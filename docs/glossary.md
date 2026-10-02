@@ -110,15 +110,16 @@ One User's configured link to a Source or a Target.
 _Avoid_: Account link, integration
 
 **Original**:
-A file or payload exactly as received from a Source, kept unchanged.
+A file or payload exactly as received from a Source, kept unchanged and belonging to one User.
+An archive that only bundles files (such as a zip) is not an Original; the files inside it are.
 _Avoid_: Raw file, upload, dump
 
 **Import**:
-One ingestion of one Original into the hub, producing or updating Recordings and Dives.
+One ingestion of what a User delivered at once (one or more Originals, possibly unpacked from an archive), producing or updating Recordings and Dives.
 _Avoid_: Sync, upload
 
 **Conflict**:
-A Dive value that was changed both in the hub and at the Source since the last Import; the hub value stays until the User decides.
+A Dive value that was changed in two places since their last common state, such as in the hub and at the Source, or in two clients. The value already in the hub stays until the User decides.
 _Avoid_: Merge error, Duplicate candidate
 
 **Push**:

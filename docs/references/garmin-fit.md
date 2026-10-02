@@ -21,3 +21,13 @@ in `record`/`session` and `dive_alert` events. Source: SDK profile 21.217.0.
 ## Notes
 - Suunto writes FIT differently: developer fields, no `dive_summary` or `tank_*`.
   See [dive data sources](../research/2026-10-02-dive-data-sources.md).
+- Official SDKs: C, C++, C#, Java, JavaScript, Objective-C, Python, Swift; v21.217.0
+  (2026-09-22) on npm/PyPI/NuGet/Maven. Proprietary FIT Protocol License (no
+  copyleft combination, no redistribution beyond its terms). JS/Python decoders
+  don't support compressed timestamps. See
+  [FIT parsing libraries](../research/2026-10-02-fit-parsing-libraries.md).
+- Tank pod metadata (name, cylinder volume, rated pressure) is in message 147
+  (`sensor_profile`), which is **not** in the public profile; libdivecomputer
+  reverse-engineered it.
+- Entry/exit GPS: `session.start_position_*` (3/4) and `session.end_position_*` (38/39),
+  in semicircles. Tank pressure is bar ×100, not SI.

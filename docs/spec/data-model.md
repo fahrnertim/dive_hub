@@ -184,8 +184,11 @@ serial number, firmware history. Assigning a Device to a Diver is how Imports at
 **Connection** — User, Source or Target type, configuration (watched folder, credentials
 reference, account ID), state.
 
-**Original** — content hash, media type, size, received at, stored bytes. It's immutable.
-The same hash received again is not processed a second time.
+**Original** — User, content hash, media type, size, received at, stored bytes. It's immutable.
+The same hash received again **from the same User** is not processed a second time. Originals are
+never shared between Users, so a hash match reveals nothing about other Users' files.
+Archives (zip, nested zips in a Garmin account export) are unpacked; each contained file becomes
+an Original, and the Import records the archive's name and hash.
 
 **Import** — User, Connection (optional for manual upload), Originals, started/finished, status,
 outcome per dive (`created`, `attached`, `updated`, `unchanged`, `duplicate candidate`, `failed`).
@@ -194,7 +197,8 @@ An Import can be undone through its Revisions.
 **Duplicate candidate** — Recording, candidate Dives, reason (several overlaps, depth mismatch,
 unknown Device), resolution.
 
-**Conflict** — Dive, field, hub value, Source value, Import, resolution.
+**Conflict** — Dive, field, base value, hub value, incoming value, where the incoming value came
+from (Import or client edit), resolution.
 
 **Push** — Dive, Connection (Target), mode (`QR payload`, `API`, `browser automation`),
 state (`pending`, `handed over`, `confirmed`, `failed`, `outdated`), remote ID if known,

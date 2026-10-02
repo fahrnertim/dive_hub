@@ -47,13 +47,24 @@ vendor or platform.
 - **Re-imports:** 3-way merge against the previous Import; hub edits win and conflicts are flagged.
 - **Outbound:** modelled now (Target, Push state), built in a later phase. First candidate
   is the SSI QR payload (no stored credentials).
+- **Phase 1 ingestion:** file import only, and only Garmin FIT files. No cloud APIs
+  (Garmin's and Suunto's are business-only, see [dive data sources](../research/2026-10-02-dive-data-sources.md)).
+  Suunto (FIT + JSON) follows in a later phase; the data model already covers it.
+- **Architecture and deployment:** API-first; one app image (API + web client + worker)
+  plus PostgreSQL, deployed with Docker Compose; built-in accounts, OIDC later
+  ([ADR 0004](../decisions/0004-system-architecture.md), [architecture](architecture.md)).
+- **Stack:** TypeScript end-to-end, React web client ([ADR 0005](../decisions/0005-typescript-stack.md)).
+- **License:** Apache-2.0; the published image uses an MIT FIT parser, Garmin's SDK only in tests
+  ([ADR 0006](../decisions/0006-license-apache-2-and-fit-parser.md)).
 
 ## Sources (inbound)
 
 | Source | Status |
 |---|---|
-| Garmin | planned |
-| Suunto | planned |
+| Garmin (FIT file import) | phase 1 |
+| Suunto (FIT + JSON file import) | later phase |
+| Other logbooks (UDDF, Subsurface) | later phase |
+| Cloud APIs (Garmin, Suunto) | not planned (business-only access) |
 | Own app connecting directly to dive computers | later |
 
 ## Targets (outbound)
@@ -71,8 +82,4 @@ _None defined yet._
 
 - **Users:** what roles exist beyond admin (dive center staff, instructor)? How do Users
   find each other's Divers? More in the [data model](data-model.md#open-questions).
-- **Ingestion mechanism per source:** research suggests file import (FIT) as the baseline,
-  because official Garmin/Suunto APIs are business-only
-  ([dive data sources](../research/2026-10-02-dive-data-sources.md)). To be confirmed.
-- **Deployment:** target platform (e.g. Docker, home server, NAS)?
 - **Relationship to existing tools** such as dive log apps: replace, complement, or integrate?
