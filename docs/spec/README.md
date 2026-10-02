@@ -35,6 +35,18 @@ vendor or platform.
 - **Scope beyond dives:** Dive Hub covers more than dive logs (e.g. certifications,
   equipment, dive sites, trips). Standard formats such as UDDF are used to define
   the scope — see [UDDF gap analysis](../research/2026-10-02-uddf-gap-analysis.md).
+- **Own data model, UDDF as adapter:** [ADR 0003](../decisions/0003-own-data-model-uddf-as-adapter.md);
+  entities and scenarios in the [data model](data-model.md), vocabulary in the [glossary](../glossary.md).
+- **Users and Divers:** a User manages one or more Divers (own, child, dive-center guest);
+  external buddies are Divers managed only by the User who created them.
+- **Buddies and sharing:** each Diver has their own Dive; Dives of the same descent are
+  linked as a Joint dive after the buddy accepts a Buddy suggestion. Visibility per Dive:
+  private, Joint dive, or instance. Dive sites and Operators are shared instance-wide.
+- **Duplicates:** several Recordings per Dive; one is primary, manual Overrides win.
+  Unambiguous time overlaps are auto-attached (undoable); otherwise the User decides.
+- **Re-imports:** 3-way merge against the previous Import; hub edits win and conflicts are flagged.
+- **Outbound:** modelled now (Target, Push state), built in a later phase. First candidate
+  is the SSI QR payload (no stored credentials).
 
 ## Sources (inbound)
 
@@ -48,7 +60,7 @@ vendor or platform.
 
 | Target | Status |
 |---|---|
-| SSI | candidate |
+| SSI | later phase (QR payload first) |
 | Others | open |
 
 ## Non-goals (so far)
@@ -57,14 +69,10 @@ _None defined yet._
 
 ## Open questions
 
-- **Users:** what roles exist (diver, admin, dive center staff, instructor)? Can users share data with each other (buddies)?
-- **Scope of data:** exact list of entities — to be derived from the UDDF gap analysis.
-- **Data model:** UDDF as internal model, or own model with UDDF import/export?
+- **Users:** what roles exist beyond admin (dive center staff, instructor)? How do Users
+  find each other's Divers? More in the [data model](data-model.md#open-questions).
 - **Ingestion mechanism per source:** research suggests file import (FIT) as the baseline,
   because official Garmin/Suunto APIs are business-only
   ([dive data sources](../research/2026-10-02-dive-data-sources.md)). To be confirmed.
-- **Duplicates:** how to merge the same dive arriving from several sources?
-- **Outbound:** SSI and PADI have no public API; only QR payloads or unofficial
-  automation exist. Is best-effort acceptable, or does outbound move to later?
 - **Deployment:** target platform (e.g. Docker, home server, NAS)?
 - **Relationship to existing tools** such as dive log apps: replace, complement, or integrate?

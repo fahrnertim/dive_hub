@@ -11,10 +11,15 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 
 ## Spec
 - [spec/README.md](spec/README.md) — Product specification: vision, sources → hub → targets, open questions.
+- [spec/data-model.md](spec/data-model.md) — Entities, ownership, relationships; UDDF checklist, gap coverage, scenarios.
+
+## Glossary
+- [glossary.md](glossary.md) — Domain language: User, Diver, Dive, Recording, Import, Push, …
 
 ## Decisions (ADRs)
 - [0001 All project knowledge lives in this repository](decisions/0001-all-project-knowledge-in-repo.md) — no local/account memory; enforcement layers.
 - [0002 Knowledge base structure](decisions/0002-knowledge-base-structure.md) — layout of AGENTS.md and docs/, conventions.
+- [0003 Own data model; UDDF as baseline scope and import/export format](decisions/0003-own-data-model-uddf-as-adapter.md) — UDDF is checklist and adapter, not storage.
 - [Template](decisions/template.md) — copy for new ADRs.
 
 ## References
