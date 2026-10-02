@@ -1,1 +1,6 @@
+# Normalise line endings in the repository to LF on all platforms
 * text=auto eol=lf
+*.fit binary
+*.zip binary
+*.png binary
+*.jpg binary

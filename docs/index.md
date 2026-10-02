@@ -17,6 +17,9 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 ## Glossary
 - [glossary.md](glossary.md) — Domain language: User, Diver, Dive, Recording, Import, Push, …
 
+## Development
+- [development.md](development.md) — setup, layout, common tasks, tooling notes.
+
 ## Agent skills
 - [skills.md](skills.md) — installed agent skills, rejected candidates, how to vet and install.
 

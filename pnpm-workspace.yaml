@@ -1,0 +1,8 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Supply-chain defaults stay on (minimumReleaseAge 1 day, strict build approval).
+# Packages allowed to run install scripts are listed here after review.
+allowBuilds:
+  esbuild: true

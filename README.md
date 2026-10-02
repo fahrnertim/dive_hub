@@ -10,3 +10,15 @@ All project knowledge lives in this repository ([why](docs/decisions/0001-all-pr
 Start at **[docs/index.md](docs/index.md)**.
 
 AI agents: see [AGENTS.md](AGENTS.md).
+
+## Try it (development)
+
+```sh
+cp .env.example .env
+docker compose -f compose.dev.yaml up -d
+pnpm install
+pnpm --filter @dive-hub/server dev   # API on :3000
+pnpm --filter @dive-hub/web dev      # open http://localhost:5173
+```
+
+Details: [development guide](docs/development.md). Licensed under [Apache-2.0](LICENSE).

@@ -1,0 +1,252 @@
+import { and, eq, gte, isNull, lte, sql } from 'drizzle-orm';
+import type { Readable } from 'node:stream';
+import type { Db, Tx } from '../db/client.js';
+import {
+  device,
+  dive,
+  diverManagement,
+  duplicateCandidate,
+  importJob,
+  importOriginal,
+  original,
+  recording,
+  recordingEvent,
+  revision,
+  sampleSeries,
+  type ImportOutcome,
+} from '../db/schema.js';
+import { createFitAdapter, looksLikeFit, type FitAdapter, type ParsedRecording } from '../fit/fit-adapter.js';
+import type { BlobStore } from '../storage/blob-store.js';
+import { extractFitFiles, looksLikeZip, type ExtractedFile } from './archive.js';
+import { decideMatch, overlapWindow } from './matching.js';
+
+export const PROCESS_IMPORT_TASK = 'process_import';
+
+export interface ImportServiceDeps {
+  db: Db;
+  blobs: BlobStore;
+  fit?: FitAdapter;
+}
+
+type Actor = { type: 'user' | 'import' | 'system'; id: string };
+
+export function createImportService({ db, blobs, fit = createFitAdapter() }: ImportServiceDeps) {
+  /** Stores the upload and creates the Import; its job is enqueued in the same transaction (ADR 0010). */
+  async function createImport(userId: string, fileName: string, stream: Readable, maxBytes: number) {
+    const upload = await blobs.putIncoming(stream, maxBytes);
+    try {
+      return await db.transaction(async (tx) => {
+        const [created] = await tx
+          .insert(importJob)
+          .values({ userId, uploadName: fileName, uploadSha256: upload.sha256, uploadStorageKey: upload.key })
+          .returning();
+        await tx.execute(
+          sql`select graphile_worker.add_job(${PROCESS_IMPORT_TASK}, json_build_object('importId', ${created!.id}::text))`,
+        );
+        return created!;
+      });
+    } catch (error) {
+      await blobs.delete(upload.key);
+      throw error;
+    }
+  }
+
+  /** Worker task: unpack, store Originals, parse, and place each Recording. */
+  async function processImport(importId: string): Promise<void> {
+    const [job] = await db.select().from(importJob).where(eq(importJob.id, importId));
+    if (!job || job.status === 'done') return;
+    await db.update(importJob).set({ status: 'processing' }).where(eq(importJob.id, importId));
+    const actor: Actor = { type: 'import', id: importId };
+
+    try {
+      const files = await unpack(job.uploadStorageKey!, job.uploadName);
+      const outcome: ImportOutcome = [];
+      for (const file of files) {
+        try {
+          outcome.push(...(await processFile(job.userId, importId, file, actor)));
+        } catch (error) {
+          outcome.push({ fileName: file.name, result: 'failed', message: (error as Error).message });
+        }
+      }
+      if (files.length === 0) {
+        outcome.push({ fileName: job.uploadName, result: 'skipped', message: 'No FIT file found' });
+      }
+      await db
+        .update(importJob)
+        .set({ status: 'done', outcome, finishedAt: new Date(), uploadStorageKey: null })
+        .where(eq(importJob.id, importId));
+      await blobs.delete(job.uploadStorageKey!);
+    } catch (error) {
+      await db
+        .update(importJob)
+        .set({ status: 'failed', error: (error as Error).message, finishedAt: new Date() })
+        .where(eq(importJob.id, importId));
+      throw error;
+    }
+  }
+
+  async function unpack(key: string, name: string): Promise<ExtractedFile[]> {
+    const data = await blobs.read(key);
+    if (looksLikeFit(data)) return [{ name, data }];
+    if (looksLikeZip(data)) return extractFitFiles(blobs.pathOf(key));
+    throw new Error('Unsupported file: expected a FIT file or a zip archive');
+  }
+
+  async function processFile(userId: string, importId: string, file: ExtractedFile, actor: Actor): Promise<ImportOutcome> {
+    const stored = await blobs.putOriginal(file.data);
+    return db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(original)
+        .where(and(eq(original.userId, userId), eq(original.sha256, stored.sha256)));
+      const orig =
+        existing ??
+        (await tx
+          .insert(original)
+          .values({
+            userId, sha256: stored.sha256, mediaType: 'application/vnd.ant.fit',
+            sizeBytes: stored.sizeBytes, fileName: file.name, storageKey: stored.key,
+          })
+          .returning())[0]!;
+      await tx.insert(importOriginal).values({ importId, originalId: orig.id }).onConflictDoNothing();
+
+      if (existing) {
+        const known = await tx.select({ id: recording.id, diveId: recording.diveId }).from(recording)
+          .where(and(eq(recording.originalId, orig.id), isNull(recording.deletedAt)));
+        if (known.length > 0) {
+          return known.map((r) => ({
+            fileName: file.name, result: 'unchanged' as const, recordingId: r.id, ...(r.diveId && { diveId: r.diveId }),
+          }));
+        }
+      }
+
+      const parsed = await fit.parse(file.data);
+      if (parsed.length === 0) return [{ fileName: file.name, result: 'skipped' as const, message: 'Not a dive' }];
+      const results: ImportOutcome = [];
+      for (const rec of parsed) results.push(await placeRecording(tx, userId, importId, orig.id, file.name, rec, actor));
+      return results;
+    });
+  }
+
+  async function placeRecording(
+    tx: Tx, userId: string, importId: string, originalId: string, fileName: string, rec: ParsedRecording, actor: Actor,
+  ): Promise<ImportOutcome[number]> {
+    const diverId = await resolveDiver(tx, userId, rec);
+    const deviceId = rec.device ? await resolveDevice(tx, diverId, rec) : null;
+    const values = {
+      deviceId, originalId, importId, recordingKey: rec.recordingKey,
+      parser: fit.parser, parserVersion: fit.parserVersion,
+      startsAt: rec.startsAt, utcOffsetSeconds: rec.utcOffsetSeconds ?? null,
+      durationSeconds: rec.durationSeconds, maxDepthM: rec.maxDepthM ?? null, avgDepthM: rec.avgDepthM ?? null,
+      summary: rec.summary, updatedAt: new Date(),
+    };
+
+    // Same Recording seen before (e.g. a re-export with a different file hash): update in place.
+    const [known] = await tx.select().from(recording)
+      .where(and(eq(recording.recordingKey, rec.recordingKey), isNull(recording.deletedAt)));
+    if (known) {
+      await tx.update(recording).set(values).where(eq(recording.id, known.id));
+      await writeSamples(tx, known.id, rec, true);
+      await writeRevision(tx, 'recording', known.id, actor, 'reimport', { originalId: { from: known.originalId, to: originalId } });
+      return { fileName, result: 'updated', recordingId: known.id, ...(known.diveId && { diveId: known.diveId }) };
+    }
+
+    const [created] = await tx.insert(recording).values(values).returning();
+    await writeSamples(tx, created!.id, rec, false);
+
+    const window = overlapWindow(rec);
+    const candidates = await tx
+      .select({ id: dive.id, startsAt: dive.startsAt, durationSeconds: dive.durationSeconds, maxDepthM: dive.maxDepthM })
+      .from(dive)
+      .where(and(
+        eq(dive.diverId, diverId), isNull(dive.deletedAt),
+        lte(dive.startsAt, window.to), gte(dive.startsAt, new Date(window.from.getTime() - 24 * 3600_000)),
+      ));
+    const decision = decideMatch(rec, candidates.map((c) => ({ ...c, maxDepthM: c.maxDepthM ?? undefined })));
+
+    if (decision.kind === 'create') {
+      const [newDive] = await tx.insert(dive).values({
+        diverId, number: rec.summary.diveNumber ?? null, startsAt: rec.startsAt,
+        utcOffsetSeconds: rec.utcOffsetSeconds ?? null, durationSeconds: rec.durationSeconds,
+        maxDepthM: rec.maxDepthM ?? null, avgDepthM: rec.avgDepthM ?? null, primaryRecordingId: created!.id,
+      }).returning();
+      await tx.update(recording).set({ diveId: newDive!.id }).where(eq(recording.id, created!.id));
+      await writeRevision(tx, 'dive', newDive!.id, actor, 'import-create', {
+        primaryRecordingId: { from: null, to: created!.id },
+      });
+      return { fileName, result: 'created', diveId: newDive!.id, recordingId: created!.id };
+    }
+    if (decision.kind === 'attach') {
+      await tx.update(recording).set({ diveId: decision.diveId }).where(eq(recording.id, created!.id));
+      await writeRevision(tx, 'dive', decision.diveId, actor, 'auto-attach', {
+        recordings: { from: null, to: created!.id },
+      });
+      return { fileName, result: 'attached', diveId: decision.diveId, recordingId: created!.id };
+    }
+    await tx.insert(duplicateCandidate).values({
+      recordingId: created!.id, candidateDiveIds: decision.diveIds, reason: decision.reason,
+    });
+    return { fileName, result: 'duplicate-candidate', recordingId: created!.id, message: decision.reason };
+  }
+
+  /** Recordings go to the Diver their Device is assigned to; unknown Devices default to the User's own Diver. */
+  async function resolveDiver(tx: Tx, userId: string, rec: ParsedRecording): Promise<string> {
+    if (rec.device) {
+      const [known] = await tx.select({ diverId: device.diverId }).from(device).where(and(
+        eq(device.manufacturer, rec.device.manufacturer), eq(device.serialNumber, rec.device.serialNumber),
+        isNull(device.deletedAt),
+      ));
+      if (known) return known.diverId;
+    }
+    const [own] = await tx.select({ diverId: diverManagement.diverId }).from(diverManagement)
+      .where(and(eq(diverManagement.userId, userId), eq(diverManagement.isOwn, true)));
+    if (!own) throw new Error('User has no own Diver');
+    return own.diverId;
+  }
+
+  async function resolveDevice(tx: Tx, diverId: string, rec: ParsedRecording): Promise<string> {
+    const d = rec.device!;
+    const [known] = await tx.select().from(device).where(and(
+      eq(device.manufacturer, d.manufacturer), eq(device.serialNumber, d.serialNumber), isNull(device.deletedAt),
+    ));
+    if (known) {
+      if (d.firmware && d.firmware !== known.firmware) {
+        await tx.update(device).set({ firmware: d.firmware, updatedAt: new Date() }).where(eq(device.id, known.id));
+      }
+      return known.id;
+    }
+    const [created] = await tx.insert(device).values({
+      diverId, manufacturer: d.manufacturer, serialNumber: d.serialNumber,
+      product: d.product ?? null, firmware: d.firmware ?? null,
+    }).returning();
+    return created!.id;
+  }
+
+  return { createImport, processImport };
+}
+
+async function writeSamples(tx: Tx, recordingId: string, rec: ParsedRecording, replace: boolean) {
+  if (replace) {
+    await tx.delete(sampleSeries).where(eq(sampleSeries.recordingId, recordingId));
+    await tx.delete(recordingEvent).where(eq(recordingEvent.recordingId, recordingId));
+  }
+  if (rec.series.length > 0) {
+    await tx.insert(sampleSeries).values(rec.series.map((s) => ({
+      recordingId, channel: s.channel, offsetsMs: s.offsetsMs, values: s.values,
+    })));
+  }
+  if (rec.events.length > 0) {
+    await tx.insert(recordingEvent).values(rec.events.map((e) => ({
+      recordingId, offsetMs: e.offsetMs, type: e.type, data: e.data,
+    })));
+  }
+}
+
+async function writeRevision(
+  tx: Tx, entityType: string, entityId: string, actor: Actor, cause: string,
+  changes: Record<string, { from: unknown; to: unknown }>,
+) {
+  await tx.insert(revision).values({ entityType, entityId, actorType: actor.type, actorId: actor.id, cause, changes });
+}
+
+export type ImportService = ReturnType<typeof createImportService>;

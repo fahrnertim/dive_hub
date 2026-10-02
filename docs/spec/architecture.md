@@ -79,3 +79,25 @@ mobile clients can use. OIDC (Authentik, Authelia, Keycloak, …) is planned for
   export zip; resumable uploads for large account exports?
 - **Sample storage layout** in PostgreSQL (row per sample vs. arrays/compressed blocks per Recording).
 - **Notifications** from worker to client (polling vs. server-sent events).
+
+## Implementation status
+
+**Slice 1 (2026-10-02): Garmin FIT import → Dive → depth profile.** See the [development guide](../development.md).
+
+Implemented: pnpm monorepo (`apps/server`, `apps/web`, `packages/api-client`); upload of FIT
+files and zips (nested zips, size/ratio/depth limits); Originals stored by hash per User; Import
+with its job enqueued in the same transaction; worker in-process; Devices attributed to Divers;
+Recording key for re-imports; auto-attach / new Dive / Duplicate candidate; Revisions for
+import-driven changes; Sample series as arrays; OpenAPI-generated client; React logbook with
+uPlot depth profile; Docker image and Compose files.
+
+Deliberate simplifications, to revisit:
+- **No sign-in yet:** one development user (`user_id = 'dev'`) with one own Diver; `user_id`
+  columns have no foreign key until Better Auth's `user` table exists (next slice, ADR 0011).
+- **Sample series:** each channel stores its own time offsets (simpler than a shared time axis
+  for dense channels, at roughly double the storage for time).
+- **No Overrides, Conflicts or Duplicate-candidate resolution UI yet**; Duplicate candidates are
+  only recorded.
+- **Parsed FIT values** are checked with small type guards, not TypeBox schemas (ADR 0009 intent).
+- **Uploads** are plain multipart (limit `DIVEHUB_MAX_UPLOAD_MB`, default 512); resumable uploads
+  for multi-GB account exports come later.

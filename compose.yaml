@@ -1,0 +1,37 @@
+# Dive Hub: app (API + web client + in-process worker) and PostgreSQL (ADR 0004).
+# Put your own reverse proxy with TLS in front of port 3000.
+# Required: set POSTGRES_PASSWORD in a .env file next to this file.
+services:
+  app:
+    image: dive-hub:dev   # replace with a pinned release tag once images are published
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://divehub:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/divehub
+      DIVEHUB_MAX_UPLOAD_MB: ${DIVEHUB_MAX_UPLOAD_MB:-512}
+    ports:
+      - "${DIVEHUB_BIND:-127.0.0.1}:${DIVEHUB_PORT:-3000}:3000"
+    volumes:
+      - files:/data
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:18.0-alpine   # pinned major version; major upgrades need a dump/restore
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: divehub
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: divehub
+    volumes:
+      - db:/var/lib/postgresql   # PostgreSQL 18+ mount point
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U divehub -d divehub"]
+      interval: 5s
+      retries: 10
+    # No published port: only the app talks to the database.
+
+volumes:
+  files:
+  db:

@@ -1,0 +1,184 @@
+import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
+import { Type, type Static } from 'typebox';
+import type { Db } from './db/client.js';
+import { dive, diverManagement, importJob, recording, sampleSeries } from './db/schema.js';
+import { downsampleMinMax } from './dives/downsample.js';
+import type { ImportService } from './imports/import-service.js';
+import { UploadTooLargeError } from './storage/blob-store.js';
+
+export interface RouteDeps {
+  db: Db;
+  imports: ImportService;
+  maxUploadBytes: number;
+  /** Until sign-in exists (ADR 0011, next slice) every request acts as the development user. */
+  currentUserId: () => string;
+}
+
+const Problem = Type.Object({ error: Type.String() });
+const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
+const DateTime = Type.String({ format: 'date-time' });
+const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([t, Type.Null()]);
+
+const ImportView = Type.Object({
+  id: Type.String(),
+  status: Type.Union([Type.Literal('pending'), Type.Literal('processing'), Type.Literal('done'), Type.Literal('failed')]),
+  uploadName: Type.String(),
+  createdAt: DateTime,
+  finishedAt: Nullable(DateTime),
+  error: Nullable(Type.String()),
+  outcome: Type.Array(Type.Object({
+    fileName: Type.String(),
+    result: Type.String(),
+    diveId: Type.Optional(Type.String()),
+    recordingId: Type.Optional(Type.String()),
+    message: Type.Optional(Type.String()),
+  })),
+});
+
+const DiveSummaryView = Type.Object({
+  id: Type.String(),
+  number: Nullable(Type.Integer()),
+  startsAt: DateTime,
+  utcOffsetSeconds: Nullable(Type.Integer()),
+  durationSeconds: Type.Number(),
+  maxDepthM: Nullable(Type.Number()),
+  avgDepthM: Nullable(Type.Number()),
+});
+
+const RecordingView = Type.Object({
+  id: Type.String(),
+  isPrimary: Type.Boolean(),
+  startsAt: DateTime,
+  durationSeconds: Type.Number(),
+  maxDepthM: Nullable(Type.Number()),
+  parser: Type.String(),
+  summary: Type.Record(Type.String(), Type.Unknown()),
+  channels: Type.Array(Type.String()),
+});
+
+const DiveView = Type.Intersect([DiveSummaryView, Type.Object({ recordings: Type.Array(RecordingView) })]);
+
+const SamplesQuery = Type.Object({
+  channels: Type.Optional(Type.String({ description: 'Comma-separated channel names; default all' })),
+  maxPoints: Type.Optional(Type.Integer({ minimum: 4, maximum: 20000, default: 2000 })),
+});
+
+const SamplesView = Type.Object({
+  recordingId: Type.String(),
+  series: Type.Array(Type.Object({
+    channel: Type.String(),
+    offsetsMs: Type.Array(Type.Integer()),
+    values: Type.Array(Type.Number()),
+  })),
+});
+
+const iso = (d: Date | null) => (d ? d.toISOString() : null);
+const toImportView = (j: typeof importJob.$inferSelect): Static<typeof ImportView> => ({
+  id: j.id, status: j.status, uploadName: j.uploadName, createdAt: j.createdAt.toISOString(),
+  finishedAt: iso(j.finishedAt), error: j.error, outcome: j.outcome,
+});
+const toDiveSummary = (d: typeof dive.$inferSelect): Static<typeof DiveSummaryView> => ({
+  id: d.id, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
+  durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, avgDepthM: d.avgDepthM,
+});
+
+export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps) => {
+  const { db, imports } = deps;
+
+  /** Divers the current user manages; all logbook reads are scoped to them. */
+  const managedDiverIds = async () =>
+    (await db.select({ id: diverManagement.diverId }).from(diverManagement)
+      .where(eq(diverManagement.userId, deps.currentUserId()))).map((r) => r.id);
+
+  app.post('/imports', {
+    schema: {
+      summary: 'Upload a FIT file or a zip archive (e.g. Garmin "Export Original") for import',
+      consumes: ['multipart/form-data'],
+      response: { 202: ImportView, 400: Problem, 413: Problem },
+    },
+  }, async (request, reply) => {
+    const file = await request.file();
+    if (!file) return reply.code(400).send({ error: 'Expected a file in the "file" field' });
+    try {
+      const created = await imports.createImport(deps.currentUserId(), file.filename, file.file, deps.maxUploadBytes);
+      return reply.code(202).send(toImportView(created));
+    } catch (error) {
+      if (error instanceof UploadTooLargeError) return reply.code(413).send({ error: error.message });
+      throw error;
+    }
+  });
+
+  app.get('/imports', {
+    schema: { summary: 'Recent Imports of the current user', response: { 200: Type.Array(ImportView) } },
+  }, async () => {
+    const rows = await db.select().from(importJob).where(eq(importJob.userId, deps.currentUserId()))
+      .orderBy(desc(importJob.createdAt)).limit(50);
+    return rows.map(toImportView);
+  });
+
+  app.get('/imports/:id', {
+    schema: { summary: 'One Import with its outcome', params: IdParams, response: { 200: ImportView, 404: Problem } },
+  }, async (request, reply) => {
+    const [row] = await db.select().from(importJob)
+      .where(and(eq(importJob.id, request.params.id), eq(importJob.userId, deps.currentUserId())));
+    return row ? toImportView(row) : reply.code(404).send({ error: 'Import not found' });
+  });
+
+  app.get('/dives', {
+    schema: { summary: 'Dives of the Divers the current user manages, newest first', response: { 200: Type.Array(DiveSummaryView) } },
+  }, async () => {
+    const divers = await managedDiverIds();
+    if (divers.length === 0) return [];
+    const rows = await db.select().from(dive)
+      .where(and(inArray(dive.diverId, divers), isNull(dive.deletedAt))).orderBy(desc(dive.startsAt)).limit(500);
+    return rows.map(toDiveSummary);
+  });
+
+  app.get('/dives/:id', {
+    schema: { summary: 'One Dive with its Recordings', params: IdParams, response: { 200: DiveView, 404: Problem } },
+  }, async (request, reply) => {
+    const divers = await managedDiverIds();
+    const [row] = divers.length === 0 ? [] : await db.select().from(dive)
+      .where(and(eq(dive.id, request.params.id), inArray(dive.diverId, divers), isNull(dive.deletedAt)));
+    if (!row) return reply.code(404).send({ error: 'Dive not found' });
+    const recs = await db.select({
+      r: recording,
+      channels: sql<string[]>`coalesce((select array_agg(channel order by channel) from ${sampleSeries} where ${sampleSeries.recordingId} = ${recording.id}), '{}')`,
+    }).from(recording).where(and(eq(recording.diveId, row.id), isNull(recording.deletedAt)));
+    return {
+      ...toDiveSummary(row),
+      recordings: recs.map(({ r, channels }) => ({
+        id: r.id, isPrimary: r.id === row.primaryRecordingId, startsAt: r.startsAt.toISOString(),
+        durationSeconds: r.durationSeconds, maxDepthM: r.maxDepthM, parser: r.parser,
+        summary: r.summary as Record<string, unknown>, channels,
+      })),
+    };
+  });
+
+  app.get('/recordings/:id/samples', {
+    schema: {
+      summary: 'Sample series of a Recording, downsampled for display',
+      params: IdParams, querystring: SamplesQuery, response: { 200: SamplesView, 404: Problem },
+    },
+  }, async (request, reply) => {
+    const divers = await managedDiverIds();
+    const [rec] = divers.length === 0 ? [] : await db.select({ id: recording.id }).from(recording)
+      .innerJoin(dive, eq(dive.id, recording.diveId))
+      .where(and(eq(recording.id, request.params.id), inArray(dive.diverId, divers)));
+    if (!rec) return reply.code(404).send({ error: 'Recording not found' });
+    const wanted = request.query.channels?.split(',').map((c) => c.trim()).filter(Boolean);
+    const rows = await db.select().from(sampleSeries).where(and(
+      eq(sampleSeries.recordingId, rec.id),
+      ...(wanted?.length ? [inArray(sampleSeries.channel, wanted)] : []),
+    ));
+    const maxPoints = request.query.maxPoints ?? 2000;
+    return {
+      recordingId: rec.id,
+      series: rows.map((s) => {
+        const reduced = downsampleMinMax(s.offsetsMs, s.values, maxPoints);
+        return { channel: s.channel, offsetsMs: reduced.offsets, values: reduced.values };
+      }),
+    };
+  });
+};

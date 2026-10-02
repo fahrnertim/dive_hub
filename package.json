@@ -1,0 +1,15 @@
+{
+  "name": "dive-hub",
+  "private": true,
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@12.8.1",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter ./apps/* dev",
+    "build": "pnpm --recursive build",
+    "test": "pnpm --recursive test",
+    "typecheck": "pnpm --recursive typecheck"
+  }
+}

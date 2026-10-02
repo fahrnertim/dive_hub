@@ -18,7 +18,9 @@ type the route handlers and produce the OpenAPI description from which clients a
 ## Decision
 - API schemas are written with **TypeBox**. Fastify validates and serialises with them natively, and
   `@fastify/swagger` turns them into OpenAPI without a conversion step.
-- Where an API shape equals a table shape, it may be derived with `drizzle-typebox`.
+- Where an API shape equals a table shape, it may be derived with `drizzle-typebox`. (As of 2026-10,
+  `drizzle-typebox` still targets `@sinclair/typebox` 0.34 while Fastify's provider needs `typebox` 1.x,
+  so schemas are written by hand until that is resolved.)
 - Parsed file contents (e.g. FIT messages) are checked with TypeBox too, so there's one way of
   describing data on the server.
 - The web client uses types from the generated OpenAPI client. Form validation in the web client

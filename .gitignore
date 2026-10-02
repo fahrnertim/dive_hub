@@ -1,2 +1,9 @@
 # Personal sample files (real dives with GPS/personal data) never go into git
 samples/private/
+
+node_modules/
+dist/
+.env
+*.log
+coverage/
+data/
