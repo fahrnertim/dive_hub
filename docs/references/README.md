@@ -11,4 +11,4 @@ One file per external project or source: `kebab-name.md`, with frontmatter
 plus a `url:` field, and sections **What it is**, **What we take from it**,
 **Notes**. Add each file to [docs/index.md](../index.md).
 
-_None yet._
+See [docs/index.md](../index.md) for the list.
