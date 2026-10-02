@@ -31,3 +31,6 @@ in `record`/`session` and `dive_alert` events. Source: SDK profile 21.217.0.
   reverse-engineered it.
 - Entry/exit GPS: `session.start_position_*` (3/4) and `session.end_position_*` (38/39),
   in semicircles. Tank pressure is bar ×100, not SI.
+- A real Descent Mk3 file: USB copy and Export Original are byte-identical; two `dive_summary`
+  messages (session and lap); variable 1–3 s sample interval; only an end position. See
+  [sample probe](../research/2026-10-02-garmin-descent-sample-probe.md).
