@@ -22,11 +22,11 @@ Research: [server and web stack](../research/2026-10-02-server-and-web-stack.md)
 - **Web client:** React single-page app (Vite), data fetching with TanStack Query, API client
   generated from the OpenAPI description.
 - **Library candidates** (chosen in the first implementation spike, each recorded when picked):
-  - HTTP framework: Fastify or Hono (code-first OpenAPI via schemas), or NestJS.
-  - Database access and migrations: Drizzle or Kysely.
-  - Job queue on PostgreSQL: pg-boss or Graphile Worker.
-  - Auth: Better Auth (accounts, sessions, bearer tokens, OIDC later), or own implementation
-    following the [auth research](../research/2026-10-02-data-sync-upload-auth.md).
+  - HTTP framework: **Fastify** ([ADR 0007](0007-fastify-http-framework.md)).
+  - Database access and migrations: **Drizzle** ([ADR 0008](0008-drizzle-database-access.md)).
+  - Job queue on PostgreSQL: **Graphile Worker** ([ADR 0010](0010-graphile-worker-job-queue.md)).
+  - API schemas: **TypeBox** ([ADR 0009](0009-typebox-schemas.md)).
+  - Auth: **Better Auth** ([ADR 0011](0011-better-auth.md)).
   - Dive profile charts: uPlot. Dive site maps: MapLibre GL JS.
 - **FIT parser:** see [ADR 0006](0006-license-apache-2-and-fit-parser.md).
 

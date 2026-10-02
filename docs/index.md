@@ -30,6 +30,11 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [0004 API-first system architecture, deployed with Docker Compose](decisions/0004-system-architecture.md) — app image (API + web + worker) and PostgreSQL; built-in auth.
 - [0005 TypeScript end-to-end; React web client](decisions/0005-typescript-stack.md) — Node LTS, React SPA, generated OpenAPI client; library candidates listed.
 - [0006 Apache-2.0 license; MIT FIT parser in the image](decisions/0006-license-apache-2-and-fit-parser.md) — Garmin FIT SDK only as test cross-check (its license forbids redistribution).
+- [0007 Fastify as HTTP framework](decisions/0007-fastify-http-framework.md) — routes, OpenAPI via @fastify/swagger, official plugins; thin handlers.
+- [0008 Drizzle for database access and migrations](decisions/0008-drizzle-database-access.md) — schema in TypeScript, generated + reviewed migrations, raw SQL where clearer.
+- [0009 TypeBox for API schemas](decisions/0009-typebox-schemas.md) — Fastify-native JSON Schema; OpenAPI without conversion.
+- [0010 Graphile Worker as job queue](decisions/0010-graphile-worker-job-queue.md) — enqueue via SQL in the Import transaction; LISTEN/NOTIFY.
+- [0011 Better Auth for accounts and sessions](decisions/0011-better-auth.md) — ≥ 1.7.7, argon2id, invite-only, database sessions, small plugin set.
 - [Template](decisions/template.md) — copy for new ADRs.
 
 ## References
@@ -50,4 +55,5 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [2026-10-02 Server and web stack](research/2026-10-02-server-and-web-stack.md) — language/framework comparison; top: TypeScript end-to-end, .NET + TS SPA, Go + TS SPA.
 - [2026-10-02 Garmin Descent sample probe](research/2026-10-02-garmin-descent-sample-probe.md) — real Mk3 file: USB = Export Original, contents, fit-file-parser must read `messages`.
 - [2026-10-02 Agent skills vetting](research/2026-10-02-agent-skills-vetting.md) — candidate skills for the stack read and rated: install now / with library choice / reject.
+- [2026-10-02 Better Auth fit check](research/2026-10-02-better-auth-check.md) — Better Auth docs checked against our auth requirements.
 - [2026-10-02 Data, sync, upload, auth](research/2026-10-02-data-sync-upload-auth.md) — sample storage, Originals and zip uploads, Revisions and sync API, sessions and OIDC-readiness.

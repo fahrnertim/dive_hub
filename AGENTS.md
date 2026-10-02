@@ -56,3 +56,6 @@ rejected, and why — in [docs/skills.md](docs/skills.md).
 - **vercel-react-best-practices**: our web client is a Vite SPA, not Next.js. Ignore the
   `server-*` rules (React Server Components, server actions).
 - **tanstack-query-best-practices**: community skill, not from TanStack; official docs win on conflict.
+- **better-auth-\***: follow [ADR 0011](docs/decisions/0011-better-auth.md). Run the auth CLI at the
+  project's pinned version (not `@latest`), generate into its own schema file, never `drizzle-kit push`
+  (migrations are generated, reviewed and committed), and don't run `npx auth mcp`.

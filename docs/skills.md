@@ -34,6 +34,10 @@ specialized skills, vet them, propose them to the user, and record the outcome h
 | security-and-hardening | addyosmani/agent-skills | uploads, auth, personal data | 2026-10-02 |
 | tanstack-query-best-practices | deckardger/tanstack-agent-skills | server state in the web client | 2026-10-02 |
 | vercel-react-best-practices | vercel-labs/agent-skills | React performance (SPA rules only) | 2026-10-02 |
+| fastify-best-practices | mcollina/skills | Fastify routes, plugins, schemas, OpenAPI | 2026-10-02 |
+| postgres-drizzle | ccheney/robust-skills | Drizzle schema, queries, migrations | 2026-10-02 |
+| better-auth-best-practices | better-auth/skills | Better Auth setup and usage | 2026-10-02 |
+| better-auth-security-best-practices | better-auth/skills | Better Auth hardening | 2026-10-02 |
 
 Install with telemetry off: `DISABLE_TELEMETRY=1 npx skills add <owner/repo> -s <skill> -a claude-code --copy -y`.
 
@@ -43,11 +47,7 @@ Details and commands: [skills vetting](research/2026-10-02-agent-skills-vetting.
 
 | When | Skill |
 |---|---|
-| Fastify chosen | mcollina/skills `fastify-best-practices` |
-| Hono chosen | honojs/skills `hono` |
-| NestJS chosen | kadajett/agent-nestjs-skills `nestjs-best-practices` |
-| Better Auth chosen | better-auth/skills `better-auth-best-practices`, `better-auth-security-best-practices` (later: email/password, 2FA) |
-| Drizzle chosen | ccheney/robust-skills `postgres-drizzle` |
+| Email/password flows, 2FA built | better-auth/skills `email-and-password-best-practices`, `two-factor-authentication-best-practices` |
 | End-to-end tests | microsoft/playwright-cli `playwright-cli` |
 | UI design work | anthropics/skills `frontend-design` |
 | Code exists, refactoring | mattpocock/skills `improve-codebase-architecture` |
@@ -61,3 +61,7 @@ Details and commands: [skills vetting](research/2026-10-02-agent-skills-vetting.
 | 2026-10-02 | planetscale postgres, affaan-m docker-patterns, getsentry security-review, giuseppe drizzle-orm-patterns | rejected | safety: vendor ads with live remote links, foreign project context, or pre-approved Bash/Write |
 | 2026-10-02 | yusukebe/hono-skill, mattpocock design-an-interface, lobehub drizzle, tanstack-skills/tanstack-skills | rejected | dead, moved, or internal/unaffiliated |
 | 2026-10-02 | mindrally kysely, bobmatnyc drizzle, supabase-postgres-best-practices, multi-stage-dockerfile, nodejs-backend-patterns, monorepo-management, vercel-composition-patterns, better-auth create-auth | rejected | generic, overlapping, or bypasses our own design |
+| 2026-10-02 | fastify-best-practices (mcollina/skills) | installed | Fastify chosen ([ADR 0007](decisions/0007-fastify-http-framework.md)); maintainer-written |
+| 2026-10-02 | honojs/skills hono, kadajett nestjs-best-practices | not needed | Fastify chosen instead of Hono/NestJS |
+| 2026-10-02 | postgres-drizzle (ccheney/robust-skills) | installed | Drizzle chosen ([ADR 0008](decisions/0008-drizzle-database-access.md)); version-aware, asks before migrating |
+| 2026-10-02 | better-auth-best-practices, better-auth-security-best-practices (better-auth/skills) | installed | Better Auth chosen ([ADR 0011](decisions/0011-better-auth.md)); CLI/migration overrides in AGENTS.md |
