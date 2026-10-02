@@ -17,6 +17,9 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 ## Glossary
 - [glossary.md](glossary.md) — Domain language: User, Diver, Dive, Recording, Import, Push, …
 
+## Agent skills
+- [skills.md](skills.md) — installed agent skills, rejected candidates, how to vet and install.
+
 ## Sample files
 - [../samples/README.md](../samples/README.md) — where real dive files go (`samples/private/`, git-ignored) and how fixtures are derived.
 
@@ -46,4 +49,5 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [2026-10-02 FIT parsing libraries](research/2026-10-02-fit-parsing-libraries.md) — official SDKs vs community parsers, FIT license, dive pitfalls, language ranking.
 - [2026-10-02 Server and web stack](research/2026-10-02-server-and-web-stack.md) — language/framework comparison; top: TypeScript end-to-end, .NET + TS SPA, Go + TS SPA.
 - [2026-10-02 Garmin Descent sample probe](research/2026-10-02-garmin-descent-sample-probe.md) — real Mk3 file: USB = Export Original, contents, fit-file-parser must read `messages`.
+- [2026-10-02 Agent skills vetting](research/2026-10-02-agent-skills-vetting.md) — candidate skills for the stack read and rated: install now / with library choice / reject.
 - [2026-10-02 Data, sync, upload, auth](research/2026-10-02-data-sync-upload-auth.md) — sample storage, Originals and zip uploads, Revisions and sync API, sessions and OIDC-readiness.

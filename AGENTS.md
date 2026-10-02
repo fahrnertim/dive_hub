@@ -41,6 +41,18 @@ Start at [docs/index.md](docs/index.md) — it lists every document.
 Project skills live in `.claude/skills/` (installed with `npx skills add … --copy`,
 pinned in `skills-lock.json`). Don't edit them; override here instead.
 
+**Rule: check for skills before new work.** Before starting anything new (a new area,
+design, or implementation with a new technology), search for specialized skills
+(`npx skills find <topic>`, [skills.sh](https://skills.sh/)). Vet them (source reputation,
+installs, repo activity, read the SKILL.md), propose the good ones to the user, and
+install only with their approval, at project level. Record the outcome — installed or
+rejected, and why — in [docs/skills.md](docs/skills.md).
+
 - **domain-modeling**: the glossary is `docs/glossary.md` (not root `GLOSSARY.md`);
   ADRs go in `docs/decisions/` using our [template](docs/decisions/template.md)
   (not `docs/adr/`). Its "offer ADRs sparingly" criteria apply.
+- **tdd**, **codebase-design**: same paths — glossary is `docs/glossary.md`, ADRs are in
+  `docs/decisions/`. Test and interface names use the glossary's terms.
+- **vercel-react-best-practices**: our web client is a Vite SPA, not Next.js. Ignore the
+  `server-*` rules (React Server Components, server actions).
+- **tanstack-query-best-practices**: community skill, not from TanStack; official docs win on conflict.
