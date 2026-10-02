@@ -24,6 +24,7 @@ Start at [docs/index.md](docs/index.md) — it lists every document.
 | Folder | Contents |
 |---|---|
 | `docs/spec/` | Product specification |
+| `docs/glossary.md` | Domain language (created with the first term) |
 | `docs/decisions/` | ADRs (`NNNN-title.md`, copy `template.md`) |
 | `docs/references/` | One file per external project/source |
 | `docs/research/` | Dated research notes (`YYYY-MM-DD-topic.md`), sources linked |
@@ -34,3 +35,12 @@ Start at [docs/index.md](docs/index.md) — it lists every document.
 - Relative Markdown links (not `[[wikilinks]]`).
 - Record significant decisions as ADRs; don't re-litigate accepted ones without a new ADR.
 - Keep this file short; details belong in `docs/`.
+
+## Skills
+
+Project skills live in `.claude/skills/` (installed with `npx skills add … --copy`,
+pinned in `skills-lock.json`). Don't edit them; override here instead.
+
+- **domain-modeling**: the glossary is `docs/glossary.md` (not root `GLOSSARY.md`);
+  ADRs go in `docs/decisions/` using our [template](docs/decisions/template.md)
+  (not `docs/adr/`). Its "offer ADRs sparingly" criteria apply.
