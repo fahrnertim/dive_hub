@@ -27,3 +27,22 @@
 
 .profile { width: 100%; }
 .profile .u-legend { color: var(--color-text); font-size: var(--text-sm); }
+
+/* Dive: edit form, notes, device data, history (ADR 0015) */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: var(--space-5) var(--space-4); }
+.field-block { display: grid; gap: var(--space-2); align-content: start; }
+.field-block > .muted, .field-origin { font-size: var(--text-sm); margin: 0; }
+.field-origin { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.field-origin .badge { margin-left: 0; }
+.notes { white-space: pre-wrap; }
+.facts-small dd { font-size: var(--text-md); }
+.extras { margin-bottom: var(--space-4); font-size: var(--text-sm); }
+.extras summary { cursor: pointer; color: var(--color-text-muted); }
+.extras dl { display: grid; grid-template-columns: max-content 1fr; gap: var(--space-1) var(--space-4); margin: var(--space-2) 0 0; }
+.extras dt { color: var(--color-text-muted); }
+.extras dd { margin: 0; }
+.history { list-style: none; margin: 0; padding: 0; }
+.history > li { padding: var(--space-3) 0; border-top: 1px solid var(--color-border); }
+.history > li:first-child { border-top: none; padding-top: 0; }
+.history-head { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); align-items: baseline; }
+.history-changes { margin: var(--space-1) 0 0; padding-left: var(--space-5); font-size: var(--text-sm); }

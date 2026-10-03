@@ -100,9 +100,17 @@
     "actions": "Actions",
     "you": "you",
     "revoke": "Revoke",
-    "roles": { "user": "User", "admin": "Admin" },
+    "roles": {
+      "user": "User",
+      "admin": "Admin"
+    },
     "disabled": "disabled",
-    "invitationStatus": { "pending": "open", "accepted": "accepted", "revoked": "revoked", "expired": "expired" },
+    "invitationStatus": {
+      "pending": "open",
+      "accepted": "accepted",
+      "revoked": "revoked",
+      "expired": "expired"
+    },
     "makeAdmin": "Make admin",
     "makeUser": "Make user",
     "createResetLink": "Password reset link",
@@ -122,7 +130,12 @@
     "choose": "Choose files",
     "hint": "“Export Original” zips from Garmin Connect and files copied from the watch both work.",
     "uploading": "Uploading…",
-    "status": { "pending": "waiting", "processing": "processing", "done": "done", "failed": "failed" },
+    "status": {
+      "pending": "waiting",
+      "processing": "processing",
+      "done": "done",
+      "failed": "failed"
+    },
     "result": {
       "created": "new dive",
       "attached": "added to an existing dive",
@@ -173,7 +186,32 @@
     "minutes": "Minutes",
     "time": "Time",
     "depth": "Depth",
-    "temperature": "Temperature"
+    "temperature": "Temperature",
+    "edit": "Edit dive",
+    "save": "Save",
+    "saved": "Saved.",
+    "number": "Dive number",
+    "start": "Start (local time at the site)",
+    "utcOffset": "UTC offset (hours)",
+    "waterTemperature": "Water temperature",
+    "notes": "Notes",
+    "noNotes": "No notes yet.",
+    "edited": "edited",
+    "editedHint": "Set by hand; the recording says {{value}}",
+    "fromRecording": "Recording: {{value}}",
+    "resetToRecording": "Use the recording’s value",
+    "willReset": "Goes back to {{value}} when you save",
+    "changedMeanwhile": "This dive was changed meanwhile. Reload it and make your changes again.",
+    "reload": "Reload",
+    "recording": "Recording",
+    "makePrimary": "Make this the primary recording",
+    "primaryHint": "The dive’s values come from the primary recording, unless you set them by hand.",
+    "device": "Device data",
+    "diveMode": "Dive mode",
+    "decoModel": "Deco model",
+    "gases": "Gases",
+    "temperatureRange": "Temperature",
+    "otherValues": "Other values from the device"
   },
   "errors": {
     "unknown": "Something went wrong. Try again.",
@@ -198,6 +236,67 @@
     "session_not_found": "This session has already ended.",
     "import_not_found": "This Import doesn’t exist.",
     "dive_not_found": "This dive doesn’t exist or isn’t yours.",
-    "recording_not_found": "This recording doesn’t exist or isn’t yours."
+    "recording_not_found": "This recording doesn’t exist or isn’t yours.",
+    "dive_changed": "This dive was changed meanwhile. Reload it and make your changes again.",
+    "dive_values_inconsistent": "The average depth can’t be deeper than the max depth.",
+    "recording_not_on_dive": "This recording doesn’t belong to the dive."
+  },
+  "vocabulary": {
+    "waterType": {
+      "fresh": "Fresh water",
+      "salt": "Salt water",
+      "brackish": "Brackish water",
+      "en13319": "EN 13319 (1020 kg/m³)",
+      "custom": "Custom density"
+    },
+    "diveMode": {
+      "open_circuit": "Open circuit",
+      "ccr": "Closed-circuit rebreather",
+      "scr": "Semi-closed rebreather",
+      "gauge": "Gauge",
+      "apnea": "Apnea"
+    },
+    "decoModel": {
+      "buhlmann_zhl16c": "Bühlmann ZHL-16C"
+    },
+    "circuit": {
+      "open_circuit": "open circuit",
+      "diluent": "diluent"
+    }
+  },
+  "history": {
+    "title": "History",
+    "empty": "No changes yet.",
+    "by": {
+      "user": "{{name}}",
+      "import": "Import of {{name}}",
+      "system": "Dive Hub",
+      "unknown": "a deleted User"
+    },
+    "cause": {
+      "import-create": "Created from an import",
+      "auto-attach": "Recording added automatically",
+      "reimport": "Updated by a new import",
+      "edit": "Edited",
+      "primary-change": "Primary recording changed"
+    },
+    "field": {
+      "number": "Dive number",
+      "startsAt": "Start",
+      "durationSeconds": "Duration",
+      "maxDepthM": "Max depth",
+      "avgDepthM": "Avg depth",
+      "waterTemperatureC": "Water temperature",
+      "waterType": "Water type",
+      "notes": "Notes",
+      "primaryRecordingId": "Primary recording",
+      "recordings": "Recording",
+      "originalId": "File"
+    },
+    "notesChanged": "Notes changed",
+    "setByHand": "set by hand",
+    "reset": "back to the recording",
+    "recordingAdded": "Recording added",
+    "fileReplaced": "Recorded data replaced by a newer file"
   }
 }

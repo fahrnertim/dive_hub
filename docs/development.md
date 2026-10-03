@@ -46,6 +46,9 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 | `apps/web/src/i18n/` | Translations (`locales/en.json` is the source), language choice |
 | `apps/web/src/lib/units.ts` | Unit conversion and Intl formatting; `lib/display.ts` binds them to the User's preferences |
 | `apps/server/src/http/problems.ts` | The API's error codes (one registry, published in OpenAPI) |
+| `apps/server/src/dives/` | Dive service: Overrides, Primary recording, Revisions; dive routes (ADR 0015) |
+| `apps/server/src/vocabulary.ts`, `src/fit/fit-vocabulary.ts` | Our words for device values, and the FIT mapping |
+| `apps/web/e2e/` | Playwright browser tests and their fixtures |
 | `packages/api-client` | Typed client generated from the server's OpenAPI description |
 
 ## Common tasks
@@ -56,9 +59,10 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 | New UI text | Add the key to `en.json` and `de.json` (tests fail otherwise); use `t('…')`, `<Trans>` for markup |
 | New API error | Add a code to `PROBLEMS` in `problems.ts`, regenerate the API client, add `errors.<code>` to both translations |
 | Type check | `pnpm typecheck` |
-| New migration after schema change | `pnpm --filter @dive-hub/server db:generate`, then review and commit the SQL |
+| New migration after schema change | **Stop the dev server first** (it migrates on every restart, and would apply the file before you add hand-written SQL). `pnpm --filter @dive-hub/server db:generate`, review, add SQL, then start again. Data changes go into their own migration (`exec drizzle-kit generate --custom --name …`). Never edit an applied migration: the server logs an error at start if one changed (ADR 0015). |
 | Regenerate Better Auth's schema (after changing its plugins or options) | `pnpm --filter @dive-hub/server auth:generate` (pinned CLI), re-apply the edits listed in the file header, then `db:generate`. Never `drizzle-kit push` or `auth migrate`. |
 | Regenerate API client after route changes | `pnpm --filter @dive-hub/api-client generate` |
+| Browser tests | `pnpm --filter @dive-hub/web test:e2e`: builds the web client, starts the app on port 3300 with a fresh `divehub_e2e` database and a seeded User and Dive (`apps/server/test/e2e-server.ts`), runs `apps/web/e2e` in the installed Edge (`PLAYWRIGHT_CHANNEL=chrome` for Chrome). Needs PostgreSQL. |
 | Regenerate the synthetic FIT fixture | `pnpm --filter @dive-hub/server exec tsx test/fixtures/synthetic-dive.ts` |
 | Build and run the image | `docker build -t dive-hub:dev .`, then `POSTGRES_PASSWORD=… docker compose up -d` |
 
@@ -72,6 +76,10 @@ Garmin's official SDK automatically when present ([samples](../samples/README.md
 - **TypeBox 1.x** (`typebox` package) is used with `@fastify/type-provider-typebox` 6. `drizzle-typebox`
   still targets `@sinclair/typebox` 0.34, so API schemas are written by hand for now (ADR 0009).
 - **Drizzle 0.45** (stable 0.x API, `relations()` style); 1.0 is in beta.
+- **Nullable request fields: `null` first** (`Type.Union([Type.Null(), T])`). Fastify's validator coerces
+  types in union order, so `[T, Null]` turns `null` into `0` or `""` (ADR 0015).
+- **Playwright** comes from `@playwright/test`; `@playwright/cli` (for the `playwright-cli` skill) pins its
+  own pre-release Playwright internally; both are dev-only.
 - **Better Auth over HTTP** is limited to `PUBLIC_AUTH_PATHS` in `apps/server/src/auth/auth.ts` (ADR 0013).
   Adding a Better Auth feature means adding its path there on purpose; the API client then picks it
   up from the OpenAPI document.

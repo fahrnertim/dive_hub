@@ -17,6 +17,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { WATER_TYPES, type DecoModel, type DiveMode, type GasCircuit, type WaterType } from '../vocabulary.js';
 import { user } from './auth-schema.js';
 
 export * from './auth-schema.js';
@@ -197,6 +198,21 @@ export const importOriginal = pgTable(
   (t) => [primaryKey({ columns: [t.importId, t.originalId] })],
 );
 
+export const waterType = pgEnum('water_type', [...WATER_TYPES]);
+
+/**
+ * Dive values that come from the Primary recording unless the User overrode them (ADR 0015).
+ * `startsAt` covers the start time and its UTC offset together.
+ */
+export const OVERRIDABLE_FIELDS = [
+  'number', 'startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM', 'waterTemperatureC', 'waterType',
+] as const;
+export type OverridableField = (typeof OVERRIDABLE_FIELDS)[number];
+
+/**
+ * One Diver's logbook entry. The recording-derived columns hold the value in effect: the User's
+ * Override for the fields listed in `overrides`, the Primary recording's value for all others.
+ */
 export const dive = pgTable(
   'dive',
   {
@@ -209,7 +225,16 @@ export const dive = pgTable(
     durationSeconds: real('duration_seconds').notNull(),
     maxDepthM: real('max_depth_m'),
     avgDepthM: real('avg_depth_m'),
+    /** Lowest water temperature (UDDF: lowesttemperature). */
+    waterTemperatureC: real('water_temperature_c'),
+    waterType: waterType('water_type'),
+    /** The Dive's own notes; not a recording value. */
+    notes: text('notes'),
+    /** Fields whose value the User set by hand; they win over the Primary recording. */
+    overrides: text('overrides').array().$type<OverridableField[]>().notNull().default(sql`'{}'`),
     primaryRecordingId: uuid('primary_recording_id'),
+    /** Increases with every change; edits name the version they started from (optimistic locking). */
+    version: integer('version').notNull().default(1),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
     deletedAt: deletedAt(),
@@ -217,15 +242,16 @@ export const dive = pgTable(
   (t) => [index('dive_diver_start_idx').on(t.diverId, t.startsAt)],
 );
 
+/** A Device's own summary of a Recording, in our vocabulary (ADR 0015). */
 export type RecordingSummary = {
   diveNumber?: number;
-  diveMode?: string;
-  decoModel?: string;
+  diveMode?: DiveMode;
+  decoModel?: DecoModel;
   gfLow?: number;
   gfHigh?: number;
-  waterType?: string;
+  waterType?: WaterType;
   waterDensity?: number;
-  gases?: { o2: number; he: number; mode?: string }[];
+  gases?: { o2: number; he: number; circuit?: GasCircuit }[];
   minTemperatureC?: number;
   maxTemperatureC?: number;
   avgHeartRate?: number;
@@ -236,6 +262,8 @@ export type RecordingSummary = {
   n2End?: number;
   avgAscentRateMps?: number;
   hasEndPosition?: boolean;
+  /** Source values we have no word for yet, by source field name (data model: extension area). */
+  extras?: Record<string, string>;
 };
 
 /** The data one Device captured for one Dive. */

@@ -11,10 +11,12 @@ import {
   original,
   recording,
   recordingEvent,
-  revision,
   sampleSeries,
   type ImportOutcome,
 } from '../db/schema.js';
+import { refreshFromPrimary } from '../dives/dive-service.js';
+import { valuesFromRecording } from '../dives/dive-values.js';
+import { writeRevision, type Actor } from '../dives/revisions.js';
 import { createFitAdapter, looksLikeFit, type FitAdapter, type ParsedRecording } from '../fit/fit-adapter.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { extractFitFiles, looksLikeZip, type ExtractedFile } from './archive.js';
@@ -33,7 +35,6 @@ export interface ImportServiceDeps {
   fit?: FitAdapter;
 }
 
-type Actor = { type: 'user' | 'import' | 'system'; id: string };
 
 export function createImportService({ db, blobs, fit = createFitAdapter() }: ImportServiceDeps) {
   /** Stores the upload and creates the Import; its job is enqueued in the same transaction (ADR 0010). */
@@ -157,6 +158,9 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
       await tx.update(recording).set(values).where(eq(recording.id, known.id));
       await writeSamples(tx, known.id, rec, true);
       await writeRevision(tx, 'recording', known.id, actor, 'reimport', { originalId: { from: known.originalId, to: originalId } });
+      // If it is a Dive's Primary recording, the Dive's values without Override follow the new data.
+      const [owner] = await tx.select({ id: dive.id }).from(dive).where(eq(dive.primaryRecordingId, known.id));
+      if (owner) await refreshFromPrimary(tx, owner.id, actor, 'reimport');
       return { fileName, result: 'updated', recordingId: known.id, ...(known.diveId && { diveId: known.diveId }) };
     }
 
@@ -174,10 +178,11 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
     const decision = decideMatch(rec, candidates.map((c) => ({ ...c, maxDepthM: c.maxDepthM ?? undefined })));
 
     if (decision.kind === 'create') {
+      const v = valuesFromRecording(created!);
       const [newDive] = await tx.insert(dive).values({
-        diverId, number: rec.summary.diveNumber ?? null, startsAt: rec.startsAt,
-        utcOffsetSeconds: rec.utcOffsetSeconds ?? null, durationSeconds: rec.durationSeconds,
-        maxDepthM: rec.maxDepthM ?? null, avgDepthM: rec.avgDepthM ?? null, primaryRecordingId: created!.id,
+        diverId, number: v.number, startsAt: v.startsAt.at, utcOffsetSeconds: v.startsAt.utcOffsetSeconds,
+        durationSeconds: v.durationSeconds, maxDepthM: v.maxDepthM, avgDepthM: v.avgDepthM,
+        waterTemperatureC: v.waterTemperatureC, waterType: v.waterType, primaryRecordingId: created!.id,
       }).returning();
       await tx.update(recording).set({ diveId: newDive!.id }).where(eq(recording.id, created!.id));
       await writeRevision(tx, 'dive', newDive!.id, actor, 'import-create', {
@@ -252,13 +257,6 @@ async function writeSamples(tx: Tx, recordingId: string, rec: ParsedRecording, r
       recordingId, offsetMs: e.offsetMs, type: e.type, data: e.data,
     })));
   }
-}
-
-async function writeRevision(
-  tx: Tx, entityType: string, entityId: string, actor: Actor, cause: string,
-  changes: Record<string, { from: unknown; to: unknown }>,
-) {
-  await tx.insert(revision).values({ entityType, entityId, actorType: actor.type, actorId: actor.id, cause, changes });
 }
 
 async function managedDivers(tx: Tx, userId: string): Promise<Set<string>> {

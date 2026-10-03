@@ -85,7 +85,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -102,7 +102,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -165,7 +165,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -236,7 +236,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -253,7 +253,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -307,9 +307,9 @@ export interface paths {
                             };
                             preferences: {
                                 /** @description Null: follow the browser */
-                                language: string | null;
+                                language: null | string;
                                 /** @description Null: follow the region of the browser */
-                                units: "metric" | "imperial" | null;
+                                units: null | "metric" | "imperial";
                             };
                         };
                     };
@@ -349,9 +349,9 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @description Null: follow the browser */
-                        language?: string | null;
+                        language?: null | string;
                         /** @description Null: follow the region of the browser */
-                        units?: "metric" | "imperial" | null;
+                        units?: null | "metric" | "imperial";
                     };
                 };
             };
@@ -364,9 +364,9 @@ export interface paths {
                     content: {
                         "application/json": {
                             /** @description Null: follow the browser */
-                            language: string | null;
+                            language: null | string;
                             /** @description Null: follow the region of the browser */
-                            units: "metric" | "imperial" | null;
+                            units: null | "metric" | "imperial";
                         };
                     };
                 };
@@ -464,7 +464,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -518,7 +518,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -578,7 +578,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -648,7 +648,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -768,7 +768,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -876,7 +876,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -893,7 +893,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -910,7 +910,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -967,7 +967,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -984,7 +984,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1001,7 +1001,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1061,7 +1061,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1078,7 +1078,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1095,7 +1095,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1159,7 +1159,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1176,7 +1176,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1193,7 +1193,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1247,7 +1247,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1264,7 +1264,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1281,7 +1281,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1340,7 +1340,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1357,7 +1357,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1374,7 +1374,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1485,7 +1485,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1502,7 +1502,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1574,7 +1574,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1623,84 +1623,6 @@ export interface paths {
                             maxDepthM: number | null;
                             avgDepthM: number | null;
                         }[];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/dives/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** One Dive with its Recordings */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Default Response */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            id: string;
-                            number: number | null;
-                            /** Format: date-time */
-                            startsAt: string;
-                            utcOffsetSeconds: number | null;
-                            durationSeconds: number;
-                            maxDepthM: number | null;
-                            avgDepthM: number | null;
-                        } & {
-                            recordings: {
-                                id: string;
-                                isPrimary: boolean;
-                                /** Format: date-time */
-                                startsAt: string;
-                                durationSeconds: number;
-                                maxDepthM: number | null;
-                                parser: string;
-                                summary: {
-                                    [key: string]: unknown;
-                                };
-                                channels: string[];
-                            }[];
-                        };
-                    };
-                };
-                /** @description Default Response */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                        };
                     };
                 };
             };
@@ -1763,7 +1685,541 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dives/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One Dive: values in effect, which are Overrides, the Primary recording's values, Recordings */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @description Send it back with an edit; it changes with every change */
+                            version: number;
+                            values: {
+                                number: null | number;
+                                startsAt: {
+                                    /** Format: date-time */
+                                    at: string;
+                                    utcOffsetSeconds: null | number;
+                                };
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                avgDepthM: null | number;
+                                waterTemperatureC: null | number;
+                                waterType: null | ("fresh" | "salt" | "brackish" | "en13319" | "custom");
+                            };
+                            /** @description Values the User set by hand */
+                            overrides: ("number" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC" | "waterType")[];
+                            fromRecording: null | {
+                                number: null | number;
+                                startsAt: {
+                                    /** Format: date-time */
+                                    at: string;
+                                    utcOffsetSeconds: null | number;
+                                };
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                avgDepthM: null | number;
+                                waterTemperatureC: null | number;
+                                waterType: null | ("fresh" | "salt" | "brackish" | "en13319" | "custom");
+                            };
+                            notes: null | string;
+                            recordings: {
+                                id: string;
+                                isPrimary: boolean;
+                                /** Format: date-time */
+                                startsAt: string;
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                parser: string;
+                                summary: {
+                                    diveNumber?: number;
+                                    /** @enum {unknown} */
+                                    diveMode?: "open_circuit" | "ccr" | "scr" | "gauge" | "apnea";
+                                    /** @enum {unknown} */
+                                    decoModel?: "buhlmann_zhl16c";
+                                    gfLow?: number;
+                                    gfHigh?: number;
+                                    /** @enum {unknown} */
+                                    waterType?: "fresh" | "salt" | "brackish" | "en13319" | "custom";
+                                    waterDensity?: number;
+                                    gases?: {
+                                        o2: number;
+                                        he: number;
+                                        /** @enum {unknown} */
+                                        circuit?: "open_circuit" | "diluent";
+                                    }[];
+                                    minTemperatureC?: number;
+                                    maxTemperatureC?: number;
+                                    avgHeartRate?: number;
+                                    surfaceIntervalSeconds?: number;
+                                    cnsStart?: number;
+                                    cnsEnd?: number;
+                                    /** @description Source values without a word in our vocabulary, by source field name */
+                                    extras?: {
+                                        [key: string]: string;
+                                    };
+                                };
+                                channels: string[];
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Edit a Dive: set values (they become Overrides), reset Overrides, change notes
+         * @description Send the version you started from; if the Dive changed meanwhile the answer is 409 dive_changed.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        version: number;
+                        set?: {
+                            number?: null | number;
+                            startsAt?: {
+                                /** Format: date-time */
+                                at: string;
+                                utcOffsetSeconds: null | number;
+                            };
+                            durationSeconds?: number;
+                            maxDepthM?: null | number;
+                            avgDepthM?: null | number;
+                            waterTemperatureC?: null | number;
+                            waterType?: null | ("fresh" | "salt" | "brackish" | "en13319" | "custom");
+                        };
+                        reset?: ("number" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC" | "waterType")[];
+                        notes?: null | string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @description Send it back with an edit; it changes with every change */
+                            version: number;
+                            values: {
+                                number: null | number;
+                                startsAt: {
+                                    /** Format: date-time */
+                                    at: string;
+                                    utcOffsetSeconds: null | number;
+                                };
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                avgDepthM: null | number;
+                                waterTemperatureC: null | number;
+                                waterType: null | ("fresh" | "salt" | "brackish" | "en13319" | "custom");
+                            };
+                            /** @description Values the User set by hand */
+                            overrides: ("number" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC" | "waterType")[];
+                            fromRecording: null | {
+                                number: null | number;
+                                startsAt: {
+                                    /** Format: date-time */
+                                    at: string;
+                                    utcOffsetSeconds: null | number;
+                                };
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                avgDepthM: null | number;
+                                waterTemperatureC: null | number;
+                                waterType: null | ("fresh" | "salt" | "brackish" | "en13319" | "custom");
+                            };
+                            notes: null | string;
+                            recordings: {
+                                id: string;
+                                isPrimary: boolean;
+                                /** Format: date-time */
+                                startsAt: string;
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                parser: string;
+                                summary: {
+                                    diveNumber?: number;
+                                    /** @enum {unknown} */
+                                    diveMode?: "open_circuit" | "ccr" | "scr" | "gauge" | "apnea";
+                                    /** @enum {unknown} */
+                                    decoModel?: "buhlmann_zhl16c";
+                                    gfLow?: number;
+                                    gfHigh?: number;
+                                    /** @enum {unknown} */
+                                    waterType?: "fresh" | "salt" | "brackish" | "en13319" | "custom";
+                                    waterDensity?: number;
+                                    gases?: {
+                                        o2: number;
+                                        he: number;
+                                        /** @enum {unknown} */
+                                        circuit?: "open_circuit" | "diluent";
+                                    }[];
+                                    minTemperatureC?: number;
+                                    maxTemperatureC?: number;
+                                    avgHeartRate?: number;
+                                    surfaceIntervalSeconds?: number;
+                                    cnsStart?: number;
+                                    cnsEnd?: number;
+                                    /** @description Source values without a word in our vocabulary, by source field name */
+                                    extras?: {
+                                        [key: string]: string;
+                                    };
+                                };
+                                channels: string[];
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/dives/{id}/primary-recording": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Make one of the Dive's Recordings the Primary one; values without Override follow it */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        recordingId: string;
+                        version: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @description Send it back with an edit; it changes with every change */
+                            version: number;
+                            values: {
+                                number: null | number;
+                                startsAt: {
+                                    /** Format: date-time */
+                                    at: string;
+                                    utcOffsetSeconds: null | number;
+                                };
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                avgDepthM: null | number;
+                                waterTemperatureC: null | number;
+                                waterType: null | ("fresh" | "salt" | "brackish" | "en13319" | "custom");
+                            };
+                            /** @description Values the User set by hand */
+                            overrides: ("number" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC" | "waterType")[];
+                            fromRecording: null | {
+                                number: null | number;
+                                startsAt: {
+                                    /** Format: date-time */
+                                    at: string;
+                                    utcOffsetSeconds: null | number;
+                                };
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                avgDepthM: null | number;
+                                waterTemperatureC: null | number;
+                                waterType: null | ("fresh" | "salt" | "brackish" | "en13319" | "custom");
+                            };
+                            notes: null | string;
+                            recordings: {
+                                id: string;
+                                isPrimary: boolean;
+                                /** Format: date-time */
+                                startsAt: string;
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                parser: string;
+                                summary: {
+                                    diveNumber?: number;
+                                    /** @enum {unknown} */
+                                    diveMode?: "open_circuit" | "ccr" | "scr" | "gauge" | "apnea";
+                                    /** @enum {unknown} */
+                                    decoModel?: "buhlmann_zhl16c";
+                                    gfLow?: number;
+                                    gfHigh?: number;
+                                    /** @enum {unknown} */
+                                    waterType?: "fresh" | "salt" | "brackish" | "en13319" | "custom";
+                                    waterDensity?: number;
+                                    gases?: {
+                                        o2: number;
+                                        he: number;
+                                        /** @enum {unknown} */
+                                        circuit?: "open_circuit" | "diluent";
+                                    }[];
+                                    minTemperatureC?: number;
+                                    maxTemperatureC?: number;
+                                    avgHeartRate?: number;
+                                    surfaceIntervalSeconds?: number;
+                                    cnsStart?: number;
+                                    cnsEnd?: number;
+                                    /** @description Source values without a word in our vocabulary, by source field name */
+                                    extras?: {
+                                        [key: string]: string;
+                                    };
+                                };
+                                channels: string[];
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dives/{id}/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The Dive's history, newest first: its own Revisions and those of its Recordings */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** Format: date-time */
+                            at: string;
+                            actor: {
+                                /** @enum {unknown} */
+                                type: "user" | "import" | "system";
+                                name: null | string;
+                            };
+                            /** @enum {unknown} */
+                            cause: "import-create" | "auto-attach" | "reimport" | "edit" | "primary-change";
+                            changes: {
+                                [key: string]: {
+                                    from: unknown;
+                                    to: unknown;
+                                };
+                            };
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "recording_not_found";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };

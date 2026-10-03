@@ -53,9 +53,11 @@ describe('FIT adapter on the synthetic dive', () => {
     expect(rec!.durationSeconds).toBe(1800);
     expect(rec!.maxDepthM).toBeCloseTo(18.5, 2);
     expect(rec!.summary).toMatchObject({
-      diveNumber: 42, decoModel: 'zhl16c', gfLow: 40, gfHigh: 85, waterType: 'salt',
+      diveNumber: 42, decoModel: 'buhlmann_zhl16c', gfLow: 40, gfHigh: 85, waterType: 'salt',
       gases: [{ o2: 32, he: 0 }], cnsEnd: 5,
     });
+    // Everything the synthetic file says has a word in our vocabulary.
+    expect(rec!.summary.extras).toBeUndefined();
     const channels = rec!.series.map((s) => s.channel).sort();
     expect(channels).toEqual(['depth', 'heartRate', 'po2', 'temperature']);
     expect(rec!.series.find((s) => s.channel === 'depth')!.offsetsMs.slice(0, 3)).toEqual([0, 2000, 4000]);

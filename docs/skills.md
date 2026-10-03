@@ -41,6 +41,7 @@ specialized skills, vet them, propose them to the user, and record the outcome h
 | email-and-password-best-practices | better-auth/skills | password policy, reset flows, hashing | 2026-10-03 |
 | frontend-design | anthropics/skills | visual direction, tokens, interface writing | 2026-10-03 |
 | accessibility | addyosmani/web-quality-skills | WCAG 2.2 rules, keyboard and screen-reader patterns, audits | 2026-10-03 |
+| playwright-cli | microsoft/playwright-cli | driving a browser, writing and debugging Playwright tests | 2026-10-03 |
 
 Install with telemetry off: `DISABLE_TELEMETRY=1 npx skills add <owner/repo> -s <skill> -a claude-code --copy -y`.
 
@@ -51,7 +52,6 @@ Details and commands: [skills vetting](research/2026-10-02-agent-skills-vetting.
 | When | Skill |
 |---|---|
 | 2FA built | better-auth/skills `two-factor-authentication-best-practices` |
-| End-to-end tests | microsoft/playwright-cli `playwright-cli` |
 | Code exists, refactoring | mattpocock/skills `improve-codebase-architecture` |
 
 ## Decisions log
@@ -75,3 +75,6 @@ Details and commands: [skills vetting](research/2026-10-02-agent-skills-vetting.
 | 2026-10-03 | accessibility (addyosmani/web-quality-skills) | installed | MIT, SKILL.md + 2 references, no scripts (commit afa8da9); same author as two installed skills; WCAG 2.2 AA guidance for the component set |
 | 2026-10-03 | daymade/claude-code-skills `i18n-expert` | rejected | One author with 72 skills, generic, defaults to zh-CN, its audit script needs Python; i18next docs suffice |
 | 2026-10-03 | `npx skills find` for "design tokens", "design system", "react aria", "i18n", "i18next", "accessibility" (slice 4) | see above | other hits target Tailwind/shadcn, HeroUI, Next.js, Vue, mobile or landing pages |
+| 2026-10-03 | playwright-cli (microsoft/playwright-cli) | installed | Official (commit b85c7a7); SKILL.md + 9 references, no scripts. Pre-approves only `playwright-cli` and `npx playwright` commands, accepted deliberately for browser tests (ADR 0015) |
+| 2026-10-03 | anthropics/skills `webapp-testing` | rejected | Python-based (no Python here) and tells the agent not to read its bundled scripts, against our vetting rule |
+| 2026-10-03 | `npx skills find` for "playwright", "e2e testing", "audit log history", "form editing react" (slice 5) | see above | the rest: vendor-specific or unrelated |

@@ -26,6 +26,11 @@ export type Me = NonNullable<Awaited<ReturnType<typeof fetchMe>>>;
 export type InvitationView = Awaited<ReturnType<typeof fetchInvitations>>[number];
 export type UserView = Awaited<ReturnType<typeof fetchUsers>>[number];
 export type SessionView = Awaited<ReturnType<typeof fetchSessions>>[number];
+export type DiveView = Awaited<ReturnType<typeof fetchDive>>;
+export type DiveValues = DiveView['values'];
+export type OverridableField = DiveView['overrides'][number];
+export type RevisionView = Awaited<ReturnType<typeof fetchRevisions>>[number];
+export type RecordingSummary = DiveView['recordings'][number]['summary'];
 
 /** Query keys in one place (hierarchical, so invalidating ['dives'] covers every dive query). */
 export const keys = {
@@ -37,6 +42,7 @@ export const keys = {
   imports: ['imports'] as const,
   dives: ['dives'] as const,
   dive: (id: string) => ['dives', id] as const,
+  revisions: (id: string) => ['dives', id, 'revisions'] as const,
   samples: (recordingId: string) => ['recordings', recordingId, 'samples'] as const,
 };
 
@@ -93,11 +99,15 @@ export const importsQuery = () =>
 
 export const divesQuery = () => queryOptions({ queryKey: keys.dives, queryFn: fetchDives });
 
-export const diveQuery = (id: string) =>
-  queryOptions({
-    queryKey: keys.dive(id),
-    queryFn: async () => unwrap(await api.GET('/api/dives/{id}', { params: { path: { id } } })),
-  });
+async function fetchDive(id: string) {
+  return unwrap(await api.GET('/api/dives/{id}', { params: { path: { id } } }));
+}
+async function fetchRevisions(id: string) {
+  return unwrap(await api.GET('/api/dives/{id}/revisions', { params: { path: { id } } }));
+}
+
+export const diveQuery = (id: string) => queryOptions({ queryKey: keys.dive(id), queryFn: () => fetchDive(id) });
+export const revisionsQuery = (id: string) => queryOptions({ queryKey: keys.revisions(id), queryFn: () => fetchRevisions(id) });
 
 export const samplesQuery = (recordingId: string) =>
   queryOptions({

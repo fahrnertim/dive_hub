@@ -2,6 +2,7 @@
 // Garmin's official SDK is only used in tests to cross-check results.
 import FitParser from 'fit-file-parser';
 import type { RecordingSummary } from '../db/schema.js';
+import { circuitFromFit, decoModelFromFit, diveModeFromFit, waterTypeFromFit } from './fit-vocabulary.js';
 
 export interface ParsedDevice {
   manufacturer: string;
@@ -179,17 +180,28 @@ function toRecording(m: FitMessages): ParsedRecording | undefined {
     }];
   });
 
+  // Source values without a word in our vocabulary are kept as extras, not dropped or guessed.
+  const extras: Record<string, string> = {};
+  const mapped = <T>(field: string, raw: string | undefined, map: (v: string | undefined) => T | undefined) => {
+    const value = map(raw);
+    if (raw !== undefined && value === undefined) extras[field] = raw;
+    return value;
+  };
+
   const summary: RecordingSummary = stripUndefined({
     diveNumber: num(diveSummary.dive_number),
-    diveMode: str(session.sub_sport),
-    decoModel: str(settings.model),
+    diveMode: mapped('sub_sport', str(session.sub_sport), diveModeFromFit),
+    decoModel: mapped('dive_settings.model', str(settings.model), decoModelFromFit),
     gfLow: num(settings.gf_low),
     gfHigh: num(settings.gf_high),
-    waterType: str(settings.water_type),
+    waterType: mapped('dive_settings.water_type', str(settings.water_type), waterTypeFromFit),
     waterDensity: num(settings.water_density),
     gases: (m.dive_gas ?? [])
       .filter((g) => g.status !== 'disabled')
-      .map((g) => stripUndefined({ o2: num(g.oxygen_content) ?? 21, he: num(g.helium_content) ?? 0, mode: str(g.mode) })),
+      .map((g) => stripUndefined({
+        o2: num(g.oxygen_content) ?? 21, he: num(g.helium_content) ?? 0,
+        circuit: mapped('dive_gas.mode', str(g.mode), circuitFromFit),
+      })),
     minTemperatureC: num(session.min_temperature) ?? (temps.length ? Math.min(...temps) : undefined),
     maxTemperatureC: num(session.max_temperature) ?? (temps.length ? Math.max(...temps) : undefined),
     avgHeartRate: num(session.avg_heart_rate),
@@ -201,6 +213,7 @@ function toRecording(m: FitMessages): ParsedRecording | undefined {
     avgAscentRateMps: num(diveSummary.avg_ascent_rate),
     hasEndPosition: session.end_position_lat !== undefined,
   });
+  if (Object.keys(extras).length > 0) summary.extras = extras;
 
   return {
     device,

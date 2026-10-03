@@ -50,18 +50,6 @@ const DiveSummaryView = Type.Object({
   avgDepthM: Nullable(Type.Number()),
 });
 
-const RecordingView = Type.Object({
-  id: Type.String(),
-  isPrimary: Type.Boolean(),
-  startsAt: DateTime,
-  durationSeconds: Type.Number(),
-  maxDepthM: Nullable(Type.Number()),
-  parser: Type.String(),
-  summary: Type.Record(Type.String(), Type.Unknown()),
-  channels: Type.Array(Type.String()),
-});
-
-const DiveView = Type.Intersect([DiveSummaryView, Type.Object({ recordings: Type.Array(RecordingView) })]);
 
 const SamplesQuery = Type.Object({
   channels: Type.Optional(Type.String({ description: 'Comma-separated channel names; default all' })),
@@ -143,27 +131,6 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
     const rows = await db.select().from(dive)
       .where(and(inArray(dive.diverId, divers), isNull(dive.deletedAt))).orderBy(desc(dive.startsAt)).limit(500);
     return rows.map(toDiveSummary);
-  });
-
-  app.get('/dives/:id', {
-    schema: { summary: 'One Dive with its Recordings', params: IdParams, response: { 200: DiveView, 404: Problem } },
-  }, async (request, reply) => {
-    const divers = await managedDiverIds(request);
-    const [row] = divers.length === 0 ? [] : await db.select().from(dive)
-      .where(and(eq(dive.id, request.params.id), inArray(dive.diverId, divers), isNull(dive.deletedAt)));
-    if (!row) return reply.code(404).send(problem('dive_not_found'));
-    const recs = await db.select({
-      r: recording,
-      channels: sql<string[]>`coalesce((select array_agg(channel order by channel) from ${sampleSeries} where ${sampleSeries.recordingId} = ${recording.id}), '{}')`,
-    }).from(recording).where(and(eq(recording.diveId, row.id), isNull(recording.deletedAt)));
-    return {
-      ...toDiveSummary(row),
-      recordings: recs.map(({ r, channels }) => ({
-        id: r.id, isPrimary: r.id === row.primaryRecordingId, startsAt: r.startsAt.toISOString(),
-        durationSeconds: r.durationSeconds, maxDepthM: r.maxDepthM, parser: r.parser,
-        summary: r.summary as Record<string, unknown>, channels,
-      })),
-    };
   });
 
   app.get('/recordings/:id/samples', {

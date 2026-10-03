@@ -20,10 +20,11 @@ export const UserView = Type.Object({
 });
 
 export const PreferencesView = Type.Object({
-  language: Type.Union([Type.String({ pattern: '^[a-z]{2,3}(-[A-Z]{2})?$', description: 'BCP 47 tag, e.g. "de"' }), Type.Null()], {
+  // Null first, so the validator's type coercion never turns null into a string (see dives/routes.ts).
+  language: Type.Union([Type.Null(), Type.String({ pattern: '^[a-z]{2,3}(-[A-Z]{2})?$', description: 'BCP 47 tag, e.g. "de"' })], {
     description: 'Null: follow the browser',
   }),
-  units: Type.Union([Type.Literal('metric'), Type.Literal('imperial'), Type.Null()], {
+  units: Type.Union([Type.Null(), Type.Literal('metric'), Type.Literal('imperial')], {
     description: 'Null: follow the region of the browser',
   }),
 });

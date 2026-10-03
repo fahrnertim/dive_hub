@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { pickLanguage } from '../src/i18n/languages.ts';
 import {
+  depthFromDisplay, temperatureFromDisplay,
   formatDepth, formatDiveTime, formatDuration, formatTemperature, pickUnits, unitLabel,
 } from '../src/lib/units.ts';
 
@@ -34,6 +35,7 @@ describe('temperature', () => {
     expect(unitLabel('depth', 'metric', 'en')).toBe('m');
     expect(unitLabel('depth', 'imperial', 'en')).toBe('ft');
     expect(unitLabel('temperature', 'imperial', 'en')).toBe('°F');
+    expect(unitLabel('minutes', 'metric', 'de')).toBe('Min.');
   });
 });
 
@@ -66,5 +68,14 @@ describe('choosing language and units', () => {
     expect(pickUnits(null, ['en-GB'])).toBe('metric');
     expect(pickUnits(null, ['de-DE'])).toBe('metric');
     expect(pickUnits(null, [])).toBe('metric');
+  });
+});
+
+describe('values typed in display units', () => {
+  it('are stored back in metres and °C', () => {
+    expect(depthFromDisplay(100, 'imperial')).toBeCloseTo(30.48, 6);
+    expect(depthFromDisplay(18.5, 'metric')).toBe(18.5);
+    expect(temperatureFromDisplay(77, 'imperial')).toBeCloseTo(25, 6);
+    expect(temperatureFromDisplay(25, 'metric')).toBe(25);
   });
 });

@@ -25,6 +25,9 @@ export const PROBLEMS = {
   session_not_found: 'No such session',
   import_not_found: 'Import not found',
   dive_not_found: 'Dive not found',
+  dive_changed: 'The dive was changed meanwhile; reload it and apply your changes again',
+  dive_values_inconsistent: 'The average depth is deeper than the max depth',
+  recording_not_on_dive: 'This recording does not belong to the dive',
   recording_not_found: 'Recording not found',
 } as const;
 

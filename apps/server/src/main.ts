@@ -3,7 +3,7 @@ import { createAuth } from './auth/auth.js';
 import { loadAuthSecret } from './auth/secret.js';
 import { loadConfig } from './config.js';
 import { createDb } from './db/client.js';
-import { migrateDatabase } from './db/migrate.js';
+import { findChangedMigrations, migrateDatabase } from './db/migrate.js';
 import { buildApp } from './app.js';
 import { createImportService } from './imports/import-service.js';
 import { createLocalBlobStore } from './storage/blob-store.js';
@@ -31,7 +31,12 @@ const app = await buildApp(
 );
 
 // src/main.ts (dev) and dist/main.js (image) both sit one level below the drizzle/ folder.
-await migrateDatabase(db, pool, fileURLToPath(new URL('../drizzle', import.meta.url)));
+const migrationsFolder = fileURLToPath(new URL('../drizzle', import.meta.url));
+await migrateDatabase(db, pool, migrationsFolder);
+const changedMigrations = await findChangedMigrations(pool, migrationsFolder);
+if (changedMigrations.length > 0) {
+  app.log.error({ migrations: changedMigrations }, 'Migration files changed after this database applied them; their changes never ran here. Put changes into a new migration (docs/development.md).');
+}
 const setupToken = await setup.issue();
 if (setupToken) {
   // Deliberately logged: whoever can read the server log may create the first admin (ADR 0012).

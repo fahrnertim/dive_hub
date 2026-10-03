@@ -18,7 +18,11 @@ const FEET_PER_METRE = 1 / 0.3048;
 export const depthIn = (metres: number, units: UnitSystem) => (units === 'imperial' ? metres * FEET_PER_METRE : metres);
 export const temperatureIn = (celsius: number, units: UnitSystem) => (units === 'imperial' ? celsius * 9 / 5 + 32 : celsius);
 
-const unitFormat = (locale: string, unit: string, digits: number) =>
+/** A depth or temperature typed in the User's units, back in metres or °C for storage. */
+export const depthFromDisplay = (value: number, units: UnitSystem) => (units === 'imperial' ? value / FEET_PER_METRE : value);
+export const temperatureFromDisplay = (value: number, units: UnitSystem) => (units === 'imperial' ? (value - 32) * 5 / 9 : value);
+
+const unitFormat =(locale: string, unit: string, digits: number) =>
   new Intl.NumberFormat(locale, { style: 'unit', unit, unitDisplay: 'short', maximumFractionDigits: digits });
 
 /** "18.5 m", "60.7 ft", "18,5 m" in German. */
@@ -33,8 +37,10 @@ export function formatTemperature(celsius: number | null, units: UnitSystem, loc
 }
 
 /** Just the unit symbol, e.g. for a chart axis: "m", "ft", "°C", "°F". */
-export function unitLabel(quantity: 'depth' | 'temperature', units: UnitSystem, locale: string): string {
-  const unit = quantity === 'depth' ? (units === 'imperial' ? 'foot' : 'meter') : (units === 'imperial' ? 'fahrenheit' : 'celsius');
+export function unitLabel(quantity: 'depth' | 'temperature' | 'minutes', units: UnitSystem, locale: string): string {
+  const unit = quantity === 'minutes' ? 'minute'
+    : quantity === 'depth' ? (units === 'imperial' ? 'foot' : 'meter')
+    : (units === 'imperial' ? 'fahrenheit' : 'celsius');
   return unitFormat(locale, unit, 0).formatToParts(1).find((p) => p.type === 'unit')?.value ?? unit;
 }
 

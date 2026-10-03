@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Dive Hub API",
-    "version": "0.3.0",
+    "version": "0.5.0",
     "description": "Sign in with POST /api/auth/sign-in/email (Better Auth); the session cookie authenticates every other call."
   },
   "components": {
@@ -265,6 +265,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -312,6 +315,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -409,6 +415,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -549,6 +558,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -596,6 +608,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -699,18 +714,21 @@
                         "language": {
                           "anyOf": [
                             {
+                              "type": "null"
+                            },
+                            {
                               "type": "string",
                               "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$",
                               "description": "BCP 47 tag, e.g. \"de\""
-                            },
-                            {
-                              "type": "null"
                             }
                           ],
                           "description": "Null: follow the browser"
                         },
                         "units": {
                           "anyOf": [
+                            {
+                              "type": "null"
+                            },
                             {
                               "type": "string",
                               "enum": [
@@ -722,9 +740,6 @@
                               "enum": [
                                 "imperial"
                               ]
-                            },
-                            {
-                              "type": "null"
                             }
                           ],
                           "description": "Null: follow the region of the browser"
@@ -752,18 +767,21 @@
                   "language": {
                     "anyOf": [
                       {
+                        "type": "null"
+                      },
+                      {
                         "type": "string",
                         "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$",
                         "description": "BCP 47 tag, e.g. \"de\""
-                      },
-                      {
-                        "type": "null"
                       }
                     ],
                     "description": "Null: follow the browser"
                   },
                   "units": {
                     "anyOf": [
+                      {
+                        "type": "null"
+                      },
                       {
                         "type": "string",
                         "enum": [
@@ -775,9 +793,6 @@
                         "enum": [
                           "imperial"
                         ]
-                      },
-                      {
-                        "type": "null"
                       }
                     ],
                     "description": "Null: follow the region of the browser"
@@ -802,18 +817,21 @@
                     "language": {
                       "anyOf": [
                         {
+                          "type": "null"
+                        },
+                        {
                           "type": "string",
                           "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$",
                           "description": "BCP 47 tag, e.g. \"de\""
-                        },
-                        {
-                          "type": "null"
                         }
                       ],
                       "description": "Null: follow the browser"
                     },
                     "units": {
                       "anyOf": [
+                        {
+                          "type": "null"
+                        },
                         {
                           "type": "string",
                           "enum": [
@@ -825,9 +843,6 @@
                           "enum": [
                             "imperial"
                           ]
-                        },
-                        {
-                          "type": "null"
                         }
                       ],
                       "description": "Null: follow the region of the browser"
@@ -1099,6 +1114,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -1167,6 +1185,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -1259,6 +1280,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -1393,6 +1417,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -1547,6 +1574,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -1759,6 +1789,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -1806,6 +1839,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -1853,6 +1889,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -1939,6 +1978,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -1986,6 +2028,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2033,6 +2078,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2151,6 +2199,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2198,6 +2249,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2245,6 +2299,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2363,6 +2420,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2410,6 +2470,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2457,6 +2520,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2525,6 +2591,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2572,6 +2641,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2619,6 +2691,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2708,6 +2783,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2755,6 +2833,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2802,6 +2883,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2997,6 +3081,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -3044,6 +3131,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -3399,6 +3489,9 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -3487,208 +3580,6 @@
                           }
                         ]
                       }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/dives/{id}": {
-      "get": {
-        "summary": "One Dive with its Recordings",
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "in": "path",
-            "name": "id",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "type": "object",
-                      "required": [
-                        "id",
-                        "number",
-                        "startsAt",
-                        "utcOffsetSeconds",
-                        "durationSeconds",
-                        "maxDepthM",
-                        "avgDepthM"
-                      ],
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "number": {
-                          "anyOf": [
-                            {
-                              "type": "integer"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "startsAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "utcOffsetSeconds": {
-                          "anyOf": [
-                            {
-                              "type": "integer"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "durationSeconds": {
-                          "type": "number"
-                        },
-                        "maxDepthM": {
-                          "anyOf": [
-                            {
-                              "type": "number"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "avgDepthM": {
-                          "anyOf": [
-                            {
-                              "type": "number"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        }
-                      }
-                    },
-                    {
-                      "type": "object",
-                      "required": [
-                        "recordings"
-                      ],
-                      "properties": {
-                        "recordings": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "required": [
-                              "id",
-                              "isPrimary",
-                              "startsAt",
-                              "durationSeconds",
-                              "maxDepthM",
-                              "parser",
-                              "summary",
-                              "channels"
-                            ],
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "isPrimary": {
-                                "type": "boolean"
-                              },
-                              "startsAt": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "durationSeconds": {
-                                "type": "number"
-                              },
-                              "maxDepthM": {
-                                "anyOf": [
-                                  {
-                                    "type": "number"
-                                  },
-                                  {
-                                    "type": "null"
-                                  }
-                                ]
-                              },
-                              "parser": {
-                                "type": "string"
-                              },
-                              "summary": {
-                                "type": "object",
-                                "additionalProperties": {}
-                              },
-                              "channels": {
-                                "type": "array",
-                                "items": {
-                                  "type": "string"
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "code",
-                    "error"
-                  ],
-                  "properties": {
-                    "code": {
-                      "enum": [
-                        "sign_in_required",
-                        "admins_only",
-                        "not_found",
-                        "invalid_input",
-                        "internal_error",
-                        "upload_missing",
-                        "upload_too_large",
-                        "setup_done",
-                        "setup_token_invalid",
-                        "invitation_invalid",
-                        "invitation_not_found",
-                        "email_taken",
-                        "reset_link_invalid",
-                        "user_not_found",
-                        "user_disabled",
-                        "last_admin",
-                        "not_yourself",
-                        "confirmation_mismatch",
-                        "session_not_found",
-                        "import_not_found",
-                        "dive_not_found",
-                        "recording_not_found"
-                      ],
-                      "description": "Stable, machine-readable reason; clients translate it"
-                    },
-                    "error": {
-                      "type": "string",
-                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -3814,6 +3705,1980 @@
                         "session_not_found",
                         "import_not_found",
                         "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dives/{id}": {
+      "get": {
+        "summary": "One Dive: values in effect, which are Overrides, the Primary recording's values, Recordings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "version",
+                    "values",
+                    "overrides",
+                    "fromRecording",
+                    "notes",
+                    "recordings"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "description": "Send it back with an edit; it changes with every change"
+                    },
+                    "values": {
+                      "type": "object",
+                      "required": [
+                        "number",
+                        "startsAt",
+                        "durationSeconds",
+                        "maxDepthM",
+                        "avgDepthM",
+                        "waterTemperatureC",
+                        "waterType"
+                      ],
+                      "properties": {
+                        "number": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 100000
+                            }
+                          ]
+                        },
+                        "startsAt": {
+                          "type": "object",
+                          "required": [
+                            "at",
+                            "utcOffsetSeconds"
+                          ],
+                          "properties": {
+                            "at": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "utcOffsetSeconds": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "integer",
+                                  "minimum": -43200,
+                                  "maximum": 50400,
+                                  "multipleOf": 900
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "durationSeconds": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 172800
+                        },
+                        "maxDepthM": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 400
+                            }
+                          ]
+                        },
+                        "avgDepthM": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 400
+                            }
+                          ]
+                        },
+                        "waterTemperatureC": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -5,
+                              "maximum": 50
+                            }
+                          ]
+                        },
+                        "waterType": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "enum": [
+                                "fresh",
+                                "salt",
+                                "brackish",
+                                "en13319",
+                                "custom"
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "overrides": {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "number",
+                          "startsAt",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "avgDepthM",
+                          "waterTemperatureC",
+                          "waterType"
+                        ],
+                        "description": "A Dive value that can be overridden"
+                      },
+                      "description": "Values the User set by hand"
+                    },
+                    "fromRecording": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "number",
+                            "startsAt",
+                            "durationSeconds",
+                            "maxDepthM",
+                            "avgDepthM",
+                            "waterTemperatureC",
+                            "waterType"
+                          ],
+                          "properties": {
+                            "number": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 100000
+                                }
+                              ]
+                            },
+                            "startsAt": {
+                              "type": "object",
+                              "required": [
+                                "at",
+                                "utcOffsetSeconds"
+                              ],
+                              "properties": {
+                                "at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "utcOffsetSeconds": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "integer",
+                                      "minimum": -43200,
+                                      "maximum": 50400,
+                                      "multipleOf": 900
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            "durationSeconds": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 172800
+                            },
+                            "maxDepthM": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": 0,
+                                  "maximum": 400
+                                }
+                              ]
+                            },
+                            "avgDepthM": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": 0,
+                                  "maximum": 400
+                                }
+                              ]
+                            },
+                            "waterTemperatureC": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": -5,
+                                  "maximum": 50
+                                }
+                              ]
+                            },
+                            "waterType": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "enum": [
+                                    "fresh",
+                                    "salt",
+                                    "brackish",
+                                    "en13319",
+                                    "custom"
+                                  ]
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "notes": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "recordings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "isPrimary",
+                          "startsAt",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "parser",
+                          "summary",
+                          "channels"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "isPrimary": {
+                            "type": "boolean"
+                          },
+                          "startsAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "durationSeconds": {
+                            "type": "number"
+                          },
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "parser": {
+                            "type": "string"
+                          },
+                          "summary": {
+                            "type": "object",
+                            "properties": {
+                              "diveNumber": {
+                                "type": "integer"
+                              },
+                              "diveMode": {
+                                "enum": [
+                                  "open_circuit",
+                                  "ccr",
+                                  "scr",
+                                  "gauge",
+                                  "apnea"
+                                ]
+                              },
+                              "decoModel": {
+                                "enum": [
+                                  "buhlmann_zhl16c"
+                                ]
+                              },
+                              "gfLow": {
+                                "type": "number"
+                              },
+                              "gfHigh": {
+                                "type": "number"
+                              },
+                              "waterType": {
+                                "enum": [
+                                  "fresh",
+                                  "salt",
+                                  "brackish",
+                                  "en13319",
+                                  "custom"
+                                ]
+                              },
+                              "waterDensity": {
+                                "type": "number"
+                              },
+                              "gases": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "o2",
+                                    "he"
+                                  ],
+                                  "properties": {
+                                    "o2": {
+                                      "type": "number"
+                                    },
+                                    "he": {
+                                      "type": "number"
+                                    },
+                                    "circuit": {
+                                      "enum": [
+                                        "open_circuit",
+                                        "diluent"
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "minTemperatureC": {
+                                "type": "number"
+                              },
+                              "maxTemperatureC": {
+                                "type": "number"
+                              },
+                              "avgHeartRate": {
+                                "type": "number"
+                              },
+                              "surfaceIntervalSeconds": {
+                                "type": "number"
+                              },
+                              "cnsStart": {
+                                "type": "number"
+                              },
+                              "cnsEnd": {
+                                "type": "number"
+                              },
+                              "extras": {
+                                "type": "object",
+                                "description": "Source values without a word in our vocabulary, by source field name",
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          },
+                          "channels": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Edit a Dive: set values (they become Overrides), reset Overrides, change notes",
+        "description": "Send the version you started from; if the Dive changed meanwhile the answer is 409 dive_changed.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer"
+                  },
+                  "set": {
+                    "type": "object",
+                    "properties": {
+                      "number": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 100000
+                          }
+                        ]
+                      },
+                      "startsAt": {
+                        "type": "object",
+                        "required": [
+                          "at",
+                          "utcOffsetSeconds"
+                        ],
+                        "properties": {
+                          "at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "utcOffsetSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer",
+                                "minimum": -43200,
+                                "maximum": 50400,
+                                "multipleOf": 900
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "durationSeconds": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 172800
+                      },
+                      "maxDepthM": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 400
+                          }
+                        ]
+                      },
+                      "avgDepthM": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 400
+                          }
+                        ]
+                      },
+                      "waterTemperatureC": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "number",
+                            "minimum": -5,
+                            "maximum": 50
+                          }
+                        ]
+                      },
+                      "waterType": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "enum": [
+                              "fresh",
+                              "salt",
+                              "brackish",
+                              "en13319",
+                              "custom"
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "reset": {
+                    "type": "array",
+                    "items": {
+                      "enum": [
+                        "number",
+                        "startsAt",
+                        "durationSeconds",
+                        "maxDepthM",
+                        "avgDepthM",
+                        "waterTemperatureC",
+                        "waterType"
+                      ],
+                      "description": "A Dive value that can be overridden"
+                    }
+                  },
+                  "notes": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 20000
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "version",
+                    "values",
+                    "overrides",
+                    "fromRecording",
+                    "notes",
+                    "recordings"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "description": "Send it back with an edit; it changes with every change"
+                    },
+                    "values": {
+                      "type": "object",
+                      "required": [
+                        "number",
+                        "startsAt",
+                        "durationSeconds",
+                        "maxDepthM",
+                        "avgDepthM",
+                        "waterTemperatureC",
+                        "waterType"
+                      ],
+                      "properties": {
+                        "number": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 100000
+                            }
+                          ]
+                        },
+                        "startsAt": {
+                          "type": "object",
+                          "required": [
+                            "at",
+                            "utcOffsetSeconds"
+                          ],
+                          "properties": {
+                            "at": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "utcOffsetSeconds": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "integer",
+                                  "minimum": -43200,
+                                  "maximum": 50400,
+                                  "multipleOf": 900
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "durationSeconds": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 172800
+                        },
+                        "maxDepthM": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 400
+                            }
+                          ]
+                        },
+                        "avgDepthM": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 400
+                            }
+                          ]
+                        },
+                        "waterTemperatureC": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -5,
+                              "maximum": 50
+                            }
+                          ]
+                        },
+                        "waterType": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "enum": [
+                                "fresh",
+                                "salt",
+                                "brackish",
+                                "en13319",
+                                "custom"
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "overrides": {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "number",
+                          "startsAt",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "avgDepthM",
+                          "waterTemperatureC",
+                          "waterType"
+                        ],
+                        "description": "A Dive value that can be overridden"
+                      },
+                      "description": "Values the User set by hand"
+                    },
+                    "fromRecording": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "number",
+                            "startsAt",
+                            "durationSeconds",
+                            "maxDepthM",
+                            "avgDepthM",
+                            "waterTemperatureC",
+                            "waterType"
+                          ],
+                          "properties": {
+                            "number": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 100000
+                                }
+                              ]
+                            },
+                            "startsAt": {
+                              "type": "object",
+                              "required": [
+                                "at",
+                                "utcOffsetSeconds"
+                              ],
+                              "properties": {
+                                "at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "utcOffsetSeconds": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "integer",
+                                      "minimum": -43200,
+                                      "maximum": 50400,
+                                      "multipleOf": 900
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            "durationSeconds": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 172800
+                            },
+                            "maxDepthM": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": 0,
+                                  "maximum": 400
+                                }
+                              ]
+                            },
+                            "avgDepthM": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": 0,
+                                  "maximum": 400
+                                }
+                              ]
+                            },
+                            "waterTemperatureC": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": -5,
+                                  "maximum": 50
+                                }
+                              ]
+                            },
+                            "waterType": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "enum": [
+                                    "fresh",
+                                    "salt",
+                                    "brackish",
+                                    "en13319",
+                                    "custom"
+                                  ]
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "notes": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "recordings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "isPrimary",
+                          "startsAt",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "parser",
+                          "summary",
+                          "channels"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "isPrimary": {
+                            "type": "boolean"
+                          },
+                          "startsAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "durationSeconds": {
+                            "type": "number"
+                          },
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "parser": {
+                            "type": "string"
+                          },
+                          "summary": {
+                            "type": "object",
+                            "properties": {
+                              "diveNumber": {
+                                "type": "integer"
+                              },
+                              "diveMode": {
+                                "enum": [
+                                  "open_circuit",
+                                  "ccr",
+                                  "scr",
+                                  "gauge",
+                                  "apnea"
+                                ]
+                              },
+                              "decoModel": {
+                                "enum": [
+                                  "buhlmann_zhl16c"
+                                ]
+                              },
+                              "gfLow": {
+                                "type": "number"
+                              },
+                              "gfHigh": {
+                                "type": "number"
+                              },
+                              "waterType": {
+                                "enum": [
+                                  "fresh",
+                                  "salt",
+                                  "brackish",
+                                  "en13319",
+                                  "custom"
+                                ]
+                              },
+                              "waterDensity": {
+                                "type": "number"
+                              },
+                              "gases": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "o2",
+                                    "he"
+                                  ],
+                                  "properties": {
+                                    "o2": {
+                                      "type": "number"
+                                    },
+                                    "he": {
+                                      "type": "number"
+                                    },
+                                    "circuit": {
+                                      "enum": [
+                                        "open_circuit",
+                                        "diluent"
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "minTemperatureC": {
+                                "type": "number"
+                              },
+                              "maxTemperatureC": {
+                                "type": "number"
+                              },
+                              "avgHeartRate": {
+                                "type": "number"
+                              },
+                              "surfaceIntervalSeconds": {
+                                "type": "number"
+                              },
+                              "cnsStart": {
+                                "type": "number"
+                              },
+                              "cnsEnd": {
+                                "type": "number"
+                              },
+                              "extras": {
+                                "type": "object",
+                                "description": "Source values without a word in our vocabulary, by source field name",
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          },
+                          "channels": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dives/{id}/primary-recording": {
+      "put": {
+        "summary": "Make one of the Dive's Recordings the Primary one; values without Override follow it",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "recordingId",
+                  "version"
+                ],
+                "properties": {
+                  "recordingId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "version": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "version",
+                    "values",
+                    "overrides",
+                    "fromRecording",
+                    "notes",
+                    "recordings"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "description": "Send it back with an edit; it changes with every change"
+                    },
+                    "values": {
+                      "type": "object",
+                      "required": [
+                        "number",
+                        "startsAt",
+                        "durationSeconds",
+                        "maxDepthM",
+                        "avgDepthM",
+                        "waterTemperatureC",
+                        "waterType"
+                      ],
+                      "properties": {
+                        "number": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 100000
+                            }
+                          ]
+                        },
+                        "startsAt": {
+                          "type": "object",
+                          "required": [
+                            "at",
+                            "utcOffsetSeconds"
+                          ],
+                          "properties": {
+                            "at": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "utcOffsetSeconds": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "integer",
+                                  "minimum": -43200,
+                                  "maximum": 50400,
+                                  "multipleOf": 900
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "durationSeconds": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 172800
+                        },
+                        "maxDepthM": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 400
+                            }
+                          ]
+                        },
+                        "avgDepthM": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 400
+                            }
+                          ]
+                        },
+                        "waterTemperatureC": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -5,
+                              "maximum": 50
+                            }
+                          ]
+                        },
+                        "waterType": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "enum": [
+                                "fresh",
+                                "salt",
+                                "brackish",
+                                "en13319",
+                                "custom"
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "overrides": {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "number",
+                          "startsAt",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "avgDepthM",
+                          "waterTemperatureC",
+                          "waterType"
+                        ],
+                        "description": "A Dive value that can be overridden"
+                      },
+                      "description": "Values the User set by hand"
+                    },
+                    "fromRecording": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "number",
+                            "startsAt",
+                            "durationSeconds",
+                            "maxDepthM",
+                            "avgDepthM",
+                            "waterTemperatureC",
+                            "waterType"
+                          ],
+                          "properties": {
+                            "number": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 100000
+                                }
+                              ]
+                            },
+                            "startsAt": {
+                              "type": "object",
+                              "required": [
+                                "at",
+                                "utcOffsetSeconds"
+                              ],
+                              "properties": {
+                                "at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "utcOffsetSeconds": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "integer",
+                                      "minimum": -43200,
+                                      "maximum": 50400,
+                                      "multipleOf": 900
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            "durationSeconds": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 172800
+                            },
+                            "maxDepthM": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": 0,
+                                  "maximum": 400
+                                }
+                              ]
+                            },
+                            "avgDepthM": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": 0,
+                                  "maximum": 400
+                                }
+                              ]
+                            },
+                            "waterTemperatureC": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": -5,
+                                  "maximum": 50
+                                }
+                              ]
+                            },
+                            "waterType": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "enum": [
+                                    "fresh",
+                                    "salt",
+                                    "brackish",
+                                    "en13319",
+                                    "custom"
+                                  ]
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "notes": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "recordings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "isPrimary",
+                          "startsAt",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "parser",
+                          "summary",
+                          "channels"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "isPrimary": {
+                            "type": "boolean"
+                          },
+                          "startsAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "durationSeconds": {
+                            "type": "number"
+                          },
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "parser": {
+                            "type": "string"
+                          },
+                          "summary": {
+                            "type": "object",
+                            "properties": {
+                              "diveNumber": {
+                                "type": "integer"
+                              },
+                              "diveMode": {
+                                "enum": [
+                                  "open_circuit",
+                                  "ccr",
+                                  "scr",
+                                  "gauge",
+                                  "apnea"
+                                ]
+                              },
+                              "decoModel": {
+                                "enum": [
+                                  "buhlmann_zhl16c"
+                                ]
+                              },
+                              "gfLow": {
+                                "type": "number"
+                              },
+                              "gfHigh": {
+                                "type": "number"
+                              },
+                              "waterType": {
+                                "enum": [
+                                  "fresh",
+                                  "salt",
+                                  "brackish",
+                                  "en13319",
+                                  "custom"
+                                ]
+                              },
+                              "waterDensity": {
+                                "type": "number"
+                              },
+                              "gases": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "o2",
+                                    "he"
+                                  ],
+                                  "properties": {
+                                    "o2": {
+                                      "type": "number"
+                                    },
+                                    "he": {
+                                      "type": "number"
+                                    },
+                                    "circuit": {
+                                      "enum": [
+                                        "open_circuit",
+                                        "diluent"
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "minTemperatureC": {
+                                "type": "number"
+                              },
+                              "maxTemperatureC": {
+                                "type": "number"
+                              },
+                              "avgHeartRate": {
+                                "type": "number"
+                              },
+                              "surfaceIntervalSeconds": {
+                                "type": "number"
+                              },
+                              "cnsStart": {
+                                "type": "number"
+                              },
+                              "cnsEnd": {
+                                "type": "number"
+                              },
+                              "extras": {
+                                "type": "object",
+                                "description": "Source values without a word in our vocabulary, by source field name",
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          },
+                          "channels": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dives/{id}/revisions": {
+      "get": {
+        "summary": "The Dive's history, newest first: its own Revisions and those of its Recordings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "at",
+                      "actor",
+                      "cause",
+                      "changes"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "actor": {
+                        "type": "object",
+                        "required": [
+                          "type",
+                          "name"
+                        ],
+                        "properties": {
+                          "type": {
+                            "enum": [
+                              "user",
+                              "import",
+                              "system"
+                            ]
+                          },
+                          "name": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "User name or uploaded file name"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "cause": {
+                        "enum": [
+                          "import-create",
+                          "auto-attach",
+                          "reimport",
+                          "edit",
+                          "primary-change"
+                        ]
+                      },
+                      "changes": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "object",
+                          "required": [
+                            "from",
+                            "to"
+                          ],
+                          "properties": {
+                            "from": {},
+                            "to": {}
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
                         "recording_not_found"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"

@@ -90,6 +90,11 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 | `Table` | Data tables that scroll sideways on phones; numeric columns are right-aligned, header included. |
 | `Dialog` | Modal with focus kept inside, for confirmations that need input (deleting a User). |
 | `CopyField` | A value shown once with a copy button (invitation and reset links). |
+| `NumberField` | Numbers in the UI language's format ("18,5" in German), with a unit after the input. |
+| `Select` | One choice from a short list (e.g. water type). |
+| `TextArea` | Multi-line text (notes). |
+| `DateTimeField` | Date and time typed by segment, in the UI language's order. |
+| badge (`.badge`) | A short state next to a value, e.g. "edited" for an Override. |
 | `ErrorBoundary` | Keeps a failing part (e.g. the chart) from blanking the page. |
 | `BrandMark` | The diver-down flag. |
 
@@ -134,7 +139,6 @@ on the document and on the language names in the picker.
 
 ## Checking the look
 
-Type checks and unit tests don't show layout. After visual changes, look at the pages in light and
-dark mode, in English and German, at phone width (390 px). Use a browser, or headless Edge or Chrome
-over the DevTools protocol, which is how slice 4 was checked. Playwright is the planned tool for this
-(skills: pending `playwright-cli`).
+Browser tests (`apps/web/e2e`, Playwright, ADR 0015) cover the main flows. Type checks and unit tests don't show layout. After visual changes, look at the pages in light and
+dark mode, in English and German, at phone width (390 px), e.g. with a Playwright script that
+takes screenshots (`page.screenshot`), as slice 5 did.

@@ -161,3 +161,22 @@ Implemented:
 Deliberate simplifications, to revisit:
 - **Device values** such as water type ("salt") are shown as recorded, untranslated.
 - **No browser test suite yet:** layout was checked by screenshots (headless Edge); Playwright is pending.
+
+**Slice 5 (2026-10-03): keeping a Dive** ([ADR 0015](../decisions/0015-overrides-vocabulary-and-browser-tests.md)).
+
+Implemented:
+- Device values in our own vocabulary (water type, dive mode, deco model, gas circuit), mapped from
+  FIT and translated; unmapped values kept as "other values from the device"; stored summaries migrated.
+- Edit mode on the dive page: values become Overrides (marked "edited", resettable to the recording's
+  value), notes; one Revision per save; optimistic locking with a reload offer on conflict.
+- Choosing the Primary recording; values without Override follow it, also on re-import.
+- The Dive's history (its Revisions and its Recordings'), translated, in the User's units.
+- New components: NumberField (locale-aware), Select, TextArea, DateTimeField, badge.
+- Browser tests with Playwright (6 flows, English and German, feet and a decimal comma).
+- Fixed: nullable request fields were coerced (`null` → `0`/`""`).
+- The server reports migration files that changed after a database applied them.
+
+Deliberate simplifications, to revisit:
+- **Events** (gas switches, alarms) are recorded but not shown yet; they need the same vocabulary.
+- **Device data** shows the selected Recording's summary; the Dive's cylinders and gases as their
+  own entities come later.

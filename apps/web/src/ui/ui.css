@@ -56,7 +56,7 @@
 .btn-secondary[data-hovered] { background: var(--color-surface-sunken); }
 .btn-danger { background: var(--color-danger); color: var(--color-on-danger); }
 .btn-danger[data-hovered] { background: color-mix(in srgb, var(--color-danger) 88%, var(--color-text)); }
-.btn-quiet { background: none; color: var(--color-accent); min-height: auto; padding: var(--space-1) 0; }
+.btn-quiet { background: none; color: var(--color-accent); min-height: auto; padding: var(--space-1) 0; justify-content: flex-start; text-align: left; }
 .btn-quiet[data-hovered] { text-decoration: underline; }
 .btn[data-pressed] { transform: translateY(1px); }
 
@@ -94,6 +94,26 @@
 .radio-group .field-label { margin-bottom: var(--space-1); }
 
 .copy-field { display: flex; gap: var(--space-2); }
+
+.input-group { display: flex; align-items: center; gap: var(--space-2); }
+.input-group .input { flex: 1; }
+.input-unit { color: var(--color-text-muted); font-size: var(--text-sm); min-width: 2ch; }
+.textarea { min-height: 6rem; resize: vertical; line-height: var(--leading-normal); }
+.select-button { display: flex; align-items: center; justify-content: space-between; text-align: left; cursor: pointer; }
+.select-button[data-focus-visible] { outline: 2px solid var(--color-focus); outline-offset: 0; }
+.select-value[data-placeholder] { color: var(--color-text-muted); }
+.select-chevron { color: var(--color-text-muted); }
+.popover { background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: var(--radius-md);
+  box-shadow: var(--shadow-overlay); min-width: var(--trigger-width); overflow: auto; }
+.listbox { outline: none; padding: var(--space-1) 0; }
+.listbox-item { padding: var(--space-2) var(--space-3); cursor: pointer; outline: none; }
+.listbox-item[data-focused] { background: var(--color-accent-soft); }
+.listbox-item[data-selected] { font-weight: var(--weight-semibold); }
+.date-input { display: flex; align-items: center; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+.date-segment { padding: 0 1px; border-radius: var(--radius-sm); }
+.date-segment[data-placeholder] { color: var(--color-text-muted); }
+.date-segment[data-focused] { background: var(--color-accent); color: var(--color-on-accent); outline: none; }
+.date-segment[data-type='literal'] { color: var(--color-text-muted); }
 .copy-field .input { font-size: var(--text-sm); }
 
 /* ---------- Tables ---------- */
@@ -115,6 +135,11 @@
   box-shadow: var(--shadow-overlay); }
 .dialog { padding: var(--space-5); outline: none; }
 .dialog-title { font-size: var(--text-lg); margin: 0 0 var(--space-3); }
+
+/* ---------- Badge: a short state next to a value ---------- */
+.badge { display: inline-block; margin-left: var(--space-2); padding: 0 var(--space-2); border-radius: var(--radius-sm);
+  background: var(--color-accent-soft); color: var(--color-accent); font-size: var(--text-xs); font-weight: var(--weight-medium);
+  line-height: 1.6; vertical-align: middle; }
 
 /* ---------- Status words ---------- */
 .status { color: var(--color-text-muted); }

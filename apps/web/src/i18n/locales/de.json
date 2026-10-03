@@ -100,9 +100,17 @@
     "actions": "Aktionen",
     "you": "du",
     "revoke": "Zurückziehen",
-    "roles": { "user": "Benutzer", "admin": "Admin" },
+    "roles": {
+      "user": "Benutzer",
+      "admin": "Admin"
+    },
     "disabled": "deaktiviert",
-    "invitationStatus": { "pending": "offen", "accepted": "angenommen", "revoked": "zurückgezogen", "expired": "abgelaufen" },
+    "invitationStatus": {
+      "pending": "offen",
+      "accepted": "angenommen",
+      "revoked": "zurückgezogen",
+      "expired": "abgelaufen"
+    },
     "makeAdmin": "Zum Admin machen",
     "makeUser": "Zum Benutzer machen",
     "createResetLink": "Link zum Zurücksetzen",
@@ -122,7 +130,12 @@
     "choose": "Dateien auswählen",
     "hint": "„Export Original“-ZIPs aus Garmin Connect und direkt von der Uhr kopierte Dateien funktionieren beide.",
     "uploading": "Wird hochgeladen …",
-    "status": { "pending": "wartet", "processing": "wird verarbeitet", "done": "fertig", "failed": "fehlgeschlagen" },
+    "status": {
+      "pending": "wartet",
+      "processing": "wird verarbeitet",
+      "done": "fertig",
+      "failed": "fehlgeschlagen"
+    },
     "result": {
       "created": "neuer Tauchgang",
       "attached": "zu einem vorhandenen Tauchgang hinzugefügt",
@@ -173,7 +186,32 @@
     "minutes": "Minuten",
     "time": "Zeit",
     "depth": "Tiefe",
-    "temperature": "Temperatur"
+    "temperature": "Temperatur",
+    "edit": "Tauchgang bearbeiten",
+    "save": "Speichern",
+    "saved": "Gespeichert.",
+    "number": "Tauchgangsnummer",
+    "start": "Beginn (Ortszeit am Tauchplatz)",
+    "utcOffset": "UTC-Abweichung (Stunden)",
+    "waterTemperature": "Wassertemperatur",
+    "notes": "Notizen",
+    "noNotes": "Noch keine Notizen.",
+    "edited": "bearbeitet",
+    "editedHint": "Von Hand gesetzt; die Aufzeichnung sagt {{value}}",
+    "fromRecording": "Aufzeichnung: {{value}}",
+    "resetToRecording": "Wert der Aufzeichnung verwenden",
+    "willReset": "Wird beim Speichern wieder {{value}}",
+    "changedMeanwhile": "Dieser Tauchgang wurde inzwischen geändert. Lade ihn neu und mach deine Änderungen noch einmal.",
+    "reload": "Neu laden",
+    "recording": "Aufzeichnung",
+    "makePrimary": "Zur primären Aufzeichnung machen",
+    "primaryHint": "Die Werte des Tauchgangs kommen aus der primären Aufzeichnung, außer du setzt sie von Hand.",
+    "device": "Gerätedaten",
+    "diveMode": "Tauchmodus",
+    "decoModel": "Dekompressionsmodell",
+    "gases": "Gase",
+    "temperatureRange": "Temperatur",
+    "otherValues": "Weitere Werte vom Gerät"
   },
   "errors": {
     "unknown": "Etwas ist schiefgegangen. Versuch es noch einmal.",
@@ -198,6 +236,67 @@
     "session_not_found": "Diese Sitzung ist bereits beendet.",
     "import_not_found": "Diesen Import gibt es nicht.",
     "dive_not_found": "Diesen Tauchgang gibt es nicht oder er gehört nicht dir.",
-    "recording_not_found": "Diese Aufzeichnung gibt es nicht oder sie gehört nicht dir."
+    "recording_not_found": "Diese Aufzeichnung gibt es nicht oder sie gehört nicht dir.",
+    "dive_changed": "Dieser Tauchgang wurde inzwischen geändert. Lade ihn neu und mach deine Änderungen noch einmal.",
+    "dive_values_inconsistent": "Die mittlere Tiefe kann nicht tiefer als die Maximaltiefe sein.",
+    "recording_not_on_dive": "Diese Aufzeichnung gehört nicht zu diesem Tauchgang."
+  },
+  "vocabulary": {
+    "waterType": {
+      "fresh": "Süßwasser",
+      "salt": "Salzwasser",
+      "brackish": "Brackwasser",
+      "en13319": "EN 13319 (1020 kg/m³)",
+      "custom": "Eigene Dichte"
+    },
+    "diveMode": {
+      "open_circuit": "Offenes System",
+      "ccr": "Geschlossener Kreislauf (CCR)",
+      "scr": "Halbgeschlossener Kreislauf (SCR)",
+      "gauge": "Gauge",
+      "apnea": "Apnoe"
+    },
+    "decoModel": {
+      "buhlmann_zhl16c": "Bühlmann ZHL-16C"
+    },
+    "circuit": {
+      "open_circuit": "offenes System",
+      "diluent": "Diluent"
+    }
+  },
+  "history": {
+    "title": "Verlauf",
+    "empty": "Noch keine Änderungen.",
+    "by": {
+      "user": "{{name}}",
+      "import": "Import von {{name}}",
+      "system": "Dive Hub",
+      "unknown": "ein gelöschter Benutzer"
+    },
+    "cause": {
+      "import-create": "Aus einem Import angelegt",
+      "auto-attach": "Aufzeichnung automatisch hinzugefügt",
+      "reimport": "Durch einen neuen Import aktualisiert",
+      "edit": "Bearbeitet",
+      "primary-change": "Primäre Aufzeichnung gewechselt"
+    },
+    "field": {
+      "number": "Tauchgangsnummer",
+      "startsAt": "Beginn",
+      "durationSeconds": "Dauer",
+      "maxDepthM": "Maximaltiefe",
+      "avgDepthM": "Mittlere Tiefe",
+      "waterTemperatureC": "Wassertemperatur",
+      "waterType": "Wasserart",
+      "notes": "Notizen",
+      "primaryRecordingId": "Primäre Aufzeichnung",
+      "recordings": "Aufzeichnung",
+      "originalId": "Datei"
+    },
+    "notesChanged": "Notizen geändert",
+    "setByHand": "von Hand gesetzt",
+    "reset": "zurück zur Aufzeichnung",
+    "recordingAdded": "Aufzeichnung hinzugefügt",
+    "fileReplaced": "Aufgezeichnete Daten durch eine neuere Datei ersetzt"
   }
 }

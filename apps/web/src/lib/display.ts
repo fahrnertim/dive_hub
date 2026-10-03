@@ -19,7 +19,7 @@ export function useDisplay() {
     duration: (seconds: number) => formatDuration(seconds, locale),
     diveTime: (iso: string, offsetSeconds: number | null) => formatDiveTime(iso, offsetSeconds, locale),
     dateTime: (iso: string) => formatDateTime(iso, locale),
-    unit: (quantity: 'depth' | 'temperature') => unitLabel(quantity, units, locale),
+    unit: (quantity: 'depth' | 'temperature' | 'minutes') => unitLabel(quantity, units, locale),
   };
 }
 

@@ -1,6 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { I18nProvider } from 'react-aria-components';
+import { useTranslation } from 'react-i18next';
 import { App } from './App.tsx';
 import { isUnauthorized, keys } from './api.ts';
 import './i18n/index.ts';
@@ -24,7 +26,17 @@ const queryClient: QueryClient = new QueryClient({
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <App />
+      <LocalizedApp />
     </QueryClientProvider>
   </StrictMode>,
 );
+
+/** React Aria's number, date and select components follow the UI language, not the browser's. */
+function LocalizedApp() {
+  const { i18n } = useTranslation();
+  return (
+    <I18nProvider locale={i18n.language}>
+      <App />
+    </I18nProvider>
+  );
+}

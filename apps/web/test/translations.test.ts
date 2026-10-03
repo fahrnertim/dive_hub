@@ -28,8 +28,8 @@ function enumsOf(property: string): string[] {
     if (!node || typeof node !== 'object') return;
     for (const [key, value] of Object.entries(node)) {
       if (key === property && value && typeof value === 'object') {
-        const schema = value as { enum?: string[]; anyOf?: { enum?: string[] }[] };
-        for (const v of [...(schema.enum ?? []), ...(schema.anyOf ?? []).flatMap((s) => s.enum ?? [])]) values.add(v);
+        const schema = value as { enum?: string[]; anyOf?: { enum?: string[] }[]; items?: { enum?: string[] } };
+        for (const v of [...(schema.enum ?? []), ...(schema.anyOf ?? []).flatMap((s) => s.enum ?? []), ...(schema.items?.enum ?? [])]) values.add(v);
       }
       walk(value);
     }
@@ -63,6 +63,12 @@ describe('codes from the API', () => {
     ['reason', 'import.reason'],
     ['errorCode', 'import.errorCode'],
     ['result', 'import.result'],
+    ['waterType', 'vocabulary.waterType'],
+    ['diveMode', 'vocabulary.diveMode'],
+    ['decoModel', 'vocabulary.decoModel'],
+    ['circuit', 'vocabulary.circuit'],
+    ['cause', 'history.cause'],
+    ['overrides', 'history.field'],
   ])('every %s has an English text under %s', (property, prefix) => {
     const codes = enumsOf(property);
     expect(codes.length).toBeGreaterThan(0);

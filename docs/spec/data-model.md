@@ -109,6 +109,9 @@ coverage, validity; B5), **Medical exam** (date, result, valid until, examiner),
 - *Owner:* Diver. *Number:* the Diver's own dive number.
 - *Time and depth:* start (UTC + offset), duration, max/avg depth, surface interval.
   These are derived from the Primary recording; any of them can be an **Override**.
+  *Implemented (ADR 0015):* number, start + offset, duration, max/avg depth, water temperature and
+  water type are columns holding the value in effect, with `overrides` naming the fields set by
+  hand; `version` grows with every change (optimistic locking); notes are the Dive's own.
 - *Place:* Dive site; entry and exit positions (B6); Operator (dive center / boat, B7); Trip.
 - *Conditions (B9):* water type (salt/fresh/brackish), water/air temperature,
   visibility, current, surface conditions, weather.

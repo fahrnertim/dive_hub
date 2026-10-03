@@ -11,6 +11,8 @@ import { withAuthEndpoints } from './auth/openapi.js';
 import type { Db } from './db/client.js';
 import type { ImportService } from './imports/import-service.js';
 import { problem, useProblemErrors } from './http/problems.js';
+import { createDiveService } from './dives/dive-service.js';
+import { diveRoutes } from './dives/routes.js';
 import { apiRoutes } from './routes.js';
 import type { BlobStore } from './storage/blob-store.js';
 import { accountRoutes } from './users/account-routes.js';
@@ -49,7 +51,7 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
       openapi: '3.1.0',
       info: {
         title: 'Dive Hub API',
-        version: '0.3.0',
+        version: '0.5.0',
         description: 'Sign in with POST /api/auth/sign-in/email (Better Auth); the session cookie authenticates every other call.',
       },
     },
@@ -69,6 +71,7 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
   await app.register(accountRoutes, { prefix: '/api', ...deps, passwordResets });
   await app.register(adminRoutes, { prefix: '/api', ...deps, passwordResets, userAdmin: createUserAdmin(deps.db, deps.blobs) });
   await app.register(apiRoutes, { prefix: '/api', ...deps });
+  await app.register(diveRoutes, { prefix: '/api', ...deps, dives: createDiveService(deps.db) });
 
   const serveWeb = !!deps.webDir && existsSync(deps.webDir);
   if (serveWeb) await app.register(fastifyStatic, { root: deps.webDir!, wildcard: false });

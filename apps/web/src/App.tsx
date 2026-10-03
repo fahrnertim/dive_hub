@@ -11,7 +11,7 @@ import { BrandMark, ErrorBoundary, Muted, Notice } from './ui/index.ts';
 
 // Pages most visits don't need load on demand: the chart library, account settings, admin.
 const DiveDetail = lazy(() => import('./DiveDetail.tsx').then((m) => ({ default: m.DiveDetail })));
-const AccountPage = lazy(() => import('./Account.tsx').then((m) => ({ default: m.AccountPage })));
+const AccountPage = lazy(() => import('./AccountPage.tsx').then((m) => ({ default: m.AccountPage })));
 const Admin = lazy(() => import('./Admin.tsx').then((m) => ({ default: m.Admin })));
 
 /** Minimal hash routing: "#/" (logbook), "#/dives/<id>", "#/account", "#/admin", "#/setup", "#/invite/<token>", "#/reset/<token>". */
