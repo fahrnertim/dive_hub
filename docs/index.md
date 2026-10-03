@@ -12,11 +12,11 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 ## Spec
 - [spec/README.md](spec/README.md) — Product specification: vision, sources → hub → targets, open questions.
 - [spec/data-model.md](spec/data-model.md) — Entities, ownership, relationships; UDDF checklist, gap coverage, scenarios.
-- [spec/architecture.md](spec/architecture.md) — Components, import flow, Docker Compose deployment, auth.
+- [spec/architecture.md](spec/architecture.md) — Components, import flow, Docker Compose deployment, auth; implementation status per slice (7: Dive sites).
 - [spec/design-system.md](spec/design-system.md) — Visual direction, tokens, components, writing, localization, units, accessibility.
 
 ## Glossary
-- [glossary.md](glossary.md) — Domain language with German UI words: User, Admin, Invitation, Password reset link, Disabled, Diver, Dive, Recording, Import, Push, …
+- [glossary.md](glossary.md) — Domain language with German UI words: User, Admin, Invitation, Password reset link, Disabled, Diver, Dive, Recording, Dive site, Position, Import, Push, …
 
 ## Development
 - [development.md](development.md) — setup, layout, common tasks, tooling notes.
@@ -47,6 +47,7 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [0017 Logbook list with offset paging, sorting and search](decisions/0017-logbook-list-paging.md) — `GET /api/dives` returns `{ dives, total }`; limit/offset, sort by column, search number and notes; settings in the address.
 - [0018 Lucide icons beside text; motion only where it explains](decisions/0018-icons-and-motion.md) — `ui/Icon.tsx` map, no icon-only buttons; menus, dialogs, notices animate in; nothing with reduced motion.
 - [0019 Tonal surfaces, comfortable density, no component library](decisions/0019-tonal-surfaces.md) — panels lift off the page by tone (no outline), attention is a tint; React Aria stays, no Tailwind. Amends 0014.
+- [0020 Dive sites shared by all Users, positions without PostGIS, no map yet](decisions/0020-dive-sites.md) — any User edits (versions, Revisions), creator/admin deletes unused; entry/exit positions on Recordings; auto-link to the only site within 200 m; "open in maps" link.
 - [Template](decisions/template.md) — copy for new ADRs.
 
 ## References
@@ -74,3 +75,4 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [2026-10-04 UI component libraries](research/2026-10-04-ui-component-libraries.md) — shadcn/ui (now with a React Aria base), Kibo, React Aria kits, headless and styled libraries, single parts; licenses checked; decided: keep our React Aria components (ADR 0019).
 - [2026-10-04 Visual refresh proposal](research/2026-10-04-visual-refresh-proposal.md) — ten ranked changes from the screenshots and directions A/B/C (surfaces, radius, density) with a [mock](research/assets/2026-10-04-visual-refresh-mock.html); owner chose all ten changes and B, implemented.
 - [2026-10-04 Responsiveness](research/2026-10-04-responsiveness.md) — 320–1440 px and 200 % text measured and locked in with tests; tables switch by container width; mobile skills checked (`mobile-native` proposed).
+- [2026-10-04 Dive site sources](research/2026-10-04-dive-site-sources.md) — open data to preseed Dive sites (OSM 1,401 dive spots ODbL, Wikidata 345 CC0; others rejected) and external site IDs (SSI IDs not public); recommends an admin import, no bundled data.

@@ -11,10 +11,15 @@ export interface SyntheticDiveOptions {
   durationSeconds?: number;
   maxDepthM?: number;
   diveNumber?: number;
+  /** Where the dive started and ended (session start/end position), in degrees. */
+  entry?: { latitude: number; longitude: number };
+  exit?: { latitude: number; longitude: number };
 }
 
 const FIT_EPOCH_MS = Date.UTC(1989, 11, 31);
 const UTC_OFFSET_SECONDS = 2 * 3600;
+/** FIT stores positions in semicircles: 2^31 of them are 180°. */
+const semicircles = (degrees: number) => Math.round((degrees * 2 ** 31) / 180);
 
 export function makeSyntheticDive(options: SyntheticDiveOptions = {}): Uint8Array {
   const serialNumber = options.serialNumber ?? 1234567890;
@@ -70,6 +75,8 @@ export function makeSyntheticDive(options: SyntheticDiveOptions = {}): Uint8Arra
     timestamp: at(duration), startTime: start, totalElapsedTime: duration, totalTimerTime: duration,
     sport: 'diving', subSport: 'singleGasDiving', minTemperature: 25, maxTemperature: 26, avgHeartRate: 80,
     messageIndex: 0, firstLapIndex: 0, numLaps: 1, event: 'session', eventType: 'stop',
+    ...(options.entry && { startPositionLat: semicircles(options.entry.latitude), startPositionLong: semicircles(options.entry.longitude) }),
+    ...(options.exit && { endPositionLat: semicircles(options.exit.latitude), endPositionLong: semicircles(options.exit.longitude) }),
   });
   write(Profile.MesgNum.ACTIVITY, {
     timestamp: at(duration), totalTimerTime: duration, numSessions: 1, type: 'manual', event: 'activity', eventType: 'stop',

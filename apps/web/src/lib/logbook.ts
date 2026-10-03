@@ -4,6 +4,7 @@ import type { LogbookParams } from '../api.ts';
 export function logbookHref(p: LogbookParams): string {
   const query = new URLSearchParams();
   if (p.diverId) query.set('diver', p.diverId);
+  if (p.siteId) query.set('site', p.siteId);
   if (p.q) query.set('q', p.q);
   if (p.sort && p.sort !== 'startsAt') query.set('sort', p.sort);
   if (p.order === 'asc') query.set('order', 'asc');
@@ -18,6 +19,7 @@ export function logbookParams(query: URLSearchParams): LogbookParams {
   const page = Number(query.get('page'));
   return {
     diverId: query.get('diver') ?? undefined,
+    siteId: query.get('site') ?? undefined,
     q: query.get('q') ?? undefined,
     sort: sort === 'number' || sort === 'maxDepth' || sort === 'duration' ? sort : undefined,
     order: query.get('order') === 'asc' ? 'asc' : undefined,

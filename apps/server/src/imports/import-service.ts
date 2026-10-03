@@ -16,12 +16,15 @@ import {
 } from '../db/schema.js';
 import { attachRecording, createDiveFromRecording, refreshFromPrimary } from '../dives/dive-service.js';
 import { writeRevision, type Actor } from '../dives/revisions.js';
+import { linkNearbySite, positionColumns } from '../sites/dive-site-link.js';
 import { createFitAdapter, looksLikeFit, type FitAdapter, type ParsedRecording } from '../fit/fit-adapter.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { extractFitFiles, looksLikeZip, type ExtractedFile } from './archive.js';
 import { decideMatch, overlapWindow } from './matching.js';
 
 export const PROCESS_IMPORT_TASK = 'process_import';
+/** Reads positions for Recordings imported before they were kept (ADR 0020); queued at worker start. */
+export const BACKFILL_POSITIONS_TASK = 'backfill_positions';
 
 /** The upload is neither a FIT file nor a zip archive. Stored as the Import's error code. */
 export class UnsupportedFileError extends Error {
@@ -146,7 +149,7 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
       parser: fit.parser, parserVersion: fit.parserVersion,
       startsAt: rec.startsAt, utcOffsetSeconds: rec.utcOffsetSeconds ?? null,
       durationSeconds: rec.durationSeconds, maxDepthM: rec.maxDepthM ?? null, avgDepthM: rec.avgDepthM ?? null,
-      summary: rec.summary, updatedAt: new Date(),
+      ...positionColumns(rec), summary: rec.summary, updatedAt: new Date(),
     };
 
     // Same Recording seen before (e.g. a re-export with a different file hash): update in place.
@@ -178,6 +181,7 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
 
     if (decision.kind === 'create') {
       const newDiveId = await createDiveFromRecording(tx, created!, diverId, actor, 'import-create');
+      await linkNearbySite(tx, newDiveId, created!, actor);
       return { fileName, result: 'created', diveId: newDiveId, recordingId: created!.id };
     }
     if (decision.kind === 'attach') {
@@ -226,7 +230,35 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
     return created!.id;
   }
 
-  return { createImport, processImport };
+  /**
+   * Recordings imported before positions were kept get them from their Original (ADR 0020). Each
+   * Recording is read once: also when its Original fails to parse, it is marked as read.
+   * Returns how many Recordings were read.
+   */
+  async function backfillPositions(): Promise<number> {
+    let read = 0;
+    for (;;) {
+      const batch = await db.select({ id: recording.id, recordingKey: recording.recordingKey, storageKey: original.storageKey })
+        .from(recording).innerJoin(original, eq(original.id, recording.originalId))
+        .where(and(isNull(recording.positionsReadAt), isNull(recording.deletedAt)))
+        .limit(50);
+      if (batch.length === 0) return read;
+      for (const r of batch) {
+        let parsed: ParsedRecording | undefined;
+        try {
+          parsed = (await fit.parse(await blobs.read(r.storageKey))).find((p) => p.recordingKey === r.recordingKey);
+        } catch {
+          parsed = undefined; // a missing or unreadable Original: nothing to learn, don't try again
+        }
+        await db.update(recording)
+          .set(positionColumns(parsed ?? { entryPosition: undefined, exitPosition: undefined }))
+          .where(eq(recording.id, r.id));
+        read++;
+      }
+    }
+  }
+
+  return { createImport, processImport, backfillPositions };
 }
 
 async function writeSamples(tx: Tx, recordingId: string, rec: ParsedRecording, replace: boolean) {

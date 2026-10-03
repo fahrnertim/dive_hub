@@ -41,6 +41,8 @@ export type RecordingSummary = DiveView['recordings'][number]['summary'];
 export type DiverView = Awaited<ReturnType<typeof fetchDivers>>[number];
 export type DeviceView = Awaited<ReturnType<typeof fetchDevices>>[number];
 export type CandidateView = Awaited<ReturnType<typeof fetchCandidates>>[number];
+export type SiteView = Awaited<ReturnType<typeof fetchSite>>;
+export type Position = NonNullable<SiteView['position']>;
 
 /** Query keys in one place (hierarchical, so invalidating ['dives'] covers every dive query). */
 export const keys = {
@@ -57,6 +59,8 @@ export const keys = {
   devices: ['devices'] as const,
   candidates: (status: 'open' | 'discarded') => ['candidates', status] as const,
   samples: (recordingId: string) => ['recordings', recordingId, 'samples'] as const,
+  sites: ['sites'] as const,
+  site: (id: string) => ['sites', id] as const,
 };
 
 /**
@@ -113,6 +117,8 @@ export const importsQuery = () =>
 /** What the logbook shows (ADR 0017); it lives in the address, e.g. "#/?sort=maxDepth&page=2". */
 export interface LogbookParams {
   diverId?: string | undefined;
+  /** Only Dives at this Dive site. */
+  siteId?: string | undefined;
   q?: string | undefined;
   sort?: 'startsAt' | 'number' | 'maxDepth' | 'duration' | undefined;
   order?: 'asc' | 'desc' | undefined;
@@ -126,7 +132,7 @@ export const divesQuery = (p: LogbookParams = {}) => queryOptions({
   queryFn: async () => unwrap(await api.GET('/api/dives', {
     params: {
       query: {
-        ...(p.diverId && { diverId: p.diverId }), ...(p.q && { q: p.q }), ...(p.sort && { sort: p.sort }), ...(p.order && { order: p.order }),
+        ...(p.diverId && { diverId: p.diverId }), ...(p.siteId && { siteId: p.siteId }), ...(p.q && { q: p.q }), ...(p.sort && { sort: p.sort }), ...(p.order && { order: p.order }),
         limit: PAGE_SIZE, offset: ((p.page ?? 1) - 1) * PAGE_SIZE,
       },
     },
@@ -168,6 +174,20 @@ export const samplesQuery = (recordingId: string) =>
       })),
     staleTime: Infinity,
   });
+
+async function fetchSite(id: string) {
+  return unwrap(await api.GET('/api/dive-sites/{id}', { params: { path: { id } } }));
+}
+
+/** Dive sites (ADR 0020): searched by words, or the ones near a position, nearest first. */
+export const sitesQuery = (p: { q?: string | undefined; near?: Position | undefined } = {}) => queryOptions({
+  queryKey: [...keys.sites, { q: p.q, near: p.near }],
+  queryFn: async () => unwrap(await api.GET('/api/dive-sites', {
+    params: { query: { ...(p.q && { q: p.q }), ...(p.near && { latitude: p.near.latitude, longitude: p.near.longitude }) } },
+  })),
+  placeholderData: keepPreviousData,
+});
+export const siteQuery = (id: string) => queryOptions({ queryKey: keys.site(id), queryFn: () => fetchSite(id) });
 
 export async function uploadFile(file: File) {
   const body = new FormData();

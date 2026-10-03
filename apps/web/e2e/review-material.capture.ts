@@ -40,7 +40,7 @@ async function tabOrder(page: Page, name: string, steps = 25) {
 }
 
 test('review material', async ({ page, request, browser }) => {
-  test.setTimeout(240_000);
+  test.setTimeout(480_000);
   await setPreferences(request, { language: null, units: null });
   const upload = await request.post('/api/imports', {
     headers, multipart: { file: { name: 'odd-computer.fit', mimeType: 'application/octet-stream', buffer: readFileSync('e2e/fixtures/odd-computer.fit') } },
@@ -85,6 +85,58 @@ test('review material', async ({ page, request, browser }) => {
   await capture(page, '10-divers-de-phone', { aria: false });
   await page.goto('/#/admin'); await page.getByRole('heading', { name: 'Benutzer' }).waitFor();
   await capture(page, '11-admin-de-phone', { aria: false });
+  await setPreferences(request, { language: null });
+
+  // Dive sites (ADR 0020): a dive with a position, a site near it, and the pages in both themes,
+  // both languages, at desktop, phone (390 px) and the narrowest phone (320 px).
+  const sited = await request.post('/api/imports', {
+    headers, multipart: { file: { name: 'sited-computer.fit', mimeType: 'application/octet-stream', buffer: readFileSync('e2e/fixtures/sited-computer.fit') } },
+  });
+  await expect.poll(async () => (await (await request.get(`/api/imports/${(await sited.json()).id}`)).json()).status).toBe('done');
+  const sitedDive = (await (await request.get(`/api/imports/${(await sited.json()).id}`)).json()).outcome[0].diveId as string;
+  const site = await (await request.post('/api/dive-sites', {
+    headers,
+    data: {
+      name: 'Lighthouse', position: { latitude: 28.5007, longitude: 34.5199 }, country: 'EG', waterBody: 'Red Sea',
+      description: 'Shore entry by the café. Sandy slope to 12 m, then the wall; mind the boats at the point.',
+    },
+  })).json() as { id: string };
+  await request.post('/api/dive-sites', { headers, data: { name: 'Eel Garden', position: { latitude: 28.5101, longitude: 34.5172 }, country: 'EG', waterBody: 'Red Sea' } });
+  const diveNow = await (await request.get(`/api/dives/${sitedDive}`)).json() as { version: number };
+  await request.patch(`/api/dives/${sitedDive}`, { headers, data: { version: diveNow.version, siteId: site.id } });
+
+  const sitePages = async (prefix: string, de: boolean) => {
+    // A new language needs a reload; moving by hash keeps the one the app started with.
+    await page.goto('/#/sites'); await page.reload(); await page.locator('table').waitFor();
+    await capture(page, `${prefix}-sites`, { aria: false });
+    await page.goto(`/#/sites/${site.id}`); await page.getByRole('heading', { name: 'Lighthouse' }).waitFor();
+    await capture(page, `${prefix}-site`, { aria: false });
+    await page.getByRole('button', { name: de ? 'Tauchplatz bearbeiten' : 'Edit dive site' }).click();
+    await capture(page, `${prefix}-site-edit`, { aria: false });
+    await page.goto(`/#/dives/${sitedDive}`); await page.getByRole('heading', { name: de ? /Tauchgang 7/ : /Dive 7/ }).waitFor();
+    await capture(page, `${prefix}-dive-with-site`, { aria: false });
+    await page.getByRole('button', { name: de ? 'Tauchplatz ändern' : 'Change dive site' }).click();
+    await page.getByRole('dialog').waitFor();
+    await capture(page, `${prefix}-site-picker`, { full: false, aria: false });
+    await page.getByRole('dialog').getByRole('button', { name: de ? 'Neuer Tauchplatz' : 'New dive site' }).click();
+    await capture(page, `${prefix}-site-picker-new`, { full: false, aria: false });
+    await page.keyboard.press('Escape');
+  };
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await sitePages('17-en-light-desktop', false);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await sitePages('18-en-dark-desktop', false);
+  await page.setViewportSize({ width: 320, height: 640 });
+  await sitePages('19-en-dark-320', false);
+  await setPreferences(request, { language: 'de' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await sitePages('20-de-dark-390', true);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await sitePages('21-de-light-390', true);
+  await page.setViewportSize({ width: 320, height: 640 });
+  await sitePages('22-de-light-320', true);
+  await page.goto(`/#/?site=${site.id}`); await page.locator('table').waitFor();
+  await capture(page, '23-de-light-320-logbook-at-site', { aria: false });
   await setPreferences(request, { language: null });
 
   const fresh = await browser.newContext({ baseURL: E2E_BASE_URL, locale: 'en-GB', storageState: { cookies: [], origins: [] } });

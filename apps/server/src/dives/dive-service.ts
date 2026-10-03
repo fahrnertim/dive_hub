@@ -6,11 +6,12 @@ import {
   columnsOf, plain, sameValue, valuesFromRecording, valuesOfDive, type DiveValues,
 } from './dive-values.js';
 import { writeRevision, type Actor, type Changes, type RevisionCause } from './revisions.js';
+import { liveSite, siteRef } from '../sites/dive-site-link.js';
 
 export class DiveError extends Error {
   constructor(readonly code:
     | 'dive_not_found' | 'dive_changed' | 'dive_values_inconsistent' | 'recording_not_on_dive'
-    | 'recording_not_found' | 'last_recording' | 'diver_not_found') {
+    | 'recording_not_found' | 'last_recording' | 'diver_not_found' | 'site_not_found') {
     super(code);
   }
 }
@@ -24,6 +25,8 @@ export interface DiveEdit {
   reset?: OverridableField[];
   /** The Dive's own notes (not an Override). */
   notes?: string | null;
+  /** The Dive site, or null for none (the Dive's own value, ADR 0020). */
+  siteId?: string | null;
 }
 
 type DiveRow = typeof dive.$inferSelect;
@@ -52,7 +55,8 @@ async function primaryValues(tx: Tx, recordingId: string | null): Promise<DiveVa
  * Returns the changes (empty when nothing differed, in which case nothing is written).
  */
 async function apply(
-  tx: Tx, current: DiveRow, next: { values: DiveValues; overrides: OverridableField[]; notes: string | null; primaryRecordingId: string | null },
+  tx: Tx, current: DiveRow,
+  next: { values: DiveValues; overrides: OverridableField[]; notes: string | null; primaryRecordingId: string | null; siteId?: string | null },
   actor: Actor, cause: RevisionCause, extra: Changes = {},
 ): Promise<Changes> {
   const before = valuesOfDive(current);
@@ -74,6 +78,10 @@ async function apply(
   if (current.notes !== next.notes) {
     changes.notes = { from: current.notes, to: next.notes };
     columns.notes = next.notes;
+  }
+  if (next.siteId !== undefined && current.siteId !== next.siteId) {
+    changes.site = { from: await siteRef(tx, current.siteId), to: await siteRef(tx, next.siteId) };
+    columns.siteId = next.siteId;
   }
   if (current.primaryRecordingId !== next.primaryRecordingId) {
     changes.primaryRecordingId = { from: current.primaryRecordingId, to: next.primaryRecordingId };
@@ -138,9 +146,10 @@ export function createDiveService(db: Db) {
         if (values.maxDepthM !== null && values.avgDepthM !== null && values.avgDepthM > values.maxDepthM) {
           throw new DiveError('dive_values_inconsistent');
         }
+        if (edit.siteId && edit.siteId !== current.siteId && !(await liveSite(tx, edit.siteId))) throw new DiveError('site_not_found');
         await apply(tx, current, {
           values, overrides, notes: edit.notes === undefined ? current.notes : edit.notes,
-          primaryRecordingId: current.primaryRecordingId,
+          primaryRecordingId: current.primaryRecordingId, ...(edit.siteId !== undefined && { siteId: edit.siteId }),
         }, { type: 'user', id: userId }, 'edit');
       });
     },

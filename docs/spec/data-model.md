@@ -140,6 +140,8 @@ suggestion** is raised. Nothing appears in that User's logbook until they accept
   per-source extension area (A7) rather than dropped.
 - *Source logbook fields*: notes, buddy names, site name and similar values the Source
   delivered (UDDF, Subsurface). They're kept as the baseline for 3-way merges on re-import.
+- *Positions (B6, implemented in ADR 0020):* entry and exit position from the Device, both optional.
+  The Dive shows its Primary recording's (exit, else entry); they stay as private as the Dive.
 - Detaching a Recording from its Dive is always possible. The Recording then gets its
   own Dive or becomes a Duplicate candidate.
 
@@ -164,6 +166,10 @@ a hash of the signed fields). It becomes a Stale signature when any signed field
 **Dive site** — instance-wide: name, aliases, position (WGS84), country/region, water body,
 environment, typical/max depth, entry points, **external IDs** (e.g. SSI site ID needed
 for Pushes, shared site databases; B14), creator, `merged into`.
+*Implemented (ADR 0020):* name, position (latitude/longitude, no PostGIS), country (ISO code), body of
+water, description, creator, `merged into` (merging later), version; any User edits (Revisions), the
+creator or an admin deletes while unused. A Dive links to one site (`site`, the Dive's own value);
+an Import links a new Dive to the only site within 200 m of its position.
 
 **Site note** — a Diver's private notes and rating for a Dive site.
 

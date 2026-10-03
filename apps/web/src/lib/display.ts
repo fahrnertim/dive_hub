@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ApiError, meQuery } from '../api.ts';
+import { countryName, formatDistance, formatPosition, type Position } from './geo.ts';
 import {
   formatDateTime, formatDepth, formatDiveTime, formatDuration, formatTemperature, pickUnits, unitLabel,
 } from './units.ts';
 
 /** Formatting in the UI language and the User's unit system (ADR 0014). */
 export function useDisplay() {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const me = useQuery(meQuery());
   const units = pickUnits(me.data?.preferences.units, navigator.languages);
   const locale = i18n.language;
@@ -19,6 +20,12 @@ export function useDisplay() {
     duration: (seconds: number) => formatDuration(seconds, locale),
     diveTime: (iso: string, offsetSeconds: number | null) => formatDiveTime(iso, offsetSeconds, locale),
     dateTime: (iso: string) => formatDateTime(iso, locale),
+    /** "28.4950° N, 34.5160° E" (ADR 0020). */
+    position: (p: Position) => formatPosition(p, locale, {
+      north: t('geo.north'), south: t('geo.south'), east: t('geo.east'), west: t('geo.west'),
+    }),
+    distance: (metres: number) => formatDistance(metres, units, locale),
+    country: (code: string) => countryName(code, locale),
     unit: (quantity: 'depth' | 'temperature' | 'minutes') => unitLabel(quantity, units, locale),
   };
 }

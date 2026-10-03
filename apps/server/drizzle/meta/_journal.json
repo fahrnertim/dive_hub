@@ -50,6 +50,20 @@
       "when": 1791027243056,
       "tag": "0006_candidate_resolution",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791052986481,
+      "tag": "0007_dive_sites",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791053000489,
+      "tag": "0008_drop_has_end_position",
+      "breakpoints": true
     }
   ]
 }

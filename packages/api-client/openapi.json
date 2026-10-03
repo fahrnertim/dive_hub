@@ -276,7 +276,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -334,7 +338,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -442,7 +450,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -593,7 +605,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -651,7 +667,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -1165,7 +1185,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -1244,7 +1268,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -1347,7 +1375,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -1492,7 +1524,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -1657,7 +1693,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -1880,7 +1920,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -1938,7 +1982,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -1996,7 +2044,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2093,7 +2145,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2151,7 +2207,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2209,7 +2269,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2338,7 +2402,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2396,7 +2464,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2454,7 +2526,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2583,7 +2659,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2641,7 +2721,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2699,7 +2783,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2778,7 +2866,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2836,7 +2928,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2894,7 +2990,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2994,7 +3094,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -3052,7 +3156,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -3110,7 +3218,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -3325,7 +3437,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -3383,7 +3499,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -3767,7 +3887,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -3800,12 +3924,22 @@
           {
             "schema": {
               "type": "string",
+              "format": "uuid"
+            },
+            "in": "query",
+            "name": "siteId",
+            "required": false,
+            "description": "Only Dives at this Dive site"
+          },
+          {
+            "schema": {
+              "type": "string",
               "maxLength": 100
             },
             "in": "query",
             "name": "q",
             "required": false,
-            "description": "A dive number, or words from the notes"
+            "description": "A dive number, or words from the notes or the site name"
           },
           {
             "schema": {
@@ -3879,7 +4013,8 @@
                           "utcOffsetSeconds",
                           "durationSeconds",
                           "maxDepthM",
-                          "avgDepthM"
+                          "avgDepthM",
+                          "site"
                         ],
                         "properties": {
                           "id": {
@@ -3929,6 +4064,28 @@
                             "anyOf": [
                               {
                                 "type": "number"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "site": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                }
                               },
                               {
                                 "type": "null"
@@ -4076,7 +4233,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -4121,6 +4282,8 @@
                     "overrides",
                     "fromRecording",
                     "notes",
+                    "site",
+                    "position",
                     "recordings"
                   ],
                   "properties": {
@@ -4386,6 +4549,56 @@
                         }
                       ]
                     },
+                    "site": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "name"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          },
+                          "description": "The Dive site (ADR 0020)"
+                        }
+                      ]
+                    },
+                    "position": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "latitude",
+                            "longitude"
+                          ],
+                          "properties": {
+                            "latitude": {
+                              "type": "number",
+                              "minimum": -90,
+                              "maximum": 90
+                            },
+                            "longitude": {
+                              "type": "number",
+                              "minimum": -180,
+                              "maximum": 180
+                            }
+                          },
+                          "description": "Where the Device of the Primary recording placed the dive: its exit, else its entry. Private like the Dive"
+                        }
+                      ]
+                    },
                     "recordings": {
                       "type": "array",
                       "items": {
@@ -4609,7 +4822,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -4625,7 +4842,7 @@
         }
       },
       "patch": {
-        "summary": "Edit a Dive: set values (they become Overrides), reset Overrides, change notes",
+        "summary": "Edit a Dive: set values (they become Overrides), reset Overrides, change notes or the Dive site",
         "description": "Send the version you started from; if the Dive changed meanwhile the answer is 409 dive_changed.",
         "requestBody": {
           "required": true,
@@ -4765,6 +4982,18 @@
                         "maxLength": 20000
                       }
                     ]
+                  },
+                  "siteId": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "The Dive site, or null for none"
+                      }
+                    ]
                   }
                 }
               }
@@ -4797,6 +5026,8 @@
                     "overrides",
                     "fromRecording",
                     "notes",
+                    "site",
+                    "position",
                     "recordings"
                   ],
                   "properties": {
@@ -5062,6 +5293,56 @@
                         }
                       ]
                     },
+                    "site": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "name"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          },
+                          "description": "The Dive site (ADR 0020)"
+                        }
+                      ]
+                    },
+                    "position": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "latitude",
+                            "longitude"
+                          ],
+                          "properties": {
+                            "latitude": {
+                              "type": "number",
+                              "minimum": -90,
+                              "maximum": 90
+                            },
+                            "longitude": {
+                              "type": "number",
+                              "minimum": -180,
+                              "maximum": 180
+                            }
+                          },
+                          "description": "Where the Device of the Primary recording placed the dive: its exit, else its entry. Private like the Dive"
+                        }
+                      ]
+                    },
                     "recordings": {
                       "type": "array",
                       "items": {
@@ -5285,7 +5566,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -5343,7 +5628,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -5401,7 +5690,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -5469,6 +5762,8 @@
                     "overrides",
                     "fromRecording",
                     "notes",
+                    "site",
+                    "position",
                     "recordings"
                   ],
                   "properties": {
@@ -5731,6 +6026,56 @@
                         },
                         {
                           "type": "string"
+                        }
+                      ]
+                    },
+                    "site": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "name"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          },
+                          "description": "The Dive site (ADR 0020)"
+                        }
+                      ]
+                    },
+                    "position": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "latitude",
+                            "longitude"
+                          ],
+                          "properties": {
+                            "latitude": {
+                              "type": "number",
+                              "minimum": -90,
+                              "maximum": 90
+                            },
+                            "longitude": {
+                              "type": "number",
+                              "minimum": -180,
+                              "maximum": 180
+                            }
+                          },
+                          "description": "Where the Device of the Primary recording placed the dive: its exit, else its entry. Private like the Dive"
                         }
                       ]
                     },
@@ -5957,7 +6302,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -6015,7 +6364,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -6073,7 +6426,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -6141,6 +6498,8 @@
                     "overrides",
                     "fromRecording",
                     "notes",
+                    "site",
+                    "position",
                     "recordings"
                   ],
                   "properties": {
@@ -6406,6 +6765,56 @@
                         }
                       ]
                     },
+                    "site": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "name"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          },
+                          "description": "The Dive site (ADR 0020)"
+                        }
+                      ]
+                    },
+                    "position": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "latitude",
+                            "longitude"
+                          ],
+                          "properties": {
+                            "latitude": {
+                              "type": "number",
+                              "minimum": -90,
+                              "maximum": 90
+                            },
+                            "longitude": {
+                              "type": "number",
+                              "minimum": -180,
+                              "maximum": 180
+                            }
+                          },
+                          "description": "Where the Device of the Primary recording placed the dive: its exit, else its entry. Private like the Dive"
+                        }
+                      ]
+                    },
                     "recordings": {
                       "type": "array",
                       "items": {
@@ -6629,7 +7038,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -6687,7 +7100,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -6801,7 +7218,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -6859,7 +7280,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -6956,7 +7381,9 @@
                           "detach",
                           "create",
                           "move",
-                          "assign-device"
+                          "assign-device",
+                          "delete",
+                          "auto-site"
                         ]
                       },
                       "changes": {
@@ -7024,7 +7451,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -7341,7 +7772,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -7399,7 +7834,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -7457,7 +7896,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -7559,7 +8002,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -7617,7 +8064,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -7675,7 +8126,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -7777,7 +8232,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -7835,7 +8294,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -7893,7 +8356,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -7995,7 +8462,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -8053,7 +8524,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -8111,7 +8586,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -8274,7 +8753,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -8332,7 +8815,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -8390,7 +8877,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -8521,7 +9012,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -8579,7 +9074,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -8637,7 +9136,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -8714,7 +9217,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -8772,7 +9279,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -8830,7 +9341,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -9006,7 +9521,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -9064,7 +9583,11 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -9122,7 +9645,1599 @@
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
-                        "recording_not_found"
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dive-sites": {
+      "get": {
+        "summary": "The instance's Dive sites by name; with latitude and longitude only those nearby, nearest first",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "description": "Words from the name or body of water"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            },
+            "in": "query",
+            "name": "latitude",
+            "required": false,
+            "description": "With longitude: only sites near here, nearest first"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            },
+            "in": "query",
+            "name": "longitude",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50000,
+              "default": 2000
+            },
+            "in": "query",
+            "name": "within",
+            "required": false,
+            "description": "Metres around latitude/longitude"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name",
+                      "position",
+                      "country",
+                      "waterBody",
+                      "description",
+                      "version",
+                      "diveCount",
+                      "inUse",
+                      "canDelete"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "position": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "latitude",
+                              "longitude"
+                            ],
+                            "properties": {
+                              "latitude": {
+                                "type": "number",
+                                "minimum": -90,
+                                "maximum": 90
+                              },
+                              "longitude": {
+                                "type": "number",
+                                "minimum": -180,
+                                "maximum": 180
+                              }
+                            },
+                            "additionalProperties": false,
+                            "description": "WGS84 degrees"
+                          }
+                        ]
+                      },
+                      "country": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "waterBody": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "description": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "version": {
+                        "type": "integer",
+                        "description": "Send it back with an edit; it changes with every change"
+                      },
+                      "diveCount": {
+                        "type": "integer",
+                        "description": "How many of the signed-in User's Dives are at the site"
+                      },
+                      "inUse": {
+                        "type": "boolean",
+                        "description": "Whether any Dive (of any User) is at the site; then it can't be deleted"
+                      },
+                      "canDelete": {
+                        "type": "boolean",
+                        "description": "Whether the signed-in User may delete it: its creator or an admin"
+                      },
+                      "distanceM": {
+                        "type": "number",
+                        "description": "Metres from the position asked for (with latitude/longitude)"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a Dive site; every User of the instance sees it",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "pattern": "\\S"
+                  },
+                  "position": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "latitude",
+                          "longitude"
+                        ],
+                        "properties": {
+                          "latitude": {
+                            "type": "number",
+                            "minimum": -90,
+                            "maximum": 90
+                          },
+                          "longitude": {
+                            "type": "number",
+                            "minimum": -180,
+                            "maximum": 180
+                          }
+                        },
+                        "additionalProperties": false,
+                        "description": "WGS84 degrees"
+                      }
+                    ]
+                  },
+                  "country": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^[A-Z]{2}$",
+                        "description": "ISO 3166-1 alpha-2, e.g. \"EG\""
+                      }
+                    ]
+                  },
+                  "waterBody": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 120,
+                        "description": "e.g. \"Red Sea\""
+                      }
+                    ]
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 5000
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "name",
+                    "position",
+                    "country",
+                    "waterBody",
+                    "description",
+                    "version",
+                    "diveCount",
+                    "inUse",
+                    "canDelete"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "position": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "latitude",
+                            "longitude"
+                          ],
+                          "properties": {
+                            "latitude": {
+                              "type": "number",
+                              "minimum": -90,
+                              "maximum": 90
+                            },
+                            "longitude": {
+                              "type": "number",
+                              "minimum": -180,
+                              "maximum": 180
+                            }
+                          },
+                          "additionalProperties": false,
+                          "description": "WGS84 degrees"
+                        }
+                      ]
+                    },
+                    "country": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "waterBody": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "description": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "version": {
+                      "type": "integer",
+                      "description": "Send it back with an edit; it changes with every change"
+                    },
+                    "diveCount": {
+                      "type": "integer",
+                      "description": "How many of the signed-in User's Dives are at the site"
+                    },
+                    "inUse": {
+                      "type": "boolean",
+                      "description": "Whether any Dive (of any User) is at the site; then it can't be deleted"
+                    },
+                    "canDelete": {
+                      "type": "boolean",
+                      "description": "Whether the signed-in User may delete it: its creator or an admin"
+                    },
+                    "distanceM": {
+                      "type": "number",
+                      "description": "Metres from the position asked for (with latitude/longitude)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dive-sites/{id}": {
+      "get": {
+        "summary": "One Dive site",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "name",
+                    "position",
+                    "country",
+                    "waterBody",
+                    "description",
+                    "version",
+                    "diveCount",
+                    "inUse",
+                    "canDelete"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "position": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "latitude",
+                            "longitude"
+                          ],
+                          "properties": {
+                            "latitude": {
+                              "type": "number",
+                              "minimum": -90,
+                              "maximum": 90
+                            },
+                            "longitude": {
+                              "type": "number",
+                              "minimum": -180,
+                              "maximum": 180
+                            }
+                          },
+                          "additionalProperties": false,
+                          "description": "WGS84 degrees"
+                        }
+                      ]
+                    },
+                    "country": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "waterBody": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "description": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "version": {
+                      "type": "integer",
+                      "description": "Send it back with an edit; it changes with every change"
+                    },
+                    "diveCount": {
+                      "type": "integer",
+                      "description": "How many of the signed-in User's Dives are at the site"
+                    },
+                    "inUse": {
+                      "type": "boolean",
+                      "description": "Whether any Dive (of any User) is at the site; then it can't be deleted"
+                    },
+                    "canDelete": {
+                      "type": "boolean",
+                      "description": "Whether the signed-in User may delete it: its creator or an admin"
+                    },
+                    "distanceM": {
+                      "type": "number",
+                      "description": "Metres from the position asked for (with latitude/longitude)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Edit a Dive site (any User)",
+        "description": "Send the version you started from; if the site changed meanwhile the answer is 409 site_changed.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "description": "The version the edit started from"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "pattern": "\\S"
+                  },
+                  "position": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "latitude",
+                          "longitude"
+                        ],
+                        "properties": {
+                          "latitude": {
+                            "type": "number",
+                            "minimum": -90,
+                            "maximum": 90
+                          },
+                          "longitude": {
+                            "type": "number",
+                            "minimum": -180,
+                            "maximum": 180
+                          }
+                        },
+                        "additionalProperties": false,
+                        "description": "WGS84 degrees"
+                      }
+                    ]
+                  },
+                  "country": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^[A-Z]{2}$",
+                        "description": "ISO 3166-1 alpha-2, e.g. \"EG\""
+                      }
+                    ]
+                  },
+                  "waterBody": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 120,
+                        "description": "e.g. \"Red Sea\""
+                      }
+                    ]
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 5000
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "name",
+                    "position",
+                    "country",
+                    "waterBody",
+                    "description",
+                    "version",
+                    "diveCount",
+                    "inUse",
+                    "canDelete"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "position": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "latitude",
+                            "longitude"
+                          ],
+                          "properties": {
+                            "latitude": {
+                              "type": "number",
+                              "minimum": -90,
+                              "maximum": 90
+                            },
+                            "longitude": {
+                              "type": "number",
+                              "minimum": -180,
+                              "maximum": 180
+                            }
+                          },
+                          "additionalProperties": false,
+                          "description": "WGS84 degrees"
+                        }
+                      ]
+                    },
+                    "country": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "waterBody": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "description": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "version": {
+                      "type": "integer",
+                      "description": "Send it back with an edit; it changes with every change"
+                    },
+                    "diveCount": {
+                      "type": "integer",
+                      "description": "How many of the signed-in User's Dives are at the site"
+                    },
+                    "inUse": {
+                      "type": "boolean",
+                      "description": "Whether any Dive (of any User) is at the site; then it can't be deleted"
+                    },
+                    "canDelete": {
+                      "type": "boolean",
+                      "description": "Whether the signed-in User may delete it: its creator or an admin"
+                    },
+                    "distanceM": {
+                      "type": "number",
+                      "description": "Metres from the position asked for (with latitude/longitude)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a Dive site: its creator or an admin, while no Dive is there",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },

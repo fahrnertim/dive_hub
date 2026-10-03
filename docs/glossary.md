@@ -2,7 +2,7 @@
 title: Glossary
 summary: Canonical domain language of Dive Hub. One term per concept; avoided synonyms listed.
 status: living
-date: 2026-10-03
+date: 2026-10-04
 ---
 
 # Dive Hub
@@ -128,9 +128,14 @@ _German_: Tauchreise
 ## Places
 
 **Dive site**:
-A place where dives happen, shared across the whole instance.
+A place where dives happen, shared across the whole instance: every User can use and edit it, its creator or an admin can delete it while no Dive is there.
 _Avoid_: Spot, location, divesite
 _German_: Tauchplatz
+
+**Position**:
+Where on Earth something is, as latitude and longitude (WGS84). A Recording has an entry position and an exit position from its Device; a Dive shows its Primary recording's. A Dive site has one shared position.
+_Avoid_: Location, coordinates (alone), GPS
+_German_: Position (Einstiegs-, Ausstiegsposition)
 
 **Operator**:
 A business that runs dives or trips, such as a dive center, shop or liveaboard, shared across the instance.

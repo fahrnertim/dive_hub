@@ -11,6 +11,7 @@ const headers = { origin: E2E_BASE_URL };
 let diveId: string;
 let invitationToken: string;
 let resetToken: string;
+let siteId: string;
 
 /**
  * A crowded instance, so narrow widths meet long names and full rows: two more Users (each row with
@@ -32,6 +33,16 @@ async function addCrowd(request: APIRequestContext, browser: Browser) {
   }
   await anonymous.close();
   await request.post('/api/divers', { headers, data: { name: 'Konstantin von Hohenzollern-Sigmaringen' } });
+  // A Dive site with a long name, a country with a long name and everything filled in (ADR 0020).
+  const site = await (await request.post('/api/dive-sites', {
+    headers,
+    data: {
+      name: 'Ras Mohammed – Shark and Yolanda Reef, Anemone City and the Satellite Pinnacles',
+      position: { latitude: 27.7355, longitude: 34.2522 }, country: 'CD', waterBody: 'Gulf of Aqaba and the northern Red Sea',
+      description: 'Drift along the wall from Shark Reef to Yolanda; the wreck’s cargo of toilets lies at 20–30 m.',
+    },
+  })).json() as { id: string };
+  siteId = site.id;
 }
 
 /** A second, signed-out User's links: an Invitation, and a reset link for a User who accepted one. */
@@ -89,6 +100,40 @@ for (const v of variants) {
       await page.goto('/#/dives/00000000-0000-7000-8000-000000000000');
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await expectGoodPage(page, title('Dive not found'));
+    });
+
+    test('Dive sites', async ({ page }) => {
+      await page.goto('/#/sites');
+      await expect(page.getByRole('table')).toBeVisible();
+      await expectGoodPage(page, title('Dive sites'));
+      await page.getByRole('button', { name: v.english ? 'New dive site' : 'Neuer Tauchplatz' }).click();
+      await expect(page.getByRole('button', { name: v.english ? 'Create dive site' : 'Tauchplatz anlegen' })).toBeVisible();
+      await expectGoodPage(page, title('Dive sites'));
+    });
+
+    test('a dive site, reading and editing', async ({ page }) => {
+      await page.goto(`/#/sites/${siteId}`);
+      await expect(page.getByRole('link', { name: v.english ? 'Open in maps' : 'In Karte öffnen' })).toBeVisible();
+      await expectGoodPage(page);
+      await page.getByRole('button', { name: v.english ? 'Edit dive site' : 'Tauchplatz bearbeiten' }).click();
+      await expect(page.getByRole('button', { name: v.english ? 'Save dive site' : 'Tauchplatz speichern' })).toBeVisible();
+      await expectGoodPage(page);
+    });
+
+    test('unknown dive site', async ({ page }) => {
+      await page.goto('/#/sites/00000000-0000-7000-8000-000000000000');
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      await expectGoodPage(page, title('Dive site not found'));
+    });
+
+    test('choosing a dive site on a dive', async ({ page }) => {
+      await page.goto(`/#/dives/${diveId}`);
+      await page.getByRole('button', { name: v.english ? 'Choose dive site' : 'Tauchplatz wählen' }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await expectGoodPage(page, title('Dive 42'));
+      await page.getByRole('button', { name: v.english ? 'New dive site' : 'Neuer Tauchplatz' }).click();
+      await expect(page.getByRole('button', { name: v.english ? 'Create and choose' : 'Anlegen und auswählen' })).toBeVisible();
+      await expectGoodPage(page, title('Dive 42'));
     });
 
     test('Divers and Devices', async ({ page }) => {
@@ -153,7 +198,7 @@ test.describe('behaviour', () => {
     // screens), where tables switch layouts by the room they have (container queries).
     for (const width of [320, 480, 640, 800, 960, 1120, 1440]) {
       await page.setViewportSize({ width, height: 900 });
-      for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/account', '/#/admin']) {
+      for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, '/#/account', '/#/admin']) {
         await page.goto(path);
         await page.getByRole('heading', { level: 1 }).waitFor();
         const overflow = await page.evaluate(() => ({
@@ -166,7 +211,7 @@ test.describe('behaviour', () => {
   });
 
   test('text at 200 % still fits: nothing scrolls sideways (WCAG 1.4.4)', async ({ page }) => {
-    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/account', '/#/admin']) {
+    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, '/#/account', '/#/admin']) {
       await page.goto(path);
       await page.getByRole('heading', { level: 1 }).waitFor();
       await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });

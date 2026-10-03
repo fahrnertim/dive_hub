@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { divesQuery, diversQuery, PAGE_SIZE, type LogbookParams } from './api.ts';
+import { divesQuery, diversQuery, PAGE_SIZE, siteQuery, type LogbookParams } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { logbookHref } from './lib/logbook.ts';
@@ -101,6 +101,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
 
   return (
     <Panel>
+      {params.siteId && <SiteFilter params={params} />}
       {/* Nothing to search before the first dive (visual refresh 8). */}
       {searchable && (
         <div className="logbook-search">
@@ -117,6 +118,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
             label={t('logbook.title')}
             head={[
               sortable('number', t('logbook.number'), true), sortable('startsAt', t('logbook.date'), false), ...(several ? [t('dive.diver')] : []),
+              t('dive.site'),
               sortable('maxDepth', t('logbook.maxDepth'), true), sortable('duration', t('logbook.duration'), true),
             ]}
           >
@@ -134,6 +136,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
                 <td className="num cell-lead">{d.number ?? t('common.none')}</td>
                 <td className="cell-main"><a href={`#/dives/${d.id}`}>{display.diveTime(d.startsAt, d.utcOffsetSeconds)}</a></td>
                 {several && <td className="cell-sub">{nameOf.get(d.diverId) ?? t('common.none')}</td>}
+                <td className="cell-sub">{d.site?.name ?? t('common.none')}</td>
                 <td className="num cell-sub">{display.depth(d.maxDepthM)}</td>
                 <td className="num cell-sub">{display.duration(d.durationSeconds)}</td>
               </tr>
@@ -151,5 +154,17 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
         </>
       )}
     </Panel>
+  );
+}
+
+/** "Dives at Lighthouse" with the way back to all dives, while the logbook shows one site's dives (ADR 0020). */
+function SiteFilter({ params }: { params: LogbookParams }) {
+  const { t } = useTranslation();
+  const site = useQuery(siteQuery(params.siteId!));
+  return (
+    <p className="site-filter">
+      <span>{t('logbook.atSite', { name: site.data?.name ?? '…' })}</span>
+      <a href={logbookHref({ ...params, siteId: undefined, page: undefined })}>{t('logbook.allSites')}</a>
+    </p>
   );
 }

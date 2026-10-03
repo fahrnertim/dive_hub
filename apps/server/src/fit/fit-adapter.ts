@@ -24,6 +24,12 @@ export interface ParsedEvent {
   data: Record<string, unknown>;
 }
 
+/** WGS84 degrees. */
+export interface Position {
+  latitude: number;
+  longitude: number;
+}
+
 export interface ParsedRecording {
   device: ParsedDevice | undefined;
   /** Identity for re-imports, stable across copies of the same file. */
@@ -33,6 +39,9 @@ export interface ParsedRecording {
   durationSeconds: number;
   maxDepthM: number | undefined;
   avgDepthM: number | undefined;
+  /** Where the Device placed the start and the end of the dive (both optional, B6). */
+  entryPosition: Position | undefined;
+  exitPosition: Position | undefined;
   summary: RecordingSummary;
   series: ParsedSeries[];
   events: ParsedEvent[];
@@ -80,6 +89,13 @@ type FitMessages = Record<string, FitMessage[] | undefined>;
 
 const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
 const str = (v: unknown): string | undefined => (typeof v === 'string' && v.length > 0 ? v : undefined);
+/** A position from a FIT lat/long pair; the parser already converted semicircles to degrees. */
+const position = (lat: unknown, long: unknown): Position | undefined => {
+  const latitude = num(lat);
+  const longitude = num(long);
+  if (latitude === undefined || longitude === undefined || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return undefined;
+  return { latitude, longitude };
+};
 const date = (v: unknown): Date | undefined => (v instanceof Date && !Number.isNaN(v.getTime()) ? v : undefined);
 
 function parseWithFitFileParser(data: Uint8Array): Promise<{ messages: FitMessages }> {
@@ -211,7 +227,6 @@ function toRecording(m: FitMessages): ParsedRecording | undefined {
     n2Start: num(diveSummary.start_n2),
     n2End: num(diveSummary.end_n2),
     avgAscentRateMps: num(diveSummary.avg_ascent_rate),
-    hasEndPosition: session.end_position_lat !== undefined,
   });
   if (Object.keys(extras).length > 0) summary.extras = extras;
 
@@ -225,6 +240,8 @@ function toRecording(m: FitMessages): ParsedRecording | undefined {
     durationSeconds: num(session.total_elapsed_time) ?? (records.length ? (series[0]?.offsetsMs.at(-1) ?? 0) / 1000 : 0),
     maxDepthM: num(diveSummary.max_depth) ?? (depths.length ? Math.max(...depths) : undefined),
     avgDepthM: num(diveSummary.avg_depth),
+    entryPosition: position(session.start_position_lat, session.start_position_long),
+    exitPosition: position(session.end_position_lat, session.end_position_long),
     summary,
     series,
     events,

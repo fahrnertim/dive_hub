@@ -48,6 +48,7 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 | `apps/server/src/http/problems.ts` | The API's error codes (one registry, published in OpenAPI) |
 | `apps/server/src/dives/` | Dive service: Overrides, Primary recording, Revisions, split off, move; Duplicate candidates; dive routes (ADR 0015, 0016) |
 | `apps/server/src/divers/` | The User's Divers and Devices (ADR 0016) |
+| `apps/server/src/sites/` | Dive sites, nearby search in SQL, a Dive's site and the Import's auto-link (ADR 0020) |
 | `apps/server/src/vocabulary.ts`, `src/fit/fit-vocabulary.ts` | Our words for device values, and the FIT mapping |
 | `apps/web/e2e/` | Playwright browser tests and their fixtures |
 | `packages/api-client` | Typed client generated from the server's OpenAPI description |
@@ -66,6 +67,7 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 | On a real phone | Vite listens on localhost only: start the web client with `pnpm --filter @dive-hub/web dev --host`, start the server with `DIVEHUB_BASE_URL=http://<laptop-ip>:5173` (sign-in only trusts that origin), allow Node through the firewall on the private network, open `http://<laptop-ip>:5173` on the phone. Guest Wi-Fi (hotels) often blocks devices from seeing each other: put the laptop on the phone's hotspot instead, or on Android use USB and Chrome's `chrome://inspect` → Port forwarding `5173 → localhost:5173` (then no base-URL change is needed). What to check: [real-device checklist](research/2026-10-04-responsiveness.md#real-device-checklist). |
 | UI review material | `pnpm --filter @dive-hub/web review:capture`: screenshots, axe results, accessibility trees, Tab order of every page into `apps/web/review-output/` ([UI review](research/2026-10-03-ui-review.md)). Runs alone; changes the seeded data. |
 | Browser tests | `pnpm --filter @dive-hub/web test:e2e`: builds the web client, starts the app on port 3300 with a fresh `divehub_e2e` database and a seeded User and Dive (`apps/server/test/e2e-server.ts`), runs `apps/web/e2e` in the installed Edge (`PLAYWRIGHT_CHANNEL=chrome` for Chrome). Needs PostgreSQL. `e2e/ui-quality.spec.ts` checks every page with axe-core (`@axe-core/playwright`, dev only) and the [page rules](spec/design-system.md#rules-every-page-follows). |
+| Regenerate the e2e fixture with a position (`sited-computer.fit`) | `pnpm --filter @dive-hub/server exec tsx test/fixtures/write-sited-fixture.ts` |
 | Regenerate the synthetic FIT fixture | `pnpm --filter @dive-hub/server exec tsx test/fixtures/synthetic-dive.ts` |
 | Build and run the image | `docker build -t dive-hub:dev .`, then `POSTGRES_PASSWORD=… docker compose up -d` |
 

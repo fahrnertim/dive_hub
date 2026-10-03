@@ -62,6 +62,10 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
     if (key === 'recordings') return [to ? t('history.recordingAdded') : t('history.recordingRemoved')];
     if (key === 'diverId') return [t('history.change', { field: t('history.field.diverId'), from: diverName(from), to: diverName(to) })];
     if (key === 'originalId') return [t('history.fileReplaced')];
+    if (key === 'site') {
+      const name = (v: unknown) => (v as { name?: string } | null)?.name ?? t('common.none');
+      return [t('history.change', { field: t('history.field.site'), from: name(from), to: name(to) })];
+    }
     if (key === 'primaryRecordingId') return [t('history.changeTo', { field: t('history.field.primaryRecordingId'), value: recordingName(to) })];
     if (!isOverridable(key)) return [key];
     const mark = overrides?.to.includes(key) && !overrides.from.includes(key) ? t('history.setByHand')

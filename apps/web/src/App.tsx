@@ -18,10 +18,12 @@ const DiveDetail = lazy(() => import('./DiveDetail.tsx').then((m) => ({ default:
 const AccountPage = lazy(() => import('./AccountPage.tsx').then((m) => ({ default: m.AccountPage })));
 const Admin = lazy(() => import('./Admin.tsx').then((m) => ({ default: m.Admin })));
 const DiversPage = lazy(() => import('./DiversPage.tsx').then((m) => ({ default: m.DiversPage })));
+const SitesPage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitesPage })));
+const SitePage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitePage })));
 
 /**
- * Minimal hash routing: "#/" (logbook, "#/?diver=<id>" for one Diver), "#/dives/<id>" ("?recording=<id>"), "#/divers",
- * "#/account", "#/admin", "#/setup", "#/invite/<token>", "#/reset/<token>".
+ * Minimal hash routing: "#/" (logbook, "#/?diver=<id>" for one Diver, "#/?site=<id>" for one Dive site),
+ * "#/dives/<id>" ("?recording=<id>"), "#/divers", "#/sites", "#/sites/<id>", "#/account", "#/admin", "#/setup", "#/invite/<token>", "#/reset/<token>".
  */
 function useRoute(): string {
   const [route, setRoute] = useState(() => location.hash.slice(1) || '/');
@@ -87,6 +89,7 @@ function Navigation({ route, me }: { route: string; me: Me }) {
       <nav className="app-nav" aria-label={t('nav.main')}>
         <a href="#/" {...current(route === '/' || route.startsWith('/?') || route.startsWith('/dives/'))}><Icon name="logbook" />{t('nav.logbook')}</a>
         <a href="#/divers" {...current(route === '/divers')}><Icon name="divers" />{t('nav.divers')}</a>
+        <a href="#/sites" {...current(route === '/sites' || route.startsWith('/sites/'))}><Icon name="site" />{t('nav.sites')}</a>
         {me.user.role === 'admin' && <a href="#/admin" {...current(route === '/admin')}><Icon name="admin" />{t('nav.admin')}</a>}
       </nav>
       {/* The account is a labelled menu, not a bare name link (UI review C6). */}
@@ -121,6 +124,9 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   if (diveId) return <DiveDetail key={diveId} id={diveId} recordingId={params.get('recording') ?? undefined} />;
   if (route === '/account') return <AccountPage />;
   if (route === '/divers') return <DiversPage />;
+  if (route === '/sites') return <SitesPage />;
+  const siteId = /^\/sites\/([\w-]+)$/.exec(path!)?.[1];
+  if (siteId) return <SitePage key={siteId} id={siteId} />;
   if (route === '/admin') {
     return me.user.role === 'admin' ? <Admin /> : <><PageHeader title={t('nav.admin')} /><Notice tone="danger">{t('errors.admins_only')}</Notice></>;
   }

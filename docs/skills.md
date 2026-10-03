@@ -2,7 +2,7 @@
 title: Agent skills
 summary: Which agent skills the project uses, which were considered and rejected, and why.
 status: living
-date: 2026-10-03
+date: 2026-10-04
 ---
 
 # Agent skills
@@ -118,3 +118,4 @@ Details and commands: [skills vetting](research/2026-10-02-agent-skills-vetting.
 | 2026-10-04 | designed-by-ai/skills `design-mobile-apps`, athevon/genjutsu `mobile-principles` | rejected | A client for the paid Sleek design service (API key, $69/month); no clear license and an internal part of a larger suite |
 | 2026-10-04 | `npx skills find` for "responsive design", "responsive layout", "mobile first", "container queries", "breakpoints", "mobile ux", "mobile usability", "mobile web", "touch", "thumb zone", "mobile navigation", "mobile forms", "pwa" | see above | the rest: native apps (iOS, React Native, Flutter, Expo), already rejected (taste-skill, ui-ux-pro-max, impeccable, uizze) or unrelated |
 | 2026-10-04 | `npx skills find` for "shadcn", "react aria", "component library", "ui polish", "dashboard design", "data dense ui", "design tokens", "visual hierarchy" (visual refresh) | see above | the rest already rejected above (impeccable, taste-skill, ui-ux-pro-max, web-design-guidelines, uizze) or unrelated (HyperFrames, Expo, mobile) |
+| 2026-10-04 | `npx skills find` for "geospatial", "postgis", "maps", "geolocation", "leaflet", "coordinates" (dive sites, [ADR 0020](decisions/0020-dive-sites.md)) | nothing installed | Only PostGIS skills fit: postgis/postgis `postgis` (official repo, one SKILL.md of gotchas, no scripts) and timescale/pg-aiguide `design-postgis-tables` (vendor, Apache-2.0). Both assume PostGIS, which the owner declined (no arm64 `postgis/postgis` image for PostgreSQL 18). Install `postgis/postgis` if PostGIS is adopted later. Map skills (zenobi-us `leaflet-mapping`, 73 installs, dotfiles repo) wait for a map ADR; the rest were unrelated (SEO, marketing) |

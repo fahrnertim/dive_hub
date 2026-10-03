@@ -18,7 +18,8 @@
     "admin": "Verwaltung",
     "account": "Mein Konto",
     "divers": "Taucher",
-    "accountMenu": ", Konto"
+    "accountMenu": ", Konto",
+    "sites": "Tauchplätze"
   },
   "form": {
     "required": "Bitte fülle dieses Feld aus.",
@@ -202,13 +203,15 @@
     "maxDepth": "Maximaltiefe",
     "duration": "Dauer",
     "search": "Suchen",
-    "searchHint": "Eine Tauchgangsnummer oder Wörter aus den Notizen",
+    "searchHint": "Eine Tauchgangsnummer oder Wörter aus den Notizen oder dem Tauchplatz",
     "noMatch": "Keine Tauchgänge passen zu „{{q}}“.",
     "pages": "Seiten",
     "previous": "Vorige Seite",
     "next": "Nächste Seite",
     "range_one": "{{from}}–{{to}} von {{count}} Tauchgang",
-    "range_other": "{{from}}–{{to}} von {{count}} Tauchgängen"
+    "range_other": "{{from}}–{{to}} von {{count}} Tauchgängen",
+    "atSite": "Tauchgänge am Tauchplatz {{name}}",
+    "allSites": "Alle Tauchgänge zeigen"
   },
   "dive": {
     "back": "Logbuch",
@@ -273,7 +276,11 @@
     "recordingActions": "Aktionen zur Aufzeichnung",
     "splitOffMenu": "Als eigenen Tauchgang abtrennen …",
     "primaryChanged": "Das ist jetzt die primäre Aufzeichnung.",
-    "moreActions": "Mehr"
+    "moreActions": "Mehr",
+    "site": "Tauchplatz",
+    "position": "Position",
+    "chooseSite": "Tauchplatz wählen",
+    "changeSite": "Tauchplatz ändern"
   },
   "errors": {
     "unknown": "Etwas ist schiefgegangen. Versuch es noch einmal.",
@@ -309,7 +316,11 @@
     "device_not_found": "Dieses Gerät gibt es nicht oder es gehört nicht zu dir.",
     "candidate_not_found": "Hier gibt es (nichts mehr) zu entscheiden.",
     "candidate_resolved": "Das wurde schon entschieden.",
-    "not_a_candidate": "Dieser Tauchgang ist keiner der Vorschläge."
+    "not_a_candidate": "Dieser Tauchgang ist keiner der Vorschläge.",
+    "site_not_found": "Diesen Tauchplatz gibt es nicht (mehr).",
+    "site_changed": "Jemand hat diesen Tauchplatz inzwischen geändert. Lade ihn neu und mach deine Änderungen noch einmal.",
+    "site_in_use": "An diesem Tauchplatz sind Tauchgänge, deshalb lässt er sich nicht löschen.",
+    "site_not_deletable": "Nur wer den Tauchplatz angelegt hat, oder ein Admin, kann ihn löschen."
   },
   "vocabulary": {
     "waterType": {
@@ -353,7 +364,9 @@
       "detach": "Aufzeichnung abgetrennt",
       "create": "Aus einer Aufzeichnung angelegt",
       "move": "Zu einem anderen Taucher verschoben",
-      "assign-device": "Gerät zugeordnet"
+      "assign-device": "Gerät zugeordnet",
+      "auto-site": "Tauchplatz vom Import gewählt",
+      "delete": "Gelöscht"
     },
     "field": {
       "number": "Tauchgangsnummer",
@@ -367,7 +380,8 @@
       "primaryRecordingId": "Primäre Aufzeichnung",
       "recordings": "Aufzeichnung",
       "originalId": "Datei",
-      "diverId": "Taucher"
+      "diverId": "Taucher",
+      "site": "Tauchplatz"
     },
     "notesChanged": "Notizen geändert",
     "setByHand": "von Hand gesetzt",
@@ -431,5 +445,68 @@
     "belongsToDevice": "{{device}} gehört zu",
     "added": "{{name}} hinzugefügt.",
     "sameName": "Du hast schon einen Taucher namens {{name}}. Das geht, aber die beiden sind dann schwer auseinanderzuhalten."
+  },
+  "geo": {
+    "north": "N",
+    "south": "S",
+    "east": "O",
+    "west": "W"
+  },
+  "sites": {
+    "title": "Tauchplätze",
+    "intro": "Orte, an denen getaucht wird, für alle auf diesem Dive Hub.",
+    "new": "Neuer Tauchplatz",
+    "create": "Tauchplatz anlegen",
+    "createAndChoose": "Anlegen und auswählen",
+    "save": "Tauchplatz speichern",
+    "saved": "Tauchplatz gespeichert.",
+    "search": "Suchen",
+    "searchHint": "Name oder Gewässer",
+    "empty": "Noch keine Tauchplätze. Leg hier den ersten an, oder auf der Seite eines Tauchgangs.",
+    "noMatch": "Keine Tauchplätze passen zu „{{q}}“.",
+    "name": "Name",
+    "where": "Wo",
+    "yourDives": "Deine Tauchgänge",
+    "dives_one": "{{count}} Tauchgang",
+    "dives_other": "{{count}} Tauchgänge",
+    "country": "Land",
+    "noCountry": "Kein Land",
+    "waterBody": "Gewässer",
+    "latitude": "Breitengrad",
+    "latitudeHint": "Grad, Süden negativ, z. B. 28,4950",
+    "longitude": "Längengrad",
+    "longitudeHint": "Grad, Westen negativ, z. B. 34,5160",
+    "positionHalf": "Gib Breiten- und Längengrad an, oder keinen von beiden.",
+    "description": "Beschreibung",
+    "noDescription": "Noch keine Beschreibung.",
+    "sharedHint": "Alle Benutzer dieses Dive Hub sehen den Tauchplatz, seine Position und Beschreibung und können sie bearbeiten.",
+    "unsavedQuestion": "Ohne Speichern verlassen? Deine Änderungen an diesem Tauchplatz gehen verloren.",
+    "changedMeanwhile": "Jemand hat diesen Tauchplatz inzwischen geändert. Brich ab, sieh dir die Änderungen an und mach deine noch einmal.",
+    "back": "Tauchplätze",
+    "backToSites": "Zurück zu den Tauchplätzen",
+    "notFound": "Tauchplatz nicht gefunden",
+    "edit": "Tauchplatz bearbeiten",
+    "moreActions": "Weitere Aktionen",
+    "delete": "Tauchplatz löschen",
+    "deleteTitle": "Diesen Tauchplatz löschen?",
+    "deleteBody": "Er verschwindet für alle Benutzer dieses Dive Hub. Das lässt sich nicht rückgängig machen.",
+    "deleteConfirm": "Löschen",
+    "deleted": "{{name}} gelöscht.",
+    "inUse": "An diesem Tauchplatz sind Tauchgänge, deshalb lässt er sich nicht löschen.",
+    "position": "Position",
+    "noPosition": "Nicht bekannt",
+    "openInMaps": "In Karte öffnen",
+    "noDivesYet": "Noch keiner",
+    "pickerTitle": "Tauchplatz",
+    "find": "Tauchplatz finden",
+    "nearby": "In der Nähe dieses Tauchgangs",
+    "all": "Tauchplätze",
+    "matching": "Passend zu „{{q}}“",
+    "none": "Kein Tauchplatz",
+    "optionAway": "{{name}} ({{distance}} entfernt)",
+    "noneNearby": "Noch keine Tauchplätze im Umkreis von {{distance}} um diesen Tauchgang.",
+    "choose": "Auswählen",
+    "chosen": "Tauchplatz: {{name}}.",
+    "cleared": "Kein Tauchplatz."
   }
 }

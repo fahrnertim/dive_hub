@@ -46,6 +46,14 @@
 .field-origin .badge { margin-left: 0; }
 .notes { white-space: pre-wrap; overflow-wrap: anywhere; }
 .facts-small dd { font-size: var(--text-md); }
+
+/* Dive sites (ADR 0020): the site with its "Change" button, positions with their map link. */
+@media (min-width: 30rem) { .fact-wide { grid-column: span 2; } }
+.site-fact { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); overflow-wrap: anywhere; }
+.facts dd .btn { font-size: var(--text-sm); font-weight: var(--weight-regular); }
+.external-link { display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--text-sm); font-weight: var(--weight-regular); }
+.site-filter { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); align-items: baseline; margin: 0 0 var(--space-4); font-weight: var(--weight-semibold); }
+.site-filter a { font-weight: var(--weight-regular); }
 .extras { margin-bottom: var(--space-4); font-size: var(--text-sm); }
 .extras summary { cursor: pointer; color: var(--color-text-muted); }
 .extras dl { display: grid; grid-template-columns: max-content 1fr; gap: var(--space-1) var(--space-4); margin: var(--space-2) 0 0; }
@@ -141,6 +149,8 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
   .table-stacked .cell-main { flex: 1 1 calc(100% - 2rem - var(--space-3)); }
   .table-stacked .cell-sub { color: var(--color-text-muted); font-size: var(--text-sm); text-align: left; }
   .table-stacked .cell-main + .cell-sub { margin-left: calc(2rem + var(--space-3)); }
+  /* Without a leading column (the Dive sites list) the second line starts under the first. */
+  .table-stacked tr:not(:has(.cell-lead)) .cell-main + .cell-sub { margin-left: 0; }
   /* The dot is decoration; screen readers read the cells as cells. */
   .table-stacked .cell-sub + .cell-sub::before { content: '·' / ''; margin: 0 var(--space-2); }
 }

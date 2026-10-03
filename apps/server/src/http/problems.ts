@@ -37,6 +37,10 @@ export const PROBLEMS = {
   candidate_resolved: 'This was already decided',
   not_a_candidate: 'That dive is not one of the candidates',
   recording_not_found: 'Recording not found',
+  site_not_found: 'Dive site not found',
+  site_changed: 'The dive site was changed meanwhile; reload it and apply your changes again',
+  site_in_use: 'Dives are at this site; it can only be deleted while none is',
+  site_not_deletable: 'Only whoever created the dive site, or an admin, can delete it',
 } as const;
 
 export type ProblemCode = keyof typeof PROBLEMS;

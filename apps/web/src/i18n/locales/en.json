@@ -18,7 +18,8 @@
     "admin": "Admin",
     "account": "My account",
     "divers": "Divers",
-    "accountMenu": ", account"
+    "accountMenu": ", account",
+    "sites": "Dive sites"
   },
   "form": {
     "required": "Fill in this field.",
@@ -202,13 +203,15 @@
     "maxDepth": "Max depth",
     "duration": "Duration",
     "search": "Search",
-    "searchHint": "A dive number, or words from the notes",
+    "searchHint": "A dive number, or words from the notes or the dive site",
     "noMatch": "No dives match “{{q}}”.",
     "pages": "Pages",
     "previous": "Previous page",
     "next": "Next page",
     "range_one": "{{from}}–{{to}} of {{count}} dive",
-    "range_other": "{{from}}–{{to}} of {{count}} dives"
+    "range_other": "{{from}}–{{to}} of {{count}} dives",
+    "atSite": "Dives at {{name}}",
+    "allSites": "Show all dives"
   },
   "dive": {
     "back": "Logbook",
@@ -273,7 +276,11 @@
     "recordingActions": "Recording actions",
     "splitOffMenu": "Split off into its own dive…",
     "primaryChanged": "This is now the primary recording.",
-    "moreActions": "More"
+    "moreActions": "More",
+    "site": "Dive site",
+    "position": "Position",
+    "chooseSite": "Choose dive site",
+    "changeSite": "Change dive site"
   },
   "errors": {
     "unknown": "Something went wrong. Try again.",
@@ -309,7 +316,11 @@
     "device_not_found": "This device doesn’t exist or isn’t yours.",
     "candidate_not_found": "There’s nothing to decide here (anymore).",
     "candidate_resolved": "This was already decided.",
-    "not_a_candidate": "That dive isn’t one of the suggestions."
+    "not_a_candidate": "That dive isn’t one of the suggestions.",
+    "site_not_found": "This dive site doesn’t exist (anymore).",
+    "site_changed": "Someone changed this dive site meanwhile. Reload it and make your changes again.",
+    "site_in_use": "Dives are at this dive site, so it can’t be deleted.",
+    "site_not_deletable": "Only whoever created this dive site, or an admin, can delete it."
   },
   "vocabulary": {
     "waterType": {
@@ -353,7 +364,9 @@
       "detach": "Recording split off",
       "create": "Created from a recording",
       "move": "Moved to another Diver",
-      "assign-device": "Device assigned"
+      "assign-device": "Device assigned",
+      "auto-site": "Dive site chosen by the import",
+      "delete": "Deleted"
     },
     "field": {
       "number": "Dive number",
@@ -367,7 +380,8 @@
       "primaryRecordingId": "Primary recording",
       "recordings": "Recording",
       "originalId": "File",
-      "diverId": "Diver"
+      "diverId": "Diver",
+      "site": "Dive site"
     },
     "notesChanged": "Notes changed",
     "setByHand": "set by hand",
@@ -431,5 +445,68 @@
     "belongsToDevice": "{{device}} belongs to",
     "added": "{{name}} added.",
     "sameName": "You already have a Diver called {{name}}. That works, but the two will be hard to tell apart."
+  },
+  "geo": {
+    "north": "N",
+    "south": "S",
+    "east": "E",
+    "west": "W"
+  },
+  "sites": {
+    "title": "Dive sites",
+    "intro": "Places where dives happen, shared by everyone on this Dive Hub.",
+    "new": "New dive site",
+    "create": "Create dive site",
+    "createAndChoose": "Create and choose",
+    "save": "Save dive site",
+    "saved": "Dive site saved.",
+    "search": "Search",
+    "searchHint": "Name or body of water",
+    "empty": "No dive sites yet. Create the first here, or from a dive’s page.",
+    "noMatch": "No dive sites match “{{q}}”.",
+    "name": "Name",
+    "where": "Where",
+    "yourDives": "Your dives",
+    "dives_one": "{{count}} dive",
+    "dives_other": "{{count}} dives",
+    "country": "Country",
+    "noCountry": "No country",
+    "waterBody": "Body of water",
+    "latitude": "Latitude",
+    "latitudeHint": "Degrees, south is negative, e.g. 28.4950",
+    "longitude": "Longitude",
+    "longitudeHint": "Degrees, west is negative, e.g. 34.5160",
+    "positionHalf": "Enter both latitude and longitude, or neither.",
+    "description": "Description",
+    "noDescription": "No description yet.",
+    "sharedHint": "Every User of this Dive Hub sees the dive site, its position and description, and can edit them.",
+    "unsavedQuestion": "Leave without saving? Your changes to this dive site will be lost.",
+    "changedMeanwhile": "Someone changed this dive site meanwhile. Cancel, look at their changes, and make yours again.",
+    "back": "Dive sites",
+    "backToSites": "Back to dive sites",
+    "notFound": "Dive site not found",
+    "edit": "Edit dive site",
+    "moreActions": "More actions",
+    "delete": "Delete dive site",
+    "deleteTitle": "Delete this dive site?",
+    "deleteBody": "It disappears for every User of this Dive Hub. This can’t be undone.",
+    "deleteConfirm": "Delete",
+    "deleted": "{{name}} deleted.",
+    "inUse": "Dives are at this dive site, so it can’t be deleted.",
+    "position": "Position",
+    "noPosition": "Not known",
+    "openInMaps": "Open in maps",
+    "noDivesYet": "None yet",
+    "pickerTitle": "Dive site",
+    "find": "Find a dive site",
+    "nearby": "Near this dive",
+    "all": "Dive sites",
+    "matching": "Matching “{{q}}”",
+    "none": "No dive site",
+    "optionAway": "{{name}} ({{distance}} away)",
+    "noneNearby": "No dive sites within {{distance}} of this dive yet.",
+    "choose": "Choose",
+    "chosen": "Dive site: {{name}}.",
+    "cleared": "No dive site."
   }
 }

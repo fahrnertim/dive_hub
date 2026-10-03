@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { Decoder, Stream } from '@garmin/fitsdk';
 import { describe, expect, it } from 'vitest';
 import { createFitAdapter, looksLikeFit, type ParsedRecording } from '../src/fit/fit-adapter.js';
+import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 
 const fixture = (name: string) => readFileSync(fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url)));
 const privateDir = fileURLToPath(new URL('../../../samples/private/', import.meta.url));
@@ -27,6 +28,14 @@ function crossCheck(data: Uint8Array, rec: ParsedRecording) {
   expect(rec.durationSeconds).toBeCloseTo(session.totalElapsedTime as number, 3);
   expect(rec.maxDepthM).toBeCloseTo(summary.maxDepth as number, 3);
   expect(rec.summary.diveNumber).toBe(summary.diveNumber);
+  const degrees = (semicircles: unknown) => (semicircles as number) * 180 / 2 ** 31;
+  if (session.endPositionLat !== undefined) {
+    expect(rec.exitPosition!.latitude).toBeCloseTo(degrees(session.endPositionLat), 6);
+    expect(rec.exitPosition!.longitude).toBeCloseTo(degrees(session.endPositionLong), 6);
+  } else expect(rec.exitPosition).toBeUndefined();
+  if (session.startPositionLat !== undefined) {
+    expect(rec.entryPosition!.latitude).toBeCloseTo(degrees(session.startPositionLat), 6);
+  } else expect(rec.entryPosition).toBeUndefined();
   const depth = rec.series.find((s) => s.channel === 'depth')!;
   const officialDepths = official.recordMesgs!.filter((r) => r.depth !== undefined);
   expect(depth.values.length).toBe(officialDepths.length);
@@ -62,6 +71,22 @@ describe('FIT adapter on the synthetic dive', () => {
     expect(channels).toEqual(['depth', 'heartRate', 'po2', 'temperature']);
     expect(rec!.series.find((s) => s.channel === 'depth')!.offsetsMs.slice(0, 3)).toEqual([0, 2000, 4000]);
     expect(rec!.events.map((e) => e.type)).toEqual(['timer', 'timer']);
+  });
+
+  it('has no position when the device recorded none', async () => {
+    const [rec] = await adapter.parse(fixture('synthetic-dive.fit'));
+    expect(rec!.entryPosition).toBeUndefined();
+    expect(rec!.exitPosition).toBeUndefined();
+  });
+
+  it('reads the entry and exit positions in degrees', async () => {
+    const data = makeSyntheticDive({ entry: { latitude: 27.2345, longitude: 33.8412 }, exit: { latitude: -8.5121, longitude: -115.0123 } });
+    const [rec] = await adapter.parse(data);
+    expect(rec!.entryPosition!.latitude).toBeCloseTo(27.2345, 6);
+    expect(rec!.entryPosition!.longitude).toBeCloseTo(33.8412, 6);
+    expect(rec!.exitPosition!.latitude).toBeCloseTo(-8.5121, 6);
+    expect(rec!.exitPosition!.longitude).toBeCloseTo(-115.0123, 6);
+    crossCheck(data, rec!);
   });
 
   it('agrees with the official Garmin SDK', async () => {

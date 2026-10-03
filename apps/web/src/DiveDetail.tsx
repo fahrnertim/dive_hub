@@ -11,7 +11,9 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { deviceName } from './lib/devices.ts';
 import { useFormatValue } from './lib/dive-values.ts';
 import { focusHeading } from './lib/focus.ts';
+import { mapsUrl } from './lib/geo.ts';
 import { usePageTitle } from './lib/page.ts';
+import { SitePicker } from './SitePicker.tsx';
 import { ActionMenu, Button, ConfirmDialog, Dialog, ErrorBoundary, Icon, Muted, Notice, PageHeader, Panel, Select } from './ui/index.ts';
 
 /** One Dive (ADR 0015): its values with Overrides marked, notes, Recordings, and its history. */
@@ -167,13 +169,16 @@ function EditedMark({ dive, field }: { dive: DiveView; field: OverridableField }
   );
 }
 
-function Fact({ label, children, mark }: { label: string; children: ReactNode; mark?: ReactNode }) {
-  return <div><dt>{label}</dt><dd>{children}{mark}</dd></div>;
+/** One value of the facts grid; `wide` for values that need two columns, such as a position. */
+function Fact({ label, children, mark, wide }: { label: string; children: ReactNode; mark?: ReactNode; wide?: boolean }) {
+  return <div {...(wide && { className: 'fact-wide' })}><dt>{label}</dt><dd>{children}{mark}</dd></div>;
 }
 
 function DiveFacts({ dive: d }: { dive: DiveView }) {
   const { t } = useTranslation();
   const format = useFormatValue();
+  const display = useDisplay();
+  const [picking, setPicking] = useState(false);
   const fact = (field: OverridableField, label: string) => (
     <Fact label={label} mark={<EditedMark dive={d} field={field} />}>{format(field, d.values[field])}</Fact>
   );
@@ -185,7 +190,24 @@ function DiveFacts({ dive: d }: { dive: DiveView }) {
         {fact('durationSeconds', t('dive.duration'))}
         {fact('waterTemperatureC', t('dive.waterTemperature'))}
         {fact('waterType', t('dive.waterType'))}
+        <Fact label={t('dive.site')}>
+          <span className="site-fact">
+            {d.site ? <a href={`#/sites/${d.site.id}`}>{d.site.name}</a> : t('common.none')}
+            <Button variant="quiet" size="small" icon="site" onPress={() => setPicking(true)}>
+              {d.site ? t('dive.changeSite') : t('dive.chooseSite')}
+            </Button>
+          </span>
+        </Fact>
+        {d.position && (
+          <Fact label={t('dive.position')} wide>
+            {display.position(d.position)}{' '}
+            <a href={mapsUrl(d.position)} target="_blank" rel="noopener noreferrer" className="external-link">
+              {t('sites.openInMaps')}<Icon name="external" />
+            </a>
+          </Fact>
+        )}
       </dl>
+      {picking && <SitePicker dive={d} onClose={() => setPicking(false)} />}
       <h2 className="subheading">{t('dive.notes')}</h2>
       {d.notes ? <p className="notes">{d.notes}</p> : <Muted>{t('dive.noNotes')}</Muted>}
     </>

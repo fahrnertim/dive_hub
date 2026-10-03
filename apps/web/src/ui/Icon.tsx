@@ -3,13 +3,15 @@
 // Names were checked with the suggest-lucide-icons skill against the installed version.
 import {
   ArrowDown, ArrowRightLeft, ArrowUp, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert,
-  CircleCheck, CircleUser, Copy, Ellipsis, Info, KeyRound, Link, LogOut, Pencil, Plus, Scissors, Shield, ShieldOff,
+  CircleCheck, CircleUser, Copy, Ellipsis, ExternalLink, Info, KeyRound, Link, LogOut, MapPin, Pencil, Plus, Scissors, Shield, ShieldOff,
   Star, Trash, Undo2, Upload, User, UserCheck, Users, UserX, type LucideIcon,
 } from 'lucide-react';
 
 const ICONS = {
   logbook: BookOpen,
   divers: Users,
+  site: MapPin,
+  external: ExternalLink,
   admin: Shield,
   account: CircleUser,
   user: User,

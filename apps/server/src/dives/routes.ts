@@ -7,7 +7,7 @@ import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import type { Db } from '../db/client.js';
 import {
-  OVERRIDABLE_FIELDS, device, dive, diverManagement, importJob, recording, revision, sampleSeries, user,
+  OVERRIDABLE_FIELDS, device, dive, diveSite, diverManagement, importJob, recording, revision, sampleSeries, user,
   type RecordingSummary,
 } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
@@ -15,6 +15,8 @@ import { DECO_MODELS, DIVE_MODES, GAS_CIRCUITS, WATER_TYPES } from '../vocabular
 import { DiveError, type DiveService } from './dive-service.js';
 import { valuesFromRecording, type DiveValues } from './dive-values.js';
 import { REVISION_CAUSES } from './revisions.js';
+import { recordingPosition } from '../sites/dive-site-link.js';
+import { PositionSchema } from '../sites/routes.js';
 
 export interface DiveRouteDeps {
   db: Db;
@@ -90,6 +92,10 @@ const DiveView = Type.Object({
   overrides: Type.Array(Field, { description: 'Values the User set by hand' }),
   fromRecording: Nullable(ValuesSchema, ),
   notes: Nullable(Type.String()),
+  site: Nullable(Type.Object({ id: Type.String(), name: Type.String() }, { description: 'The Dive site (ADR 0020)' })),
+  position: Nullable(Type.Object(PositionSchema.properties, {
+    description: 'Where the Device of the Primary recording placed the dive: its exit, else its entry. Private like the Dive',
+  })),
   recordings: Type.Array(RecordingView),
 });
 
@@ -98,6 +104,7 @@ const EditBody = Type.Object({
   set: Type.Optional(Type.Partial(ValuesSchema)),
   reset: Type.Optional(Type.Array(Field)),
   notes: Type.Optional(Nullable(Type.String({ maxLength: 20_000 }))),
+  siteId: Type.Optional(Nullable(Type.String({ format: 'uuid', description: 'The Dive site, or null for none' }))),
 });
 
 const RevisionView = Type.Object({
@@ -123,7 +130,7 @@ const fromValues = (v: Partial<Static<typeof ValuesSchema>>): Partial<DiveValues
 
 const STATUS: Record<DiveError['code'], number> = {
   dive_not_found: 404, dive_changed: 409, dive_values_inconsistent: 400, recording_not_on_dive: 400,
-  recording_not_found: 404, last_recording: 409, diver_not_found: 404,
+  recording_not_found: 404, last_recording: 409, diver_not_found: 404, site_not_found: 404,
 };
 
 export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { db, auth, dives }) => {
@@ -149,6 +156,9 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     }).from(recording).leftJoin(device, eq(device.id, recording.deviceId))
       .where(and(eq(recording.diveId, row.id), isNull(recording.deletedAt))).orderBy(recording.startsAt);
     const primary = recs.find(({ r }) => r.id === row.primaryRecordingId)?.r;
+    const [site] = row.siteId
+      ? await db.select({ id: diveSite.id, name: diveSite.name }).from(diveSite).where(eq(diveSite.id, row.siteId))
+      : [];
     return {
       id: row.id,
       diverId: row.diverId,
@@ -161,6 +171,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       overrides: row.overrides,
       fromRecording: primary ? toValues(valuesFromRecording(primary)) : null,
       notes: row.notes,
+      site: site ?? null,
+      position: primary ? recordingPosition(primary) : null,
       recordings: recs.map(({ r, d, channels }) => ({
         id: r.id, isPrimary: r.id === row.primaryRecordingId,
         device: d ? { manufacturer: d.manufacturer, product: d.product, serialNumber: d.serialNumber } : null, startsAt: r.startsAt.toISOString(),
@@ -182,14 +194,15 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
 
   app.patch('/dives/:id', {
     schema: {
-      summary: 'Edit a Dive: set values (they become Overrides), reset Overrides, change notes',
+      summary: 'Edit a Dive: set values (they become Overrides), reset Overrides, change notes or the Dive site',
       description: 'Send the version you started from; if the Dive changed meanwhile the answer is 409 dive_changed.',
       params: IdParams, body: EditBody, response: { 200: DiveView, 400: Problem, 404: Problem, 409: Problem },
     },
   }, async (request) => {
-    const { version, set, reset, notes } = request.body;
+    const { version, set, reset, notes, siteId } = request.body;
     await dives.edit(request.user!.id, request.params.id, {
       version, ...(set && { set: fromValues(set) }), ...(reset && { reset }), ...(notes !== undefined && { notes }),
+      ...(siteId !== undefined && { siteId }),
     });
     return view((await findDive(request, request.params.id))!);
   });

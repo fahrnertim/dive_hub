@@ -195,3 +195,29 @@ Implemented:
 Deliberate simplifications, to revisit:
 - **Sharing a Diver** between Users comes with Participants and Buddy suggestions.
 - **Device assignment** has no dates; lending is handled by moving single Dives.
+
+**Slice 7 (2026-10-04): Dive sites** ([ADR 0020](../decisions/0020-dive-sites.md)).
+
+Implemented:
+- Dive sites shared by every User: `/api/dive-sites` (list by name or near a position, one, create, edit with
+  version, delete). Any User edits (Revisions on `dive_site`); the creator or an admin deletes while no Dive is there.
+- Entry and exit positions on Recordings from FIT (`session.start_position_*`, `end_position_*`); a Dive shows
+  its Primary recording's (exit, else entry). Older Recordings are backfilled from their Originals by the
+  `backfill_positions` worker job, queued once per start (job key).
+- An Import links a new Dive to the only site within 200 m (Revision cause `auto-site`).
+- A Dive's site in `PATCH /api/dives/:id` (`siteId`, under the Dive's version); the logbook shows it, filters
+  by it (`siteId`, `#/?site=`) and searches its name.
+- Nearby search without PostGIS: bounding box plus haversine in SQL (`src/sites/site-service.ts`).
+- Web client: Dive sites page, site page (edit, delete), choosing or creating a site on the dive page,
+  positions with an "Open in maps" link (openstreetmap.org), countries named through `Intl.DisplayNames`.
+
+Found in the screenshot review and fixed:
+- With a fourth section the phone navigation, a sideways-scrolling strip, hid "Admin" at 320 px; it wraps now.
+- A form's unsaved-changes guard stayed on after saving, so moving to the new site's page asked first;
+  `releaseLeaveGuard()` (`lib/leave-guard.ts`) ends it once saved.
+- Removing a form message on blur moved the buttons under a pressing pointer; such messages now change only on submit.
+
+Deliberate simplifications, to revisit:
+- **No map**, no merging of duplicate sites, no aliases, entry points or external IDs yet.
+- **A Dive's position** isn't an Override; a hand-logged dive gets one only through its site.
+- **Sites created later** aren't linked to earlier Dives nearby; the dive page offers them.

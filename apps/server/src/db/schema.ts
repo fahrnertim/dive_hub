@@ -5,6 +5,9 @@ import { sql } from 'drizzle-orm';
 import {
   bigint,
   boolean,
+  check,
+  doublePrecision,
+  type AnyPgColumn,
   index,
   integer,
   jsonb,
@@ -201,6 +204,37 @@ export const importOriginal = pgTable(
 export const waterType = pgEnum('water_type', [...WATER_TYPES]);
 
 /**
+ * A place where dives happen, shared by every User of the instance (ADR 0020). Any User edits it
+ * (with `version` for optimistic locking, and Revisions); its creator or an admin deletes it while
+ * no Dive is there. Position in WGS84 degrees, both or neither.
+ */
+export const diveSite = pgTable(
+  'dive_site',
+  {
+    id: id(),
+    name: text('name').notNull(),
+    latitude: doublePrecision('latitude'),
+    longitude: doublePrecision('longitude'),
+    /** ISO 3166-1 alpha-2, e.g. "EG"; clients show the name in their language. */
+    country: text('country'),
+    /** Free text, e.g. "Red Sea" or "Attersee". */
+    waterBody: text('water_body'),
+    description: text('description'),
+    createdBy: uuid('created_by').references(() => user.id, { onDelete: 'set null' }),
+    /** Set when this site was merged into another (merging comes later). */
+    mergedInto: uuid('merged_into').references((): AnyPgColumn => diveSite.id),
+    version: integer('version').notNull().default(1),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    deletedAt: deletedAt(),
+  },
+  (t) => [
+    index('dive_site_position_idx').on(t.latitude, t.longitude),
+    check('dive_site_position_ck', sql`(${t.latitude} is null) = (${t.longitude} is null) and ${t.latitude} between -90 and 90 and ${t.longitude} between -180 and 180`),
+  ],
+);
+
+/**
  * Dive values that come from the Primary recording unless the User overrode them (ADR 0015).
  * `startsAt` covers the start time and its UTC offset together.
  */
@@ -230,6 +264,8 @@ export const dive = pgTable(
     waterType: waterType('water_type'),
     /** The Dive's own notes; not a recording value. */
     notes: text('notes'),
+    /** Where the Dive was (ADR 0020); the Dive's own value, not an Override. */
+    siteId: uuid('site_id').references(() => diveSite.id),
     /** Fields whose value the User set by hand; they win over the Primary recording. */
     overrides: text('overrides').array().$type<OverridableField[]>().notNull().default(sql`'{}'`),
     primaryRecordingId: uuid('primary_recording_id'),
@@ -239,7 +275,7 @@ export const dive = pgTable(
     updatedAt: updatedAt(),
     deletedAt: deletedAt(),
   },
-  (t) => [index('dive_diver_start_idx').on(t.diverId, t.startsAt)],
+  (t) => [index('dive_diver_start_idx').on(t.diverId, t.startsAt), index('dive_site_idx').on(t.siteId)],
 );
 
 /** A Device's own summary of a Recording, in our vocabulary (ADR 0015). */
@@ -261,7 +297,6 @@ export type RecordingSummary = {
   n2Start?: number;
   n2End?: number;
   avgAscentRateMps?: number;
-  hasEndPosition?: boolean;
   /** Source values we have no word for yet, by source field name (data model: extension area). */
   extras?: Record<string, string>;
 };
@@ -284,6 +319,13 @@ export const recording = pgTable(
     durationSeconds: real('duration_seconds').notNull(),
     maxDepthM: real('max_depth_m'),
     avgDepthM: real('avg_depth_m'),
+    /** Where the Device placed the start and the end of the dive, WGS84 degrees (B6, ADR 0020). */
+    entryLatitude: doublePrecision('entry_latitude'),
+    entryLongitude: doublePrecision('entry_longitude'),
+    exitLatitude: doublePrecision('exit_latitude'),
+    exitLongitude: doublePrecision('exit_longitude'),
+    /** Set once the Original was read for positions (imported with them, or backfilled). */
+    positionsReadAt: timestamp('positions_read_at', { withTimezone: true }),
     summary: jsonb('summary').$type<RecordingSummary>().notNull().default({}),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

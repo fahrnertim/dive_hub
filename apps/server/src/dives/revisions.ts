@@ -9,13 +9,15 @@ export const REVISION_CAUSES = [
   'import-create', 'auto-attach', 'reimport', 'edit', 'primary-change',
   // A User's decisions about Recordings and Divers (ADR 0016):
   'attach', 'detach', 'create', 'move', 'assign-device',
+  // Dive sites (ADR 0020): deleting a site, and an Import linking a new Dive to the only site nearby.
+  'delete', 'auto-site',
 ] as const;
 export type RevisionCause = (typeof REVISION_CAUSES)[number];
 
 export type Changes = Record<string, { from: unknown; to: unknown }>;
 
 export async function writeRevision(
-  tx: Tx, entityType: 'dive' | 'recording' | 'device', entityId: string, actor: Actor, cause: RevisionCause, changes: Changes,
+  tx: Tx, entityType: 'dive' | 'recording' | 'device' | 'dive_site', entityId: string, actor: Actor, cause: RevisionCause, changes: Changes,
 ) {
   await tx.insert(revision).values({ entityType, entityId, actorType: actor.type, actorId: actor.id, cause, changes });
 }

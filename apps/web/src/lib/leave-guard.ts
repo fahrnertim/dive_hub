@@ -21,5 +21,8 @@ export function useLeaveGuard(active: boolean, question: string) {
   }, [active, question]);
 }
 
+/** A form that just saved: nothing is lost, so moving on (e.g. to the saved item's page) needn't ask. */
+export const releaseLeaveGuard = () => { guard = null; };
+
 /** False if a form has unsaved changes and the User chose to stay. */
 export const mayLeave = () => (guard ? guard() : true);

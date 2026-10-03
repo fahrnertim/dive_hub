@@ -231,7 +231,9 @@
 @media (max-width: 40rem) {
   /* Phone header: brand and user menu on the first row, the navigation on its own second row. */
   .app-header-inner { gap: var(--space-2) var(--space-3); }
-  .app-nav { order: 3; flex-basis: 100%; overflow-x: auto; }
+  /* It wraps rather than scrolls: with four sections a scrolling strip hid the last ones on small phones. */
+  .app-nav { order: 3; flex-basis: 100%; flex-wrap: wrap; gap: 0 var(--space-4); }
+  .app-nav a { white-space: nowrap; }
   .panel { padding: var(--space-5) var(--space-4); }
   .copy-field { flex-direction: column; }
   /* On a phone the button wraps under the field anyway; no alignment margin. */
