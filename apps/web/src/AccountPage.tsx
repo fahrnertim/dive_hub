@@ -1,12 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formValues, NewPasswordField, useUserChanged } from './Account.tsx';
 import { api, authClient, keys, meQuery, sessionsQuery, unwrap, type SessionView } from './api.ts';
 import { LANGUAGES } from './i18n/index.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
+import { announce } from './lib/announce.ts';
+import { refocusAfterRemoval } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, Form, Notice, Panel, RadioGroup, Table, TextField } from './ui/index.ts';
+import { Button, ConfirmButton, Form, Notice, Panel, RadioGroup, Table, TextField } from './ui/index.ts';
 
 /** The signed-in User's own account: display settings, password, and where they're signed in. */
 export function AccountPage() {
@@ -32,7 +34,10 @@ function DisplaySettings() {
   const save = useMutation({
     mutationFn: async (body: { language?: string | null; units?: 'metric' | 'imperial' | null }) =>
       unwrap(await api.PATCH('/api/me/preferences', { body })),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.me, exact: true }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: keys.me, exact: true });
+      announce(t('account.saved'));
+    },
   });
   const prefs = me.data?.preferences;
   if (!prefs) return null;
@@ -124,6 +129,7 @@ function Sessions() {
   const queryClient = useQueryClient();
   const userChanged = useUserChanged();
   const sessions = useQuery(sessionsQuery());
+  const list = useRef<HTMLDivElement>(null);
   const end = useMutation({
     mutationFn: async (s: SessionView) => {
       unwrap(await api.DELETE('/api/me/sessions/{id}', { params: { path: { id: s.id } } }));
@@ -135,41 +141,59 @@ function Sessions() {
     mutationFn: async () => unwrap(await api.DELETE('/api/me/sessions')),
     onSettled: () => queryClient.invalidateQueries({ queryKey: keys.sessions }),
   });
-  const error = end.error ?? endOthers.error ?? sessions.error;
+  const error = (end.variables?.current ? null : end.error) ?? sessions.error; // the dialog shows its own
+  const label = (s: SessionView) => t('common.forItem', { action: t('account.signOutSession'), item: `${describe(s.userAgent)}, ${display.dateTime(s.createdAt)}` });
 
   return (
     <Panel
       title={t('account.sessions')}
       actions={sessions.data && sessions.data.length > 1 && (
-        <Button isPending={endOthers.isPending} onPress={() => endOthers.mutate()}>{t('account.signOutOthers')}</Button>
+        <ConfirmButton
+          tone="primary" title={t('account.signOutOthersTitle')} body={t('account.signOutOthersBody')} confirmLabel={t('account.signOutOthers')}
+          onConfirm={() => endOthers.mutateAsync()}
+        >
+          {t('account.signOutOthers')}
+        </ConfirmButton>
       )}
     >
       {error && <Notice tone="danger">{errorText(error)}</Notice>}
       {sessions.data && (
+        <div ref={list}>
         <Table
           label={t('account.sessions')}
           head={[t('account.device'), t('account.ipAddress'), t('account.signedIn'), t('account.lastActive'), { label: t('common.actions'), hidden: true }]}
         >
-          {sessions.data.map((s) => (
+          {sessions.data.map((s, index) => (
             <tr key={s.id}>
               <td>{describe(s.userAgent)}{s.current && <> (<strong>{t('account.thisDevice')}</strong>)</>}</td>
               <td>{s.ipAddress ?? t('common.none')}</td>
               <td>{display.dateTime(s.createdAt)}</td>
               <td>{s.lastActiveAt ? display.dateTime(s.lastActiveAt) : t('common.none')}</td>
               <td>
-                <Button
-                  variant="quiet"
-                  aria-label={t('common.forItem', { action: t('account.signOutSession'), item: `${describe(s.userAgent)}, ${display.dateTime(s.createdAt)}` })}
-                  isPending={end.isPending && end.variables?.id === s.id}
-                  isDisabled={end.isPending}
-                  onPress={() => end.mutate(s)}
-                >
-                  {t('account.signOutSession')}
-                </Button>
+                {s.current ? (
+                  <ConfirmButton
+                    variant="quiet" aria-label={label(s)} tone="primary"
+                    title={t('account.signOutThisTitle')} body={t('account.signOutThisBody')} confirmLabel={t('account.signOutSession')}
+                    onConfirm={() => end.mutateAsync(s)}
+                  >
+                    {t('account.signOutSession')}
+                  </ConfirmButton>
+                ) : (
+                  <Button
+                    variant="quiet" aria-label={label(s)}
+                    isPending={end.isPending && end.variables?.id === s.id} isDisabled={end.isPending}
+                    onPress={() => end.mutate(s, {
+                      onSuccess: () => refocusAfterRemoval(list.current?.querySelector('tbody') ?? null, index, sessions.data.length),
+                    })}
+                  >
+                    {t('account.signOutSession')}
+                  </Button>
+                )}
               </td>
             </tr>
           ))}
         </Table>
+        </div>
       )}
     </Panel>
   );

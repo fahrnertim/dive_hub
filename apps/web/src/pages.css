@@ -33,6 +33,11 @@
 
 .profile { width: 100%; }
 .profile .u-legend { color: var(--color-text); font-size: var(--text-sm); }
+/* The legend names the lines; values appear only while the pointer is on the chart (UI review B6). */
+.profile:not(:hover) .u-legend .u-value,
+.profile:not(:hover) .u-legend .u-series:first-child { display: none; }
+.profile:not(:hover) .u-inline.u-live th::after { content: none; }
+.profile-figure .extras { margin: var(--space-3) 0 0; }
 
 /* Dive: edit form, notes, device data, history (ADR 0015) */
 .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: var(--space-5) var(--space-4); }
@@ -68,6 +73,11 @@
 .diver-name { font-weight: var(--weight-semibold); }
 .diver-row .actions { margin-left: auto; display: flex; gap: var(--space-3); }
 .diver-row .form-inline { flex: 1; }
+.logbook-actions { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); }
 .logbook-filter { min-width: 12rem; }
+/* Shown while files are dragged over the logbook page; dropping anywhere imports them. */
+.page-drop { position: fixed; inset: var(--space-3); z-index: 30; pointer-events: none; display: grid; place-items: center;
+  border: 3px dashed var(--color-accent); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--color-accent-soft) 85%, transparent); }
+.page-drop p { font-size: var(--text-xl); font-weight: var(--weight-semibold); color: var(--color-text); }
 .device-owner { min-width: 10rem; }
 .recording-actions { margin-bottom: var(--space-1); }

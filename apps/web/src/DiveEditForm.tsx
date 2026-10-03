@@ -3,7 +3,9 @@ import { CalendarDateTime } from '@internationalized/date';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, ApiError, keys, unwrap, type DiveValues, type DiveView, type OverridableField } from './api.ts';
+import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
+import { useLeaveGuard } from './lib/leave-guard.ts';
 import { useFormatValue } from './lib/dive-values.ts';
 import { depthFromDisplay, depthIn, temperatureFromDisplay, temperatureIn } from './lib/units.ts';
 import { Button, DateTimeField, Form, Notice, NumberField, Select, TextArea } from './ui/index.ts';
@@ -113,9 +115,16 @@ export function DiveEditForm({ dive: d, onDone }: { dive: DiveView; onDone: () =
       queryClient.setQueryData(keys.dive(d.id), updated);
       void queryClient.invalidateQueries({ queryKey: keys.revisions(d.id) });
       void queryClient.invalidateQueries({ queryKey: keys.dives, exact: true });
+      announce(t('dive.saved'));
       onDone();
     },
   });
+  // Unsaved changes: leaving the page or cancelling asks first (UI review B3).
+  const dirty = touched.size > 0 || reset.size > 0 || notes !== (d.notes ?? '');
+  useLeaveGuard(dirty && !save.isSuccess, t('dive.unsavedQuestion'));
+  const cancel = () => {
+    if (!dirty || confirm(t('dive.unsavedQuestion'))) onDone();
+  };
   const changedMeanwhile = save.error instanceof ApiError && save.error.code === 'dive_changed';
 
   /** The field's description: what the recording says, or that it goes back to that on save. */
@@ -141,7 +150,7 @@ export function DiveEditForm({ dive: d, onDone }: { dive: DiveView; onDone: () =
     <Form className="form" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
       <div className="form-grid">
         <div className="field-block">
-          <NumberField label={t('dive.number')} description={hint('number')} value={draft.number} onChange={(n) => change('number', n)} minValue={0} maxValue={100_000} step={1} />
+          <NumberField autoFocus label={t('dive.number')} description={hint('number')} value={draft.number} onChange={(n) => change('number', n)} minValue={0} maxValue={100_000} step={1} />
           {origin('number')}
         </div>
         <div className="field-block">
@@ -190,7 +199,7 @@ export function DiveEditForm({ dive: d, onDone }: { dive: DiveView; onDone: () =
       )}
       <div className="form-actions">
         <Button type="submit" variant="primary" isPending={save.isPending}>{t('dive.save')}</Button>
-        <Button onPress={onDone}>{t('common.cancel')}</Button>
+        <Button onPress={cancel}>{t('common.cancel')}</Button>
       </div>
     </Form>
   );

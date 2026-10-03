@@ -2,7 +2,8 @@
 // light desktop and in German on a dark phone: see expectGoodPage. Plus the behaviour the review
 // asked for: focus after navigation, a quick "not found", field names with units, admin safeguards.
 // Runs after the other specs (file order), so the data has two Divers and a split-off Dive by then.
-import { expect, test, type APIRequestContext, type Browser } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { expect, test, type APIRequestContext, type Browser, type Page } from '@playwright/test';
 import { E2E_BASE_URL, expectGoodPage, resetDive, seededDiveId, setPreferences } from './support.ts';
 
 const headers = { origin: E2E_BASE_URL };
@@ -148,6 +149,63 @@ test.describe('behaviour', () => {
     await resetDive(request);
   });
 
+  test('editing a dive: focus goes into the form and back to "Edit dive"', async ({ page, request }) => {
+    await resetDive(request);
+    await page.goto(`/#/dives/${diveId}`);
+    await page.getByRole('button', { name: 'Edit dive' }).click();
+    await expect(page.getByRole('textbox', { name: 'Dive number' })).toBeFocused();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByRole('button', { name: 'Edit dive' })).toBeFocused();
+  });
+
+  test('unsaved changes: leaving or cancelling asks first, and saving is announced', async ({ page, request }) => {
+    await resetDive(request);
+    await page.goto(`/#/dives/${diveId}`);
+    await page.getByRole('button', { name: 'Edit dive' }).click();
+    await page.getByRole('textbox', { name: 'Notes' }).fill('Not saved yet');
+
+    page.once('dialog', (dialog) => void dialog.dismiss()); // stay
+    await page.getByRole('navigation').getByRole('link', { name: 'Divers' }).click();
+    await expect(page.getByRole('textbox', { name: 'Notes' })).toHaveValue('Not saved yet');
+    expect(page.url()).toContain(`/dives/${diveId}`);
+
+    page.once('dialog', (dialog) => void dialog.dismiss());
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByRole('textbox', { name: 'Notes' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.locator('[data-announcer]')).toHaveText('Dive saved.');
+    await page.getByRole('navigation').getByRole('link', { name: 'Divers' }).click(); // no question now
+    await expect(page.getByRole('heading', { name: 'Divers', level: 1 })).toBeVisible();
+    await resetDive(request);
+  });
+
+  test('the depth profile is described in text and as a table', async ({ page, request }) => {
+    await resetDive(request);
+    await page.goto(`/#/dives/${diveId}`);
+    const chart = page.getByRole('img', { name: 'Depth profile' });
+    await expect(chart).toHaveAccessibleDescription(/^Deepest point 18\.5 m after \d+ min; 30 min in total\. Water 25°C – 26°C\.$/);
+    await page.getByText('Profile as a table').click();
+    await expect(page.getByRole('region', { name: 'Profile as a table' }).getByRole('row')).toHaveCount(32); // header + minutes 0–30
+  });
+
+  test('the logbook comes first; files dropped anywhere on the page are imported', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Logbook', level: 1 })).toBeVisible();
+    await expect(page.getByText('Drop Garmin FIT files or zips here')).toHaveCount(0); // the first-run panel
+    await expect(page.getByRole('button', { name: 'Import files' })).toBeVisible();
+
+    await dropFiles(page, [
+      { name: 'notes.txt', bytes: [...Buffer.from('not a dive')] },
+      { name: 'main-computer.fit', bytes: [...readFileSync('e2e/fixtures/main-computer.fit')] },
+    ]);
+    await expect(page.getByText('Skipped notes.txt')).toBeVisible();
+    const imports = page.locator('section.panel').filter({ has: page.getByRole('heading', { name: 'Imports' }) });
+    await expect(imports.getByText('main-computer.fit').first()).toBeVisible();
+    await expect(imports.getByText('already imported').first()).toBeVisible();
+    await expect(page.locator('[data-announcer]')).toHaveText('main-computer.fit: already imported');
+  });
+
   test('the only admin is not offered to remove their own admin role', async ({ page }) => {
     await page.goto('/#/admin');
     const me = page.getByRole('row').filter({ hasText: 'erika@example.com' });
@@ -155,3 +213,15 @@ test.describe('behaviour', () => {
     await expect(me.getByRole('button', { name: /Remove admin role/ })).toHaveCount(0);
   });
 });
+
+/** Drops files on the page the way a browser does when they're dragged from the desktop. */
+async function dropFiles(page: Page, files: { name: string; bytes: number[] }[]) {
+  await page.evaluate((list) => {
+    const data = new DataTransfer();
+    for (const f of list) data.items.add(new File([new Uint8Array(f.bytes)], f.name));
+    const target = document.querySelector('main')!;
+    for (const type of ['dragenter', 'dragover', 'drop']) {
+      target.dispatchEvent(new DragEvent(type, { dataTransfer: data, bubbles: true, cancelable: true }));
+    }
+  }, files);
+}

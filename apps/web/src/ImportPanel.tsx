@@ -1,18 +1,47 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { createContext, use, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DropZone, FileTrigger, Text, type FileDropItem } from 'react-aria-components';
+import { FileTrigger } from 'react-aria-components';
 import { importsQuery, keys, uploadFile, type ImportView } from './api.ts';
+import { announce } from './lib/announce.ts';
 import { useErrorText } from './lib/display.ts';
 import { IMPORTABLE, splitImportable } from './lib/importable.ts';
 import { Button, Muted, Notice, Panel } from './ui/index.ts';
 
-export function ImportPanel() {
+const isRunning = (i: ImportView) => i.status === 'pending' || i.status === 'processing';
+/** Imports shown without "Show all": the running ones and those of the last day, at most this many. */
+const RECENT = 3;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+interface ImportState {
+  /** Uploads the importable files and names the rest. */
+  accept: (files: File[]) => void;
+  uploading: boolean;
+  /** How many files are being uploaded. */
+  uploadingCount: number;
+  error: unknown;
+  skipped: string[];
+  /** Files are being dragged over the page. */
+  dragging: boolean;
+}
+const ImportContext = createContext<ImportState | null>(null);
+
+function useImport(): ImportState {
+  const state = use(ImportContext);
+  if (!state) throw new Error('useImport needs an ImportProvider');
+  return state;
+}
+
+/**
+ * Importing on the logbook page (UI review B5): files dropped anywhere on the page are uploaded,
+ * the "Import files" button picks them. Also tells screen readers how each Import ended.
+ */
+export function ImportProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
-  const errorText = useErrorText();
   const queryClient = useQueryClient();
   const imports = useQuery(importsQuery());
   const [skipped, setSkipped] = useState<string[]>([]);
+  const [dragging, setDragging] = useState(false);
 
   const upload = useMutation({
     mutationFn: async (files: File[]) => {
@@ -20,45 +49,151 @@ export function ImportPanel() {
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: keys.imports }),
   });
+  const { mutate } = upload;
+  const accept = useCallback((files: File[]) => {
+    const { accepted, skipped: rest } = splitImportable(files.map((f) => f.name));
+    setSkipped(rest);
+    const chosen = files.filter((f) => accepted.includes(f.name));
+    if (chosen.length === 0) return;
+    announce(t('import.uploading', { count: chosen.length }));
+    mutate(chosen);
+  }, [mutate, t]);
 
-  // When an Import finishes, the logbook may have new dives.
-  const running = imports.data?.some((i) => i.status === 'pending' || i.status === 'processing');
+  // When an Import finishes: the logbook may have new dives, and its result is announced.
+  const running = imports.data?.some(isRunning);
   useEffect(() => {
     if (!running) void queryClient.invalidateQueries({ queryKey: keys.dives });
   }, [running, queryClient]);
+  const seenRunning = useRef(new Set<string>());
+  const describe = useDescribeOutcome();
+  useEffect(() => {
+    for (const i of imports.data ?? []) {
+      if (isRunning(i)) seenRunning.current.add(i.id);
+      else if (seenRunning.current.delete(i.id)) announce(t('import.finished', { name: i.uploadName, result: describe(i) }));
+    }
+  }, [imports.data, describe, t]);
 
+  // Files dragged anywhere over the page can be dropped there.
+  useEffect(() => {
+    let depth = 0;
+    const hasFiles = (e: DragEvent) => e.dataTransfer?.types.includes('Files') ?? false;
+    const enter = (e: DragEvent) => { if (hasFiles(e)) { depth += 1; setDragging(true); } };
+    const leave = (e: DragEvent) => { if (hasFiles(e)) { depth = Math.max(0, depth - 1); if (depth === 0) setDragging(false); } };
+    const over = (e: DragEvent) => { if (hasFiles(e)) e.preventDefault(); };
+    const drop = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      depth = 0;
+      setDragging(false);
+      accept([...(e.dataTransfer?.files ?? [])]);
+    };
+    addEventListener('dragenter', enter);
+    addEventListener('dragleave', leave);
+    addEventListener('dragover', over);
+    addEventListener('drop', drop);
+    return () => {
+      removeEventListener('dragenter', enter);
+      removeEventListener('dragleave', leave);
+      removeEventListener('dragover', over);
+      removeEventListener('drop', drop);
+    };
+  }, [accept]);
+
+  const state = { accept, uploading: upload.isPending, uploadingCount: upload.variables?.length ?? 0, error: upload.error, skipped, dragging };
+  return (
+    <ImportContext value={state}>
+      {children}
+      {dragging && <div className="page-drop" aria-hidden="true"><p>{t('import.dropNow')}</p></div>}
+    </ImportContext>
+  );
+}
+
+/** Opens the file picker; busy while uploading. */
+export function ImportFilesButton({ label, variant }: { label?: string; variant?: 'primary' | 'secondary' }) {
+  const { t } = useTranslation();
+  const { accept, uploading } = useImport();
+  return (
+    <FileTrigger acceptedFileTypes={[...IMPORTABLE]} allowsMultiple onSelect={(list) => list && accept(Array.from(list))}>
+      <Button variant={variant} isPending={uploading}>{label ?? t('import.importFiles')}</Button>
+    </FileTrigger>
+  );
+}
+
+function ImportNotices() {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const { error, skipped } = useImport();
+  return (
+    <>
+      {error !== null && error !== undefined && <Notice tone="danger">{errorText(error)}</Notice>}
+      {skipped.length > 0 && <Notice tone="danger">{t('import.skipped', { names: skipped.join(', ') })}</Notice>}
+    </>
+  );
+}
+
+/** First run (no dives yet): a large drop area, as the page's main action. */
+export function ImportPanel() {
+  const { t } = useTranslation();
+  const { dragging } = useImport();
+  const imports = useQuery(importsQuery());
   return (
     <Panel title={t('import.title')}>
-      <DropZone
-        className="dropzone"
-        onDrop={async (e) => {
-          const files = e.items.filter((item): item is FileDropItem => item.kind === 'file');
-          const { accepted, skipped } = splitImportable(files.map((f) => f.name));
-          setSkipped(skipped);
-          const chosen = files.filter((f) => accepted.includes(f.name));
-          if (chosen.length > 0) upload.mutate(await Promise.all(chosen.map((f) => f.getFile())));
-        }}
-      >
-        <Text slot="label" className="dropzone-label">{t('import.drop')}</Text>
-        <FileTrigger
-          acceptedFileTypes={[...IMPORTABLE]}
-          allowsMultiple
-          onSelect={(list) => { setSkipped([]); if (list) upload.mutate(Array.from(list)); }}
-        >
-          <Button isPending={upload.isPending}>{t('import.choose')}</Button>
-        </FileTrigger>
+      <div className="dropzone" data-drop-target={dragging || undefined}>
+        <p className="dropzone-label">{t('import.drop')}</p>
+        <ImportFilesButton label={t('import.choose')} />
         <Muted>{t('import.hint')}</Muted>
-      </DropZone>
-      {upload.isPending && <Muted>{t('import.uploading')}</Muted>}
-      {upload.error && <Notice tone="danger">{errorText(upload.error)}</Notice>}
-      {skipped.length > 0 && <Notice tone="danger">{t('import.skipped', { names: skipped.join(', ') })}</Notice>}
-      {imports.data && imports.data.length > 0 && (
-        <ul className="imports">
-          {imports.data.slice(0, 8).map((i) => <ImportRow key={i.id} item={i} />)}
-        </ul>
-      )}
+      </div>
+      <ImportNotices />
+      <ImportList imports={imports.data ?? []} />
     </Panel>
   );
+}
+
+/**
+ * For a returning User: the logbook comes first, and Imports show here only while something is
+ * running, happened in the last day, or went wrong. Older ones are behind "Show all imports".
+ */
+export function RecentImports() {
+  const { t } = useTranslation();
+  const { uploading, uploadingCount, error, skipped } = useImport();
+  const imports = useQuery(importsQuery());
+  const [now] = useState(() => Date.now());
+  const all = imports.data ?? [];
+  const recent = all.filter((i) => isRunning(i) || now - Date.parse(i.createdAt) < DAY_MS);
+  if (recent.length === 0 && !uploading && !error && skipped.length === 0) return null;
+  return (
+    <Panel title={t('import.recent')}>
+      {uploading && <Muted>{t('import.uploading', { count: uploadingCount })}</Muted>}
+      <ImportNotices />
+      <ImportList imports={all} />
+    </Panel>
+  );
+}
+
+function ImportList({ imports }: { imports: ImportView[] }) {
+  const { t } = useTranslation();
+  const [showAll, setShowAll] = useState(false);
+  if (imports.length === 0) return null;
+  const shown = showAll ? imports : imports.slice(0, RECENT);
+  return (
+    <>
+      <ul className="imports">
+        {shown.map((i) => <ImportRow key={i.id} item={i} />)}
+      </ul>
+      {imports.length > RECENT && (
+        <Button variant="quiet" onPress={() => setShowAll(!showAll)}>{showAll ? t('import.showFewer') : t('import.showAll')}</Button>
+      )}
+    </>
+  );
+}
+
+/** One line for an Import's result, as announced when it finishes. */
+function useDescribeOutcome() {
+  const { t } = useTranslation();
+  return useCallback((i: ImportView) => {
+    if (i.errorCode) return t(`import.errorCode.${i.errorCode}`);
+    return i.outcome.map((o) => t(`import.result.${o.result}`)).join(', ') || t(`import.status.${i.status}`);
+  }, [t]);
 }
 
 function ImportRow({ item }: { item: ImportView }) {

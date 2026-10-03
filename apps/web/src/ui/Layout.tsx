@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
+import { announce } from '../lib/announce.ts';
 
 /**
  * A titled area of a page. `narrow` for single forms (sign-in, setup). `level={1}` when the panel's
@@ -21,10 +22,17 @@ export function Panel({ title, children, narrow, actions, level = 2 }: {
   );
 }
 
-/** A message about what just happened. Errors are announced at once; the rest politely. */
+/**
+ * A message about what just happened. Errors are alerts, read at once; the rest is read politely
+ * through the page's live region (lib/announce.ts) when the notice appears.
+ */
 export function Notice({ tone = 'info', children }: { tone?: 'info' | 'success' | 'danger'; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (tone !== 'danger' && ref.current) announce(ref.current.innerText);
+  }, [tone]);
   return (
-    <div className={`notice notice-${tone}`} role={tone === 'danger' ? 'alert' : 'status'}>
+    <div ref={ref} className={`notice notice-${tone}`} role={tone === 'danger' ? 'alert' : undefined}>
       {children}
     </div>
   );

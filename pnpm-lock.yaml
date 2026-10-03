@@ -283,7 +283,7 @@ importers:
     devDependencies:
       '@axe-core/playwright':
         specifier: ^4.13.0
-        version: 4.13.0(playwright-core@1.64.0-alpha-1790635538000)
+        version: 4.13.0(playwright-core@1.63.0)
       '@playwright/cli':
         specifier: ^0.1.22
         version: 0.1.22
@@ -299,6 +299,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.1.1
         version: 6.1.1(vite@8.3.2(@types/node@22.20.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
+      playwright-core:
+        specifier: ^1.63.0
+        version: 1.63.0
       typescript:
         specifier: 7.0.2
         version: 7.0.2
@@ -3340,10 +3343,10 @@ packages:
 
 snapshots:
 
-  '@axe-core/playwright@4.13.0(playwright-core@1.64.0-alpha-1790635538000)':
+  '@axe-core/playwright@4.13.0(playwright-core@1.63.0)':
     dependencies:
       axe-core: 4.13.0
-      playwright-core: 1.64.0-alpha-1790635538000
+      playwright-core: 1.63.0
 
   '@babel/code-frame@7.29.7':
     dependencies:

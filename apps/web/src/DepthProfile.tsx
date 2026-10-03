@@ -1,14 +1,36 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import { samplesQuery } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
+import { perMinute, summarize } from './lib/profile.ts';
 import { depthIn, temperatureIn } from './lib/units.ts';
-import { Notice } from './ui/index.ts';
+import { Notice, Table } from './ui/index.ts';
 
 const token = (el: Element, name: string, fallback: string) => getComputedStyle(el).getPropertyValue(name).trim() || fallback;
+
+/** A token's colour with an alpha (two hex digits), whatever notation the token uses. */
+function withAlpha(color: string, alpha: string) {
+  const ctx = document.createElement('canvas').getContext('2d');
+  if (!ctx) return color;
+  ctx.fillStyle = color; // the canvas normalizes an opaque colour to #rrggbb
+  return /^#[0-9a-f]{6}$/i.test(ctx.fillStyle) ? `${ctx.fillStyle}${alpha}` : color;
+}
+
+/** Light or dark, following the system as the tokens do; the chart redraws when it changes. */
+function useColorScheme() {
+  const query = '(prefers-color-scheme: dark)';
+  const [dark, setDark] = useState(() => matchMedia(query).matches);
+  useEffect(() => {
+    const list = matchMedia(query);
+    const onChange = () => setDark(list.matches);
+    list.addEventListener('change', onChange);
+    return () => list.removeEventListener('change', onChange);
+  }, []);
+  return dark;
+}
 
 /**
  * Depth over time (depth axis pointing down) with water temperature, drawn with uPlot. The area under
@@ -20,6 +42,8 @@ export function DepthProfile({ recordingId }: { recordingId: string }) {
   const display = useDisplay();
   const samples = useQuery(samplesQuery(recordingId));
   const container = useRef<HTMLDivElement>(null);
+  const summaryId = useId();
+  const dark = useColorScheme();
   const { units, locale } = display;
   const depthUnit = display.unit('depth');
   const temperatureUnit = display.unit('temperature');
@@ -54,10 +78,10 @@ export function DepthProfile({ recordingId }: { recordingId: string }) {
     /** Fill from the surface (top of the plot) down to the deepest point, light to dark. */
     const depthFill = (u: uPlot) => {
       // uPlot may ask before it has laid out the plot area.
-      if (!Number.isFinite(u.bbox?.top) || !Number.isFinite(u.bbox?.height)) return `${deep}55`;
+      if (!Number.isFinite(u.bbox?.top) || !Number.isFinite(u.bbox?.height)) return withAlpha(deep, '55');
       const gradient = u.ctx.createLinearGradient(0, u.bbox.top, 0, u.bbox.top + u.bbox.height);
-      gradient.addColorStop(0, `${shallow}33`);
-      gradient.addColorStop(1, `${deep}cc`);
+      gradient.addColorStop(0, withAlpha(shallow, '33'));
+      gradient.addColorStop(1, withAlpha(deep, 'cc'));
       return gradient;
     };
 
@@ -79,7 +103,7 @@ export function DepthProfile({ recordingId }: { recordingId: string }) {
             value: (_u, v) => (v == null ? '–' : `${number.format(Math.abs(v))} ${depthUnit}`),
           },
           {
-            label: t('dive.temperature'), scale: 'temp', stroke: muted, width: 1, dash: [4, 4],
+            label: t('dive.temperature'), scale: 'temp', stroke: muted, width: 1.5, dash: [6, 4],
             value: (_u, v) => (v == null ? '–' : `${number.format(v)} ${temperatureUnit}`),
           },
         ],
@@ -94,8 +118,46 @@ export function DepthProfile({ recordingId }: { recordingId: string }) {
       plot.destroy();
     };
   // display.duration is recreated each render; units and locale capture what it depends on.
-  }, [samples.data, units, locale, depthUnit, temperatureUnit, t]);
+  }, [samples.data, units, locale, depthUnit, temperatureUnit, t, dark]);
 
   if (samples.error) return <Notice tone="danger">{errorText(samples.error)}</Notice>;
-  return <div ref={container} className="profile" role="img" aria-label={t('dive.profile')} />;
+  const depth = samples.data?.series.find((s) => s.channel === 'depth');
+  const temperature = samples.data?.series.find((s) => s.channel === 'temperature');
+  const summary = depth && summarize(depth, temperature);
+  return (
+    <div className="profile-figure">
+      {/* The picture for sighted users; the summary and the table say the same in text (UI review B6). */}
+      <div ref={container} className="profile" role="img" aria-label={t('dive.profile')} aria-describedby={summary ? summaryId : undefined} />
+      {summary && depth && (
+        <>
+          <p id={summaryId} className="visually-hidden">
+            {t('dive.profileSummary', {
+              depth: display.depth(summary.maxDepthM),
+              time: display.duration(summary.maxDepthAtSeconds),
+              duration: display.duration(summary.durationSeconds),
+            })}
+            {summary.minTemperatureC !== null && summary.maxTemperatureC !== null && ` ${t('dive.profileTemperature', {
+              range: summary.minTemperatureC === summary.maxTemperatureC ? display.temperature(summary.minTemperatureC)
+                : `${display.temperature(summary.minTemperatureC)} – ${display.temperature(summary.maxTemperatureC)}`,
+            })}`}
+          </p>
+          <details className="extras">
+            <summary>{t('dive.profileTable')}</summary>
+            <Table
+              label={t('dive.profileTable')}
+              head={[{ label: t('dive.time'), numeric: true }, { label: t('dive.depth'), numeric: true }, ...(temperature ? [{ label: t('dive.temperature'), numeric: true as const }] : [])]}
+            >
+              {perMinute(depth, temperature).map((row) => (
+                <tr key={row.minute}>
+                  <td className="num">{display.duration(row.minute * 60)}</td>
+                  <td className="num">{display.depth(row.depthM)}</td>
+                  {temperature && <td className="num">{row.temperatureC === null ? t('common.none') : display.temperature(row.temperatureC)}</td>}
+                </tr>
+              ))}
+            </Table>
+          </details>
+        </>
+      )}
+    </div>
+  );
 }

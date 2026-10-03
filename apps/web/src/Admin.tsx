@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { api, invitationsQuery, keys, meQuery, unwrap, usersQuery, type UserView } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
+import { focusHeading } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, Checkbox, CopyField, Dialog, Form, Notice, Panel, Table, TextField } from './ui/index.ts';
+import { Button, Checkbox, ConfirmButton, CopyField, Dialog, Form, Notice, Panel, Table, TextField } from './ui/index.ts';
 
 /** Admins invite people (copy the link, there's no mail yet) and manage Users (ADR 0012, 0013). */
 export function Admin() {
@@ -70,6 +71,7 @@ function Invitations() {
   const display = useDisplay();
   const queryClient = useQueryClient();
   const invitations = useQuery(invitationsQuery());
+  const table = useRef<HTMLDivElement>(null);
   const revoke = useMutation({
     mutationFn: async (id: string) => unwrap(await api.DELETE('/api/invitations/{id}', { params: { path: { id } } })),
     onSettled: () => queryClient.invalidateQueries({ queryKey: keys.invitations }),
@@ -78,7 +80,7 @@ function Invitations() {
   if (!invitations.data?.length) return null;
   return (
     <Panel title={t('admin.invitations')}>
-      {revoke.error && <Notice tone="danger">{errorText(revoke.error)}</Notice>}
+      <div ref={table}>
       <Table label={t('admin.invitations')} head={[t('admin.email'), t('admin.role'), t('admin.status'), t('admin.expires'), { label: t('common.actions'), hidden: true }]}>
         {invitations.data.map((i) => (
           <tr key={i.id}>
@@ -88,20 +90,21 @@ function Invitations() {
             <td>{i.status === 'pending' ? display.dateTime(i.expiresAt) : t('common.none')}</td>
             <td>
               {i.status === 'pending' && (
-                <Button
+                <ConfirmButton
                   variant="quiet"
                   aria-label={t('common.forItem', { action: t('admin.revoke'), item: i.email })}
-                  isPending={revoke.isPending && revoke.variables === i.id}
-                  isDisabled={revoke.isPending}
-                  onPress={() => revoke.mutate(i.id)}
+                  title={t('admin.revokeTitle', { email: i.email })} body={t('admin.revokeBody')} confirmLabel={t('admin.revoke')}
+                  onConfirm={() => revoke.mutateAsync(i.id)}
+                  onDone={() => requestAnimationFrame(() => focusHeading(table.current))}
                 >
                   {t('admin.revoke')}
-                </Button>
+                </ConfirmButton>
               )}
             </td>
           </tr>
         ))}
       </Table>
+      </div>
     </Panel>
   );
 }
@@ -113,20 +116,25 @@ function Users() {
   const me = useQuery(meQuery());
   // The server refuses to remove the last admin; don't offer it.
   const admins = users.data?.filter((u) => u.role === 'admin' && !u.disabled).length ?? 0;
+  const panel = useRef<HTMLDivElement>(null);
+  // After a User is deleted their row is gone; focus goes to the Users heading, not the page top.
+  const onRemoved = () => requestAnimationFrame(() => focusHeading(panel.current));
   return (
     <Panel title={t('admin.users')}>
+      <div ref={panel}>
       {users.error && <Notice tone="danger">{errorText(users.error)}</Notice>}
       {users.data && (
         <Table label={t('admin.users')} head={[t('admin.name'), t('admin.email'), t('admin.role'), t('admin.since'), t('admin.actions')]}>
-          {users.data.map((u) => <UserRow key={u.id} user={u} isMe={u.id === me.data?.user.id} isLastAdmin={u.role === 'admin' && admins <= 1} />)}
+          {users.data.map((u) => <UserRow key={u.id} user={u} isMe={u.id === me.data?.user.id} isLastAdmin={u.role === 'admin' && admins <= 1} onRemoved={onRemoved} />)}
         </Table>
       )}
+      </div>
     </Panel>
   );
 }
 
 /** One User with the admin's actions (ADR 0013). The server refuses what would leave no admin. */
-function UserRow({ user: u, isMe, isLastAdmin }: { user: UserView; isMe: boolean; isLastAdmin: boolean }) {
+function UserRow({ user: u, isMe, isLastAdmin, onRemoved }: { user: UserView; isMe: boolean; isLastAdmin: boolean; onRemoved: () => void }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const display = useDisplay();
@@ -158,10 +166,21 @@ function UserRow({ user: u, isMe, isLastAdmin }: { user: UserView; isMe: boolean
     },
   });
   const reset = useMutation({ mutationFn: async () => unwrap(await api.POST('/api/users/{id}/password-reset', path)) });
-  const error = act.error ?? reset.error;
+  // Errors of confirmed actions show in their dialog.
+  const error = (act.variables === 'disable' || act.variables === 'sign-out' ? null : act.error) ?? reset.error;
   /** Names the User for screen readers: every row has the same buttons (WCAG 2.4.6). */
   const label = (action: string) => t('common.forItem', { action, item: u.name });
-  const actionButton = (action: 'make-admin' | 'make-user' | 'disable' | 'enable' | 'sign-out', text: string) => (
+  /** Disabling and signing out everywhere end someone's sessions: those ask first (UI review B2). */
+  const confirmed = (action: 'disable' | 'sign-out', text: string, title: string, body: string) => (
+    <ConfirmButton
+      variant="quiet" aria-label={label(text)} isDisabled={act.isPending}
+      title={title} body={body} confirmLabel={text}
+      onConfirm={() => act.mutateAsync(action)}
+    >
+      {text}
+    </ConfirmButton>
+  );
+  const actionButton = (action: 'make-admin' | 'make-user' | 'enable', text: string) => (
     <Button
       variant="quiet" aria-label={label(text)}
       isPending={act.isPending && act.variables === action} isDisabled={act.isPending}
@@ -189,8 +208,10 @@ function UserRow({ user: u, isMe, isLastAdmin }: { user: UserView; isMe: boolean
             )}
             {!isMe && (
               <>
-                {actionButton('sign-out', t('admin.signOutEverywhere'))}
-                {u.disabled ? actionButton('enable', t('admin.enable')) : actionButton('disable', t('admin.disable'))}
+                {confirmed('sign-out', t('admin.signOutEverywhere'), t('admin.signOutTitle', { name: u.name }), t('admin.signOutBody'))}
+                {u.disabled
+                  ? actionButton('enable', t('admin.enable'))
+                  : confirmed('disable', t('admin.disable'), t('admin.disableTitle', { name: u.name }), t('admin.disableBody'))}
                 <Button variant="quiet" aria-label={label(t('admin.delete'))} onPress={() => setDeleting(true)}>{t('admin.delete')}</Button>
               </>
             )}
@@ -206,7 +227,11 @@ function UserRow({ user: u, isMe, isLastAdmin }: { user: UserView; isMe: boolean
           </td>
         </tr>
       )}
-      <DeleteUserDialog user={u} isOpen={deleting} onOpenChange={setDeleting} onDeleted={refresh} />
+      <DeleteUserDialog
+        user={u} isOpen={deleting} onOpenChange={setDeleting}
+        // The row is gone afterwards; focus goes to the Users heading instead of the page top.
+        onDeleted={async () => { await refresh(); onRemoved(); }}
+      />
       <Dialog title={t('admin.demoteSelfTitle')} isOpen={demotingSelf} onOpenChange={setDemotingSelf}>
         <p>{t('admin.demoteSelfBody')}</p>
         <div className="form-actions">

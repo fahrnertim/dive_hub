@@ -8,7 +8,8 @@
     "signOut": "Abmelden",
     "none": "–",
     "actions": "Aktionen",
-    "forItem": "{{action}}: {{item}}"
+    "forItem": "{{action}}: {{item}}",
+    "undo": "Rückgängig"
   },
   "nav": {
     "main": "Hauptmenü",
@@ -84,7 +85,11 @@
     "metric": "Metrisch (m, °C)",
     "imperial": "Imperial (ft, °F)",
     "saved": "Gespeichert.",
-    "browser": "Browser"
+    "browser": "Browser",
+    "signOutOthersTitle": "Überall sonst abmelden?",
+    "signOutOthersBody": "Alle anderen Browser und Geräte, auf denen du angemeldet bist, müssen sich neu anmelden.",
+    "signOutThisTitle": "Auf diesem Gerät abmelden?",
+    "signOutThisBody": "Zum erneuten Anmelden brauchst du dein Passwort."
   },
   "admin": {
     "inviteTitle": "Jemanden einladen",
@@ -129,14 +134,19 @@
     "deleteSubmit": "{{name}} löschen",
     "demoteSelfTitle": "Dir selbst die Adminrechte entziehen?",
     "demoteSelfBody": "Du verlierst den Zugang zu dieser Seite. Ein anderer Admin kann dir die Rechte zurückgeben.",
-    "demoteSelfSubmit": "Meine Adminrechte entziehen"
+    "demoteSelfSubmit": "Meine Adminrechte entziehen",
+    "revokeTitle": "Einladung für {{email}} zurückziehen?",
+    "revokeBody": "Der Link funktioniert dann nicht mehr. Du kannst die Person mit einem neuen Link wieder einladen.",
+    "disableTitle": "{{name}} deaktivieren?",
+    "disableBody": "Die Person kann sich nicht mehr anmelden und wird überall abgemeldet. Ihre Daten bleiben, und du kannst sie wieder aktivieren.",
+    "signOutTitle": "{{name}} überall abmelden?",
+    "signOutBody": "Alle Sitzungen enden. Die Person kann sich wieder anmelden."
   },
   "import": {
     "title": "Import",
     "drop": "Garmin-FIT-Dateien oder ZIP-Archive hier ablegen",
     "choose": "Dateien auswählen",
     "hint": "„Export Original“-ZIPs aus Garmin Connect und direkt von der Uhr kopierte Dateien funktionieren beide.",
-    "uploading": "Wird hochgeladen …",
     "status": {
       "pending": "wartet",
       "processing": "wird verarbeitet",
@@ -169,7 +179,16 @@
       "attached": "zu einem Tauchgang hinzugefügt",
       "new_dive": "als eigener Tauchgang angelegt",
       "discarded": "verworfen"
-    }
+    },
+    "uploading_one": "{{count}} Datei wird hochgeladen …",
+    "uploading_other": "{{count}} Dateien werden hochgeladen …",
+    "finished": "{{name}}: {{result}}",
+    "importFiles": "Dateien importieren",
+    "dropAnywhere": "Du kannst FIT-Dateien und ZIPs auch irgendwo auf dieser Seite ablegen.",
+    "dropNow": "Zum Importieren ablegen",
+    "recent": "Importe",
+    "showAll": "Alle Importe zeigen",
+    "showFewer": "Weniger zeigen"
   },
   "logbook": {
     "title": "Logbuch",
@@ -202,7 +221,7 @@
     "temperature": "Temperatur",
     "edit": "Tauchgang bearbeiten",
     "save": "Speichern",
-    "saved": "Gespeichert.",
+    "saved": "Tauchgang gespeichert.",
     "number": "Tauchgangsnummer",
     "start": "Beginn (Ortszeit am Tauchplatz)",
     "utcOffset": "UTC-Abweichung (Stunden)",
@@ -231,7 +250,14 @@
     "move": "Verschieben",
     "splitOff": "Als eigenen Tauchgang abtrennen",
     "splitHint": "Für eine Aufzeichnung, die zu einem anderen Tauchgang gehört. Sie wird ein eigener Tauchgang.",
-    "notFoundTitle": "Tauchgang nicht gefunden"
+    "notFoundTitle": "Tauchgang nicht gefunden",
+    "splitOffTitle": "Diese Aufzeichnung abtrennen?",
+    "splitOffBody": "Sie wird ein eigener Tauchgang mit eigenem Verlauf. Dieser Tauchgang behält seine anderen Aufzeichnungen.",
+    "splitOffConfirm": "Abtrennen",
+    "unsavedQuestion": "Ohne Speichern verlassen? Deine Änderungen an diesem Tauchgang gehen verloren.",
+    "profileSummary": "Tiefster Punkt {{depth}} nach {{time}}; insgesamt {{duration}}.",
+    "profileTemperature": "Wasser {{range}}.",
+    "profileTable": "Profil als Tabelle"
   },
   "errors": {
     "unknown": "Etwas ist schiefgegangen. Versuch es noch einmal.",
@@ -349,7 +375,8 @@
     "showDiscarded": "Verworfene Aufzeichnungen zeigen",
     "hideDiscarded": "Verworfene Aufzeichnungen ausblenden",
     "reopen": "Neu entscheiden",
-    "none": "Nichts zu entscheiden."
+    "none": "Nichts zu entscheiden.",
+    "discardedNotice": "Aufzeichnung vom {{time}} verworfen."
   },
   "divers": {
     "title": "Taucher",
@@ -376,6 +403,7 @@
     "filter": "Taucher",
     "allDivers": "Alle Taucher",
     "logbooks": "Logbücher, die du führst",
-    "belongsToDevice": "{{device}} gehört zu"
+    "belongsToDevice": "{{device}} gehört zu",
+    "added": "{{name}} hinzugefügt."
   }
 }

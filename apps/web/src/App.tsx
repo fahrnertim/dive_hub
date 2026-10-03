@@ -2,12 +2,13 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AcceptInvitation, ResetPassword, Setup, SignIn, SignOutButton } from './Account.tsx';
-import { meQuery, setupQuery, type Me } from './api.ts';
+import { divesQuery, meQuery, setupQuery, type Me } from './api.ts';
 import { DiveList } from './DiveList.tsx';
 import { pickLanguage } from './i18n/index.ts';
 import { Decisions } from './Decisions.tsx';
-import { ImportPanel } from './ImportPanel.tsx';
+import { ImportFilesButton, ImportPanel, ImportProvider, RecentImports } from './ImportPanel.tsx';
 import { useErrorText } from './lib/display.ts';
+import { mayLeave } from './lib/leave-guard.ts';
 import { useFocusOnNavigate } from './lib/page.ts';
 import { BrandMark, ErrorBoundary, Muted, Notice } from './ui/index.ts';
 
@@ -24,7 +25,14 @@ const DiversPage = lazy(() => import('./DiversPage.tsx').then((m) => ({ default:
 function useRoute(): string {
   const [route, setRoute] = useState(() => location.hash.slice(1) || '/');
   useEffect(() => {
-    const onChange = () => setRoute(location.hash.slice(1) || '/');
+    const onChange = (event: HashChangeEvent) => {
+      // A form with unsaved changes may keep the User here; then the address goes back, too.
+      if (!mayLeave()) {
+        history.replaceState(null, '', new URL(event.oldURL).hash || '#/');
+        return;
+      }
+      setRoute(location.hash.slice(1) || '/');
+    };
     addEventListener('hashchange', onChange);
     return () => removeEventListener('hashchange', onChange);
   }, []);
@@ -105,12 +113,31 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
     return me.user.role === 'admin' ? <Admin /> : <><h1>{t('nav.admin')}</h1><Notice tone="danger">{t('errors.admins_only')}</Notice></>;
   }
   const diverId = new URLSearchParams(route.split('?')[1] ?? '').get('diver') ?? undefined;
+  return <Logbook diverId={diverId} />;
+}
+
+/**
+ * The logbook page. On the first run the Import is the main action and comes first; once there are
+ * dives, the logbook comes first and importing is a button, or dropping files on the page (UI review B5).
+ */
+function Logbook({ diverId }: { diverId: string | undefined }) {
+  const all = useQuery(divesQuery());
+  const returning = (all.data?.length ?? 0) > 0;
   return (
-    <>
+    <ImportProvider>
       <Decisions />
-      <ImportPanel />
-      <DiveList diverId={diverId} />
-    </>
+      {returning ? (
+        <>
+          <RecentImports />
+          <DiveList diverId={diverId} importAction={<ImportFilesButton />} />
+        </>
+      ) : (
+        <>
+          {all.data && <ImportPanel />}
+          <DiveList diverId={diverId} />
+        </>
+      )}
+    </ImportProvider>
   );
 }
 

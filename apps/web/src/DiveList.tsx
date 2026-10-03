@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { divesQuery, diversQuery } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
@@ -8,7 +9,7 @@ import { Muted, Notice, Panel, Select, Table } from './ui/index.ts';
 const ALL = 'all';
 
 /** The logbook: Dives of the User's Divers, newest first; with several Divers, a filter and a column. */
-export function DiveList({ diverId }: { diverId?: string | undefined }) {
+export function DiveList({ diverId, importAction }: { diverId?: string | undefined; importAction?: ReactNode }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const display = useDisplay();
@@ -22,17 +23,23 @@ export function DiveList({ diverId }: { diverId?: string | undefined }) {
     <Panel
       title={t('logbook.title')}
       level={1}
-      actions={several && (
-        <div className="logbook-filter">
-          <Select
-            label={t('divers.filter')}
-            value={diverId ?? ALL}
-            onChange={(v) => { location.hash = !v || v === ALL ? '/' : `/?diver=${v}`; }}
-            options={[{ id: ALL, label: t('divers.allDivers') }, ...(divers.data ?? []).map((d) => ({ id: d.id, label: d.name }))]}
-          />
+      actions={(several || importAction) && (
+        <div className="logbook-actions">
+          {several && (
+            <div className="logbook-filter">
+              <Select
+                label={t('divers.filter')}
+                value={diverId ?? ALL}
+                onChange={(v) => { location.hash = !v || v === ALL ? '/' : `/?diver=${v}`; }}
+                options={[{ id: ALL, label: t('divers.allDivers') }, ...(divers.data ?? []).map((d) => ({ id: d.id, label: d.name }))]}
+              />
+            </div>
+          )}
+          {importAction}
         </div>
       )}
     >
+      {importAction && <Muted>{t('import.dropAnywhere')}</Muted>}
       {dives.isPending && <Muted>{t('common.loading')}</Muted>}
       {dives.error && <Notice tone="danger">{errorText(dives.error)}</Notice>}
       {dives.data?.length === 0 && <Muted>{t('logbook.empty')}</Muted>}

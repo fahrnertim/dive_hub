@@ -28,12 +28,15 @@ test('a recording that doesn\'t clearly fit is put aside, brought back and added
 
   await panel.getByRole('button', { name: /^Discard:/ }).click();
   await expect(page.getByRole('heading', { name: 'Needs your decision' })).toHaveCount(0);
+  // The Discard button is gone; focus is on the way back.
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeFocused();
   await page.getByRole('button', { name: 'Show discarded recordings' }).click();
   await page.getByRole('button', { name: 'Decide again' }).click();
   await page.getByRole('button', { name: 'Hide discarded recordings' }).click();
 
   await page.getByRole('button', { name: 'Add to this dive' }).click();
   await expect(page.getByRole('heading', { name: 'Needs your decision' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Logbook', level: 1 })).toBeFocused(); // nothing left to decide
   await page.getByRole('link', { name: 'Jan 15, 2026, 11:00 AM (UTC+2)' }).click();
   await expect(page.getByRole('radio', { name: /\(777\)/ })).toBeVisible();
   await expect(page.locator('.history > li').first()).toContainText('Recording added');
@@ -44,6 +47,8 @@ test('a recording that belongs elsewhere is split off into its own dive', async 
   await page.getByRole('link', { name: 'Jan 15, 2026, 11:00 AM (UTC+2)' }).click();
   await page.getByRole('radio', { name: /\(777\)/ }).click();
   await page.getByRole('button', { name: 'Split off into its own dive' }).click();
+  // It's hard to undo, so it asks first.
+  await page.getByRole('dialog').getByRole('button', { name: 'Split off', exact: true }).click();
   await expect(page.getByRole('radio', { name: /\(777\)/ })).toHaveCount(0);
   await expect(page.locator('.history > li').first()).toContainText('Recording split off');
   await page.getByRole('link', { name: 'Logbook' }).first().click();

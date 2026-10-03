@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, devicesQuery, diversQuery, keys, unwrap, type DeviceView, type DiverView } from './api.ts';
 import { deviceName } from './lib/devices.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
+import { announce } from './lib/announce.ts';
+import { refocusAfterRemoval } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
 import { Button, Form, Muted, Notice, Panel, Select, Table, TextField } from './ui/index.ts';
 
@@ -25,6 +27,7 @@ function Divers() {
   const errorText = useErrorText();
   const queryClient = useQueryClient();
   const divers = useQuery(diversQuery());
+  const list = useRef<HTMLUListElement>(null);
   const create = useMutation({
     mutationFn: async (name: string) => unwrap(await api.POST('/api/divers', { body: { name } })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.divers }),
@@ -32,15 +35,17 @@ function Divers() {
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
-    create.mutate(String(new FormData(form).get('name')).trim(), { onSuccess: () => form.reset() });
+    create.mutate(String(new FormData(form).get('name')).trim(), {
+      onSuccess: (created) => { form.reset(); announce(t('divers.added', { name: created.name })); },
+    });
   };
 
   return (
     <Panel title={t('divers.logbooks')}>
       <Muted>{t('divers.intro')}</Muted>
       {divers.error && <Notice tone="danger">{errorText(divers.error)}</Notice>}
-      <ul className="diver-list">
-        {divers.data?.map((d) => <DiverRow key={d.id} diver={d} />)}
+      <ul className="diver-list" ref={list}>
+        {divers.data?.map((d, index) => <DiverRow key={d.id} diver={d} list={list} index={index} count={divers.data.length} />)}
       </ul>
       <Form className="form-inline" onSubmit={submit}>
         <TextField label={t('divers.add')} name="name" isRequired maxLength={100} autoComplete="off" />
@@ -51,11 +56,18 @@ function Divers() {
   );
 }
 
-function DiverRow({ diver: d }: { diver: DiverView }) {
+function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: RefObject<HTMLUListElement | null>; index: number; count: number }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const queryClient = useQueryClient();
   const [renaming, setRenaming] = useState(false);
+  // When renaming ends (saved or cancelled), focus goes back to "Rename" (UI review B1).
+  const renameButton = useRef<HTMLButtonElement>(null);
+  const wasRenaming = useRef(false);
+  useEffect(() => {
+    if (wasRenaming.current && !renaming) renameButton.current?.focus();
+    wasRenaming.current = renaming;
+  }, [renaming]);
   const refresh = () => queryClient.invalidateQueries({ queryKey: keys.divers });
   const rename = useMutation({
     mutationFn: async (name: string) => unwrap(await api.PATCH('/api/divers/{id}', { params: { path: { id: d.id } }, body: { name } })),
@@ -63,7 +75,10 @@ function DiverRow({ diver: d }: { diver: DiverView }) {
   });
   const remove = useMutation({
     mutationFn: async () => unwrap(await api.DELETE('/api/divers/{id}', { params: { path: { id: d.id } } })),
-    onSuccess: refresh,
+    onSuccess: async () => {
+      await refresh();
+      refocusAfterRemoval(list.current, index, count);
+    },
   });
   const empty = d.diveCount === 0 && d.deviceCount === 0;
 
@@ -83,7 +98,7 @@ function DiverRow({ diver: d }: { diver: DiverView }) {
           <span className="diver-name">{d.name}{d.isOwn && ` (${t('divers.own')})`}</span>
           <a href={`#/?diver=${d.id}`} className="muted">{t('divers.dives', { count: d.diveCount })}</a>
           <span className="actions">
-            <Button variant="quiet" aria-label={t('common.forItem', { action: t('divers.rename'), item: d.name })} onPress={() => setRenaming(true)}>
+            <Button ref={renameButton} variant="quiet" aria-label={t('common.forItem', { action: t('divers.rename'), item: d.name })} onPress={() => setRenaming(true)}>
               {t('divers.rename')}
             </Button>
             {!d.isOwn && empty && (

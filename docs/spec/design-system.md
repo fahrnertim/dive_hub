@@ -89,6 +89,7 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 | `Notice` | What just happened: `info`, `success`, `danger` (announced at once). |
 | `Table` | Data tables that scroll sideways on phones; numeric columns are right-aligned, header included. |
 | `Dialog` | Modal with focus kept inside, for confirmations that need input (deleting a User). |
+| `ConfirmButton` | A button whose action is hard to undo: it asks in a `Dialog` that says what will happen. |
 | `CopyField` | A value shown once with a copy button (invitation and reset links). |
 | `NumberField` | Numbers in the UI language's format ("18,5" in German), with a unit after the input. |
 | `Select` | One choice from a short list (e.g. water type). |
@@ -162,6 +163,19 @@ German on a dark phone. **A new page gets a test there.**
 - **Targets are at least 24 × 24 px** (WCAG 2.5.8), including date segments.
 - **A query that fails with a 4xx is not retried** (`shouldRetry` in `api.ts`), so "not found"
   shows at once.
+- **Focus never falls to the page.** When the focused element goes away, focus moves on. A form that
+  opens focuses its first field, and on closing focus returns to the button that opened it. After an
+  item is removed from a list, `refocusAfterRemoval` (`lib/focus.ts`) focuses the next item, else the
+  panel heading.
+- **Actions that are hard to undo ask first** (`ConfirmButton`): split off, revoke, disable,
+  sign out everywhere, demoting yourself. Easily undone actions offer "Undo" instead (discarding a
+  Recording).
+- **Results are announced.** `Notice` (info, success) and `announce()` (`lib/announce.ts`) speak
+  through one polite live region that is always in the page; errors are `role=alert`.
+- **Unsaved edits aren't lost silently.** A form with changes calls `useLeaveGuard`
+  (`lib/leave-guard.ts`); leaving the page or cancelling then asks first.
+- **Pictures have text.** The depth profile has a text summary (`aria-describedby`) and its samples
+  as a table under "Profile as a table".
 
 ## Checking the look
 

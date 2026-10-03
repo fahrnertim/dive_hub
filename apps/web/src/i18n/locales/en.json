@@ -8,7 +8,8 @@
     "signOut": "Sign out",
     "none": "–",
     "actions": "Actions",
-    "forItem": "{{action}}: {{item}}"
+    "forItem": "{{action}}: {{item}}",
+    "undo": "Undo"
   },
   "nav": {
     "main": "Main",
@@ -84,7 +85,11 @@
     "metric": "Metric (m, °C)",
     "imperial": "Imperial (ft, °F)",
     "saved": "Saved.",
-    "browser": "Browser"
+    "browser": "Browser",
+    "signOutOthersTitle": "Sign out everywhere else?",
+    "signOutOthersBody": "Every other browser and device where you’re signed in has to sign in again.",
+    "signOutThisTitle": "Sign out on this device?",
+    "signOutThisBody": "You’ll need your password to sign in again."
   },
   "admin": {
     "inviteTitle": "Invite someone",
@@ -129,14 +134,19 @@
     "deleteSubmit": "Delete {{name}}",
     "demoteSelfTitle": "Remove your own admin role?",
     "demoteSelfBody": "You’ll lose access to this page. Another admin can give the role back.",
-    "demoteSelfSubmit": "Remove my admin role"
+    "demoteSelfSubmit": "Remove my admin role",
+    "revokeTitle": "Revoke the invitation for {{email}}?",
+    "revokeBody": "The link stops working. You can invite them again with a new link.",
+    "disableTitle": "Disable {{name}}?",
+    "disableBody": "They can’t sign in anymore and are signed out everywhere. Their data stays, and you can enable them again.",
+    "signOutTitle": "Sign {{name}} out everywhere?",
+    "signOutBody": "All their sessions end. They can sign in again."
   },
   "import": {
     "title": "Import",
     "drop": "Drop Garmin FIT files or zips here",
     "choose": "Choose files",
     "hint": "“Export Original” zips from Garmin Connect and files copied from the watch both work.",
-    "uploading": "Uploading…",
     "status": {
       "pending": "waiting",
       "processing": "processing",
@@ -169,7 +179,16 @@
       "attached": "added to a dive",
       "new_dive": "made a new dive",
       "discarded": "discarded"
-    }
+    },
+    "uploading_one": "Uploading {{count}} file…",
+    "uploading_other": "Uploading {{count}} files…",
+    "finished": "{{name}}: {{result}}",
+    "importFiles": "Import files",
+    "dropAnywhere": "You can also drop FIT files and zips anywhere on this page.",
+    "dropNow": "Drop to import",
+    "recent": "Imports",
+    "showAll": "Show all imports",
+    "showFewer": "Show fewer"
   },
   "logbook": {
     "title": "Logbook",
@@ -202,7 +221,7 @@
     "temperature": "Temperature",
     "edit": "Edit dive",
     "save": "Save",
-    "saved": "Saved.",
+    "saved": "Dive saved.",
     "number": "Dive number",
     "start": "Start (local time at the site)",
     "utcOffset": "UTC offset (hours)",
@@ -231,7 +250,14 @@
     "move": "Move",
     "splitOff": "Split off into its own dive",
     "splitHint": "For a recording that belongs to another dive. It becomes a dive of its own.",
-    "notFoundTitle": "Dive not found"
+    "notFoundTitle": "Dive not found",
+    "splitOffTitle": "Split off this recording?",
+    "splitOffBody": "It becomes a dive of its own, with its own history. This dive keeps its other recordings.",
+    "splitOffConfirm": "Split off",
+    "unsavedQuestion": "Leave without saving? Your changes to this dive will be lost.",
+    "profileSummary": "Deepest point {{depth}} after {{time}}; {{duration}} in total.",
+    "profileTemperature": "Water {{range}}.",
+    "profileTable": "Profile as a table"
   },
   "errors": {
     "unknown": "Something went wrong. Try again.",
@@ -349,7 +375,8 @@
     "showDiscarded": "Show discarded recordings",
     "hideDiscarded": "Hide discarded recordings",
     "reopen": "Decide again",
-    "none": "Nothing to decide."
+    "none": "Nothing to decide.",
+    "discardedNotice": "Discarded the recording from {{time}}."
   },
   "divers": {
     "title": "Divers",
@@ -376,6 +403,7 @@
     "filter": "Diver",
     "allDivers": "All Divers",
     "logbooks": "Logbooks you keep",
-    "belongsToDevice": "{{device}} belongs to"
+    "belongsToDevice": "{{device}} belongs to",
+    "added": "{{name}} added."
   }
 }

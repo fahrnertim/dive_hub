@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ToggleButton, ToggleButtonGroup } from 'react-aria-components';
 import { api, ApiError, diveQuery, diversQuery, keys, unwrap, type DiveView, type OverridableField, type RecordingSummary } from './api.ts';
@@ -9,8 +9,9 @@ import { DiveHistory } from './DiveHistory.tsx';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { deviceName } from './lib/devices.ts';
 import { useFormatValue } from './lib/dive-values.ts';
+import { focusHeading } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, Dialog, ErrorBoundary, Muted, Notice, Panel, Select } from './ui/index.ts';
+import { Button, ConfirmButton, Dialog, ErrorBoundary, Muted, Notice, Panel, Select } from './ui/index.ts';
 
 /** One Dive (ADR 0015): its values with Overrides marked, notes, Recordings, and its history. */
 export function DiveDetail({ id }: { id: string }) {
@@ -21,6 +22,13 @@ export function DiveDetail({ id }: { id: string }) {
   const divers = useQuery(diversQuery());
   const [editing, setEditing] = useState(false);
   const [moving, setMoving] = useState(false);
+  // Closing the edit form puts focus back on "Edit dive" (the form had it; UI review B1).
+  const editButton = useRef<HTMLButtonElement>(null);
+  const wasEditing = useRef(false);
+  useEffect(() => {
+    if (wasEditing.current && !editing) editButton.current?.focus();
+    wasEditing.current = editing;
+  }, [editing]);
   const v = dive.data?.values;
   const notFound = dive.error instanceof ApiError && dive.error.status === 404;
   const title = !v ? (notFound ? t('dive.notFoundTitle') : undefined)
@@ -47,7 +55,7 @@ export function DiveDetail({ id }: { id: string }) {
         title={<>{title}<span className="title-meta">{display.diveTime(d.values.startsAt.at, d.values.startsAt.utcOffsetSeconds)}<EditedMark dive={d} field="startsAt" /></span></>}
         actions={!editing && (
           <div className="form-actions">
-            <Button onPress={() => setEditing(true)}>{t('dive.edit')}</Button>
+            <Button ref={editButton} onPress={() => setEditing(true)}>{t('dive.edit')}</Button>
             {(divers.data?.length ?? 0) > 1 && <Button variant="quiet" onPress={() => setMoving(true)}>{t('dive.moveTo')}</Button>}
           </div>
         )}
@@ -153,6 +161,7 @@ function Recordings({ dive: d }: { dive: DiveView }) {
   const display = useDisplay();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<string>();
+  const content = useRef<HTMLDivElement>(null);
   const recording = d.recordings.find((r) => r.id === selected) ?? d.recordings.find((r) => r.isPrimary) ?? d.recordings[0];
   const splitOff = useMutation({
     mutationFn: async (recordingId: string) =>
@@ -176,6 +185,7 @@ function Recordings({ dive: d }: { dive: DiveView }) {
 
   return (
     <Panel title={d.recordings.length > 1 ? t('dive.recordings') : t('dive.recording')}>
+      <div ref={content}>
       {d.recordings.length > 1 && (
         <>
           <ToggleButtonGroup
@@ -198,10 +208,17 @@ function Recordings({ dive: d }: { dive: DiveView }) {
             {!recording.isPrimary && (
               <Button isPending={makePrimary.isPending} isDisabled={splitOff.isPending} onPress={() => makePrimary.mutate(recording.id)}>{t('dive.makePrimary')}</Button>
             )}
-            <Button variant="quiet" isPending={splitOff.isPending} isDisabled={makePrimary.isPending} onPress={() => splitOff.mutate(recording.id)}>{t('dive.splitOff')}</Button>
+            <ConfirmButton
+              variant="quiet" isDisabled={makePrimary.isPending}
+              title={t('dive.splitOffTitle')} body={t('dive.splitOffBody')} confirmLabel={t('dive.splitOffConfirm')}
+              onConfirm={() => splitOff.mutateAsync(recording.id)}
+              onDone={() => requestAnimationFrame(() => focusHeading(content.current))}
+            >
+              {t('dive.splitOff')}
+            </ConfirmButton>
           </div>
           <Muted>{t('dive.splitHint')}</Muted>
-          {(makePrimary.error ?? splitOff.error) && <Notice tone="danger">{errorText(makePrimary.error ?? splitOff.error)}</Notice>}
+          {makePrimary.error && <Notice tone="danger">{errorText(makePrimary.error)}</Notice>}
         </>
       )}
       <dl className="facts facts-small">
@@ -233,6 +250,7 @@ function Recordings({ dive: d }: { dive: DiveView }) {
       <ErrorBoundary key={recording.id} fallback={<Notice tone="danger">{t('dive.profileFailed')}</Notice>}>
         <DepthProfile recordingId={recording.id} />
       </ErrorBoundary>
+      </div>
     </Panel>
   );
 }

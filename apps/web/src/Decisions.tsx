@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, candidatesQuery, keys, unwrap, type CandidateView } from './api.ts';
 import { deviceName } from './lib/devices.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
+import { refocusAfterRemoval } from './lib/focus.ts';
 import { Button, Muted, Notice, Panel } from './ui/index.ts';
 
 /**
@@ -15,21 +16,31 @@ export function Decisions() {
   const open = useQuery(candidatesQuery('open'));
   const discarded = useQuery(candidatesQuery('discarded'));
   const [showDiscarded, setShowDiscarded] = useState(false);
+  // The Recording just discarded, offered back with "Undo" (UI review B2).
+  const [undo, setUndo] = useState<CandidateView>();
+  const list = useRef<HTMLUListElement>(null);
   const count = open.data?.length ?? 0;
+  // Offered only while that Recording is still discarded (it may be decided again another way).
+  const undoable = undo && discarded.data?.some((c) => c.id === undo.id) ? undo : undefined;
+  const undoNotice = undoable && <UndoDiscard key={undoable.id} candidate={undoable} onDone={() => setUndo(undefined)} />;
 
   if (count === 0 && !showDiscarded) {
     if (!discarded.data?.length) return null;
     return (
-      <p className="decisions-quiet">
+      <div className="decisions-quiet">
+        {undoNotice}
         <Button variant="quiet" onPress={() => setShowDiscarded(true)}>{t('decisions.showDiscarded')}</Button>
-      </p>
+      </div>
     );
   }
   return (
     <Panel title={t('decisions.title')}>
       {count > 0 && <p>{t('decisions.intro', { count })}</p>}
-      <ul className="decisions">
-        {open.data?.map((c) => <Decision key={c.id} candidate={c} />)}
+      {undoNotice}
+      <ul className="decisions" ref={list}>
+        {open.data?.map((c, index) => (
+          <Decision key={c.id} candidate={c} list={list} index={index} count={count} onDiscarded={() => setUndo(c)} />
+        ))}
       </ul>
       {showDiscarded ? <Discarded onHide={() => setShowDiscarded(false)} /> : (discarded.data?.length ?? 0) > 0 && (
         <Button variant="quiet" onPress={() => setShowDiscarded(true)}>{t('decisions.showDiscarded')}</Button>
@@ -54,10 +65,16 @@ function RecordingLine({ c }: { c: CandidateView }) {
   );
 }
 
-function useDecide(c: CandidateView) {
+/**
+ * The decisions about one Duplicate candidate. The candidate leaves its list afterwards; focus then
+ * goes to the next one, else the panel or page heading (UI review B1).
+ */
+type Action = { kind: 'attach'; diveId: string } | { kind: 'new-dive' | 'discard' | 'reopen' };
+
+function useDecide(c: CandidateView, refocus?: (action: Action) => void) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (action: { kind: 'attach'; diveId: string } | { kind: 'new-dive' | 'discard' | 'reopen' }) => {
+    mutationFn: async (action: Action) => {
       const path = { params: { path: { id: c.id } } };
       switch (action.kind) {
         case 'attach': return unwrap(await api.POST('/api/duplicate-candidates/{id}/attach', { ...path, body: { diveId: action.diveId } }));
@@ -66,18 +83,41 @@ function useDecide(c: CandidateView) {
         case 'reopen': return unwrap(await api.POST('/api/duplicate-candidates/{id}/reopen', path));
       }
     },
-    onSettled: async () => {
+    onSettled: async (_data, error, action) => {
       await queryClient.invalidateQueries({ queryKey: ['candidates'] });
       await queryClient.invalidateQueries({ queryKey: keys.dives });
+      if (!error) refocus?.(action);
     },
   });
 }
 
-function Decision({ candidate: c }: { candidate: CandidateView }) {
+/** "Discarded the recording from …" with a way back. Takes focus: the Discard button is gone. */
+function UndoDiscard({ candidate: c, onDone }: { candidate: CandidateView; onDone: () => void }) {
+  const { t } = useTranslation();
+  const display = useDisplay();
+  const reopen = useDecide(c);
+  const button = useRef<HTMLButtonElement>(null);
+  useEffect(() => button.current?.focus(), []);
+  return (
+    <Notice tone="success">
+      <p>{t('decisions.discardedNotice', { time: display.diveTime(c.recording.startsAt, c.recording.utcOffsetSeconds) })}</p>
+      <Button ref={button} isPending={reopen.isPending} onPress={() => reopen.mutate({ kind: 'reopen' }, { onSuccess: onDone })}>
+        {t('common.undo')}
+      </Button>
+    </Notice>
+  );
+}
+
+function Decision({ candidate: c, list, index, count, onDiscarded }: {
+  candidate: CandidateView; list: RefObject<HTMLUListElement | null>; index: number; count: number; onDiscarded: () => void;
+}) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const display = useDisplay();
-  const decide = useDecide(c);
+  const decide = useDecide(c, (action) => {
+    if (action.kind === 'discard') onDiscarded(); // the Undo notice takes focus
+    else refocusAfterRemoval(list.current, index, count);
+  });
   // Several Recordings may wait at once; their buttons say which one they decide about.
   const recordingName = display.diveTime(c.recording.startsAt, c.recording.utcOffsetSeconds);
   return (
@@ -132,22 +172,26 @@ function Decision({ candidate: c }: { candidate: CandidateView }) {
 function Discarded({ onHide }: { onHide: () => void }) {
   const { t } = useTranslation();
   const discarded = useQuery(candidatesQuery('discarded'));
+  const list = useRef<HTMLUListElement>(null);
+  const count = discarded.data?.length ?? 0;
   return (
     <section className="discarded">
       <h3>{t('decisions.discarded')}</h3>
       {discarded.data?.length === 0 && <Muted>{t('decisions.none')}</Muted>}
-      <ul className="decisions">
-        {discarded.data?.map((c) => <DiscardedItem key={c.id} candidate={c} />)}
+      <ul className="decisions" ref={list}>
+        {discarded.data?.map((c, index) => (
+          <DiscardedItem key={c.id} candidate={c} onReopened={() => refocusAfterRemoval(list.current, index, count)} />
+        ))}
       </ul>
       <Button variant="quiet" onPress={onHide}>{t('decisions.hideDiscarded')}</Button>
     </section>
   );
 }
 
-function DiscardedItem({ candidate: c }: { candidate: CandidateView }) {
+function DiscardedItem({ candidate: c, onReopened }: { candidate: CandidateView; onReopened: () => void }) {
   const { t } = useTranslation();
   const display = useDisplay();
-  const decide = useDecide(c);
+  const decide = useDecide(c, onReopened);
   return (
     <li className="decision">
       <RecordingLine c={c} />

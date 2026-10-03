@@ -1,7 +1,10 @@
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog as AriaDialog, Heading, Modal, ModalOverlay } from 'react-aria-components';
-import { Button } from './Button.tsx';
+import { announce } from '../lib/announce.ts';
+import { useErrorText } from '../lib/display.ts';
+import { Button, type ButtonProps } from './Button.tsx';
+import { Notice } from './Layout.tsx';
 
 /** A modal dialog; focus stays inside and returns to the trigger when it closes. */
 export function Dialog({ title, isOpen, onOpenChange, children }: {
@@ -26,9 +29,52 @@ export function CopyField({ value, label }: { value: string; label: string }) {
   return (
     <div className="copy-field">
       <input className="input" readOnly value={value} aria-label={label} onFocus={(e) => e.currentTarget.select()} />
-      <Button onPress={async () => { await navigator.clipboard.writeText(value); setCopied(true); }}>
+      <Button onPress={async () => { await navigator.clipboard.writeText(value); setCopied(true); announce(t('common.copied')); }}>
         {copied ? t('common.copied') : t('common.copy')}
       </Button>
     </div>
+  );
+}
+
+/**
+ * A button whose action is hard to undo (split off, disable, revoke, sign out everywhere): it asks
+ * first, in a dialog that says what will happen (UI review B2). `onConfirm` runs the action; the
+ * dialog closes when it succeeds and shows the error when it fails. Focus returns to the button, or
+ * `onDone` moves it when the button is gone afterwards.
+ */
+export function ConfirmButton({ children, title, body, confirmLabel, onConfirm, onDone, tone = 'danger', ...button }: Omit<ButtonProps, 'onPress' | 'children'> & {
+  children: ReactNode; title: ReactNode; body: ReactNode; confirmLabel: string;
+  onConfirm: () => Promise<unknown>; onDone?: () => void; tone?: 'danger' | 'primary';
+}) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<unknown>();
+  const confirm = async () => {
+    setPending(true);
+    setError(undefined);
+    try {
+      await onConfirm();
+      setOpen(false);
+      onDone?.();
+    } catch (e) {
+      setError(e);
+    } finally {
+      setPending(false);
+    }
+  };
+  return (
+    <>
+      <Button {...button} onPress={() => { setError(undefined); setOpen(true); }}>{children}</Button>
+      <Dialog title={title} isOpen={open} onOpenChange={setOpen}>
+        <p>{body}</p>
+        {error !== undefined && <Notice tone="danger">{errorText(error)}</Notice>}
+        <div className="form-actions">
+          <Button variant={tone} isPending={pending} onPress={confirm}>{confirmLabel}</Button>
+          <Button onPress={() => setOpen(false)}>{t('common.cancel')}</Button>
+        </div>
+      </Dialog>
+    </>
   );
 }
