@@ -8,7 +8,9 @@ import {
 import { writeRevision, type Actor, type Changes, type RevisionCause } from './revisions.js';
 
 export class DiveError extends Error {
-  constructor(readonly code: 'dive_not_found' | 'dive_changed' | 'dive_values_inconsistent' | 'recording_not_on_dive') {
+  constructor(readonly code:
+    | 'dive_not_found' | 'dive_changed' | 'dive_values_inconsistent' | 'recording_not_on_dive'
+    | 'recording_not_found' | 'last_recording' | 'diver_not_found') {
     super(code);
   }
 }
@@ -51,10 +53,10 @@ async function primaryValues(tx: Tx, recordingId: string | null): Promise<DiveVa
  */
 async function apply(
   tx: Tx, current: DiveRow, next: { values: DiveValues; overrides: OverridableField[]; notes: string | null; primaryRecordingId: string | null },
-  actor: Actor, cause: RevisionCause,
+  actor: Actor, cause: RevisionCause, extra: Changes = {},
 ): Promise<Changes> {
   const before = valuesOfDive(current);
-  const changes: Changes = {};
+  const changes: Changes = { ...extra };
   let columns: Record<string, unknown> = {};
   for (const field of OVERRIDABLE_FIELDS) {
     const from = plain(field, before[field]);
@@ -93,6 +95,34 @@ function merge(current: DiveValues, fromRecording: DiveValues | null, overrides:
   return merged;
 }
 
+/** Divers the User manages. */
+export async function managedDiverIds(tx: Tx | Db, userId: string): Promise<Set<string>> {
+  const rows = await tx.select({ id: diverManagement.diverId }).from(diverManagement).where(eq(diverManagement.userId, userId));
+  return new Set(rows.map((r) => r.id));
+}
+
+/** A new Dive for one Diver from a Recording, which becomes its Primary recording. */
+export async function createDiveFromRecording(
+  tx: Tx, rec: typeof recording.$inferSelect, diverId: string, actor: Actor, cause: RevisionCause,
+): Promise<string> {
+  const v = valuesFromRecording(rec);
+  const [created] = await tx.insert(dive).values({
+    diverId, number: v.number, startsAt: v.startsAt.at, utcOffsetSeconds: v.startsAt.utcOffsetSeconds,
+    durationSeconds: v.durationSeconds, maxDepthM: v.maxDepthM, avgDepthM: v.avgDepthM,
+    waterTemperatureC: v.waterTemperatureC, waterType: v.waterType, primaryRecordingId: rec.id,
+  }).returning({ id: dive.id });
+  await tx.update(recording).set({ diveId: created!.id, updatedAt: new Date() }).where(eq(recording.id, rec.id));
+  await writeRevision(tx, 'dive', created!.id, actor, cause, { primaryRecordingId: { from: null, to: rec.id } });
+  return created!.id;
+}
+
+/** Adds a Recording to a Dive; the Dive's values stay with its Primary recording. */
+export async function attachRecording(tx: Tx, diveId: string, recordingId: string, actor: Actor, cause: RevisionCause) {
+  await tx.update(recording).set({ diveId, updatedAt: new Date() }).where(eq(recording.id, recordingId));
+  await tx.update(dive).set({ version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
+  await writeRevision(tx, 'dive', diveId, actor, cause, { recordings: { from: null, to: recordingId } });
+}
+
 export function createDiveService(db: Db) {
   return {
     /** A User's edit of their Dive, in one transaction and one Revision. */
@@ -127,6 +157,44 @@ export function createDiveService(db: Db) {
         await apply(tx, current, {
           values, overrides: current.overrides, notes: current.notes, primaryRecordingId: recordingId,
         }, { type: 'user', id: userId }, 'primary-change');
+      });
+    },
+
+    /**
+     * Splits a Recording off its Dive into a new Dive of the same Diver (data model: detaching is
+     * always possible). If it was the Primary recording, the earliest remaining one takes over.
+     * A Dive's last Recording can't be split off; that would only move the Dive.
+     */
+    async detach(userId: string, recordingId: string, version: number): Promise<string> {
+      return db.transaction(async (tx) => {
+        const [rec] = await tx.select().from(recording).where(and(eq(recording.id, recordingId), isNull(recording.deletedAt)));
+        if (!rec?.diveId) throw new DiveError('recording_not_found');
+        const current = await lockManagedDive(tx, userId, rec.diveId).catch(() => { throw new DiveError('recording_not_found'); });
+        if (current.version !== version) throw new DiveError('dive_changed');
+        const remaining = (await tx.select().from(recording)
+          .where(and(eq(recording.diveId, current.id), isNull(recording.deletedAt)))
+          .orderBy(recording.startsAt)).filter((r) => r.id !== rec.id);
+        if (remaining.length === 0) throw new DiveError('last_recording');
+        const actor: Actor = { type: 'user', id: userId };
+        await tx.update(recording).set({ diveId: null }).where(eq(recording.id, rec.id));
+        const primary = current.primaryRecordingId === rec.id ? remaining[0]!.id : current.primaryRecordingId;
+        const values = merge(valuesOfDive(current), await primaryValues(tx, primary), current.overrides);
+        await apply(tx, current, {
+          values, overrides: current.overrides, notes: current.notes, primaryRecordingId: primary,
+        }, actor, 'detach', { recordings: { from: rec.id, to: null } });
+        return createDiveFromRecording(tx, rec, current.diverId, actor, 'detach');
+      });
+    },
+
+    /** Files a Dive under another Diver the User manages (e.g. dived with a lent computer). */
+    async move(userId: string, diveId: string, diverId: string, version: number): Promise<void> {
+      await db.transaction(async (tx) => {
+        const current = await lockManagedDive(tx, userId, diveId);
+        if (current.version !== version) throw new DiveError('dive_changed');
+        if (!(await managedDiverIds(tx, userId)).has(diverId)) throw new DiveError('diver_not_found');
+        if (diverId === current.diverId) return;
+        await tx.update(dive).set({ diverId, version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
+        await writeRevision(tx, 'dive', diveId, { type: 'user', id: userId }, 'move', { diverId: { from: current.diverId, to: diverId } });
       });
     },
   };

@@ -11,7 +11,7 @@ test.beforeEach(async ({ request }) => {
 
 test('shows the dive with the recording\'s values, the device data and how it came to be', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('link', { name: /Jan 15, 2026/ }).click();
+  await page.getByRole('link', { name: 'Jan 15, 2026, 11:00 AM (UTC+2)' }).click();
   await expect(page.getByRole('heading', { name: /Dive 42/ })).toBeVisible();
   const facts = page.locator('dl.facts').first();
   await expect(facts).toContainText('18.5 m');
@@ -59,10 +59,10 @@ test('goes back to the recording\'s value', async ({ page }) => {
 
 test('switches the Primary recording; values without Override follow it', async ({ page }) => {
   await page.goto(`/#/dives/${diveId}`);
-  await page.getByRole('radio', { name: /Recording 2/ }).click();
+  await page.getByRole('radio', { name: /\(999\)/ }).click();
   await page.getByRole('button', { name: 'Make this the primary recording' }).click();
   await expect(page.locator('dl.facts').first()).toContainText('29 min');
-  await expect(page.getByRole('radio', { name: 'Recording 2 (primary)' })).toBeVisible();
+  await expect(page.getByRole('radio', { name: 'Garmin Descent Mk3 (999) (primary)' })).toBeVisible();
   await expect(page.locator('.history > li').first()).toContainText('Primary recording changed');
 });
 

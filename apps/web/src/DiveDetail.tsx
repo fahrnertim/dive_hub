@@ -2,13 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ToggleButton, ToggleButtonGroup } from 'react-aria-components';
-import { api, diveQuery, keys, unwrap, type DiveView, type OverridableField, type RecordingSummary } from './api.ts';
+import { api, diveQuery, diversQuery, keys, unwrap, type DiveView, type OverridableField, type RecordingSummary } from './api.ts';
 import { DepthProfile } from './DepthProfile.tsx';
 import { DiveEditForm } from './DiveEditForm.tsx';
 import { DiveHistory } from './DiveHistory.tsx';
 import { useDisplay, useErrorText } from './lib/display.ts';
+import { deviceName } from './lib/devices.ts';
 import { useFormatValue } from './lib/dive-values.ts';
-import { Button, ErrorBoundary, Muted, Notice, Panel } from './ui/index.ts';
+import { Button, Dialog, ErrorBoundary, Muted, Notice, Panel, Select } from './ui/index.ts';
 
 /** One Dive (ADR 0015): its values with Overrides marked, notes, Recordings, and its history. */
 export function DiveDetail({ id }: { id: string }) {
@@ -16,7 +17,9 @@ export function DiveDetail({ id }: { id: string }) {
   const errorText = useErrorText();
   const display = useDisplay();
   const dive = useQuery(diveQuery(id));
+  const divers = useQuery(diversQuery());
   const [editing, setEditing] = useState(false);
+  const [moving, setMoving] = useState(false);
 
   if (dive.isPending) return <Muted>{t('common.loading')}</Muted>;
   if (dive.error) return <Notice tone="danger">{errorText(dive.error)}</Notice>;
@@ -29,15 +32,58 @@ export function DiveDetail({ id }: { id: string }) {
       <p><a href="#/">{t('dive.back')}</a></p>
       <Panel
         title={<>{title}<span className="title-meta">{display.diveTime(v.startsAt.at, v.startsAt.utcOffsetSeconds)}<EditedMark dive={d} field="startsAt" /></span></>}
-        actions={!editing && <Button onPress={() => setEditing(true)}>{t('dive.edit')}</Button>}
+        actions={!editing && (
+          <div className="form-actions">
+            <Button onPress={() => setEditing(true)}>{t('dive.edit')}</Button>
+            {(divers.data?.length ?? 0) > 1 && <Button variant="quiet" onPress={() => setMoving(true)}>{t('dive.moveTo')}</Button>}
+          </div>
+        )}
       >
+        {(divers.data?.length ?? 0) > 1 && (
+          <p className="muted">{t('dive.diver')}: {divers.data?.find((v) => v.id === d.diverId)?.name}</p>
+        )}
         {editing
           ? <DiveEditForm key={d.version} dive={d} onDone={() => setEditing(false)} />
           : <DiveFacts dive={d} />}
       </Panel>
       <Recordings dive={d} />
       <DiveHistory dive={d} />
+      {moving && <MoveDialog dive={d} onClose={() => setMoving(false)} />}
     </>
+  );
+}
+
+/** Files the Dive under another Diver the User manages (ADR 0016). */
+function MoveDialog({ dive: d, onClose }: { dive: DiveView; onClose: () => void }) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const queryClient = useQueryClient();
+  const divers = useQuery(diversQuery());
+  const others = (divers.data ?? []).filter((v) => v.id !== d.diverId);
+  const [target, setTarget] = useState<string | null>(others[0]?.id ?? null);
+  const move = useMutation({
+    mutationFn: async (diverId: string) =>
+      unwrap(await api.POST('/api/dives/{id}/move', { params: { path: { id: d.id } }, body: { diverId, version: d.version } })),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(keys.dive(d.id), updated);
+      await queryClient.invalidateQueries({ queryKey: keys.dives });
+      await queryClient.invalidateQueries({ queryKey: keys.divers });
+      await queryClient.invalidateQueries({ queryKey: keys.revisions(d.id) });
+      onClose();
+    },
+  });
+  return (
+    <Dialog title={t('dive.moveTitle')} isOpen onOpenChange={(open) => !open && onClose()}>
+      <p>{t('dive.moveIntro')}</p>
+      <div className="form">
+        <Select label={t('dive.diver')} value={target} onChange={setTarget} options={others.map((v) => ({ id: v.id, label: v.name }))} />
+        {move.error && <Notice tone="danger">{errorText(move.error)}</Notice>}
+        <div className="form-actions">
+          <Button variant="primary" isDisabled={!target || move.isPending} onPress={() => target && move.mutate(target)}>{t('dive.move')}</Button>
+          <Button onPress={onClose}>{t('common.cancel')}</Button>
+        </div>
+      </div>
+    </Dialog>
   );
 }
 
@@ -89,6 +135,14 @@ function Recordings({ dive: d }: { dive: DiveView }) {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<string>();
   const recording = d.recordings.find((r) => r.id === selected) ?? d.recordings.find((r) => r.isPrimary) ?? d.recordings[0];
+  const splitOff = useMutation({
+    mutationFn: async (recordingId: string) =>
+      unwrap(await api.POST('/api/recordings/{id}/detach', { params: { path: { id: recordingId } }, body: { version: d.version } })),
+    onSuccess: async () => {
+      setSelected(undefined);
+      await queryClient.invalidateQueries({ queryKey: keys.dives });
+    },
+  });
   const makePrimary = useMutation({
     mutationFn: async (recordingId: string) =>
       unwrap(await api.PUT('/api/dives/{id}/primary-recording', { params: { path: { id: d.id } }, body: { recordingId, version: d.version } })),
@@ -115,17 +169,20 @@ function Recordings({ dive: d }: { dive: DiveView }) {
           >
             {d.recordings.map((r, i) => (
               <ToggleButton key={r.id} id={r.id} className="segment">
-                {t('dive.recordingN', { n: i + 1 })}{r.isPrimary && ` (${t('dive.primary')})`}
+                {r.device ? `${deviceName(r.device.manufacturer, r.device.product)} (${r.device.serialNumber})` : t('dive.recordingN', { n: i + 1 })}
+                {r.isPrimary && ` (${t('dive.primary')})`}
               </ToggleButton>
             ))}
           </ToggleButtonGroup>
           <Muted>{t('dive.primaryHint')}</Muted>
-          {!recording.isPrimary && (
-            <p>
+          <div className="form-actions recording-actions">
+            {!recording.isPrimary && (
               <Button isDisabled={makePrimary.isPending} onPress={() => makePrimary.mutate(recording.id)}>{t('dive.makePrimary')}</Button>
-            </p>
-          )}
-          {makePrimary.error && <Notice tone="danger">{errorText(makePrimary.error)}</Notice>}
+            )}
+            <Button variant="quiet" isDisabled={splitOff.isPending} onPress={() => splitOff.mutate(recording.id)}>{t('dive.splitOff')}</Button>
+          </div>
+          <Muted>{t('dive.splitHint')}</Muted>
+          {(makePrimary.error ?? splitOff.error) && <Notice tone="danger">{errorText(makePrimary.error ?? splitOff.error)}</Notice>}
         </>
       )}
       <dl className="facts facts-small">

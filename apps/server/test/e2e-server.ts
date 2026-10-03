@@ -15,6 +15,7 @@ import { createImportService } from '../src/imports/import-service.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { createInvitations } from '../src/users/invitations.js';
 import { createSetup } from '../src/users/setup.js';
+import { startWorker } from '../src/worker.js';
 
 export const E2E_USER = { email: 'erika@example.com', name: 'Erika', password: 'correct horse battery staple' };
 
@@ -49,9 +50,11 @@ for (const file of ['main-computer.fit', 'backup-computer.fit']) {
   await imports.processImport(created.id);
 }
 
+// Uploads made by the tests are processed in the background, as in the real app.
+const worker = await startWorker(pool, imports, app.log);
 await app.listen({ host: '127.0.0.1', port });
 console.log(`e2e server ready on http://localhost:${port}`);
 
-const stop = async () => { await app.close(); await pool.end(); process.exit(0); };
+const stop = async () => { await app.close(); await worker.stop(); await pool.end(); process.exit(0); };
 process.once('SIGINT', stop);
 process.once('SIGTERM', stop);

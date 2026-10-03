@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
@@ -42,6 +42,7 @@ const ImportView = Type.Object({
 
 const DiveSummaryView = Type.Object({
   id: Type.String(),
+  diverId: Type.String(),
   number: Nullable(Type.Integer()),
   startsAt: DateTime,
   utcOffsetSeconds: Nullable(Type.Integer()),
@@ -73,7 +74,7 @@ const toImportView = (j: typeof importJob.$inferSelect): Static<typeof ImportVie
   error: j.error === 'unsupported_file' ? null : j.error,
 });
 const toDiveSummary = (d: typeof dive.$inferSelect): Static<typeof DiveSummaryView> => ({
-  id: d.id, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
+  id: d.id, diverId: d.diverId, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
   durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, avgDepthM: d.avgDepthM,
 });
 
@@ -124,9 +125,15 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
   });
 
   app.get('/dives', {
-    schema: { summary: 'Dives of the Divers the signed-in User manages, newest first', response: { 200: Type.Array(DiveSummaryView) } },
+    schema: {
+      summary: 'Dives of the Divers the signed-in User manages, newest first',
+      querystring: Type.Object({ diverId: Type.Optional(Type.String({ format: 'uuid', description: 'Only this Diver\'s Dives' })) }),
+      response: { 200: Type.Array(DiveSummaryView) },
+    },
   }, async (request) => {
-    const divers = await managedDiverIds(request);
+    const managed = await managedDiverIds(request);
+    const wanted = request.query.diverId;
+    const divers = wanted ? managed.filter((id) => id === wanted) : managed;
     if (divers.length === 0) return [];
     const rows = await db.select().from(dive)
       .where(and(inArray(dive.diverId, divers), isNull(dive.deletedAt))).orderBy(desc(dive.startsAt)).limit(500);

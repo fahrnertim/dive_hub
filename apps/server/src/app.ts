@@ -12,7 +12,11 @@ import type { Db } from './db/client.js';
 import type { ImportService } from './imports/import-service.js';
 import { problem, useProblemErrors } from './http/problems.js';
 import { createDiveService } from './dives/dive-service.js';
+import { createCandidates } from './dives/candidates.js';
+import { candidateRoutes } from './dives/candidate-routes.js';
 import { diveRoutes } from './dives/routes.js';
+import { createDiverService } from './divers/diver-service.js';
+import { diverRoutes } from './divers/routes.js';
 import { apiRoutes } from './routes.js';
 import type { BlobStore } from './storage/blob-store.js';
 import { accountRoutes } from './users/account-routes.js';
@@ -51,7 +55,7 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
       openapi: '3.1.0',
       info: {
         title: 'Dive Hub API',
-        version: '0.5.0',
+        version: '0.6.0',
         description: 'Sign in with POST /api/auth/sign-in/email (Better Auth); the session cookie authenticates every other call.',
       },
     },
@@ -72,6 +76,8 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
   await app.register(adminRoutes, { prefix: '/api', ...deps, passwordResets, userAdmin: createUserAdmin(deps.db, deps.blobs) });
   await app.register(apiRoutes, { prefix: '/api', ...deps });
   await app.register(diveRoutes, { prefix: '/api', ...deps, dives: createDiveService(deps.db) });
+  await app.register(candidateRoutes, { prefix: '/api', ...deps, candidates: createCandidates(deps.db) });
+  await app.register(diverRoutes, { prefix: '/api', ...deps, divers: createDiverService(deps.db) });
 
   const serveWeb = !!deps.webDir && existsSync(deps.webDir);
   if (serveWeb) await app.register(fastifyStatic, { root: deps.webDir!, wildcard: false });

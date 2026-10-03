@@ -324,14 +324,26 @@ export const recordingEvent = pgTable(
   (t) => [index('recording_event_recording_idx').on(t.recordingId)],
 );
 
-export const duplicateCandidate = pgTable('duplicate_candidate', {
-  id: id(),
-  recordingId: uuid('recording_id').notNull().references(() => recording.id),
-  candidateDiveIds: uuid('candidate_dive_ids').array().notNull(),
-  reason: text('reason').notNull(),
-  resolvedAt: timestamp('resolved_at', { withTimezone: true }),
-  createdAt: createdAt(),
-});
+export const candidateResolution = pgEnum('candidate_resolution', ['attached', 'new_dive', 'discarded']);
+
+/**
+ * A Recording that might belong to more than one Dive, or doesn't clearly match one, waiting for
+ * the User (ADR 0016). Open while `resolution` is null. A discarded Recording stays, detached and
+ * hidden, so importing the same file again doesn't bring the question back; it can be reopened.
+ */
+export const duplicateCandidate = pgTable(
+  'duplicate_candidate',
+  {
+    id: id(),
+    recordingId: uuid('recording_id').notNull().references(() => recording.id),
+    candidateDiveIds: uuid('candidate_dive_ids').array().notNull(),
+    reason: text('reason').notNull(),
+    resolution: candidateResolution('resolution'),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('duplicate_candidate_recording_idx').on(t.recordingId)],
+);
 
 export const actorType = pgEnum('actor_type', ['user', 'import', 'system']);
 

@@ -7,6 +7,12 @@ export const E2E_BASE_URL = `http://localhost:${E2E_PORT}`;
 export const E2E_USER = { email: 'erika@example.com', name: 'Erika', password: 'correct horse battery staple' };
 
 type Dive = { id: string; version: number; overrides: string[]; recordings: { id: string }[] };
+
+/** The seeded Dive (number 42, from the main and the backup computer). */
+export async function seededDiveId(api: APIRequestContext): Promise<string> {
+  const dives = await (await api.get('/api/dives')).json() as { id: string; number: number | null }[];
+  return dives.find((d) => d.number === 42)!.id;
+}
 const headers = { origin: E2E_BASE_URL };
 
 /**
@@ -15,8 +21,7 @@ const headers = { origin: E2E_BASE_URL };
  */
 export async function resetDive(api: APIRequestContext): Promise<Dive> {
   await api.patch('/api/me/preferences', { data: { language: null, units: null }, headers });
-  const [summary] = await (await api.get('/api/dives')).json() as { id: string }[];
-  let dive = await (await api.get(`/api/dives/${summary!.id}`)).json() as Dive;
+  let dive = await (await api.get(`/api/dives/${await seededDiveId(api)}`)).json() as Dive;
   dive = await (await api.put(`/api/dives/${dive.id}/primary-recording`, {
     data: { recordingId: dive.recordings[0]!.id, version: dive.version }, headers,
   })).json() as Dive;

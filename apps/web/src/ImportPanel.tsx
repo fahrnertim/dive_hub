@@ -29,6 +29,7 @@ export function ImportPanel() {
     <Panel title={t('import.title')}>
       <DropZone
         className="dropzone"
+        aria-label={t('import.drop')}
         onDrop={async (e) => {
           const files = e.items.filter((item): item is FileDropItem => item.kind === 'file');
           upload.mutate(await Promise.all(files.map((f) => f.getFile())));

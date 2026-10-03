@@ -5,6 +5,7 @@ import { AcceptInvitation, ResetPassword, Setup, SignIn, SignOutButton } from '.
 import { meQuery, setupQuery, type Me } from './api.ts';
 import { DiveList } from './DiveList.tsx';
 import { pickLanguage } from './i18n/index.ts';
+import { Decisions } from './Decisions.tsx';
 import { ImportPanel } from './ImportPanel.tsx';
 import { useErrorText } from './lib/display.ts';
 import { BrandMark, ErrorBoundary, Muted, Notice } from './ui/index.ts';
@@ -13,8 +14,12 @@ import { BrandMark, ErrorBoundary, Muted, Notice } from './ui/index.ts';
 const DiveDetail = lazy(() => import('./DiveDetail.tsx').then((m) => ({ default: m.DiveDetail })));
 const AccountPage = lazy(() => import('./AccountPage.tsx').then((m) => ({ default: m.AccountPage })));
 const Admin = lazy(() => import('./Admin.tsx').then((m) => ({ default: m.Admin })));
+const DiversPage = lazy(() => import('./DiversPage.tsx').then((m) => ({ default: m.DiversPage })));
 
-/** Minimal hash routing: "#/" (logbook), "#/dives/<id>", "#/account", "#/admin", "#/setup", "#/invite/<token>", "#/reset/<token>". */
+/**
+ * Minimal hash routing: "#/" (logbook, "#/?diver=<id>" for one Diver), "#/dives/<id>", "#/divers",
+ * "#/account", "#/admin", "#/setup", "#/invite/<token>", "#/reset/<token>".
+ */
 function useRoute(): string {
   const [route, setRoute] = useState(() => location.hash.slice(1) || '/');
   useEffect(() => {
@@ -68,7 +73,8 @@ function Navigation({ route, me }: { route: string; me: Me }) {
   return (
     <>
       <nav className="app-nav" aria-label={t('nav.main')}>
-        <a href="#/" {...current(route === '/' || route.startsWith('/dives/'))}>{t('nav.logbook')}</a>
+        <a href="#/" {...current(route === '/' || route.startsWith('/?') || route.startsWith('/dives/'))}>{t('nav.logbook')}</a>
+        <a href="#/divers" {...current(route === '/divers')}>{t('nav.divers')}</a>
         {me.user.role === 'admin' && <a href="#/admin" {...current(route === '/admin')}>{t('nav.admin')}</a>}
       </nav>
       <div className="user-menu">
@@ -92,11 +98,14 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   const diveId = /^\/dives\/([\w-]+)$/.exec(route)?.[1];
   if (diveId) return <DiveDetail id={diveId} />;
   if (route === '/account') return <AccountPage />;
+  if (route === '/divers') return <DiversPage />;
   if (route === '/admin') return me.user.role === 'admin' ? <Admin /> : <Notice tone="danger">{t('errors.admins_only')}</Notice>;
+  const diverId = new URLSearchParams(route.split('?')[1] ?? '').get('diver') ?? undefined;
   return (
     <>
+      <Decisions />
       <ImportPanel />
-      <DiveList />
+      <DiveList diverId={diverId} />
     </>
   );
 }

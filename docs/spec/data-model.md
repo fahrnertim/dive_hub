@@ -181,6 +181,7 @@ category-specific properties (e.g. tank volume, working pressure, material),
 
 **Device** — an Equipment item that records data (dive computer, transmitter):
 serial number, firmware history. Assigning a Device to a Diver is how Imports attribute Recordings.
+*Implemented (ADR 0016):* reassigning affects only Imports from then on; single Dives can be moved.
 
 ### Data in and out
 
@@ -198,7 +199,8 @@ outcome per dive (`created`, `attached`, `updated`, `unchanged`, `duplicate cand
 An Import can be undone through its Revisions.
 
 **Duplicate candidate** — Recording, candidate Dives, reason (several overlaps, depth mismatch,
-unknown Device), resolution.
+unknown Device), resolution. *Implemented (ADR 0016):* resolutions `attached`, `new_dive`,
+`discarded` (the Recording stays, detached, and can be reopened).
 
 **Conflict** — Dive, field, base value, hub value, incoming value, where the incoming value came
 from (Import or client edit), resolution.

@@ -13,7 +13,8 @@
     "skipToContent": "Skip to content",
     "logbook": "Logbook",
     "admin": "Admin",
-    "account": "My account"
+    "account": "My account",
+    "divers": "Divers"
   },
   "form": {
     "required": "Fill in this field.",
@@ -211,7 +212,14 @@
     "decoModel": "Deco model",
     "gases": "Gases",
     "temperatureRange": "Temperature",
-    "otherValues": "Other values from the device"
+    "otherValues": "Other values from the device",
+    "diver": "Diver",
+    "moveTo": "Move to another Diver…",
+    "moveTitle": "Move this dive",
+    "moveIntro": "The dive, its recordings and notes go to the other Diver’s logbook.",
+    "move": "Move",
+    "splitOff": "Split off into its own dive",
+    "splitHint": "For a recording that belongs to another dive. It becomes a dive of its own."
   },
   "errors": {
     "unknown": "Something went wrong. Try again.",
@@ -239,7 +247,15 @@
     "recording_not_found": "This recording doesn’t exist or isn’t yours.",
     "dive_changed": "This dive was changed meanwhile. Reload it and make your changes again.",
     "dive_values_inconsistent": "The average depth can’t be deeper than the max depth.",
-    "recording_not_on_dive": "This recording doesn’t belong to the dive."
+    "recording_not_on_dive": "This recording doesn’t belong to the dive.",
+    "last_recording": "This is the dive’s only recording, so it can’t be split off.",
+    "diver_not_found": "This Diver doesn’t exist or isn’t yours.",
+    "own_diver": "Your own Diver can’t be deleted.",
+    "diver_not_empty": "This Diver still has dives or devices.",
+    "device_not_found": "This device doesn’t exist or isn’t yours.",
+    "candidate_not_found": "There’s nothing to decide here (anymore).",
+    "candidate_resolved": "This was already decided.",
+    "not_a_candidate": "That dive isn’t one of the suggestions."
   },
   "vocabulary": {
     "waterType": {
@@ -278,7 +294,12 @@
       "auto-attach": "Recording added automatically",
       "reimport": "Updated by a new import",
       "edit": "Edited",
-      "primary-change": "Primary recording changed"
+      "primary-change": "Primary recording changed",
+      "attach": "Recording added",
+      "detach": "Recording split off",
+      "create": "Created from a recording",
+      "move": "Moved to another Diver",
+      "assign-device": "Device assigned"
     },
     "field": {
       "number": "Dive number",
@@ -291,12 +312,57 @@
       "notes": "Notes",
       "primaryRecordingId": "Primary recording",
       "recordings": "Recording",
-      "originalId": "File"
+      "originalId": "File",
+      "diverId": "Diver"
     },
     "notesChanged": "Notes changed",
     "setByHand": "set by hand",
     "reset": "back to the recording",
     "recordingAdded": "Recording added",
-    "fileReplaced": "Recorded data replaced by a newer file"
+    "fileReplaced": "Recorded data replaced by a newer file",
+    "recordingRemoved": "Recording split off into its own dive"
+  },
+  "decisions": {
+    "title": "Needs your decision",
+    "intro_one": "One recording doesn’t clearly belong to a dive.",
+    "intro_other": "{{count}} recordings don’t clearly belong to a dive.",
+    "recording": "Recording",
+    "device": "{{name}} ({{serial}})",
+    "unknownDevice": "unknown device",
+    "maybe": "It might belong to",
+    "addTo": "Add to this dive",
+    "newDive": "Make it a new dive",
+    "discard": "Discard",
+    "discarded": "Discarded recordings",
+    "showDiscarded": "Show discarded recordings",
+    "hideDiscarded": "Hide discarded recordings",
+    "reopen": "Decide again",
+    "none": "Nothing to decide."
+  },
+  "divers": {
+    "title": "Divers",
+    "intro": "The Divers whose logbooks you keep. Your own comes first.",
+    "own": "you",
+    "dives_one": "{{count}} dive",
+    "dives_other": "{{count}} dives",
+    "add": "Add a Diver",
+    "newName": "Name",
+    "create": "Add",
+    "rename": "Rename",
+    "save": "Save",
+    "delete": "Delete",
+    "notEmpty": "Only Divers without dives or devices can be deleted.",
+    "devices": "Devices",
+    "devicesIntro": "Dive computers and transmitters that recorded your dives. Imports from a device go to the Diver it belongs to.",
+    "deviceName": "Device",
+    "serial": "Serial number",
+    "lastUsed": "Last used",
+    "recordings": "Recordings",
+    "belongsTo": "Belongs to",
+    "assignHint": "Imports from now on go to this Diver; dives already in a logbook stay where they are.",
+    "noDevices": "No devices yet. They appear with your first import.",
+    "filter": "Diver",
+    "allDivers": "All Divers",
+    "logbooks": "Logbooks you keep"
   }
 }

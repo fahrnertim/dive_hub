@@ -31,6 +31,9 @@ export type DiveValues = DiveView['values'];
 export type OverridableField = DiveView['overrides'][number];
 export type RevisionView = Awaited<ReturnType<typeof fetchRevisions>>[number];
 export type RecordingSummary = DiveView['recordings'][number]['summary'];
+export type DiverView = Awaited<ReturnType<typeof fetchDivers>>[number];
+export type DeviceView = Awaited<ReturnType<typeof fetchDevices>>[number];
+export type CandidateView = Awaited<ReturnType<typeof fetchCandidates>>[number];
 
 /** Query keys in one place (hierarchical, so invalidating ['dives'] covers every dive query). */
 export const keys = {
@@ -43,6 +46,9 @@ export const keys = {
   dives: ['dives'] as const,
   dive: (id: string) => ['dives', id] as const,
   revisions: (id: string) => ['dives', id, 'revisions'] as const,
+  divers: ['divers'] as const,
+  devices: ['devices'] as const,
+  candidates: (status: 'open' | 'discarded') => ['candidates', status] as const,
   samples: (recordingId: string) => ['recordings', recordingId, 'samples'] as const,
 };
 
@@ -97,7 +103,10 @@ export const importsQuery = () =>
     refetchInterval: (q) => (q.state.data?.some((i) => i.status === 'pending' || i.status === 'processing') ? 1000 : false),
   });
 
-export const divesQuery = () => queryOptions({ queryKey: keys.dives, queryFn: fetchDives });
+export const divesQuery = (diverId?: string) => queryOptions({
+  queryKey: diverId ? [...keys.dives, { diverId }] : keys.dives,
+  queryFn: async () => unwrap(await api.GET('/api/dives', { params: { query: diverId ? { diverId } : {} } })),
+});
 
 async function fetchDive(id: string) {
   return unwrap(await api.GET('/api/dives/{id}', { params: { path: { id } } }));
@@ -105,6 +114,21 @@ async function fetchDive(id: string) {
 async function fetchRevisions(id: string) {
   return unwrap(await api.GET('/api/dives/{id}/revisions', { params: { path: { id } } }));
 }
+
+async function fetchDivers() {
+  return unwrap(await api.GET('/api/divers'));
+}
+async function fetchDevices() {
+  return unwrap(await api.GET('/api/devices'));
+}
+async function fetchCandidates(status: 'open' | 'discarded') {
+  return unwrap(await api.GET('/api/duplicate-candidates', { params: { query: { status } } }));
+}
+
+export const diversQuery = () => queryOptions({ queryKey: keys.divers, queryFn: fetchDivers });
+export const devicesQuery = () => queryOptions({ queryKey: keys.devices, queryFn: fetchDevices });
+export const candidatesQuery = (status: 'open' | 'discarded') =>
+  queryOptions({ queryKey: keys.candidates(status), queryFn: () => fetchCandidates(status) });
 
 export const diveQuery = (id: string) => queryOptions({ queryKey: keys.dive(id), queryFn: () => fetchDive(id) });
 export const revisionsQuery = (id: string) => queryOptions({ queryKey: keys.revisions(id), queryFn: () => fetchRevisions(id) });

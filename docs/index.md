@@ -43,6 +43,7 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [0013 Account management](decisions/0013-account-management.md) — reset links, disable vs delete, always one admin, only four Better Auth endpoints over HTTP.
 - [0014 Design system, localization, error codes, units](decisions/0014-design-system-and-localization.md) — React Aria + own tokens, i18next (en, de), API error codes, metric/imperial per User.
 - [0015 Overrides, optimistic locking, device vocabulary, browser tests](decisions/0015-overrides-vocabulary-and-browser-tests.md) — overridden fields marked on the Dive, version checks, our words for device values, Playwright.
+- [0016 Deciding about Recordings, Devices, extra Divers](decisions/0016-recording-decisions-and-divers.md) — resolve Duplicate candidates on the logbook, split off, Device reassignment for the future, move Dives, Divers page.
 - [Template](decisions/template.md) — copy for new ADRs.
 
 ## References

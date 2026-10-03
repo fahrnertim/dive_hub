@@ -7,7 +7,7 @@ import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import type { Db } from '../db/client.js';
 import {
-  OVERRIDABLE_FIELDS, dive, diverManagement, importJob, recording, revision, sampleSeries, user,
+  OVERRIDABLE_FIELDS, device, dive, diverManagement, importJob, recording, revision, sampleSeries, user,
   type RecordingSummary,
 } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
@@ -73,6 +73,7 @@ const SummaryView = Type.Object({
 const RecordingView = Type.Object({
   id: Type.String(),
   isPrimary: Type.Boolean(),
+  device: Nullable(Type.Object({ manufacturer: Type.String(), product: Nullable(Type.String()), serialNumber: Type.String() })),
   startsAt: DateTime,
   durationSeconds: Type.Number(),
   maxDepthM: Nullable(Type.Number()),
@@ -83,6 +84,7 @@ const RecordingView = Type.Object({
 
 const DiveView = Type.Object({
   id: Type.String(),
+  diverId: Type.String({ description: 'The Diver whose logbook this Dive is in' }),
   version: Type.Integer({ description: 'Send it back with an edit; it changes with every change' }),
   values: ValuesSchema,
   overrides: Type.Array(Field, { description: 'Values the User set by hand' }),
@@ -120,6 +122,7 @@ const fromValues = (v: Partial<Static<typeof ValuesSchema>>): Partial<DiveValues
 
 const STATUS: Record<DiveError['code'], number> = {
   dive_not_found: 404, dive_changed: 409, dive_values_inconsistent: 400, recording_not_on_dive: 400,
+  recording_not_found: 404, last_recording: 409, diver_not_found: 404,
 };
 
 export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { db, auth, dives }) => {
@@ -140,11 +143,14 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   const view = async (row: typeof dive.$inferSelect): Promise<Static<typeof DiveView>> => {
     const recs = await db.select({
       r: recording,
+      d: device,
       channels: sql<string[]>`coalesce((select array_agg(channel order by channel) from ${sampleSeries} where ${sampleSeries.recordingId} = ${recording.id}), '{}')`,
-    }).from(recording).where(and(eq(recording.diveId, row.id), isNull(recording.deletedAt))).orderBy(recording.startsAt);
+    }).from(recording).leftJoin(device, eq(device.id, recording.deviceId))
+      .where(and(eq(recording.diveId, row.id), isNull(recording.deletedAt))).orderBy(recording.startsAt);
     const primary = recs.find(({ r }) => r.id === row.primaryRecordingId)?.r;
     return {
       id: row.id,
+      diverId: row.diverId,
       version: row.version,
       values: toValues({
         number: row.number, startsAt: { at: row.startsAt, utcOffsetSeconds: row.utcOffsetSeconds },
@@ -154,8 +160,9 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       overrides: row.overrides,
       fromRecording: primary ? toValues(valuesFromRecording(primary)) : null,
       notes: row.notes,
-      recordings: recs.map(({ r, channels }) => ({
-        id: r.id, isPrimary: r.id === row.primaryRecordingId, startsAt: r.startsAt.toISOString(),
+      recordings: recs.map(({ r, d, channels }) => ({
+        id: r.id, isPrimary: r.id === row.primaryRecordingId,
+        device: d ? { manufacturer: d.manufacturer, product: d.product, serialNumber: d.serialNumber } : null, startsAt: r.startsAt.toISOString(),
         durationSeconds: r.durationSeconds, maxDepthM: r.maxDepthM, parser: r.parser,
         summary: r.summary as RecordingSummary, channels,
       })),
@@ -196,6 +203,26 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     await dives.setPrimary(request.user!.id, request.params.id, request.body.recordingId, request.body.version);
     return view((await findDive(request, request.params.id))!);
   });
+
+  app.post('/dives/:id/move', {
+    schema: {
+      summary: 'File the Dive under another Diver the User manages',
+      params: IdParams, body: Type.Object({ diverId: Type.String({ format: 'uuid' }), version: Type.Integer() }),
+      response: { 200: DiveView, 404: Problem, 409: Problem },
+    },
+  }, async (request) => {
+    await dives.move(request.user!.id, request.params.id, request.body.diverId, request.body.version);
+    return view((await findDive(request, request.params.id))!);
+  });
+
+  app.post('/recordings/:id/detach', {
+    schema: {
+      summary: 'Split a Recording off its Dive into a new Dive of the same Diver',
+      description: 'Send the version of the Dive it is on. The Dive\'s last Recording can\'t be split off.',
+      params: IdParams, body: Type.Object({ version: Type.Integer() }),
+      response: { 200: Type.Object({ diveId: Type.String({ description: 'The new Dive' }) }), 404: Problem, 409: Problem },
+    },
+  }, async (request) => ({ diveId: await dives.detach(request.user!.id, request.params.id, request.body.version) }));
 
   app.get('/dives/:id/revisions', {
     schema: {

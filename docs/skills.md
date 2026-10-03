@@ -78,3 +78,4 @@ Details and commands: [skills vetting](research/2026-10-02-agent-skills-vetting.
 | 2026-10-03 | playwright-cli (microsoft/playwright-cli) | installed | Official (commit b85c7a7); SKILL.md + 9 references, no scripts. Pre-approves only `playwright-cli` and `npx playwright` commands, accepted deliberately for browser tests (ADR 0015) |
 | 2026-10-03 | anthropics/skills `webapp-testing` | rejected | Python-based (no Python here) and tells the agent not to read its bundled scripts, against our vetting rule |
 | 2026-10-03 | `npx skills find` for "playwright", "e2e testing", "audit log history", "form editing react" (slice 5) | see above | the rest: vendor-specific or unrelated |
+| 2026-10-03 | `npx skills find` for "deduplication merge records", "data ownership sharing", "tanstack query mutations" (slice 6) | nothing new | generic or vendor-specific; the installed tanstack-query skill covers mutations |

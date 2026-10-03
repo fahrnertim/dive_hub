@@ -28,6 +28,14 @@ export const PROBLEMS = {
   dive_changed: 'The dive was changed meanwhile; reload it and apply your changes again',
   dive_values_inconsistent: 'The average depth is deeper than the max depth',
   recording_not_on_dive: 'This recording does not belong to the dive',
+  last_recording: 'This is the dive\'s only recording; it can\'t be split off',
+  diver_not_found: 'Diver not found',
+  own_diver: 'Your own Diver can\'t be deleted',
+  diver_not_empty: 'This Diver still has dives or devices',
+  device_not_found: 'Device not found',
+  candidate_not_found: 'Nothing to decide here (anymore)',
+  candidate_resolved: 'This was already decided',
+  not_a_candidate: 'That dive is not one of the candidates',
   recording_not_found: 'Recording not found',
 } as const;
 

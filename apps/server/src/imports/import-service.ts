@@ -14,8 +14,7 @@ import {
   sampleSeries,
   type ImportOutcome,
 } from '../db/schema.js';
-import { refreshFromPrimary } from '../dives/dive-service.js';
-import { valuesFromRecording } from '../dives/dive-values.js';
+import { attachRecording, createDiveFromRecording, refreshFromPrimary } from '../dives/dive-service.js';
 import { writeRevision, type Actor } from '../dives/revisions.js';
 import { createFitAdapter, looksLikeFit, type FitAdapter, type ParsedRecording } from '../fit/fit-adapter.js';
 import type { BlobStore } from '../storage/blob-store.js';
@@ -178,23 +177,11 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
     const decision = decideMatch(rec, candidates.map((c) => ({ ...c, maxDepthM: c.maxDepthM ?? undefined })));
 
     if (decision.kind === 'create') {
-      const v = valuesFromRecording(created!);
-      const [newDive] = await tx.insert(dive).values({
-        diverId, number: v.number, startsAt: v.startsAt.at, utcOffsetSeconds: v.startsAt.utcOffsetSeconds,
-        durationSeconds: v.durationSeconds, maxDepthM: v.maxDepthM, avgDepthM: v.avgDepthM,
-        waterTemperatureC: v.waterTemperatureC, waterType: v.waterType, primaryRecordingId: created!.id,
-      }).returning();
-      await tx.update(recording).set({ diveId: newDive!.id }).where(eq(recording.id, created!.id));
-      await writeRevision(tx, 'dive', newDive!.id, actor, 'import-create', {
-        primaryRecordingId: { from: null, to: created!.id },
-      });
-      return { fileName, result: 'created', diveId: newDive!.id, recordingId: created!.id };
+      const newDiveId = await createDiveFromRecording(tx, created!, diverId, actor, 'import-create');
+      return { fileName, result: 'created', diveId: newDiveId, recordingId: created!.id };
     }
     if (decision.kind === 'attach') {
-      await tx.update(recording).set({ diveId: decision.diveId }).where(eq(recording.id, created!.id));
-      await writeRevision(tx, 'dive', decision.diveId, actor, 'auto-attach', {
-        recordings: { from: null, to: created!.id },
-      });
+      await attachRecording(tx, decision.diveId, created!.id, actor, 'auto-attach');
       return { fileName, result: 'attached', diveId: decision.diveId, recordingId: created!.id };
     }
     await tx.insert(duplicateCandidate).values({

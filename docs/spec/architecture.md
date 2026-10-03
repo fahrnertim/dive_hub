@@ -180,3 +180,18 @@ Deliberate simplifications, to revisit:
 - **Events** (gas switches, alarms) are recorded but not shown yet; they need the same vocabulary.
 - **Device data** shows the selected Recording's summary; the Dive's cylinders and gases as their
   own entities come later.
+
+**Slice 6 (2026-10-03): deciding and assigning** ([ADR 0016](../decisions/0016-recording-decisions-and-divers.md)).
+
+Implemented:
+- "Needs your decision" on the logbook: add a Duplicate candidate to a Dive, make it a new Dive,
+  discard (kept, reopenable).
+- Splitting a Recording off into its own Dive; moving a Dive to another Diver.
+- Divers page: the User's Divers (add, rename, delete when empty) and Devices (assign to a Diver
+  for future Imports).
+- Logbook: Diver column and filter when a User keeps several Divers.
+- Recordings named by their Device; the e2e server runs the background worker.
+
+Deliberate simplifications, to revisit:
+- **Sharing a Diver** between Users comes with Participants and Buddy suggestions.
+- **Device assignment** has no dates; lending is handled by moving single Dives.

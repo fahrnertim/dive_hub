@@ -46,7 +46,8 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 | `apps/web/src/i18n/` | Translations (`locales/en.json` is the source), language choice |
 | `apps/web/src/lib/units.ts` | Unit conversion and Intl formatting; `lib/display.ts` binds them to the User's preferences |
 | `apps/server/src/http/problems.ts` | The API's error codes (one registry, published in OpenAPI) |
-| `apps/server/src/dives/` | Dive service: Overrides, Primary recording, Revisions; dive routes (ADR 0015) |
+| `apps/server/src/dives/` | Dive service: Overrides, Primary recording, Revisions, split off, move; Duplicate candidates; dive routes (ADR 0015, 0016) |
+| `apps/server/src/divers/` | The User's Divers and Devices (ADR 0016) |
 | `apps/server/src/vocabulary.ts`, `src/fit/fit-vocabulary.ts` | Our words for device values, and the FIT mapping |
 | `apps/web/e2e/` | Playwright browser tests and their fixtures |
 | `packages/api-client` | Typed client generated from the server's OpenAPI description |

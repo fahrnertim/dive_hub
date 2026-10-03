@@ -43,6 +43,13 @@
       "when": 1791026058621,
       "tag": "0005_vocabulary_data",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791027243056,
+      "tag": "0006_candidate_resolution",
+      "breakpoints": true
     }
   ]
 }

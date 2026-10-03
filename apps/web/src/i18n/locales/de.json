@@ -13,7 +13,8 @@
     "skipToContent": "Zum Inhalt springen",
     "logbook": "Logbuch",
     "admin": "Verwaltung",
-    "account": "Mein Konto"
+    "account": "Mein Konto",
+    "divers": "Taucher"
   },
   "form": {
     "required": "Bitte fülle dieses Feld aus.",
@@ -211,7 +212,14 @@
     "decoModel": "Dekompressionsmodell",
     "gases": "Gase",
     "temperatureRange": "Temperatur",
-    "otherValues": "Weitere Werte vom Gerät"
+    "otherValues": "Weitere Werte vom Gerät",
+    "diver": "Taucher",
+    "moveTo": "Zu einem anderen Taucher verschieben …",
+    "moveTitle": "Tauchgang verschieben",
+    "moveIntro": "Der Tauchgang mit seinen Aufzeichnungen und Notizen wandert ins Logbuch des anderen Tauchers.",
+    "move": "Verschieben",
+    "splitOff": "Als eigenen Tauchgang abtrennen",
+    "splitHint": "Für eine Aufzeichnung, die zu einem anderen Tauchgang gehört. Sie wird ein eigener Tauchgang."
   },
   "errors": {
     "unknown": "Etwas ist schiefgegangen. Versuch es noch einmal.",
@@ -239,7 +247,15 @@
     "recording_not_found": "Diese Aufzeichnung gibt es nicht oder sie gehört nicht dir.",
     "dive_changed": "Dieser Tauchgang wurde inzwischen geändert. Lade ihn neu und mach deine Änderungen noch einmal.",
     "dive_values_inconsistent": "Die mittlere Tiefe kann nicht tiefer als die Maximaltiefe sein.",
-    "recording_not_on_dive": "Diese Aufzeichnung gehört nicht zu diesem Tauchgang."
+    "recording_not_on_dive": "Diese Aufzeichnung gehört nicht zu diesem Tauchgang.",
+    "last_recording": "Das ist die einzige Aufzeichnung dieses Tauchgangs, sie lässt sich nicht abtrennen.",
+    "diver_not_found": "Diesen Taucher gibt es nicht oder er gehört nicht zu dir.",
+    "own_diver": "Deinen eigenen Taucher kannst du nicht löschen.",
+    "diver_not_empty": "Dieser Taucher hat noch Tauchgänge oder Geräte.",
+    "device_not_found": "Dieses Gerät gibt es nicht oder es gehört nicht zu dir.",
+    "candidate_not_found": "Hier gibt es (nichts mehr) zu entscheiden.",
+    "candidate_resolved": "Das wurde schon entschieden.",
+    "not_a_candidate": "Dieser Tauchgang ist keiner der Vorschläge."
   },
   "vocabulary": {
     "waterType": {
@@ -278,7 +294,12 @@
       "auto-attach": "Aufzeichnung automatisch hinzugefügt",
       "reimport": "Durch einen neuen Import aktualisiert",
       "edit": "Bearbeitet",
-      "primary-change": "Primäre Aufzeichnung gewechselt"
+      "primary-change": "Primäre Aufzeichnung gewechselt",
+      "attach": "Aufzeichnung hinzugefügt",
+      "detach": "Aufzeichnung abgetrennt",
+      "create": "Aus einer Aufzeichnung angelegt",
+      "move": "Zu einem anderen Taucher verschoben",
+      "assign-device": "Gerät zugeordnet"
     },
     "field": {
       "number": "Tauchgangsnummer",
@@ -291,12 +312,57 @@
       "notes": "Notizen",
       "primaryRecordingId": "Primäre Aufzeichnung",
       "recordings": "Aufzeichnung",
-      "originalId": "Datei"
+      "originalId": "Datei",
+      "diverId": "Taucher"
     },
     "notesChanged": "Notizen geändert",
     "setByHand": "von Hand gesetzt",
     "reset": "zurück zur Aufzeichnung",
     "recordingAdded": "Aufzeichnung hinzugefügt",
-    "fileReplaced": "Aufgezeichnete Daten durch eine neuere Datei ersetzt"
+    "fileReplaced": "Aufgezeichnete Daten durch eine neuere Datei ersetzt",
+    "recordingRemoved": "Aufzeichnung als eigener Tauchgang abgetrennt"
+  },
+  "decisions": {
+    "title": "Braucht deine Entscheidung",
+    "intro_one": "Eine Aufzeichnung gehört nicht eindeutig zu einem Tauchgang.",
+    "intro_other": "{{count}} Aufzeichnungen gehören nicht eindeutig zu einem Tauchgang.",
+    "recording": "Aufzeichnung",
+    "device": "{{name}} ({{serial}})",
+    "unknownDevice": "unbekanntes Gerät",
+    "maybe": "Sie könnte gehören zu",
+    "addTo": "Zu diesem Tauchgang hinzufügen",
+    "newDive": "Eigenen Tauchgang anlegen",
+    "discard": "Verwerfen",
+    "discarded": "Verworfene Aufzeichnungen",
+    "showDiscarded": "Verworfene Aufzeichnungen zeigen",
+    "hideDiscarded": "Verworfene Aufzeichnungen ausblenden",
+    "reopen": "Neu entscheiden",
+    "none": "Nichts zu entscheiden."
+  },
+  "divers": {
+    "title": "Taucher",
+    "intro": "Die Taucher, deren Logbuch du führst. Dein eigener steht oben.",
+    "own": "du",
+    "dives_one": "{{count}} Tauchgang",
+    "dives_other": "{{count}} Tauchgänge",
+    "add": "Taucher hinzufügen",
+    "newName": "Name",
+    "create": "Hinzufügen",
+    "rename": "Umbenennen",
+    "save": "Speichern",
+    "delete": "Löschen",
+    "notEmpty": "Nur Taucher ohne Tauchgänge und Geräte lassen sich löschen.",
+    "devices": "Geräte",
+    "devicesIntro": "Tauchcomputer und Sender, die deine Tauchgänge aufgezeichnet haben. Importe von einem Gerät landen beim Taucher, dem es gehört.",
+    "deviceName": "Gerät",
+    "serial": "Seriennummer",
+    "lastUsed": "Zuletzt benutzt",
+    "recordings": "Aufzeichnungen",
+    "belongsTo": "Gehört zu",
+    "assignHint": "Importe ab jetzt landen bei diesem Taucher; Tauchgänge, die schon in einem Logbuch sind, bleiben, wo sie sind.",
+    "noDevices": "Noch keine Geräte. Sie erscheinen mit deinem ersten Import.",
+    "filter": "Taucher",
+    "allDivers": "Alle Taucher",
+    "logbooks": "Logbücher, die du führst"
   }
 }

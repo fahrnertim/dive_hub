@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { revisionsQuery, type DiveView, type OverridableField, type RevisionView } from './api.ts';
+import { diversQuery, revisionsQuery, type DiveView, type OverridableField, type RevisionView } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
+import { deviceName } from './lib/devices.ts';
 import { useFormatValue } from './lib/dive-values.ts';
 import { Muted, Notice, Panel } from './ui/index.ts';
 
@@ -30,18 +31,23 @@ function Entry({ revision: r, dive }: { revision: RevisionView; dive: DiveView }
   const { t } = useTranslation();
   const display = useDisplay();
   const format = useFormatValue();
+  const divers = useQuery(diversQuery());
+  const diverName = (id: unknown) => divers.data?.find((v) => v.id === id)?.name ?? t('common.none');
   const who = r.actor.type === 'system' ? t('history.by.system')
     : r.actor.name ? t(`history.by.${r.actor.type}`, { name: r.actor.name }) : t('history.by.unknown');
   const overrides = r.changes.overrides as { from: OverridableField[]; to: OverridableField[] } | undefined;
   const recordingName = (id: unknown) => {
     const n = dive.recordings.findIndex((rec) => rec.id === id);
-    return n >= 0 ? t('dive.recordingN', { n: n + 1 }) : t('common.none');
+    if (n < 0) return t('common.none');
+    const d = dive.recordings[n]!.device;
+    return d ? `${deviceName(d.manufacturer, d.product)} (${d.serialNumber})` : t('dive.recordingN', { n: n + 1 });
   };
 
   const lines = Object.entries(r.changes).flatMap(([key, { from, to }]) => {
     if (key === 'overrides') return [];
     if (key === 'notes') return [t('history.notesChanged')];
-    if (key === 'recordings') return [t('history.recordingAdded')];
+    if (key === 'recordings') return [to ? t('history.recordingAdded') : t('history.recordingRemoved')];
+    if (key === 'diverId') return [`${t('history.field.diverId')}: ${diverName(from)} → ${diverName(to)}`];
     if (key === 'originalId') return [t('history.fileReplaced')];
     if (key === 'primaryRecordingId') return [`${t('history.field.primaryRecordingId')}: ${recordingName(to)}`];
     if (!isOverridable(key)) return [key];

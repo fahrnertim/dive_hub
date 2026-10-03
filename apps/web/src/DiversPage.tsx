@@ -1,0 +1,147 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
+import { api, devicesQuery, diversQuery, keys, unwrap, type DeviceView, type DiverView } from './api.ts';
+import { deviceName } from './lib/devices.ts';
+import { useDisplay, useErrorText } from './lib/display.ts';
+import { Button, Form, Muted, Notice, Panel, Select, Table, TextField } from './ui/index.ts';
+
+/** The Divers whose logbooks the User keeps, and their Devices (ADR 0016). */
+export function DiversPage() {
+  const { t } = useTranslation();
+  return (
+    <>
+      <h1>{t('divers.title')}</h1>
+      <Divers />
+      <Devices />
+    </>
+  );
+}
+
+function Divers() {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const queryClient = useQueryClient();
+  const divers = useQuery(diversQuery());
+  const create = useMutation({
+    mutationFn: async (name: string) => unwrap(await api.POST('/api/divers', { body: { name } })),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.divers }),
+  });
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    create.mutate(String(new FormData(form).get('name')).trim(), { onSuccess: () => form.reset() });
+  };
+
+  return (
+    <Panel title={t('divers.logbooks')}>
+      <Muted>{t('divers.intro')}</Muted>
+      {divers.error && <Notice tone="danger">{errorText(divers.error)}</Notice>}
+      <ul className="diver-list">
+        {divers.data?.map((d) => <DiverRow key={d.id} diver={d} />)}
+      </ul>
+      <Form className="form-inline" onSubmit={submit}>
+        <TextField label={t('divers.add')} name="name" isRequired maxLength={100} autoComplete="off" />
+        <Button type="submit" isDisabled={create.isPending}>{t('divers.create')}</Button>
+      </Form>
+      {create.error && <Notice tone="danger">{errorText(create.error)}</Notice>}
+    </Panel>
+  );
+}
+
+function DiverRow({ diver: d }: { diver: DiverView }) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const queryClient = useQueryClient();
+  const [renaming, setRenaming] = useState(false);
+  const refresh = () => queryClient.invalidateQueries({ queryKey: keys.divers });
+  const rename = useMutation({
+    mutationFn: async (name: string) => unwrap(await api.PATCH('/api/divers/{id}', { params: { path: { id: d.id } }, body: { name } })),
+    onSuccess: () => { setRenaming(false); void refresh(); },
+  });
+  const remove = useMutation({
+    mutationFn: async () => unwrap(await api.DELETE('/api/divers/{id}', { params: { path: { id: d.id } } })),
+    onSuccess: refresh,
+  });
+  const empty = d.diveCount === 0 && d.deviceCount === 0;
+
+  return (
+    <li className="diver-row">
+      {renaming ? (
+        <Form
+          className="form-inline"
+          onSubmit={(e) => { e.preventDefault(); rename.mutate(String(new FormData(e.currentTarget).get('name')).trim()); }}
+        >
+          <TextField label={t('divers.newName')} name="name" defaultValue={d.name} isRequired maxLength={100} autoFocus />
+          <Button type="submit" variant="primary" isDisabled={rename.isPending}>{t('divers.save')}</Button>
+          <Button onPress={() => setRenaming(false)}>{t('common.cancel')}</Button>
+        </Form>
+      ) : (
+        <>
+          <span className="diver-name">{d.name}{d.isOwn && ` (${t('divers.own')})`}</span>
+          <a href={`#/?diver=${d.id}`} className="muted">{t('divers.dives', { count: d.diveCount })}</a>
+          <span className="actions">
+            <Button variant="quiet" onPress={() => setRenaming(true)}>{t('divers.rename')}</Button>
+            {!d.isOwn && empty && <Button variant="quiet" isDisabled={remove.isPending} onPress={() => remove.mutate()}>{t('divers.delete')}</Button>}
+          </span>
+        </>
+      )}
+      {(rename.error ?? remove.error) && <Notice tone="danger">{errorText(rename.error ?? remove.error)}</Notice>}
+    </li>
+  );
+}
+
+function Devices() {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const devices = useQuery(devicesQuery());
+  const divers = useQuery(diversQuery());
+  return (
+    <Panel title={t('divers.devices')}>
+      <Muted>{t('divers.devicesIntro')}</Muted>
+      {devices.isPending && <Muted>{t('common.loading')}</Muted>}
+      {devices.error && <Notice tone="danger">{errorText(devices.error)}</Notice>}
+      {devices.data?.length === 0 && <Muted>{t('divers.noDevices')}</Muted>}
+      {devices.data && devices.data.length > 0 && divers.data && (
+        <Table
+          label={t('divers.devices')}
+          head={[t('divers.deviceName'), t('divers.serial'), { label: t('divers.recordings'), numeric: true }, t('divers.lastUsed'), t('divers.belongsTo')]}
+        >
+          {devices.data.map((d) => <DeviceRow key={d.id} device={d} divers={divers.data} />)}
+        </Table>
+      )}
+    </Panel>
+  );
+}
+
+function DeviceRow({ device: d, divers }: { device: DeviceView; divers: DiverView[] }) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const display = useDisplay();
+  const queryClient = useQueryClient();
+  const assign = useMutation({
+    mutationFn: async (diverId: string) => unwrap(await api.PATCH('/api/devices/{id}', { params: { path: { id: d.id } }, body: { diverId } })),
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: keys.devices });
+      await queryClient.invalidateQueries({ queryKey: keys.divers });
+    },
+  });
+  return (
+    <tr>
+      <td>{deviceName(d.manufacturer, d.product)}</td>
+      <td>{d.serialNumber}</td>
+      <td className="num">{d.recordingCount}</td>
+      <td>{d.lastUsedAt ? display.dateTime(d.lastUsedAt) : t('common.none')}</td>
+      <td>
+        <Select
+          label={<span className="visually-hidden">{t('divers.belongsTo')}</span>}
+          value={d.diverId}
+          onChange={(diverId) => diverId && diverId !== d.diverId && assign.mutate(diverId)}
+          options={divers.map((v) => ({ id: v.id, label: v.name }))}
+          description={divers.length > 1 ? t('divers.assignHint') : undefined}
+        />
+        {assign.error && <Notice tone="danger">{errorText(assign.error)}</Notice>}
+      </td>
+    </tr>
+  );
+}
