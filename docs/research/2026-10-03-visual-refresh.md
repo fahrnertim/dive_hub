@@ -1,6 +1,6 @@
 ---
 title: Visual refresh (planned)
-summary: Brief and handover for a "clean and modern" pass within the design system, after the UI review and the icons-and-motion slice. Owner chooses the direction before anything changes.
+summary: Brief and handover for a "clean and modern" pass, after the UI review and the icons-and-motion slice, including research on UI component libraries. Owner chooses the direction before anything changes.
 status: planned
 date: 2026-10-03
 ---
@@ -26,6 +26,42 @@ it with the installed skills.
   `find-animation-opportunities` / `review-animations` if motion changes. AGENTS.md lists their overrides.
 - Undecided: uizze `ui-taste` ("pending owner discussion" in [skills](../skills.md)). Offer it only if
   the pass with the installed skills turns out thin.
+
+## Component library research
+
+The owner wants UI component libraries researched as part of the refresh (2026-10-03). Starting points:
+
+- [shadcn/ui](https://ui.shadcn.com/)
+- [Kibo UI](https://www.kibo-ui.com/)
+- [Untitled UI: React component libraries](https://www.untitledui.com/blog/react-component-libraries)
+- [awesome-react-components](https://github.com/brillout/awesome-react-components)
+
+Do your own research beyond these as well (for example libraries built on React Aria, which we
+already use).
+
+**Question:** should Dive Hub keep its own components on React Aria with our tokens
+([ADR 0014](../decisions/0014-design-system-and-localization.md)), adopt a library for some parts
+(e.g. data tables, date pickers, toasts, charts), or move to a library as the base? What would each
+gain or cost in look, accessibility, maintenance and bundle size?
+
+**Vet every candidate for:**
+- **License and free use, including commercial use.** Dive Hub is Apache-2.0 and self-hosted, and
+  others may run it commercially. The license must allow redistribution inside an Apache-2.0 project
+  without fees or seats: MIT, Apache-2.0, ISC or BSD are fine; GPL, "free for non-commercial use" and
+  source-available are not. Record any attribution duties. Check for "pro" tiers, and what is really
+  free versus paid (components, templates, Figma kits, icons).
+- **Fit with our stack:** React 19, Vite SPA (no Next.js or RSC), React Aria compatibility or
+  equivalent behaviour, styling model (Tailwind, CSS-in-JS, or plain CSS) versus our token CSS,
+  i18n (German number and date formats), dark mode.
+- **Quality:** accessibility (WCAG 2.2 AA, keyboard, screen readers), maintenance (releases,
+  maintainers, issues), bundle size and tree-shaking, supply-chain risk (dependencies, install
+  scripts, copy-in versus package).
+- **What it would mean for us:** migration effort, what our tests (`e2e/ui-quality.spec.ts`,
+  `test/source-rules.test.ts`) and page rules would need, and which ADRs it touches.
+
+**Output:** a dated research note `docs/research/YYYY-MM-DD-ui-component-libraries.md` (sources
+linked, licenses quoted), a shortlist with a recommendation, and a decision for the owner. Adopting
+a library, or Tailwind, needs a new ADR.
 
 ## Candidate changes (proposals, not decisions)
 
@@ -57,14 +93,16 @@ gradients (they contradict ADR 0014; see the skills decisions log).
 
 1. Read AGENTS.md, docs/index.md, the design system, ADR 0014, ADR 0018 and this note. Run the skills
    check for anything new (AGENTS.md rule).
-2. Capture the current state: `pnpm --filter @dive-hub/web review:capture` (PostgreSQL via
+2. Research UI component libraries (section above) and write the research note. The owner decides
+   on that first, because it can change the direction of everything below.
+3. Capture the current state: `pnpm --filter @dive-hub/web review:capture` (PostgreSQL via
    `docker compose -f compose.dev.yaml up -d`; pnpm as `npx pnpm@12.8.1`). Look at every screenshot.
-3. **Propose before changing.** Give a ranked list of changes with before/after reasoning. For 6–7,
+4. **Propose before changing.** Give a ranked list of changes with before/after reasoning. For 6–7,
    give two or three concrete options (token values, one mocked page). The owner picks; nothing
    changes in the app before that.
-4. Implement in batches, committing between them when the owner allows. Change tokens and components,
+5. Implement in batches, committing between them when the owner allows. Change tokens and components,
    not single pages. Keep the [page rules](../spec/design-system.md#rules-every-page-follows) and
    tests green (`e2e/ui-quality.spec.ts`, `test/source-rules.test.ts`). Re-measure contrast for any
    new colour and update the contrast table. Check light and dark, English and German, 390 px.
-5. Record the outcome here (`status: done`), in the design system, and in an ADR if the direction
+6. Record the outcome here (`status: done`), in the design system, and in an ADR if the direction
    changed.
