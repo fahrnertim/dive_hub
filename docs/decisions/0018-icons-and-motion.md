@@ -43,7 +43,7 @@ this work ([skills](../skills.md)).
   | Dialogs open | overlay fades in over 150 ms; the dialog scales from 0.97 over 200 ms, centred | prevents a jarring change |
   | Notices appear | 200 ms fade, 4 px rise | the result of an action arrives instead of popping in |
   | Drop overlay | 150 ms fade | prevents a jarring change |
-  | Pressed buttons | `scale(0.97)`, 120 ms (since the review) | feedback |
+  | Pressed buttons | `scale(0.97)`, 120 ms, `--ease-out`; not quiet (text-like) buttons | feedback |
 
 - **Never animated:** page changes, table rows when sorting or paging, the depth profile, tab
   switches, focus moves, loading placeholders. These are frequent, or they're data the User reads.
@@ -51,6 +51,11 @@ this work ([skills](../skills.md)).
   `transform` and `opacity` animate. Entries animate; exits are instant.
 - **Reduced motion:** the durations drop to 0, so nothing moves. This is deliberately stricter than
   the skills' "gentler, not zero". A logbook loses nothing without motion.
+
+**Review** (`review-animations`, 2026-10-03): approved. Two fixes applied: the press transition uses
+`--ease-out` instead of the weak built-in `ease-out`, and quiet buttons no longer scale. Kept
+deliberately: the drop overlay only fades (a backdrop has no trigger to grow from); notices use
+keyframes (they don't stack quickly); menus opened with the keyboard animate too (occasional, 150 ms).
 
 ## Consequences
 - One more runtime dependency (`lucide-react`). Upgrades are checked against renamed icons

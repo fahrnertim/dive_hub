@@ -52,7 +52,7 @@
 .btn { font: inherit; font-weight: var(--weight-medium); line-height: var(--leading-tight); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
   min-height: 2.5rem; padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); border: 1px solid transparent;
-  transition: background-color var(--duration-fast), border-color var(--duration-fast), transform var(--duration-fast) ease-out; }
+  transition: background-color var(--duration-fast), border-color var(--duration-fast), transform var(--duration-fast) var(--ease-out); }
 .btn[data-focus-visible] { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 .btn[data-disabled] { opacity: 0.55; cursor: not-allowed; }
 .btn-primary { background: var(--color-accent); color: var(--color-on-accent); }
@@ -66,8 +66,9 @@
 .btn-quiet { background: none; color: var(--color-accent); min-height: 2rem; padding: var(--space-1); margin-inline: calc(-1 * var(--space-1));
   justify-content: flex-start; text-align: left; }
 .btn-quiet[data-hovered] { text-decoration: underline; }
-/* Pressing gives way a little (emil-design-eng); the duration token drops to 0 with reduced motion. */
-.btn[data-pressed] { transform: scale(0.97); }
+/* Pressing gives way a little (emil-design-eng); the duration token drops to 0 with reduced motion.
+   Not for quiet buttons: shrinking a line of text reads as jitter; colour and underline are their feedback. */
+.btn:not(.btn-quiet)[data-pressed] { transform: scale(0.97); }
 /* Busy (isPending): stays focusable, ignores presses; the cursor and a dimmed label say so. */
 .btn[data-pending] { cursor: progress; opacity: 0.7; }
 
