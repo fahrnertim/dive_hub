@@ -1,17 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
-import { api, authClient, keys, unwrap } from './api.ts';
+import { api, authClient, unwrap } from './api.ts';
 
 const MIN_PASSWORD_LENGTH = 15;
 
-/** After signing in as someone (else), nothing cached for the previous User may show. */
-function useSignedIn() {
+/**
+ * After the User changes, nothing cached for the previous one may show. resetQueries drops all
+ * cached data and refetches what's on screen (so `me` picks up the new session); clear() would
+ * detach the mounted queries and leave the page as it was.
+ */
+function useUserChanged() {
   const queryClient = useQueryClient();
   return async () => {
-    queryClient.clear();
-    await queryClient.invalidateQueries({ queryKey: keys.me });
     history.replaceState(null, '', location.pathname); // drop tokens from the address bar
     location.hash = '/';
+    await queryClient.resetQueries();
   };
 }
 
@@ -31,7 +34,7 @@ function PasswordField({ label = 'Password' }: { label?: string }) {
 }
 
 export function SignIn() {
-  const signedIn = useSignedIn();
+  const signedIn = useUserChanged();
   const signIn = useMutation({
     mutationFn: async ({ email, password }: Record<string, string>) => {
       const { error } = await authClient.signIn.email({ email: email!, password: password! });
@@ -56,7 +59,7 @@ export function SignIn() {
 
 /** First start: whoever has the setup token from the server log creates the first admin. */
 export function Setup() {
-  const signedIn = useSignedIn();
+  const signedIn = useUserChanged();
   const setup = useMutation({
     mutationFn: async ({ token, name, email, password }: Record<string, string>) =>
       unwrap(await api.POST('/api/setup', { body: { token: token!.trim(), name: name!, email: email!, password: password! } })),
@@ -80,7 +83,7 @@ export function Setup() {
 }
 
 export function AcceptInvitation({ token }: { token: string }) {
-  const signedIn = useSignedIn();
+  const signedIn = useUserChanged();
   const invitation = useQuery({
     queryKey: ['invitation', token],
     queryFn: async () => unwrap(await api.POST('/api/invitations/lookup', { body: { token } })),
@@ -118,7 +121,7 @@ export function AcceptInvitation({ token }: { token: string }) {
 }
 
 export function SignOutButton() {
-  const queryClient = useQueryClient();
+  const userChanged = useUserChanged();
   const [busy, setBusy] = useState(false);
   return (
     <button
@@ -128,10 +131,7 @@ export function SignOutButton() {
       onClick={async () => {
         setBusy(true);
         await authClient.signOut();
-        queryClient.clear();
-        queryClient.setQueryData(keys.me, null);
-        location.hash = '/';
-        setBusy(false);
+        await userChanged(); // `me` refetches as nobody, which shows the sign-in page
       }}
     >
       Sign out
