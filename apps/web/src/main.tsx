@@ -4,7 +4,7 @@ import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@ta
 import { I18nProvider } from 'react-aria-components';
 import { useTranslation } from 'react-i18next';
 import { App } from './App.tsx';
-import { isUnauthorized, keys } from './api.ts';
+import { isUnauthorized, keys, shouldRetry } from './api.ts';
 import './i18n/index.ts';
 import './design/tokens.css';
 import './design/base.css';
@@ -19,7 +19,7 @@ const queryClient: QueryClient = new QueryClient({
   queryCache: new QueryCache({ onError }),
   mutationCache: new MutationCache({ onError }),
   defaultOptions: {
-    queries: { staleTime: 30_000, retry: (count, error) => !isUnauthorized(error) && count < 1 },
+    queries: { staleTime: 30_000, retry: shouldRetry },
   },
 });
 

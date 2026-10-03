@@ -3,7 +3,7 @@
 // added to dive 42, then split off into its own dive; a second Diver gets that dive and a Device.
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
-import { E2E_BASE_URL, setPreferences } from './support.ts';
+import { E2E_BASE_URL, expectGoodPage, setPreferences } from './support.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -24,8 +24,9 @@ test('a recording that doesn\'t clearly fit is put aside, brought back and added
   await expect(panel).toContainText('One recording doesn’t clearly belong to a dive.');
   await expect(panel).toContainText('Garmin Descent Mk3 (777)');
   await expect(panel).toContainText('the max depth differs too much');
+  await expectGoodPage(page, 'Logbook'); // with the decision panel and the Import history on it
 
-  await panel.getByRole('button', { name: 'Discard', exact: true }).click();
+  await panel.getByRole('button', { name: /^Discard:/ }).click();
   await expect(page.getByRole('heading', { name: 'Needs your decision' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Show discarded recordings' }).click();
   await page.getByRole('button', { name: 'Decide again' }).click();
@@ -57,9 +58,9 @@ test('a second Diver gets a dive and a device; the logbook can show one Diver', 
 
   // The backup computer belongs to Mia from now on.
   const backupRow = page.getByRole('row').filter({ hasText: '999' });
-  await backupRow.getByRole('button', { name: /Belongs to/ }).click();
+  await backupRow.getByRole('button', { name: /belongs to/ }).click();
   await page.getByRole('option', { name: 'Mia' }).click();
-  await expect(backupRow.getByRole('button', { name: /Belongs to/ })).toContainText('Mia');
+  await expect(backupRow.getByRole('button', { name: /belongs to/ })).toContainText('Mia');
 
   // Move the split-off dive to Mia.
   await page.goto('/');
@@ -82,6 +83,6 @@ test('the Divers page speaks German', async ({ page, request }) => {
   await page.goto('/#/divers');
   await expect(page.getByRole('heading', { name: 'Taucher', level: 1 })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Geräte' })).toBeVisible();
-  await expect(page.getByText('Importe ab jetzt landen bei diesem Taucher').first()).toBeVisible();
+  await expect(page.getByText('Importe ab dann bei ihm')).toBeVisible();
   await setPreferences(request, { language: null });
 });

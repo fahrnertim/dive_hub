@@ -3262,6 +3262,15 @@
                           },
                           "message": {
                             "type": "string"
+                          },
+                          "decision": {
+                            "enum": [
+                              "open",
+                              "attached",
+                              "new_dive",
+                              "discarded"
+                            ],
+                            "description": "For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to"
                           }
                         }
                       }
@@ -3526,6 +3535,15 @@
                             },
                             "message": {
                               "type": "string"
+                            },
+                            "decision": {
+                              "enum": [
+                                "open",
+                                "attached",
+                                "new_dive",
+                                "discarded"
+                              ],
+                              "description": "For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to"
                             }
                           }
                         }
@@ -3686,6 +3704,15 @@
                           },
                           "message": {
                             "type": "string"
+                          },
+                          "decision": {
+                            "enum": [
+                              "open",
+                              "attached",
+                              "new_dive",
+                              "discarded"
+                            ],
+                            "description": "For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to"
                           }
                         }
                       }

@@ -1,4 +1,5 @@
-import type { APIRequestContext } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+import { expect, type APIRequestContext, type Page } from '@playwright/test';
 
 export const E2E_PORT = 3300;
 export const E2E_BASE_URL = `http://localhost:${E2E_PORT}`;
@@ -39,4 +40,37 @@ export async function editElsewhere(api: APIRequestContext, diveId: string, note
 
 export async function setPreferences(api: APIRequestContext, preferences: { language?: string | null; units?: string | null }) {
   await api.patch('/api/me/preferences', { data: preferences, headers });
+}
+
+/**
+ * The checks every page must pass (UI review 2026-10-03, so its problems don't come back):
+ * axe-core finds no WCAG 2.2 AA or best-practice violation, the page has one h1 and its own title,
+ * nothing scrolls the page sideways, and no two buttons have the same name (screen readers list
+ * buttons by name, so "Revoke" on every row can't be told apart). `title` is the expected h1 text,
+ * checked against document.title; leave it out to check only that the page set one.
+ */
+export async function expectGoodPage(page: Page, title?: string) {
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+  if (title) await expect(page).toHaveTitle(`${title} – Dive Hub`);
+  else await expect(page).toHaveTitle(/^.+ – Dive Hub$/);
+
+  const axe = await new AxeBuilder({ page })
+    // React Aria's live announcer briefly keeps a role=img pointing at a pending button that may be gone.
+    .exclude('[data-live-announcer]')
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
+    .analyze();
+  expect(axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.html.slice(0, 120)).join(' | ')}`)).toEqual([]);
+
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow, 'the page scrolls sideways').toBeLessThanOrEqual(0);
+
+  const names = await page.getByRole('button').evaluateAll((buttons) => buttons
+    .filter((b) => b.checkVisibility())
+    .map((b) => {
+      const ids = b.getAttribute('aria-labelledby');
+      if (ids) return ids.split(' ').map((id) => document.getElementById(id)?.textContent?.trim() ?? '').join(' ');
+      return (b.getAttribute('aria-label') ?? b.textContent ?? '').trim();
+    }));
+  const repeated = names.filter((n, i) => names.indexOf(n) !== i);
+  expect(repeated, 'buttons with the same name').toEqual([]);
 }

@@ -29,6 +29,8 @@ code { font-size: 0.9em; background: var(--color-surface-sunken); padding: 0 var
 table, dl, .numeric { font-variant-numeric: tabular-nums; }
 
 :focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+/* Headings get focus after navigation (lib/page.ts) as a starting point, not as a control. */
+h1[tabindex='-1']:focus { outline: none; }
 
 .visually-hidden {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;

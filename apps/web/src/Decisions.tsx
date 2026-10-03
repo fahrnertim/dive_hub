@@ -78,6 +78,8 @@ function Decision({ candidate: c }: { candidate: CandidateView }) {
   const errorText = useErrorText();
   const display = useDisplay();
   const decide = useDecide(c);
+  // Several Recordings may wait at once; their buttons say which one they decide about.
+  const recordingName = display.diveTime(c.recording.startsAt, c.recording.utcOffsetSeconds);
   return (
     <li className="decision">
       <RecordingLine c={c} />
@@ -92,7 +94,13 @@ function Decision({ candidate: c }: { candidate: CandidateView }) {
                 </a>
                 {' · '}{display.diveTime(d.startsAt, d.utcOffsetSeconds)} · {display.depth(d.maxDepthM)} · {display.duration(d.durationSeconds)}
                 {' '}
-                <Button variant="quiet" isDisabled={decide.isPending} onPress={() => decide.mutate({ kind: 'attach', diveId: d.id })}>
+                <Button
+                  variant="quiet"
+                  aria-label={t('common.forItem', { action: t('decisions.addTo'), item: d.number !== null ? t('dive.title', { number: d.number }) : display.diveTime(d.startsAt, d.utcOffsetSeconds) })}
+                  isPending={decide.isPending && decide.variables.kind === 'attach' && decide.variables.diveId === d.id}
+                  isDisabled={decide.isPending}
+                  onPress={() => decide.mutate({ kind: 'attach', diveId: d.id })}
+                >
                   {t('decisions.addTo')}
                 </Button>
               </li>
@@ -101,8 +109,20 @@ function Decision({ candidate: c }: { candidate: CandidateView }) {
         </>
       )}
       <div className="form-actions">
-        <Button isDisabled={decide.isPending} onPress={() => decide.mutate({ kind: 'new-dive' })}>{t('decisions.newDive')}</Button>
-        <Button variant="quiet" isDisabled={decide.isPending} onPress={() => decide.mutate({ kind: 'discard' })}>{t('decisions.discard')}</Button>
+        <Button
+          aria-label={t('common.forItem', { action: t('decisions.newDive'), item: recordingName })}
+          isPending={decide.isPending && decide.variables.kind === 'new-dive'} isDisabled={decide.isPending}
+          onPress={() => decide.mutate({ kind: 'new-dive' })}
+        >
+          {t('decisions.newDive')}
+        </Button>
+        <Button
+          variant="quiet" aria-label={t('common.forItem', { action: t('decisions.discard'), item: recordingName })}
+          isPending={decide.isPending && decide.variables.kind === 'discard'} isDisabled={decide.isPending}
+          onPress={() => decide.mutate({ kind: 'discard' })}
+        >
+          {t('decisions.discard')}
+        </Button>
       </div>
       {decide.error && <Notice tone="danger">{errorText(decide.error)}</Notice>}
     </li>
@@ -126,11 +146,19 @@ function Discarded({ onHide }: { onHide: () => void }) {
 
 function DiscardedItem({ candidate: c }: { candidate: CandidateView }) {
   const { t } = useTranslation();
+  const display = useDisplay();
   const decide = useDecide(c);
   return (
     <li className="decision">
       <RecordingLine c={c} />
-      <Button variant="quiet" isDisabled={decide.isPending} onPress={() => decide.mutate({ kind: 'reopen' })}>{t('decisions.reopen')}</Button>
+      <Button
+        variant="quiet"
+        aria-label={t('common.forItem', { action: t('decisions.reopen'), item: display.diveTime(c.recording.startsAt, c.recording.utcOffsetSeconds) })}
+        isPending={decide.isPending}
+        onPress={() => decide.mutate({ kind: 'reopen' })}
+      >
+        {t('decisions.reopen')}
+      </Button>
     </li>
   );
 }

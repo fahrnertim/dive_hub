@@ -4,11 +4,13 @@ import { useTranslation } from 'react-i18next';
 import { api, devicesQuery, diversQuery, keys, unwrap, type DeviceView, type DiverView } from './api.ts';
 import { deviceName } from './lib/devices.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
+import { usePageTitle } from './lib/page.ts';
 import { Button, Form, Muted, Notice, Panel, Select, Table, TextField } from './ui/index.ts';
 
 /** The Divers whose logbooks the User keeps, and their Devices (ADR 0016). */
 export function DiversPage() {
   const { t } = useTranslation();
+  usePageTitle(t('divers.title'));
   return (
     <>
       <h1>{t('divers.title')}</h1>
@@ -42,7 +44,7 @@ function Divers() {
       </ul>
       <Form className="form-inline" onSubmit={submit}>
         <TextField label={t('divers.add')} name="name" isRequired maxLength={100} autoComplete="off" />
-        <Button type="submit" isDisabled={create.isPending}>{t('divers.create')}</Button>
+        <Button type="submit" isPending={create.isPending}>{t('divers.create')}</Button>
       </Form>
       {create.error && <Notice tone="danger">{errorText(create.error)}</Notice>}
     </Panel>
@@ -72,8 +74,8 @@ function DiverRow({ diver: d }: { diver: DiverView }) {
           className="form-inline"
           onSubmit={(e) => { e.preventDefault(); rename.mutate(String(new FormData(e.currentTarget).get('name')).trim()); }}
         >
-          <TextField label={t('divers.newName')} name="name" defaultValue={d.name} isRequired maxLength={100} autoFocus />
-          <Button type="submit" variant="primary" isDisabled={rename.isPending}>{t('divers.save')}</Button>
+          <TextField label={t('divers.newName')} name="name" defaultValue={d.name} isRequired maxLength={100} autoComplete="off" autoFocus />
+          <Button type="submit" variant="primary" isPending={rename.isPending}>{t('divers.save')}</Button>
           <Button onPress={() => setRenaming(false)}>{t('common.cancel')}</Button>
         </Form>
       ) : (
@@ -81,8 +83,14 @@ function DiverRow({ diver: d }: { diver: DiverView }) {
           <span className="diver-name">{d.name}{d.isOwn && ` (${t('divers.own')})`}</span>
           <a href={`#/?diver=${d.id}`} className="muted">{t('divers.dives', { count: d.diveCount })}</a>
           <span className="actions">
-            <Button variant="quiet" onPress={() => setRenaming(true)}>{t('divers.rename')}</Button>
-            {!d.isOwn && empty && <Button variant="quiet" isDisabled={remove.isPending} onPress={() => remove.mutate()}>{t('divers.delete')}</Button>}
+            <Button variant="quiet" aria-label={t('common.forItem', { action: t('divers.rename'), item: d.name })} onPress={() => setRenaming(true)}>
+              {t('divers.rename')}
+            </Button>
+            {!d.isOwn && empty && (
+              <Button variant="quiet" aria-label={t('common.forItem', { action: t('divers.delete'), item: d.name })} isPending={remove.isPending} onPress={() => remove.mutate()}>
+                {t('divers.delete')}
+              </Button>
+            )}
           </span>
         </>
       )}
@@ -99,6 +107,8 @@ function Devices() {
   return (
     <Panel title={t('divers.devices')}>
       <Muted>{t('divers.devicesIntro')}</Muted>
+      {/* Said once here, not under every device's select (UI review A2). */}
+      {(divers.data?.length ?? 0) > 1 && (devices.data?.length ?? 0) > 0 && <Muted>{t('divers.assignHint')}</Muted>}
       {devices.isPending && <Muted>{t('common.loading')}</Muted>}
       {devices.error && <Notice tone="danger">{errorText(devices.error)}</Notice>}
       {devices.data?.length === 0 && <Muted>{t('divers.noDevices')}</Muted>}
@@ -132,13 +142,12 @@ function DeviceRow({ device: d, divers }: { device: DeviceView; divers: DiverVie
       <td>{d.serialNumber}</td>
       <td className="num">{d.recordingCount}</td>
       <td>{d.lastUsedAt ? display.dateTime(d.lastUsedAt) : t('common.none')}</td>
-      <td>
+      <td className="device-owner">
         <Select
-          label={<span className="visually-hidden">{t('divers.belongsTo')}</span>}
+          label={<span className="visually-hidden">{t('divers.belongsToDevice', { device: `${deviceName(d.manufacturer, d.product)} ${d.serialNumber}` })}</span>}
           value={d.diverId}
           onChange={(diverId) => diverId && diverId !== d.diverId && assign.mutate(diverId)}
           options={divers.map((v) => ({ id: v.id, label: v.name }))}
-          description={divers.length > 1 ? t('divers.assignHint') : undefined}
         />
         {assign.error && <Notice tone="danger">{errorText(assign.error)}</Notice>}
       </td>

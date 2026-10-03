@@ -64,7 +64,7 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 | Regenerate Better Auth's schema (after changing its plugins or options) | `pnpm --filter @dive-hub/server auth:generate` (pinned CLI), re-apply the edits listed in the file header, then `db:generate`. Never `drizzle-kit push` or `auth migrate`. |
 | Regenerate API client after route changes | `pnpm --filter @dive-hub/api-client generate` |
 | UI review material | `pnpm --filter @dive-hub/web review:capture`: screenshots, axe results, accessibility trees, Tab order of every page into `apps/web/review-output/` ([UI review](research/2026-10-03-ui-review.md)). Runs alone; changes the seeded data. |
-| Browser tests | `pnpm --filter @dive-hub/web test:e2e`: builds the web client, starts the app on port 3300 with a fresh `divehub_e2e` database and a seeded User and Dive (`apps/server/test/e2e-server.ts`), runs `apps/web/e2e` in the installed Edge (`PLAYWRIGHT_CHANNEL=chrome` for Chrome). Needs PostgreSQL. |
+| Browser tests | `pnpm --filter @dive-hub/web test:e2e`: builds the web client, starts the app on port 3300 with a fresh `divehub_e2e` database and a seeded User and Dive (`apps/server/test/e2e-server.ts`), runs `apps/web/e2e` in the installed Edge (`PLAYWRIGHT_CHANNEL=chrome` for Chrome). Needs PostgreSQL. `e2e/ui-quality.spec.ts` checks every page with axe-core (`@axe-core/playwright`, dev only) and the [page rules](spec/design-system.md#rules-every-page-follows). |
 | Regenerate the synthetic FIT fixture | `pnpm --filter @dive-hub/server exec tsx test/fixtures/synthetic-dive.ts` |
 | Build and run the image | `docker build -t dive-hub:dev .`, then `POSTGRES_PASSWORD=… docker compose up -d` |
 

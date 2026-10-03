@@ -6,7 +6,9 @@
     "copy": "Copy",
     "copied": "Copied",
     "signOut": "Sign out",
-    "none": "–"
+    "none": "–",
+    "actions": "Actions",
+    "forItem": "{{action}}: {{item}}"
   },
   "nav": {
     "main": "Main",
@@ -81,7 +83,8 @@
     "unitsAuto": "Same as the browser’s region",
     "metric": "Metric (m, °C)",
     "imperial": "Imperial (ft, °F)",
-    "saved": "Saved."
+    "saved": "Saved.",
+    "browser": "Browser"
   },
   "admin": {
     "inviteTitle": "Invite someone",
@@ -113,7 +116,7 @@
       "expired": "expired"
     },
     "makeAdmin": "Make admin",
-    "makeUser": "Make user",
+    "makeUser": "Remove admin role",
     "createResetLink": "Password reset link",
     "signOutEverywhere": "Sign out everywhere",
     "signedOutEverywhere": "{{name}} was signed out everywhere.",
@@ -123,7 +126,10 @@
     "deleteTitle": "Delete {{name}}?",
     "deleteBody": "This removes their account, their uploaded files and Imports, and their own Diver with all Dives. It can’t be undone. To keep the data, disable the User instead.",
     "deleteConfirm": "Type {{email}} to confirm",
-    "deleteSubmit": "Delete {{name}}"
+    "deleteSubmit": "Delete {{name}}",
+    "demoteSelfTitle": "Remove your own admin role?",
+    "demoteSelfBody": "You’ll lose access to this page. Another admin can give the role back.",
+    "demoteSelfSubmit": "Remove my admin role"
   },
   "import": {
     "title": "Import",
@@ -157,6 +163,12 @@
     "errorCode": {
       "unsupported_file": "This is neither a FIT file nor a zip archive.",
       "processing_failed": "Processing failed."
+    },
+    "skipped": "Skipped {{names}}: only FIT files and zip archives can be imported.",
+    "decision": {
+      "attached": "added to a dive",
+      "new_dive": "made a new dive",
+      "discarded": "discarded"
     }
   },
   "logbook": {
@@ -198,7 +210,6 @@
     "notes": "Notes",
     "noNotes": "No notes yet.",
     "edited": "edited",
-    "editedHint": "Set by hand; the recording says {{value}}",
     "fromRecording": "Recording: {{value}}",
     "resetToRecording": "Use the recording’s value",
     "willReset": "Goes back to {{value}} when you save",
@@ -219,7 +230,8 @@
     "moveIntro": "The dive, its recordings and notes go to the other Diver’s logbook.",
     "move": "Move",
     "splitOff": "Split off into its own dive",
-    "splitHint": "For a recording that belongs to another dive. It becomes a dive of its own."
+    "splitHint": "For a recording that belongs to another dive. It becomes a dive of its own.",
+    "notFoundTitle": "Dive not found"
   },
   "errors": {
     "unknown": "Something went wrong. Try again.",
@@ -359,10 +371,11 @@
     "lastUsed": "Last used",
     "recordings": "Recordings",
     "belongsTo": "Belongs to",
-    "assignHint": "Imports from now on go to this Diver; dives already in a logbook stay where they are.",
+    "assignHint": "When you give a device to another Diver, imports from then on go to that Diver. Dives already in a logbook stay where they are.",
     "noDevices": "No devices yet. They appear with your first import.",
     "filter": "Diver",
     "allDivers": "All Divers",
-    "logbooks": "Logbooks you keep"
+    "logbooks": "Logbooks you keep",
+    "belongsToDevice": "{{device}} belongs to"
   }
 }

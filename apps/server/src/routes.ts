@@ -5,7 +5,9 @@ import { Type, type Static } from 'typebox';
 import type { Auth } from './auth/auth.js';
 import { requireUser } from './auth/fastify.js';
 import type { Db } from './db/client.js';
-import { IMPORT_ERROR_CODES, OUTCOME_REASONS, dive, diverManagement, importJob, recording, sampleSeries } from './db/schema.js';
+import {
+  IMPORT_ERROR_CODES, OUTCOME_REASONS, dive, diverManagement, duplicateCandidate, importJob, recording, sampleSeries,
+} from './db/schema.js';
 import { downsampleMinMax } from './dives/downsample.js';
 import { Problem, problem } from './http/problems.js';
 import type { ImportService } from './imports/import-service.js';
@@ -37,6 +39,9 @@ const ImportView = Type.Object({
     recordingId: Type.Optional(Type.String()),
     reason: Type.Optional(Type.Enum([...OUTCOME_REASONS])),
     message: Type.Optional(Type.String()),
+    decision: Type.Optional(Type.Enum(['open', 'attached', 'new_dive', 'discarded'], {
+      description: 'For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to',
+    })),
   })),
 });
 
@@ -73,6 +78,34 @@ const toImportView = (j: typeof importJob.$inferSelect): Static<typeof ImportVie
   errorCode: j.error === null ? null : j.error === 'unsupported_file' ? 'unsupported_file' : 'processing_failed',
   error: j.error === 'unsupported_file' ? null : j.error,
 });
+/**
+ * An Import's outcome is stored once; a Duplicate candidate is decided later. Adds the current
+ * decision (and the Dive the Recording went to) so the client doesn't show a stale "needs your decision".
+ */
+async function withDecisions(db: Db, rows: (typeof importJob.$inferSelect)[]) {
+  const views = rows.map(toImportView);
+  const ids = views.flatMap((v) => v.outcome.filter((o) => o.result === 'duplicate-candidate' && o.recordingId).map((o) => o.recordingId!));
+  if (ids.length === 0) return views;
+  const decided = await db.select({
+    recordingId: duplicateCandidate.recordingId, resolution: duplicateCandidate.resolution, createdAt: duplicateCandidate.createdAt,
+    diveId: recording.diveId,
+  }).from(duplicateCandidate)
+    .innerJoin(recording, eq(recording.id, duplicateCandidate.recordingId))
+    .where(inArray(duplicateCandidate.recordingId, ids))
+    .orderBy(duplicateCandidate.createdAt);
+  // The latest candidate per Recording wins (a discarded one may be reopened as a new candidate).
+  const byRecording = new Map(decided.map((d) => [d.recordingId, d]));
+  for (const v of views) {
+    v.outcome = v.outcome.map((o) => {
+      const d = o.result === 'duplicate-candidate' && o.recordingId ? byRecording.get(o.recordingId) : undefined;
+      if (!d) return o;
+      const decision = d.resolution ?? 'open';
+      return { ...o, decision, ...(d.diveId && decision !== 'discarded' && { diveId: d.diveId }) };
+    });
+  }
+  return views;
+}
+
 const toDiveSummary = (d: typeof dive.$inferSelect): Static<typeof DiveSummaryView> => ({
   id: d.id, diverId: d.diverId, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
   durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, avgDepthM: d.avgDepthM,
@@ -113,7 +146,7 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
   }, async (request) => {
     const rows = await db.select().from(importJob).where(eq(importJob.userId, userId(request)))
       .orderBy(desc(importJob.createdAt)).limit(50);
-    return rows.map(toImportView);
+    return withDecisions(db, rows);
   });
 
   app.get('/imports/:id', {
@@ -121,7 +154,7 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
   }, async (request, reply) => {
     const [row] = await db.select().from(importJob)
       .where(and(eq(importJob.id, request.params.id), eq(importJob.userId, userId(request))));
-    return row ? toImportView(row) : reply.code(404).send(problem('import_not_found'));
+    return row ? (await withDecisions(db, [row]))[0]! : reply.code(404).send(problem('import_not_found'));
   });
 
   app.get('/dives', {

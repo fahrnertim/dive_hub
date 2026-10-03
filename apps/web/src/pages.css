@@ -11,11 +11,17 @@
 .imports li { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); padding: var(--space-2) 0; border-top: 1px solid var(--color-border); }
 .import-name { font-weight: var(--weight-semibold); overflow-wrap: anywhere; }
 
+.panel-head h1 { font-size: var(--text-xl); }
+/* A heading inside a panel, one level below the panel's title. */
+.subheading { font-size: var(--text-lg); }
 .title-meta { display: block; font-size: var(--text-md); font-weight: var(--weight-regular); color: var(--color-text-muted); margin-top: var(--space-1); }
 
 .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: var(--space-4); margin: var(--space-4) 0 var(--space-5); }
 .facts dt { color: var(--color-text-muted); font-size: var(--text-sm); }
 .facts dd { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+/* What the recording says, next to a value set by hand. */
+.recorded-value { display: block; font-size: var(--text-sm); font-weight: var(--weight-regular); color: var(--color-text-muted); }
+.title-meta .recorded-value { display: inline; margin-left: var(--space-2); }
 
 .segmented { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--color-border-strong); border-radius: var(--radius-md);
   overflow: hidden; margin-bottom: var(--space-3); }
@@ -63,4 +69,5 @@
 .diver-row .actions { margin-left: auto; display: flex; gap: var(--space-3); }
 .diver-row .form-inline { flex: 1; }
 .logbook-filter { min-width: 12rem; }
+.device-owner { min-width: 10rem; }
 .recording-actions { margin-bottom: var(--space-1); }

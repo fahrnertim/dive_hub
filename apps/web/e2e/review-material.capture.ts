@@ -2,6 +2,7 @@
 // accessibility trees and Tab orders of every page and state. Not a test; run it on purpose:
 //   pnpm --filter @dive-hub/web review:capture        (output: apps/web/review-output/, git-ignored)
 // It changes the seeded data (adds a Duplicate candidate, a Diver, invitations), so run it alone.
+import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { E2E_BASE_URL, setPreferences } from './support.ts';
@@ -16,14 +17,10 @@ async function capture(page: Page, name: string, opts: { full?: boolean; axe?: b
   await page.screenshot({ path: `${out}${name}.png`, fullPage: opts.full ?? true });
   if (opts.aria !== false) writeFileSync(`${out}${name}.aria.yml`, await page.locator('body').ariaSnapshot());
   if (opts.axe !== false) {
-    // axe-core from cdnjs, for review runs only (no dependency).
-    await page.addScriptTag({ url: 'https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.10.2/axe.min.js' });
-    findings[name] = await page.evaluate(async () => {
-      // @ts-expect-error injected above
-      const r = await window.axe.run(document, { runOnly: ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa', 'best-practice'] });
-      return r.violations.map((v: { id: string; impact: string; help: string; nodes: { target: string[] }[] }) =>
-        ({ id: v.id, impact: v.impact, help: v.help, targets: v.nodes.slice(0, 4).map((n) => n.target.join(' ')) }));
-    });
+    const r = await new AxeBuilder({ page })
+    // React Aria's live announcer briefly keeps a role=img pointing at a pending button that may be gone.
+    .exclude('[data-live-announcer]').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa', 'best-practice']).analyze();
+    findings[name] = r.violations.map((v) => ({ id: v.id, impact: v.impact, help: v.help, targets: v.nodes.slice(0, 4).map((n) => n.target.join(' ')) }));
   }
 }
 

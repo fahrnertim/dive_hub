@@ -65,7 +65,8 @@ rejected, and why — in [docs/skills.md](docs/skills.md).
 - **accessibility**: target WCAG 2.2 AA; build on the React Aria components in `apps/web/src/ui/`.
 - **playwright-cli**: tests live in `apps/web/e2e` and run with `pnpm --filter @dive-hub/web test:e2e`
   (installed Edge/Chrome; don't run `npx playwright install`). Keep tests at the User's level: roles,
-  labels and visible text, not CSS classes.
+  labels and visible text, not CSS classes. A new page or state gets a case in `e2e/ui-quality.spec.ts`
+  ([page rules](docs/spec/design-system.md#rules-every-page-follows)).
 - **emil-design-eng**: skip its fixed opening line; write findings in our review documents' format
   (its Before/After table is fine inside them). Motion respects `prefers-reduced-motion` and the
   duration tokens in `apps/web/src/design/tokens.css`.

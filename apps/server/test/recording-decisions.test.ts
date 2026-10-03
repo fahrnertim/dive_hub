@@ -9,7 +9,7 @@ import {
 type Candidate = { id: string; reason: string; recording: { id: string; device: { serialNumber: string } | null }; dives: { id: string }[] };
 type Dive = { id: string; diverId: string; version: number; values: { durationSeconds: number }; recordings: { id: string; isPrimary: boolean }[] };
 type Diver = { id: string; name: string; isOwn: boolean; diveCount: number; deviceCount: number };
-type Device = { id: string; serialNumber: string; diverId: string; recordingCount: number };
+type Device = { id: string; serialNumber: string; diverId: string; recordingCount: number; lastUsedAt: string | null };
 
 describe.skipIf(!(await databaseReachable()))('deciding about Recordings and Divers', () => {
   let t: TestDatabase;
@@ -105,10 +105,15 @@ describe.skipIf(!(await databaseReachable()))('deciding about Recordings and Div
         serialNumber: 777, start: new Date('2026-02-01T09:01:00Z'), maxDepthM: 40, diveNumber: 51,
       }));
       expect(odd.result).toBe('duplicate-candidate');
+      expect(odd).toMatchObject({ decision: 'open' });
       const [c] = await json<Candidate[]>('GET', '/api/duplicate-candidates');
       const { diveId } = await json<{ diveId: string }>('POST', `/api/duplicate-candidates/${c!.id}/new-dive`);
       const d = await json<Dive>('GET', `/api/dives/${diveId}`);
       expect(d.recordings).toEqual([expect.objectContaining({ id: odd.recordingId, isPrimary: true })]);
+      // The Import's outcome now says what was decided, not "needs your decision".
+      const imports = await json<{ outcome: { recordingId?: string; decision?: string; diveId?: string }[] }[]>('GET', '/api/imports');
+      const outcome = imports.flatMap((i) => i.outcome).find((o) => o.recordingId === odd.recordingId);
+      expect(outcome).toMatchObject({ decision: 'new_dive', diveId });
     });
   });
 
@@ -161,6 +166,11 @@ describe.skipIf(!(await databaseReachable()))('deciding about Recordings and Div
       const lent = await upload('lent.fit', makeSyntheticDive({ serialNumber: 111, start: new Date('2026-04-01T09:00:00Z') }));
       expect((await json<Dive>('GET', `/api/dives/${lent.diveId}`)).diverId).toBe(kid.id);
       expect((await json<{ id: string }[]>('GET', `/api/dives?diverId=${kid.id}`)).map((d) => d.id)).toEqual([lent.diveId]);
+      // Each Device counts its own Recordings and knows when it was last used.
+      const after = (await json<Device[]>('GET', '/api/devices')).find((d) => d.serialNumber === '111')!;
+      expect(watch.recordingCount).toBeGreaterThan(0);
+      expect(after.recordingCount).toBe(watch.recordingCount + 1);
+      expect(after.lastUsedAt).toBe('2026-04-01T09:00:00.000Z');
       expect((await call('PATCH', `/api/devices/${watch.id}`, other, { diverId: kid.id })).statusCode).toBe(404);
     });
 

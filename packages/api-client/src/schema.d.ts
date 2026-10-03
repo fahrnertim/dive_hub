@@ -1429,6 +1429,11 @@ export interface paths {
                                 /** @enum {unknown} */
                                 reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed";
                                 message?: string;
+                                /**
+                                 * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
+                                 * @enum {unknown}
+                                 */
+                                decision?: "open" | "attached" | "new_dive" | "discarded";
                             }[];
                         }[];
                     };
@@ -1470,6 +1475,11 @@ export interface paths {
                                 /** @enum {unknown} */
                                 reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed";
                                 message?: string;
+                                /**
+                                 * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
+                                 * @enum {unknown}
+                                 */
+                                decision?: "open" | "attached" | "new_dive" | "discarded";
                             }[];
                         };
                     };
@@ -1559,6 +1569,11 @@ export interface paths {
                                 /** @enum {unknown} */
                                 reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed";
                                 message?: string;
+                                /**
+                                 * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
+                                 * @enum {unknown}
+                                 */
+                                decision?: "open" | "attached" | "new_dive" | "discarded";
                             }[];
                         };
                     };

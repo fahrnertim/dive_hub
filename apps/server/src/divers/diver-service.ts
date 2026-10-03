@@ -66,6 +66,8 @@ export function createDiverService(db: Db) {
     async devices(userId: string) {
       const divers = [...(await managedDiverIds(db, userId))];
       if (divers.length === 0) return [];
+      // A join, not correlated subqueries: in a single-table select Drizzle leaves columns
+      // unqualified, so a subquery's `id` would mean the recording's own id.
       return db.select({
         id: device.id,
         manufacturer: device.manufacturer,
@@ -73,10 +75,12 @@ export function createDiverService(db: Db) {
         serialNumber: device.serialNumber,
         firmware: device.firmware,
         diverId: device.diverId,
-        recordingCount: sql<number>`(select count(*)::int from ${recording} where ${recording.deviceId} = ${device.id} and ${recording.deletedAt} is null)`,
-        lastUsedAt: sql<Date | null>`(select max(${recording.startsAt}) from ${recording} where ${recording.deviceId} = ${device.id} and ${recording.deletedAt} is null)`,
+        recordingCount: sql<number>`count(${recording.id})::int`,
+        lastUsedAt: sql<Date | null>`max(${recording.startsAt})`.mapWith(recording.startsAt),
       }).from(device)
+        .leftJoin(recording, and(eq(recording.deviceId, device.id), isNull(recording.deletedAt)))
         .where(and(inArray(device.diverId, divers), isNull(device.deletedAt)))
+        .groupBy(device.id)
         .orderBy(device.manufacturer, device.serialNumber);
     },
 

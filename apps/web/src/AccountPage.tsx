@@ -5,11 +5,13 @@ import { formValues, NewPasswordField, useUserChanged } from './Account.tsx';
 import { api, authClient, keys, meQuery, sessionsQuery, unwrap, type SessionView } from './api.ts';
 import { LANGUAGES } from './i18n/index.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
+import { usePageTitle } from './lib/page.ts';
 import { Button, Form, Notice, Panel, RadioGroup, Table, TextField } from './ui/index.ts';
 
 /** The signed-in User's own account: display settings, password, and where they're signed in. */
 export function AccountPage() {
   const { t } = useTranslation();
+  usePageTitle(t('account.title'));
   return (
     <>
       <h1>{t('account.title')}</h1>
@@ -95,7 +97,7 @@ function ChangePassword() {
         <NewPasswordField label={t('account.newPassword')} />
         {change.error && <Notice tone="danger">{change.error.message}</Notice>}
         {done && <Notice tone="success">{t('account.changed')}</Notice>}
-        <div className="form-actions"><Button type="submit" variant="primary" isDisabled={change.isPending}>{t('account.submitChange')}</Button></div>
+        <div className="form-actions"><Button type="submit" variant="primary" isPending={change.isPending}>{t('account.submitChange')}</Button></div>
       </Form>
     </Panel>
   );
@@ -107,7 +109,7 @@ function useDescribeAgent() {
   return (userAgent: string | null): string => {
     if (!userAgent) return t('account.unknownDevice');
     const browser = [['Edg/', 'Edge'], ['Firefox/', 'Firefox'], ['Chrome/', 'Chrome'], ['Safari/', 'Safari']]
-      .find(([marker]) => userAgent.includes(marker!))?.[1] ?? 'Browser';
+      .find(([marker]) => userAgent.includes(marker!))?.[1] ?? t('account.browser');
     const os = [['Windows', 'Windows'], ['Android', 'Android'], ['iPhone', 'iOS'], ['iPad', 'iPadOS'], ['Mac OS X', 'macOS'], ['Linux', 'Linux']]
       .find(([marker]) => userAgent.includes(marker!))?.[1];
     return os ? t('account.agent', { browser, os }) : browser;
@@ -139,14 +141,14 @@ function Sessions() {
     <Panel
       title={t('account.sessions')}
       actions={sessions.data && sessions.data.length > 1 && (
-        <Button isDisabled={endOthers.isPending} onPress={() => endOthers.mutate()}>{t('account.signOutOthers')}</Button>
+        <Button isPending={endOthers.isPending} onPress={() => endOthers.mutate()}>{t('account.signOutOthers')}</Button>
       )}
     >
       {error && <Notice tone="danger">{errorText(error)}</Notice>}
       {sessions.data && (
         <Table
           label={t('account.sessions')}
-          head={[t('account.device'), t('account.ipAddress'), t('account.signedIn'), t('account.lastActive'), '']}
+          head={[t('account.device'), t('account.ipAddress'), t('account.signedIn'), t('account.lastActive'), { label: t('common.actions'), hidden: true }]}
         >
           {sessions.data.map((s) => (
             <tr key={s.id}>
@@ -154,7 +156,17 @@ function Sessions() {
               <td>{s.ipAddress ?? t('common.none')}</td>
               <td>{display.dateTime(s.createdAt)}</td>
               <td>{s.lastActiveAt ? display.dateTime(s.lastActiveAt) : t('common.none')}</td>
-              <td><Button variant="quiet" isDisabled={end.isPending} onPress={() => end.mutate(s)}>{t('account.signOutSession')}</Button></td>
+              <td>
+                <Button
+                  variant="quiet"
+                  aria-label={t('common.forItem', { action: t('account.signOutSession'), item: `${describe(s.userAgent)}, ${display.dateTime(s.createdAt)}` })}
+                  isPending={end.isPending && end.variables?.id === s.id}
+                  isDisabled={end.isPending}
+                  onPress={() => end.mutate(s)}
+                >
+                  {t('account.signOutSession')}
+                </Button>
+              </td>
             </tr>
           ))}
         </Table>

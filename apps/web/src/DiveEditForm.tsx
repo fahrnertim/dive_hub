@@ -118,16 +118,21 @@ export function DiveEditForm({ dive: d, onDone }: { dive: DiveView; onDone: () =
   });
   const changedMeanwhile = save.error instanceof ApiError && save.error.code === 'dive_changed';
 
-  /** Below each field: whether it's set by hand, and the way back to the recording's value. */
-  const origin = (field: OverridableField): ReactNode => {
+  /** The field's description: what the recording says, or that it goes back to that on save. */
+  const hint = (field: OverridableField): string => {
     const recorded = format(field, d.fromRecording?.[field]);
-    if (reset.has(field)) return <span className="muted">{t('dive.willReset', { value: recorded })}</span>;
-    const overridden = d.overrides.includes(field) || touched.has(field);
-    if (!overridden || !d.fromRecording) return <span className="muted">{t('dive.fromRecording', { value: recorded })}</span>;
+    return reset.has(field) ? t('dive.willReset', { value: recorded }) : t('dive.fromRecording', { value: recorded });
+  };
+  /** Below a field set by hand: the mark, and the way back to the recording's value. */
+  const origin = (field: OverridableField): ReactNode => {
+    const overridden = (d.overrides.includes(field) || touched.has(field)) && !reset.has(field);
+    if (!overridden || !d.fromRecording) return null;
     return (
       <span className="field-origin">
         <span className="badge">{t('dive.edited')}</span>
-        <Button variant="quiet" onPress={() => resetToRecording(field)}>{t('dive.resetToRecording')} ({recorded})</Button>
+        <Button variant="quiet" onPress={() => resetToRecording(field)}>
+          {t('dive.resetToRecording')} ({format(field, d.fromRecording[field])})
+        </Button>
       </span>
     );
   };
@@ -136,11 +141,11 @@ export function DiveEditForm({ dive: d, onDone }: { dive: DiveView; onDone: () =
     <Form className="form" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
       <div className="form-grid">
         <div className="field-block">
-          <NumberField label={t('dive.number')} value={draft.number} onChange={(n) => change('number', n)} minValue={0} maxValue={100_000} step={1} />
+          <NumberField label={t('dive.number')} description={hint('number')} value={draft.number} onChange={(n) => change('number', n)} minValue={0} maxValue={100_000} step={1} />
           {origin('number')}
         </div>
         <div className="field-block">
-          <DateTimeField label={t('dive.start')} value={draft.start} onChange={(v) => v && change('start', v as CalendarDateTime)} isRequired />
+          <DateTimeField label={t('dive.start')} description={hint('startsAt')} value={draft.start} onChange={(v) => v && change('start', v as CalendarDateTime)} isRequired />
           <NumberField
             label={t('dive.utcOffset')} value={draft.offsetHours} onChange={(n) => change('offsetHours', n)}
             minValue={-12} maxValue={14} step={0.25} formatOptions={{ signDisplay: 'always', maximumFractionDigits: 2 }}
@@ -148,24 +153,25 @@ export function DiveEditForm({ dive: d, onDone }: { dive: DiveView; onDone: () =
           {origin('startsAt')}
         </div>
         <div className="field-block">
-          <NumberField label={t('dive.duration')} unit={display.unit('minutes')} value={draft.durationMin} onChange={(n) => change('durationMin', n)} minValue={0} maxValue={2880} isRequired />
+          <NumberField label={t('dive.duration')} description={hint('durationSeconds')} unit={display.unit('minutes')} value={draft.durationMin} onChange={(n) => change('durationMin', n)} minValue={0} maxValue={2880} isRequired />
           {origin('durationSeconds')}
         </div>
         <div className="field-block">
-          <NumberField label={t('dive.maxDepth')} unit={display.unit('depth')} value={draft.maxDepth} onChange={(n) => change('maxDepth', n)} minValue={0} formatOptions={{ maximumFractionDigits: 1 }} />
+          <NumberField label={t('dive.maxDepth')} description={hint('maxDepthM')} unit={display.unit('depth')} value={draft.maxDepth} onChange={(n) => change('maxDepth', n)} minValue={0} formatOptions={{ maximumFractionDigits: 1 }} />
           {origin('maxDepthM')}
         </div>
         <div className="field-block">
-          <NumberField label={t('dive.avgDepth')} unit={display.unit('depth')} value={draft.avgDepth} onChange={(n) => change('avgDepth', n)} minValue={0} formatOptions={{ maximumFractionDigits: 1 }} />
+          <NumberField label={t('dive.avgDepth')} description={hint('avgDepthM')} unit={display.unit('depth')} value={draft.avgDepth} onChange={(n) => change('avgDepth', n)} minValue={0} formatOptions={{ maximumFractionDigits: 1 }} />
           {origin('avgDepthM')}
         </div>
         <div className="field-block">
-          <NumberField label={t('dive.waterTemperature')} unit={display.unit('temperature')} value={draft.waterTemperature} onChange={(n) => change('waterTemperature', n)} formatOptions={{ maximumFractionDigits: 1 }} />
+          <NumberField label={t('dive.waterTemperature')} description={hint('waterTemperatureC')} unit={display.unit('temperature')} value={draft.waterTemperature} onChange={(n) => change('waterTemperature', n)} formatOptions={{ maximumFractionDigits: 1 }} />
           {origin('waterTemperatureC')}
         </div>
         <div className="field-block">
           <Select<WaterType>
             label={t('dive.waterType')}
+            description={hint('waterType')}
             value={draft.waterType}
             onChange={(v) => change('waterType', v)}
             options={WATER_TYPES.map((w) => ({ id: w, label: t(`vocabulary.waterType.${w}`) }))}
@@ -183,7 +189,7 @@ export function DiveEditForm({ dive: d, onDone }: { dive: DiveView; onDone: () =
         </Notice>
       )}
       <div className="form-actions">
-        <Button type="submit" variant="primary" isDisabled={save.isPending}>{t('dive.save')}</Button>
+        <Button type="submit" variant="primary" isPending={save.isPending}>{t('dive.save')}</Button>
         <Button onPress={onDone}>{t('common.cancel')}</Button>
       </div>
     </Form>

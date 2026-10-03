@@ -1,14 +1,18 @@
 import type { ReactNode } from 'react';
 
-/** A titled area of a page. `narrow` for single forms (sign-in, setup). */
-export function Panel({ title, children, narrow, actions }: {
-  title?: ReactNode; children: ReactNode; narrow?: boolean; actions?: ReactNode;
+/**
+ * A titled area of a page. `narrow` for single forms (sign-in, setup). `level={1}` when the panel's
+ * title is the page's title: every page has exactly one h1 (checked by e2e/accessibility.spec.ts).
+ */
+export function Panel({ title, children, narrow, actions, level = 2 }: {
+  title?: ReactNode; children: ReactNode; narrow?: boolean; actions?: ReactNode; level?: 1 | 2;
 }) {
+  const Heading = level === 1 ? 'h1' : 'h2';
   return (
     <section className={narrow ? 'panel panel-narrow' : 'panel'}>
       {(title || actions) && (
         <div className="panel-head">
-          {title && <h2>{title}</h2>}
+          {title && <Heading>{title}</Heading>}
           {actions}
         </div>
       )}
@@ -28,8 +32,16 @@ export function Notice({ tone = 'info', children }: { tone?: 'info' | 'success' 
 
 export const Muted = ({ children }: { children: ReactNode }) => <p className="muted">{children}</p>;
 
-type Column = ReactNode | { label: ReactNode; numeric: true };
-const isNumeric = (c: Column): c is { label: ReactNode; numeric: true } => typeof c === 'object' && c !== null && 'numeric' in c;
+/**
+ * A column header. Every header has text: a column of buttons gets { label: t('common.actions'), hidden: true },
+ * read by screen readers but not shown (an empty header fails WCAG 1.3.1).
+ */
+type Column = string | { label: string; numeric: true } | { label: string; hidden: true };
+const header = (c: Column, i: number) => {
+  if (typeof c === 'string') return <th key={i} scope="col">{c}</th>;
+  if ('numeric' in c) return <th key={i} scope="col" className="num">{c.label}</th>;
+  return <th key={i} scope="col"><span className="visually-hidden">{c.label}</span></th>;
+};
 
 /**
  * A data table that scrolls sideways on narrow screens instead of breaking the layout. Numeric
@@ -40,7 +52,7 @@ export function Table({ label, head, children }: { label: string; head: Column[]
     <div className="table-scroll" role="region" aria-label={label} tabIndex={0}>
       <table className="table">
         <thead>
-          <tr>{head.map((h, i) => (isNumeric(h) ? <th key={i} scope="col" className="num">{h.label}</th> : <th key={i} scope="col">{h}</th>))}</tr>
+          <tr>{head.map(header)}</tr>
         </thead>
         <tbody>{children}</tbody>
       </table>

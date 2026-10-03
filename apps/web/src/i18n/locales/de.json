@@ -6,7 +6,9 @@
     "copy": "Kopieren",
     "copied": "Kopiert",
     "signOut": "Abmelden",
-    "none": "–"
+    "none": "–",
+    "actions": "Aktionen",
+    "forItem": "{{action}}: {{item}}"
   },
   "nav": {
     "main": "Hauptmenü",
@@ -81,7 +83,8 @@
     "unitsAuto": "Wie die Region des Browsers",
     "metric": "Metrisch (m, °C)",
     "imperial": "Imperial (ft, °F)",
-    "saved": "Gespeichert."
+    "saved": "Gespeichert.",
+    "browser": "Browser"
   },
   "admin": {
     "inviteTitle": "Jemanden einladen",
@@ -113,7 +116,7 @@
       "expired": "abgelaufen"
     },
     "makeAdmin": "Zum Admin machen",
-    "makeUser": "Zum Benutzer machen",
+    "makeUser": "Adminrechte entziehen",
     "createResetLink": "Link zum Zurücksetzen",
     "signOutEverywhere": "Überall abmelden",
     "signedOutEverywhere": "{{name}} wurde überall abgemeldet.",
@@ -123,7 +126,10 @@
     "deleteTitle": "{{name}} löschen?",
     "deleteBody": "Das entfernt das Konto, die hochgeladenen Dateien und Importe sowie den eigenen Taucher mit allen Tauchgängen. Das lässt sich nicht rückgängig machen. Um die Daten zu behalten, deaktiviere den Benutzer stattdessen.",
     "deleteConfirm": "Gib {{email}} zur Bestätigung ein",
-    "deleteSubmit": "{{name}} löschen"
+    "deleteSubmit": "{{name}} löschen",
+    "demoteSelfTitle": "Dir selbst die Adminrechte entziehen?",
+    "demoteSelfBody": "Du verlierst den Zugang zu dieser Seite. Ein anderer Admin kann dir die Rechte zurückgeben.",
+    "demoteSelfSubmit": "Meine Adminrechte entziehen"
   },
   "import": {
     "title": "Import",
@@ -157,6 +163,12 @@
     "errorCode": {
       "unsupported_file": "Das ist weder eine FIT-Datei noch ein ZIP-Archiv.",
       "processing_failed": "Die Verarbeitung ist fehlgeschlagen."
+    },
+    "skipped": "Übersprungen: {{names}}. Nur FIT-Dateien und ZIP-Archive lassen sich importieren.",
+    "decision": {
+      "attached": "zu einem Tauchgang hinzugefügt",
+      "new_dive": "als eigener Tauchgang angelegt",
+      "discarded": "verworfen"
     }
   },
   "logbook": {
@@ -198,7 +210,6 @@
     "notes": "Notizen",
     "noNotes": "Noch keine Notizen.",
     "edited": "bearbeitet",
-    "editedHint": "Von Hand gesetzt; die Aufzeichnung sagt {{value}}",
     "fromRecording": "Aufzeichnung: {{value}}",
     "resetToRecording": "Wert der Aufzeichnung verwenden",
     "willReset": "Wird beim Speichern wieder {{value}}",
@@ -219,7 +230,8 @@
     "moveIntro": "Der Tauchgang mit seinen Aufzeichnungen und Notizen wandert ins Logbuch des anderen Tauchers.",
     "move": "Verschieben",
     "splitOff": "Als eigenen Tauchgang abtrennen",
-    "splitHint": "Für eine Aufzeichnung, die zu einem anderen Tauchgang gehört. Sie wird ein eigener Tauchgang."
+    "splitHint": "Für eine Aufzeichnung, die zu einem anderen Tauchgang gehört. Sie wird ein eigener Tauchgang.",
+    "notFoundTitle": "Tauchgang nicht gefunden"
   },
   "errors": {
     "unknown": "Etwas ist schiefgegangen. Versuch es noch einmal.",
@@ -359,10 +371,11 @@
     "lastUsed": "Zuletzt benutzt",
     "recordings": "Aufzeichnungen",
     "belongsTo": "Gehört zu",
-    "assignHint": "Importe ab jetzt landen bei diesem Taucher; Tauchgänge, die schon in einem Logbuch sind, bleiben, wo sie sind.",
+    "assignHint": "Wenn du ein Gerät einem anderen Taucher gibst, landen Importe ab dann bei ihm. Tauchgänge, die schon in einem Logbuch sind, bleiben, wo sie sind.",
     "noDevices": "Noch keine Geräte. Sie erscheinen mit deinem ersten Import.",
     "filter": "Taucher",
     "allDivers": "Alle Taucher",
-    "logbooks": "Logbücher, die du führst"
+    "logbooks": "Logbücher, die du führst",
+    "belongsToDevice": "{{device}} gehört zu"
   }
 }

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { divesQuery, diversQuery } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
+import { usePageTitle } from './lib/page.ts';
 import { Muted, Notice, Panel, Select, Table } from './ui/index.ts';
 
 const ALL = 'all';
@@ -15,10 +16,12 @@ export function DiveList({ diverId }: { diverId?: string | undefined }) {
   const divers = useQuery(diversQuery());
   const several = (divers.data?.length ?? 0) > 1;
   const nameOf = new Map(divers.data?.map((d) => [d.id, d.name]));
+  usePageTitle(t('logbook.title'));
 
   return (
     <Panel
       title={t('logbook.title')}
+      level={1}
       actions={several && (
         <div className="logbook-filter">
           <Select

@@ -26,7 +26,8 @@ export function NumberField({ label, description, unit, ...props }: FieldChrome 
   const message = useMessage();
   return (
     <AriaNumberField {...props} className="field">
-      <Label className="field-label">{label}</Label>
+      {/* The unit is part of the field's name for screen readers ("Max depth (m)"); visually it follows the input. */}
+      <Label className="field-label">{label}{unit && <span className="visually-hidden"> ({unit})</span>}</Label>
       <Group className="input-group">
         <Input className="input" />
         {unit && <span className="input-unit" aria-hidden="true">{unit}</span>}

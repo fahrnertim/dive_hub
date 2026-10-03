@@ -3,11 +3,13 @@ import { useState, type FormEvent } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { api, invitationsQuery, keys, meQuery, unwrap, usersQuery, type UserView } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
+import { usePageTitle } from './lib/page.ts';
 import { Button, Checkbox, CopyField, Dialog, Form, Notice, Panel, Table, TextField } from './ui/index.ts';
 
 /** Admins invite people (copy the link, there's no mail yet) and manage Users (ADR 0012, 0013). */
 export function Admin() {
   const { t } = useTranslation();
+  usePageTitle(t('nav.admin'));
   return (
     <>
       <h1>{t('nav.admin')}</h1>
@@ -52,7 +54,7 @@ function Invite() {
       <Form className="form-inline" onSubmit={submit}>
         <TextField label={t('admin.email')} name="email" type="email" isRequired autoComplete="off" />
         <Checkbox isSelected={asAdmin} onChange={setAsAdmin}>{t('admin.inviteAsAdmin')}</Checkbox>
-        <Button type="submit" variant="primary" isDisabled={invite.isPending}>{t('admin.createInvitation')}</Button>
+        <Button type="submit" variant="primary" isPending={invite.isPending}>{t('admin.createInvitation')}</Button>
       </Form>
       {invite.error && <Notice tone="danger">{errorText(invite.error)}</Notice>}
       {invite.data && (
@@ -77,7 +79,7 @@ function Invitations() {
   return (
     <Panel title={t('admin.invitations')}>
       {revoke.error && <Notice tone="danger">{errorText(revoke.error)}</Notice>}
-      <Table label={t('admin.invitations')} head={[t('admin.email'), t('admin.role'), t('admin.status'), t('admin.expires'), '']}>
+      <Table label={t('admin.invitations')} head={[t('admin.email'), t('admin.role'), t('admin.status'), t('admin.expires'), { label: t('common.actions'), hidden: true }]}>
         {invitations.data.map((i) => (
           <tr key={i.id}>
             <td>{i.email}</td>
@@ -86,7 +88,15 @@ function Invitations() {
             <td>{i.status === 'pending' ? display.dateTime(i.expiresAt) : t('common.none')}</td>
             <td>
               {i.status === 'pending' && (
-                <Button variant="quiet" isDisabled={revoke.isPending} onPress={() => revoke.mutate(i.id)}>{t('admin.revoke')}</Button>
+                <Button
+                  variant="quiet"
+                  aria-label={t('common.forItem', { action: t('admin.revoke'), item: i.email })}
+                  isPending={revoke.isPending && revoke.variables === i.id}
+                  isDisabled={revoke.isPending}
+                  onPress={() => revoke.mutate(i.id)}
+                >
+                  {t('admin.revoke')}
+                </Button>
               )}
             </td>
           </tr>
@@ -101,12 +111,14 @@ function Users() {
   const errorText = useErrorText();
   const users = useQuery(usersQuery());
   const me = useQuery(meQuery());
+  // The server refuses to remove the last admin; don't offer it.
+  const admins = users.data?.filter((u) => u.role === 'admin' && !u.disabled).length ?? 0;
   return (
     <Panel title={t('admin.users')}>
       {users.error && <Notice tone="danger">{errorText(users.error)}</Notice>}
       {users.data && (
         <Table label={t('admin.users')} head={[t('admin.name'), t('admin.email'), t('admin.role'), t('admin.since'), t('admin.actions')]}>
-          {users.data.map((u) => <UserRow key={u.id} user={u} isMe={u.id === me.data?.user.id} />)}
+          {users.data.map((u) => <UserRow key={u.id} user={u} isMe={u.id === me.data?.user.id} isLastAdmin={u.role === 'admin' && admins <= 1} />)}
         </Table>
       )}
     </Panel>
@@ -114,13 +126,14 @@ function Users() {
 }
 
 /** One User with the admin's actions (ADR 0013). The server refuses what would leave no admin. */
-function UserRow({ user: u, isMe }: { user: UserView; isMe: boolean }) {
+function UserRow({ user: u, isMe, isLastAdmin }: { user: UserView; isMe: boolean; isLastAdmin: boolean }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const display = useDisplay();
   const queryClient = useQueryClient();
   const [notice, setNotice] = useState<string>();
   const [deleting, setDeleting] = useState(false);
+  const [demotingSelf, setDemotingSelf] = useState(false);
   const refresh = () => queryClient.invalidateQueries({ queryKey: keys.users });
   const path = { params: { path: { id: u.id } } };
 
@@ -137,10 +150,26 @@ function UserRow({ user: u, isMe }: { user: UserView; isMe: boolean }) {
       }
     },
     onMutate: () => setNotice(undefined),
-    onSettled: refresh,
+    onSettled: async (_data, _error, action) => {
+      setDemotingSelf(false);
+      await refresh();
+      // Without the admin role the navigation and this page change; `me` says so.
+      if (isMe && action === 'make-user') await queryClient.invalidateQueries({ queryKey: keys.me, exact: true });
+    },
   });
   const reset = useMutation({ mutationFn: async () => unwrap(await api.POST('/api/users/{id}/password-reset', path)) });
   const error = act.error ?? reset.error;
+  /** Names the User for screen readers: every row has the same buttons (WCAG 2.4.6). */
+  const label = (action: string) => t('common.forItem', { action, item: u.name });
+  const actionButton = (action: 'make-admin' | 'make-user' | 'disable' | 'enable' | 'sign-out', text: string) => (
+    <Button
+      variant="quiet" aria-label={label(text)}
+      isPending={act.isPending && act.variables === action} isDisabled={act.isPending}
+      onPress={() => (isMe && action === 'make-user' ? setDemotingSelf(true) : act.mutate(action))}
+    >
+      {text}
+    </Button>
+  );
 
   return (
     <>
@@ -151,17 +180,18 @@ function UserRow({ user: u, isMe }: { user: UserView; isMe: boolean }) {
         <td>{display.dateTime(u.createdAt)}</td>
         <td>
           <div className="actions">
-            <Button variant="quiet" isDisabled={act.isPending} onPress={() => act.mutate(u.role === 'admin' ? 'make-user' : 'make-admin')}>
-              {u.role === 'admin' ? t('admin.makeUser') : t('admin.makeAdmin')}
-            </Button>
-            {!u.disabled && <Button variant="quiet" isDisabled={reset.isPending} onPress={() => reset.mutate()}>{t('admin.createResetLink')}</Button>}
+            {u.role === 'user' && actionButton('make-admin', t('admin.makeAdmin'))}
+            {u.role === 'admin' && !isLastAdmin && actionButton('make-user', t('admin.makeUser'))}
+            {!u.disabled && (
+              <Button variant="quiet" aria-label={label(t('admin.createResetLink'))} isPending={reset.isPending} onPress={() => reset.mutate()}>
+                {t('admin.createResetLink')}
+              </Button>
+            )}
             {!isMe && (
               <>
-                <Button variant="quiet" isDisabled={act.isPending} onPress={() => act.mutate('sign-out')}>{t('admin.signOutEverywhere')}</Button>
-                <Button variant="quiet" isDisabled={act.isPending} onPress={() => act.mutate(u.disabled ? 'enable' : 'disable')}>
-                  {u.disabled ? t('admin.enable') : t('admin.disable')}
-                </Button>
-                <Button variant="quiet" onPress={() => setDeleting(true)}>{t('admin.delete')}</Button>
+                {actionButton('sign-out', t('admin.signOutEverywhere'))}
+                {u.disabled ? actionButton('enable', t('admin.enable')) : actionButton('disable', t('admin.disable'))}
+                <Button variant="quiet" aria-label={label(t('admin.delete'))} onPress={() => setDeleting(true)}>{t('admin.delete')}</Button>
               </>
             )}
           </div>
@@ -177,6 +207,13 @@ function UserRow({ user: u, isMe }: { user: UserView; isMe: boolean }) {
         </tr>
       )}
       <DeleteUserDialog user={u} isOpen={deleting} onOpenChange={setDeleting} onDeleted={refresh} />
+      <Dialog title={t('admin.demoteSelfTitle')} isOpen={demotingSelf} onOpenChange={setDemotingSelf}>
+        <p>{t('admin.demoteSelfBody')}</p>
+        <div className="form-actions">
+          <Button variant="danger" isPending={act.isPending} onPress={() => act.mutate('make-user')}>{t('admin.demoteSelfSubmit')}</Button>
+          <Button onPress={() => setDemotingSelf(false)}>{t('common.cancel')}</Button>
+        </div>
+      </Dialog>
     </>
   );
 }
@@ -201,10 +238,10 @@ function DeleteUserDialog({ user: u, isOpen, onOpenChange, onDeleted }: {
           remove.mutate(String(new FormData(e.currentTarget).get('confirmEmail')));
         }}
       >
-        <TextField label={t('admin.deleteConfirm', { email: u.email })} name="confirmEmail" isRequired autoComplete="off" autoFocus />
+        <TextField label={t('admin.deleteConfirm', { email: u.email })} name="confirmEmail" type="email" isRequired autoComplete="off" spellCheck="false" autoFocus />
         {remove.error && <Notice tone="danger">{errorText(remove.error)}</Notice>}
         <div className="form-actions">
-          <Button type="submit" variant="danger" isDisabled={remove.isPending}>{t('admin.deleteSubmit', { name: u.name })}</Button>
+          <Button type="submit" variant="danger" isPending={remove.isPending}>{t('admin.deleteSubmit', { name: u.name })}</Button>
           <Button onPress={() => onOpenChange(false)}>{t('common.cancel')}</Button>
         </div>
       </Form>

@@ -59,6 +59,8 @@
 .btn-quiet { background: none; color: var(--color-accent); min-height: auto; padding: var(--space-1) 0; justify-content: flex-start; text-align: left; }
 .btn-quiet[data-hovered] { text-decoration: underline; }
 .btn[data-pressed] { transform: translateY(1px); }
+/* Busy (isPending): stays focusable, ignores presses; the cursor and a dimmed label say so. */
+.btn[data-pending] { cursor: progress; opacity: 0.7; }
 
 /* ---------- Forms ---------- */
 .form { display: grid; gap: var(--space-4); }
@@ -104,20 +106,24 @@
 .select-value[data-placeholder] { color: var(--color-text-muted); }
 .select-chevron { color: var(--color-text-muted); }
 .popover { background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: var(--radius-md);
-  box-shadow: var(--shadow-overlay); min-width: var(--trigger-width); overflow: auto; }
+  box-shadow: var(--shadow-overlay); min-width: var(--trigger-width); overflow: auto; overscroll-behavior: contain; }
 .listbox { outline: none; padding: var(--space-1) 0; }
 .listbox-item { padding: var(--space-2) var(--space-3); cursor: pointer; outline: none; }
 .listbox-item[data-focused] { background: var(--color-accent-soft); }
 .listbox-item[data-selected] { font-weight: var(--weight-semibold); }
 .date-input { display: flex; align-items: center; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
-.date-segment { padding: 0 1px; border-radius: var(--radius-sm); }
+/* At least 24 × 24 px per segment: "1" or "15" alone would be too small to tap (WCAG 2.5.8). */
+.date-segment { padding: 0 1px; border-radius: var(--radius-sm); display: inline-block; min-width: 1.5rem; line-height: 1.5rem; text-align: center; }
+.date-segment[data-type='literal'] { min-width: 0; }
 .date-segment[data-placeholder] { color: var(--color-text-muted); }
 .date-segment[data-focused] { background: var(--color-accent); color: var(--color-on-accent); outline: none; }
 .date-segment[data-type='literal'] { color: var(--color-text-muted); }
 .copy-field .input { font-size: var(--text-sm); }
 
 /* ---------- Tables ---------- */
-.table-scroll { overflow-x: auto; }
+/* position: relative keeps visually hidden labels and React Aria's hidden inputs inside the scroll box;
+   without it they stretch the page sideways on phones (UI review A2). */
+.table-scroll { overflow-x: auto; position: relative; }
 .table-scroll:focus-visible { outline: 2px solid var(--color-focus); }
 .table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
 .table th, .table td { text-align: left; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); vertical-align: middle; }
@@ -130,7 +136,7 @@
 
 /* ---------- Dialog ---------- */
 .modal-overlay { position: fixed; inset: 0; z-index: 20; background: rgb(7 24 39 / 0.45);
-  display: grid; place-items: center; padding: var(--space-4); }
+  display: grid; place-items: center; padding: var(--space-4); overflow-y: auto; overscroll-behavior: contain; }
 .modal { width: 100%; max-width: 32rem; background: var(--color-surface); border-radius: var(--radius-lg);
   box-shadow: var(--shadow-overlay); }
 .dialog { padding: var(--space-5); outline: none; }
@@ -148,7 +154,9 @@
 .status-pending, .status-processing { color: var(--color-accent); }
 
 @media (max-width: 40rem) {
-  .app-header-inner { gap: var(--space-3); }
+  /* Phone header: brand and user menu on the first row, the navigation on its own second row. */
+  .app-header-inner { gap: var(--space-2) var(--space-3); }
+  .app-nav { order: 3; flex-basis: 100%; overflow-x: auto; }
   .panel { padding: var(--space-4); }
   .copy-field { flex-direction: column; }
 }

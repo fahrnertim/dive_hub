@@ -8,6 +8,7 @@ import { pickLanguage } from './i18n/index.ts';
 import { Decisions } from './Decisions.tsx';
 import { ImportPanel } from './ImportPanel.tsx';
 import { useErrorText } from './lib/display.ts';
+import { useFocusOnNavigate } from './lib/page.ts';
 import { BrandMark, ErrorBoundary, Muted, Notice } from './ui/index.ts';
 
 // Pages most visits don't need load on demand: the chart library, account settings, admin.
@@ -44,6 +45,7 @@ export function App() {
   const route = useRoute();
   const me = useQuery(meQuery());
   useLanguage(me.data);
+  useFocusOnNavigate(route);
 
   return (
     <>
@@ -99,7 +101,9 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   if (diveId) return <DiveDetail id={diveId} />;
   if (route === '/account') return <AccountPage />;
   if (route === '/divers') return <DiversPage />;
-  if (route === '/admin') return me.user.role === 'admin' ? <Admin /> : <Notice tone="danger">{t('errors.admins_only')}</Notice>;
+  if (route === '/admin') {
+    return me.user.role === 'admin' ? <Admin /> : <><h1>{t('nav.admin')}</h1><Notice tone="danger">{t('errors.admins_only')}</Notice></>;
+  }
   const diverId = new URLSearchParams(route.split('?')[1] ?? '').get('diver') ?? undefined;
   return (
     <>

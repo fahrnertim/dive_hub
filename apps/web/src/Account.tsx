@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { api, authClient, unwrap } from './api.ts';
 import { useErrorText } from './lib/display.ts';
+import { usePageTitle } from './lib/page.ts';
 import { Button, Form, Muted, Notice, Panel, TextField } from './ui/index.ts';
 
 const MIN_PASSWORD_LENGTH = 15;
@@ -40,6 +41,7 @@ export function NewPasswordField({ label }: { label: string }) {
 
 export function SignIn() {
   const { t } = useTranslation();
+  usePageTitle(t('signIn.title'));
   const signedIn = useUserChanged();
   const signIn = useMutation({
     mutationFn: async ({ email, password }: Record<string, string>) => {
@@ -53,12 +55,12 @@ export function SignIn() {
   });
 
   return (
-    <Panel title={t('signIn.title')} narrow>
+    <Panel title={t('signIn.title')} narrow level={1}>
       <Form className="form" onSubmit={(e) => signIn.mutate(formValues(e))}>
-        <TextField label={t('form.email')} name="email" type="email" autoComplete="username" isRequired />
+        <TextField label={t('form.email')} name="email" type="email" autoComplete="username" spellCheck="false" isRequired />
         <TextField label={t('form.password')} name="password" type="password" autoComplete="current-password" isRequired />
         {signIn.error && <Notice tone="danger">{signIn.error.message}</Notice>}
-        <div className="form-actions"><Button type="submit" variant="primary" isDisabled={signIn.isPending}>{t('signIn.submit')}</Button></div>
+        <div className="form-actions"><Button type="submit" variant="primary" isPending={signIn.isPending}>{t('signIn.submit')}</Button></div>
       </Form>
       <Muted>{t('signIn.noAccount')}</Muted>
     </Panel>
@@ -68,6 +70,7 @@ export function SignIn() {
 /** First start: whoever has the setup token from the server log creates the first admin. */
 export function Setup() {
   const { t } = useTranslation();
+  usePageTitle(t('setup.title'));
   const errorText = useErrorText();
   const signedIn = useUserChanged();
   const setup = useMutation({
@@ -77,15 +80,15 @@ export function Setup() {
   });
 
   return (
-    <Panel title={t('setup.title')} narrow>
+    <Panel title={t('setup.title')} narrow level={1}>
       <p><Trans i18nKey="setup.intro" components={{ code: <code /> }} /></p>
       <Form className="form" onSubmit={(e) => setup.mutate(formValues(e))}>
-        <TextField label={t('setup.token')} name="token" isRequired autoComplete="off" spellCheck="false" />
+        <TextField label={t('setup.token')} name="token" isRequired autoComplete="off" autoCorrect="off" spellCheck="false" />
         <TextField label={t('form.name')} name="name" isRequired maxLength={100} autoComplete="name" />
-        <TextField label={t('form.email')} name="email" type="email" isRequired autoComplete="username" />
+        <TextField label={t('form.email')} name="email" type="email" isRequired autoComplete="username" spellCheck="false" />
         <NewPasswordField label={t('form.password')} />
         {setup.error && <Notice tone="danger">{errorText(setup.error)}</Notice>}
-        <div className="form-actions"><Button type="submit" variant="primary" isDisabled={setup.isPending}>{t('setup.submit')}</Button></div>
+        <div className="form-actions"><Button type="submit" variant="primary" isPending={setup.isPending}>{t('setup.submit')}</Button></div>
       </Form>
     </Panel>
   );
@@ -93,6 +96,7 @@ export function Setup() {
 
 export function AcceptInvitation({ token }: { token: string }) {
   const { t } = useTranslation();
+  usePageTitle(t('invitation.title'));
   const errorText = useErrorText();
   const signedIn = useUserChanged();
   const invitation = useQuery({
@@ -109,14 +113,14 @@ export function AcceptInvitation({ token }: { token: string }) {
   if (invitation.isPending) return <Muted>{t('invitation.checking')}</Muted>;
   if (invitation.error) {
     return (
-      <Panel title={t('invitation.title')} narrow>
+      <Panel title={t('invitation.title')} narrow level={1}>
         <Notice tone="danger">{errorText(invitation.error)}</Notice>
         <Muted>{t('invitation.askForNewLink')}</Muted>
       </Panel>
     );
   }
   return (
-    <Panel title={t('invitation.title')} narrow>
+    <Panel title={t('invitation.title')} narrow level={1}>
       <p><Trans i18nKey="invitation.intro" values={{ email: invitation.data.email }} components={{ strong: <strong /> }} /></p>
       <Form className="form" onSubmit={(e) => accept.mutate(formValues(e))}>
         {/* Lets password managers save the e-mail with the new password. */}
@@ -124,7 +128,7 @@ export function AcceptInvitation({ token }: { token: string }) {
         <TextField label={t('form.name')} name="name" isRequired maxLength={100} autoComplete="name" />
         <NewPasswordField label={t('form.password')} />
         {accept.error && <Notice tone="danger">{errorText(accept.error)}</Notice>}
-        <div className="form-actions"><Button type="submit" variant="primary" isDisabled={accept.isPending}>{t('invitation.submit')}</Button></div>
+        <div className="form-actions"><Button type="submit" variant="primary" isPending={accept.isPending}>{t('invitation.submit')}</Button></div>
       </Form>
     </Panel>
   );
@@ -133,6 +137,7 @@ export function AcceptInvitation({ token }: { token: string }) {
 /** Opened from a password reset link an admin passed on (ADR 0013). */
 export function ResetPassword({ token }: { token: string }) {
   const { t } = useTranslation();
+  usePageTitle(t('reset.title'));
   const errorText = useErrorText();
   const signedIn = useUserChanged();
   const link = useQuery({
@@ -149,20 +154,20 @@ export function ResetPassword({ token }: { token: string }) {
   if (link.isPending) return <Muted>{t('reset.checking')}</Muted>;
   if (link.error) {
     return (
-      <Panel title={t('reset.title')} narrow>
+      <Panel title={t('reset.title')} narrow level={1}>
         <Notice tone="danger">{errorText(link.error)}</Notice>
         <Muted>{t('invitation.askForNewLink')}</Muted>
       </Panel>
     );
   }
   return (
-    <Panel title={t('reset.title')} narrow>
+    <Panel title={t('reset.title')} narrow level={1}>
       <p><Trans i18nKey="reset.intro" values={{ email: link.data.email }} components={{ strong: <strong /> }} /></p>
       <Form className="form" onSubmit={(e) => reset.mutate(formValues(e))}>
         <input type="email" name="email" value={link.data.email} autoComplete="username" readOnly hidden />
         <NewPasswordField label={t('reset.newPassword')} />
         {reset.error && <Notice tone="danger">{errorText(reset.error)}</Notice>}
-        <div className="form-actions"><Button type="submit" variant="primary" isDisabled={reset.isPending}>{t('reset.submit')}</Button></div>
+        <div className="form-actions"><Button type="submit" variant="primary" isPending={reset.isPending}>{t('reset.submit')}</Button></div>
       </Form>
     </Panel>
   );
@@ -175,11 +180,15 @@ export function SignOutButton() {
   return (
     <Button
       variant="quiet"
-      isDisabled={busy}
+      isPending={busy}
       onPress={async () => {
         setBusy(true);
-        await authClient.signOut();
-        await userChanged(); // `me` refetches as nobody, which shows the sign-in page
+        try {
+          await authClient.signOut();
+          await userChanged(); // `me` refetches as nobody, which shows the sign-in page
+        } finally {
+          setBusy(false);
+        }
       }}
     >
       {t('common.signOut')}

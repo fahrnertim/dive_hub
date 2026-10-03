@@ -2,13 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ToggleButton, ToggleButtonGroup } from 'react-aria-components';
-import { api, diveQuery, diversQuery, keys, unwrap, type DiveView, type OverridableField, type RecordingSummary } from './api.ts';
+import { api, ApiError, diveQuery, diversQuery, keys, unwrap, type DiveView, type OverridableField, type RecordingSummary } from './api.ts';
 import { DepthProfile } from './DepthProfile.tsx';
 import { DiveEditForm } from './DiveEditForm.tsx';
 import { DiveHistory } from './DiveHistory.tsx';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { deviceName } from './lib/devices.ts';
 import { useFormatValue } from './lib/dive-values.ts';
+import { usePageTitle } from './lib/page.ts';
 import { Button, Dialog, ErrorBoundary, Muted, Notice, Panel, Select } from './ui/index.ts';
 
 /** One Dive (ADR 0015): its values with Overrides marked, notes, Recordings, and its history. */
@@ -20,18 +21,30 @@ export function DiveDetail({ id }: { id: string }) {
   const divers = useQuery(diversQuery());
   const [editing, setEditing] = useState(false);
   const [moving, setMoving] = useState(false);
+  const v = dive.data?.values;
+  const notFound = dive.error instanceof ApiError && dive.error.status === 404;
+  const title = !v ? (notFound ? t('dive.notFoundTitle') : undefined)
+    : v.number !== null ? t('dive.title', { number: v.number }) : t('dive.titleNoNumber');
+  usePageTitle(title);
 
   if (dive.isPending) return <Muted>{t('common.loading')}</Muted>;
-  if (dive.error) return <Notice tone="danger">{errorText(dive.error)}</Notice>;
+  if (dive.error) {
+    return (
+      <>
+        <p><a href="#/">{t('dive.back')}</a></p>
+        {notFound && <h1>{title}</h1>}
+        <Notice tone="danger">{errorText(dive.error)}</Notice>
+      </>
+    );
+  }
   const d = dive.data;
-  const v = d.values;
-  const title = v.number !== null ? t('dive.title', { number: v.number }) : t('dive.titleNoNumber');
 
   return (
     <>
       <p><a href="#/">{t('dive.back')}</a></p>
       <Panel
-        title={<>{title}<span className="title-meta">{display.diveTime(v.startsAt.at, v.startsAt.utcOffsetSeconds)}<EditedMark dive={d} field="startsAt" /></span></>}
+        level={1}
+        title={<>{title}<span className="title-meta">{display.diveTime(d.values.startsAt.at, d.values.startsAt.utcOffsetSeconds)}<EditedMark dive={d} field="startsAt" /></span></>}
         actions={!editing && (
           <div className="form-actions">
             <Button onPress={() => setEditing(true)}>{t('dive.edit')}</Button>
@@ -79,7 +92,7 @@ function MoveDialog({ dive: d, onClose }: { dive: DiveView; onClose: () => void 
         <Select label={t('dive.diver')} value={target} onChange={setTarget} options={others.map((v) => ({ id: v.id, label: v.name }))} />
         {move.error && <Notice tone="danger">{errorText(move.error)}</Notice>}
         <div className="form-actions">
-          <Button variant="primary" isDisabled={!target || move.isPending} onPress={() => target && move.mutate(target)}>{t('dive.move')}</Button>
+          <Button variant="primary" isDisabled={!target} isPending={move.isPending} onPress={() => target && move.mutate(target)}>{t('dive.move')}</Button>
           <Button onPress={onClose}>{t('common.cancel')}</Button>
         </div>
       </div>
@@ -87,15 +100,21 @@ function MoveDialog({ dive: d, onClose }: { dive: DiveView; onClose: () => void 
   );
 }
 
-/** "edited" next to a value the User set by hand, with what the recording says. */
+/**
+ * "edited" next to a value the User set by hand, with what the recording says. Visible text, not a
+ * tooltip: keyboard and touch users can't reach a `title`.
+ */
 function EditedMark({ dive, field }: { dive: DiveView; field: OverridableField }) {
   const { t } = useTranslation();
   const format = useFormatValue();
   if (!dive.overrides.includes(field)) return null;
   return (
-    <span className="badge" title={t('dive.editedHint', { value: format(field, dive.fromRecording?.[field]) })}>
-      {t('dive.edited')}
-    </span>
+    <>
+      <span className="badge">{t('dive.edited')}</span>
+      {dive.fromRecording && (
+        <span className="recorded-value">{t('dive.fromRecording', { value: format(field, dive.fromRecording[field]) })}</span>
+      )}
+    </>
   );
 }
 
@@ -118,7 +137,7 @@ function DiveFacts({ dive: d }: { dive: DiveView }) {
         {fact('waterTemperatureC', t('dive.waterTemperature'))}
         {fact('waterType', t('dive.waterType'))}
       </dl>
-      <h3>{t('dive.notes')}</h3>
+      <h2 className="subheading">{t('dive.notes')}</h2>
       {d.notes ? <p className="notes">{d.notes}</p> : <Muted>{t('dive.noNotes')}</Muted>}
     </>
   );
@@ -177,9 +196,9 @@ function Recordings({ dive: d }: { dive: DiveView }) {
           <Muted>{t('dive.primaryHint')}</Muted>
           <div className="form-actions recording-actions">
             {!recording.isPrimary && (
-              <Button isDisabled={makePrimary.isPending} onPress={() => makePrimary.mutate(recording.id)}>{t('dive.makePrimary')}</Button>
+              <Button isPending={makePrimary.isPending} isDisabled={splitOff.isPending} onPress={() => makePrimary.mutate(recording.id)}>{t('dive.makePrimary')}</Button>
             )}
-            <Button variant="quiet" isDisabled={splitOff.isPending} onPress={() => splitOff.mutate(recording.id)}>{t('dive.splitOff')}</Button>
+            <Button variant="quiet" isPending={splitOff.isPending} isDisabled={makePrimary.isPending} onPress={() => splitOff.mutate(recording.id)}>{t('dive.splitOff')}</Button>
           </div>
           <Muted>{t('dive.splitHint')}</Muted>
           {(makePrimary.error ?? splitOff.error) && <Notice tone="danger">{errorText(makePrimary.error ?? splitOff.error)}</Notice>}

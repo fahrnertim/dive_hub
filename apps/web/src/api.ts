@@ -20,6 +20,13 @@ export class ApiError extends Error {
 }
 export const isUnauthorized = (error: unknown) => error instanceof ApiError && error.status === 401;
 
+/**
+ * Retry a failed query once, but only when trying again can help: a network error or a server error.
+ * A 4xx (not found, not allowed, signed out) stays the same, and retrying only delays the message.
+ */
+export const shouldRetry = (failures: number, error: unknown) =>
+  failures < 1 && !(error instanceof ApiError && error.status >= 400 && error.status < 500);
+
 export type ImportView = Awaited<ReturnType<typeof fetchImports>>[number];
 export type DiveSummary = Awaited<ReturnType<typeof fetchDives>>[number];
 export type Me = NonNullable<Awaited<ReturnType<typeof fetchMe>>>;

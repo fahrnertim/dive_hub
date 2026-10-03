@@ -137,6 +137,32 @@ controls (React Aria), labels on every field, errors announced, tables with head
 contrast as measured above, `prefers-reduced-motion` respected, a "skip to content" link, `lang`
 on the document and on the language names in the picker.
 
+## Rules every page follows
+
+From the [UI review](../research/2026-10-03-ui-review.md). `expectGoodPage` in `apps/web/e2e/support.ts`
+checks them. `e2e/ui-quality.spec.ts` runs it on every page, in English on a light desktop and in
+German on a dark phone. **A new page gets a test there.**
+
+- **One `h1` per page.** It is the page's title. A panel whose title is the page title uses
+  `<Panel level={1}>`, and headings inside a panel go one level down (`h2.subheading`).
+- **The browser tab names the page.** Each page calls `usePageTitle()` (`lib/page.ts`) with its
+  h1 text, giving e.g. "Dive 42 – Dive Hub". After navigating, focus moves to the new h1.
+- **axe-core finds nothing** (WCAG 2.2 AA plus best practices), in both themes.
+- **Nothing scrolls the page sideways** at 390 px. Wide tables scroll inside `Table`, whose box
+  is positioned so that visually hidden labels stay inside it.
+- **No two buttons have the same name.** A button repeated per row (Revoke, Rename, Sign out) gets
+  `aria-label={t('common.forItem', { action, item })}` ("Revoke: new@example.com"). The visible
+  text comes first, so voice control still works (WCAG 2.5.3).
+- **No empty table headers.** An actions column is `{ label: t('common.actions'), hidden: true }`.
+- **Busy buttons use `isPending`, not `isDisabled`.** Pending keeps keyboard focus and is announced.
+  When several buttons share one mutation, the one pressed is pending and the others are disabled.
+- **Information is text, not a `title` tooltip.** Keyboard and touch users can't reach tooltips.
+- **Units belong to the field's name** (`NumberField unit`), and hints are the field's `description`,
+  so screen readers read them with the field.
+- **Targets are at least 24 × 24 px** (WCAG 2.5.8), including date segments.
+- **A query that fails with a 4xx is not retried** (`shouldRetry` in `api.ts`), so "not found"
+  shows at once.
+
 ## Checking the look
 
 Browser tests (`apps/web/e2e`, Playwright, ADR 0015) cover the main flows. Type checks and unit tests don't show layout. After visual changes, look at the pages in light and
