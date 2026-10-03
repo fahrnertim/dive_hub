@@ -76,6 +76,16 @@
 .diver-row .form-inline { flex: 1; }
 .logbook-actions { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); }
 .logbook-filter { min-width: 12rem; }
+.logbook-search { max-width: 24rem; margin-bottom: var(--space-3); }
+.sort-button { font: inherit; color: inherit; background: none; border: none; padding: var(--space-1) 0; cursor: pointer;
+  display: inline-flex; align-items: center; gap: var(--space-1); min-height: 1.5rem; }
+.sort-button[data-hovered] { color: var(--color-text); }
+.sort-button[data-focus-visible] { outline: 2px solid var(--color-focus); outline-offset: 2px; border-radius: var(--radius-sm); }
+.sort-mark { font-size: 0.75em; min-width: 1ch; }
+th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text); }
+.pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-3); }
+.pager .muted { margin: 0; }
+.pager-buttons { display: flex; gap: var(--space-2); }
 /* Shown while files are dragged over the logbook page; dropping anywhere imports them. */
 .page-drop { position: fixed; inset: var(--space-3); z-index: 30; pointer-events: none; display: grid; place-items: center;
   border: 3px dashed var(--color-accent); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--color-accent-soft) 85%, transparent); }

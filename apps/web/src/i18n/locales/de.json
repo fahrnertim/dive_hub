@@ -201,7 +201,15 @@
     "number": "Nr.",
     "date": "Datum",
     "maxDepth": "Maximaltiefe",
-    "duration": "Dauer"
+    "duration": "Dauer",
+    "search": "Suchen",
+    "searchHint": "Eine Tauchgangsnummer oder Wörter aus den Notizen",
+    "noMatch": "Keine Tauchgänge passen zu „{{q}}“.",
+    "pages": "Seiten",
+    "previous": "Vorige Seite",
+    "next": "Nächste Seite",
+    "range_one": "{{from}}–{{to}} von {{count}} Tauchgang",
+    "range_other": "{{from}}–{{to}} von {{count}} Tauchgängen"
   },
   "dive": {
     "back": "Logbuch",

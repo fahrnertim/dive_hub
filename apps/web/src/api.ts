@@ -1,5 +1,5 @@
 import { createApiClient, type paths } from '@dive-hub/api-client';
-import { queryOptions } from '@tanstack/react-query';
+import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import { createAuthClient } from 'better-auth/client';
 
 export const api = createApiClient();
@@ -28,7 +28,7 @@ export const shouldRetry = (failures: number, error: unknown) =>
   failures < 1 && !(error instanceof ApiError && error.status >= 400 && error.status < 500);
 
 export type ImportView = Awaited<ReturnType<typeof fetchImports>>[number];
-export type DiveSummary = Awaited<ReturnType<typeof fetchDives>>[number];
+export type DiveSummary = Awaited<ReturnType<typeof fetchDives>>['dives'][number];
 export type Me = NonNullable<Awaited<ReturnType<typeof fetchMe>>>;
 export type InvitationView = Awaited<ReturnType<typeof fetchInvitations>>[number];
 export type UserView = Awaited<ReturnType<typeof fetchUsers>>[number];
@@ -110,9 +110,28 @@ export const importsQuery = () =>
     refetchInterval: (q) => (q.state.data?.some((i) => i.status === 'pending' || i.status === 'processing') ? 1000 : false),
   });
 
-export const divesQuery = (diverId?: string) => queryOptions({
-  queryKey: diverId ? [...keys.dives, { diverId }] : keys.dives,
-  queryFn: async () => unwrap(await api.GET('/api/dives', { params: { query: diverId ? { diverId } : {} } })),
+/** What the logbook shows (ADR 0017); it lives in the address, e.g. "#/?sort=maxDepth&page=2". */
+export interface LogbookParams {
+  diverId?: string | undefined;
+  q?: string | undefined;
+  sort?: 'startsAt' | 'number' | 'maxDepth' | 'duration' | undefined;
+  order?: 'asc' | 'desc' | undefined;
+  page?: number | undefined;
+}
+export const PAGE_SIZE = 50;
+
+/** One page of the logbook. The previous page stays on screen while the next one loads. */
+export const divesQuery = (p: LogbookParams = {}) => queryOptions({
+  queryKey: [...keys.dives, { ...p }],
+  queryFn: async () => unwrap(await api.GET('/api/dives', {
+    params: {
+      query: {
+        ...(p.diverId && { diverId: p.diverId }), ...(p.q && { q: p.q }), ...(p.sort && { sort: p.sort }), ...(p.order && { order: p.order }),
+        limit: PAGE_SIZE, offset: ((p.page ?? 1) - 1) * PAGE_SIZE,
+      },
+    },
+  })),
+  placeholderData: keepPreviousData,
 });
 
 async function fetchDive(id: string) {

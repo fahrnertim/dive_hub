@@ -201,7 +201,15 @@
     "number": "#",
     "date": "Date",
     "maxDepth": "Max depth",
-    "duration": "Duration"
+    "duration": "Duration",
+    "search": "Search",
+    "searchHint": "A dive number, or words from the notes",
+    "noMatch": "No dives match “{{q}}”.",
+    "pages": "Pages",
+    "previous": "Previous page",
+    "next": "Next page",
+    "range_one": "{{from}}–{{to}} of {{count}} dive",
+    "range_other": "{{from}}–{{to}} of {{count}} dives"
   },
   "dive": {
     "back": "Logbook",

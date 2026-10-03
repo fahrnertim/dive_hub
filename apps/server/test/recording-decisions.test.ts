@@ -159,13 +159,13 @@ describe.skipIf(!(await databaseReachable()))('deciding about Recordings and Div
     it('sends future Imports from a reassigned Device to the new Diver; past Dives stay', async () => {
       const devices = await json<Device[]>('GET', '/api/devices');
       const watch = devices.find((d) => d.serialNumber === '111')!;
-      const before = await json<{ id: string; diverId: string }[]>('GET', '/api/dives');
+      const before = await json<{ dives: { id: string; diverId: string }[] }>('GET', '/api/dives');
       expect((await call('PATCH', `/api/devices/${watch.id}`, tim, { diverId: kid.id })).statusCode).toBe(204);
-      expect(await json<{ id: string; diverId: string }[]>('GET', '/api/dives')).toEqual(before);
+      expect(await json<{ dives: { id: string; diverId: string }[] }>('GET', '/api/dives')).toEqual(before);
 
       const lent = await upload('lent.fit', makeSyntheticDive({ serialNumber: 111, start: new Date('2026-04-01T09:00:00Z') }));
       expect((await json<Dive>('GET', `/api/dives/${lent.diveId}`)).diverId).toBe(kid.id);
-      expect((await json<{ id: string }[]>('GET', `/api/dives?diverId=${kid.id}`)).map((d) => d.id)).toEqual([lent.diveId]);
+      expect((await json<{ dives: { id: string }[] }>('GET', `/api/dives?diverId=${kid.id}`)).dives.map((d) => d.id)).toEqual([lent.diveId]);
       // Each Device counts its own Recordings and knows when it was last used.
       const after = (await json<Device[]>('GET', '/api/devices')).find((d) => d.serialNumber === '111')!;
       expect(watch.recordingCount).toBeGreaterThan(0);
@@ -175,7 +175,7 @@ describe.skipIf(!(await databaseReachable()))('deciding about Recordings and Div
     });
 
     it('moves a single Dive to another Diver the User manages', async () => {
-      const [mine] = await json<{ id: string }[]>('GET', `/api/dives?diverId=${own.id}`);
+      const [mine] = (await json<{ dives: { id: string }[] }>('GET', `/api/dives?diverId=${own.id}`)).dives;
       const d = await json<Dive>('GET', `/api/dives/${mine!.id}`);
       const moved = await json<Dive>('POST', `/api/dives/${d.id}/move`, tim, { diverId: kid.id, version: d.version });
       expect(moved.diverId).toBe(kid.id);

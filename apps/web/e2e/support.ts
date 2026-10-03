@@ -11,7 +11,7 @@ type Dive = { id: string; version: number; overrides: string[]; recordings: { id
 
 /** The seeded Dive (number 42, from the main and the backup computer). */
 export async function seededDiveId(api: APIRequestContext): Promise<string> {
-  const dives = await (await api.get('/api/dives')).json() as { id: string; number: number | null }[];
+  const { dives } = await (await api.get('/api/dives?q=42')).json() as { dives: { id: string; number: number | null }[] };
   return dives.find((d) => d.number === 42)!.id;
 }
 const headers = { origin: E2E_BASE_URL };

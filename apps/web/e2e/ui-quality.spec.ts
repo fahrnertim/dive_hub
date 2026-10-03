@@ -251,6 +251,26 @@ test.describe('behaviour', () => {
     await field.fill('');
   });
 
+  test('the logbook sorts by a column and searches; the address keeps both', async ({ page }) => {
+    await page.goto('/');
+    const depthHeader = page.getByRole('columnheader', { name: 'Max depth' });
+    await depthHeader.getByRole('button').click();
+    await expect(page).toHaveURL(/sort=maxDepth/);
+    await expect(depthHeader).toHaveAttribute('aria-sort', 'descending');
+    await depthHeader.getByRole('button').click();
+    await expect(depthHeader).toHaveAttribute('aria-sort', 'ascending');
+    await expect(page.getByRole('columnheader', { name: 'Date' })).toHaveAttribute('aria-sort', 'none');
+
+    const search = page.getByRole('searchbox', { name: 'Search' });
+    await search.fill('42');
+    await expect(page).toHaveURL(/q=42/);
+    await expect(page.getByRole('row')).toHaveCount(2); // header + dive 42
+    await page.reload();
+    await expect(search).toHaveValue('42');
+    await search.fill('no such words');
+    await expect(page.getByText('No dives match “no such words”.')).toBeVisible();
+  });
+
   test('the only admin is not offered to remove their own admin role', async ({ page }) => {
     await page.goto('/#/admin');
     const me = page.getByRole('row').filter({ hasText: 'erika@example.com' });

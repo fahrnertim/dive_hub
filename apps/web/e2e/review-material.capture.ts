@@ -48,7 +48,7 @@ test('review material', async ({ page, request, browser }) => {
   await expect.poll(async () => (await (await request.get(`/api/imports/${(await upload.json()).id}`)).json()).status).toBe('done');
   await request.post('/api/divers', { headers, data: { name: 'Mia' } });
   const invite = await (await request.post('/api/invitations', { headers, data: { email: 'new@example.com' } })).json();
-  const dives = await (await request.get('/api/dives')).json() as { id: string; number: number }[];
+  const { dives } = await (await request.get('/api/dives')).json() as { dives: { id: string; number: number }[] };
   const dive42 = dives.find((d) => d.number === 42)!.id;
 
   await page.setViewportSize({ width: 1280, height: 900 });

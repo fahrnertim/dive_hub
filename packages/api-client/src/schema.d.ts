@@ -1612,12 +1612,18 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Dives of the Divers the signed-in User manages, newest first */
+        /** A page of the Dives of the Divers the signed-in User manages (newest first unless sorted otherwise) */
         get: {
             parameters: {
                 query?: {
                     /** @description Only this Diver's Dives */
                     diverId?: string;
+                    /** @description A dive number, or words from the notes */
+                    q?: string;
+                    sort?: "startsAt" | "number" | "maxDepth" | "duration";
+                    order?: "desc" | "asc";
+                    limit?: number;
+                    offset?: number;
                 };
                 header?: never;
                 path?: never;
@@ -1632,16 +1638,19 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            id: string;
-                            diverId: string;
-                            number: number | null;
-                            /** Format: date-time */
-                            startsAt: string;
-                            utcOffsetSeconds: number | null;
-                            durationSeconds: number;
-                            maxDepthM: number | null;
-                            avgDepthM: number | null;
-                        }[];
+                            dives: {
+                                id: string;
+                                diverId: string;
+                                number: number | null;
+                                /** Format: date-time */
+                                startsAt: string;
+                                utcOffsetSeconds: number | null;
+                                durationSeconds: number;
+                                maxDepthM: number | null;
+                                avgDepthM: number | null;
+                            }[];
+                            total: number;
+                        };
                     };
                 };
             };

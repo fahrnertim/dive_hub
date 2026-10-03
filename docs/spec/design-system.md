@@ -177,8 +177,9 @@ German on a dark phone. **A new page gets a test there.**
   (`lib/leave-guard.ts`); leaving the page or cancelling then asks first.
 - **One main action per panel; the rest in a menu** (`ActionMenu`). Tables whose last column
   holds actions use `cards`, so the actions stay in sight on a phone.
-- **What the User picks is in the address**: the logbook's Diver filter, the dive page's Recording
-  tab (`?recording=`).
+- **What the User picks is in the address**: the logbook's Diver filter, search, sort and page
+  (`lib/logbook.ts`, [ADR 0017](../decisions/0017-logbook-list-paging.md)), the dive page's Recording
+  tab (`?recording=`). Sortable table headers are buttons with `aria-sort` (`Table` column `sort`).
 - **Pictures have text.** The depth profile has a text summary (`aria-describedby`) and its samples
   as a table under "Profile as a table".
 

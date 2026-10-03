@@ -2,8 +2,9 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AcceptInvitation, ResetPassword, Setup, SignIn, useSignOut } from './Account.tsx';
-import { divesQuery, meQuery, setupQuery, type Me } from './api.ts';
+import { divesQuery, meQuery, setupQuery, type LogbookParams, type Me } from './api.ts';
 import { DiveList } from './DiveList.tsx';
+import { logbookParams } from './lib/logbook.ts';
 import { pickLanguage } from './i18n/index.ts';
 import { Decisions } from './Decisions.tsx';
 import { ImportFilesButton, ImportPanel, ImportProvider, RecentImports } from './ImportPanel.tsx';
@@ -122,29 +123,28 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   if (route === '/admin') {
     return me.user.role === 'admin' ? <Admin /> : <><h1>{t('nav.admin')}</h1><Notice tone="danger">{t('errors.admins_only')}</Notice></>;
   }
-  const diverId = params.get('diver') ?? undefined;
-  return <Logbook diverId={diverId} />;
+  return <Logbook params={logbookParams(params)} />;
 }
 
 /**
  * The logbook page. On the first run the Import is the main action and comes first; once there are
  * dives, the logbook comes first and importing is a button, or dropping files on the page (UI review B5).
  */
-function Logbook({ diverId }: { diverId: string | undefined }) {
+function Logbook({ params }: { params: LogbookParams }) {
   const all = useQuery(divesQuery());
-  const returning = (all.data?.length ?? 0) > 0;
+  const returning = (all.data?.total ?? 0) > 0;
   return (
     <ImportProvider>
       <Decisions />
       {returning ? (
         <>
           <RecentImports />
-          <DiveList diverId={diverId} importAction={<ImportFilesButton />} />
+          <DiveList params={params} importAction={<ImportFilesButton />} />
         </>
       ) : (
         <>
           {all.data && <ImportPanel />}
-          <DiveList diverId={diverId} />
+          <DiveList params={params} />
         </>
       )}
     </ImportProvider>

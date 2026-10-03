@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, inArray, isNull, or, sql, type SQL } from 'drizzle-orm';
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
@@ -43,6 +43,17 @@ const ImportView = Type.Object({
       description: 'For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to',
     })),
   })),
+});
+
+/** The logbook list (ADR 0017): a page of Dives, sorted, optionally searched, with the total. */
+const DIVE_SORTS = ['startsAt', 'number', 'maxDepth', 'duration'] as const;
+const DiveListQuery = Type.Object({
+  diverId: Type.Optional(Type.String({ format: 'uuid', description: 'Only this Diver\'s Dives' })),
+  q: Type.Optional(Type.String({ maxLength: 100, description: 'A dive number, or words from the notes' })),
+  sort: Type.Optional(Type.Enum([...DIVE_SORTS], { default: 'startsAt' })),
+  order: Type.Optional(Type.Enum(['desc', 'asc'], { default: 'desc' })),
+  limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200, default: 50 })),
+  offset: Type.Optional(Type.Integer({ minimum: 0, default: 0 })),
 });
 
 const DiveSummaryView = Type.Object({
@@ -159,18 +170,34 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
 
   app.get('/dives', {
     schema: {
-      summary: 'Dives of the Divers the signed-in User manages, newest first',
-      querystring: Type.Object({ diverId: Type.Optional(Type.String({ format: 'uuid', description: 'Only this Diver\'s Dives' })) }),
-      response: { 200: Type.Array(DiveSummaryView) },
+      summary: 'A page of the Dives of the Divers the signed-in User manages (newest first unless sorted otherwise)',
+      querystring: DiveListQuery,
+      response: { 200: Type.Object({ dives: Type.Array(DiveSummaryView), total: Type.Integer() }) },
     },
   }, async (request) => {
+    const { diverId, q, sort = 'startsAt', order = 'desc', limit = 50, offset = 0 } = request.query;
     const managed = await managedDiverIds(request);
-    const wanted = request.query.diverId;
-    const divers = wanted ? managed.filter((id) => id === wanted) : managed;
-    if (divers.length === 0) return [];
-    const rows = await db.select().from(dive)
-      .where(and(inArray(dive.diverId, divers), isNull(dive.deletedAt))).orderBy(desc(dive.startsAt)).limit(500);
-    return rows.map(toDiveSummary);
+    const divers = diverId ? managed.filter((id) => id === diverId) : managed;
+    if (divers.length === 0) return { dives: [], total: 0 };
+
+    const text = q?.trim();
+    let search: SQL | undefined;
+    if (text) {
+      const pattern = `%${text.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+      const asNumber = /^\d{1,9}$/.test(text) ? Number(text) : undefined;
+      search = or(ilike(dive.notes, pattern), asNumber === undefined ? undefined : eq(dive.number, asNumber));
+    }
+    const where = and(inArray(dive.diverId, divers), isNull(dive.deletedAt), search);
+    const column = { startsAt: dive.startsAt, number: dive.number, maxDepth: dive.maxDepthM, duration: dive.durationSeconds }[sort];
+    // Dives without a value (no number, no depth) go last either way; the start time breaks ties.
+    const direction = order === 'asc' ? sql`asc nulls last` : sql`desc nulls last`;
+    const [rows, [counted]] = await Promise.all([
+      db.select().from(dive).where(where)
+        .orderBy(sql`${column} ${direction}`, desc(dive.startsAt), desc(dive.id))
+        .limit(limit).offset(offset),
+      db.select({ n: count() }).from(dive).where(where),
+    ]);
+    return { dives: rows.map(toDiveSummary), total: counted?.n ?? 0 };
   });
 
   app.get('/recordings/:id/samples', {

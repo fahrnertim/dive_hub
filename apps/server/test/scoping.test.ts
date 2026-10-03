@@ -40,12 +40,12 @@ describe.skipIf(!(await databaseReachable()))('scoping to the signed-in User', (
 
   it('files an upload under the User who sent it', async () => {
     expect(alicesImport.outcome).toEqual([expect.objectContaining({ result: 'created' })]);
-    expect((await get('/api/dives', alice)).json()).toHaveLength(1);
+    expect((await get('/api/dives', alice)).json().dives).toHaveLength(1);
   });
 
   it("hides another User's Dives and Recordings", async () => {
     const { diveId, recordingId } = alicesImport.outcome[0]!;
-    expect((await get('/api/dives', bob)).json()).toEqual([]);
+    expect((await get('/api/dives', bob)).json().dives).toEqual([]);
     expect((await get(`/api/dives/${diveId}`, bob)).statusCode).toBe(404);
     expect((await get(`/api/recordings/${recordingId}/samples`, bob)).statusCode).toBe(404);
     // Alice can still see both.
@@ -62,7 +62,7 @@ describe.skipIf(!(await databaseReachable()))('scoping to the signed-in User', (
     // Bob uploads the very same file: its Device belongs to Alice's Diver.
     const bobsImport = await upload(bob, 'copy-of-alice.fit', makeSyntheticDive({ serialNumber: 111 }));
     expect(bobsImport.outcome).toEqual([expect.objectContaining({ result: 'skipped' })]);
-    expect((await get('/api/dives', bob)).json()).toEqual([]);
+    expect((await get('/api/dives', bob)).json().dives).toEqual([]);
 
     // Alice's Dive is unchanged, and her Import still names her own file as its Original.
     const dive = (await get(`/api/dives/${alicesImport.outcome[0]!.diveId}`, alice)).json();
@@ -74,14 +74,14 @@ describe.skipIf(!(await databaseReachable()))('scoping to the signed-in User', (
     const later = makeSyntheticDive({ serialNumber: 111, start: new Date('2026-01-16T09:00:00Z') });
     const bobsImport = await upload(bob, 'later-on-alices-watch.fit', later);
     expect(bobsImport.outcome).toEqual([expect.objectContaining({ result: 'skipped' })]);
-    expect((await get('/api/dives', alice)).json()).toHaveLength(1);
-    expect((await get('/api/dives', bob)).json()).toEqual([]);
+    expect((await get('/api/dives', alice)).json().dives).toHaveLength(1);
+    expect((await get('/api/dives', bob)).json().dives).toEqual([]);
   });
 
   it("keeps each User's own uploads separate when they dive with different Devices", async () => {
     const bobsImport = await upload(bob, 'bob.fit', makeSyntheticDive({ serialNumber: 222 }));
     expect(bobsImport.outcome).toEqual([expect.objectContaining({ result: 'created' })]);
-    expect((await get('/api/dives', bob)).json()).toHaveLength(1);
-    expect((await get('/api/dives', alice)).json()).toHaveLength(1);
+    expect((await get('/api/dives', bob)).json().dives).toHaveLength(1);
+    expect((await get('/api/dives', alice)).json().dives).toHaveLength(1);
   });
 });

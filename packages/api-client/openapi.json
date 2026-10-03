@@ -3785,7 +3785,7 @@
     },
     "/api/dives": {
       "get": {
-        "summary": "Dives of the Divers the signed-in User manages, newest first",
+        "summary": "A page of the Dives of the Divers the signed-in User manages (newest first unless sorted otherwise)",
         "parameters": [
           {
             "schema": {
@@ -3796,6 +3796,63 @@
             "name": "diverId",
             "required": false,
             "description": "Only this Diver's Dives"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "description": "A dive number, or words from the notes"
+          },
+          {
+            "schema": {
+              "enum": [
+                "startsAt",
+                "number",
+                "maxDepth",
+                "duration"
+              ],
+              "default": "startsAt"
+            },
+            "in": "query",
+            "name": "sort",
+            "required": false
+          },
+          {
+            "schema": {
+              "enum": [
+                "desc",
+                "asc"
+              ],
+              "default": "desc"
+            },
+            "in": "query",
+            "name": "order",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "in": "query",
+            "name": "offset",
+            "required": false
           }
         ],
         "responses": {
@@ -3804,73 +3861,85 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "required": [
-                      "id",
-                      "diverId",
-                      "number",
-                      "startsAt",
-                      "utcOffsetSeconds",
-                      "durationSeconds",
-                      "maxDepthM",
-                      "avgDepthM"
-                    ],
-                    "properties": {
-                      "id": {
-                        "type": "string"
-                      },
-                      "diverId": {
-                        "type": "string"
-                      },
-                      "number": {
-                        "anyOf": [
-                          {
-                            "type": "integer"
+                  "type": "object",
+                  "required": [
+                    "dives",
+                    "total"
+                  ],
+                  "properties": {
+                    "dives": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "diverId",
+                          "number",
+                          "startsAt",
+                          "utcOffsetSeconds",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "avgDepthM"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
                           },
-                          {
-                            "type": "null"
-                          }
-                        ]
-                      },
-                      "startsAt": {
-                        "type": "string",
-                        "format": "date-time"
-                      },
-                      "utcOffsetSeconds": {
-                        "anyOf": [
-                          {
-                            "type": "integer"
+                          "diverId": {
+                            "type": "string"
                           },
-                          {
-                            "type": "null"
-                          }
-                        ]
-                      },
-                      "durationSeconds": {
-                        "type": "number"
-                      },
-                      "maxDepthM": {
-                        "anyOf": [
-                          {
+                          "number": {
+                            "anyOf": [
+                              {
+                                "type": "integer"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "startsAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "utcOffsetSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "integer"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "durationSeconds": {
                             "type": "number"
                           },
-                          {
-                            "type": "null"
-                          }
-                        ]
-                      },
-                      "avgDepthM": {
-                        "anyOf": [
-                          {
-                            "type": "number"
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
-                          {
-                            "type": "null"
+                          "avgDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           }
-                        ]
+                        }
                       }
+                    },
+                    "total": {
+                      "type": "integer"
                     }
                   }
                 }

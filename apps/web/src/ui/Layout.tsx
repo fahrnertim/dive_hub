@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
+import { Button as AriaButton } from 'react-aria-components';
 import { announce } from '../lib/announce.ts';
 
 /**
@@ -44,11 +45,26 @@ export const Muted = ({ children }: { children: ReactNode }) => <p className="mu
  * A column header. Every header has text: a column of buttons gets { label: t('common.actions'), hidden: true },
  * read by screen readers but not shown (an empty header fails WCAG 1.3.1).
  */
-type Column = string | { label: string; numeric: true } | { label: string; hidden: true };
+type Column = string | {
+  label: string;
+  numeric?: true;
+  hidden?: true;
+  /** A sortable column: the header is a button, and aria-sort says the current order. */
+  sort?: { direction: 'ascending' | 'descending' | undefined; onSort: () => void };
+};
 const header = (c: Column, i: number) => {
   if (typeof c === 'string') return <th key={i} scope="col">{c}</th>;
-  if ('numeric' in c) return <th key={i} scope="col" className="num">{c.label}</th>;
-  return <th key={i} scope="col" data-hidden="true"><span className="visually-hidden">{c.label}</span></th>;
+  if (c.hidden) return <th key={i} scope="col" data-hidden="true"><span className="visually-hidden">{c.label}</span></th>;
+  const mark = c.sort?.direction === 'ascending' ? '▲' : c.sort?.direction === 'descending' ? '▼' : '';
+  return (
+    <th key={i} scope="col" className={c.numeric ? 'num' : undefined} aria-sort={c.sort ? c.sort.direction ?? 'none' : undefined}>
+      {c.sort ? (
+        <AriaButton className="sort-button" onPress={c.sort.onSort}>
+          {c.label}<span aria-hidden="true" className="sort-mark">{mark}</span>
+        </AriaButton>
+      ) : c.label}
+    </th>
+  );
 };
 
 /**

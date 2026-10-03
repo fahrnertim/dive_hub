@@ -105,7 +105,7 @@ describe.skipIf(!(await databaseReachable()))('managing Users', () => {
 
     expect((await inject('POST', `/api/users/${ids.disabled}/enable`, adminCookie)).json()).toMatchObject({ disabled: false });
     const again = await signIn(ctx.app, 'disabled@example.com');
-    expect((await inject('GET', '/api/dives', again)).json()).toHaveLength(1);
+    expect((await inject('GET', '/api/dives', again)).json().dives).toHaveLength(1);
   });
 
   it("doesn't let an admin disable or delete themselves", async () => {
@@ -175,7 +175,7 @@ describe.skipIf(!(await databaseReachable()))('managing Users', () => {
         expect(existsSync(join(t.dataDir, ...key.split('/'))), key).toBe(shared.includes(key));
       }
       // The stayer's logbook is untouched.
-      expect((await inject('GET', '/api/dives', stayer)).json()).toHaveLength(1);
+      expect((await inject('GET', '/api/dives', stayer)).json().dives).toHaveLength(1);
       expect((await inject('GET', '/api/imports', stayer)).json()).toHaveLength(2);
     });
   });
