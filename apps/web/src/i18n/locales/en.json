@@ -233,7 +233,7 @@
     "depth": "Depth",
     "temperature": "Temperature",
     "edit": "Edit dive",
-    "save": "Save",
+    "save": "Save dive",
     "saved": "Dive saved.",
     "number": "Dive number",
     "start": "Start (local time at the site)",
@@ -379,7 +379,10 @@
     "edits_other": "{{count}} edits",
     "showAll": "Show the whole history",
     "showFewer": "Show fewer",
-    "noNetChange": "Changed and changed back"
+    "noNetChange": "Changed and changed back",
+    "change": "{{field}}: {{from}} → {{to}}",
+    "changeMarked": "{{field}}: {{from}} → {{to}} ({{mark}})",
+    "changeTo": "{{field}}: {{value}}"
   },
   "decisions": {
     "title": "Needs your decision",
@@ -409,7 +412,7 @@
     "newName": "Name",
     "create": "Add",
     "rename": "Rename",
-    "save": "Save",
+    "save": "Save name",
     "delete": "Delete",
     "notEmpty": "Only Divers without dives or devices can be deleted.",
     "devices": "Devices",

@@ -45,6 +45,23 @@ describe('duration', () => {
     expect(plain(formatDuration(65 * 60, 'en'))).toBe('1 hr 5 min');
     expect(plain(formatDuration(65 * 60, 'de'))).toBe('1 Std. 5 Min.');
   });
+
+  it('lets Intl.DurationFormat word it where the browser has it', () => {
+    const intl = Intl as unknown as { DurationFormat?: unknown };
+    const had = intl.DurationFormat;
+    const seen: unknown[] = [];
+    intl.DurationFormat = class {
+      constructor(readonly locale: string, readonly options: object) { seen.push([locale, options]); }
+      format(d: { hours?: number; minutes: number }) { return `${d.hours ?? 0}:${d.minutes}`; }
+    };
+    try {
+      expect(formatDuration(65 * 60, 'de')).toBe('1:5');
+      expect(formatDuration(45 * 60, 'en')).toBe('0:45');
+      expect(seen[0]).toEqual(['de', { style: 'short', minutesDisplay: 'always' }]);
+    } finally {
+      if (had) intl.DurationFormat = had; else delete intl.DurationFormat;
+    }
+  });
 });
 
 describe('dive time', () => {

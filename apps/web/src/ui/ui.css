@@ -17,7 +17,6 @@
 .brand-mark { flex: none; }
 .app-nav { display: flex; gap: var(--space-4); flex: 1; }
 .app-nav a { color: var(--color-text-muted); text-decoration: none; padding: var(--space-1) 0; border-bottom: 2px solid transparent; }
-.app-nav a:hover { color: var(--color-text); }
 .app-nav a[aria-current='page'] { color: var(--color-text); border-bottom-color: var(--color-accent); }
 .user-menu { display: flex; align-items: center; gap: var(--space-4); margin-left: auto; }
 .user-menu a { color: var(--color-text); }
@@ -47,18 +46,22 @@
 .btn { font: inherit; font-weight: var(--weight-medium); line-height: var(--leading-tight); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
   min-height: 2.5rem; padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); border: 1px solid transparent;
-  transition: background-color var(--duration-fast), border-color var(--duration-fast); }
+  transition: background-color var(--duration-fast), border-color var(--duration-fast), transform var(--duration-fast) ease-out; }
 .btn[data-focus-visible] { outline: 2px solid var(--color-focus); outline-offset: 2px; }
-.btn[data-disabled] { opacity: 0.55; cursor: default; }
+.btn[data-disabled] { opacity: 0.55; cursor: not-allowed; }
 .btn-primary { background: var(--color-accent); color: var(--color-on-accent); }
 .btn-primary[data-hovered] { background: color-mix(in srgb, var(--color-accent) 88%, var(--color-text)); }
 .btn-secondary { background: var(--color-surface); color: var(--color-text); border-color: var(--color-border-strong); }
 .btn-secondary[data-hovered] { background: var(--color-surface-sunken); }
 .btn-danger { background: var(--color-danger); color: var(--color-on-danger); }
 .btn-danger[data-hovered] { background: color-mix(in srgb, var(--color-danger) 88%, var(--color-text)); }
-.btn-quiet { background: none; color: var(--color-accent); min-height: auto; padding: var(--space-1) 0; justify-content: flex-start; text-align: left; }
+/* Quiet buttons look like text but are 32 px tall and slightly wider than their text; the negative
+   margin keeps them aligned with the text around them (WCAG 2.5.8 with room to spare). */
+.btn-quiet { background: none; color: var(--color-accent); min-height: 2rem; padding: var(--space-1); margin-inline: calc(-1 * var(--space-1));
+  justify-content: flex-start; text-align: left; }
 .btn-quiet[data-hovered] { text-decoration: underline; }
-.btn[data-pressed] { transform: translateY(1px); }
+/* Pressing gives way a little (emil-design-eng); the duration token drops to 0 with reduced motion. */
+.btn[data-pressed] { transform: scale(0.97); }
 /* Busy (isPending): stays focusable, ignores presses; the cursor and a dimmed label say so. */
 .btn[data-pending] { cursor: progress; opacity: 0.7; }
 
@@ -79,7 +82,9 @@
   min-height: 2.5rem; padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); }
 .input[data-focused], .input:focus { outline: 2px solid var(--color-focus); outline-offset: 0; border-color: var(--color-focus); }
+.input[data-hovered]:not([data-focused]), .select-button[data-hovered] { border-color: var(--color-text-muted); }
 .input[data-invalid] { border-color: var(--color-danger); }
+.input[data-disabled], .field [data-disabled] { opacity: 0.55; cursor: not-allowed; }
 .input[readonly] { background: var(--color-surface-sunken); }
 
 .checkbox, .radio { display: inline-flex; align-items: center; gap: var(--space-2); cursor: pointer; min-height: 2.5rem; }
@@ -92,6 +97,8 @@
 .radio-dot { border-radius: 50%; }
 .radio[data-selected] .radio-dot { border: 5px solid var(--color-accent); }
 .checkbox[data-focus-visible] .checkbox-box, .radio[data-focus-visible] .radio-dot { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.checkbox[data-hovered] .checkbox-box, .radio[data-hovered]:not([data-selected]) .radio-dot { border-color: var(--color-text-muted); }
+.checkbox[data-disabled], .radio[data-disabled] { opacity: 0.55; cursor: not-allowed; }
 .radio-group { display: grid; gap: 0; }
 .radio-group .field-label { margin-bottom: var(--space-1); }
 
@@ -103,6 +110,8 @@
 .textarea { min-height: 6rem; resize: vertical; line-height: var(--leading-normal); }
 .select-button { display: flex; align-items: center; justify-content: space-between; text-align: left; cursor: pointer; }
 .select-button[data-focus-visible] { outline: 2px solid var(--color-focus); outline-offset: 0; }
+/* Open: the select's border says which control the list belongs to. */
+.select-button[data-pressed], .select-button[aria-expanded='true'] { border-color: var(--color-focus); }
 .select-value[data-placeholder] { color: var(--color-text-muted); }
 .select-chevron { color: var(--color-text-muted); }
 .popover { background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: var(--radius-md);
@@ -131,7 +140,7 @@
 .table td.num, .table th.num { text-align: right; }
 .table tr.is-disabled td { color: var(--color-text-muted); }
 .table tr.row-link { cursor: pointer; }
-.table tr.row-link:hover td { background: var(--color-accent-soft); }
+
 .table .actions { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); }
 
 /* ---------- Dialog ---------- */
@@ -152,6 +161,11 @@
 .status-done, .status-accepted { color: var(--color-success); }
 .status-failed { color: var(--color-danger); }
 .status-pending, .status-processing { color: var(--color-accent); }
+
+@media (hover: hover) {
+  .app-nav a:hover { color: var(--color-text); }
+  .table tr.row-link:hover td { background: var(--color-accent-soft); }
+}
 
 /* ---------- Menus ---------- */
 .menu { outline: none; padding: var(--space-1) 0; min-width: 12rem; }

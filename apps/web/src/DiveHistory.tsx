@@ -60,13 +60,14 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
     if (key === 'overrides') return [];
     if (key === 'notes') return [t('history.notesChanged')];
     if (key === 'recordings') return [to ? t('history.recordingAdded') : t('history.recordingRemoved')];
-    if (key === 'diverId') return [`${t('history.field.diverId')}: ${diverName(from)} → ${diverName(to)}`];
+    if (key === 'diverId') return [t('history.change', { field: t('history.field.diverId'), from: diverName(from), to: diverName(to) })];
     if (key === 'originalId') return [t('history.fileReplaced')];
-    if (key === 'primaryRecordingId') return [`${t('history.field.primaryRecordingId')}: ${recordingName(to)}`];
+    if (key === 'primaryRecordingId') return [t('history.changeTo', { field: t('history.field.primaryRecordingId'), value: recordingName(to) })];
     if (!isOverridable(key)) return [key];
-    const mark = overrides?.to.includes(key) && !overrides.from.includes(key) ? ` (${t('history.setByHand')})`
-      : overrides?.from.includes(key) && !overrides.to.includes(key) ? ` (${t('history.reset')})` : '';
-    return [`${t(`history.field.${key}`)}: ${format(key, from as never)} → ${format(key, to as never)}${mark}`];
+    const mark = overrides?.to.includes(key) && !overrides.from.includes(key) ? t('history.setByHand')
+      : overrides?.from.includes(key) && !overrides.to.includes(key) ? t('history.reset') : undefined;
+    const change = { field: t(`history.field.${key}`), from: format(key, from as never), to: format(key, to as never) };
+    return [mark ? t('history.changeMarked', { ...change, mark }) : t('history.change', change)];
   });
 
   return (

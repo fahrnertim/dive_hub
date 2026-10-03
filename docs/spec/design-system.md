@@ -71,6 +71,13 @@ uses `--color-border-strong`.
   `--radius-lg` 10 px (panels).
 - **Elevation:** only things floating above the page (dialogs) get `--shadow-overlay`.
 - **Motion:** `--duration-*` drop to 0 with `prefers-reduced-motion`.
+- **Interaction states** (React Aria data attributes, `ui/ui.css`): hover darkens control borders
+  (inputs, select, checkbox, radio) or the background (buttons); pressed buttons scale to 0.97
+  (`--duration-fast`, ease-out); disabled controls are dimmed with `cursor: not-allowed`; busy
+  buttons (`data-pending`) are dimmed with `cursor: progress`; an open select keeps the focus colour on
+  its border. CSS `:hover` rules sit inside `@media (hover: hover)`, so they don't stick on touch screens.
+- **Touch:** links and buttons have `touch-action: manipulation` and no tap highlight. Quiet
+  buttons are 32 px tall.
 - **Layout:** content up to `--width-content` (72 rem), left-aligned. Single forms (sign-in, setup)
   are a narrow centered panel (`--width-form`, 28 rem).
 
@@ -162,6 +169,13 @@ German on a dark phone. **A new page gets a test there.**
 - **Units belong to the field's name** (`NumberField unit`), and hints are the field's `description`,
   so screen readers read them with the field.
 - **Targets are at least 24 × 24 px** (WCAG 2.5.8), including date segments.
+- **Names stay as they are**: the brand, device names and serial numbers carry `translate="no"`.
+- **Sentences come whole from the translations** (`history.change`, not `field + ': ' + value`).
+  German puts a no-break space before "…".
+
+`apps/web/test/source-rules.test.ts` checks the rules a browser can't easily see: no `title`
+tooltips on elements, `isPending` on busy buttons, no empty table headers, `:hover` only for
+pointers, no `transition: all`, "…" instead of "...", and no line break before "…".
 - **A query that fails with a 4xx is not retried** (`shouldRetry` in `api.ts`), so "not found"
   shows at once.
 - **Focus never falls to the page.** When the focused element goes away, focus moves on. A form that

@@ -63,7 +63,7 @@ export function App() {
       </a>
       <header className="app-header">
         <div className="app-header-inner">
-          <a href="#/" className="brand"><BrandMark />{t('common.appName')}</a>
+          <a href="#/" className="brand" translate="no"><BrandMark />{t('common.appName')}</a>
           {me.data && <Navigation route={route} me={me.data} />}
         </div>
       </header>

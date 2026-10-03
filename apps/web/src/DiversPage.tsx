@@ -174,8 +174,8 @@ function DeviceRow({ device: d, divers }: { device: DeviceView; divers: DiverVie
   });
   return (
     <tr>
-      <td>{deviceName(d.manufacturer, d.product)}</td>
-      <td>{d.serialNumber}</td>
+      <td translate="no">{deviceName(d.manufacturer, d.product)}</td>
+      <td translate="no">{d.serialNumber}</td>
       <td className="num">{d.recordingCount}</td>
       <td>{d.lastUsedAt ? display.dateTime(d.lastUsedAt) : t('common.none')}</td>
       <td className="device-owner">

@@ -44,9 +44,18 @@ export function unitLabel(quantity: 'depth' | 'temperature' | 'minutes', units: 
   return unitFormat(locale, unit, 0).formatToParts(1).find((p) => p.type === 'unit')?.value ?? unit;
 }
 
-/** "45 min", "1 h 5 min" (and their translations). */
+/** Intl.DurationFormat (2025 browsers); Node 22 and older browsers don't have it yet. */
+type DurationFormatter = { format(duration: { hours?: number; minutes: number }): string };
+const durationFormat = () => (Intl as unknown as { DurationFormat?: new (locale: string, options: object) => DurationFormatter }).DurationFormat;
+
+/** "45 min", "1 hr, 5 min" (and their translations): the locale's own way where possible. */
 export function formatDuration(seconds: number, locale: string): string {
   const minutes = Math.round(seconds / 60);
+  const DurationFormat = durationFormat();
+  if (DurationFormat) {
+    const parts = minutes < 60 ? { minutes } : { hours: Math.floor(minutes / 60), minutes: minutes % 60 };
+    return new DurationFormat(locale, { style: 'short', minutesDisplay: 'always' }).format(parts);
+  }
   const min = unitFormat(locale, 'minute', 0);
   if (minutes < 60) return min.format(minutes);
   return `${unitFormat(locale, 'hour', 0).format(Math.floor(minutes / 60))} ${min.format(minutes % 60)}`;

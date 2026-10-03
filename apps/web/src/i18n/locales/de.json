@@ -1,7 +1,7 @@
 {
   "common": {
     "appName": "Dive Hub",
-    "loading": "Wird geladen …",
+    "loading": "Wird geladen …",
     "cancel": "Abbrechen",
     "copy": "Kopieren",
     "copied": "Kopiert",
@@ -49,14 +49,14 @@
   },
   "invitation": {
     "title": "Dive Hub beitreten",
-    "checking": "Einladung wird geprüft …",
+    "checking": "Einladung wird geprüft …",
     "intro": "Du wurdest als <strong>{{email}}</strong> eingeladen. Wähle deinen Namen und ein Passwort.",
     "submit": "Konto anlegen",
     "askForNewLink": "Bitte die Verwaltung um einen neuen Link."
   },
   "reset": {
     "title": "Passwort zurücksetzen",
-    "checking": "Link wird geprüft …",
+    "checking": "Link wird geprüft …",
     "intro": "Wähle ein neues Passwort für <strong>{{email}}</strong>. Überall sonst wirst du abgemeldet.",
     "newPassword": "Neues Passwort",
     "submit": "Passwort festlegen"
@@ -129,7 +129,7 @@
     "signedOutEverywhere": "{{name}} wurde überall abgemeldet.",
     "disable": "Deaktivieren",
     "enable": "Aktivieren",
-    "delete": "Löschen …",
+    "delete": "Löschen …",
     "deleteTitle": "{{name}} löschen?",
     "deleteBody": "Das entfernt das Konto, die hochgeladenen Dateien und Importe sowie den eigenen Taucher mit allen Tauchgängen. Das lässt sich nicht rückgängig machen. Um die Daten zu behalten, deaktiviere den Benutzer stattdessen.",
     "deleteConfirm": "Gib {{email}} zur Bestätigung ein",
@@ -182,8 +182,8 @@
       "new_dive": "als eigener Tauchgang angelegt",
       "discarded": "verworfen"
     },
-    "uploading_one": "{{count}} Datei wird hochgeladen …",
-    "uploading_other": "{{count}} Dateien werden hochgeladen …",
+    "uploading_one": "{{count}} Datei wird hochgeladen …",
+    "uploading_other": "{{count}} Dateien werden hochgeladen …",
     "finished": "{{name}}: {{result}}",
     "importFiles": "Dateien importieren",
     "dropAnywhere": "Du kannst FIT-Dateien und ZIPs auch irgendwo auf dieser Seite ablegen.",
@@ -233,7 +233,7 @@
     "depth": "Tiefe",
     "temperature": "Temperatur",
     "edit": "Tauchgang bearbeiten",
-    "save": "Speichern",
+    "save": "Tauchgang speichern",
     "saved": "Tauchgang gespeichert.",
     "number": "Tauchgangsnummer",
     "start": "Beginn (Ortszeit am Tauchplatz)",
@@ -257,7 +257,7 @@
     "temperatureRange": "Temperatur",
     "otherValues": "Weitere Werte vom Gerät",
     "diver": "Taucher",
-    "moveTo": "Zu einem anderen Taucher verschieben …",
+    "moveTo": "Zu einem anderen Taucher verschieben …",
     "moveTitle": "Tauchgang verschieben",
     "moveIntro": "Der Tauchgang mit seinen Aufzeichnungen und Notizen wandert ins Logbuch des anderen Tauchers.",
     "move": "Verschieben",
@@ -271,7 +271,7 @@
     "profileTemperature": "Wasser {{range}}.",
     "profileTable": "Profil als Tabelle",
     "recordingActions": "Aktionen zur Aufzeichnung",
-    "splitOffMenu": "Als eigenen Tauchgang abtrennen …",
+    "splitOffMenu": "Als eigenen Tauchgang abtrennen …",
     "primaryChanged": "Das ist jetzt die primäre Aufzeichnung.",
     "moreActions": "Mehr"
   },
@@ -379,7 +379,10 @@
     "edits_other": "{{count}} Änderungen",
     "showAll": "Ganzen Verlauf zeigen",
     "showFewer": "Weniger zeigen",
-    "noNetChange": "Geändert und wieder zurückgesetzt"
+    "noNetChange": "Geändert und wieder zurückgesetzt",
+    "change": "{{field}}: {{from}} → {{to}}",
+    "changeMarked": "{{field}}: {{from}} → {{to}} ({{mark}})",
+    "changeTo": "{{field}}: {{value}}"
   },
   "decisions": {
     "title": "Braucht deine Entscheidung",
@@ -409,7 +412,7 @@
     "newName": "Name",
     "create": "Hinzufügen",
     "rename": "Umbenennen",
-    "save": "Speichern",
+    "save": "Name speichern",
     "delete": "Löschen",
     "notEmpty": "Nur Taucher ohne Tauchgänge und Geräte lassen sich löschen.",
     "devices": "Geräte",

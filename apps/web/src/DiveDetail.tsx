@@ -228,7 +228,7 @@ function Recordings({ dive: d, initial }: { dive: DiveView; initial: string | un
         <Tabs selectedKey={recording.id} onSelectionChange={(key) => select(String(key))}>
           <TabList aria-label={t('dive.recordings')} className="tab-list">
             {d.recordings.map((r) => (
-              <Tab key={r.id} id={r.id} className="tab">{name(r)}{r.isPrimary && ` (${t('dive.primary')})`}</Tab>
+              <Tab key={r.id} id={r.id} className="tab"><span translate="no">{name(r)}</span>{r.isPrimary && ` (${t('dive.primary')})`}</Tab>
             ))}
           </TabList>
           {d.recordings.map((r) => (

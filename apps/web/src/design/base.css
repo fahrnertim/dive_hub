@@ -14,14 +14,21 @@ html {
 
 body { margin: 0; }
 
-h1, h2, h3 { line-height: var(--leading-tight); font-weight: var(--weight-semibold); margin: 0 0 var(--space-3); }
+h1, h2, h3 { line-height: var(--leading-tight); font-weight: var(--weight-semibold); margin: 0 0 var(--space-3); text-wrap: balance; }
 h1 { font-size: var(--text-2xl); }
 h2 { font-size: var(--text-xl); }
 h3 { font-size: var(--text-lg); }
 p { margin: 0 0 var(--space-3); max-width: 70ch; }
 
 a { color: var(--color-accent); text-underline-offset: 0.15em; }
-a:hover { text-decoration-thickness: 2px; }
+/* Taps act at once (no double-tap zoom wait) and without the grey flash; focus and pressed states show instead. */
+a, button, [role='button'], [role='tab'], [role='menuitem'] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+/* CSS :hover only where there is a pointer; on touch screens it sticks after a tap. (React Aria's
+   [data-hovered] already ignores touch.) Every :hover rule of the app lives in such a block. */
+@media (hover: hover) {
+  a:hover { text-decoration-thickness: 2px; }
+}
 
 code { font-size: 0.9em; background: var(--color-surface-sunken); padding: 0 var(--space-1); border-radius: var(--radius-sm); }
 
