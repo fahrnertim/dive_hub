@@ -42,6 +42,7 @@ specialized skills, vet them, propose them to the user, and record the outcome h
 | frontend-design | anthropics/skills | visual direction, tokens, interface writing | 2026-10-03 |
 | accessibility | addyosmani/web-quality-skills | WCAG 2.2 rules, keyboard and screen-reader patterns, audits | 2026-10-03 |
 | playwright-cli | microsoft/playwright-cli | driving a browser, writing and debugging Playwright tests | 2026-10-03 |
+| emil-design-eng | emilkowalski/skills | interaction polish: component feel, pressed/hover states, motion | 2026-10-03 |
 
 Install with telemetry off: `DISABLE_TELEMETRY=1 npx skills add <owner/repo> -s <skill> -a claude-code --copy -y`.
 
@@ -79,3 +80,8 @@ Details and commands: [skills vetting](research/2026-10-02-agent-skills-vetting.
 | 2026-10-03 | anthropics/skills `webapp-testing` | rejected | Python-based (no Python here) and tells the agent not to read its bundled scripts, against our vetting rule |
 | 2026-10-03 | `npx skills find` for "playwright", "e2e testing", "audit log history", "form editing react" (slice 5) | see above | the rest: vendor-specific or unrelated |
 | 2026-10-03 | `npx skills find` for "deduplication merge records", "data ownership sharing", "tanstack query mutations" (slice 6) | nothing new | generic or vendor-specific; the installed tanstack-query skill covers mutations |
+| 2026-10-03 | emil-design-eng (emilkowalski/skills) | installed | One SKILL.md, no scripts (commit e8a175d), by a well-known design engineer; for interaction polish and motion. AGENTS.md overrides its fixed greeting and table-only output |
+| 2026-10-03 | vercel-labs/agent-skills `web-design-guidelines` | rejected; content used | Fetches its rules from a mutable `main` URL on every run. The rules themselves are used, pinned at commit e3d624b ([UI review](research/2026-10-03-ui-review.md)) |
+| 2026-10-03 | pbakaus `impeccable` | rejected | Strong method, but downloads and runs a binary, bundles ~2 MB of scripts, writes PRODUCT.md/DESIGN.md at the repository root |
+| 2026-10-03 | leonxlnx/taste-skill `redesign-existing-projects`, nextlevelbuilder `ui-ux-pro-max` | rejected | Generic "premium" restyling against our design system; Python-based search over a CSV database |
+| 2026-10-03 | `npx skills find` for UI/UX review, navigation, tables, forms, empty states, heuristics (UI review) | see above | specialized ones (empty states, tables) have under 200 installs and weren't vetted further |

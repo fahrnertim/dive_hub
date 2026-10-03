@@ -66,3 +66,4 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [2026-10-02 Agent skills vetting](research/2026-10-02-agent-skills-vetting.md) — candidate skills for the stack read and rated: install now / with library choice / reject.
 - [2026-10-02 Better Auth fit check](research/2026-10-02-better-auth-check.md) — Better Auth docs checked against our auth requirements.
 - [2026-10-02 Data, sync, upload, auth](research/2026-10-02-data-sync-upload-auth.md) — sample storage, Originals and zip uploads, Revisions and sync API, sessions and OIDC-readiness.
+- [2026-10-03 UI/UX review](research/2026-10-03-ui-review.md) — final ranked findings (tiers A–D) with fixes; owner picks the fix slice, then icons and motion.

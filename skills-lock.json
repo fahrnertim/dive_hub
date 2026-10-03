@@ -43,6 +43,12 @@
       "skillPath": "better-auth/emailAndPassword/SKILL.md",
       "computedHash": "ac9f9b0a549390f157ec62f5421a0bc90ac622c7e425af13155953847e0b68ea"
     },
+    "emil-design-eng": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "skillPath": "skills/emil-design-eng/SKILL.md",
+      "computedHash": "77853cec799207f80868c611374c6ed5fdf34a55355c5ab544b59e791c63ad98"
+    },
     "fastify-best-practices": {
       "source": "mcollina/skills",
       "sourceType": "github",

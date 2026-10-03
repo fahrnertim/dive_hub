@@ -19,6 +19,11 @@ export default defineConfig({
     storageState: 'e2e/.state/user.json',
     trace: 'retain-on-failure',
   },
+  projects: [
+    { name: 'e2e', testMatch: '**/*.spec.ts' },
+    // Review material (e2e/review-material.capture.ts); only with --project=review.
+    { name: 'review', testMatch: '**/*.capture.ts' },
+  ],
   webServer: {
     command: 'npx tsx test/e2e-server.ts',
     cwd: '../server',

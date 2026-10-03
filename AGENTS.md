@@ -66,6 +66,9 @@ rejected, and why — in [docs/skills.md](docs/skills.md).
 - **playwright-cli**: tests live in `apps/web/e2e` and run with `pnpm --filter @dive-hub/web test:e2e`
   (installed Edge/Chrome; don't run `npx playwright install`). Keep tests at the User's level: roles,
   labels and visible text, not CSS classes.
+- **emil-design-eng**: skip its fixed opening line; write findings in our review documents' format
+  (its Before/After table is fine inside them). Motion respects `prefers-reduced-motion` and the
+  duration tokens in `apps/web/src/design/tokens.css`.
 - **email-and-password-best-practices**: same rules as better-auth-\* (never `npx auth@latest migrate`; use
   `auth:generate` + drizzle-kit). Keep our argon2id parameters (m = 19 MiB, t = 2, p = 1) and 15-character
   minimum from [ADR 0012](docs/decisions/0012-invitations-and-admin-bootstrap.md), not the skill's example values.
