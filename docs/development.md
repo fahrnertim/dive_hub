@@ -42,13 +42,19 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 | `apps/server/src/fit/` | FIT adapter (`fit-file-parser`, ADR 0006) |
 | `apps/server/src/imports/` | Import pipeline: archives, matching Recordings to Dives, Revisions |
 | `apps/web` | React + Vite SPA (ADR 0005), uPlot depth profile |
+| `apps/web/src/design/`, `apps/web/src/ui/` | Design tokens and components on React Aria ([design system](spec/design-system.md), ADR 0014) |
+| `apps/web/src/i18n/` | Translations (`locales/en.json` is the source), language choice |
+| `apps/web/src/lib/units.ts` | Unit conversion and Intl formatting; `lib/display.ts` binds them to the User's preferences |
+| `apps/server/src/http/problems.ts` | The API's error codes (one registry, published in OpenAPI) |
 | `packages/api-client` | Typed client generated from the server's OpenAPI description |
 
 ## Common tasks
 
 | Task | Command |
 |---|---|
-| All tests | `pnpm test` (DB tests create and drop their own database; skipped if PostgreSQL is unreachable) |
+| All tests | `pnpm test` (DB tests create and drop their own database; skipped if PostgreSQL is unreachable). Web tests (`apps/web/test`) cover units/formatting and translation completeness. |
+| New UI text | Add the key to `en.json` and `de.json` (tests fail otherwise); use `t('…')`, `<Trans>` for markup |
+| New API error | Add a code to `PROBLEMS` in `problems.ts`, regenerate the API client, add `errors.<code>` to both translations |
 | Type check | `pnpm typecheck` |
 | New migration after schema change | `pnpm --filter @dive-hub/server db:generate`, then review and commit the SQL |
 | Regenerate Better Auth's schema (after changing its plugins or options) | `pnpm --filter @dive-hub/server auth:generate` (pinned CLI), re-apply the edits listed in the file header, then `db:generate`. Never `drizzle-kit push` or `auth migrate`. |

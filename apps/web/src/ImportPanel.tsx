@@ -1,21 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { DropZone, FileTrigger, Text, type FileDropItem } from 'react-aria-components';
 import { importsQuery, keys, uploadFile, type ImportView } from './api.ts';
-
-const RESULT_LABEL: Record<string, string> = {
-  created: 'new dive',
-  attached: 'added to existing dive',
-  updated: 'updated',
-  unchanged: 'already imported',
-  'duplicate-candidate': 'needs your decision',
-  skipped: 'skipped',
-  failed: 'failed',
-};
+import { useErrorText } from './lib/display.ts';
+import { Button, Muted, Notice, Panel } from './ui/index.ts';
 
 export function ImportPanel() {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
   const queryClient = useQueryClient();
-  const input = useRef<HTMLInputElement>(null);
-  const [dragging, setDragging] = useState(false);
   const imports = useQuery(importsQuery());
 
   const upload = useMutation({
@@ -31,50 +25,53 @@ export function ImportPanel() {
     if (!running) void queryClient.invalidateQueries({ queryKey: keys.dives });
   }, [running, queryClient]);
 
-  const send = (list: FileList | null) => {
-    if (list && list.length > 0) upload.mutate(Array.from(list));
-  };
-
   return (
-    <section className="card">
-      <h2>Import</h2>
-      <div
-        className={`dropzone${dragging ? ' dragging' : ''}`}
-        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(e) => { e.preventDefault(); setDragging(false); send(e.dataTransfer.files); }}
-        onClick={() => input.current?.click()}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && input.current?.click()}
+    <Panel title={t('import.title')}>
+      <DropZone
+        className="dropzone"
+        onDrop={async (e) => {
+          const files = e.items.filter((item): item is FileDropItem => item.kind === 'file');
+          upload.mutate(await Promise.all(files.map((f) => f.getFile())));
+        }}
       >
-        <p><strong>Drop Garmin FIT files or zips here</strong>, or click to choose.</p>
-        <p className="hint">“Export Original” zips from Garmin Connect and files copied from the watch both work.</p>
-        <input ref={input} type="file" accept=".fit,.zip" multiple hidden onChange={(e) => { send(e.target.files); e.target.value = ''; }} />
-      </div>
-      {upload.isPending && <p className="hint">Uploading…</p>}
-      {upload.error && <p className="error">{upload.error.message}</p>}
+        <Text slot="label" className="dropzone-label">{t('import.drop')}</Text>
+        <FileTrigger acceptedFileTypes={['.fit', '.zip']} allowsMultiple onSelect={(list) => list && upload.mutate(Array.from(list))}>
+          <Button>{t('import.choose')}</Button>
+        </FileTrigger>
+        <Muted>{t('import.hint')}</Muted>
+      </DropZone>
+      {upload.isPending && <Muted>{t('import.uploading')}</Muted>}
+      {upload.error && <Notice tone="danger">{errorText(upload.error)}</Notice>}
       {imports.data && imports.data.length > 0 && (
         <ul className="imports">
           {imports.data.slice(0, 8).map((i) => <ImportRow key={i.id} item={i} />)}
         </ul>
       )}
-    </section>
+    </Panel>
   );
 }
 
 function ImportRow({ item }: { item: ImportView }) {
+  const { t } = useTranslation();
   return (
     <li>
-      <span className="name">{item.uploadName}</span>
-      <span className={`status ${item.status}`}>{item.status}</span>
-      {item.error && <span className="error">{item.error}</span>}
-      {item.outcome.map((o, n) => (
-        <span key={n} className="outcome">
-          {o.diveId ? <a href={`#/dives/${o.diveId}`}>{RESULT_LABEL[o.result] ?? o.result}</a> : (RESULT_LABEL[o.result] ?? o.result)}
-          {o.message && ` (${o.message})`}
+      <span className="import-name">{item.uploadName}</span>
+      <span className={`status status-${item.status}`}>{t(`import.status.${item.status}`)}</span>
+      {item.errorCode && (
+        <span className="status-failed">
+          {t(`import.errorCode.${item.errorCode}`)}{item.error && ` (${item.error})`}
         </span>
-      ))}
+      )}
+      {item.outcome.map((o, n) => {
+        const result = t(`import.result.${o.result}`);
+        const detail = [o.reason && t(`import.reason.${o.reason}`), o.message].filter(Boolean).join(', ');
+        return (
+          <span key={n} className="import-outcome">
+            {o.diveId ? <a href={`#/dives/${o.diveId}`}>{result}</a> : result}
+            {detail && ` (${detail})`}
+          </span>
+        );
+      })}
     </li>
   );
 }

@@ -1,4 +1,4 @@
-import { createApiClient } from '@dive-hub/api-client';
+import { createApiClient, type paths } from '@dive-hub/api-client';
 import { queryOptions } from '@tanstack/react-query';
 import { createAuthClient } from 'better-auth/client';
 
@@ -6,9 +6,15 @@ export const api = createApiClient();
 /** Better Auth's own endpoints (sign-in, sign-out) at /api/auth on this origin; the session is a cookie. */
 export const authClient = createAuthClient();
 
-/** An API error with its HTTP status, so a 401 anywhere can send the user back to sign-in. */
+/** The server's error codes (one list for every route; any problem response shows it). */
+export type ProblemCode = paths['/api/dives/{id}']['get']['responses'][404]['content']['application/json']['code'];
+
+/**
+ * An API error with its HTTP status (a 401 anywhere sends the user back to sign-in) and the
+ * server's error code, which the UI translates (ADR 0014).
+ */
 export class ApiError extends Error {
-  constructor(message: string, readonly status: number) {
+  constructor(message: string, readonly status: number, readonly code?: ProblemCode) {
     super(message);
   }
 }
@@ -41,9 +47,9 @@ export const keys = {
 export function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): T {
   if (!result.response.ok) {
     // Our routes answer { error }; Fastify's validation errors carry the useful text in `message`.
-    const body = result.error as { error?: string; message?: string } | undefined;
-    const message = body?.message ?? body?.error ?? `Request failed (${result.response.status})`;
-    throw new ApiError(message, result.response.status);
+    const body = result.error as { code?: ProblemCode; error?: string; message?: string } | undefined;
+    const message = body?.error ?? body?.message ?? `Request failed (${result.response.status})`;
+    throw new ApiError(message, result.response.status, body?.code);
   }
   return result.data as T;
 }
@@ -108,7 +114,7 @@ export async function uploadFile(file: File) {
   body.append('file', file);
   const response = await fetch('/api/imports', { method: 'POST', body });
   if (!response.ok) {
-    const problem = (await response.json().catch(() => ({}))) as { error?: string };
-    throw new ApiError(problem.error ?? `Upload failed (${response.status})`, response.status);
+    const problem = (await response.json().catch(() => ({}))) as { code?: ProblemCode; error?: string };
+    throw new ApiError(problem.error ?? `Upload failed (${response.status})`, response.status, problem.code);
   }
 }

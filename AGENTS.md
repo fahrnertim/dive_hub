@@ -59,6 +59,10 @@ rejected, and why — in [docs/skills.md](docs/skills.md).
 - **better-auth-\***: follow [ADR 0011](docs/decisions/0011-better-auth.md). Run the auth CLI at the
   project's pinned version (not `@latest`), generate into its own schema file, never `drizzle-kit push`
   (migrations are generated, reviewed and committed), and don't run `npx auth mcp`.
+- **frontend-design**: our product is an app, not a landing page; ignore the "hero" guidance. The brief is
+  [docs/spec/design-system.md](docs/spec/design-system.md) and the tokens in `apps/web/src/design/tokens.css`:
+  extend them, don't restyle single pages.
+- **accessibility**: target WCAG 2.2 AA; build on the React Aria components in `apps/web/src/ui/`.
 - **email-and-password-best-practices**: same rules as better-auth-\* (never `npx auth@latest migrate`; use
   `auth:generate` + drizzle-kit). Keep our argon2id parameters (m = 19 MiB, t = 2, p = 1) and 15-character
   minimum from [ADR 0012](docs/decisions/0012-invitations-and-admin-bootstrap.md), not the skill's example values.

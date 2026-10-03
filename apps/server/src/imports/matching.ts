@@ -14,7 +14,7 @@ export interface CandidateDive extends TimeSpan {
 export type MatchDecision =
   | { kind: 'create' }
   | { kind: 'attach'; diveId: string }
-  | { kind: 'duplicate-candidate'; diveIds: string[]; reason: string };
+  | { kind: 'duplicate-candidate'; diveIds: string[]; reason: 'overlaps_several_dives' | 'max_depth_differs' };
 
 /** Allowed clock drift between devices. Tune with real files (open question in the data model). */
 export const OVERLAP_TOLERANCE_SECONDS = 5 * 60;
@@ -48,11 +48,11 @@ export function decideMatch(
   const hits = dives.filter((d) => overlaps(recording, d, tolerance));
   if (hits.length === 0) return { kind: 'create' };
   if (hits.length > 1) {
-    return { kind: 'duplicate-candidate', diveIds: hits.map((d) => d.id), reason: 'overlaps several dives' };
+    return { kind: 'duplicate-candidate', diveIds: hits.map((d) => d.id), reason: 'overlaps_several_dives' };
   }
   const [dive] = hits as [CandidateDive];
   if (depthsDisagree(recording.maxDepthM, dive.maxDepthM)) {
-    return { kind: 'duplicate-candidate', diveIds: [dive.id], reason: 'max depth differs too much' };
+    return { kind: 'duplicate-candidate', diveIds: [dive.id], reason: 'max_depth_differs' };
   }
   return { kind: 'attach', diveId: dive.id };
 }

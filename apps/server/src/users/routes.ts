@@ -7,10 +7,11 @@ import { APIError } from 'better-auth/api';
 import type { Auth } from '../auth/auth.js';
 import { authHeaders, forwardCookies, requireAdmin, requireUser } from '../auth/fastify.js';
 import type { Db } from '../db/client.js';
-import { diver, diverManagement } from '../db/schema.js';
+import { diver, diverManagement, userPreference } from '../db/schema.js';
 import { EmailTakenError, invitationStatus, type InvitationRow, type Invitations, type Role } from './invitations.js';
 import type { Setup } from './setup.js';
-import { DateTime, IdParams, LinkView, Password, Problem, RoleSchema, Token, UserView, toUserView } from './views.js';
+import { problem } from '../http/problems.js';
+import { DateTime, IdParams, LinkView, Password, PreferencesView, Problem, RoleSchema, Token, UserView, toUserView } from './views.js';
 
 export interface UserRouteDeps {
   db: Db;
@@ -23,7 +24,11 @@ export interface UserRouteDeps {
 const Email = Type.String({ format: 'email', maxLength: 254 });
 const Name = Type.String({ minLength: 1, maxLength: 100 });
 
-const MeView = Type.Object({ user: UserView, ownDiver: Type.Object({ id: Type.String(), name: Type.String() }) });
+const MeView = Type.Object({
+  user: UserView,
+  ownDiver: Type.Object({ id: Type.String(), name: Type.String() }),
+  preferences: PreferencesView,
+});
 const InvitationView = Type.Object({
   id: Type.String(), email: Type.String(), role: RoleSchema, createdAt: DateTime, expiresAt: DateTime,
   status: Type.Union([Type.Literal('pending'), Type.Literal('accepted'), Type.Literal('revoked'), Type.Literal('expired')]),
@@ -65,9 +70,9 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
       response: { 201: UserView, 403: Problem, 409: Problem },
     },
   }, async (request, reply) => {
-    if (!(await setup.isNeeded())) return reply.code(409).send({ error: 'Setup is already done' });
+    if (!(await setup.isNeeded())) return reply.code(409).send(problem('setup_done'));
     const restore = setup.consume(request.body.token);
-    if (!restore) return reply.code(403).send({ error: 'Invalid or expired setup token' });
+    if (!restore) return reply.code(403).send(problem('setup_token_invalid'));
     try {
       const { token: _, ...input } = request.body;
       const created = await createAndSignIn(request, reply, { ...input, role: 'admin' });
@@ -89,7 +94,7 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
     const found = await invitations.find(request.body.token);
     return found
       ? { email: found.email, expiresAt: found.expiresAt.toISOString() }
-      : reply.code(404).send({ error: 'This invitation is invalid, used or expired' });
+      : reply.code(404).send(problem('invitation_invalid'));
   });
 
   app.post('/invitations/accept', {
@@ -100,7 +105,7 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
     },
   }, async (request, reply) => {
     const claimed = await invitations.claim(request.body.token);
-    if (!claimed) return reply.code(404).send({ error: 'This invitation is invalid, used or expired' });
+    if (!claimed) return reply.code(404).send(problem('invitation_invalid'));
     const { email, role } = claimed.invitation;
     try {
       const created = await createAndSignIn(request, reply, { email, role, name: request.body.name, password: request.body.password });
@@ -108,7 +113,7 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
       return reply.code(201).send(toUserView(created));
     } catch (error) {
       await claimed.reopen();
-      if (isEmailTaken(error)) return reply.code(409).send({ error: 'A User with this e-mail already exists' });
+      if (isEmailTaken(error)) return reply.code(409).send(problem('email_taken'));
       throw error;
     }
   });
@@ -126,7 +131,24 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
       const [own] = await db.select({ id: diver.id, name: diver.name }).from(diverManagement)
         .innerJoin(diver, eq(diver.id, diverManagement.diverId))
         .where(and(eq(diverManagement.userId, me.id), eq(diverManagement.isOwn, true)));
-      return { user: toUserView(me), ownDiver: own! };
+      const [prefs] = await db.select().from(userPreference).where(eq(userPreference.userId, me.id));
+      return {
+        user: toUserView(me), ownDiver: own!,
+        preferences: { language: prefs?.language ?? null, units: prefs?.units ?? null },
+      };
+    });
+
+    signedIn.patch('/me/preferences', {
+      schema: {
+        summary: 'Change display settings (language, units); fields left out stay as they are',
+        body: Type.Partial(PreferencesView),
+        response: { 200: PreferencesView },
+      },
+    }, async (request) => {
+      const changes = { ...request.body, updatedAt: new Date() };
+      const [saved] = await db.insert(userPreference).values({ userId: request.user!.id, ...changes })
+        .onConflictDoUpdate({ target: userPreference.userId, set: changes }).returning();
+      return { language: saved!.language, units: saved!.units };
     });
 
     // --- Admins ----------------------------------------------------------------------------------
@@ -153,7 +175,7 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
           // The token travels in the URL fragment, which browsers never send to the server or in Referer.
           return reply.code(201).send({ ...toInvitationView(invitation), url: `${baseUrl}/#/invite/${token}` });
         } catch (error) {
-          if (error instanceof EmailTakenError) return reply.code(409).send({ error: error.message });
+          if (error instanceof EmailTakenError) return reply.code(409).send(problem('email_taken'));
           throw error;
         }
       });
@@ -163,7 +185,7 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
       }, async (request, reply) =>
         (await invitations.revoke(request.params.id))
           ? reply.code(204).send(null)
-          : reply.code(404).send({ error: 'No open invitation with this id' }));
+          : reply.code(404).send(problem('invitation_not_found')));
     });
   });
 };

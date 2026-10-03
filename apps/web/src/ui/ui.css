@@ -1,0 +1,129 @@
+/*
+ * Component and layout styles (ADR 0014). Only semantic tokens from design/tokens.css.
+ * React Aria exposes state as data attributes ([data-hovered], [data-pressed], [data-focus-visible],
+ * [data-disabled], [data-selected], [data-invalid], [data-drop-target]).
+ */
+
+/* ---------- App frame ---------- */
+.skip-link { position: absolute; left: var(--space-4); top: -3rem; z-index: 10; padding: var(--space-2) var(--space-3);
+  background: var(--color-surface); border: 2px solid var(--color-focus); border-radius: var(--radius-md); }
+.skip-link:focus { top: var(--space-2); }
+
+.app-header { border-bottom: 1px solid var(--color-border); background: var(--color-surface); }
+.app-header-inner { max-width: var(--width-content); margin: 0 auto; padding: var(--space-3) var(--space-4);
+  display: flex; align-items: center; gap: var(--space-5); flex-wrap: wrap; }
+.brand { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text); text-decoration: none;
+  font-weight: var(--weight-semibold); font-size: var(--text-lg); }
+.brand-mark { flex: none; }
+.app-nav { display: flex; gap: var(--space-4); flex: 1; }
+.app-nav a { color: var(--color-text-muted); text-decoration: none; padding: var(--space-1) 0; border-bottom: 2px solid transparent; }
+.app-nav a:hover { color: var(--color-text); }
+.app-nav a[aria-current='page'] { color: var(--color-text); border-bottom-color: var(--color-accent); }
+.user-menu { display: flex; align-items: center; gap: var(--space-4); margin-left: auto; }
+.user-menu a { color: var(--color-text); }
+
+.app-main { max-width: var(--width-content); margin: 0 auto; padding: var(--space-5) var(--space-4) var(--space-7);
+  display: grid; gap: var(--space-5); }
+.app-main:focus { outline: none; }
+
+/* ---------- Panels, notices, text ---------- */
+.panel { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+  padding: var(--space-5); min-width: 0; }
+.panel-narrow { width: 100%; max-width: var(--width-form); justify-self: center; }
+.panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+.panel > :last-child { margin-bottom: 0; }
+.panel .form + .muted, .panel .form + p { margin-top: var(--space-4); }
+
+.muted { color: var(--color-text-muted); font-size: var(--text-sm); }
+
+.notice { border-radius: var(--radius-md); padding: var(--space-2) var(--space-3); margin: var(--space-3) 0;
+  border-left: 3px solid; font-size: var(--text-sm); }
+.notice-info { background: var(--color-accent-soft); border-color: var(--color-accent); }
+.notice-success { background: var(--color-success-soft); border-color: var(--color-success); }
+.notice-danger { background: var(--color-danger-soft); border-color: var(--color-danger); }
+.notice > :last-child { margin-bottom: 0; }
+
+/* ---------- Buttons ---------- */
+.btn { font: inherit; font-weight: var(--weight-medium); line-height: var(--leading-tight); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  min-height: 2.5rem; padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); border: 1px solid transparent;
+  transition: background-color var(--duration-fast), border-color var(--duration-fast); }
+.btn[data-focus-visible] { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.btn[data-disabled] { opacity: 0.55; cursor: default; }
+.btn-primary { background: var(--color-accent); color: var(--color-on-accent); }
+.btn-primary[data-hovered] { background: color-mix(in srgb, var(--color-accent) 88%, var(--color-text)); }
+.btn-secondary { background: var(--color-surface); color: var(--color-text); border-color: var(--color-border-strong); }
+.btn-secondary[data-hovered] { background: var(--color-surface-sunken); }
+.btn-danger { background: var(--color-danger); color: var(--color-on-danger); }
+.btn-danger[data-hovered] { background: color-mix(in srgb, var(--color-danger) 88%, var(--color-text)); }
+.btn-quiet { background: none; color: var(--color-accent); min-height: auto; padding: var(--space-1) 0; }
+.btn-quiet[data-hovered] { text-decoration: underline; }
+.btn[data-pressed] { transform: translateY(1px); }
+
+/* ---------- Forms ---------- */
+.form { display: grid; gap: var(--space-4); }
+.narrow-form { max-width: var(--width-form); }
+.form-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; }
+.form-inline { display: flex; gap: var(--space-3); align-items: flex-end; flex-wrap: wrap; }
+.form-inline .field { flex: 1 1 16rem; }
+.form-inline .radio-group { margin-right: var(--space-6); }
+
+.field { display: grid; gap: var(--space-1); }
+.field-label { font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.field-description { font-size: var(--text-sm); color: var(--color-text-muted); }
+.field-error { font-size: var(--text-sm); color: var(--color-danger); }
+
+.input { font: inherit; color: var(--color-text); background: var(--color-surface); min-width: 0; width: 100%;
+  min-height: 2.5rem; padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); }
+.input[data-focused], .input:focus { outline: 2px solid var(--color-focus); outline-offset: 0; border-color: var(--color-focus); }
+.input[data-invalid] { border-color: var(--color-danger); }
+.input[readonly] { background: var(--color-surface-sunken); }
+
+.checkbox, .radio { display: inline-flex; align-items: center; gap: var(--space-2); cursor: pointer; min-height: 2.5rem; }
+.checkbox-box, .radio-dot { flex: none; width: 1.125rem; height: 1.125rem; border: 1px solid var(--color-border-strong);
+  background: var(--color-surface); display: grid; place-items: center; }
+.checkbox-box { border-radius: var(--radius-sm); }
+.checkbox-box svg { width: 0.875rem; height: 0.875rem; fill: none; stroke: var(--color-on-accent); stroke-width: 2.2; visibility: hidden; }
+.checkbox[data-selected] .checkbox-box { background: var(--color-accent); border-color: var(--color-accent); }
+.checkbox[data-selected] .checkbox-box svg { visibility: visible; }
+.radio-dot { border-radius: 50%; }
+.radio[data-selected] .radio-dot { border: 5px solid var(--color-accent); }
+.checkbox[data-focus-visible] .checkbox-box, .radio[data-focus-visible] .radio-dot { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.radio-group { display: grid; gap: 0; }
+.radio-group .field-label { margin-bottom: var(--space-1); }
+
+.copy-field { display: flex; gap: var(--space-2); }
+.copy-field .input { font-size: var(--text-sm); }
+
+/* ---------- Tables ---------- */
+.table-scroll { overflow-x: auto; }
+.table-scroll:focus-visible { outline: 2px solid var(--color-focus); }
+.table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.table th, .table td { text-align: left; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); vertical-align: middle; }
+.table th { color: var(--color-text-muted); font-weight: var(--weight-medium); white-space: nowrap; }
+.table td.num, .table th.num { text-align: right; }
+.table tr.is-disabled td { color: var(--color-text-muted); }
+.table tr.row-link { cursor: pointer; }
+.table tr.row-link:hover td { background: var(--color-accent-soft); }
+.table .actions { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); }
+
+/* ---------- Dialog ---------- */
+.modal-overlay { position: fixed; inset: 0; z-index: 20; background: rgb(7 24 39 / 0.45);
+  display: grid; place-items: center; padding: var(--space-4); }
+.modal { width: 100%; max-width: 32rem; background: var(--color-surface); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-overlay); }
+.dialog { padding: var(--space-5); outline: none; }
+.dialog-title { font-size: var(--text-lg); margin: 0 0 var(--space-3); }
+
+/* ---------- Status words ---------- */
+.status { color: var(--color-text-muted); }
+.status-done, .status-accepted { color: var(--color-success); }
+.status-failed { color: var(--color-danger); }
+.status-pending, .status-processing { color: var(--color-accent); }
+
+@media (max-width: 40rem) {
+  .app-header-inner { gap: var(--space-3); }
+  .panel { padding: var(--space-4); }
+  .copy-field { flex-direction: column; }
+}

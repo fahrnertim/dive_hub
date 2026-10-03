@@ -5,8 +5,9 @@ import { Type, type Static } from 'typebox';
 import type { Auth } from './auth/auth.js';
 import { requireUser } from './auth/fastify.js';
 import type { Db } from './db/client.js';
-import { dive, diverManagement, importJob, recording, sampleSeries } from './db/schema.js';
+import { IMPORT_ERROR_CODES, OUTCOME_REASONS, dive, diverManagement, importJob, recording, sampleSeries } from './db/schema.js';
 import { downsampleMinMax } from './dives/downsample.js';
+import { Problem, problem } from './http/problems.js';
 import type { ImportService } from './imports/import-service.js';
 import { UploadTooLargeError } from './storage/blob-store.js';
 
@@ -17,7 +18,6 @@ export interface RouteDeps {
   auth: Auth;
 }
 
-const Problem = Type.Object({ error: Type.String() });
 const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
 const DateTime = Type.String({ format: 'date-time' });
 const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([t, Type.Null()]);
@@ -28,12 +28,14 @@ const ImportView = Type.Object({
   uploadName: Type.String(),
   createdAt: DateTime,
   finishedAt: Nullable(DateTime),
-  error: Nullable(Type.String()),
+  errorCode: Nullable(Type.Enum([...IMPORT_ERROR_CODES], { description: 'Why the Import failed; clients translate it' })),
+  error: Nullable(Type.String({ description: 'English detail for processing_failed' })),
   outcome: Type.Array(Type.Object({
     fileName: Type.String(),
-    result: Type.String(),
+    result: Type.Enum(['created', 'attached', 'updated', 'unchanged', 'duplicate-candidate', 'skipped', 'failed']),
     diveId: Type.Optional(Type.String()),
     recordingId: Type.Optional(Type.String()),
+    reason: Type.Optional(Type.Enum([...OUTCOME_REASONS])),
     message: Type.Optional(Type.String()),
   })),
 });
@@ -78,7 +80,9 @@ const SamplesView = Type.Object({
 const iso = (d: Date | null) => (d ? d.toISOString() : null);
 const toImportView = (j: typeof importJob.$inferSelect): Static<typeof ImportView> => ({
   id: j.id, status: j.status, uploadName: j.uploadName, createdAt: j.createdAt.toISOString(),
-  finishedAt: iso(j.finishedAt), error: j.error, outcome: j.outcome,
+  finishedAt: iso(j.finishedAt), outcome: j.outcome,
+  errorCode: j.error === null ? null : j.error === 'unsupported_file' ? 'unsupported_file' : 'processing_failed',
+  error: j.error === 'unsupported_file' ? null : j.error,
 });
 const toDiveSummary = (d: typeof dive.$inferSelect): Static<typeof DiveSummaryView> => ({
   id: d.id, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
@@ -105,12 +109,12 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
     },
   }, async (request, reply) => {
     const file = await request.file();
-    if (!file) return reply.code(400).send({ error: 'Expected a file in the "file" field' });
+    if (!file) return reply.code(400).send(problem('upload_missing'));
     try {
       const created = await imports.createImport(userId(request), file.filename, file.file, deps.maxUploadBytes);
       return reply.code(202).send(toImportView(created));
     } catch (error) {
-      if (error instanceof UploadTooLargeError) return reply.code(413).send({ error: error.message });
+      if (error instanceof UploadTooLargeError) return reply.code(413).send(problem('upload_too_large', error.message));
       throw error;
     }
   });
@@ -128,7 +132,7 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
   }, async (request, reply) => {
     const [row] = await db.select().from(importJob)
       .where(and(eq(importJob.id, request.params.id), eq(importJob.userId, userId(request))));
-    return row ? toImportView(row) : reply.code(404).send({ error: 'Import not found' });
+    return row ? toImportView(row) : reply.code(404).send(problem('import_not_found'));
   });
 
   app.get('/dives', {
@@ -147,7 +151,7 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
     const divers = await managedDiverIds(request);
     const [row] = divers.length === 0 ? [] : await db.select().from(dive)
       .where(and(eq(dive.id, request.params.id), inArray(dive.diverId, divers), isNull(dive.deletedAt)));
-    if (!row) return reply.code(404).send({ error: 'Dive not found' });
+    if (!row) return reply.code(404).send(problem('dive_not_found'));
     const recs = await db.select({
       r: recording,
       channels: sql<string[]>`coalesce((select array_agg(channel order by channel) from ${sampleSeries} where ${sampleSeries.recordingId} = ${recording.id}), '{}')`,
@@ -172,7 +176,7 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
     const [rec] = divers.length === 0 ? [] : await db.select({ id: recording.id }).from(recording)
       .innerJoin(dive, eq(dive.id, recording.diveId))
       .where(and(eq(recording.id, request.params.id), inArray(dive.diverId, divers), isNull(recording.deletedAt)));
-    if (!rec) return reply.code(404).send({ error: 'Recording not found' });
+    if (!rec) return reply.code(404).send(problem('recording_not_found'));
     const wanted = request.query.channels?.split(',').map((c) => c.trim()).filter(Boolean);
     const rows = await db.select().from(sampleSeries).where(and(
       eq(sampleSeries.recordingId, rec.id),

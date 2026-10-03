@@ -63,13 +63,14 @@ export function createTestAuth(db: Db, options: { rateLimit?: boolean } = {}): A
   return createAuth({ db, baseUrl: BASE_URL, secret: 'test-secret-with-enough-entropy-0123456789abcdef', ...options });
 }
 
-export async function createTestApp(t: TestDatabase, options: { rateLimit?: boolean } = {}) {
-  const auth = createTestAuth(t.db, options);
+export async function createTestApp(t: TestDatabase, options: { rateLimit?: boolean; webDir?: string } = {}) {
+  const { webDir, ...authOptions } = options;
+  const auth = createTestAuth(t.db, authOptions);
   const setup: Setup = createSetup(t.db);
   const blobs = createLocalBlobStore(t.dataDir);
   const imports: ImportService = createImportService({ db: t.db, blobs });
   const app = await buildApp({
-    db: t.db, imports, blobs, auth, setup, invitations: createInvitations(t.db), baseUrl: BASE_URL, maxUploadBytes: 1 << 26,
+    db: t.db, imports, blobs, auth, setup, invitations: createInvitations(t.db), baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir,
   });
   return { app, auth, setup, imports, blobs };
 }

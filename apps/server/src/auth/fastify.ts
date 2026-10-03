@@ -1,6 +1,7 @@
 // Better Auth inside Fastify (ADR 0011): the /api/auth/* handler and a session guard for our routes.
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { fromNodeHeaders } from 'better-auth/node';
+import { problem } from '../http/problems.js';
 import { CLIENT_IP_HEADER, PUBLIC_AUTH_PATHS, type Auth, type SessionUser } from './auth.js';
 
 declare module 'fastify' {
@@ -42,7 +43,7 @@ export async function authHandler(app: FastifyInstance, { auth }: { auth: Auth }
     schema: { hide: true },
     handler: async (request, reply) => {
       const url = new URL(request.url, auth.options.baseURL);
-      if (!publicPaths.has(url.pathname.slice('/api/auth'.length))) return reply.code(404).send({ error: 'Not found' });
+      if (!publicPaths.has(url.pathname.slice('/api/auth'.length))) return reply.code(404).send(problem('not_found'));
       const response = await auth.handler(new Request(url, {
         method: request.method,
         headers: authHeaders(request),
@@ -64,7 +65,7 @@ export function requireUser(auth: Auth) {
     const { headers, response: session } = await auth.api.getSession({
       headers: authHeaders(request), returnHeaders: true,
     });
-    if (!session) return reply.code(401).send({ error: 'Sign in required' });
+    if (!session) return reply.code(401).send(problem('sign_in_required'));
     forwardCookies(headers, reply);
     request.user = session.user;
     request.sessionId = session.session.id;
@@ -73,5 +74,5 @@ export function requireUser(auth: Auth) {
 
 /** onRequest hook (after requireUser): 403 unless the signed-in User is an admin. */
 export async function requireAdmin(request: FastifyRequest, reply: FastifyReply) {
-  if (request.user?.role !== 'admin') return reply.code(403).send({ error: 'Admins only' });
+  if (request.user?.role !== 'admin') return reply.code(403).send(problem('admins_only'));
 }

@@ -1,0 +1,140 @@
+---
+title: Design system
+summary: Visual direction, tokens, components, writing, localization and units of the web client; the brief every screen follows.
+status: living
+date: 2026-10-03
+---
+
+# Design system
+
+Decided in [ADR 0014](../decisions/0014-design-system-and-localization.md). Code:
+`apps/web/src/design/` (tokens, base styles), `apps/web/src/ui/` (components), `apps/web/src/i18n/`
+(translations), `apps/web/src/lib/units.ts` (units and formatting).
+
+## Direction
+
+**Subject:** a logbook that a family, club or dive center hosts for itself. Its main job is reading
+and keeping dive records: dense numbers, profiles, lists.
+
+**Vocabulary taken from diving:** the water column getting darker with depth, the red-and-white
+diver-down flag, the plain clarity of a wet-notes slate.
+
+**One bold element, everything else quiet.** The depth profile's area darkens from the surface to
+the deepest point, like the water column. The diver-down flag is the brand mark. Everything else is
+calm: panels with borders instead of shadows, one typeface, no decoration that carries no information.
+
+Checked against generic defaults (frontend-design skill). No cream background, no all-caps labels,
+no identical shadowed cards, no gradients as decoration (the only gradient encodes depth), no
+monospace for data (tabular figures instead).
+
+## Tokens
+
+Defined once in `design/tokens.css`. Components use only the **semantic** tokens (`--color-*`,
+`--space-*`, `--text-*`, `--radius-*`); the `--palette-*` values feed them and are not used directly.
+
+### Color
+
+| Palette name | Hex | Role |
+|---|---|---|
+| Slate | `#f3f6f8` | page background (light) |
+| Wet notes | `#ffffff` | panels, inputs (light) |
+| Abyss | `#0b2236` | text (light) |
+| Open water | `#0f5e8c` | accent: links, primary buttons, focus (light) |
+| Surface light | `#8fd3e8` | shallow end of the depth ramp |
+| Dive flag | `#c8102e` | brand mark only |
+| Kelp | `#2a7150` | success |
+
+Dark mode ("night dive") follows `prefers-color-scheme`. Background `#071827`, panels `#0e2338`,
+text `#dce8f0`, accent `#62b6e6`.
+
+**Contrast (WCAG 2.2 AA), measured:**
+
+| Pair | Light | Dark |
+|---|---|---|
+| Text on background / panel | 14.9 / 16.2 | 14.4 / 12.8 |
+| Muted text on background / panel | 5.6 / 6.1 | 6.3 (panel) |
+| Accent on panel; text on accent | 7.0; 7.0 | 7.1; 8.0 |
+| Danger on panel; text on danger | 6.9; 6.9 | 6.3; 7.1 |
+| Success on panel | 5.9 | 7.5 |
+| Control border on panel (≥ 3:1, WCAG 1.4.11) | 3.6 | 3.5 |
+
+`--color-border` (dividers) is decorative and lighter; anything that marks a control's boundary
+uses `--color-border-strong`.
+
+### Type, space, shape
+
+- **Typeface:** IBM Plex Sans (variable, OFL, bundled, never from a CDN), one family.
+  Numbers in tables and facts use tabular figures.
+- **Scale:** minor third (×1.2) on 16 px: `--text-xs` … `--text-2xl`.
+- **Space:** 4 px steps, `--space-1` (4 px) … `--space-7` (48 px).
+- **Radius by hierarchy:** `--radius-sm` 2 px (small marks), `--radius-md` 6 px (controls),
+  `--radius-lg` 10 px (panels).
+- **Elevation:** only things floating above the page (dialogs) get `--shadow-overlay`.
+- **Motion:** `--duration-*` drop to 0 with `prefers-reduced-motion`.
+- **Layout:** content up to `--width-content` (72 rem), left-aligned. Single forms (sign-in, setup)
+  are a narrow centered panel (`--width-form`, 28 rem).
+
+## Components
+
+In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA) with our CSS
+(`ui/ui.css`). Pages use these, not raw form elements.
+
+| Component | Use |
+|---|---|
+| `Button` | `primary`: the one main action of a form or panel. `secondary`: other actions. `quiet`: inline, text-like (table actions). `danger`: destructive confirmation. |
+| `TextField` | Label, input, description and error. Validation messages come from our translations. |
+| `Checkbox`, `RadioGroup` | Choices. A radio group saves immediately where that is expected (display settings). |
+| `Form` | React Aria's form with native validation on submit. |
+| `Panel` | A titled area of a page; `narrow` for single forms. |
+| `Notice` | What just happened: `info`, `success`, `danger` (announced at once). |
+| `Table` | Data tables that scroll sideways on phones; numeric columns are right-aligned, header included. |
+| `Dialog` | Modal with focus kept inside, for confirmations that need input (deleting a User). |
+| `CopyField` | A value shown once with a copy button (invitation and reset links). |
+| `ErrorBoundary` | Keeps a failing part (e.g. the chart) from blanking the page. |
+| `BrandMark` | The diver-down flag. |
+
+## Writing
+
+- Plain words from the [glossary](../glossary.md), sentence case, active voice. A button says what
+  happens ("Create invitation link"), and the result uses the same verb.
+- Errors say what happened and what to do; they don't apologize.
+- German uses informal **du**, common in dive clubs. German UI terms are listed per glossary entry.
+
+## Localization
+
+- **i18next** with bundled translations: `i18n/locales/en.json` (source and fallback), `de.json`.
+  Keys are grouped by screen (`signIn.*`, `admin.*`, …) and typed: an unknown key is a type error.
+- The **language** is the User's preference (`/api/me/preferences`), else the browser's, else English.
+  `<html lang>` follows it.
+- **Plurals** use i18next suffixes (`_one`, `_other`). Markup inside a sentence uses `<Trans>`
+  with named tags (`<strong>`, `<code>`), never sentences glued together from pieces.
+- **Server texts are codes.** Every API refusal carries `code` (and an English `error` for logs).
+  Import outcomes carry `reason`, failed Imports `errorCode`. The client translates them under
+  `errors.*`, `import.reason.*`, `import.errorCode.*`.
+- **Tests** (`apps/web/test/translations.test.ts`) check that every translation has the same keys
+  and placeholders as English, and that every code in the OpenAPI document has an English text.
+- **Adding a language:** copy `en.json`, translate, register it in `i18n/languages.ts` and
+  `i18n/index.ts`, and add it to the translation test.
+
+## Units
+
+- Stored in SI-based units (m, °C, bar), converted only for display (`lib/units.ts`).
+- The **unit system** (metric or imperial) is a User preference, separate from language. Unset means
+  the browser's region decides (imperial for US, LR, MM).
+- Numbers and units are formatted with `Intl.NumberFormat` (`style: 'unit'`) in the UI language,
+  e.g. "18,5 m", "60.7 ft".
+- Pages use `useDisplay()` (`lib/display.ts`) for depth, temperature, duration and dive times.
+
+## Accessibility baseline
+
+WCAG 2.2 AA (accessibility skill): visible focus on everything interactive, keyboard-operable
+controls (React Aria), labels on every field, errors announced, tables with headers and a label,
+contrast as measured above, `prefers-reduced-motion` respected, a "skip to content" link, `lang`
+on the document and on the language names in the picker.
+
+## Checking the look
+
+Type checks and unit tests don't show layout. After visual changes, look at the pages in light and
+dark mode, in English and German, at phone width (390 px). Use a browser, or headless Edge or Chrome
+over the DevTools protocol, which is how slice 4 was checked. Playwright is the planned tool for this
+(skills: pending `playwright-cli`).

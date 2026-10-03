@@ -22,6 +22,11 @@ import { decideMatch, overlapWindow } from './matching.js';
 
 export const PROCESS_IMPORT_TASK = 'process_import';
 
+/** The upload is neither a FIT file nor a zip archive. Stored as the Import's error code. */
+export class UnsupportedFileError extends Error {
+  constructor() { super('Unsupported file: expected a FIT file or a zip archive'); }
+}
+
 export interface ImportServiceDeps {
   db: Db;
   blobs: BlobStore;
@@ -65,11 +70,11 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
         try {
           outcome.push(...(await processFile(job.userId, importId, file, actor)));
         } catch (error) {
-          outcome.push({ fileName: file.name, result: 'failed', message: (error as Error).message });
+          outcome.push({ fileName: file.name, result: 'failed', reason: 'file_failed', message: (error as Error).message });
         }
       }
       if (files.length === 0) {
-        outcome.push({ fileName: job.uploadName, result: 'skipped', message: 'No FIT file found' });
+        outcome.push({ fileName: job.uploadName, result: 'skipped', reason: 'no_fit_file' });
       }
       await db
         .update(importJob)
@@ -79,7 +84,7 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
     } catch (error) {
       await db
         .update(importJob)
-        .set({ status: 'failed', error: (error as Error).message, finishedAt: new Date() })
+        .set({ status: 'failed', error: error instanceof UnsupportedFileError ? 'unsupported_file' : (error as Error).message, finishedAt: new Date() })
         .where(eq(importJob.id, importId));
       throw error;
     }
@@ -89,7 +94,7 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
     const data = await blobs.read(key);
     if (looksLikeFit(data)) return [{ name, data }];
     if (looksLikeZip(data)) return extractFitFiles(blobs.pathOf(key));
-    throw new Error('Unsupported file: expected a FIT file or a zip archive');
+    throw new UnsupportedFileError();
   }
 
   async function processFile(userId: string, importId: string, file: ExtractedFile, actor: Actor): Promise<ImportOutcome> {
@@ -121,7 +126,7 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
       }
 
       const parsed = await fit.parse(file.data);
-      if (parsed.length === 0) return [{ fileName: file.name, result: 'skipped' as const, message: 'Not a dive' }];
+      if (parsed.length === 0) return [{ fileName: file.name, result: 'skipped' as const, reason: 'not_a_dive' as const }];
       const results: ImportOutcome = [];
       for (const rec of parsed) results.push(await placeRecording(tx, userId, importId, orig.id, file.name, rec, actor));
       return results;
@@ -134,7 +139,7 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
     // A User only ever writes to the logbooks of Divers they manage.
     const managed = await managedDivers(tx, userId);
     const diverId = await resolveDiver(tx, userId, rec, managed);
-    if (!diverId) return { fileName, result: 'skipped', message: NOT_YOUR_DIVER };
+    if (!diverId) return { fileName, result: 'skipped', reason: 'not_your_diver' };
     const deviceId = rec.device ? await resolveDevice(tx, diverId, rec) : null;
     const values = {
       deviceId, originalId, importId, recordingKey: rec.recordingKey,
@@ -148,7 +153,7 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
     const [known] = await tx.select().from(recording)
       .where(and(eq(recording.recordingKey, rec.recordingKey), isNull(recording.deletedAt)));
     if (known) {
-      if (!(await recordingIsManaged(tx, known, userId, managed))) return { fileName, result: 'skipped', message: NOT_YOUR_DIVER };
+      if (!(await recordingIsManaged(tx, known, userId, managed))) return { fileName, result: 'skipped', reason: 'not_your_diver' };
       await tx.update(recording).set(values).where(eq(recording.id, known.id));
       await writeSamples(tx, known.id, rec, true);
       await writeRevision(tx, 'recording', known.id, actor, 'reimport', { originalId: { from: known.originalId, to: originalId } });
@@ -190,7 +195,7 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
     await tx.insert(duplicateCandidate).values({
       recordingId: created!.id, candidateDiveIds: decision.diveIds, reason: decision.reason,
     });
-    return { fileName, result: 'duplicate-candidate', recordingId: created!.id, message: decision.reason };
+    return { fileName, result: 'duplicate-candidate', recordingId: created!.id, reason: decision.reason };
   }
 
   /**
@@ -255,8 +260,6 @@ async function writeRevision(
 ) {
   await tx.insert(revision).values({ entityType, entityId, actorType: actor.type, actorId: actor.id, cause, changes });
 }
-
-const NOT_YOUR_DIVER = 'Recorded for a Diver you don’t manage';
 
 async function managedDivers(tx: Tx, userId: string): Promise<Set<string>> {
   const rows = await tx.select({ id: diverManagement.diverId }).from(diverManagement).where(eq(diverManagement.userId, userId));

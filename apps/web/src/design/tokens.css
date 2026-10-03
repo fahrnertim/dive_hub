@@ -1,0 +1,109 @@
+/*
+ * Design tokens (ADR 0014, docs/spec/design-system.md). Components use only the semantic tokens
+ * (--color-*, --space-*, --text-*, --radius-*); the palette below is not used directly.
+ * Contrast of every text/background pair is checked against WCAG 2.2 AA (see the design-system doc).
+ */
+:root {
+  /* Palette: the water column, from the surface to the abyss, and the diver-down flag. */
+  --palette-surface-light: #8fd3e8;
+  --palette-open-water: #0f5e8c;
+  --palette-abyss: #0b2236;
+  --palette-slate: #f3f6f8;
+  --palette-wet-notes: #ffffff;
+  --palette-dive-flag: #c8102e;
+  --palette-kelp: #2a7150;
+
+  /* Semantic colors, light ("day dive") */
+  --color-bg: var(--palette-slate);
+  --color-surface: var(--palette-wet-notes);
+  --color-surface-sunken: #e8eef2;
+  --color-text: var(--palette-abyss);
+  --color-text-muted: #4e6578;
+  --color-border: #d5dfe6;          /* dividers, panel outlines (decorative) */
+  --color-border-strong: #74899b;   /* input and control boundaries: ≥ 3:1 */
+  --color-accent: var(--palette-open-water);
+  --color-on-accent: #ffffff;
+  --color-accent-soft: #e1eef6;
+  --color-danger: #b3122b;
+  --color-on-danger: #ffffff;
+  --color-danger-soft: #fbe9ec;
+  --color-success: var(--palette-kelp);
+  --color-success-soft: #e5f3ec;
+  --color-focus: var(--palette-open-water);
+  --color-brand-flag: var(--palette-dive-flag);
+  /* Depth ramp for the dive profile fill: shallow to deep */
+  --color-depth-shallow: var(--palette-surface-light);
+  --color-depth-deep: var(--palette-open-water);
+
+  /* Type: IBM Plex Sans, minor-third scale (1.2) on a 16 px base */
+  --font-sans: 'IBM Plex Sans Variable', 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --text-xs: 0.694rem;
+  --text-sm: 0.833rem;
+  --text-md: 1rem;
+  --text-lg: 1.2rem;
+  --text-xl: 1.44rem;
+  --text-2xl: 1.728rem;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* Space: 4 px steps */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  /* Radius by hierarchy: small marks, controls, panels */
+  --radius-sm: 2px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* Elevation only for things that float above the page (dialogs, popovers) */
+  --shadow-overlay: 0 12px 32px rgb(11 34 54 / 0.24);
+
+  --width-content: 72rem;
+  --width-form: 28rem;
+
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+
+  color-scheme: light;
+}
+
+/* Night dive */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #071827;
+    --color-surface: #0e2338;
+    --color-surface-sunken: #0a1c2e;
+    --color-text: #dce8f0;
+    --color-text-muted: #8fa6b8;
+    --color-border: #1d3a55;
+    --color-border-strong: #5e7891;
+    --color-accent: #62b6e6;
+    --color-on-accent: #071827;
+    --color-accent-soft: #12324d;
+    --color-danger: #ff7a7a;
+    --color-on-danger: #071827;
+    --color-danger-soft: #3a1620;
+    --color-success: #5cc593;
+    --color-success-soft: #10301f;
+    --color-focus: #62b6e6;
+    --color-depth-shallow: #62b6e6;
+    --color-depth-deep: #12324d;
+    --shadow-overlay: 0 12px 32px rgb(0 0 0 / 0.5);
+    color-scheme: dark;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+  }
+}

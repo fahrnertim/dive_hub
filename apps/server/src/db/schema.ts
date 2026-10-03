@@ -98,6 +98,17 @@ export const passwordReset = pgTable(
   ],
 );
 
+export const unitSystem = pgEnum('unit_system', ['metric', 'imperial']);
+
+/** A User's display settings (ADR 0014). Null means: follow the browser. */
+export const userPreference = pgTable('user_preference', {
+  userId: uuid('user_id').primaryKey().references(() => user.id, { onDelete: 'cascade' }),
+  /** BCP 47 language tag such as "de" or "en-GB". */
+  language: text('language'),
+  units: unitSystem('units'),
+  updatedAt: updatedAt(),
+});
+
 export const device = pgTable(
   'device',
   {
@@ -137,11 +148,23 @@ export const original = pgTable(
 
 export const importStatus = pgEnum('import_status', ['pending', 'processing', 'done', 'failed']);
 
+/** Why a file was skipped, failed or needs a decision; clients translate it (ADR 0014). */
+export const OUTCOME_REASONS = [
+  'no_fit_file', 'not_a_dive', 'not_your_diver', 'overlaps_several_dives', 'max_depth_differs', 'file_failed',
+] as const;
+export type OutcomeReason = (typeof OUTCOME_REASONS)[number];
+
+/** Why a whole Import failed; anything unexpected is 'processing_failed', with details in `error`. */
+export const IMPORT_ERROR_CODES = ['unsupported_file', 'processing_failed'] as const;
+export type ImportErrorCode = (typeof IMPORT_ERROR_CODES)[number];
+
 export type ImportOutcome = {
   fileName: string;
   result: 'created' | 'attached' | 'updated' | 'unchanged' | 'duplicate-candidate' | 'skipped' | 'failed';
   diveId?: string;
   recordingId?: string;
+  reason?: OutcomeReason;
+  /** Technical detail in English (e.g. a parser error), shown next to the translated reason. */
   message?: string;
 }[];
 

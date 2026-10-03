@@ -13,9 +13,10 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [spec/README.md](spec/README.md) — Product specification: vision, sources → hub → targets, open questions.
 - [spec/data-model.md](spec/data-model.md) — Entities, ownership, relationships; UDDF checklist, gap coverage, scenarios.
 - [spec/architecture.md](spec/architecture.md) — Components, import flow, Docker Compose deployment, auth.
+- [spec/design-system.md](spec/design-system.md) — Visual direction, tokens, components, writing, localization, units, accessibility.
 
 ## Glossary
-- [glossary.md](glossary.md) — Domain language: User, Admin, Invitation, Password reset link, Disabled, Diver, Dive, Recording, Import, Push, …
+- [glossary.md](glossary.md) — Domain language with German UI words: User, Admin, Invitation, Password reset link, Disabled, Diver, Dive, Recording, Import, Push, …
 
 ## Development
 - [development.md](development.md) — setup, layout, common tasks, tooling notes.
@@ -40,6 +41,7 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [0011 Better Auth for accounts and sessions](decisions/0011-better-auth.md) — ≥ 1.7.7, argon2id, invite-only, database sessions, small plugin set.
 - [0012 Invitation links, setup token for the first admin, 2FA later](decisions/0012-invitations-and-admin-bootstrap.md) — copy-link invitations, setup token in the log, no impersonation.
 - [0013 Account management](decisions/0013-account-management.md) — reset links, disable vs delete, always one admin, only four Better Auth endpoints over HTTP.
+- [0014 Design system, localization, error codes, units](decisions/0014-design-system-and-localization.md) — React Aria + own tokens, i18next (en, de), API error codes, metric/imperial per User.
 - [Template](decisions/template.md) — copy for new ADRs.
 
 ## References

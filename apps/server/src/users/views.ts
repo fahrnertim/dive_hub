@@ -3,7 +3,7 @@ import { Type, type Static } from 'typebox';
 import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from '../auth/password.js';
 import type { Role } from './invitations.js';
 
-export const Problem = Type.Object({ error: Type.String() });
+export { Problem } from '../http/problems.js';
 export const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
 export const DateTime = Type.String({ format: 'date-time' });
 export const RoleSchema = Type.Union([Type.Literal('user'), Type.Literal('admin')]);
@@ -17,6 +17,15 @@ export const UserView = Type.Object({
   id: Type.String(), email: Type.String(), name: Type.String(), role: RoleSchema,
   disabled: Type.Boolean({ description: 'Disabled Users can\'t sign in; their data stays' }),
   createdAt: DateTime,
+});
+
+export const PreferencesView = Type.Object({
+  language: Type.Union([Type.String({ pattern: '^[a-z]{2,3}(-[A-Z]{2})?$', description: 'BCP 47 tag, e.g. "de"' }), Type.Null()], {
+    description: 'Null: follow the browser',
+  }),
+  units: Type.Union([Type.Literal('metric'), Type.Literal('imperial'), Type.Null()], {
+    description: 'Null: follow the region of the browser',
+  }),
 });
 
 /** A link shown once to the admin, who passes it on (Invitations, password reset links). */

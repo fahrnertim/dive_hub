@@ -3,11 +3,12 @@ import { eq, inArray, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { original, session, user } from '../db/schema.js';
 import type { BlobStore } from '../storage/blob-store.js';
+import { PROBLEMS } from '../http/problems.js';
 import type { Role } from './invitations.js';
 
 export class UserAdminError extends Error {
-  constructor(readonly code: 'not-found' | 'last-admin' | 'self' | 'confirmation', message: string) {
-    super(message);
+  constructor(readonly code: 'user_not_found' | 'last_admin' | 'not_yourself' | 'confirmation_mismatch') {
+    super(PROBLEMS[code]);
   }
 }
 
@@ -23,7 +24,7 @@ export function createUserAdmin(db: Db, blobs: BlobStore) {
       .where(sql`${user.id} = ${userId} or (${user.role} = 'admin' and ${user.banned} is not true)`)
       .orderBy(user.id).for('update');
     const target = rows.find((r) => r.id === userId);
-    if (!target) throw new UserAdminError('not-found', 'No such User');
+    if (!target) throw new UserAdminError('user_not_found');
     const otherAdmins = rows.filter((r) => r.id !== userId && r.role === 'admin' && !r.banned).length;
     return { target, otherAdmins };
   }
@@ -31,12 +32,12 @@ export function createUserAdmin(db: Db, blobs: BlobStore) {
   /** Throws unless the change still leaves an enabled admin. */
   function keepAnAdmin(target: UserRow, otherAdmins: number) {
     if (target.role === 'admin' && !target.banned && otherAdmins === 0) {
-      throw new UserAdminError('last-admin', 'This is the only admin; make someone else admin first');
+      throw new UserAdminError('last_admin');
     }
   }
 
-  const notSelf = (targetId: string, actorId: string, what: string) => {
-    if (targetId === actorId) throw new UserAdminError('self', `You can't ${what} yourself; ask another admin`);
+  const notSelf = (targetId: string, actorId: string) => {
+    if (targetId === actorId) throw new UserAdminError('not_yourself');
   };
 
   return {
@@ -51,7 +52,7 @@ export function createUserAdmin(db: Db, blobs: BlobStore) {
 
     /** Blocks sign-in and ends every session; all data stays. */
     async disable(userId: string, actorId: string): Promise<UserRow> {
-      notSelf(userId, actorId, 'disable');
+      notSelf(userId, actorId);
       return db.transaction(async (tx) => {
         const { target, otherAdmins } = await lock(tx, userId);
         keepAnAdmin(target, otherAdmins);
@@ -64,14 +65,14 @@ export function createUserAdmin(db: Db, blobs: BlobStore) {
 
     async enable(userId: string): Promise<UserRow> {
       const [updated] = await db.update(user).set({ banned: false, updatedAt: new Date() }).where(eq(user.id, userId)).returning();
-      if (!updated) throw new UserAdminError('not-found', 'No such User');
+      if (!updated) throw new UserAdminError('user_not_found');
       return updated;
     },
 
     /** Signs the User out everywhere. */
     async endSessions(userId: string): Promise<void> {
       const [found] = await db.select({ id: user.id }).from(user).where(eq(user.id, userId));
-      if (!found) throw new UserAdminError('not-found', 'No such User');
+      if (!found) throw new UserAdminError('user_not_found');
       await db.delete(session).where(eq(session.userId, userId));
     },
 
@@ -81,11 +82,11 @@ export function createUserAdmin(db: Db, blobs: BlobStore) {
      * Recordings, samples, Devices and Revisions. The admin confirms by typing the User's e-mail.
      */
     async remove(userId: string, actorId: string, confirmEmail: string): Promise<void> {
-      notSelf(userId, actorId, 'delete');
+      notSelf(userId, actorId);
       const fileKeys = await db.transaction(async (tx) => {
         const { target, otherAdmins } = await lock(tx, userId);
         if (confirmEmail.trim().toLowerCase() !== target.email) {
-          throw new UserAdminError('confirmation', 'The confirmation does not match the User\'s e-mail');
+          throw new UserAdminError('confirmation_mismatch');
         }
         keepAnAdmin(target, otherAdmins);
         return deleteUserData(tx, userId);

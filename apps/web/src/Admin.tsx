@@ -1,14 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { api, invitationsQuery, keys, meQuery, unwrap, usersQuery, type UserView } from './api.ts';
-import { formatLocalDateTime } from './format.ts';
+import { useDisplay, useErrorText } from './lib/display.ts';
+import { Button, Checkbox, CopyField, Dialog, Form, Notice, Panel, Table, TextField } from './ui/index.ts';
 
-const date = (iso: string) => formatLocalDateTime(iso, null);
-
-/** Admins invite people (copy the link, there's no mail yet) and see who has an account (ADR 0012). */
+/** Admins invite people (copy the link, there's no mail yet) and manage Users (ADR 0012, 0013). */
 export function Admin() {
+  const { t } = useTranslation();
   return (
     <>
+      <h1>{t('nav.admin')}</h1>
       <Invite />
       <Invitations />
       <Users />
@@ -16,35 +18,54 @@ export function Admin() {
   );
 }
 
+/** A link shown once, for the admin to pass on (Invitations, password reset links). */
+function LinkToPassOn({ to, url, expiresAt, label }: { to: string; url: string; expiresAt: string; label: string }) {
+  const display = useDisplay();
+  return (
+    <Notice tone="info">
+      <p><Trans i18nKey="admin.linkIntro" values={{ to, until: display.dateTime(expiresAt) }} components={{ strong: <strong /> }} /></p>
+      <CopyField value={url} label={label} />
+    </Notice>
+  );
+}
+
 function Invite() {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
   const queryClient = useQueryClient();
+  const [asAdmin, setAsAdmin] = useState(false);
   const invite = useMutation({
-    mutationFn: async (body: { email: string; role: 'user' | 'admin' }) =>
-      unwrap(await api.POST('/api/invitations', { body })),
+    mutationFn: async (body: { email: string; role: 'user' | 'admin' }) => unwrap(await api.POST('/api/invitations', { body })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.invitations }),
   });
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    invite.mutate({ email: String(form.get('email')), role: form.get('admin') ? 'admin' : 'user' });
-    event.currentTarget.reset();
+    const form = event.currentTarget;
+    invite.mutate(
+      { email: String(new FormData(form).get('email')), role: asAdmin ? 'admin' : 'user' },
+      { onSuccess: () => { form.reset(); setAsAdmin(false); } },
+    );
   };
 
   return (
-    <section className="card">
-      <h2>Invite someone</h2>
-      <form className="form inline" onSubmit={submit}>
-        <label>E-mail<input name="email" type="email" required autoComplete="off" /></label>
-        <label className="check"><input name="admin" type="checkbox" /> Admin</label>
-        <button type="submit" disabled={invite.isPending}>Create invitation link</button>
-      </form>
-      {invite.error && <p className="error">{invite.error.message}</p>}
-      {invite.data && <CopyLink to={invite.data.email} url={invite.data.url} expiresAt={invite.data.expiresAt} label="Invitation link" />}
-    </section>
+    <Panel title={t('admin.inviteTitle')}>
+      <Form className="form-inline" onSubmit={submit}>
+        <TextField label={t('admin.email')} name="email" type="email" isRequired autoComplete="off" />
+        <Checkbox isSelected={asAdmin} onChange={setAsAdmin}>{t('admin.inviteAsAdmin')}</Checkbox>
+        <Button type="submit" variant="primary" isDisabled={invite.isPending}>{t('admin.createInvitation')}</Button>
+      </Form>
+      {invite.error && <Notice tone="danger">{errorText(invite.error)}</Notice>}
+      {invite.data && (
+        <LinkToPassOn to={invite.data.email} url={invite.data.url} expiresAt={invite.data.expiresAt} label={t('admin.invitationLink')} />
+      )}
+    </Panel>
   );
 }
 
 function Invitations() {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const display = useDisplay();
   const queryClient = useQueryClient();
   const invitations = useQuery(invitationsQuery());
   const revoke = useMutation({
@@ -54,73 +75,52 @@ function Invitations() {
 
   if (!invitations.data?.length) return null;
   return (
-    <section className="card">
-      <h2>Invitations</h2>
-      {revoke.error && <p className="error">{revoke.error.message}</p>}
-      <table className="table">
-        <thead><tr><th>E-mail</th><th>Role</th><th>Status</th><th>Expires</th><th /></tr></thead>
-        <tbody>
-          {invitations.data.map((i) => (
-            <tr key={i.id}>
-              <td>{i.email}</td>
-              <td>{i.role}</td>
-              <td className={`status ${i.status}`}>{i.status}</td>
-              <td>{i.status === 'pending' ? date(i.expiresAt) : '–'}</td>
-              <td>
-                {i.status === 'pending' && (
-                  <button type="button" className="link" disabled={revoke.isPending} onClick={() => revoke.mutate(i.id)}>Revoke</button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
-  );
-}
-
-/** A link shown once, for the admin to pass on (Invitations, password reset links). */
-function CopyLink({ to, url, expiresAt, label }: { to: string; url: string; expiresAt: string; label: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <div className="invite-link">
-      <p>Send this link to <strong>{to}</strong>. It works once, until {date(expiresAt)}, and is shown only now.</p>
-      <div className="copy">
-        <input readOnly value={url} onFocus={(e) => e.currentTarget.select()} aria-label={label} />
-        <button type="button" onClick={async () => { await navigator.clipboard.writeText(url); setCopied(true); }}>
-          {copied ? 'Copied' : 'Copy'}
-        </button>
-      </div>
-    </div>
+    <Panel title={t('admin.invitations')}>
+      {revoke.error && <Notice tone="danger">{errorText(revoke.error)}</Notice>}
+      <Table label={t('admin.invitations')} head={[t('admin.email'), t('admin.role'), t('admin.status'), t('admin.expires'), '']}>
+        {invitations.data.map((i) => (
+          <tr key={i.id}>
+            <td>{i.email}</td>
+            <td>{t(`admin.roles.${i.role}`)}</td>
+            <td className={`status status-${i.status}`}>{t(`admin.invitationStatus.${i.status}`)}</td>
+            <td>{i.status === 'pending' ? display.dateTime(i.expiresAt) : t('common.none')}</td>
+            <td>
+              {i.status === 'pending' && (
+                <Button variant="quiet" isDisabled={revoke.isPending} onPress={() => revoke.mutate(i.id)}>{t('admin.revoke')}</Button>
+              )}
+            </td>
+          </tr>
+        ))}
+      </Table>
+    </Panel>
   );
 }
 
 function Users() {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
   const users = useQuery(usersQuery());
   const me = useQuery(meQuery());
   return (
-    <section className="card">
-      <h2>Users</h2>
-      {users.error && <p className="error">{users.error.message}</p>}
+    <Panel title={t('admin.users')}>
+      {users.error && <Notice tone="danger">{errorText(users.error)}</Notice>}
       {users.data && (
-        <table className="table">
-          <thead><tr><th>Name</th><th>E-mail</th><th>Role</th><th>Since</th><th>Actions</th></tr></thead>
-          <tbody>
-            {users.data.map((u) => <UserRow key={u.id} user={u} isMe={u.id === me.data?.user.id} />)}
-          </tbody>
-        </table>
+        <Table label={t('admin.users')} head={[t('admin.name'), t('admin.email'), t('admin.role'), t('admin.since'), t('admin.actions')]}>
+          {users.data.map((u) => <UserRow key={u.id} user={u} isMe={u.id === me.data?.user.id} />)}
+        </Table>
       )}
-    </section>
+    </Panel>
   );
 }
 
-type Panel = 'none' | 'reset' | 'delete';
-
 /** One User with the admin's actions (ADR 0013). The server refuses what would leave no admin. */
 function UserRow({ user: u, isMe }: { user: UserView; isMe: boolean }) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const display = useDisplay();
   const queryClient = useQueryClient();
-  const [panel, setPanel] = useState<Panel>('none');
   const [notice, setNotice] = useState<string>();
+  const [deleting, setDeleting] = useState(false);
   const refresh = () => queryClient.invalidateQueries({ queryKey: keys.users });
   const path = { params: { path: { id: u.id } } };
 
@@ -133,75 +133,81 @@ function UserRow({ user: u, isMe }: { user: UserView; isMe: boolean }) {
         case 'enable': return void unwrap(await api.POST('/api/users/{id}/enable', path));
         case 'sign-out':
           unwrap(await api.DELETE('/api/users/{id}/sessions', path));
-          return setNotice(`${u.name} was signed out everywhere.`);
+          return setNotice(t('admin.signedOutEverywhere', { name: u.name }));
       }
     },
     onMutate: () => setNotice(undefined),
     onSettled: refresh,
   });
-  const reset = useMutation({
-    mutationFn: async () => unwrap(await api.POST('/api/users/{id}/password-reset', path)),
-    onSuccess: () => setPanel('reset'),
-  });
-  const remove = useMutation({
-    mutationFn: async (confirmEmail: string) => unwrap(await api.DELETE('/api/users/{id}', { ...path, body: { confirmEmail } })),
-    onSuccess: refresh,
-  });
-  const error = act.error ?? reset.error ?? remove.error;
+  const reset = useMutation({ mutationFn: async () => unwrap(await api.POST('/api/users/{id}/password-reset', path)) });
+  const error = act.error ?? reset.error;
 
   return (
     <>
-      <tr className={u.disabled ? 'disabled' : undefined}>
-        <td>{u.name}{isMe && ' (you)'}</td>
+      <tr className={u.disabled ? 'is-disabled' : undefined}>
+        <td>{u.name}{isMe && ` (${t('admin.you')})`}</td>
         <td>{u.email}</td>
-        <td>{u.role}{u.disabled && ', disabled'}</td>
-        <td>{date(u.createdAt)}</td>
-        <td className="actions">
-          <button type="button" className="link" disabled={act.isPending}
-            onClick={() => act.mutate(u.role === 'admin' ? 'make-user' : 'make-admin')}>
-            {u.role === 'admin' ? 'Make user' : 'Make admin'}
-          </button>
-          {!u.disabled && (
-            <button type="button" className="link" disabled={reset.isPending} onClick={() => reset.mutate()}>Password reset link</button>
-          )}
-          {!isMe && (
-            <>
-              <button type="button" className="link" disabled={act.isPending} onClick={() => act.mutate('sign-out')}>Sign out everywhere</button>
-              <button type="button" className="link" disabled={act.isPending} onClick={() => act.mutate(u.disabled ? 'enable' : 'disable')}>
-                {u.disabled ? 'Enable' : 'Disable'}
-              </button>
-              <button type="button" className="link danger" onClick={() => setPanel(panel === 'delete' ? 'none' : 'delete')}>Delete…</button>
-            </>
-          )}
+        <td>{t(`admin.roles.${u.role}`)}{u.disabled && `, ${t('admin.disabled')}`}</td>
+        <td>{display.dateTime(u.createdAt)}</td>
+        <td>
+          <div className="actions">
+            <Button variant="quiet" isDisabled={act.isPending} onPress={() => act.mutate(u.role === 'admin' ? 'make-user' : 'make-admin')}>
+              {u.role === 'admin' ? t('admin.makeUser') : t('admin.makeAdmin')}
+            </Button>
+            {!u.disabled && <Button variant="quiet" isDisabled={reset.isPending} onPress={() => reset.mutate()}>{t('admin.createResetLink')}</Button>}
+            {!isMe && (
+              <>
+                <Button variant="quiet" isDisabled={act.isPending} onPress={() => act.mutate('sign-out')}>{t('admin.signOutEverywhere')}</Button>
+                <Button variant="quiet" isDisabled={act.isPending} onPress={() => act.mutate(u.disabled ? 'enable' : 'disable')}>
+                  {u.disabled ? t('admin.enable') : t('admin.disable')}
+                </Button>
+                <Button variant="quiet" onPress={() => setDeleting(true)}>{t('admin.delete')}</Button>
+              </>
+            )}
+          </div>
         </td>
       </tr>
-      {(error || notice || panel !== 'none') && (
-        <tr className="panel">
+      {(error || notice || reset.data) && (
+        <tr>
           <td colSpan={5}>
-            {error && <p className="error">{error.message}</p>}
-            {notice && <p className="ok">{notice}</p>}
-            {panel === 'reset' && reset.data && (
-              <CopyLink to={u.email} url={reset.data.url} expiresAt={reset.data.expiresAt} label="Password reset link" />
-            )}
-            {panel === 'delete' && (
-              <form
-                className="form"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  remove.mutate(String(new FormData(e.currentTarget).get('confirmEmail')));
-                }}
-              >
-                <p>
-                  Deleting <strong>{u.name}</strong> removes their account, their uploaded files and Imports, and their own
-                  Diver with all Dives. <strong>This can't be undone.</strong> To keep the data, disable the User instead.
-                </p>
-                <label>Type <code>{u.email}</code> to confirm<input name="confirmEmail" required autoComplete="off" /></label>
-                <div><button type="submit" className="danger" disabled={remove.isPending}>Delete {u.name}</button></div>
-              </form>
-            )}
+            {error && <Notice tone="danger">{errorText(error)}</Notice>}
+            {notice && <Notice tone="success">{notice}</Notice>}
+            {reset.data && <LinkToPassOn to={u.email} url={reset.data.url} expiresAt={reset.data.expiresAt} label={t('admin.resetLink')} />}
           </td>
         </tr>
       )}
+      <DeleteUserDialog user={u} isOpen={deleting} onOpenChange={setDeleting} onDeleted={refresh} />
     </>
+  );
+}
+
+function DeleteUserDialog({ user: u, isOpen, onOpenChange, onDeleted }: {
+  user: UserView; isOpen: boolean; onOpenChange: (open: boolean) => void; onDeleted: () => void;
+}) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const remove = useMutation({
+    mutationFn: async (confirmEmail: string) =>
+      unwrap(await api.DELETE('/api/users/{id}', { params: { path: { id: u.id } }, body: { confirmEmail } })),
+    onSuccess: () => { onOpenChange(false); onDeleted(); },
+  });
+  return (
+    <Dialog title={t('admin.deleteTitle', { name: u.name })} isOpen={isOpen} onOpenChange={onOpenChange}>
+      <p>{t('admin.deleteBody')}</p>
+      <Form
+        className="form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          remove.mutate(String(new FormData(e.currentTarget).get('confirmEmail')));
+        }}
+      >
+        <TextField label={t('admin.deleteConfirm', { email: u.email })} name="confirmEmail" isRequired autoComplete="off" autoFocus />
+        {remove.error && <Notice tone="danger">{errorText(remove.error)}</Notice>}
+        <div className="form-actions">
+          <Button type="submit" variant="danger" isDisabled={remove.isPending}>{t('admin.deleteSubmit', { name: u.name })}</Button>
+          <Button onPress={() => onOpenChange(false)}>{t('common.cancel')}</Button>
+        </div>
+      </Form>
+    </Dialog>
   );
 }

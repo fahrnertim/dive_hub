@@ -81,6 +81,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -92,6 +98,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -149,6 +161,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -214,6 +232,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -225,6 +249,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -275,6 +305,12 @@ export interface paths {
                                 id: string;
                                 name: string;
                             };
+                            preferences: {
+                                /** @description Null: follow the browser */
+                                language: string | null;
+                                /** @description Null: follow the region of the browser */
+                                units: "metric" | "imperial" | null;
+                            };
                         };
                     };
                 };
@@ -286,6 +322,56 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/me/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change display settings (language, units); fields left out stay as they are */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description Null: follow the browser */
+                        language?: string | null;
+                        /** @description Null: follow the region of the browser */
+                        units?: "metric" | "imperial" | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Null: follow the browser */
+                            language: string | null;
+                            /** @description Null: follow the region of the browser */
+                            units: "metric" | "imperial" | null;
+                        };
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/api/invitations": {
@@ -374,6 +460,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -422,6 +514,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -476,6 +574,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -540,6 +644,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -654,6 +764,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -756,6 +872,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -767,6 +889,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -778,6 +906,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -829,6 +963,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -840,6 +980,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -851,6 +997,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -905,6 +1057,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -916,6 +1074,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -927,6 +1091,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -985,6 +1155,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -996,6 +1172,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -1007,6 +1189,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -1055,6 +1243,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -1066,6 +1260,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -1077,6 +1277,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -1130,6 +1336,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -1141,6 +1353,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -1152,6 +1370,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -1194,12 +1418,16 @@ export interface paths {
                             /** Format: date-time */
                             createdAt: string;
                             finishedAt: string | null;
+                            errorCode: ("unsupported_file" | "processing_failed") | null;
                             error: string | null;
                             outcome: {
                                 fileName: string;
-                                result: string;
+                                /** @enum {unknown} */
+                                result: "created" | "attached" | "updated" | "unchanged" | "duplicate-candidate" | "skipped" | "failed";
                                 diveId?: string;
                                 recordingId?: string;
+                                /** @enum {unknown} */
+                                reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed";
                                 message?: string;
                             }[];
                         }[];
@@ -1231,12 +1459,16 @@ export interface paths {
                             /** Format: date-time */
                             createdAt: string;
                             finishedAt: string | null;
+                            errorCode: ("unsupported_file" | "processing_failed") | null;
                             error: string | null;
                             outcome: {
                                 fileName: string;
-                                result: string;
+                                /** @enum {unknown} */
+                                result: "created" | "attached" | "updated" | "unchanged" | "duplicate-candidate" | "skipped" | "failed";
                                 diveId?: string;
                                 recordingId?: string;
+                                /** @enum {unknown} */
+                                reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed";
                                 message?: string;
                             }[];
                         };
@@ -1249,6 +1481,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -1260,6 +1498,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -1304,12 +1548,16 @@ export interface paths {
                             /** Format: date-time */
                             createdAt: string;
                             finishedAt: string | null;
+                            errorCode: ("unsupported_file" | "processing_failed") | null;
                             error: string | null;
                             outcome: {
                                 fileName: string;
-                                result: string;
+                                /** @enum {unknown} */
+                                result: "created" | "attached" | "updated" | "unchanged" | "duplicate-candidate" | "skipped" | "failed";
                                 diveId?: string;
                                 recordingId?: string;
+                                /** @enum {unknown} */
+                                reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed";
                                 message?: string;
                             }[];
                         };
@@ -1322,6 +1570,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -1439,6 +1693,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };
@@ -1499,6 +1759,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "recording_not_found";
+                            /** @description English description, for logs and scripts */
                             error: string;
                         };
                     };

@@ -145,3 +145,19 @@ Implemented:
 Deliberate simplifications, to revisit:
 - **Deleting** keeps Divers someone else also manages; this needs revisiting with Diver sharing.
 - **No audit log** of admin actions beyond the server log ("user deleted").
+
+**Slice 4 (2026-10-03): UI foundation** ([ADR 0014](../decisions/0014-design-system-and-localization.md), [design system](design-system.md)).
+
+Implemented:
+- Design tokens (light and dark, contrast measured to WCAG 2.2 AA) and a component set on React Aria
+  Components; every page moved onto them. IBM Plex Sans bundled; the depth profile is filled with a depth gradient.
+- English and German with i18next and typed keys; language from the User's preference or the browser.
+- Every API refusal carries a `code`; Import outcomes a `reason`, failed Imports an `errorCode`;
+  server errors no longer show internals.
+- Per-User display preferences (`user_preference`: language, metric/imperial) with Intl-based formatting.
+- Lazy-loaded pages (dive detail, account, admin); error boundaries around the page and the chart.
+- A missing static file answers 404 instead of the web client's `index.html`.
+
+Deliberate simplifications, to revisit:
+- **Device values** such as water type ("salt") are shown as recorded, untranslated.
+- **No browser test suite yet:** layout was checked by screenshots (headless Edge); Playwright is pending.

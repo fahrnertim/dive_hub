@@ -1,0 +1,29 @@
+/* Styles for single pages (import, logbook, dive). Shared components live in ui/ui.css. */
+
+.dropzone { display: grid; justify-items: center; gap: var(--space-2); text-align: center; padding: var(--space-5);
+  border: 2px dashed var(--color-border-strong); border-radius: var(--radius-lg); background: var(--color-surface-sunken); }
+.dropzone[data-drop-target] { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.dropzone[data-focus-visible] { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.dropzone-label { font-weight: var(--weight-medium); }
+.dropzone .muted { margin: 0; }
+
+.imports { list-style: none; padding: 0; margin: var(--space-4) 0 0; font-size: var(--text-sm); }
+.imports li { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); padding: var(--space-2) 0; border-top: 1px solid var(--color-border); }
+.import-name { font-weight: var(--weight-semibold); overflow-wrap: anywhere; }
+
+.title-meta { display: block; font-size: var(--text-md); font-weight: var(--weight-regular); color: var(--color-text-muted); margin-top: var(--space-1); }
+
+.facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: var(--space-4); margin: var(--space-4) 0 var(--space-5); }
+.facts dt { color: var(--color-text-muted); font-size: var(--text-sm); }
+.facts dd { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+
+.segmented { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--color-border-strong); border-radius: var(--radius-md);
+  overflow: hidden; margin-bottom: var(--space-3); }
+.segment { font: inherit; font-size: var(--text-sm); border: none; background: var(--color-surface); color: var(--color-text);
+  padding: var(--space-2) var(--space-3); cursor: pointer; }
+.segment + .segment { border-left: 1px solid var(--color-border-strong); }
+.segment[data-selected] { background: var(--color-accent); color: var(--color-on-accent); }
+.segment[data-focus-visible] { outline: 2px solid var(--color-focus); outline-offset: -2px; }
+
+.profile { width: 100%; }
+.profile .u-legend { color: var(--color-text); font-size: var(--text-sm); }

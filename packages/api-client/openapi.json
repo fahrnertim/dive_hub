@@ -238,11 +238,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -256,11 +285,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -324,11 +382,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -435,11 +522,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -453,11 +569,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -479,7 +624,8 @@
                   "type": "object",
                   "required": [
                     "user",
-                    "ownDiver"
+                    "ownDiver",
+                    "preferences"
                   ],
                   "properties": {
                     "user": {
@@ -542,6 +688,149 @@
                           "type": "string"
                         }
                       }
+                    },
+                    "preferences": {
+                      "type": "object",
+                      "required": [
+                        "language",
+                        "units"
+                      ],
+                      "properties": {
+                        "language": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$",
+                              "description": "BCP 47 tag, e.g. \"de\""
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "Null: follow the browser"
+                        },
+                        "units": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "metric"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "imperial"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "Null: follow the region of the browser"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/preferences": {
+      "patch": {
+        "summary": "Change display settings (language, units); fields left out stay as they are",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "language": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$",
+                        "description": "BCP 47 tag, e.g. \"de\""
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Null: follow the browser"
+                  },
+                  "units": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "metric"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "imperial"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Null: follow the region of the browser"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "language",
+                    "units"
+                  ],
+                  "properties": {
+                    "language": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$",
+                          "description": "BCP 47 tag, e.g. \"de\""
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "Null: follow the browser"
+                    },
+                    "units": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "metric"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "imperial"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "Null: follow the region of the browser"
                     }
                   }
                 }
@@ -783,11 +1072,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -822,11 +1140,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -885,11 +1232,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -990,11 +1366,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1115,11 +1520,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1298,11 +1732,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1316,11 +1779,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1334,11 +1826,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1391,11 +1912,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1409,11 +1959,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1427,11 +2006,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1516,11 +2124,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1534,11 +2171,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1552,11 +2218,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1641,11 +2336,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1659,11 +2383,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1677,11 +2430,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1716,11 +2498,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1734,11 +2545,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1752,11 +2592,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1812,11 +2681,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1830,11 +2728,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1848,11 +2775,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1878,6 +2834,7 @@
                     "uploadName",
                     "createdAt",
                     "finishedAt",
+                    "errorCode",
                     "error",
                     "outcome"
                   ],
@@ -1931,10 +2888,25 @@
                         }
                       ]
                     },
+                    "errorCode": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "unsupported_file",
+                            "processing_failed"
+                          ],
+                          "description": "Why the Import failed; clients translate it"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "error": {
                       "anyOf": [
                         {
-                          "type": "string"
+                          "type": "string",
+                          "description": "English detail for processing_failed"
                         },
                         {
                           "type": "null"
@@ -1954,13 +2926,31 @@
                             "type": "string"
                           },
                           "result": {
-                            "type": "string"
+                            "enum": [
+                              "created",
+                              "attached",
+                              "updated",
+                              "unchanged",
+                              "duplicate-candidate",
+                              "skipped",
+                              "failed"
+                            ]
                           },
                           "diveId": {
                             "type": "string"
                           },
                           "recordingId": {
                             "type": "string"
+                          },
+                          "reason": {
+                            "enum": [
+                              "no_fit_file",
+                              "not_a_dive",
+                              "not_your_diver",
+                              "overlaps_several_dives",
+                              "max_depth_differs",
+                              "file_failed"
+                            ]
                           },
                           "message": {
                             "type": "string"
@@ -1980,11 +2970,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -1998,11 +3017,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -2028,6 +3076,7 @@
                       "uploadName",
                       "createdAt",
                       "finishedAt",
+                      "errorCode",
                       "error",
                       "outcome"
                     ],
@@ -2081,10 +3130,25 @@
                           }
                         ]
                       },
+                      "errorCode": {
+                        "anyOf": [
+                          {
+                            "enum": [
+                              "unsupported_file",
+                              "processing_failed"
+                            ],
+                            "description": "Why the Import failed; clients translate it"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
                       "error": {
                         "anyOf": [
                           {
-                            "type": "string"
+                            "type": "string",
+                            "description": "English detail for processing_failed"
                           },
                           {
                             "type": "null"
@@ -2104,13 +3168,31 @@
                               "type": "string"
                             },
                             "result": {
-                              "type": "string"
+                              "enum": [
+                                "created",
+                                "attached",
+                                "updated",
+                                "unchanged",
+                                "duplicate-candidate",
+                                "skipped",
+                                "failed"
+                              ]
                             },
                             "diveId": {
                               "type": "string"
                             },
                             "recordingId": {
                               "type": "string"
+                            },
+                            "reason": {
+                              "enum": [
+                                "no_fit_file",
+                                "not_a_dive",
+                                "not_your_diver",
+                                "overlaps_several_dives",
+                                "max_depth_differs",
+                                "file_failed"
+                              ]
                             },
                             "message": {
                               "type": "string"
@@ -2154,6 +3236,7 @@
                     "uploadName",
                     "createdAt",
                     "finishedAt",
+                    "errorCode",
                     "error",
                     "outcome"
                   ],
@@ -2207,10 +3290,25 @@
                         }
                       ]
                     },
+                    "errorCode": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "unsupported_file",
+                            "processing_failed"
+                          ],
+                          "description": "Why the Import failed; clients translate it"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "error": {
                       "anyOf": [
                         {
-                          "type": "string"
+                          "type": "string",
+                          "description": "English detail for processing_failed"
                         },
                         {
                           "type": "null"
@@ -2230,13 +3328,31 @@
                             "type": "string"
                           },
                           "result": {
-                            "type": "string"
+                            "enum": [
+                              "created",
+                              "attached",
+                              "updated",
+                              "unchanged",
+                              "duplicate-candidate",
+                              "skipped",
+                              "failed"
+                            ]
                           },
                           "diveId": {
                             "type": "string"
                           },
                           "recordingId": {
                             "type": "string"
+                          },
+                          "reason": {
+                            "enum": [
+                              "no_fit_file",
+                              "not_a_dive",
+                              "not_your_diver",
+                              "overlaps_several_dives",
+                              "max_depth_differs",
+                              "file_failed"
+                            ]
                           },
                           "message": {
                             "type": "string"
@@ -2256,11 +3372,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -2510,11 +3655,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }
@@ -2613,11 +3787,40 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "code",
                     "error"
                   ],
                   "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "recording_not_found"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
                     }
                   }
                 }

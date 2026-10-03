@@ -7,6 +7,7 @@ import type { Auth } from '../auth/auth.js';
 import { authHeaders, forwardCookies, requireUser } from '../auth/fastify.js';
 import type { Db } from '../db/client.js';
 import { session } from '../db/schema.js';
+import { problem } from '../http/problems.js';
 import type { PasswordResets } from './password-resets.js';
 import { DateTime, IdParams, Password, Problem, Token, UserView, toUserView } from './views.js';
 
@@ -26,8 +27,6 @@ const SessionView = Type.Object({
   current: Type.Boolean({ description: 'The session this request came with' }),
 });
 
-const INVALID_LINK = 'This link is invalid, used or expired';
-
 export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async (app, { db, auth, passwordResets }) => {
   // --- Public: using a password reset link ---------------------------------------------------------
 
@@ -39,7 +38,7 @@ export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async 
     },
   }, async (request, reply) => {
     const found = await passwordResets.find(request.body.token);
-    return found ? { email: found.email } : reply.code(404).send({ error: INVALID_LINK });
+    return found ? { email: found.email } : reply.code(404).send(problem('reset_link_invalid'));
   });
 
   app.post('/password-resets/complete', {
@@ -50,7 +49,7 @@ export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async 
     },
   }, async (request, reply) => {
     const email = await passwordResets.complete(request.body.token, request.body.password);
-    if (!email) return reply.code(404).send({ error: INVALID_LINK });
+    if (!email) return reply.code(404).send(problem('reset_link_invalid'));
     const { headers, response } = await auth.api.signInEmail({
       body: { email, password: request.body.password }, headers: authHeaders(request), returnHeaders: true,
     });
@@ -81,7 +80,7 @@ export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async 
     }, async (request, reply) => {
       const deleted = await db.delete(session)
         .where(and(eq(session.id, request.params.id), eq(session.userId, request.user!.id))).returning({ id: session.id });
-      return deleted.length > 0 ? reply.code(204).send(null) : reply.code(404).send({ error: 'No such session' });
+      return deleted.length > 0 ? reply.code(204).send(null) : reply.code(404).send(problem('session_not_found'));
     });
 
     signedIn.delete('/me/sessions', {

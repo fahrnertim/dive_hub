@@ -3,7 +3,11 @@ import { createRoot } from 'react-dom/client';
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App } from './App.tsx';
 import { isUnauthorized, keys } from './api.ts';
-import './styles.css';
+import './i18n/index.ts';
+import './design/tokens.css';
+import './design/base.css';
+import './ui/ui.css';
+import './pages.css';
 
 // A 401 from any call means the session ended (expired or signed out elsewhere): show sign-in.
 const onError = (error: unknown) => {

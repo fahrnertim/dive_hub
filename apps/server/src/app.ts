@@ -10,6 +10,7 @@ import { authHandler } from './auth/fastify.js';
 import { withAuthEndpoints } from './auth/openapi.js';
 import type { Db } from './db/client.js';
 import type { ImportService } from './imports/import-service.js';
+import { problem, useProblemErrors } from './http/problems.js';
 import { apiRoutes } from './routes.js';
 import type { BlobStore } from './storage/blob-store.js';
 import { accountRoutes } from './users/account-routes.js';
@@ -41,6 +42,7 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
     .withTypeProvider<TypeBoxTypeProvider>();
   app.decorateRequest('user', null);
   app.decorateRequest('sessionId', null);
+  useProblemErrors(app);
 
   await app.register(swagger, {
     openapi: {
@@ -68,12 +70,13 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
   await app.register(adminRoutes, { prefix: '/api', ...deps, passwordResets, userAdmin: createUserAdmin(deps.db, deps.blobs) });
   await app.register(apiRoutes, { prefix: '/api', ...deps });
 
-  if (deps.webDir && existsSync(deps.webDir)) {
-    await app.register(fastifyStatic, { root: deps.webDir, wildcard: false });
-    // Single-page app: unknown non-API paths get index.html.
-    app.setNotFoundHandler((request, reply) =>
-      request.url.startsWith('/api/') ? reply.code(404).send({ error: 'Not found' }) : reply.sendFile('index.html'),
-    );
-  }
+  const serveWeb = !!deps.webDir && existsSync(deps.webDir);
+  if (serveWeb) await app.register(fastifyStatic, { root: deps.webDir!, wildcard: false });
+  // Single-page app: unknown page paths get index.html. Unknown API paths and missing files (a path
+  // with an extension, e.g. an old asset) get a 404, so a browser never runs HTML as a script.
+  const isPage = (url: string) => !url.startsWith('/api/') && !/\.[a-z0-9]+$/i.test(url.split(/[?#]/)[0]!);
+  app.setNotFoundHandler((request, reply) =>
+    serveWeb && request.method === 'GET' && isPage(request.url) ? reply.sendFile('index.html') : reply.code(404).send(problem('not_found')),
+  );
   return app;
 }
