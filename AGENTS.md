@@ -70,6 +70,9 @@ rejected, and why — in [docs/skills.md](docs/skills.md).
 - **emil-design-eng**: skip its fixed opening line; write findings in our review documents' format
   (its Before/After table is fine inside them). Motion respects `prefers-reduced-motion` and the
   duration tokens in `apps/web/src/design/tokens.css`.
+- **mobile-native**: skip its fixed opening line. Keep pull-to-refresh (no `overscroll-behavior: none` on `html`/`body`):
+  the logbook is a scrolling document. Hover rules stay in `@media (hover: hover)` as `source-rules.test.ts` checks.
+  Its "test on real hardware" step needs the owner's phone; say what could only be checked in emulation.
 - **review-animations**, **find-animation-opportunities**: reduced motion means our `--duration-*` tokens
   drop to 0 (not "gentler, not zero"), until an ADR says otherwise. Map their Base UI/Framer examples to
   React Aria (`data-placement`, `--trigger-anchor-point`) and plain CSS transitions. Findings go in our

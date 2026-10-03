@@ -23,6 +23,8 @@ p { margin: 0 0 var(--space-3); max-width: 70ch; }
 a { color: var(--color-accent); text-underline-offset: 0.15em; }
 /* Taps act at once (no double-tap zoom wait) and without the grey flash; focus and pressed states show instead. */
 a, button, [role='button'], [role='tab'], [role='menuitem'] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+/* A long press on a control doesn't select its label (mobile-native). Links and text stay selectable. */
+button, [role='button'], [role='tab'], [role='menuitem'] { -webkit-user-select: none; user-select: none; }
 
 /* CSS :hover only where there is a pointer; on touch screens it sticks after a tap. (React Aria's
    [data-hovered] already ignores touch.) Every :hover rule of the app lives in such a block. */

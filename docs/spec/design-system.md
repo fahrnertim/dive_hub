@@ -93,8 +93,9 @@ boundary uses `--color-border-strong`. Panels have no outline (ADR 0019).
   (`--duration-fast`, ease-out); disabled controls are dimmed with `cursor: not-allowed`; busy
   buttons (`data-pending`) are dimmed with `cursor: progress`; an open select keeps the focus colour on
   its border. CSS `:hover` rules sit inside `@media (hover: hover)`, so they don't stick on touch screens.
-- **Touch:** links and buttons have `touch-action: manipulation` and no tap highlight. Quiet
-  buttons are 32 px tall.
+- **Touch** (mobile-native skill): links and buttons have `touch-action: manipulation` and no tap highlight;
+  buttons, tabs and menu items don't select their label on a long press. Inputs stay at 16 px or more (iOS zooms
+  into smaller ones). The browser bar (`theme-color`) has the header's colour per scheme. Quiet buttons are 32 px tall.
 - **Layout:** content up to `--width-content` (72 rem), left-aligned. Every page starts with `PageHeader`
   (h1, meta, lead, the page's actions), then its panels. Single forms (sign-in, setup) are a narrow centered
   panel (`--width-form`, 28 rem) whose title is the h1.
@@ -198,7 +199,7 @@ It also sweeps every page from 320 to 1440 px and checks text at 200 % ([respons
 
 `apps/web/test/source-rules.test.ts` checks the rules a browser can't easily see: no `title`
 tooltips on elements, `isPending` on busy buttons, no empty table headers, `:hover` only for
-pointers, no `transition: all`, "…" instead of "...", and no line break before "…".
+pointers, no `transition: all`, "…" instead of "...", no line break before "…", and inputs at 16 px or more.
 - **A query that fails with a 4xx is not retried** (`shouldRetry` in `api.ts`), so "not found"
   shows at once.
 - **Focus never falls to the page.** When the focused element goes away, focus moves on. A form that

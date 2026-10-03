@@ -53,7 +53,7 @@ Emulation doesn't reproduce those (see below).
 - Mobile UI/UX search (mobile ux, mobile usability, mobile web, touch, thumb zone, mobile navigation, mobile forms,
   pwa): mostly native-app skills (iOS, React Native, Flutter, Expo) or ones already rejected. Vetted:
   - `emilkowalski/skills` `mobile-native`: MIT, one SKILL.md, no scripts or fetches (commit e8a175d, same as our three
-    Emil Kowalski skills). Fixes that make a web app feel native on a phone. **Proposed.**
+    Emil Kowalski skills). Fixes that make a web app feel native on a phone. **Installed** (owner approved 2026-10-04).
   - `designed-by-ai/skills` `design-mobile-apps`: a client for the paid Sleek design service (API key). Rejected.
   - `athevon/genjutsu` `mobile-principles`: no clear license, internal part of a larger suite. Rejected.
 
@@ -65,9 +65,9 @@ Emulation doesn't reproduce those (see below).
 | Tap highlight flash, 300 ms delay | done: `-webkit-tap-highlight-color: transparent`, `touch-action: manipulation` |
 | `100vh` | not used |
 | Zoom disabled | no (good) |
-| Inputs under 16 px zoom the page on iOS | **open**: the copy field (invitation and reset links) uses `--text-sm` |
-| Long-press selects button text | **open**: no `user-select: none` on buttons |
-| `theme-color` matches the top of the page | **open**: still `#f3f6f8` / `#071827`; the header is `#ffffff` / `#0e2338` |
+| Inputs under 16 px zoom the page on iOS | fixed: the copy field is at body size; `source-rules.test.ts` keeps inputs off `--text-sm`/`--text-xs` |
+| Long-press selects button text | fixed: `user-select: none` on buttons, tabs and menu items (`design/base.css`); links and text stay selectable |
+| `theme-color` matches the top of the page | fixed: `#ffffff` / `#0e2338`, the header (`index.html`) |
 | Safe areas (`viewport-fit=cover`) | not needed: nothing is fixed to the screen edges |
 | Pull-to-refresh | keep: the logbook is a scrolling document; dialogs and menus already use `overscroll-behavior: contain` |
-| Test on real hardware | **open** |
+| Test on real hardware | **open**: needs the owner's phone (dev server over the local network) |

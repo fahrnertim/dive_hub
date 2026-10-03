@@ -153,7 +153,6 @@
 .date-segment[data-placeholder] { color: var(--color-text-muted); }
 .date-segment[data-focused] { background: var(--color-accent); color: var(--color-on-accent); outline: none; }
 .date-segment[data-type='literal'] { color: var(--color-text-muted); }
-.copy-field .input { font-size: var(--text-sm); }
 /* A select inside a table row (device owner). */
 .select-small .select-button { min-height: 2rem; padding-block: var(--space-1); font-size: var(--text-sm); }
 

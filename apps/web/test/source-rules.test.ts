@@ -34,6 +34,18 @@ describe('styles', () => {
     for (const { path, text } of css) expect(text, path).not.toMatch(/transition:\s*all/);
   });
 
+  it('keep inputs at 16 px or more, or iOS zooms the page into them (mobile-native)', () => {
+    for (const { path, text } of css) {
+      for (const m of text.matchAll(/([^{}]*)\{([^}]*)\}/g)) {
+        const [, selector, body] = m;
+        // .input and textarea, not .input-unit or .input-group.
+        if (/(\.input|\binput|\btextarea)(?![\w-])/.test(selector!)) {
+          expect(body, `${path}: ${selector!.trim()}`).not.toMatch(/font-size:\s*var\(--text-(xs|sm)\)/);
+        }
+      }
+    }
+  });
+
   it('use CSS :hover only inside @media (hover: hover), so it doesn’t stick on touch screens', () => {
     for (const { path, text } of css) {
       const blocks = hoverBlocks(text);
