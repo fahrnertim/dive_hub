@@ -37,18 +37,16 @@ export function CopyField({ value, label }: { value: string; label: string }) {
 }
 
 /**
- * A button whose action is hard to undo (split off, disable, revoke, sign out everywhere): it asks
- * first, in a dialog that says what will happen (UI review B2). `onConfirm` runs the action; the
- * dialog closes when it succeeds and shows the error when it fails. Focus returns to the button, or
- * `onDone` moves it when the button is gone afterwards.
+ * Asks before an action that is hard to undo (split off, disable, revoke, sign out everywhere) and
+ * says what will happen (UI review B2). `onConfirm` runs the action; the dialog closes when it
+ * succeeds and shows the error when it fails. Opened by `ConfirmButton`, or by a menu item.
  */
-export function ConfirmButton({ children, title, body, confirmLabel, onConfirm, onDone, tone = 'danger', ...button }: Omit<ButtonProps, 'onPress' | 'children'> & {
-  children: ReactNode; title: ReactNode; body: ReactNode; confirmLabel: string;
-  onConfirm: () => Promise<unknown>; onDone?: () => void; tone?: 'danger' | 'primary';
+export function ConfirmDialog({ isOpen, onOpenChange, title, body, confirmLabel, onConfirm, onDone, tone = 'danger' }: {
+  isOpen: boolean; onOpenChange: (open: boolean) => void; title: ReactNode; body: ReactNode; confirmLabel: string;
+  onConfirm: () => Promise<unknown>; onDone?: (() => void) | undefined; tone?: 'danger' | 'primary' | undefined;
 }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
-  const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>();
   const confirm = async () => {
@@ -56,7 +54,7 @@ export function ConfirmButton({ children, title, body, confirmLabel, onConfirm, 
     setError(undefined);
     try {
       await onConfirm();
-      setOpen(false);
+      onOpenChange(false);
       onDone?.();
     } catch (e) {
       setError(e);
@@ -65,16 +63,30 @@ export function ConfirmButton({ children, title, body, confirmLabel, onConfirm, 
     }
   };
   return (
+    <Dialog title={title} isOpen={isOpen} onOpenChange={(open) => { setError(undefined); onOpenChange(open); }}>
+      <p>{body}</p>
+      {error !== undefined && <Notice tone="danger">{errorText(error)}</Notice>}
+      <div className="form-actions">
+        <Button variant={tone} isPending={pending} onPress={confirm}>{confirmLabel}</Button>
+        <Button onPress={() => onOpenChange(false)}>{t('common.cancel')}</Button>
+      </div>
+    </Dialog>
+  );
+}
+
+/** A button whose action is hard to undo: it opens a ConfirmDialog. Focus returns to the button, or `onDone` moves it. */
+export function ConfirmButton({ children, title, body, confirmLabel, onConfirm, onDone, tone, ...button }: Omit<ButtonProps, 'onPress' | 'children'> & {
+  children: ReactNode; title: ReactNode; body: ReactNode; confirmLabel: string;
+  onConfirm: () => Promise<unknown>; onDone?: () => void; tone?: 'danger' | 'primary';
+}) {
+  const [open, setOpen] = useState(false);
+  return (
     <>
-      <Button {...button} onPress={() => { setError(undefined); setOpen(true); }}>{children}</Button>
-      <Dialog title={title} isOpen={open} onOpenChange={setOpen}>
-        <p>{body}</p>
-        {error !== undefined && <Notice tone="danger">{errorText(error)}</Notice>}
-        <div className="form-actions">
-          <Button variant={tone} isPending={pending} onPress={confirm}>{confirmLabel}</Button>
-          <Button onPress={() => setOpen(false)}>{t('common.cancel')}</Button>
-        </div>
-      </Dialog>
+      <Button {...button} onPress={() => setOpen(true)}>{children}</Button>
+      <ConfirmDialog
+        isOpen={open} onOpenChange={setOpen} title={title} body={body} confirmLabel={confirmLabel}
+        onConfirm={onConfirm} onDone={onDone} tone={tone}
+      />
     </>
   );
 }

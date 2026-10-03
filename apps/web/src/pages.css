@@ -31,7 +31,8 @@
 .segment[data-selected] { background: var(--color-accent); color: var(--color-on-accent); }
 .segment[data-focus-visible] { outline: 2px solid var(--color-focus); outline-offset: -2px; }
 
-.profile { width: 100%; }
+/* Room for the chart and its legend before it's drawn, so the page doesn't jump (UI review C10). */
+.profile { width: 100%; min-height: 22.5rem; }
 .profile .u-legend { color: var(--color-text); font-size: var(--text-sm); }
 /* The legend names the lines; values appear only while the pointer is on the chart (UI review B6). */
 .profile:not(:hover) .u-legend .u-value,
@@ -81,3 +82,27 @@
 .page-drop p { font-size: var(--text-xl); font-weight: var(--weight-semibold); color: var(--color-text); }
 .device-owner { min-width: 10rem; }
 .recording-actions { margin-bottom: var(--space-1); }
+
+/* Recordings as tabs (UI review C3) */
+.tab-list { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); border-bottom: 1px solid var(--color-border); margin-bottom: var(--space-3); }
+.tab { padding: var(--space-2) 0; margin-bottom: -1px; border-bottom: 2px solid transparent; color: var(--color-text-muted);
+  cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-medium); outline: none; }
+.tab[data-hovered] { color: var(--color-text); }
+.tab[data-selected] { color: var(--color-text); border-bottom-color: var(--color-accent); }
+.tab[data-focus-visible] { outline: 2px solid var(--color-focus); outline-offset: 2px; border-radius: var(--radius-sm); }
+.tab-panel { outline: none; }
+.tab-panel[data-focus-visible] { outline: 2px solid var(--color-focus); outline-offset: 4px; border-radius: var(--radius-sm); }
+.recording-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); }
+.recording-bar .muted { margin: 0; }
+.title-diver { display: block; font-size: var(--text-sm); }
+
+/* First run (UI review C7) */
+.find-title { font-size: var(--text-md); margin: var(--space-4) 0 var(--space-2); }
+.find-list { margin: 0; padding-left: var(--space-5); font-size: var(--text-sm); }
+.find-list li + li { margin-top: var(--space-1); }
+
+/* Loading: the shapes of what comes, without motion (UI review C10). */
+.loading { display: grid; gap: var(--space-5); }
+.skeleton { background: var(--color-surface); }
+.skeleton-facts { min-height: 14rem; }
+.skeleton-chart { min-height: 28rem; }

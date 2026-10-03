@@ -28,7 +28,9 @@ export function TextField({ label, description, placeholder, ...props }: TextFie
     <AriaTextField {...props} className="field">
       <Label className="field-label">{label}</Label>
       <Input className="input" {...(placeholder !== undefined && { placeholder })} />
-      {description && <Text slot="description" className="field-description">{description}</Text>}
+      {/* A description that may appear while typing is passed as '' at first: React Aria links the
+          description element when the field mounts. */}
+      {description !== undefined && <Text slot="description" className="field-description">{description}</Text>}
       <FieldError className="field-error">{message}</FieldError>
     </AriaTextField>
   );

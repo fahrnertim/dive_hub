@@ -6848,6 +6848,7 @@
                         "type": "object",
                         "required": [
                           "type",
+                          "id",
                           "name"
                         ],
                         "properties": {
@@ -6857,6 +6858,10 @@
                               "import",
                               "system"
                             ]
+                          },
+                          "id": {
+                            "type": "string",
+                            "description": "User id, Import id, or the system actor"
                           },
                           "name": {
                             "anyOf": [

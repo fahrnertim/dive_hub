@@ -27,28 +27,33 @@ function Divers() {
   const errorText = useErrorText();
   const queryClient = useQueryClient();
   const divers = useQuery(diversQuery());
+  const sameName = useSameName();
   const list = useRef<HTMLUListElement>(null);
   const create = useMutation({
     mutationFn: async (name: string) => unwrap(await api.POST('/api/divers', { body: { name } })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.divers }),
   });
+  const [name, setName] = useState('');
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = event.currentTarget;
-    create.mutate(String(new FormData(form).get('name')).trim(), {
-      onSuccess: (created) => { form.reset(); announce(t('divers.added', { name: created.name })); },
+    create.mutate(name.trim(), {
+      onSuccess: (created) => { setName(''); announce(t('divers.added', { name: created.name })); },
     });
   };
 
   return (
     <Panel title={t('divers.logbooks')}>
       <Muted>{t('divers.intro')}</Muted>
+      {divers.isPending && <Muted>{t('common.loading')}</Muted>}
       {divers.error && <Notice tone="danger">{errorText(divers.error)}</Notice>}
       <ul className="diver-list" ref={list}>
         {divers.data?.map((d, index) => <DiverRow key={d.id} diver={d} list={list} index={index} count={divers.data.length} />)}
       </ul>
       <Form className="form-inline" onSubmit={submit}>
-        <TextField label={t('divers.add')} name="name" isRequired maxLength={100} autoComplete="off" />
+        <TextField
+          label={t('divers.add')} name="name" isRequired maxLength={100} autoComplete="off" value={name} onChange={setName}
+          description={sameName(divers.data, name) ?? ''}
+        />
         <Button type="submit" isPending={create.isPending}>{t('divers.create')}</Button>
       </Form>
       {create.error && <Notice tone="danger">{errorText(create.error)}</Notice>}
@@ -56,11 +61,24 @@ function Divers() {
   );
 }
 
+/** A warning when another Diver already has this name (still allowed; UI review C9). */
+function useSameName() {
+  const { t } = useTranslation();
+  return (divers: DiverView[] | undefined, name: string, except?: string) => {
+    const wanted = name.trim().toLocaleLowerCase();
+    const twin = wanted && divers?.find((d) => d.id !== except && d.name.toLocaleLowerCase() === wanted);
+    return twin ? t('divers.sameName', { name: twin.name }) : undefined;
+  };
+}
+
 function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: RefObject<HTMLUListElement | null>; index: number; count: number }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const queryClient = useQueryClient();
   const [renaming, setRenaming] = useState(false);
+  const [newName, setNewName] = useState(d.name);
+  const all = useQuery(diversQuery());
+  const sameName = useSameName();
   // When renaming ends (saved or cancelled), focus goes back to "Rename" (UI review B1).
   const renameButton = useRef<HTMLButtonElement>(null);
   const wasRenaming = useRef(false);
@@ -87,9 +105,12 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
       {renaming ? (
         <Form
           className="form-inline"
-          onSubmit={(e) => { e.preventDefault(); rename.mutate(String(new FormData(e.currentTarget).get('name')).trim()); }}
+          onSubmit={(e) => { e.preventDefault(); rename.mutate(newName.trim()); }}
         >
-          <TextField label={t('divers.newName')} name="name" defaultValue={d.name} isRequired maxLength={100} autoComplete="off" autoFocus />
+          <TextField
+            label={t('divers.newName')} name="name" value={newName} onChange={setNewName} isRequired maxLength={100} autoComplete="off" autoFocus
+            description={sameName(all.data, newName, d.id) ?? ''}
+          />
           <Button type="submit" variant="primary" isPending={rename.isPending}>{t('divers.save')}</Button>
           <Button onPress={() => setRenaming(false)}>{t('common.cancel')}</Button>
         </Form>
@@ -98,7 +119,7 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
           <span className="diver-name">{d.name}{d.isOwn && ` (${t('divers.own')})`}</span>
           <a href={`#/?diver=${d.id}`} className="muted">{t('divers.dives', { count: d.diveCount })}</a>
           <span className="actions">
-            <Button ref={renameButton} variant="quiet" aria-label={t('common.forItem', { action: t('divers.rename'), item: d.name })} onPress={() => setRenaming(true)}>
+            <Button ref={renameButton} variant="quiet" aria-label={t('common.forItem', { action: t('divers.rename'), item: d.name })} onPress={() => { setNewName(d.name); setRenaming(true); }}>
               {t('divers.rename')}
             </Button>
             {!d.isOwn && empty && (
@@ -128,7 +149,7 @@ function Devices() {
       {devices.error && <Notice tone="danger">{errorText(devices.error)}</Notice>}
       {devices.data?.length === 0 && <Muted>{t('divers.noDevices')}</Muted>}
       {devices.data && devices.data.length > 0 && divers.data && (
-        <Table
+        <Table cards
           label={t('divers.devices')}
           head={[t('divers.deviceName'), t('divers.serial'), { label: t('divers.recordings'), numeric: true }, t('divers.lastUsed'), t('divers.belongsTo')]}
         >

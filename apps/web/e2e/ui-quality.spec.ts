@@ -83,6 +83,8 @@ for (const v of variants) {
       await page.getByRole('button', { name: v.english ? 'Create invitation link' : 'Einladungslink erstellen' }).click();
       await expect(page.getByRole('button', { name: v.english ? 'Copy' : 'Kopieren' })).toBeVisible();
       await expectGoodPage(page, title('Admin'));
+      // On a phone the rows are cards: the actions stay in sight instead of scrolling away.
+      await expect(page.getByRole('button', { name: v.english ? /^Revoke:/ : /^Zurückziehen:/ }).first()).toBeInViewport();
     });
 
     test.describe('signed out', () => {
@@ -204,6 +206,49 @@ test.describe('behaviour', () => {
     await expect(imports.getByText('main-computer.fit').first()).toBeVisible();
     await expect(imports.getByText('already imported').first()).toBeVisible();
     await expect(page.locator('[data-announcer]')).toHaveText('main-computer.fit: already imported');
+  });
+
+  test('the chosen recording is in the address, so a reload keeps it', async ({ page, request }) => {
+    await resetDive(request);
+    await page.goto(`/#/dives/${diveId}`);
+    await page.getByRole('tab', { name: /\(999\)/ }).click();
+    await expect(page).toHaveURL(/\?recording=/);
+    await page.reload();
+    await expect(page.getByRole('tab', { name: /\(999\)/ })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('edits in a row are one history entry', async ({ page, request }) => {
+    await resetDive(request);
+    await page.goto(`/#/dives/${diveId}`);
+    for (const notes of ['First thought', 'Second thought']) {
+      await page.getByRole('button', { name: 'Edit dive' }).click();
+      await page.getByRole('textbox', { name: 'Notes' }).fill(notes);
+      await page.getByRole('button', { name: 'Save' }).click();
+      await expect(page.getByText(notes)).toBeVisible();
+    }
+    // One entry for both saves (and the test's own resets just before, by the same User).
+    const latest = page.locator('.history > li').first();
+    await expect(latest).toContainText(/\d+ edits/);
+    await expect(latest).toContainText('Notes changed');
+    await expect(page.locator('.history > li')).toHaveCount(3); // the latest three; the rest behind "Show the whole history"
+    await expect(page.getByRole('button', { name: 'Show the whole history' })).toBeVisible();
+    await resetDive(request);
+  });
+
+  test('the account is a labelled menu with "My account" and "Sign out"', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: /^Erika\s*, account$/ }).click();
+    await expect(page.getByRole('menuitem', { name: 'Sign out' })).toBeVisible();
+    await page.getByRole('menuitem', { name: 'My account' }).click();
+    await expect(page.getByRole('heading', { name: 'My account', level: 1 })).toBeVisible();
+  });
+
+  test('a second Diver with the same name is allowed, with a warning', async ({ page }) => {
+    await page.goto('/#/divers');
+    const field = page.getByRole('textbox', { name: 'Add a Diver' });
+    await field.fill('erika');
+    await expect(field).toHaveAccessibleDescription(/You already have a Diver called Erika/);
+    await field.fill('');
   });
 
   test('the only admin is not offered to remove their own admin role', async ({ page }) => {

@@ -19,6 +19,7 @@ test('shows the dive with the recording\'s values, the device data and how it ca
   await expect(facts).toContainText('Salt water');
   await expect(page.getByText('edited')).toHaveCount(0);
   await expect(page.getByText('Bühlmann ZHL-16C, GF 40/85')).toBeVisible();
+  await page.getByRole('button', { name: 'Show the whole history' }).click();
   await expect(page.getByText('Created from an import')).toBeVisible();
   // The depth profile was drawn (its canvas exists and the page didn't fail).
   await expect(page.getByRole('img', { name: 'Depth profile' }).locator('canvas').first()).toBeVisible();
@@ -54,15 +55,17 @@ test('goes back to the recording\'s value', async ({ page }) => {
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.locator('dl.facts').first()).toContainText('18.5 m');
   await expect(page.locator('dl.facts').first().getByText('edited')).toHaveCount(0);
-  await expect(page.locator('.history > li').first()).toContainText('(back to the recording)');
+  // Set by hand and back within minutes is one history entry with no net change to max depth.
+  await expect(page.locator('.history > li').first()).not.toContainText('Max depth');
 });
 
 test('switches the Primary recording; values without Override follow it', async ({ page }) => {
   await page.goto(`/#/dives/${diveId}`);
-  await page.getByRole('radio', { name: /\(999\)/ }).click();
-  await page.getByRole('button', { name: 'Make this the primary recording' }).click();
+  await page.getByRole('tab', { name: /\(999\)/ }).click();
+  await page.getByRole('button', { name: /^Recording actions/ }).click();
+  await page.getByRole('menuitem', { name: 'Make this the primary recording' }).click();
   await expect(page.locator('dl.facts').first()).toContainText('29 min');
-  await expect(page.getByRole('radio', { name: 'Garmin Descent Mk3 (999) (primary)' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Garmin Descent Mk3 (999) (primary)' })).toBeVisible();
   await expect(page.locator('.history > li').first()).toContainText('Primary recording changed');
 });
 

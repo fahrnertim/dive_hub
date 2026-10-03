@@ -81,7 +81,7 @@ function Invitations() {
   return (
     <Panel title={t('admin.invitations')}>
       <div ref={table}>
-      <Table label={t('admin.invitations')} head={[t('admin.email'), t('admin.role'), t('admin.status'), t('admin.expires'), { label: t('common.actions'), hidden: true }]}>
+      <Table cards label={t('admin.invitations')} head={[t('admin.email'), t('admin.role'), t('admin.status'), t('admin.expires'), { label: t('common.actions'), hidden: true }]}>
         {invitations.data.map((i) => (
           <tr key={i.id}>
             <td>{i.email}</td>
@@ -124,7 +124,7 @@ function Users() {
       <div ref={panel}>
       {users.error && <Notice tone="danger">{errorText(users.error)}</Notice>}
       {users.data && (
-        <Table label={t('admin.users')} head={[t('admin.name'), t('admin.email'), t('admin.role'), t('admin.since'), t('admin.actions')]}>
+        <Table cards label={t('admin.users')} head={[t('admin.name'), t('admin.email'), t('admin.role'), t('admin.since'), t('admin.actions')]}>
           {users.data.map((u) => <UserRow key={u.id} user={u} isMe={u.id === me.data?.user.id} isLastAdmin={u.role === 'admin' && admins <= 1} onRemoved={onRemoved} />)}
         </Table>
       )}

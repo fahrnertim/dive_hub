@@ -38,18 +38,19 @@ test('a recording that doesn\'t clearly fit is put aside, brought back and added
   await expect(page.getByRole('heading', { name: 'Needs your decision' })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Logbook', level: 1 })).toBeFocused(); // nothing left to decide
   await page.getByRole('link', { name: 'Jan 15, 2026, 11:00 AM (UTC+2)' }).click();
-  await expect(page.getByRole('radio', { name: /\(777\)/ })).toBeVisible();
+  await expect(page.getByRole('tab', { name: /\(777\)/ })).toBeVisible();
   await expect(page.locator('.history > li').first()).toContainText('Recording added');
 });
 
 test('a recording that belongs elsewhere is split off into its own dive', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Jan 15, 2026, 11:00 AM (UTC+2)' }).click();
-  await page.getByRole('radio', { name: /\(777\)/ }).click();
-  await page.getByRole('button', { name: 'Split off into its own dive' }).click();
+  await page.getByRole('tab', { name: /\(777\)/ }).click();
+  await page.getByRole('button', { name: /^Recording actions/ }).click();
+  await page.getByRole('menuitem', { name: 'Split off into its own dive…' }).click();
   // It's hard to undo, so it asks first.
   await page.getByRole('dialog').getByRole('button', { name: 'Split off', exact: true }).click();
-  await expect(page.getByRole('radio', { name: /\(777\)/ })).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: /\(777\)/ })).toHaveCount(0);
   await expect(page.locator('.history > li').first()).toContainText('Recording split off');
   await page.getByRole('link', { name: 'Logbook' }).first().click();
   await expect(page.getByRole('link', { name: 'Jan 15, 2026, 11:01 AM (UTC+2)' })).toBeVisible();
@@ -70,7 +71,8 @@ test('a second Diver gets a dive and a device; the logbook can show one Diver', 
   // Move the split-off dive to Mia.
   await page.goto('/');
   await page.getByRole('link', { name: 'Jan 15, 2026, 11:01 AM (UTC+2)' }).click();
-  await page.getByRole('button', { name: 'Move to another Diver…' }).click();
+  await page.getByRole('button', { name: /^More/ }).click();
+  await page.getByRole('menuitem', { name: 'Move to another Diver…' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Move', exact: true }).click();
   await expect(page.getByText('Diver: Mia')).toBeVisible();
   await expect(page.locator('.history > li').first()).toContainText('Moved to another Diver');

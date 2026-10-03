@@ -87,9 +87,10 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 | `Form` | React Aria's form with native validation on submit. |
 | `Panel` | A titled area of a page; `narrow` for single forms. |
 | `Notice` | What just happened: `info`, `success`, `danger` (announced at once). |
-| `Table` | Data tables that scroll sideways on phones; numeric columns are right-aligned, header included. |
+| `Table` | Data tables that scroll sideways on phones; numeric columns are right-aligned, header included. `cards`: on a phone each row becomes a card (tables with an actions column). |
 | `Dialog` | Modal with focus kept inside, for confirmations that need input (deleting a User). |
-| `ConfirmButton` | A button whose action is hard to undo: it asks in a `Dialog` that says what will happen. |
+| `ConfirmButton`, `ConfirmDialog` | An action that is hard to undo asks first, in a dialog that says what will happen. The dialog alone serves menu items. |
+| `ActionMenu` | Secondary actions behind one button ("Recording actions", "More", the account menu). The panel shows only its main action. |
 | `CopyField` | A value shown once with a copy button (invitation and reset links). |
 | `NumberField` | Numbers in the UI language's format ("18,5" in German), with a unit after the input. |
 | `Select` | One choice from a short list (e.g. water type). |
@@ -174,6 +175,10 @@ German on a dark phone. **A new page gets a test there.**
   through one polite live region that is always in the page; errors are `role=alert`.
 - **Unsaved edits aren't lost silently.** A form with changes calls `useLeaveGuard`
   (`lib/leave-guard.ts`); leaving the page or cancelling then asks first.
+- **One main action per panel; the rest in a menu** (`ActionMenu`). Tables whose last column
+  holds actions use `cards`, so the actions stay in sight on a phone.
+- **What the User picks is in the address**: the logbook's Diver filter, the dive page's Recording
+  tab (`?recording=`).
 - **Pictures have text.** The depth profile has a text summary (`aria-describedby`) and its samples
   as a table under "Profile as a table".
 

@@ -153,7 +153,24 @@
 .status-failed { color: var(--color-danger); }
 .status-pending, .status-processing { color: var(--color-accent); }
 
+/* ---------- Menus ---------- */
+.menu { outline: none; padding: var(--space-1) 0; min-width: 12rem; }
+.menu-item { display: block; padding: var(--space-2) var(--space-3); cursor: pointer; outline: none; color: var(--color-text); text-decoration: none; }
+.menu-item[data-focused] { background: var(--color-accent-soft); }
+.menu-chevron { color: var(--color-text-muted); font-size: 0.8em; }
+.user-menu-button { color: var(--color-text); }
+
 @media (max-width: 40rem) {
+  /* Tables with cards: one card per row, the column name next to each value (UI review C5). */
+  .table-cards thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+  .table-cards, .table-cards tbody, .table-cards tr, .table-cards td { display: block; }
+  .table-cards tr { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2) var(--space-3); margin-bottom: var(--space-3); }
+  .table-cards td { border: none; padding: var(--space-1) 0; display: grid; grid-template-columns: 8rem minmax(0, 1fr); gap: var(--space-3); align-items: baseline; }
+  .table-cards td.num { text-align: left; }
+  .table-cards td::before { content: attr(data-label); color: var(--color-text-muted); font-weight: var(--weight-medium); }
+  .table-cards td[data-label=''] { display: block; }
+  .table-cards td[data-label='']::before { content: none; }
+
   /* Phone header: brand and user menu on the first row, the navigation on its own second row. */
   .app-header-inner { gap: var(--space-2) var(--space-3); }
   .app-nav { order: 3; flex-basis: 100%; overflow-x: auto; }

@@ -105,6 +105,7 @@ const RevisionView = Type.Object({
   at: DateTime,
   actor: Type.Object({
     type: Type.Enum(['user', 'import', 'system']),
+    id: Type.String({ description: 'User id, Import id, or the system actor' }),
     name: Nullable(Type.String({ description: 'User name or uploaded file name' })),
   }),
   cause: Type.Enum([...REVISION_CAUSES]),
@@ -247,7 +248,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       .orderBy(desc(revision.at), desc(revision.id)).limit(200);
     return rows.map(({ r, userName, uploadName }) => ({
       id: r.id, at: r.at.toISOString(),
-      actor: { type: r.actorType, name: r.actorType === 'user' ? userName : r.actorType === 'import' ? uploadName : null },
+      actor: { type: r.actorType, id: r.actorId, name: r.actorType === 'user' ? userName : r.actorType === 'import' ? uploadName : null },
       cause: r.cause as (typeof REVISION_CAUSES)[number],
       changes: r.changes,
     }));

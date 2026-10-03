@@ -56,6 +56,7 @@ export function SignIn() {
 
   return (
     <Panel title={t('signIn.title')} narrow level={1}>
+      <p className="muted">{t('signIn.about')}</p>
       <Form className="form" onSubmit={(e) => signIn.mutate(formValues(e))}>
         <TextField label={t('form.email')} name="email" type="email" autoComplete="username" spellCheck="false" isRequired />
         <TextField label={t('form.password')} name="password" type="password" autoComplete="current-password" isRequired />
@@ -121,6 +122,7 @@ export function AcceptInvitation({ token }: { token: string }) {
   }
   return (
     <Panel title={t('invitation.title')} narrow level={1}>
+      <p className="muted">{t('signIn.about')}</p>
       <p><Trans i18nKey="invitation.intro" values={{ email: invitation.data.email }} components={{ strong: <strong /> }} /></p>
       <Form className="form" onSubmit={(e) => accept.mutate(formValues(e))}>
         {/* Lets password managers save the e-mail with the new password. */}
@@ -173,25 +175,11 @@ export function ResetPassword({ token }: { token: string }) {
   );
 }
 
-export function SignOutButton() {
-  const { t } = useTranslation();
+/** Signs out and shows the sign-in page. */
+export function useSignOut() {
   const userChanged = useUserChanged();
-  const [busy, setBusy] = useState(false);
-  return (
-    <Button
-      variant="quiet"
-      isPending={busy}
-      onPress={async () => {
-        setBusy(true);
-        try {
-          await authClient.signOut();
-          await userChanged(); // `me` refetches as nobody, which shows the sign-in page
-        } finally {
-          setBusy(false);
-        }
-      }}
-    >
-      {t('common.signOut')}
-    </Button>
-  );
+  return async () => {
+    await authClient.signOut();
+    await userChanged(); // `me` refetches as nobody, which shows the sign-in page
+  };
 }

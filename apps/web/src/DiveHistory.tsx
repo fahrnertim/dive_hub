@@ -1,33 +1,46 @@
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { diversQuery, revisionsQuery, type DiveView, type OverridableField, type RevisionView } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { deviceName } from './lib/devices.ts';
 import { useFormatValue } from './lib/dive-values.ts';
-import { Muted, Notice, Panel } from './ui/index.ts';
+import { mergeEdits } from './lib/history.ts';
+import { Button, Muted, Notice, Panel } from './ui/index.ts';
 
 const OVERRIDABLE: OverridableField[] = ['number', 'startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM', 'waterTemperatureC', 'waterType'];
 const isOverridable = (key: string): key is OverridableField => (OVERRIDABLE as string[]).includes(key);
 
-/** Who or what changed the Dive, when, and from what to what (Revisions, newest first). */
+/** Entries shown before "Show the whole history". */
+const LATEST = 3;
+
+/**
+ * Who or what changed the Dive, when, and from what to what (Revisions, newest first). Edits one
+ * person makes in a row are one entry, and only the latest few show at first (UI review C2).
+ */
 export function DiveHistory({ dive }: { dive: DiveView }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const revisions = useQuery(revisionsQuery(dive.id));
+  const [showAll, setShowAll] = useState(false);
+  const entries = revisions.data ? mergeEdits(revisions.data) : [];
   return (
     <Panel title={t('history.title')}>
       {revisions.error && <Notice tone="danger">{errorText(revisions.error)}</Notice>}
       {revisions.data?.length === 0 && <Muted>{t('history.empty')}</Muted>}
-      {revisions.data && revisions.data.length > 0 && (
+      {entries.length > 0 && (
         <ol className="history">
-          {revisions.data.map((r) => <Entry key={r.id} revision={r} dive={dive} />)}
+          {(showAll ? entries : entries.slice(0, LATEST)).map((r) => <Entry key={r.id} revision={r} count={r.count} dive={dive} />)}
         </ol>
+      )}
+      {entries.length > LATEST && (
+        <Button variant="quiet" onPress={() => setShowAll(!showAll)}>{showAll ? t('history.showFewer') : t('history.showAll')}</Button>
       )}
     </Panel>
   );
 }
 
-function Entry({ revision: r, dive }: { revision: RevisionView; dive: DiveView }) {
+function Entry({ revision: r, count, dive }: { revision: RevisionView; count: number; dive: DiveView }) {
   const { t } = useTranslation();
   const display = useDisplay();
   const format = useFormatValue();
@@ -60,9 +73,10 @@ function Entry({ revision: r, dive }: { revision: RevisionView; dive: DiveView }
     <li>
       <div className="history-head">
         <strong>{t(`history.cause.${r.cause}`)}</strong>
-        <span className="muted">{display.dateTime(r.at)} · {who}</span>
+        <span className="muted">{display.dateTime(r.at)} · {who}{count > 1 && ` · ${t('history.edits', { count })}`}</span>
       </div>
       {lines.length > 0 && <ul className="history-changes">{lines.map((line, i) => <li key={i}>{line}</li>)}</ul>}
+      {lines.length === 0 && count > 1 && <ul className="history-changes"><li>{t('history.noNetChange')}</li></ul>}
     </li>
   );
 }

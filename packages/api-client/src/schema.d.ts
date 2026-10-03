@@ -2477,6 +2477,8 @@ export interface paths {
                             actor: {
                                 /** @enum {unknown} */
                                 type: "user" | "import" | "system";
+                                /** @description User id, Import id, or the system actor */
+                                id: string;
                                 name: null | string;
                             };
                             /** @enum {unknown} */

@@ -143,6 +143,12 @@ export function ImportPanel() {
         <ImportFilesButton label={t('import.choose')} />
         <Muted>{t('import.hint')}</Muted>
       </div>
+      {/* First run: how to get the files at all (UI review C7). */}
+      <h3 className="find-title">{t('import.findTitle')}</h3>
+      <ul className="find-list">
+        <li>{t('import.findConnect')}</li>
+        <li>{t('import.findWatch')}</li>
+      </ul>
       <ImportNotices />
       <ImportList imports={imports.data ?? []} />
     </Panel>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { announce } from '../lib/announce.ts';
 
 /**
@@ -48,17 +48,38 @@ type Column = string | { label: string; numeric: true } | { label: string; hidde
 const header = (c: Column, i: number) => {
   if (typeof c === 'string') return <th key={i} scope="col">{c}</th>;
   if ('numeric' in c) return <th key={i} scope="col" className="num">{c.label}</th>;
-  return <th key={i} scope="col"><span className="visually-hidden">{c.label}</span></th>;
+  return <th key={i} scope="col" data-hidden="true"><span className="visually-hidden">{c.label}</span></th>;
 };
 
 /**
  * A data table that scrolls sideways on narrow screens instead of breaking the layout. Numeric
  * columns ({ label, numeric: true }) are right-aligned, header included; give their cells className="num".
+ * `cards`: on a phone each row becomes a card with the column names next to the values, for tables
+ * whose last column holds actions that would otherwise scroll out of sight (UI review C5).
  */
-export function Table({ label, head, children }: { label: string; head: Column[]; children: ReactNode }) {
+export function Table({ label, head, children, cards }: { label: string; head: Column[]; children: ReactNode; cards?: boolean }) {
+  const table = useRef<HTMLTableElement>(null);
+  // Cards show each cell's column name (data-label, via CSS). Explicit roles keep the table a
+  // table for screen readers when CSS lays it out as blocks.
+  useLayoutEffect(() => {
+    const el = table.current;
+    if (!cards || !el?.tHead?.rows[0]) return;
+    const headers = [...el.tHead.rows[0].cells];
+    el.setAttribute('role', 'table');
+    for (const section of [el.tHead, ...el.tBodies]) section.setAttribute('role', 'rowgroup');
+    for (const row of el.rows) row.setAttribute('role', 'row');
+    for (const th of headers) th.setAttribute('role', 'columnheader');
+    for (const row of [...el.tBodies].flatMap((b) => [...b.rows])) {
+      [...row.cells].forEach((cell, i) => {
+        cell.setAttribute('role', 'cell');
+        const th = headers[i];
+        cell.dataset.label = cell.colSpan === 1 && th && !th.dataset.hidden ? th.textContent ?? '' : '';
+      });
+    }
+  });
   return (
     <div className="table-scroll" role="region" aria-label={label} tabIndex={0}>
-      <table className="table">
+      <table className={cards ? 'table table-cards' : 'table'} ref={table}>
         <thead>
           <tr>{head.map(header)}</tr>
         </thead>

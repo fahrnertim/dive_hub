@@ -159,7 +159,7 @@ function Sessions() {
       {error && <Notice tone="danger">{errorText(error)}</Notice>}
       {sessions.data && (
         <div ref={list}>
-        <Table
+        <Table cards
           label={t('account.sessions')}
           head={[t('account.device'), t('account.ipAddress'), t('account.signedIn'), t('account.lastActive'), { label: t('common.actions'), hidden: true }]}
         >

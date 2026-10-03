@@ -17,7 +17,8 @@
     "logbook": "Logbuch",
     "admin": "Verwaltung",
     "account": "Mein Konto",
-    "divers": "Taucher"
+    "divers": "Taucher",
+    "accountMenu": ", Konto"
   },
   "form": {
     "required": "Bitte fülle dieses Feld aus.",
@@ -37,7 +38,8 @@
     "noAccount": "Noch kein Konto? Bitte die Verwaltung dieses Dive Hub um eine Einladung.",
     "wrongCredentials": "E-Mail oder Passwort ist falsch.",
     "tooManyAttempts": "Zu viele Versuche. Versuch es in ein paar Minuten noch einmal.",
-    "disabled": "Dieses Konto ist deaktiviert. Wende dich an die Verwaltung."
+    "disabled": "Dieses Konto ist deaktiviert. Wende dich an die Verwaltung.",
+    "about": "Dive Hub hält die Tauchgänge eines Vereins, einer Familie oder einer Tauchbasis an einem Ort zusammen."
   },
   "setup": {
     "title": "Dive Hub einrichten",
@@ -188,11 +190,14 @@
     "dropNow": "Zum Importieren ablegen",
     "recent": "Importe",
     "showAll": "Alle Importe zeigen",
-    "showFewer": "Weniger zeigen"
+    "showFewer": "Weniger zeigen",
+    "findTitle": "Wo du deine Tauchgänge findest",
+    "findConnect": "Garmin-Connect-Website: Tauchgang öffnen, im Zahnrad-Menü „Export Original“ wählen und das ZIP so importieren, wie es ist.",
+    "findWatch": "Uhr: per USB anschließen und die Dateien aus dem Ordner GARMIN/Activity kopieren."
   },
   "logbook": {
     "title": "Logbuch",
-    "empty": "Noch keine Tauchgänge. Importiere oben eine FIT-Datei.",
+    "empty": "Noch keine Tauchgänge. Importiere oben deine Dateien, um das Logbuch zu füllen.",
     "number": "Nr.",
     "date": "Datum",
     "maxDepth": "Maximaltiefe",
@@ -249,7 +254,6 @@
     "moveIntro": "Der Tauchgang mit seinen Aufzeichnungen und Notizen wandert ins Logbuch des anderen Tauchers.",
     "move": "Verschieben",
     "splitOff": "Als eigenen Tauchgang abtrennen",
-    "splitHint": "Für eine Aufzeichnung, die zu einem anderen Tauchgang gehört. Sie wird ein eigener Tauchgang.",
     "notFoundTitle": "Tauchgang nicht gefunden",
     "splitOffTitle": "Diese Aufzeichnung abtrennen?",
     "splitOffBody": "Sie wird ein eigener Tauchgang mit eigenem Verlauf. Dieser Tauchgang behält seine anderen Aufzeichnungen.",
@@ -257,7 +261,11 @@
     "unsavedQuestion": "Ohne Speichern verlassen? Deine Änderungen an diesem Tauchgang gehen verloren.",
     "profileSummary": "Tiefster Punkt {{depth}} nach {{time}}; insgesamt {{duration}}.",
     "profileTemperature": "Wasser {{range}}.",
-    "profileTable": "Profil als Tabelle"
+    "profileTable": "Profil als Tabelle",
+    "recordingActions": "Aktionen zur Aufzeichnung",
+    "splitOffMenu": "Als eigenen Tauchgang abtrennen …",
+    "primaryChanged": "Das ist jetzt die primäre Aufzeichnung.",
+    "moreActions": "Mehr"
   },
   "errors": {
     "unknown": "Etwas ist schiefgegangen. Versuch es noch einmal.",
@@ -358,7 +366,12 @@
     "reset": "zurück zur Aufzeichnung",
     "recordingAdded": "Aufzeichnung hinzugefügt",
     "fileReplaced": "Aufgezeichnete Daten durch eine neuere Datei ersetzt",
-    "recordingRemoved": "Aufzeichnung als eigener Tauchgang abgetrennt"
+    "recordingRemoved": "Aufzeichnung als eigener Tauchgang abgetrennt",
+    "edits_one": "{{count}} Änderung",
+    "edits_other": "{{count}} Änderungen",
+    "showAll": "Ganzen Verlauf zeigen",
+    "showFewer": "Weniger zeigen",
+    "noNetChange": "Geändert und wieder zurückgesetzt"
   },
   "decisions": {
     "title": "Braucht deine Entscheidung",
@@ -404,6 +417,7 @@
     "allDivers": "Alle Taucher",
     "logbooks": "Logbücher, die du führst",
     "belongsToDevice": "{{device}} gehört zu",
-    "added": "{{name}} hinzugefügt."
+    "added": "{{name}} hinzugefügt.",
+    "sameName": "Du hast schon einen Taucher namens {{name}}. Das geht, aber die beiden sind dann schwer auseinanderzuhalten."
   }
 }

@@ -1,20 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ToggleButton, ToggleButtonGroup } from 'react-aria-components';
+import { Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
 import { api, ApiError, diveQuery, diversQuery, keys, unwrap, type DiveView, type OverridableField, type RecordingSummary } from './api.ts';
 import { DepthProfile } from './DepthProfile.tsx';
 import { DiveEditForm } from './DiveEditForm.tsx';
 import { DiveHistory } from './DiveHistory.tsx';
+import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { deviceName } from './lib/devices.ts';
 import { useFormatValue } from './lib/dive-values.ts';
 import { focusHeading } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, ConfirmButton, Dialog, ErrorBoundary, Muted, Notice, Panel, Select } from './ui/index.ts';
+import { ActionMenu, Button, ConfirmDialog, Dialog, ErrorBoundary, Muted, Notice, Panel, Select } from './ui/index.ts';
 
 /** One Dive (ADR 0015): its values with Overrides marked, notes, Recordings, and its history. */
-export function DiveDetail({ id }: { id: string }) {
+export function DiveDetail({ id, recordingId }: { id: string; recordingId?: string | undefined }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const display = useDisplay();
@@ -35,7 +36,7 @@ export function DiveDetail({ id }: { id: string }) {
     : v.number !== null ? t('dive.title', { number: v.number }) : t('dive.titleNoNumber');
   usePageTitle(title);
 
-  if (dive.isPending) return <Muted>{t('common.loading')}</Muted>;
+  if (dive.isPending) return <DiveLoading />;
   if (dive.error) {
     return (
       <>
@@ -46,31 +47,56 @@ export function DiveDetail({ id }: { id: string }) {
     );
   }
   const d = dive.data;
+  const several = (divers.data?.length ?? 0) > 1;
+  const diverName = divers.data?.find((v) => v.id === d.diverId)?.name;
 
   return (
     <>
       <p><a href="#/">{t('dive.back')}</a></p>
       <Panel
         level={1}
-        title={<>{title}<span className="title-meta">{display.diveTime(d.values.startsAt.at, d.values.startsAt.utcOffsetSeconds)}<EditedMark dive={d} field="startsAt" /></span></>}
+        title={(
+          <>
+            {title}
+            <span className="title-meta">
+              {display.diveTime(d.values.startsAt.at, d.values.startsAt.utcOffsetSeconds)}<EditedMark dive={d} field="startsAt" />
+              {/* The Diver right under the date, before the actions wrap in on a phone (UI review C4). */}
+              {several && diverName && <span className="title-diver">{t('dive.diver')}: {diverName}</span>}
+            </span>
+          </>
+        )}
         actions={!editing && (
           <div className="form-actions">
             <Button ref={editButton} onPress={() => setEditing(true)}>{t('dive.edit')}</Button>
-            {(divers.data?.length ?? 0) > 1 && <Button variant="quiet" onPress={() => setMoving(true)}>{t('dive.moveTo')}</Button>}
+            {several && (
+              <ActionMenu
+                label={t('dive.moreActions')} aria-label={t('common.forItem', { action: t('dive.moreActions'), item: title ?? '' })}
+                actions={[{ id: 'move', label: t('dive.moveTo'), onAction: () => setMoving(true) }]}
+              />
+            )}
           </div>
         )}
       >
-        {(divers.data?.length ?? 0) > 1 && (
-          <p className="muted">{t('dive.diver')}: {divers.data?.find((v) => v.id === d.diverId)?.name}</p>
-        )}
         {editing
           ? <DiveEditForm key={d.version} dive={d} onDone={() => setEditing(false)} />
           : <DiveFacts dive={d} />}
       </Panel>
-      <Recordings dive={d} />
+      <Recordings dive={d} initial={recordingId} />
       <DiveHistory dive={d} />
       {moving && <MoveDialog dive={d} onClose={() => setMoving(false)} />}
     </>
+  );
+}
+
+/** Space for the dive while it loads, so the page doesn't jump when it arrives (UI review C10). */
+function DiveLoading() {
+  const { t } = useTranslation();
+  return (
+    <div className="loading" aria-busy="true">
+      <Muted>{t('common.loading')}</Muted>
+      <div className="panel skeleton skeleton-facts" />
+      <div className="panel skeleton skeleton-chart" />
+    </div>
   );
 }
 
@@ -154,20 +180,28 @@ function DiveFacts({ dive: d }: { dive: DiveView }) {
 const gasName = (g: NonNullable<RecordingSummary['gases']>[number], air: string) =>
   g.he > 0 ? `${g.o2}/${g.he}` : g.o2 === 21 ? air : `EAN${g.o2}`;
 
-/** The Recordings of the Dive: which one is primary, the device's own data and the profile. */
-function Recordings({ dive: d }: { dive: DiveView }) {
+/**
+ * The Recordings of the Dive as tabs: which one is primary, the device's own data and the profile.
+ * The tab is in the address (?recording=…), and the actions on a Recording are in a menu (UI review C3).
+ */
+function Recordings({ dive: d, initial }: { dive: DiveView; initial: string | undefined }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
-  const display = useDisplay();
   const queryClient = useQueryClient();
-  const [selected, setSelected] = useState<string>();
+  const [selected, setSelected] = useState(initial);
+  const [splitting, setSplitting] = useState(false);
   const content = useRef<HTMLDivElement>(null);
   const recording = d.recordings.find((r) => r.id === selected) ?? d.recordings.find((r) => r.isPrimary) ?? d.recordings[0];
+  const select = (id: string) => {
+    setSelected(id);
+    history.replaceState(null, '', `#/dives/${d.id}?recording=${id}`);
+  };
   const splitOff = useMutation({
     mutationFn: async (recordingId: string) =>
       unwrap(await api.POST('/api/recordings/{id}/detach', { params: { path: { id: recordingId } }, body: { version: d.version } })),
     onSuccess: async () => {
       setSelected(undefined);
+      history.replaceState(null, '', `#/dives/${d.id}`);
       await queryClient.invalidateQueries({ queryKey: keys.dives });
     },
   });
@@ -177,50 +211,64 @@ function Recordings({ dive: d }: { dive: DiveView }) {
     onSuccess: (updated) => {
       queryClient.setQueryData(keys.dive(d.id), updated);
       void queryClient.invalidateQueries({ queryKey: keys.dives });
+      announce(t('dive.primaryChanged'));
     },
   });
   if (!recording) return null;
+  const name = (r: DiveView['recordings'][number]) => (r.device
+    ? `${deviceName(r.device.manufacturer, r.device.product)} (${r.device.serialNumber})`
+    : t('dive.recordingN', { n: d.recordings.indexOf(r) + 1 }));
+
+  if (d.recordings.length === 1) {
+    return <Panel title={t('dive.recording')}><RecordingDetails recording={recording} /></Panel>;
+  }
+  return (
+    <Panel title={t('dive.recordings')}>
+      <div ref={content}>
+        <Tabs selectedKey={recording.id} onSelectionChange={(key) => select(String(key))}>
+          <TabList aria-label={t('dive.recordings')} className="tab-list">
+            {d.recordings.map((r) => (
+              <Tab key={r.id} id={r.id} className="tab">{name(r)}{r.isPrimary && ` (${t('dive.primary')})`}</Tab>
+            ))}
+          </TabList>
+          {d.recordings.map((r) => (
+            <TabPanel key={r.id} id={r.id} className="tab-panel">
+              <div className="recording-bar">
+                <Muted>{t('dive.primaryHint')}</Muted>
+                <ActionMenu
+                  label={t('dive.recordingActions')}
+                  aria-label={t('common.forItem', { action: t('dive.recordingActions'), item: name(r) })}
+                  variant="secondary"
+                  actions={[
+                    ...(r.isPrimary ? [] : [{ id: 'primary', label: t('dive.makePrimary'), onAction: () => makePrimary.mutate(r.id) }]),
+                    { id: 'split', label: t('dive.splitOffMenu'), onAction: () => setSplitting(true) },
+                  ]}
+                />
+              </div>
+              {makePrimary.error && <Notice tone="danger">{errorText(makePrimary.error)}</Notice>}
+              <RecordingDetails recording={r} />
+            </TabPanel>
+          ))}
+        </Tabs>
+      </div>
+      <ConfirmDialog
+        isOpen={splitting} onOpenChange={setSplitting}
+        title={t('dive.splitOffTitle')} body={t('dive.splitOffBody')} confirmLabel={t('dive.splitOffConfirm')}
+        onConfirm={() => splitOff.mutateAsync(recording.id)}
+        onDone={() => requestAnimationFrame(() => focusHeading(content.current))}
+      />
+    </Panel>
+  );
+}
+
+/** What one Recording's device says: dive mode, deco model, gases, temperatures, and the profile. */
+function RecordingDetails({ recording }: { recording: DiveView['recordings'][number] }) {
+  const { t } = useTranslation();
+  const display = useDisplay();
   const s = recording.summary;
   const gases = s.gases ?? [];
-
   return (
-    <Panel title={d.recordings.length > 1 ? t('dive.recordings') : t('dive.recording')}>
-      <div ref={content}>
-      {d.recordings.length > 1 && (
-        <>
-          <ToggleButtonGroup
-            className="segmented"
-            aria-label={t('dive.recordings')}
-            selectionMode="single"
-            disallowEmptySelection
-            selectedKeys={[recording.id]}
-            onSelectionChange={(sel) => setSelected([...sel][0] as string)}
-          >
-            {d.recordings.map((r, i) => (
-              <ToggleButton key={r.id} id={r.id} className="segment">
-                {r.device ? `${deviceName(r.device.manufacturer, r.device.product)} (${r.device.serialNumber})` : t('dive.recordingN', { n: i + 1 })}
-                {r.isPrimary && ` (${t('dive.primary')})`}
-              </ToggleButton>
-            ))}
-          </ToggleButtonGroup>
-          <Muted>{t('dive.primaryHint')}</Muted>
-          <div className="form-actions recording-actions">
-            {!recording.isPrimary && (
-              <Button isPending={makePrimary.isPending} isDisabled={splitOff.isPending} onPress={() => makePrimary.mutate(recording.id)}>{t('dive.makePrimary')}</Button>
-            )}
-            <ConfirmButton
-              variant="quiet" isDisabled={makePrimary.isPending}
-              title={t('dive.splitOffTitle')} body={t('dive.splitOffBody')} confirmLabel={t('dive.splitOffConfirm')}
-              onConfirm={() => splitOff.mutateAsync(recording.id)}
-              onDone={() => requestAnimationFrame(() => focusHeading(content.current))}
-            >
-              {t('dive.splitOff')}
-            </ConfirmButton>
-          </div>
-          <Muted>{t('dive.splitHint')}</Muted>
-          {makePrimary.error && <Notice tone="danger">{errorText(makePrimary.error)}</Notice>}
-        </>
-      )}
+    <>
       <dl className="facts facts-small">
         {s.diveMode && <Fact label={t('dive.diveMode')}>{t(`vocabulary.diveMode.${s.diveMode}`)}</Fact>}
         {s.decoModel && (
@@ -250,7 +298,6 @@ function Recordings({ dive: d }: { dive: DiveView }) {
       <ErrorBoundary key={recording.id} fallback={<Notice tone="danger">{t('dive.profileFailed')}</Notice>}>
         <DepthProfile recordingId={recording.id} />
       </ErrorBoundary>
-      </div>
-    </Panel>
+    </>
   );
 }

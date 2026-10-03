@@ -17,7 +17,8 @@
     "logbook": "Logbook",
     "admin": "Admin",
     "account": "My account",
-    "divers": "Divers"
+    "divers": "Divers",
+    "accountMenu": ", account"
   },
   "form": {
     "required": "Fill in this field.",
@@ -37,7 +38,8 @@
     "noAccount": "No account? Ask the admin of this Dive Hub for an invitation.",
     "wrongCredentials": "Wrong e-mail or password.",
     "tooManyAttempts": "Too many attempts. Try again in a few minutes.",
-    "disabled": "This account is disabled. Ask an admin."
+    "disabled": "This account is disabled. Ask an admin.",
+    "about": "Dive Hub keeps the dive logs of a club, a family or a dive center in one place."
   },
   "setup": {
     "title": "Set up Dive Hub",
@@ -188,11 +190,14 @@
     "dropNow": "Drop to import",
     "recent": "Imports",
     "showAll": "Show all imports",
-    "showFewer": "Show fewer"
+    "showFewer": "Show fewer",
+    "findTitle": "Where to find your dives",
+    "findConnect": "Garmin Connect website: open a dive, choose “Export Original” in the gear menu, and import the zip as it is.",
+    "findWatch": "Watch: connect it by USB and copy the files from the folder GARMIN/Activity."
   },
   "logbook": {
     "title": "Logbook",
-    "empty": "No dives yet. Import a FIT file above.",
+    "empty": "No dives yet. Import your files above to fill the logbook.",
     "number": "#",
     "date": "Date",
     "maxDepth": "Max depth",
@@ -249,7 +254,6 @@
     "moveIntro": "The dive, its recordings and notes go to the other Diver’s logbook.",
     "move": "Move",
     "splitOff": "Split off into its own dive",
-    "splitHint": "For a recording that belongs to another dive. It becomes a dive of its own.",
     "notFoundTitle": "Dive not found",
     "splitOffTitle": "Split off this recording?",
     "splitOffBody": "It becomes a dive of its own, with its own history. This dive keeps its other recordings.",
@@ -257,7 +261,11 @@
     "unsavedQuestion": "Leave without saving? Your changes to this dive will be lost.",
     "profileSummary": "Deepest point {{depth}} after {{time}}; {{duration}} in total.",
     "profileTemperature": "Water {{range}}.",
-    "profileTable": "Profile as a table"
+    "profileTable": "Profile as a table",
+    "recordingActions": "Recording actions",
+    "splitOffMenu": "Split off into its own dive…",
+    "primaryChanged": "This is now the primary recording.",
+    "moreActions": "More"
   },
   "errors": {
     "unknown": "Something went wrong. Try again.",
@@ -358,7 +366,12 @@
     "reset": "back to the recording",
     "recordingAdded": "Recording added",
     "fileReplaced": "Recorded data replaced by a newer file",
-    "recordingRemoved": "Recording split off into its own dive"
+    "recordingRemoved": "Recording split off into its own dive",
+    "edits_one": "{{count}} edit",
+    "edits_other": "{{count}} edits",
+    "showAll": "Show the whole history",
+    "showFewer": "Show fewer",
+    "noNetChange": "Changed and changed back"
   },
   "decisions": {
     "title": "Needs your decision",
@@ -404,6 +417,7 @@
     "allDivers": "All Divers",
     "logbooks": "Logbooks you keep",
     "belongsToDevice": "{{device}} belongs to",
-    "added": "{{name}} added."
+    "added": "{{name}} added.",
+    "sameName": "You already have a Diver called {{name}}. That works, but the two will be hard to tell apart."
   }
 }
