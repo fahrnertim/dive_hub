@@ -69,3 +69,4 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [2026-10-02 Better Auth fit check](research/2026-10-02-better-auth-check.md) — Better Auth docs checked against our auth requirements.
 - [2026-10-02 Data, sync, upload, auth](research/2026-10-02-data-sync-upload-auth.md) — sample storage, Originals and zip uploads, Revisions and sync API, sessions and OIDC-readiness.
 - [2026-10-03 UI/UX review](research/2026-10-03-ui-review.md) — ranked findings (tiers A–D) with fixes, all fixed in four batches with tests; next: icons and motion.
+- [2026-10-03 Visual refresh (planned)](research/2026-10-03-visual-refresh.md) — brief and handover for a "clean and modern" pass within the design system; owner picks the direction first.
