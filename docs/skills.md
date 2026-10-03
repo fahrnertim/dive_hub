@@ -69,3 +69,4 @@ Details and commands: [skills vetting](research/2026-10-02-agent-skills-vetting.
 | 2026-10-03 | email-and-password-best-practices (better-auth/skills) | installed | Official; one SKILL.md, no scripts (commit 20c9e88, 2026-09-01). Thin, but covers reset tokens, session revocation and length limits. Its Quick Start runs `npx auth@latest migrate` and its argon2 example (64 MiB, p = 4) is too heavy for 2 GB NAS boxes; AGENTS.md overrides both |
 | 2026-10-03 | better-auth/skills organization-best-practices | not needed | we don't use the organization plugin; ADR 0012 builds invitations |
 | 2026-10-03 | `npx skills find` for "better auth", "invitation", "authentication session" | nothing new | only the better-auth/skills set and unrelated vendor skills |
+| 2026-10-03 | `npx skills find` for "password reset", "openapi", "user management admin" (slice 3) | nothing new | vendor-specific (Lark, Azure, Clerk, WorkOS, Appwrite) or already installed |

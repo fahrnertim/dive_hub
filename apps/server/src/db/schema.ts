@@ -75,6 +75,29 @@ export const invitation = pgTable(
   ],
 );
 
+/**
+ * An admin-issued, single-use link with which a User sets a new password (ADR 0013).
+ * Only the SHA-256 of the token is stored; the link is shown once, when it is created.
+ */
+export const passwordReset = pgTable(
+  'password_reset',
+  {
+    id: id(),
+    tokenSha256: text('token_sha256').notNull(),
+    userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    createdBy: uuid('created_by').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: createdAt(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('password_reset_token_uq').on(t.tokenSha256),
+    index('password_reset_user_idx').on(t.userId),
+    index('password_reset_created_by_idx').on(t.createdBy),
+  ],
+);
+
 export const device = pgTable(
   'device',
   {

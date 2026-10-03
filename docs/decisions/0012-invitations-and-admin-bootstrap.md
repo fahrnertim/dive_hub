@@ -34,7 +34,7 @@ self-hosted installs have no mail relay. The [auth research](../research/2026-10
   creation path (setup, invitation, admin API).
 - **Passwords:** argon2id at OWASP's minimum (m = 19 MiB, t = 2, p = 1), at least 15 characters
   (NIST, single factor), at most 128, no composition rules.
-- **Admins can't impersonate Users.** The admin plugin's role definition leaves out `impersonate`,
+- **Admins can't impersonate Users.** The admin plugin's role definition leaves out `impersonate` (since [ADR 0013](0013-account-management.md) its endpoints aren't reachable over HTTP at all),
   because signing in as someone would show Dives whose Visibility excludes the admin.
 - **Client IP:** Fastify works it out (`trustProxy` from `DIVEHUB_TRUSTED_PROXIES`) and passes it
   to Better Auth in a header of our own that the client can't set. Rate limiting (database storage,
@@ -43,7 +43,7 @@ self-hosted installs have no mail relay. The [auth research](../research/2026-10
   directory (`auth-secret`, mode 0600).
 - **2FA (TOTP + backup codes) is a later slice.** Its plugin adds tables through an ordinary
   migration; nothing here needs redesigning.
-- **Password reset** isn't built yet. It will be an admin-issued, single-use link like an Invitation,
+- **Password reset** comes as an admin-issued, single-use link like an Invitation ([ADR 0013](0013-account-management.md)),
   later optionally by mail.
 
 ## Considered options

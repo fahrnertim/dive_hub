@@ -252,21 +252,24 @@ describe.skipIf(!online)('invitations', () => {
     expect(users.json().map((u: { email: string }) => u.email)).toContain('member@example.com');
   });
 
-  it('does not let a User make themselves admin through Better Auth', async () => {
+  it('exposes only the Better Auth endpoints we use; its admin plugin is reachable through our routes only', async () => {
     const me = (await ctx.app.inject({ method: 'GET', url: '/api/me', headers: { cookie: userCookie } })).json();
-    const response = await ctx.app.inject({
-      method: 'POST', url: '/api/auth/admin/set-role', headers: { cookie: userCookie, origin: BASE_URL },
-      payload: { userId: me.user.id, role: 'admin' },
-    });
-    expect(response.statusCode).toBe(403);
-  });
-
-  it('does not let admins impersonate Users', async () => {
-    const me = (await ctx.app.inject({ method: 'GET', url: '/api/me', headers: { cookie: userCookie } })).json();
-    const response = await ctx.app.inject({
-      method: 'POST', url: '/api/auth/admin/impersonate-user', headers: { cookie: adminCookie, origin: BASE_URL },
-      payload: { userId: me.user.id },
-    });
-    expect(response.statusCode).toBe(403);
+    const blocked = [
+      ['/api/auth/admin/set-role', userCookie, { userId: me.user.id, role: 'admin' }],
+      ['/api/auth/admin/impersonate-user', adminCookie, { userId: me.user.id }],
+      ['/api/auth/admin/remove-user', adminCookie, { userId: me.user.id }],
+      ['/api/auth/admin/set-user-password', adminCookie, { userId: me.user.id, newPassword: PASSWORD }],
+      ['/api/auth/list-sessions', userCookie, undefined],
+      ['/api/auth/request-password-reset', userCookie, { email: 'member@example.com' }],
+      ['/api/auth/update-user', userCookie, { name: 'x' }],
+      ['/api/auth/sign-in/email/../../admin/list-users', adminCookie, undefined],
+    ] as const;
+    for (const [url, cookie, payload] of blocked) {
+      const response = await ctx.app.inject({
+        method: payload ? 'POST' : 'GET', url, headers: { cookie, origin: BASE_URL }, ...(payload && { payload }),
+      });
+      expect(response.statusCode, url).toBe(404);
+    }
+    expect((await ctx.app.inject({ method: 'GET', url: '/api/me', headers: { cookie: userCookie } })).json().user.role).toBe('user');
   });
 });

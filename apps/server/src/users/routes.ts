@@ -1,16 +1,16 @@
 // Users: who am I, first-admin setup, invitations (ADR 0011, 0012).
-import { asc, eq, and } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import type { FastifyPluginAsyncTypebox, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
 import { APIError } from 'better-auth/api';
 import type { Auth } from '../auth/auth.js';
 import { authHeaders, forwardCookies, requireAdmin, requireUser } from '../auth/fastify.js';
-import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from '../auth/password.js';
 import type { Db } from '../db/client.js';
-import { diver, diverManagement, user } from '../db/schema.js';
+import { diver, diverManagement } from '../db/schema.js';
 import { EmailTakenError, invitationStatus, type InvitationRow, type Invitations, type Role } from './invitations.js';
 import type { Setup } from './setup.js';
+import { DateTime, IdParams, LinkView, Password, Problem, RoleSchema, Token, UserView, toUserView } from './views.js';
 
 export interface UserRouteDeps {
   db: Db;
@@ -20,34 +20,16 @@ export interface UserRouteDeps {
   baseUrl: string;
 }
 
-const Problem = Type.Object({ error: Type.String() });
-const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
-const DateTime = Type.String({ format: 'date-time' });
-const RoleSchema = Type.Union([Type.Literal('user'), Type.Literal('admin')]);
 const Email = Type.String({ format: 'email', maxLength: 254 });
 const Name = Type.String({ minLength: 1, maxLength: 100 });
-const Password = Type.String({
-  minLength: MIN_PASSWORD_LENGTH, maxLength: MAX_PASSWORD_LENGTH,
-  description: `At least ${MIN_PASSWORD_LENGTH} characters`,
-});
-const Token = Type.String({ minLength: 16, maxLength: 128 });
 
-const UserView = Type.Object({
-  id: Type.String(), email: Type.String(), name: Type.String(), role: RoleSchema, createdAt: DateTime,
-});
 const MeView = Type.Object({ user: UserView, ownDiver: Type.Object({ id: Type.String(), name: Type.String() }) });
 const InvitationView = Type.Object({
   id: Type.String(), email: Type.String(), role: RoleSchema, createdAt: DateTime, expiresAt: DateTime,
   status: Type.Union([Type.Literal('pending'), Type.Literal('accepted'), Type.Literal('revoked'), Type.Literal('expired')]),
 });
-const CreatedInvitationView = Type.Intersect([InvitationView, Type.Object({
-  url: Type.String({ description: 'The invitation link. Shown only now: only its hash is stored.' }),
-})]);
+const CreatedInvitationView = Type.Intersect([InvitationView, LinkView]);
 
-const asRole = (role: string | null | undefined): Role => (role === 'admin' ? 'admin' : 'user');
-const toUserView = (u: { id: string; email: string; name: string; role?: string | null | undefined; createdAt: Date }): Static<typeof UserView> => ({
-  id: u.id, email: u.email, name: u.name, role: asRole(u.role), createdAt: u.createdAt.toISOString(),
-});
 const toInvitationView = (i: InvitationRow): Static<typeof InvitationView> => ({
   id: i.id, email: i.email, role: i.role, createdAt: i.createdAt.toISOString(),
   expiresAt: i.expiresAt.toISOString(), status: invitationStatus(i),
@@ -152,10 +134,6 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
     await signedIn.register(async (scope) => {
       const admins = scope.withTypeProvider<TypeBoxTypeProvider>();
       admins.addHook('onRequest', requireAdmin);
-
-      admins.get('/users', {
-        schema: { summary: 'All Users of this instance (admins only)', response: { 200: Type.Array(UserView) } },
-      }, async () => (await db.select().from(user).orderBy(asc(user.createdAt))).map(toUserView));
 
       admins.get('/invitations', {
         schema: { summary: 'Invitations, newest first (admins only)', response: { 200: Type.Array(InvitationView) } },

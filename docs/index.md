@@ -15,7 +15,7 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [spec/architecture.md](spec/architecture.md) — Components, import flow, Docker Compose deployment, auth.
 
 ## Glossary
-- [glossary.md](glossary.md) — Domain language: User, Admin, Invitation, Diver, Dive, Recording, Import, Push, …
+- [glossary.md](glossary.md) — Domain language: User, Admin, Invitation, Password reset link, Disabled, Diver, Dive, Recording, Import, Push, …
 
 ## Development
 - [development.md](development.md) — setup, layout, common tasks, tooling notes.
@@ -39,6 +39,7 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [0010 Graphile Worker as job queue](decisions/0010-graphile-worker-job-queue.md) — enqueue via SQL in the Import transaction; LISTEN/NOTIFY.
 - [0011 Better Auth for accounts and sessions](decisions/0011-better-auth.md) — ≥ 1.7.7, argon2id, invite-only, database sessions, small plugin set.
 - [0012 Invitation links, setup token for the first admin, 2FA later](decisions/0012-invitations-and-admin-bootstrap.md) — copy-link invitations, setup token in the log, no impersonation.
+- [0013 Account management](decisions/0013-account-management.md) — reset links, disable vs delete, always one admin, only four Better Auth endpoints over HTTP.
 - [Template](decisions/template.md) — copy for new ADRs.
 
 ## References

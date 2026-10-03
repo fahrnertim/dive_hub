@@ -1,12 +1,14 @@
 // Better Auth inside Fastify (ADR 0011): the /api/auth/* handler and a session guard for our routes.
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { fromNodeHeaders } from 'better-auth/node';
-import { CLIENT_IP_HEADER, type Auth, type SessionUser } from './auth.js';
+import { CLIENT_IP_HEADER, PUBLIC_AUTH_PATHS, type Auth, type SessionUser } from './auth.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
     /** The signed-in User; set by the session guard on every protected route. */
     user: SessionUser | null;
+    /** Id of the session the request came with (set together with `user`). */
+    sessionId: string | null;
   }
 }
 
@@ -26,7 +28,9 @@ export function forwardCookies(from: Headers, reply: FastifyReply): void {
   if (cookies.length > 0) reply.header('set-cookie', cookies);
 }
 
-/** Mounts Better Auth's own endpoints (sign-in, sign-out, session, admin plugin) at /api/auth/*. */
+const publicPaths = new Set<string>(PUBLIC_AUTH_PATHS);
+
+/** Mounts the Better Auth endpoints we expose (PUBLIC_AUTH_PATHS) at /api/auth/*; the rest answer 404. */
 export async function authHandler(app: FastifyInstance, { auth }: { auth: Auth }) {
   // Hand Better Auth the body exactly as sent; it parses and validates it itself.
   app.removeAllContentTypeParsers();
@@ -37,7 +41,9 @@ export async function authHandler(app: FastifyInstance, { auth }: { auth: Auth }
     url: '/api/auth/*',
     schema: { hide: true },
     handler: async (request, reply) => {
-      const response = await auth.handler(new Request(new URL(request.url, auth.options.baseURL), {
+      const url = new URL(request.url, auth.options.baseURL);
+      if (!publicPaths.has(url.pathname.slice('/api/auth'.length))) return reply.code(404).send({ error: 'Not found' });
+      const response = await auth.handler(new Request(url, {
         method: request.method,
         headers: authHeaders(request),
         ...(typeof request.body === 'string' && request.body.length > 0 && { body: request.body }),
@@ -61,6 +67,7 @@ export function requireUser(auth: Auth) {
     if (!session) return reply.code(401).send({ error: 'Sign in required' });
     forwardCookies(headers, reply);
     request.user = session.user;
+    request.sessionId = session.session.id;
   };
 }
 

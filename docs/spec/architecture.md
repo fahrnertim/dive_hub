@@ -126,9 +126,22 @@ Implemented:
 Migration `0001_auth` deletes slice-1 development data (`user_id = 'dev'`).
 
 Deliberate simplifications, to revisit:
-- **No password reset** and no admin UI to ban, remove or change Users yet.
-- **No 2FA** (later slice, ADR 0012); no session list in the UI.
-- **OpenAPI:** our own endpoints (`/api/me`, setup, invitations) are described; Better
-  Auth's aren't yet (its OpenAPI plugin, ADR 0011).
+- **No 2FA** (later slice, ADR 0012).
 - **Recording keys** stay globally unique. If two Users each import a Recording without a Device
   that starts in the same second, the second Import is reported as failed.
+
+**Slice 3 (2026-10-03): account basics** ([ADR 0013](../decisions/0013-account-management.md)).
+
+Implemented:
+- Password reset links issued by admins (single-use, 24 h, end all sessions).
+- Changing one's own password; listing and ending one's own sessions (never returning tokens).
+- Admins change roles, disable/enable Users, sign Users out everywhere, and delete Users with
+  everything only they own, including stored files no one else shares.
+- There is always one enabled admin (row locks against simultaneous demotion).
+- Only `sign-in/email`, `sign-out`, `get-session` and `change-password` of Better Auth are reachable
+  over HTTP; they are described in our OpenAPI document.
+- Web client: account page (password, sessions), reset page, admin actions per User.
+
+Deliberate simplifications, to revisit:
+- **Deleting** keeps Divers someone else also manages; this needs revisiting with Diver sharing.
+- **No audit log** of admin actions beyond the server log ("user deleted").

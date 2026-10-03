@@ -18,6 +18,8 @@ export type ImportView = Awaited<ReturnType<typeof fetchImports>>[number];
 export type DiveSummary = Awaited<ReturnType<typeof fetchDives>>[number];
 export type Me = NonNullable<Awaited<ReturnType<typeof fetchMe>>>;
 export type InvitationView = Awaited<ReturnType<typeof fetchInvitations>>[number];
+export type UserView = Awaited<ReturnType<typeof fetchUsers>>[number];
+export type SessionView = Awaited<ReturnType<typeof fetchSessions>>[number];
 
 /** Query keys in one place (hierarchical, so invalidating ['dives'] covers every dive query). */
 export const keys = {
@@ -25,18 +27,25 @@ export const keys = {
   setup: ['setup'] as const,
   users: ['users'] as const,
   invitations: ['invitations'] as const,
+  sessions: ['me', 'sessions'] as const,
   imports: ['imports'] as const,
   dives: ['dives'] as const,
   dive: (id: string) => ['dives', id] as const,
   samples: (recordingId: string) => ['recordings', recordingId, 'samples'] as const,
 };
 
+/**
+ * The response body, or an ApiError. Success is the HTTP status: a 204 has no body, so openapi-fetch
+ * gives `data: undefined` for it.
+ */
 export function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): T {
-  if (result.error !== undefined || result.data === undefined) {
-    const message = (result.error as { error?: string } | undefined)?.error ?? 'Request failed';
+  if (!result.response.ok) {
+    // Our routes answer { error }; Fastify's validation errors carry the useful text in `message`.
+    const body = result.error as { error?: string; message?: string } | undefined;
+    const message = body?.message ?? body?.error ?? `Request failed (${result.response.status})`;
     throw new ApiError(message, result.response.status);
   }
-  return result.data;
+  return result.data as T;
 }
 
 /** The signed-in User, or null when nobody is signed in. */
@@ -47,12 +56,18 @@ async function fetchMe() {
 async function fetchInvitations() {
   return unwrap(await api.GET('/api/invitations'));
 }
+async function fetchUsers() {
+  return unwrap(await api.GET('/api/users'));
+}
+async function fetchSessions() {
+  return unwrap(await api.GET('/api/me/sessions'));
+}
 
 export const meQuery = () => queryOptions({ queryKey: keys.me, queryFn: fetchMe, staleTime: 5 * 60_000 });
 export const setupQuery = () =>
   queryOptions({ queryKey: keys.setup, queryFn: async () => unwrap(await api.GET('/api/setup')) });
-export const usersQuery = () =>
-  queryOptions({ queryKey: keys.users, queryFn: async () => unwrap(await api.GET('/api/users')) });
+export const usersQuery = () => queryOptions({ queryKey: keys.users, queryFn: fetchUsers });
+export const sessionsQuery = () => queryOptions({ queryKey: keys.sessions, queryFn: fetchSessions });
 export const invitationsQuery = () => queryOptions({ queryKey: keys.invitations, queryFn: fetchInvitations });
 
 async function fetchImports() {

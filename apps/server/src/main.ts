@@ -13,7 +13,8 @@ import { startWorker } from './worker.js';
 
 const config = loadConfig();
 const { db, pool } = createDb(config.databaseUrl);
-const imports = createImportService({ db, blobs: createLocalBlobStore(config.dataDir) });
+const blobs = createLocalBlobStore(config.dataDir);
+const imports = createImportService({ db, blobs });
 const auth = createAuth({
   db, baseUrl: config.baseUrl, secret: await loadAuthSecret(config.authSecret, config.dataDir),
   // The Vite dev server proxies /api from its own origin.
@@ -23,7 +24,7 @@ const setup = createSetup(db);
 
 const app = await buildApp(
   {
-    db, imports, auth, setup, invitations: createInvitations(db), baseUrl: config.baseUrl,
+    db, imports, blobs, auth, setup, invitations: createInvitations(db), baseUrl: config.baseUrl,
     maxUploadBytes: config.maxUploadBytes, trustedProxies: config.trustedProxies, webDir: config.webDir,
   },
   { logger: { level: config.logLevel } },

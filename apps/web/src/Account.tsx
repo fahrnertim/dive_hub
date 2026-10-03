@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
-import { api, authClient, unwrap } from './api.ts';
+import { api, authClient, keys, sessionsQuery, unwrap, type SessionView } from './api.ts';
+import { formatLocalDateTime } from './format.ts';
 
 const MIN_PASSWORD_LENGTH = 15;
 
@@ -136,5 +137,147 @@ export function SignOutButton() {
     >
       Sign out
     </button>
+  );
+}
+
+/** Opened from a password reset link an admin passed on (ADR 0013). */
+export function ResetPassword({ token }: { token: string }) {
+  const signedIn = useUserChanged();
+  const link = useQuery({
+    queryKey: ['password-reset', token],
+    queryFn: async () => unwrap(await api.POST('/api/password-resets/lookup', { body: { token } })),
+    retry: false,
+  });
+  const reset = useMutation({
+    mutationFn: async ({ password }: Record<string, string>) =>
+      unwrap(await api.POST('/api/password-resets/complete', { body: { token, password: password! } })),
+    onSuccess: signedIn,
+  });
+
+  if (link.isPending) return <p className="hint">Checking link…</p>;
+  if (link.error) {
+    return (
+      <section className="card narrow">
+        <h2>Reset password</h2>
+        <p className="error">{link.error.message}</p>
+        <p className="hint">Ask the admin for a new link.</p>
+      </section>
+    );
+  }
+  return (
+    <section className="card narrow">
+      <h2>Reset password</h2>
+      <p>Choose a new password for <strong>{link.data.email}</strong>. You'll be signed out everywhere else.</p>
+      <form className="form" onSubmit={(e) => reset.mutate(formValues(e))}>
+        <input type="email" name="email" value={link.data.email} autoComplete="username" readOnly hidden />
+        <PasswordField label="New password" />
+        {reset.error && <p className="error">{reset.error.message}</p>}
+        <button type="submit" disabled={reset.isPending}>Set password</button>
+      </form>
+    </section>
+  );
+}
+
+/** The signed-in User's own account: password and where they're signed in. */
+export function AccountPage() {
+  return (
+    <>
+      <ChangePassword />
+      <Sessions />
+    </>
+  );
+}
+
+function ChangePassword() {
+  const queryClient = useQueryClient();
+  const [done, setDone] = useState(false);
+  const change = useMutation({
+    mutationFn: async ({ currentPassword, password }: Record<string, string>) => {
+      const { error } = await authClient.changePassword({
+        currentPassword: currentPassword!, newPassword: password!, revokeOtherSessions: true,
+      });
+      if (error) throw new Error(error.status === 400 && error.code === 'INVALID_PASSWORD' ? 'The current password is wrong.' : (error.message ?? 'Could not change the password.'));
+    },
+    onSuccess: () => {
+      setDone(true);
+      void queryClient.invalidateQueries({ queryKey: keys.sessions });
+    },
+  });
+
+  return (
+    <section className="card">
+      <h2>Change password</h2>
+      <form
+        className="form narrow-form"
+        onSubmit={(e) => {
+          const values = formValues(e);
+          const form = e.currentTarget;
+          setDone(false);
+          change.mutate(values, { onSuccess: () => form.reset() });
+        }}
+      >
+        <label>Current password<input name="currentPassword" type="password" autoComplete="current-password" required /></label>
+        <PasswordField label="New password" />
+        {change.error && <p className="error">{change.error.message}</p>}
+        {done && <p className="ok">Password changed. Your other sessions were signed out.</p>}
+        <button type="submit" disabled={change.isPending}>Change password</button>
+      </form>
+    </section>
+  );
+}
+
+/** "Firefox on Windows" from a user agent string; good enough to recognise one's own devices. */
+function describeAgent(userAgent: string | null): string {
+  if (!userAgent) return 'Unknown device';
+  const browser = /Edg\//.test(userAgent) ? 'Edge' : /Firefox\//.test(userAgent) ? 'Firefox'
+    : /Chrome\//.test(userAgent) ? 'Chrome' : /Safari\//.test(userAgent) ? 'Safari' : 'Browser';
+  const os = /Windows/.test(userAgent) ? 'Windows' : /Android/.test(userAgent) ? 'Android'
+    : /iPhone|iPad/.test(userAgent) ? 'iOS' : /Mac OS X/.test(userAgent) ? 'macOS' : /Linux/.test(userAgent) ? 'Linux' : '';
+  return os ? `${browser} on ${os}` : browser;
+}
+
+function Sessions() {
+  const queryClient = useQueryClient();
+  const userChanged = useUserChanged();
+  const sessions = useQuery(sessionsQuery());
+  const end = useMutation({
+    mutationFn: async (s: SessionView) => {
+      unwrap(await api.DELETE('/api/me/sessions/{id}', { params: { path: { id: s.id } } }));
+      return s;
+    },
+    onSuccess: async (s) => (s.current ? userChanged() : queryClient.invalidateQueries({ queryKey: keys.sessions })),
+  });
+  const endOthers = useMutation({
+    mutationFn: async () => unwrap(await api.DELETE('/api/me/sessions')),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.sessions }),
+  });
+
+  return (
+    <section className="card">
+      <h2>Where you're signed in</h2>
+      {sessions.error && <p className="error">{sessions.error.message}</p>}
+      {sessions.data && (
+        <table className="table">
+          <thead><tr><th>Device</th><th>IP address</th><th>Signed in</th><th>Last active</th><th /></tr></thead>
+          <tbody>
+            {sessions.data.map((s) => (
+              <tr key={s.id}>
+                <td>{describeAgent(s.userAgent)}{s.current && <strong> (this one)</strong>}</td>
+                <td>{s.ipAddress ?? '–'}</td>
+                <td>{formatLocalDateTime(s.createdAt, null)}</td>
+                <td>{s.lastActiveAt ? formatLocalDateTime(s.lastActiveAt, null) : '–'}</td>
+                <td>
+                  <button type="button" className="link" disabled={end.isPending} onClick={() => end.mutate(s)}>Sign out</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {(end.error ?? endOthers.error) && <p className="error">{(end.error ?? endOthers.error)!.message}</p>}
+      {sessions.data && sessions.data.length > 1 && (
+        <p><button type="button" disabled={endOthers.isPending} onClick={() => endOthers.mutate()}>Sign out everywhere else</button></p>
+      )}
+    </section>
   );
 }

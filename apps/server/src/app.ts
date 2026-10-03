@@ -7,16 +7,23 @@ import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { sql } from 'drizzle-orm';
 import type { Auth } from './auth/auth.js';
 import { authHandler } from './auth/fastify.js';
+import { withAuthEndpoints } from './auth/openapi.js';
 import type { Db } from './db/client.js';
 import type { ImportService } from './imports/import-service.js';
 import { apiRoutes } from './routes.js';
+import type { BlobStore } from './storage/blob-store.js';
+import { accountRoutes } from './users/account-routes.js';
+import { adminRoutes } from './users/admin-routes.js';
 import type { Invitations } from './users/invitations.js';
+import { createPasswordResets } from './users/password-resets.js';
 import { userRoutes } from './users/routes.js';
 import type { Setup } from './users/setup.js';
+import { createUserAdmin } from './users/user-admin.js';
 
 export interface AppDeps {
   db: Db;
   imports: ImportService;
+  blobs: BlobStore;
   auth: Auth;
   setup: Setup;
   invitations: Invitations;
@@ -33,13 +40,14 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
   const app = Fastify({ ...options, ...(trustedProxies.length > 0 && { trustProxy: trustedProxies }) })
     .withTypeProvider<TypeBoxTypeProvider>();
   app.decorateRequest('user', null);
+  app.decorateRequest('sessionId', null);
 
   await app.register(swagger, {
     openapi: {
       openapi: '3.1.0',
       info: {
         title: 'Dive Hub API',
-        version: '0.2.0',
+        version: '0.3.0',
         description: 'Sign in with POST /api/auth/sign-in/email (Better Auth); the session cookie authenticates every other call.',
       },
     },
@@ -51,10 +59,13 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
     await deps.db.execute(sql`select 1`);
     return { status: 'ok' };
   });
-  app.get('/api/openapi.json', { schema: { hide: true } }, async () => app.swagger());
+  app.get('/api/openapi.json', { schema: { hide: true } }, async () => withAuthEndpoints(app.swagger(), deps.auth));
 
   await app.register(authHandler, { auth: deps.auth });
+  const passwordResets = createPasswordResets(deps.db);
   await app.register(userRoutes, { prefix: '/api', ...deps });
+  await app.register(accountRoutes, { prefix: '/api', ...deps, passwordResets });
+  await app.register(adminRoutes, { prefix: '/api', ...deps, passwordResets, userAdmin: createUserAdmin(deps.db, deps.blobs) });
   await app.register(apiRoutes, { prefix: '/api', ...deps });
 
   if (deps.webDir && existsSync(deps.webDir)) {

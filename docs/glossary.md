@@ -24,6 +24,14 @@ _Avoid_: Superuser, owner, root
 An admin's offer to one e-mail address to become a User: a single-use link that expires. Accepting it creates the User and their own Diver.
 _Avoid_: Invite code, sign-up link
 
+**Password reset link**:
+A single-use link an admin creates for a User who forgot their password. Using it sets a new password and signs them out everywhere else.
+_Avoid_: Recovery link, reset token
+
+**Disabled**:
+The state of a User who can't sign in. Their data stays, and an admin can enable them again. Deleting a User, by contrast, removes everything only they own.
+_Avoid_: Banned, suspended, deactivated
+
 **Diver**:
 A person who dives and whose dives, certifications and equipment can be recorded.
 A Diver may be managed by a User (their own Diver, or someone they log for, such as a child) or exist without one.

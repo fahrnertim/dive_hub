@@ -3,10 +3,11 @@
 // Migrations are then generated with drizzle-kit, reviewed and committed (ADR 0008, 0011).
 import { drizzle } from 'drizzle-orm/node-postgres';
 import type { Db } from '../db/client.js';
+import * as schema from '../db/schema.js';
 import { createAuth } from './auth.js';
 
 export const auth = createAuth({
-  db: drizzle.mock() as unknown as Db,
+  db: drizzle.mock({ schema }) as unknown as Db,
   baseUrl: 'http://localhost:3000',
   secret: 'schema-generation-only-not-a-real-secret',
 });
