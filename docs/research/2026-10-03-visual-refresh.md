@@ -1,11 +1,19 @@
 ---
-title: Visual refresh (planned)
+title: Visual refresh
 summary: Brief and handover for a "clean and modern" pass, after the UI review and the icons-and-motion slice, including research on UI component libraries. Owner chooses the direction before anything changes.
-status: planned
+status: done
 date: 2026-10-03
 ---
 
-# Visual refresh (planned)
+# Visual refresh
+
+## Progress
+
+- 2026-10-04: library research done ([UI component libraries](2026-10-04-ui-component-libraries.md)); screenshots captured and reviewed, ranked changes and directions proposed ([proposal](2026-10-04-visual-refresh-proposal.md)).
+- 2026-10-04: the owner chose library option 1 (keep our React Aria components), all ten changes, direction B
+  (tonal surfaces) with comfortable density, and the skills `better-layout`, `better-typography`, `better-colors`.
+  Recorded in [ADR 0019](../decisions/0019-tonal-surfaces.md) and the [design system](../spec/design-system.md);
+  implemented with all browser tests (44) and unit tests (47) green. Outcome per change: see the proposal.
 
 ## Why
 

@@ -8,7 +8,8 @@ date: 2026-10-03
 # ADR 0014: Design system on React Aria, i18next localization, error codes, unit preferences
 
 ## Status
-Accepted – 2026-10-03
+Accepted – 2026-10-03. Surfaces and density amended by [ADR 0019](0019-tonal-surfaces.md) (2026-10-04): panels are
+set off by tone, without outline; no component library or Tailwind.
 
 ## Context
 After three slices the web client had about ten screens, roughly 150 hard-coded English strings,
@@ -40,7 +41,8 @@ Retrofitting both later costs more with every screen. The project owner decided 
   date pickers would become our job as the app grows.
 - **Mantine.** Fastest to build screens with, but larger, with its own look and conventions.
 - **shadcn/ui + Tailwind.** Popular, but it brings Tailwind as the styling approach; tokens would
-  live in its config.
+  live in its config. Checked again on 2026-10-04, including shadcn's new React Aria base, HeroUI v3 and
+  Untitled UI ([UI component libraries](../research/2026-10-04-ui-component-libraries.md)): still Tailwind; not adopted.
 - **English only for now.** Would have left the machinery untested; a second language proves it.
 - **Units derived from language.** Rejected: a German diver may log in feet, and an English-speaking
   diver outside the US in metres.

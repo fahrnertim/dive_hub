@@ -2,7 +2,7 @@
 title: Documentation index
 summary: Map of all project knowledge. One line per document.
 status: living
-date: 2026-10-03
+date: 2026-10-04
 ---
 
 # Documentation index
@@ -46,6 +46,7 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [0016 Deciding about Recordings, Devices, extra Divers](decisions/0016-recording-decisions-and-divers.md) — resolve Duplicate candidates on the logbook, split off, Device reassignment for the future, move Dives, Divers page.
 - [0017 Logbook list with offset paging, sorting and search](decisions/0017-logbook-list-paging.md) — `GET /api/dives` returns `{ dives, total }`; limit/offset, sort by column, search number and notes; settings in the address.
 - [0018 Lucide icons beside text; motion only where it explains](decisions/0018-icons-and-motion.md) — `ui/Icon.tsx` map, no icon-only buttons; menus, dialogs, notices animate in; nothing with reduced motion.
+- [0019 Tonal surfaces, comfortable density, no component library](decisions/0019-tonal-surfaces.md) — panels lift off the page by tone (no outline), attention is a tint; React Aria stays, no Tailwind. Amends 0014.
 - [Template](decisions/template.md) — copy for new ADRs.
 
 ## References
@@ -69,4 +70,6 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [2026-10-02 Better Auth fit check](research/2026-10-02-better-auth-check.md) — Better Auth docs checked against our auth requirements.
 - [2026-10-02 Data, sync, upload, auth](research/2026-10-02-data-sync-upload-auth.md) — sample storage, Originals and zip uploads, Revisions and sync API, sessions and OIDC-readiness.
 - [2026-10-03 UI/UX review](research/2026-10-03-ui-review.md) — ranked findings (tiers A–D) with fixes, all fixed in four batches with tests; next: icons and motion.
-- [2026-10-03 Visual refresh (planned)](research/2026-10-03-visual-refresh.md) — brief and handover for a "clean and modern" pass, including research on UI component libraries (license, free and commercial use); owner picks the direction first.
+- [2026-10-03 Visual refresh](research/2026-10-03-visual-refresh.md) — brief and handover for the "clean and modern" pass; done 2026-10-04 (direction B, ADR 0019).
+- [2026-10-04 UI component libraries](research/2026-10-04-ui-component-libraries.md) — shadcn/ui (now with a React Aria base), Kibo, React Aria kits, headless and styled libraries, single parts; licenses checked; decided: keep our React Aria components (ADR 0019).
+- [2026-10-04 Visual refresh proposal](research/2026-10-04-visual-refresh-proposal.md) — ten ranked changes from the screenshots and directions A/B/C (surfaces, radius, density) with a [mock](research/assets/2026-10-04-visual-refresh-mock.html); owner chose all ten changes and B, implemented.

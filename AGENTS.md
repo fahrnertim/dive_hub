@@ -86,3 +86,7 @@ rejected, and why — in [docs/skills.md](docs/skills.md).
 - **email-and-password-best-practices**: same rules as better-auth-\* (never `npx auth@latest migrate`; use
   `auth:generate` + drizzle-kit). Keep our argon2id parameters (m = 19 MiB, t = 2, p = 1) and 15-character
   minimum from [ADR 0012](docs/decisions/0012-invitations-and-admin-bootstrap.md), not the skill's example values.
+- **better-layout**, **better-typography**, **better-colors** (jakubkrehel): our tokens and hex notation stay (no oklch rewrite).
+  Their hand-offs to `better-accessibility`, `better-ui` and `better-writing` go to our `accessibility` skill, `emil-design-eng`
+  and the writing rules in [docs/spec/design-system.md](docs/spec/design-system.md#writing). Surfaces follow
+  [ADR 0019](docs/decisions/0019-tonal-surfaces.md): tones, not shadows, on the page. Findings go in our review documents' format.
