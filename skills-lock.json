@@ -55,6 +55,12 @@
       "skillPath": "skills/fastify/SKILL.md",
       "computedHash": "980cf47d3f104df8be0a2767ccc604e4fa1b94db4405589594dd9f5029b40d25"
     },
+    "find-animation-opportunities": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "skillPath": "skills/find-animation-opportunities/SKILL.md",
+      "computedHash": "c6673fadf179233cc0a52c978ea9acc9b82a210665c749307a571a86ed4c092e"
+    },
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "github",
@@ -85,11 +91,23 @@
       "skillPath": "plugins/database-design/skills/postgresql-table-design/SKILL.md",
       "computedHash": "d9832627098bddf570aef2219092625faf6b2a14aeeb0f6fb96ed691a020100a"
     },
+    "review-animations": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "skillPath": "skills/review-animations/SKILL.md",
+      "computedHash": "8c2befeb28bb484bf2de7b2fc228774857e266d32a65d76895e78651a536d8cf"
+    },
     "security-and-hardening": {
       "source": "addyosmani/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/security-and-hardening/SKILL.md",
       "computedHash": "1e0cd727cccd3c8c0834ce7722a8a2851e2e849f1352ee972f39311437b021d3"
+    },
+    "suggest-lucide-icons": {
+      "source": "nweii/agent-stuff",
+      "sourceType": "github",
+      "skillPath": "skills/suggest-lucide-icons/SKILL.md",
+      "computedHash": "88994235b7a45d143ee03780ffef34d9f9053058206eaf5a137f25bc74dc9a51"
     },
     "tanstack-query-best-practices": {
       "source": "deckardger/tanstack-agent-skills",
@@ -102,6 +120,42 @@
       "sourceType": "github",
       "skillPath": "skills/engineering/tdd/SKILL.md",
       "computedHash": "0c09a435ba032b151d6ecc042eee25d4bd9951bfd19262f9aa317c9923d99756"
+    },
+    "ux-empty-states": {
+      "source": "uxcel-lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/screens/empty-states/SKILL.md",
+      "computedHash": "3e41d5a8e3947d74ed213c01dd582582a973e61746868afc2d256aedcf319b35"
+    },
+    "ux-inputs-and-forms": {
+      "source": "uxcel-lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/inputs-and-forms/SKILL.md",
+      "computedHash": "66d7f60a1a776ac22fbf50a7df96a2db83cff6d213a62236f0e7eda37ba82f72"
+    },
+    "ux-loaders-and-progress": {
+      "source": "uxcel-lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/loaders-and-progress/SKILL.md",
+      "computedHash": "0880913945549c50c828ff43689a868a90c487d35819e53a5a03edd201b4f7b7"
+    },
+    "ux-menus": {
+      "source": "uxcel-lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/menus/SKILL.md",
+      "computedHash": "f8947ebc9844d540db607b833bc0a7103d5531977fcf591343f918ab22f4890a"
+    },
+    "ux-notifications-and-toasts": {
+      "source": "uxcel-lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/notifications-and-toasts/SKILL.md",
+      "computedHash": "ccff158e3800c0213507a52b3b169f742df30557c4e3433c7533568b94f6e4f6"
+    },
+    "ux-tables": {
+      "source": "uxcel-lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/tables/SKILL.md",
+      "computedHash": "b4bf5b94ee2b54908aeb9df6f1d01308ca9421cff1533f727ed46f0de5b16152"
     },
     "vercel-react-best-practices": {
       "source": "vercel-labs/agent-skills",

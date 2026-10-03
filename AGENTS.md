@@ -70,6 +70,18 @@ rejected, and why — in [docs/skills.md](docs/skills.md).
 - **emil-design-eng**: skip its fixed opening line; write findings in our review documents' format
   (its Before/After table is fine inside them). Motion respects `prefers-reduced-motion` and the
   duration tokens in `apps/web/src/design/tokens.css`.
+- **review-animations**, **find-animation-opportunities**: reduced motion means our `--duration-*` tokens
+  drop to 0 (not "gentler, not zero"), until an ADR says otherwise. Map their Base UI/Framer examples to
+  React Aria (`data-placement`, `--trigger-anchor-point`) and plain CSS transitions. Findings go in our
+  review documents' format.
+- **ux-tables**, **ux-inputs-and-forms**, **ux-empty-states**, **ux-menus**, **ux-loaders-and-progress**,
+  **ux-notifications-and-toasts** (uxcel): the design system and React Aria win on conflict. Row actions
+  stay visible (never hover-only); no truncate-plus-tooltip on phones; notices and toasts can always be
+  dismissed, and errors never time out (WCAG 2.2.1, 4.1.3). Skip their hand-offs to `ux-*-audit` skills
+  and orchestration docs we don't have, and their mobile push and marketing parts.
+- **suggest-lucide-icons**: a name must also exist in the installed `lucide-react` version (check
+  `node_modules/lucide-react`), not only in `@latest`. Run its script with `python` (Windows). Icons are
+  `aria-hidden`; the control keeps its visible text or `aria-label`.
 - **email-and-password-best-practices**: same rules as better-auth-\* (never `npx auth@latest migrate`; use
   `auth:generate` + drizzle-kit). Keep our argon2id parameters (m = 19 MiB, t = 2, p = 1) and 15-character
   minimum from [ADR 0012](docs/decisions/0012-invitations-and-admin-bootstrap.md), not the skill's example values.

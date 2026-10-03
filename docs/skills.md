@@ -43,6 +43,9 @@ specialized skills, vet them, propose them to the user, and record the outcome h
 | accessibility | addyosmani/web-quality-skills | WCAG 2.2 rules, keyboard and screen-reader patterns, audits | 2026-10-03 |
 | playwright-cli | microsoft/playwright-cli | driving a browser, writing and debugging Playwright tests | 2026-10-03 |
 | emil-design-eng | emilkowalski/skills | interaction polish: component feel, pressed/hover states, motion | 2026-10-03 |
+| review-animations, find-animation-opportunities | emilkowalski/skills | reviewing motion, finding where motion helps | 2026-10-03 |
+| ux-tables, ux-inputs-and-forms, ux-empty-states, ux-menus, ux-loaders-and-progress, ux-notifications-and-toasts | uxcel-lab/product-skills | usability rules for tables, forms, menus, states and notifications | 2026-10-03 |
+| suggest-lucide-icons | nweii/agent-stuff | picking Lucide icons by real, verified names | 2026-10-03 |
 
 Install with telemetry off: `DISABLE_TELEMETRY=1 npx skills add <owner/repo> -s <skill> -a claude-code --copy -y`.
 
@@ -54,6 +57,8 @@ Details and commands: [skills vetting](research/2026-10-02-agent-skills-vetting.
 |---|---|
 | 2FA built | better-auth/skills `two-factor-authentication-best-practices` |
 | Code exists, refactoring | mattpocock/skills `improve-codebase-architecture` |
+| Gesture-driven UI (drag, swipe, sheets) | emilkowalski/skills `apple-design` |
+| `<ViewTransition>` in stable React | vercel-labs/agent-skills `vercel-react-view-transitions` |
 
 ## Decisions log
 
@@ -85,3 +90,21 @@ Details and commands: [skills vetting](research/2026-10-02-agent-skills-vetting.
 | 2026-10-03 | pbakaus `impeccable` | rejected | Strong method, but downloads and runs a binary, bundles ~2 MB of scripts, writes PRODUCT.md/DESIGN.md at the repository root |
 | 2026-10-03 | leonxlnx/taste-skill `redesign-existing-projects`, nextlevelbuilder `ui-ux-pro-max` | rejected | Generic "premium" restyling against our design system; Python-based search over a CSV database |
 | 2026-10-03 | `npx skills find` for UI/UX review, navigation, tables, forms, empty states, heuristics (UI review) | see above | specialized ones (empty states, tables) have under 200 installs and weren't vetted further |
+| 2026-10-03 | review-animations, find-animation-opportunities (emilkowalski/skills) | installed | Markdown only, same author and commit (e8a175d) as emil-design-eng; a review method with Block/Approve and a capped search for motion worth adding. AGENTS.md: reduced motion goes to 0 |
+| 2026-10-03 | uxcel-lab/product-skills `ux-tables`, `ux-inputs-and-forms`, `ux-empty-states`, `ux-menus`, `ux-loaders-and-progress`, `ux-notifications-and-toasts` | installed | MIT, one SKILL.md each, no scripts or fetches (commit 5007cd0); from Uxcel's own lessons; concrete rules for exactly these components. New and little used (≈45 installs); AGENTS.md overrides hover-only row actions, undismissable toasts and missing hand-offs |
+| 2026-10-03 | nweii/agent-stuff `suggest-lucide-icons` | installed | Lucide chosen for the icons slice. One SKILL.md and a stdlib Python script (read in full): fetches the public `lucide-static@latest/tags.json` from unpkg, caches it in the temp folder, writes nothing to the repo. Stops agents from inventing icon names; AGENTS.md: check the installed version |
+| 2026-10-03 | better-auth/better-icons | rejected | Global CLI install, MCP config written into `~/.claude` or the repo root, preferences in the home folder (against ADR 0001); copies SVGs from 200 sets instead of one library |
+| 2026-10-03 | aksuharun/skills `lucide-icons` | rejected | Thin rewrite of the lucide.dev docs; weaker accessibility advice than ours |
+| 2026-10-03 | emilkowalski/skills `animate` | not now | ~70% already in emil-design-eng; routes toasts and dropdowns to Base UI/Sonner/Vaul instead of React Aria |
+| 2026-10-03 | emilkowalski/skills `animation-vocabulary`, `ask-sonner` | rejected | A glossary with no build value; a Sonner-only guide (we use React Aria) |
+| 2026-10-03 | emilkowalski/skills `apple-design` | later | Mostly gesture physics (springs, momentum); glass bars conflict with our bordered panels. See Pending |
+| 2026-10-03 | kylezantos/design-motion-principles | rejected | Writes HTML audit reports at the repository root, loads Google Fonts, Framer Motion based, `0.01ms !important` reduced-motion reset |
+| 2026-10-03 | vercel-labs/agent-skills `vercel-react-view-transitions` | later | Needs React canary outside Next.js; asks to apply every pattern. See Pending |
+| 2026-10-03 | dylantarre/animation-principles (incl. `notifications-toasts`, `accordions-dropdowns`) | rejected | Template skills; bounce and shake on toasts, looping pulses, no reduced motion; contradicts emil-design-eng |
+| 2026-10-03 | leonxlnx/taste-skill `minimalist-ui`, `design-taste-frontend`, `high-end-visual-design` | rejected | Fixed marketing aesthetics (cream background, serif headings, uppercase pills, pill buttons, glass, scroll reveals), Tailwind/Next.js; `design-taste-frontend` itself excludes dashboards and data tables |
+| 2026-10-03 | uizze.sh `ui-taste` | pending owner discussion | Apache adaptation of Impeccable without its binary; good product-UI playbooks, but a vendor zip pinned only by checksum, paid-service upsell, large overlap with frontend-design |
+| 2026-10-03 | wondelai/skills `web-typography`, wshobson/agents `interaction-design`, google-labs-code `design-md` | rejected | Basic book summary with an affiliate link; Tailwind and framer-motion with hand-built controls; needs Stitch and writes DESIGN.md |
+| 2026-10-03 | vercel-labs/agent-skills `web-design-guidelines` (re-checked, commit 063bee9) | still rejected | Still fetches its rules from the mutable `main` branch |
+| 2026-10-03 | owl-listener/designer-skills `form-design`, `loading-states` | rejected | Agrees with uxcel's forms skill (redundant); loading-states is thin and suggests shimmer and staggering |
+| 2026-10-03 | gnurio/refactoring-ui-plugin, aladicf/better-web-ui, param087/saas-ui-skills, heroui-inc `heroui-react` | rejected | "All rights reserved" (can't be copied in); an Impeccable fork writing files at the root; Tailwind/shadcn with a buggy example; HeroUI-specific |
+| 2026-10-03 | `npx skills find` for icons, motion, modern/clean design, toasts, tables, dropdowns, hover, empty/loading states, forms (icons and motion slice) | see above | the rest: video (Remotion, HyperFrames), vendor UI kits (Syncfusion), unrelated |
