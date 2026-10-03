@@ -70,4 +70,41 @@ Emulation doesn't reproduce those (see below).
 | `theme-color` matches the top of the page | fixed: `#ffffff` / `#0e2338`, the header (`index.html`) |
 | Safe areas (`viewport-fit=cover`) | not needed: nothing is fixed to the screen edges |
 | Pull-to-refresh | keep: the logbook is a scrolling document; dialogs and menus already use `overscroll-behavior: contain` |
-| Test on real hardware | **open**: needs the owner's phone (dev server over the local network) |
+| Test on real hardware | **open**: needs the owner's phone; see the checklist below |
+
+## Real-device checklist
+
+Open (2026-10-04): the owner couldn't reach the dev server from the hotel's Wi-Fi. How to connect: [development](../development.md)
+("On a real phone"). Ideally one iPhone (Safari) and one Android phone (Chrome); note what fails and on which.
+
+**Tapping and pressing**
+1. Tap buttons and links (navigation, Edit dive, a logbook row): the response is immediate, without a grey flash.
+2. After tapping something with a hover effect (a navigation link, a logbook row), nothing stays highlighted.
+3. Long-press a button (Edit dive, Import files): its label isn't selected. Long-pressing normal text still selects it.
+
+**Typing**
+4. Tap any field (search, the dive form's numbers, sign-in): the page doesn't zoom in.
+5. Admin → Create invitation link → tap the link field and Copy: no zoom, the link is copied.
+6. Edit a dive: number fields bring up a number keyboard with a decimal key (comma in German); the field stays
+   visible above the keyboard.
+7. Type a new max depth and tap Save straight away, without closing the keyboard first: the dive saves
+   (the bug fixed in the visual refresh).
+
+**Look and layout**
+8. The browser bar matches the header: white in light mode, dark blue in dark mode (switch the phone's setting).
+9. Logbook: each dive is two lines (date, then Diver · depth · duration); nothing scrolls sideways.
+10. Dive page: the chart is full width; the Recording tabs scroll sideways with the next one peeking in.
+11. Turn the phone to landscape on the logbook and a dive: nothing scrolls sideways, the chart resizes.
+12. Admin and Divers pages: rows show as label and value lines; long e-mail addresses wrap.
+
+**Menus, dialogs, scrolling**
+13. Open the Diver filter, Recording actions and the account menu: each opens from its button; tapping outside
+    closes it; a long list scrolls inside without moving the page.
+14. Open a confirmation (split off a recording): the page behind doesn't scroll.
+15. Pull down at the top of the logbook: the browser's pull-to-refresh still works.
+
+**Files and settings**
+16. Import files opens the phone's file picker; a `.fit` or `.zip` uploads and shows in Imports.
+17. Turn on reduced motion (iOS: Accessibility → Motion; Android: Remove animations): menus and dialogs appear
+    without animating.
+18. Pinch-zoom works on every page.
