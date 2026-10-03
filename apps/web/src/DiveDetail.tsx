@@ -12,7 +12,7 @@ import { deviceName } from './lib/devices.ts';
 import { useFormatValue } from './lib/dive-values.ts';
 import { focusHeading } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
-import { ActionMenu, Button, ConfirmDialog, Dialog, ErrorBoundary, Icon, Muted, Notice, Panel, Select } from './ui/index.ts';
+import { ActionMenu, Button, ConfirmDialog, Dialog, ErrorBoundary, Icon, Muted, Notice, PageHeader, Panel, Select } from './ui/index.ts';
 
 /** One Dive (ADR 0015): its values with Overrides marked, notes, Recordings, and its history. */
 export function DiveDetail({ id, recordingId }: { id: string; recordingId?: string | undefined }) {
@@ -37,11 +37,24 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
   usePageTitle(title);
 
   if (dive.isPending) return <DiveLoading />;
+  if (notFound) {
+    // Not an error to dismiss but a dead end to leave: say why and offer the way back (visual refresh 8).
+    return (
+      <>
+        <PageHeader title={title} />
+        <Panel>
+          <div className="empty-state">
+            <p>{errorText(dive.error)}</p>
+            <a href="#/" className="btn btn-secondary"><Icon name="back" />{t('dive.backToLogbook')}</a>
+          </div>
+        </Panel>
+      </>
+    );
+  }
   if (dive.error) {
     return (
       <>
         <p><a href="#/" className="back-link"><Icon name="back" />{t('dive.back')}</a></p>
-        {notFound && <h1>{title}</h1>}
         <Notice tone="danger">{errorText(dive.error)}</Notice>
       </>
     );
@@ -53,30 +66,32 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
   return (
     <>
       <p><a href="#/" className="back-link"><Icon name="back" />{t('dive.back')}</a></p>
-      <Panel
-        level={1}
-        title={(
-          <>
-            {title}
-            <span className="title-meta">
-              {display.diveTime(d.values.startsAt.at, d.values.startsAt.utcOffsetSeconds)}<EditedMark dive={d} field="startsAt" />
+      <div className="dive-head">
+        <PageHeader
+          title={title}
+          meta={(
+            <>
+              <p className="title-meta">
+                {display.diveTime(d.values.startsAt.at, d.values.startsAt.utcOffsetSeconds)}<EditedMark dive={d} field="startsAt" />
+              </p>
               {/* The Diver right under the date, before the actions wrap in on a phone (UI review C4). */}
-              {several && diverName && <span className="title-diver">{t('dive.diver')}: {diverName}</span>}
-            </span>
-          </>
-        )}
-        actions={!editing && (
-          <div className="form-actions">
-            <Button ref={editButton} icon="edit" onPress={() => setEditing(true)}>{t('dive.edit')}</Button>
-            {several && (
-              <ActionMenu
-                label={t('dive.moreActions')} aria-label={t('common.forItem', { action: t('dive.moreActions'), item: title ?? '' })}
-                actions={[{ id: 'move', label: t('dive.moveTo'), icon: 'move', onAction: () => setMoving(true) }]}
-              />
-            )}
-          </div>
-        )}
-      >
+              {several && diverName && <p className="title-meta">{t('dive.diver')}: {diverName}</p>}
+            </>
+          )}
+          actions={!editing && (
+            <>
+              <Button ref={editButton} icon="edit" onPress={() => setEditing(true)}>{t('dive.edit')}</Button>
+              {several && (
+                <ActionMenu
+                  label={t('dive.moreActions')} aria-label={t('common.forItem', { action: t('dive.moreActions'), item: title ?? '' })}
+                  actions={[{ id: 'move', label: t('dive.moveTo'), icon: 'move', onAction: () => setMoving(true) }]}
+                />
+              )}
+            </>
+          )}
+        />
+      </div>
+      <Panel>
         {editing
           ? <DiveEditForm key={d.version} dive={d} onDone={() => setEditing(false)} />
           : <DiveFacts dive={d} />}

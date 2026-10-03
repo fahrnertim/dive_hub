@@ -26,14 +26,27 @@
 .app-main:focus { outline: none; }
 
 /* ---------- Panels, notices, text ---------- */
-.panel { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg);
-  padding: var(--space-5); min-width: 0; }
+/* Panels lift off the page by tone alone: no outline, no shadow (ADR 0019). */
+.panel { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--panel-padding); min-width: 0; }
+/* Something that waits for the User (Duplicate candidates) is tinted. */
+.panel-attention { background: var(--color-accent-soft); }
 .panel-narrow { width: 100%; max-width: var(--width-form); justify-self: center; }
-.panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+.panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-3); }
+.panel-head > h2, .panel-head > h1 { margin: 0; }
+
+/* The page head: the h1 first, an optional lead and meta under it, the page's actions beside it. */
+.page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-4); }
+.page-head h1 { margin: 0; }
+.page-head-text { display: grid; gap: var(--space-1); min-width: 0; }
+.page-head-text > p { margin: 0; }
+.page-actions { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); }
 .panel > :last-child { margin-bottom: 0; }
 .panel .form + .muted, .panel .form + p { margin-top: var(--space-4); }
 
-.muted { color: var(--color-text-muted); font-size: var(--text-sm); }
+/* Text roles: colour and size are separate (visual refresh 1). A lead or a sentence stays at body size. */
+.muted { color: var(--color-text-muted); }
+/* Small, secondary text: counts, dates of an entry, hints. */
+.meta { color: var(--color-text-muted); font-size: var(--text-sm); }
 
 .notice { border-radius: var(--radius-md); padding: var(--space-2) var(--space-3); margin: var(--space-3) 0;
   border-left: 3px solid; font-size: var(--text-sm); }
@@ -47,9 +60,10 @@
 .notice-danger > .icon { color: var(--color-danger); }
 .notice-body { flex: 1; min-width: 0; }
 .notice-body > :last-child { margin-bottom: 0; }
+.notice-body p { max-width: none; }
 
 /* ---------- Buttons ---------- */
-.btn { font: inherit; font-weight: var(--weight-medium); line-height: var(--leading-tight); cursor: pointer;
+.btn { font: inherit; font-weight: var(--weight-medium); line-height: var(--leading-tight); cursor: pointer; text-decoration: none;
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
   min-height: 2.5rem; padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); border: 1px solid transparent;
   transition: background-color var(--duration-fast), border-color var(--duration-fast), transform var(--duration-fast) var(--ease-out); }
@@ -66,6 +80,8 @@
 .btn-quiet { background: none; color: var(--color-accent); min-height: 2rem; padding: var(--space-1); margin-inline: calc(-1 * var(--space-1));
   justify-content: flex-start; text-align: left; }
 .btn-quiet[data-hovered] { text-decoration: underline; }
+/* Small: an action inside a row (Add to this dive, pager). Still 32 px tall. */
+.btn-small { min-height: 2rem; padding: var(--space-1) var(--space-3); font-size: var(--text-sm); }
 /* Pressing gives way a little (emil-design-eng); the duration token drops to 0 with reduced motion.
    Not for quiet buttons: shrinking a line of text reads as jitter; colour and underline are their feedback. */
 .btn:not(.btn-quiet)[data-pressed] { transform: scale(0.97); }
@@ -76,7 +92,10 @@
 .form { display: grid; gap: var(--space-4); }
 .narrow-form { max-width: var(--width-form); }
 .form-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; }
-.form-inline { display: flex; gap: var(--space-3); align-items: flex-end; flex-wrap: wrap; }
+/* Buttons and checkboxes line up with the input, not with the bottom of the field: a hint under the
+   input would push them down (visual refresh 7). The margin is the label's line plus the field's gap. */
+.form-inline { display: flex; gap: var(--space-3); align-items: flex-start; flex-wrap: wrap; }
+.form-inline > :not(.field):not(.radio-group) { margin-top: calc(var(--text-sm) * var(--leading-normal) + var(--space-1)); }
 .form-inline .field { flex: 1 1 16rem; }
 .form-inline .radio-group { margin-right: var(--space-6); }
 
@@ -135,15 +154,22 @@
 .date-segment[data-focused] { background: var(--color-accent); color: var(--color-on-accent); outline: none; }
 .date-segment[data-type='literal'] { color: var(--color-text-muted); }
 .copy-field .input { font-size: var(--text-sm); }
+/* A select inside a table row (device owner). */
+.select-small .select-button { min-height: 2rem; padding-block: var(--space-1); font-size: var(--text-sm); }
 
 /* ---------- Tables ---------- */
 /* position: relative keeps visually hidden labels and React Aria's hidden inputs inside the scroll box;
    without it they stretch the page sideways on phones (UI review A2). */
-.table-scroll { overflow-x: auto; position: relative; }
+/* The negative margin lets the cell padding sit outside the text, so the first and last columns line
+   up with the panel's heading (visual refresh 5). */
+.table-scroll { overflow-x: auto; position: relative; margin-inline: calc(-1 * var(--space-3)); }
 .table-scroll:focus-visible { outline: 2px solid var(--color-focus); }
 .table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
 .table th, .table td { text-align: left; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); vertical-align: middle; }
-.table th { color: var(--color-text-muted); font-weight: var(--weight-medium); white-space: nowrap; }
+.table th { color: var(--color-text-muted); font-weight: var(--weight-medium); white-space: nowrap; padding-top: var(--space-1); }
+.table tbody tr:last-child td { border-bottom: none; }
+/* Links in tables keep an underline (WCAG 1.4.1), but a lighter one. */
+.table td a { text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
 .table td.num, .table th.num { text-align: right; }
 .table tr.is-disabled td { color: var(--color-text-muted); }
 .table tr.row-link { cursor: pointer; }
@@ -158,16 +184,12 @@
 .dialog { padding: var(--space-5); outline: none; }
 .dialog-title { font-size: var(--text-lg); margin: 0 0 var(--space-3); }
 
-/* ---------- Badge: a short state next to a value ---------- */
-.badge { display: inline-block; margin-left: var(--space-2); padding: 0 var(--space-2); border-radius: var(--radius-sm);
-  background: var(--color-accent-soft); color: var(--color-accent); font-size: var(--text-xs); font-weight: var(--weight-medium);
+/* ---------- Badge: a state, not a link (visual refresh 3). The accent colour means "you can click this". ---------- */
+.badge { display: inline-block; padding: 0 var(--space-2); border-radius: var(--radius-sm); white-space: nowrap;
+  background: var(--color-surface-sunken); color: var(--color-text-muted); font-size: var(--text-xs); font-weight: var(--weight-medium);
   line-height: 1.6; vertical-align: middle; }
-
-/* ---------- Status words ---------- */
-.status { color: var(--color-text-muted); }
-.status-done, .status-accepted { color: var(--color-success); }
-.status-failed { color: var(--color-danger); }
-.status-pending, .status-processing { color: var(--color-accent); }
+.badge-success { background: var(--color-success-soft); color: var(--color-success); }
+.badge-danger { background: var(--color-danger-soft); color: var(--color-danger); }
 
 @media (hover: hover) {
   .app-nav a:hover { color: var(--color-text); }
@@ -206,16 +228,21 @@
   /* Tables with cards: one card per row, the column name next to each value (UI review C5). */
   .table-cards thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
   .table-cards, .table-cards tbody, .table-cards tr, .table-cards td { display: block; }
-  .table-cards tr { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2) var(--space-3); margin-bottom: var(--space-3); }
+  /* Rows are separated by a line, not boxed: no boxes inside panels (visual refresh 6). */
+  .table-cards tr { border-bottom: 1px solid var(--color-border); padding: var(--space-3); }
+  .table-cards tbody tr:last-child { border-bottom: none; }
   .table-cards td { border: none; padding: var(--space-1) 0; display: grid; grid-template-columns: 8rem minmax(0, 1fr); gap: var(--space-3); align-items: baseline; }
   .table-cards td.num { text-align: left; }
-  .table-cards td::before { content: attr(data-label); color: var(--color-text-muted); font-weight: var(--weight-medium); }
+  .table-cards td::before { content: attr(data-label); color: var(--color-text-muted); }
   .table-cards td[data-label=''] { display: block; }
   .table-cards td[data-label='']::before { content: none; }
+  .table-cards td > .badge { justify-self: start; }
 
   /* Phone header: brand and user menu on the first row, the navigation on its own second row. */
   .app-header-inner { gap: var(--space-2) var(--space-3); }
   .app-nav { order: 3; flex-basis: 100%; overflow-x: auto; }
-  .panel { padding: var(--space-4); }
+  .panel { padding: var(--space-5) var(--space-4); }
   .copy-field { flex-direction: column; }
+  /* On a phone the button wraps under the field anyway; no alignment margin. */
+  .form-inline > :not(.field):not(.radio-group) { margin-top: 0; }
 }

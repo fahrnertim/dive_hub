@@ -74,7 +74,7 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
     <li>
       <div className="history-head">
         <strong>{t(`history.cause.${r.cause}`)}</strong>
-        <span className="muted">{display.dateTime(r.at)} · {who}{count > 1 && ` · ${t('history.edits', { count })}`}</span>
+        <span className="meta">{display.dateTime(r.at)} · {who}{count > 1 && ` · ${t('history.edits', { count })}`}</span>
       </div>
       {lines.length > 0 && <ul className="history-changes">{lines.map((line, i) => <li key={i}>{line}</li>)}</ul>}
       {lines.length === 0 && count > 1 && <ul className="history-changes"><li>{t('history.noNetChange')}</li></ul>}

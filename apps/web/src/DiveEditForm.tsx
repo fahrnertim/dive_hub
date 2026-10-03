@@ -8,7 +8,7 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { useLeaveGuard } from './lib/leave-guard.ts';
 import { useFormatValue } from './lib/dive-values.ts';
 import { depthFromDisplay, depthIn, temperatureFromDisplay, temperatureIn } from './lib/units.ts';
-import { Button, DateTimeField, Form, Notice, NumberField, Select, TextArea } from './ui/index.ts';
+import { Badge, Button, DateTimeField, Form, Notice, NumberField, Select, TextArea } from './ui/index.ts';
 
 type WaterType = NonNullable<DiveValues['waterType']>;
 const WATER_TYPES: WaterType[] = ['fresh', 'salt', 'brackish', 'en13319', 'custom'];
@@ -138,43 +138,55 @@ export function DiveEditForm({ dive: d, onDone }: { dive: DiveView; onDone: () =
     if (!overridden || !d.fromRecording) return null;
     return (
       <span className="field-origin">
-        <span className="badge">{t('dive.edited')}</span>
+        <Badge>{t('dive.edited')}</Badge>
         <Button variant="quiet" onPress={() => resetToRecording(field)}>
           {t('dive.resetToRecording')} ({format(field, d.fromRecording[field])})
         </Button>
       </span>
     );
   };
+  /**
+   * A number field is marked as edited while typing. Its value only commits on blur, and the mark
+   * appearing then would push the Save button away under the pointer that is clicking it.
+   */
+  const typing = (field: OverridableField) => () => {
+    if (touched.has(field) && !reset.has(field)) return;
+    setTouched((old) => new Set(old).add(field));
+    setReset((old) => { const next = new Set(old); next.delete(field); return next; });
+  };
 
   return (
     <Form className="form" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
       <div className="form-grid">
         <div className="field-block">
-          <NumberField autoFocus label={t('dive.number')} description={hint('number')} value={draft.number} onChange={(n) => change('number', n)} minValue={0} maxValue={100_000} step={1} />
+          <NumberField autoFocus label={t('dive.number')} description={hint('number')} value={draft.number} onChange={(n) => change('number', n)} onInput={typing('number')} minValue={0} maxValue={100_000} step={1} />
           {origin('number')}
         </div>
         <div className="field-block">
           <DateTimeField label={t('dive.start')} description={hint('startsAt')} value={draft.start} onChange={(v) => v && change('start', v as CalendarDateTime)} isRequired />
-          <NumberField
-            label={t('dive.utcOffset')} value={draft.offsetHours} onChange={(n) => change('offsetHours', n)}
-            minValue={-12} maxValue={14} step={0.25} formatOptions={{ signDisplay: 'always', maximumFractionDigits: 2 }}
-          />
           {origin('startsAt')}
         </div>
+        {/* Its own cell, beside the start: stacked under it, it left a hole in the grid (visual refresh 7). */}
         <div className="field-block">
-          <NumberField label={t('dive.duration')} description={hint('durationSeconds')} unit={display.unit('minutes')} value={draft.durationMin} onChange={(n) => change('durationMin', n)} minValue={0} maxValue={2880} isRequired />
+          <NumberField
+            label={t('dive.utcOffset')} value={draft.offsetHours} onChange={(n) => change('offsetHours', n)} onInput={typing('startsAt')}
+            minValue={-12} maxValue={14} step={0.25} formatOptions={{ signDisplay: 'always', maximumFractionDigits: 2 }}
+          />
+        </div>
+        <div className="field-block">
+          <NumberField label={t('dive.duration')} description={hint('durationSeconds')} unit={display.unit('minutes')} value={draft.durationMin} onChange={(n) => change('durationMin', n)} onInput={typing('durationSeconds')} minValue={0} maxValue={2880} isRequired />
           {origin('durationSeconds')}
         </div>
         <div className="field-block">
-          <NumberField label={t('dive.maxDepth')} description={hint('maxDepthM')} unit={display.unit('depth')} value={draft.maxDepth} onChange={(n) => change('maxDepth', n)} minValue={0} formatOptions={{ maximumFractionDigits: 1 }} />
+          <NumberField label={t('dive.maxDepth')} description={hint('maxDepthM')} unit={display.unit('depth')} value={draft.maxDepth} onChange={(n) => change('maxDepth', n)} onInput={typing('maxDepthM')} minValue={0} formatOptions={{ maximumFractionDigits: 1 }} />
           {origin('maxDepthM')}
         </div>
         <div className="field-block">
-          <NumberField label={t('dive.avgDepth')} description={hint('avgDepthM')} unit={display.unit('depth')} value={draft.avgDepth} onChange={(n) => change('avgDepth', n)} minValue={0} formatOptions={{ maximumFractionDigits: 1 }} />
+          <NumberField label={t('dive.avgDepth')} description={hint('avgDepthM')} unit={display.unit('depth')} value={draft.avgDepth} onChange={(n) => change('avgDepth', n)} onInput={typing('avgDepthM')} minValue={0} formatOptions={{ maximumFractionDigits: 1 }} />
           {origin('avgDepthM')}
         </div>
         <div className="field-block">
-          <NumberField label={t('dive.waterTemperature')} description={hint('waterTemperatureC')} unit={display.unit('temperature')} value={draft.waterTemperature} onChange={(n) => change('waterTemperature', n)} formatOptions={{ maximumFractionDigits: 1 }} />
+          <NumberField label={t('dive.waterTemperature')} description={hint('waterTemperatureC')} unit={display.unit('temperature')} value={draft.waterTemperature} onChange={(n) => change('waterTemperature', n)} onInput={typing('waterTemperatureC')} formatOptions={{ maximumFractionDigits: 1 }} />
           {origin('waterTemperatureC')}
         </div>
         <div className="field-block">

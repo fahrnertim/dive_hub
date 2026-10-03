@@ -94,7 +94,11 @@ export function DepthProfile({ recordingId }: { recordingId: string }) {
         axes: [
           { ...axis, label: t('dive.minutes'), values: (_u, ticks) => ticks.map((v) => number.format(v)) },
           { ...axis, label: `${t('dive.depth')} (${depthUnit})`, values: (_u, ticks) => ticks.map((v) => number.format(Math.abs(v))) },
-          { ...axis, scale: 'temp', side: 1, stroke: muted, label: temperatureUnit, grid: { show: false }, values: (_u, ticks) => ticks.map((v) => number.format(v)) },
+          // The unit sits in each tick ("25 °C"); a rotated "°C" axis title was hard to read (visual refresh 10).
+          {
+            ...axis, scale: 'temp', side: 1, stroke: muted, size: 64, grid: { show: false },
+            values: (_u, ticks) => ticks.map((v) => `${number.format(v)} ${temperatureUnit}`),
+          },
         ],
         series: [
           { label: t('dive.time'), value: (_u, v) => (v == null ? '–' : display.duration(v * 60)) },

@@ -6,17 +6,49 @@ import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { logbookHref } from './lib/logbook.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, Icon, Muted, Notice, Panel, Select, Table, TextField } from './ui/index.ts';
+import { Button, Icon, Muted, Notice, PageHeader, Panel, Select, Table, TextField } from './ui/index.ts';
 
 const ALL = 'all';
 type Sort = NonNullable<LogbookParams['sort']>;
+
+/**
+ * The logbook page's head (visual refresh 2): the title, the Diver filter when there are several
+ * Divers, and the import button for a returning User, with the hint that files can be dropped.
+ */
+export function LogbookHeader({ params, importAction }: { params: LogbookParams; importAction?: ReactNode }) {
+  const { t } = useTranslation();
+  const divers = useQuery(diversQuery());
+  const several = (divers.data?.length ?? 0) > 1;
+  usePageTitle(t('logbook.title'));
+  return (
+    <PageHeader
+      title={t('logbook.title')}
+      lead={importAction && t('import.dropAnywhere')}
+      actions={(several || importAction) && (
+        <>
+          {several && (
+            <div className="logbook-filter">
+              <Select
+                label={t('divers.filter')}
+                value={params.diverId ?? ALL}
+                onChange={(v) => { location.hash = logbookHref({ ...params, diverId: !v || v === ALL ? undefined : v, page: undefined }); }}
+                options={[{ id: ALL, label: t('divers.allDivers') }, ...(divers.data ?? []).map((d) => ({ id: d.id, label: d.name }))]}
+              />
+            </div>
+          )}
+          {importAction}
+        </>
+      )}
+    />
+  );
+}
 
 /**
  * The logbook: Dives of the User's Divers, a page at a time, newest first unless sorted by a column,
  * searchable by number and notes (ADR 0017). With several Divers, a filter and a column. Everything
  * the User picks is in the address, so back, reload and links keep it.
  */
-export function DiveList({ params, importAction }: { params: LogbookParams; importAction?: ReactNode }) {
+export function DiveList({ params, searchable = true }: { params: LogbookParams; searchable?: boolean }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const display = useDisplay();
@@ -24,7 +56,6 @@ export function DiveList({ params, importAction }: { params: LogbookParams; impo
   const divers = useQuery(diversQuery());
   const several = (divers.data?.length ?? 0) > 1;
   const nameOf = new Map(divers.data?.map((d) => [d.id, d.name]));
-  usePageTitle(t('logbook.title'));
 
   // Typing searches after a short pause; the address is replaced, not added to the history.
   const [text, setText] = useState(params.q ?? '');
@@ -69,35 +100,20 @@ export function DiveList({ params, importAction }: { params: LogbookParams; impo
   };
 
   return (
-    <Panel
-      title={t('logbook.title')}
-      level={1}
-      actions={(several || importAction) && (
-        <div className="logbook-actions">
-          {several && (
-            <div className="logbook-filter">
-              <Select
-                label={t('divers.filter')}
-                value={params.diverId ?? ALL}
-                onChange={(v) => { location.hash = logbookHref({ ...params, diverId: !v || v === ALL ? undefined : v, page: undefined }); }}
-                options={[{ id: ALL, label: t('divers.allDivers') }, ...(divers.data ?? []).map((d) => ({ id: d.id, label: d.name }))]}
-              />
-            </div>
-          )}
-          {importAction}
+    <Panel>
+      {/* Nothing to search before the first dive (visual refresh 8). */}
+      {searchable && (
+        <div className="logbook-search">
+          <TextField label={t('logbook.search')} description={t('logbook.searchHint')} type="search" value={text} onChange={setText} autoComplete="off" />
         </div>
       )}
-    >
-      {importAction && <Muted>{t('import.dropAnywhere')}</Muted>}
-      <div className="logbook-search">
-        <TextField label={t('logbook.search')} description={t('logbook.searchHint')} type="search" value={text} onChange={setText} autoComplete="off" />
-      </div>
       {dives.isPending && <Muted>{t('common.loading')}</Muted>}
       {dives.error && <Notice tone="danger">{errorText(dives.error)}</Notice>}
       {dives.data?.total === 0 && <Muted>{params.q ? t('logbook.noMatch', { q: params.q }) : t('logbook.empty')}</Muted>}
       {dives.data && dives.data.total > 0 && (
         <>
           <Table
+            stacked
             label={t('logbook.title')}
             head={[
               sortable('number', t('logbook.number'), true), sortable('startsAt', t('logbook.date'), false), ...(several ? [t('dive.diver')] : []),
@@ -115,20 +131,20 @@ export function DiveList({ params, importAction }: { params: LogbookParams; impo
                   location.hash = `/dives/${d.id}`;
                 }}
               >
-                <td className="num">{d.number ?? t('common.none')}</td>
-                <td><a href={`#/dives/${d.id}`}>{display.diveTime(d.startsAt, d.utcOffsetSeconds)}</a></td>
-                {several && <td>{nameOf.get(d.diverId) ?? t('common.none')}</td>}
-                <td className="num">{display.depth(d.maxDepthM)}</td>
-                <td className="num">{display.duration(d.durationSeconds)}</td>
+                <td className="num cell-lead">{d.number ?? t('common.none')}</td>
+                <td className="cell-main"><a href={`#/dives/${d.id}`}>{display.diveTime(d.startsAt, d.utcOffsetSeconds)}</a></td>
+                {several && <td className="cell-sub">{nameOf.get(d.diverId) ?? t('common.none')}</td>}
+                <td className="num cell-sub">{display.depth(d.maxDepthM)}</td>
+                <td className="num cell-sub">{display.duration(d.durationSeconds)}</td>
               </tr>
             ))}
           </Table>
           <nav className="pager" aria-label={t('logbook.pages')}>
-            <span className="muted">{range}</span>
+            <span className="meta">{range}</span>
             {total > PAGE_SIZE && (
               <span className="pager-buttons">
-                <Button ref={previous} icon="previous" isDisabled={page <= 1} onPress={() => goTo(page - 1)}>{t('logbook.previous')}</Button>
-                <Button ref={next} isDisabled={page >= pages} onPress={() => goTo(page + 1)}>{t('logbook.next')}<Icon name="next" /></Button>
+                <Button ref={previous} size="small" icon="previous" isDisabled={page <= 1} onPress={() => goTo(page - 1)}>{t('logbook.previous')}</Button>
+                <Button ref={next} size="small" isDisabled={page >= pages} onPress={() => goTo(page + 1)}>{t('logbook.next')}<Icon name="next" /></Button>
               </span>
             )}
           </nav>

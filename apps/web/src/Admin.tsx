@@ -5,7 +5,7 @@ import { api, invitationsQuery, keys, meQuery, unwrap, usersQuery, type UserView
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { focusHeading } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, Checkbox, ConfirmButton, CopyField, Dialog, Form, Notice, Panel, Table, TextField } from './ui/index.ts';
+import { Badge, Button, Checkbox, ConfirmButton, CopyField, Dialog, Form, Notice, PageHeader, Panel, Table, TextField } from './ui/index.ts';
 
 /** Admins invite people (copy the link, there's no mail yet) and manage Users (ADR 0012, 0013). */
 export function Admin() {
@@ -13,7 +13,7 @@ export function Admin() {
   usePageTitle(t('nav.admin'));
   return (
     <>
-      <h1>{t('nav.admin')}</h1>
+      <PageHeader title={t('nav.admin')} />
       <Invite />
       <Invitations />
       <Users />
@@ -86,7 +86,7 @@ function Invitations() {
           <tr key={i.id}>
             <td>{i.email}</td>
             <td>{t(`admin.roles.${i.role}`)}</td>
-            <td className={`status status-${i.status}`}>{t(`admin.invitationStatus.${i.status}`)}</td>
+            <td><Badge tone={i.status === 'accepted' ? 'success' : 'neutral'}>{t(`admin.invitationStatus.${i.status}`)}</Badge></td>
             <td>{i.status === 'pending' ? display.dateTime(i.expiresAt) : t('common.none')}</td>
             <td>
               {i.status === 'pending' && (
@@ -124,7 +124,7 @@ function Users() {
       <div ref={panel}>
       {users.error && <Notice tone="danger">{errorText(users.error)}</Notice>}
       {users.data && (
-        <Table cards label={t('admin.users')} head={[t('admin.name'), t('admin.email'), t('admin.role'), t('admin.since'), t('admin.actions')]}>
+        <Table cards label={t('admin.users')} head={[t('admin.name'), t('admin.email'), t('admin.role'), t('admin.since'), { label: t('common.actions'), hidden: true }]}>
           {users.data.map((u) => <UserRow key={u.id} user={u} isMe={u.id === me.data?.user.id} isLastAdmin={u.role === 'admin' && admins <= 1} onRemoved={onRemoved} />)}
         </Table>
       )}

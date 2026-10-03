@@ -2,12 +2,13 @@
 title: Design system
 summary: Visual direction, tokens, components, writing, localization and units of the web client; the brief every screen follows.
 status: living
-date: 2026-10-03
+date: 2026-10-04
 ---
 
 # Design system
 
-Decided in [ADR 0014](../decisions/0014-design-system-and-localization.md). Code:
+Decided in [ADR 0014](../decisions/0014-design-system-and-localization.md), surfaces and density amended by
+[ADR 0019](../decisions/0019-tonal-surfaces.md) (visual refresh, 2026-10-04). Code:
 `apps/web/src/design/` (tokens, base styles), `apps/web/src/ui/` (components), `apps/web/src/i18n/`
 (translations), `apps/web/src/lib/units.ts` (units and formatting).
 
@@ -21,7 +22,8 @@ diver-down flag, the plain clarity of a wet-notes slate.
 
 **One bold element, everything else quiet.** The depth profile's area darkens from the surface to
 the deepest point, like the water column. The diver-down flag is the brand mark. Everything else is
-calm: panels with borders instead of shadows, one typeface, no decoration that carries no information.
+calm: panels set off from the page by tone alone (no outline, no shadow), one typeface, no decoration
+that carries no information.
 
 Checked against generic defaults (frontend-design skill). No cream background, no all-caps labels,
 no identical shadowed cards, no gradients as decoration (the only gradient encodes depth), no
@@ -36,7 +38,7 @@ Defined once in `design/tokens.css`. Components use only the **semantic** tokens
 
 | Palette name | Hex | Role |
 |---|---|---|
-| Slate | `#f3f6f8` | page background (light) |
+| Slate | `#e9eef2` | page background (light); panels lift off it by tone |
 | Wet notes | `#ffffff` | panels, inputs (light) |
 | Abyss | `#0b2236` | text (light) |
 | Open water | `#0f5e8c` | accent: links, primary buttons, focus (light) |
@@ -44,22 +46,24 @@ Defined once in `design/tokens.css`. Components use only the **semantic** tokens
 | Dive flag | `#c8102e` | brand mark only |
 | Kelp | `#2a7150` | success |
 
-Dark mode ("night dive") follows `prefers-color-scheme`. Background `#071827`, panels `#0e2338`,
+Dark mode ("night dive") follows `prefers-color-scheme`. Background `#061522`, panels `#0e2338`,
 text `#dce8f0`, accent `#62b6e6`.
 
 **Contrast (WCAG 2.2 AA), measured:**
 
 | Pair | Light | Dark |
 |---|---|---|
-| Text on background / panel | 14.9 / 16.2 | 14.4 / 12.8 |
-| Muted text on background / panel | 5.6 / 6.1 | 6.3 (panel) |
-| Accent on panel; text on accent | 7.0; 7.0 | 7.1; 8.0 |
+| Text on background / panel / attention tint | 13.9 / 16.2 / 13.7 | 14.8 / 12.8 / 10.6 |
+| Muted text on background / panel / tint | 5.2 / 6.1 / 5.1 | 7.3 / 6.3 / 5.2 |
+| Accent on background / panel; text on accent | 6.0 / 7.0; 7.0 | 8.2 / 7.1; 8.0 |
 | Danger on panel; text on danger | 6.9; 6.9 | 6.3; 7.1 |
 | Success on panel | 5.9 | 7.5 |
-| Control border on panel (≥ 3:1, WCAG 1.4.11) | 3.6 | 3.5 |
+| Badges: neutral, success, danger on their fill | 5.2, 5.1, 5.9 | 6.8, 6.7, 6.3 |
+| Control border on background / panel / tint (≥ 3:1, WCAG 1.4.11) | 3.3 / 3.9 / 3.3 | 4.7 / 4.1 / 3.4 |
+| Panel on background (decorative, no meaning) | 1.17 | 1.19 |
 
-`--color-border` (dividers) is decorative and lighter; anything that marks a control's boundary
-uses `--color-border-strong`.
+`--color-border` (dividers between rows) is decorative and lighter; anything that marks a control's
+boundary uses `--color-border-strong`. Panels have no outline (ADR 0019).
 
 ### Type, space, shape
 
@@ -67,8 +71,14 @@ uses `--color-border-strong`.
   Numbers in tables and facts use tabular figures.
 - **Scale:** minor third (×1.2) on 16 px: `--text-xs` … `--text-2xl`.
 - **Space:** 4 px steps, `--space-1` (4 px) … `--space-7` (48 px).
-- **Radius by hierarchy:** `--radius-sm` 2 px (small marks), `--radius-md` 6 px (controls),
-  `--radius-lg` 10 px (panels).
+- **Radius by hierarchy:** `--radius-sm` 2 px (small marks, badges), `--radius-md` 6 px (controls, rows inside a
+  panel), `--radius-lg` 14 px (panels).
+- **Surfaces** ([ADR 0019](../decisions/0019-tonal-surfaces.md)): white panels on the slightly deeper page tone,
+  no outline, `--panel-padding` 32 px (24/16 px on a phone). Something that waits for the User (Duplicate
+  candidates) is tinted with `--color-accent-soft` (`Panel attention`). One comfortable density: table rows
+  keep `--space-3` vertical padding.
+- **Text roles:** `.muted` is colour only, so leads and sentences stay at body size; `.meta` is small, muted
+  secondary text (counts, entry dates). Large headings use `--tracking-heading` (−0.01em).
 - **Elevation:** only things floating above the page (dialogs) get `--shadow-overlay`.
 - **Motion** ([ADR 0018](../decisions/0018-icons-and-motion.md)): only entries that explain where
   something came from. Menus and selects grow from their trigger (`--duration-popover`, 150 ms),
@@ -85,8 +95,9 @@ uses `--color-border-strong`.
   its border. CSS `:hover` rules sit inside `@media (hover: hover)`, so they don't stick on touch screens.
 - **Touch:** links and buttons have `touch-action: manipulation` and no tap highlight. Quiet
   buttons are 32 px tall.
-- **Layout:** content up to `--width-content` (72 rem), left-aligned. Single forms (sign-in, setup)
-  are a narrow centered panel (`--width-form`, 28 rem).
+- **Layout:** content up to `--width-content` (72 rem), left-aligned. Every page starts with `PageHeader`
+  (h1, meta, lead, the page's actions), then its panels. Single forms (sign-in, setup) are a narrow centered
+  panel (`--width-form`, 28 rem) whose title is the h1.
 
 ## Components
 
@@ -95,22 +106,23 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 
 | Component | Use |
 |---|---|
-| `Button` | `primary`: the one main action of a form or panel. `secondary`: other actions. `quiet`: inline, text-like (table actions). `danger`: destructive confirmation. |
+| `Button` | `primary`: the one main action of a form or panel. `secondary`: other actions. `quiet`: inline, text-like (table actions). `danger`: destructive confirmation. `size="small"` (32 px) for an action inside a row (Add to this dive, pager). |
 | `TextField` | Label, input, description and error. Validation messages come from our translations. |
 | `Checkbox`, `RadioGroup` | Choices. A radio group saves immediately where that is expected (display settings). |
 | `Form` | React Aria's form with native validation on submit. |
-| `Panel` | A titled area of a page; `narrow` for single forms. |
+| `PageHeader` | The page's h1 with optional meta (a dive's date and Diver), a lead sentence and the page's actions. |
+| `Panel` | A titled area of a page; `narrow` for single forms; `attention` for something waiting for the User. |
 | `Notice` | What just happened: `info`, `success`, `danger` (announced at once). |
-| `Table` | Data tables that scroll sideways on phones; numeric columns are right-aligned, header included. `cards`: on a phone each row becomes a card (tables with an actions column). |
+| `Table` | Data tables that scroll sideways on phones; numeric columns are right-aligned, header included. The first and last columns line up with the panel's text. `cards`: on a phone each row becomes a block of label–value lines, separated by dividers (tables with an actions column). `stacked`: on a phone each row becomes two lines (`cell-lead` and `cell-main`, then the `cell-sub` cells), as in the logbook. |
 | `Dialog` | Modal with focus kept inside, for confirmations that need input (deleting a User). |
 | `ConfirmButton`, `ConfirmDialog` | An action that is hard to undo asks first, in a dialog that says what will happen. The dialog alone serves menu items. |
 | `ActionMenu` | Secondary actions behind one button ("Recording actions", "More", the account menu). The panel shows only its main action. |
 | `CopyField` | A value shown once with a copy button (invitation and reset links). |
-| `NumberField` | Numbers in the UI language's format ("18,5" in German), with a unit after the input. |
-| `Select` | One choice from a short list (e.g. water type). |
+| `NumberField` | Numbers in the UI language's format ("18,5" in German), with a unit after the input. The value commits on blur; `onInput` reacts while typing (the dive form marks a field "edited" then, so nothing moves under a pointer about to press Save). |
+| `Select` | One choice from a short list (e.g. water type). `size="small"` inside a table row. |
 | `TextArea` | Multi-line text (notes). |
 | `DateTimeField` | Date and time typed by segment, in the UI language's order. |
-| badge (`.badge`) | A short state next to a value, e.g. "edited" for an Override. |
+| `Badge` | A short state: `neutral` ("edited", "open", "processing"), `success` ("done", "accepted"), `danger` ("failed"). States never use the accent colour, which means "you can click this". |
 | `ErrorBoundary` | Keeps a failing part (e.g. the chart) from blanking the page. |
 | `BrandMark` | The diver-down flag. |
 | `Icon` | A Lucide icon by meaning (`edit`, `import`, `move`, …); the set lives in `ui/Icon.tsx`. |
@@ -160,8 +172,8 @@ From the [UI review](../research/2026-10-03-ui-review.md). `expectGoodPage` in `
 checks them. `e2e/ui-quality.spec.ts` runs it on every page, in English on a light desktop and in
 German on a dark phone. **A new page gets a test there.**
 
-- **One `h1` per page.** It is the page's title. A panel whose title is the page title uses
-  `<Panel level={1}>`, and headings inside a panel go one level down (`h2.subheading`).
+- **One `h1` per page.** It is the page's title, in `PageHeader` (single forms: `<Panel narrow level={1}>`).
+  Headings inside a panel go one level down (`h2.subheading`).
 - **The browser tab names the page.** Each page calls `usePageTitle()` (`lib/page.ts`) with its
   h1 text, giving e.g. "Dive 42 – Dive Hub". After navigating, focus moves to the new h1.
 - **axe-core finds nothing** (WCAG 2.2 AA plus best practices), in both themes.
@@ -199,6 +211,9 @@ pointers, no `transition: all`, "…" instead of "...", and no line break before
   (`lib/leave-guard.ts`); leaving the page or cancelling then asks first.
 - **One main action per panel; the rest in a menu** (`ActionMenu`). Tables whose last column
   holds actions use `cards`, so the actions stay in sight on a phone.
+- **Buttons beside a field line up with its input** (`form-inline`), not with the bottom of its hint.
+- **States are badges, dead ends lead somewhere**: an empty or not-found page says why and offers the way
+  on ("Back to logbook"); a search field only shows when there is something to search.
 - **What the User picks is in the address**: the logbook's Diver filter, search, sort and page
   (`lib/logbook.ts`, [ADR 0017](../decisions/0017-logbook-list-paging.md)), the dive page's Recording
   tab (`?recording=`). Sortable table headers are buttons with `aria-sort` (`Table` column `sort`).

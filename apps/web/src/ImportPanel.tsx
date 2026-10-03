@@ -6,9 +6,13 @@ import { importsQuery, keys, uploadFile, type ImportView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useErrorText } from './lib/display.ts';
 import { IMPORTABLE, splitImportable } from './lib/importable.ts';
-import { Button, Muted, Notice, Panel } from './ui/index.ts';
+import { Badge, Button, Muted, Notice, Panel } from './ui/index.ts';
 
 const isRunning = (i: ImportView) => i.status === 'pending' || i.status === 'processing';
+const statusTone = (i: ImportView) => {
+  if (i.status === 'done') return 'success';
+  return i.status === 'failed' ? 'danger' : 'neutral';
+};
 /** Imports shown without "Show all": the running ones and those of the last day, at most this many. */
 const RECENT = 3;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -207,9 +211,10 @@ function ImportRow({ item }: { item: ImportView }) {
   return (
     <li>
       <span className="import-name">{item.uploadName}</span>
-      <span className={`status status-${item.status}`}>{t(`import.status.${item.status}`)}</span>
+      {/* A state, so a badge: not a word in the colour that means "click" (visual refresh 3). */}
+      <Badge tone={statusTone(item)}>{t(`import.status.${item.status}`)}</Badge>
       {item.errorCode && (
-        <span className="status-failed">
+        <span className="import-error">
           {t(`import.errorCode.${item.errorCode}`)}{item.error && ` (${item.error})`}
         </span>
       )}

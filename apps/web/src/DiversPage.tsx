@@ -7,7 +7,7 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, Form, Muted, Notice, Panel, Select, Table, TextField } from './ui/index.ts';
+import { Button, Form, Muted, Notice, PageHeader, Panel, Select, Table, TextField } from './ui/index.ts';
 
 /** The Divers whose logbooks the User keeps, and their Devices (ADR 0016). */
 export function DiversPage() {
@@ -15,7 +15,7 @@ export function DiversPage() {
   usePageTitle(t('divers.title'));
   return (
     <>
-      <h1>{t('divers.title')}</h1>
+      <PageHeader title={t('divers.title')} />
       <Divers />
       <Devices />
     </>
@@ -117,7 +117,7 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
       ) : (
         <>
           <span className="diver-name">{d.name}{d.isOwn && ` (${t('divers.own')})`}</span>
-          <a href={`#/?diver=${d.id}`} className="muted">{t('divers.dives', { count: d.diveCount })}</a>
+          <a href={`#/?diver=${d.id}`} className="meta">{t('divers.dives', { count: d.diveCount })}</a>
           <span className="actions">
             <Button ref={renameButton} variant="quiet" aria-label={t('common.forItem', { action: t('divers.rename'), item: d.name })} onPress={() => { setNewName(d.name); setRenaming(true); }}>
               {t('divers.rename')}
@@ -181,6 +181,7 @@ function DeviceRow({ device: d, divers }: { device: DeviceView; divers: DiverVie
       <td className="device-owner">
         <Select
           label={<span className="visually-hidden">{t('divers.belongsToDevice', { device: `${deviceName(d.manufacturer, d.product)} ${d.serialNumber}` })}</span>}
+          size="small"
           value={d.diverId}
           onChange={(diverId) => diverId && diverId !== d.diverId && assign.mutate(diverId)}
           options={divers.map((v) => ({ id: v.id, label: v.name }))}

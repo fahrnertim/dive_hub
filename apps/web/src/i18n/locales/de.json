@@ -108,7 +108,6 @@
     "status": "Status",
     "expires": "Läuft ab",
     "since": "Seit",
-    "actions": "Aktionen",
     "you": "du",
     "revoke": "Zurückziehen",
     "roles": {
@@ -263,6 +262,7 @@
     "move": "Verschieben",
     "splitOff": "Als eigenen Tauchgang abtrennen",
     "notFoundTitle": "Tauchgang nicht gefunden",
+    "backToLogbook": "Zurück zum Logbuch",
     "splitOffTitle": "Diese Aufzeichnung abtrennen?",
     "splitOffBody": "Sie wird ein eigener Tauchgang mit eigenem Verlauf. Dieser Tauchgang behält seine anderen Aufzeichnungen.",
     "splitOffConfirm": "Abtrennen",
@@ -391,6 +391,7 @@
     "recording": "Aufzeichnung",
     "device": "{{name}} ({{serial}})",
     "unknownDevice": "unbekanntes Gerät",
+    "why": "Nicht automatisch zugeordnet: {{reason}}.",
     "maybe": "Sie könnte gehören zu",
     "addTo": "Zu diesem Tauchgang hinzufügen",
     "newDive": "Eigenen Tauchgang anlegen",

@@ -8,7 +8,7 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, ConfirmButton, Form, Notice, Panel, RadioGroup, Table, TextField } from './ui/index.ts';
+import { Button, ConfirmButton, Form, Notice, PageHeader, Panel, RadioGroup, Table, TextField } from './ui/index.ts';
 
 /** The signed-in User's own account: display settings, password, and where they're signed in. */
 export function AccountPage() {
@@ -16,7 +16,7 @@ export function AccountPage() {
   usePageTitle(t('account.title'));
   return (
     <>
-      <h1>{t('account.title')}</h1>
+      <PageHeader title={t('account.title')} />
       <DisplaySettings />
       <ChangePassword />
       <Sessions />

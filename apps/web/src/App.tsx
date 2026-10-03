@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AcceptInvitation, ResetPassword, Setup, SignIn, useSignOut } from './Account.tsx';
 import { divesQuery, meQuery, setupQuery, type LogbookParams, type Me } from './api.ts';
-import { DiveList } from './DiveList.tsx';
+import { DiveList, LogbookHeader } from './DiveList.tsx';
 import { logbookParams } from './lib/logbook.ts';
 import { pickLanguage } from './i18n/index.ts';
 import { Decisions } from './Decisions.tsx';
@@ -11,7 +11,7 @@ import { ImportFilesButton, ImportPanel, ImportProvider, RecentImports } from '.
 import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
 import { useFocusOnNavigate } from './lib/page.ts';
-import { ActionMenu, BrandMark, ErrorBoundary, Icon, Muted, Notice } from './ui/index.ts';
+import { ActionMenu, BrandMark, ErrorBoundary, Icon, Muted, Notice, PageHeader } from './ui/index.ts';
 
 // Pages most visits don't need load on demand: the chart library, account settings, admin.
 const DiveDetail = lazy(() => import('./DiveDetail.tsx').then((m) => ({ default: m.DiveDetail })));
@@ -122,7 +122,7 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   if (route === '/account') return <AccountPage />;
   if (route === '/divers') return <DiversPage />;
   if (route === '/admin') {
-    return me.user.role === 'admin' ? <Admin /> : <><h1>{t('nav.admin')}</h1><Notice tone="danger">{t('errors.admins_only')}</Notice></>;
+    return me.user.role === 'admin' ? <Admin /> : <><PageHeader title={t('nav.admin')} /><Notice tone="danger">{t('errors.admins_only')}</Notice></>;
   }
   return <Logbook params={logbookParams(params)} />;
 }
@@ -130,22 +130,24 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
 /**
  * The logbook page. On the first run the Import is the main action and comes first; once there are
  * dives, the logbook comes first and importing is a button, or dropping files on the page (UI review B5).
+ * The page head comes first in both, then what waits for a decision (visual refresh 2).
  */
 function Logbook({ params }: { params: LogbookParams }) {
   const all = useQuery(divesQuery());
   const returning = (all.data?.total ?? 0) > 0;
   return (
     <ImportProvider>
+      <LogbookHeader params={params} importAction={returning && <ImportFilesButton />} />
       <Decisions />
       {returning ? (
         <>
+          <DiveList params={params} />
           <RecentImports />
-          <DiveList params={params} importAction={<ImportFilesButton />} />
         </>
       ) : (
         <>
           {all.data && <ImportPanel />}
-          <DiveList params={params} />
+          <DiveList params={params} searchable={false} />
         </>
       )}
     </ImportProvider>

@@ -8,7 +8,7 @@
   --palette-surface-light: #8fd3e8;
   --palette-open-water: #0f5e8c;
   --palette-abyss: #0b2236;
-  --palette-slate: #f3f6f8;
+  --palette-slate: #e9eef2;
   --palette-wet-notes: #ffffff;
   --palette-dive-flag: #c8102e;
   --palette-kelp: #2a7150;
@@ -19,8 +19,8 @@
   --color-surface-sunken: #e8eef2;
   --color-text: var(--palette-abyss);
   --color-text-muted: #4e6578;
-  --color-border: #d5dfe6;          /* dividers, panel outlines (decorative) */
-  --color-border-strong: #74899b;   /* input and control boundaries: ≥ 3:1 */
+  --color-border: #d5dfe6;          /* dividers between rows (decorative); panels have no outline (ADR 0019) */
+  --color-border-strong: #6e8497;   /* input and control boundaries: ≥ 3:1 on panel, page and tint */
   --color-accent: var(--palette-open-water);
   --color-on-accent: #ffffff;
   --color-accent-soft: #e1eef6;
@@ -45,6 +45,8 @@
   --text-2xl: 1.728rem;
   --leading-tight: 1.25;
   --leading-normal: 1.5;
+  /* Large headings sit slightly tighter (better-typography). */
+  --tracking-heading: -0.01em;
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
@@ -61,7 +63,10 @@
   /* Radius by hierarchy: small marks, controls, panels */
   --radius-sm: 2px;
   --radius-md: 6px;
-  --radius-lg: 10px;
+  --radius-lg: 14px;
+
+  /* Panels lift off the page by tone, not outline or shadow (ADR 0019). */
+  --panel-padding: var(--space-6);
 
   /* Elevation only for things that float above the page (dialogs, popovers) */
   --shadow-overlay: 0 12px 32px rgb(11 34 54 / 0.24);
@@ -81,13 +86,13 @@
 /* Night dive */
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg: #071827;
+    --color-bg: #061522;
     --color-surface: #0e2338;
     --color-surface-sunken: #0a1c2e;
     --color-text: #dce8f0;
     --color-text-muted: #8fa6b8;
     --color-border: #1d3a55;
-    --color-border-strong: #5e7891;
+    --color-border-strong: #6a849d;
     --color-accent: #62b6e6;
     --color-on-accent: #071827;
     --color-accent-soft: #12324d;

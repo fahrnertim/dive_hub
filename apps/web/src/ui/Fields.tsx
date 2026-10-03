@@ -23,14 +23,18 @@ interface FieldChrome {
  * A number in the UI language's format ("18,5" in German), with optional unit after it.
  * Arrow keys step the value; the stepper buttons are left out to keep forms calm.
  */
-export function NumberField({ label, description, unit, ...props }: FieldChrome & Omit<AriaNumberFieldProps, 'className' | 'children'> & { unit?: string }) {
+export function NumberField({ label, description, unit, onInput, ...props }: FieldChrome & Omit<AriaNumberFieldProps, 'className' | 'children'> & {
+  unit?: string;
+  /** While typing; onChange only fires when the value commits (blur, Enter). */
+  onInput?: () => void;
+}) {
   const message = useMessage();
   return (
     <AriaNumberField {...props} className="field">
       {/* The unit is part of the field's name for screen readers ("Max depth (m)"); visually it follows the input. */}
       <Label className="field-label">{label}{unit && <span className="visually-hidden"> ({unit})</span>}</Label>
       <Group className="input-group">
-        <Input className="input" />
+        <Input className="input" onInput={onInput} />
         {unit && <span className="input-unit" aria-hidden="true">{unit}</span>}
       </Group>
       {description && <Text slot="description" className="field-description">{description}</Text>}
@@ -53,14 +57,16 @@ export function TextArea({ label, description, ...props }: FieldChrome & {
 }
 
 /** One choice from a short list. `null` in options is the "none" entry. */
-export function Select<K extends string>({ label, description, options, value, onChange }: FieldChrome & {
+export function Select<K extends string>({ label, description, options, value, onChange, size }: FieldChrome & {
   options: { id: K; label: ReactNode }[];
   value: K | null;
   onChange: (value: K | null) => void;
+  /** small: inside a table row (a Device's owner). */
+  size?: 'small';
 }) {
   return (
     <AriaSelect
-      className="field"
+      className={size ? `field select-${size}` : 'field'}
       selectedKey={value}
       onSelectionChange={(key) => onChange((key as K) ?? null)}
     >

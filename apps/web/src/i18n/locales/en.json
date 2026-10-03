@@ -108,7 +108,6 @@
     "status": "Status",
     "expires": "Expires",
     "since": "Since",
-    "actions": "Actions",
     "you": "you",
     "revoke": "Revoke",
     "roles": {
@@ -263,6 +262,7 @@
     "move": "Move",
     "splitOff": "Split off into its own dive",
     "notFoundTitle": "Dive not found",
+    "backToLogbook": "Back to logbook",
     "splitOffTitle": "Split off this recording?",
     "splitOffBody": "It becomes a dive of its own, with its own history. This dive keeps its other recordings.",
     "splitOffConfirm": "Split off",
@@ -391,6 +391,7 @@
     "recording": "Recording",
     "device": "{{name}} ({{serial}})",
     "unknownDevice": "unknown device",
+    "why": "Not added automatically: {{reason}}.",
     "maybe": "It might belong to",
     "addTo": "Add to this dive",
     "newDive": "Make it a new dive",

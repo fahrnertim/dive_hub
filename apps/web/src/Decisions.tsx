@@ -34,7 +34,7 @@ export function Decisions() {
     );
   }
   return (
-    <Panel title={t('decisions.title')}>
+    <Panel title={t('decisions.title')} attention={count > 0}>
       {count > 0 && <p>{t('decisions.intro', { count })}</p>}
       {undoNotice}
       <ul className="decisions" ref={list}>
@@ -57,11 +57,14 @@ function RecordingLine({ c }: { c: CandidateView }) {
     ? t('decisions.device', { name: deviceName(r.device.manufacturer, r.device.product), serial: r.device.serialNumber })
     : t('decisions.unknownDevice');
   return (
-    <p className="decision-recording">
-      <strong>{t('decisions.recording')}:</strong>{' '}
-      {display.diveTime(r.startsAt, r.utcOffsetSeconds)} · {display.depth(r.maxDepthM)} · {display.duration(r.durationSeconds)} · {device}
-      <span className="muted"> ({t(`import.reason.${c.reason}`)})</span>
-    </p>
+    <div className="decision-recording">
+      <p>
+        <strong>{t('decisions.recording')}:</strong>{' '}
+        {display.diveTime(r.startsAt, r.utcOffsetSeconds)} · {display.depth(r.maxDepthM)} · {display.duration(r.durationSeconds)} · {device}
+      </p>
+      {/* Why it wasn't added: a sentence of its own, at body size (visual refresh 4). */}
+      <p className="muted">{t('decisions.why', { reason: t(`import.reason.${c.reason}`) })}</p>
+    </div>
   );
 }
 
@@ -124,18 +127,19 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
     <li className="decision">
       <RecordingLine c={c} />
       {c.dives.length > 0 && (
-        <>
-          <p className="muted">{t('decisions.maybe')}</p>
+        <div>
+          <h3 className="decision-subtitle">{t('decisions.maybe')}</h3>
           <ul className="decision-dives">
             {c.dives.map((d) => (
-              <li key={d.id}>
-                <a href={`#/dives/${d.id}`}>
-                  {d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}
-                </a>
-                {' · '}{display.diveTime(d.startsAt, d.utcOffsetSeconds)} · {display.depth(d.maxDepthM)} · {display.duration(d.durationSeconds)}
-                {' '}
+              <li key={d.id} className="decision-dive">
+                <span>
+                  <a href={`#/dives/${d.id}`}>
+                    {d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}
+                  </a>
+                  {' · '}{display.diveTime(d.startsAt, d.utcOffsetSeconds)} · {display.depth(d.maxDepthM)} · {display.duration(d.durationSeconds)}
+                </span>
                 <Button
-                  variant="quiet"
+                  size="small"
                   aria-label={t('common.forItem', { action: t('decisions.addTo'), item: d.number !== null ? t('dive.title', { number: d.number }) : display.diveTime(d.startsAt, d.utcOffsetSeconds) })}
                   isPending={decide.isPending && decide.variables.kind === 'attach' && decide.variables.diveId === d.id}
                   isDisabled={decide.isPending}
@@ -146,7 +150,7 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
               </li>
             ))}
           </ul>
-        </>
+        </div>
       )}
       <div className="form-actions">
         <Button
