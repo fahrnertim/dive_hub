@@ -54,7 +54,7 @@ function Divers() {
           label={t('divers.add')} name="name" isRequired maxLength={100} autoComplete="off" value={name} onChange={setName}
           description={sameName(divers.data, name) ?? ''}
         />
-        <Button type="submit" isPending={create.isPending}>{t('divers.create')}</Button>
+        <Button type="submit" icon="add" isPending={create.isPending}>{t('divers.create')}</Button>
       </Form>
       {create.error && <Notice tone="danger">{errorText(create.error)}</Notice>}
     </Panel>
@@ -111,7 +111,7 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
             label={t('divers.newName')} name="name" value={newName} onChange={setNewName} isRequired maxLength={100} autoComplete="off" autoFocus
             description={sameName(all.data, newName, d.id) ?? ''}
           />
-          <Button type="submit" variant="primary" isPending={rename.isPending}>{t('divers.save')}</Button>
+          <Button type="submit" variant="primary" icon="save" isPending={rename.isPending}>{t('divers.save')}</Button>
           <Button onPress={() => setRenaming(false)}>{t('common.cancel')}</Button>
         </Form>
       ) : (

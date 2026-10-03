@@ -64,6 +64,32 @@ describe('components', () => {
   });
 });
 
+describe('icons and motion (ADR 0018)', () => {
+  it('import Lucide only in ui/Icon.tsx, and use no text glyphs as icons', () => {
+    for (const { path, text } of tsx) {
+      if (!path.endsWith('Icon.tsx')) expect(text, path).not.toContain("from 'lucide-react'");
+      expect(text, path).not.toMatch(/[▾▴▲▼◂▸]/);
+    }
+  });
+
+  it('animate only transform and opacity', () => {
+    for (const { path, text } of css) {
+      for (const m of text.matchAll(/@keyframes [\w-]+ \{([^}]*\{[^}]*\})+\s*\}/g)) {
+        const properties = [...m[0].matchAll(/([a-z-]+)\s*:/g)].map((p) => p[1]);
+        expect(properties.filter((p) => p !== 'transform' && p !== 'opacity'), `${path}: ${m[0].slice(0, 40)}`).toEqual([]);
+      }
+    }
+  });
+
+  it('time animations and transitions with the duration tokens, which drop to 0 for reduced motion', () => {
+    for (const { path, text } of css) {
+      for (const m of text.matchAll(/(?:animation|transition)\s*:[^;}]*/g)) {
+        expect(m[0], path).not.toMatch(/\d+m?s\b/);
+      }
+    }
+  });
+});
+
 describe('texts', () => {
   const locales = files(join(src, 'i18n/locales'), '.json').map((path) => ({ path, text: read(path) }));
 

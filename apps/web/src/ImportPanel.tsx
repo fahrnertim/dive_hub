@@ -114,7 +114,7 @@ export function ImportFilesButton({ label, variant }: { label?: string; variant?
   const { accept, uploading } = useImport();
   return (
     <FileTrigger acceptedFileTypes={[...IMPORTABLE]} allowsMultiple onSelect={(list) => list && accept(Array.from(list))}>
-      <Button variant={variant} isPending={uploading}>{label ?? t('import.importFiles')}</Button>
+      <Button variant={variant} icon="import" isPending={uploading}>{label ?? t('import.importFiles')}</Button>
     </FileTrigger>
   );
 }

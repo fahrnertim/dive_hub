@@ -80,7 +80,8 @@ rejected, and why — in [docs/skills.md](docs/skills.md).
   dismissed, and errors never time out (WCAG 2.2.1, 4.1.3). Skip their hand-offs to `ux-*-audit` skills
   and orchestration docs we don't have, and their mobile push and marketing parts.
 - **suggest-lucide-icons**: a name must also exist in the installed `lucide-react` version (check
-  `node_modules/lucide-react`), not only in `@latest`. Run its script with `python` (Windows). Icons are
+  `node_modules/lucide-react`), not only in `@latest`. Run its script as `PYTHONUTF8=1 python …` (Windows' default encoding fails). New icons go into the
+  map in `apps/web/src/ui/Icon.tsx` ([ADR 0018](docs/decisions/0018-icons-and-motion.md)). Icons are
   `aria-hidden`; the control keeps its visible text or `aria-label`.
 - **email-and-password-best-practices**: same rules as better-auth-\* (never `npx auth@latest migrate`; use
   `auth:generate` + drizzle-kit). Keep our argon2id parameters (m = 19 MiB, t = 2, p = 1) and 15-character

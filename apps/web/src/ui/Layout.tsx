@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { announce } from '../lib/announce.ts';
+import { Icon } from './Icon.tsx';
 
 /**
  * A titled area of a page. `narrow` for single forms (sign-in, setup). `level={1}` when the panel's
@@ -34,7 +35,8 @@ export function Notice({ tone = 'info', children }: { tone?: 'info' | 'success' 
   }, [tone]);
   return (
     <div ref={ref} className={`notice notice-${tone}`} role={tone === 'danger' ? 'alert' : undefined}>
-      {children}
+      <Icon name={tone} />
+      <div className="notice-body">{children}</div>
     </div>
   );
 }
@@ -55,12 +57,13 @@ type Column = string | {
 const header = (c: Column, i: number) => {
   if (typeof c === 'string') return <th key={i} scope="col">{c}</th>;
   if (c.hidden) return <th key={i} scope="col" data-hidden="true"><span className="visually-hidden">{c.label}</span></th>;
-  const mark = c.sort?.direction === 'ascending' ? '▲' : c.sort?.direction === 'descending' ? '▼' : '';
+  const mark = c.sort?.direction === 'ascending' ? <Icon name="sortAscending" />
+    : c.sort?.direction === 'descending' ? <Icon name="sortDescending" /> : null;
   return (
     <th key={i} scope="col" className={c.numeric ? 'num' : undefined} aria-sort={c.sort ? c.sort.direction ?? 'none' : undefined}>
       {c.sort ? (
         <AriaButton className="sort-button" onPress={c.sort.onSort}>
-          {c.label}<span aria-hidden="true" className="sort-mark">{mark}</span>
+          {c.label}<span className="sort-mark">{mark}</span>
         </AriaButton>
       ) : c.label}
     </th>

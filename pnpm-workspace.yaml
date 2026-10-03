@@ -6,3 +6,6 @@ packages:
 # Packages allowed to run install scripts are listed here after review.
 allowBuilds:
   esbuild: true
+
+minimumReleaseAgeExclude:
+  - lucide-react@1.51.0

@@ -73,14 +73,16 @@
   display: inline-flex; align-items: center; gap: var(--space-1); min-height: 1.5rem; }
 .sort-button[data-hovered] { color: var(--color-text); }
 .sort-button[data-focus-visible] { outline: 2px solid var(--color-focus); outline-offset: 2px; border-radius: var(--radius-sm); }
-.sort-mark { font-size: 0.75em; min-width: 1ch; }
+.sort-mark { display: inline-flex; min-width: 0.9em; }
+.sort-mark .icon { width: 0.9em; height: 0.9em; }
 th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text); }
 .pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-3); }
 .pager .muted { margin: 0; }
 .pager-buttons { display: flex; gap: var(--space-2); }
 /* Shown while files are dragged over the logbook page; dropping anywhere imports them. */
 .page-drop { position: fixed; inset: var(--space-3); z-index: 30; pointer-events: none; display: grid; place-items: center;
-  border: 3px dashed var(--color-accent); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--color-accent-soft) 85%, transparent); }
+  border: 3px dashed var(--color-accent); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--color-accent-soft) 85%, transparent);
+  animation: enter-fade var(--duration-popover) var(--ease-out); }
 .page-drop p { font-size: var(--text-xl); font-weight: var(--weight-semibold); color: var(--color-text); }
 .device-owner { min-width: 10rem; }
 

@@ -271,6 +271,27 @@ test.describe('behaviour', () => {
     await expect(page.getByText('No dives match “no such words”.')).toBeVisible();
   });
 
+  test('menus grow from their trigger; with reduced motion nothing moves (ADR 0018)', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('table')).toBeVisible();
+    const menu = page.getByRole('button', { name: /^Erika\s*, account$/ });
+    // Opens the menu and lists the animations running a frame later, with their durations.
+    const open = () => menu.evaluate(async (button) => {
+      (button as HTMLElement).click();
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      return document.getAnimations().map((a) => ({
+        name: (a as CSSAnimation).animationName, duration: Number(a.effect?.getComputedTiming().duration ?? 0),
+      }));
+    });
+    expect(await open()).toContainEqual({ name: 'enter-pop', duration: 150 });
+    await page.getByRole('menu').press('Escape');
+    await expect(page.getByRole('menu')).toHaveCount(0);
+
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    expect((await open()).filter((a) => a.duration > 0)).toEqual([]);
+    await expect(page.getByRole('menuitem', { name: 'My account' })).toBeVisible();
+  });
+
   test('the only admin is not offered to remove their own admin role', async ({ page }) => {
     await page.goto('/#/admin');
     const me = page.getByRole('row').filter({ hasText: 'erika@example.com' });

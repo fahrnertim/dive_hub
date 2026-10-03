@@ -55,7 +55,7 @@ function Invite() {
       <Form className="form-inline" onSubmit={submit}>
         <TextField label={t('admin.email')} name="email" type="email" isRequired autoComplete="off" />
         <Checkbox isSelected={asAdmin} onChange={setAsAdmin}>{t('admin.inviteAsAdmin')}</Checkbox>
-        <Button type="submit" variant="primary" isPending={invite.isPending}>{t('admin.createInvitation')}</Button>
+        <Button type="submit" variant="primary" icon="link" isPending={invite.isPending}>{t('admin.createInvitation')}</Button>
       </Form>
       {invite.error && <Notice tone="danger">{errorText(invite.error)}</Notice>}
       {invite.data && (

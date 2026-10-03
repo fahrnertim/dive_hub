@@ -11,7 +11,7 @@ import { ImportFilesButton, ImportPanel, ImportProvider, RecentImports } from '.
 import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
 import { useFocusOnNavigate } from './lib/page.ts';
-import { ActionMenu, BrandMark, ErrorBoundary, Muted, Notice } from './ui/index.ts';
+import { ActionMenu, BrandMark, ErrorBoundary, Icon, Muted, Notice } from './ui/index.ts';
 
 // Pages most visits don't need load on demand: the chart library, account settings, admin.
 const DiveDetail = lazy(() => import('./DiveDetail.tsx').then((m) => ({ default: m.DiveDetail })));
@@ -85,18 +85,19 @@ function Navigation({ route, me }: { route: string; me: Me }) {
   return (
     <>
       <nav className="app-nav" aria-label={t('nav.main')}>
-        <a href="#/" {...current(route === '/' || route.startsWith('/?') || route.startsWith('/dives/'))}>{t('nav.logbook')}</a>
-        <a href="#/divers" {...current(route === '/divers')}>{t('nav.divers')}</a>
-        {me.user.role === 'admin' && <a href="#/admin" {...current(route === '/admin')}>{t('nav.admin')}</a>}
+        <a href="#/" {...current(route === '/' || route.startsWith('/?') || route.startsWith('/dives/'))}><Icon name="logbook" />{t('nav.logbook')}</a>
+        <a href="#/divers" {...current(route === '/divers')}><Icon name="divers" />{t('nav.divers')}</a>
+        {me.user.role === 'admin' && <a href="#/admin" {...current(route === '/admin')}><Icon name="admin" />{t('nav.admin')}</a>}
       </nav>
       {/* The account is a labelled menu, not a bare name link (UI review C6). */}
       <div className="user-menu">
         <ActionMenu
           className="user-menu-button"
+          icon="account"
           label={<>{me.user.name}<span className="visually-hidden">{t('nav.accountMenu')}</span></>}
           actions={[
-            { id: 'account', label: t('nav.account'), href: '#/account' },
-            { id: 'sign-out', label: t('common.signOut'), onAction: () => void signOut() },
+            { id: 'account', label: t('nav.account'), href: '#/account', icon: 'user' },
+            { id: 'sign-out', label: t('common.signOut'), onAction: () => void signOut(), icon: 'signOut' },
           ]}
         />
       </div>

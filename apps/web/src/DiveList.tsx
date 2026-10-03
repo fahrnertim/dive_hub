@@ -6,7 +6,7 @@ import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { logbookHref } from './lib/logbook.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, Muted, Notice, Panel, Select, Table, TextField } from './ui/index.ts';
+import { Button, Icon, Muted, Notice, Panel, Select, Table, TextField } from './ui/index.ts';
 
 const ALL = 'all';
 type Sort = NonNullable<LogbookParams['sort']>;
@@ -127,8 +127,8 @@ export function DiveList({ params, importAction }: { params: LogbookParams; impo
             <span className="muted">{range}</span>
             {total > PAGE_SIZE && (
               <span className="pager-buttons">
-                <Button ref={previous} isDisabled={page <= 1} onPress={() => goTo(page - 1)}>{t('logbook.previous')}</Button>
-                <Button ref={next} isDisabled={page >= pages} onPress={() => goTo(page + 1)}>{t('logbook.next')}</Button>
+                <Button ref={previous} icon="previous" isDisabled={page <= 1} onPress={() => goTo(page - 1)}>{t('logbook.previous')}</Button>
+                <Button ref={next} isDisabled={page >= pages} onPress={() => goTo(page + 1)}>{t('logbook.next')}<Icon name="next" /></Button>
               </span>
             )}
           </nav>

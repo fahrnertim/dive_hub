@@ -16,7 +16,7 @@
   font-weight: var(--weight-semibold); font-size: var(--text-lg); }
 .brand-mark { flex: none; }
 .app-nav { display: flex; gap: var(--space-4); flex: 1; }
-.app-nav a { color: var(--color-text-muted); text-decoration: none; padding: var(--space-1) 0; border-bottom: 2px solid transparent; }
+.app-nav a { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); text-decoration: none; padding: var(--space-1) 0; border-bottom: 2px solid transparent; }
 .app-nav a[aria-current='page'] { color: var(--color-text); border-bottom-color: var(--color-accent); }
 .user-menu { display: flex; align-items: center; gap: var(--space-4); margin-left: auto; }
 .user-menu a { color: var(--color-text); }
@@ -40,7 +40,13 @@
 .notice-info { background: var(--color-accent-soft); border-color: var(--color-accent); }
 .notice-success { background: var(--color-success-soft); border-color: var(--color-success); }
 .notice-danger { background: var(--color-danger-soft); border-color: var(--color-danger); }
-.notice > :last-child { margin-bottom: 0; }
+.notice { display: flex; gap: var(--space-2); align-items: flex-start; }
+.notice > .icon { margin-top: 0.1em; }
+.notice-info > .icon { color: var(--color-accent); }
+.notice-success > .icon { color: var(--color-success); }
+.notice-danger > .icon { color: var(--color-danger); }
+.notice-body { flex: 1; min-width: 0; }
+.notice-body > :last-child { margin-bottom: 0; }
 
 /* ---------- Buttons ---------- */
 .btn { font: inherit; font-weight: var(--weight-medium); line-height: var(--leading-tight); cursor: pointer;
@@ -113,7 +119,7 @@
 /* Open: the select's border says which control the list belongs to. */
 .select-button[data-pressed], .select-button[aria-expanded='true'] { border-color: var(--color-focus); }
 .select-value[data-placeholder] { color: var(--color-text-muted); }
-.select-chevron { color: var(--color-text-muted); }
+.select-chevron { display: inline-flex; color: var(--color-text-muted); }
 .popover { background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: var(--radius-md);
   box-shadow: var(--shadow-overlay); min-width: var(--trigger-width); overflow: auto; overscroll-behavior: contain; }
 .listbox { outline: none; padding: var(--space-1) 0; }
@@ -167,11 +173,32 @@
   .table tr.row-link:hover td { background: var(--color-accent-soft); }
 }
 
+/* ---------- Icons (ADR 0018): the size of the text, its colour ---------- */
+.icon { width: 1.25em; height: 1.25em; flex: none; }
+.btn .icon, .app-nav .icon, .menu-item .icon { width: 1.125em; height: 1.125em; }
+.menu-chevron .icon, .select-chevron .icon { width: 1em; height: 1em; }
+.back-link { display: inline-flex; align-items: center; gap: var(--space-1); }
+
+/* ---------- Motion (ADR 0018): entries only, transform and opacity, tokens drop to 0 with reduced motion ---------- */
+@keyframes enter-pop { from { opacity: 0; transform: scale(0.96); } }
+@keyframes enter-dialog { from { opacity: 0; transform: scale(0.97); } }
+@keyframes enter-fade { from { opacity: 0; } }
+@keyframes enter-rise { from { opacity: 0; transform: translateY(4px); } }
+/* Menus and selects grow out of the control that opened them. */
+.popover { transform-origin: var(--trigger-anchor-point, top); }
+.popover[data-entering] { animation: enter-pop var(--duration-popover) var(--ease-out); }
+/* Dialogs stay centred; the backdrop fades. */
+.modal-overlay[data-entering] { animation: enter-fade var(--duration-popover) var(--ease-out); }
+.modal[data-entering] { animation: enter-dialog var(--duration-normal) var(--ease-out); }
+/* The result of an action arrives rather than pops in. */
+.notice { animation: enter-rise var(--duration-normal) var(--ease-out); }
+
 /* ---------- Menus ---------- */
 .menu { outline: none; padding: var(--space-1) 0; min-width: 12rem; }
-.menu-item { display: block; padding: var(--space-2) var(--space-3); cursor: pointer; outline: none; color: var(--color-text); text-decoration: none; }
+.menu-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); cursor: pointer; outline: none; color: var(--color-text); text-decoration: none; }
 .menu-item[data-focused] { background: var(--color-accent-soft); }
-.menu-chevron { color: var(--color-text-muted); font-size: 0.8em; }
+.menu-chevron { display: inline-flex; color: var(--color-text-muted); }
+.menu-item .icon { color: var(--color-text-muted); }
 .user-menu-button { color: var(--color-text); }
 
 @media (max-width: 40rem) {

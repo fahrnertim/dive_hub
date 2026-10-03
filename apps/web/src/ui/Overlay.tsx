@@ -29,7 +29,7 @@ export function CopyField({ value, label }: { value: string; label: string }) {
   return (
     <div className="copy-field">
       <input className="input" readOnly value={value} aria-label={label} onFocus={(e) => e.currentTarget.select()} />
-      <Button onPress={async () => { await navigator.clipboard.writeText(value); setCopied(true); announce(t('common.copied')); }}>
+      <Button icon={copied ? 'copied' : 'copy'} onPress={async () => { await navigator.clipboard.writeText(value); setCopied(true); announce(t('common.copied')); }}>
         {copied ? t('common.copied') : t('common.copy')}
       </Button>
     </div>

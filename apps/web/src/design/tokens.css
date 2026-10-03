@@ -70,7 +70,10 @@
   --width-form: 28rem;
 
   --duration-fast: 120ms;
+  --duration-popover: 150ms;
   --duration-normal: 200ms;
+  /* Strong ease-out: starts fast, settles softly (ADR 0018, emil-design-eng). */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
   color-scheme: light;
 }
@@ -104,6 +107,7 @@
 @media (prefers-reduced-motion: reduce) {
   :root {
     --duration-fast: 0ms;
+    --duration-popover: 0ms;
     --duration-normal: 0ms;
   }
 }

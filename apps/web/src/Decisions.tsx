@@ -101,7 +101,7 @@ function UndoDiscard({ candidate: c, onDone }: { candidate: CandidateView; onDon
   return (
     <Notice tone="success">
       <p>{t('decisions.discardedNotice', { time: display.diveTime(c.recording.startsAt, c.recording.utcOffsetSeconds) })}</p>
-      <Button ref={button} isPending={reopen.isPending} onPress={() => reopen.mutate({ kind: 'reopen' }, { onSuccess: onDone })}>
+      <Button ref={button} icon="undo" isPending={reopen.isPending} onPress={() => reopen.mutate({ kind: 'reopen' }, { onSuccess: onDone })}>
         {t('common.undo')}
       </Button>
     </Notice>
@@ -150,7 +150,7 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
       )}
       <div className="form-actions">
         <Button
-          aria-label={t('common.forItem', { action: t('decisions.newDive'), item: recordingName })}
+          icon="add" aria-label={t('common.forItem', { action: t('decisions.newDive'), item: recordingName })}
           isPending={decide.isPending && decide.variables.kind === 'new-dive'} isDisabled={decide.isPending}
           onPress={() => decide.mutate({ kind: 'new-dive' })}
         >

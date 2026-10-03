@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Icon } from './Icon.tsx';
 import {
   Button as AriaButton, DateField as AriaDateField, DateInput, DateSegment, FieldError, Group, Input, Label, ListBox,
   ListBoxItem, NumberField as AriaNumberField, Popover, Select as AriaSelect, SelectValue, Text, TextArea as AriaTextArea,
@@ -66,7 +67,7 @@ export function Select<K extends string>({ label, description, options, value, o
       <Label className="field-label">{label}</Label>
       <AriaButton className="input select-button">
         <SelectValue className="select-value" />
-        <span aria-hidden="true" className="select-chevron">▾</span>
+        <span className="select-chevron"><Icon name="open" /></span>
       </AriaButton>
       {description && <Text slot="description" className="field-description">{description}</Text>}
       <Popover className="popover">

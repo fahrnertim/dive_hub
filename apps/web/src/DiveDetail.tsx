@@ -12,7 +12,7 @@ import { deviceName } from './lib/devices.ts';
 import { useFormatValue } from './lib/dive-values.ts';
 import { focusHeading } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
-import { ActionMenu, Button, ConfirmDialog, Dialog, ErrorBoundary, Muted, Notice, Panel, Select } from './ui/index.ts';
+import { ActionMenu, Button, ConfirmDialog, Dialog, ErrorBoundary, Icon, Muted, Notice, Panel, Select } from './ui/index.ts';
 
 /** One Dive (ADR 0015): its values with Overrides marked, notes, Recordings, and its history. */
 export function DiveDetail({ id, recordingId }: { id: string; recordingId?: string | undefined }) {
@@ -40,7 +40,7 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
   if (dive.error) {
     return (
       <>
-        <p><a href="#/">{t('dive.back')}</a></p>
+        <p><a href="#/" className="back-link"><Icon name="back" />{t('dive.back')}</a></p>
         {notFound && <h1>{title}</h1>}
         <Notice tone="danger">{errorText(dive.error)}</Notice>
       </>
@@ -52,7 +52,7 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
 
   return (
     <>
-      <p><a href="#/">{t('dive.back')}</a></p>
+      <p><a href="#/" className="back-link"><Icon name="back" />{t('dive.back')}</a></p>
       <Panel
         level={1}
         title={(
@@ -67,11 +67,11 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
         )}
         actions={!editing && (
           <div className="form-actions">
-            <Button ref={editButton} onPress={() => setEditing(true)}>{t('dive.edit')}</Button>
+            <Button ref={editButton} icon="edit" onPress={() => setEditing(true)}>{t('dive.edit')}</Button>
             {several && (
               <ActionMenu
                 label={t('dive.moreActions')} aria-label={t('common.forItem', { action: t('dive.moreActions'), item: title ?? '' })}
-                actions={[{ id: 'move', label: t('dive.moveTo'), onAction: () => setMoving(true) }]}
+                actions={[{ id: 'move', label: t('dive.moveTo'), icon: 'move', onAction: () => setMoving(true) }]}
               />
             )}
           </div>
@@ -126,7 +126,7 @@ function MoveDialog({ dive: d, onClose }: { dive: DiveView; onClose: () => void 
         <Select label={t('dive.diver')} value={target} onChange={setTarget} options={others.map((v) => ({ id: v.id, label: v.name }))} />
         {move.error && <Notice tone="danger">{errorText(move.error)}</Notice>}
         <div className="form-actions">
-          <Button variant="primary" isDisabled={!target} isPending={move.isPending} onPress={() => target && move.mutate(target)}>{t('dive.move')}</Button>
+          <Button variant="primary" icon="move" isDisabled={!target} isPending={move.isPending} onPress={() => target && move.mutate(target)}>{t('dive.move')}</Button>
           <Button onPress={onClose}>{t('common.cancel')}</Button>
         </div>
       </div>
@@ -240,8 +240,8 @@ function Recordings({ dive: d, initial }: { dive: DiveView; initial: string | un
                   aria-label={t('common.forItem', { action: t('dive.recordingActions'), item: name(r) })}
                   variant="secondary"
                   actions={[
-                    ...(r.isPrimary ? [] : [{ id: 'primary', label: t('dive.makePrimary'), onAction: () => makePrimary.mutate(r.id) }]),
-                    { id: 'split', label: t('dive.splitOffMenu'), onAction: () => setSplitting(true) },
+                    ...(r.isPrimary ? [] : [{ id: 'primary', label: t('dive.makePrimary'), icon: 'primary' as const, onAction: () => makePrimary.mutate(r.id) }]),
+                    { id: 'split', label: t('dive.splitOffMenu'), icon: 'splitOff', onAction: () => setSplitting(true) },
                   ]}
                 />
               </div>

@@ -198,7 +198,7 @@ export function DiveEditForm({ dive: d, onDone }: { dive: DiveView; onDone: () =
         </Notice>
       )}
       <div className="form-actions">
-        <Button type="submit" variant="primary" isPending={save.isPending}>{t('dive.save')}</Button>
+        <Button type="submit" variant="primary" icon="save" isPending={save.isPending}>{t('dive.save')}</Button>
         <Button onPress={cancel}>{t('common.cancel')}</Button>
       </div>
     </Form>

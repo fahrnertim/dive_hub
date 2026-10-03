@@ -70,7 +70,14 @@ uses `--color-border-strong`.
 - **Radius by hierarchy:** `--radius-sm` 2 px (small marks), `--radius-md` 6 px (controls),
   `--radius-lg` 10 px (panels).
 - **Elevation:** only things floating above the page (dialogs) get `--shadow-overlay`.
-- **Motion:** `--duration-*` drop to 0 with `prefers-reduced-motion`.
+- **Motion** ([ADR 0018](../decisions/0018-icons-and-motion.md)): only entries that explain where
+  something came from. Menus and selects grow from their trigger (`--duration-popover`, 150 ms),
+  dialogs fade and scale in (200 ms), notices rise in (200 ms). The curve is always `--ease-out`, and
+  only `transform` and `opacity` animate. Pages, table rows, the chart, tabs and focus never move.
+  All `--duration-*` drop to 0 with `prefers-reduced-motion`.
+- **Icons** ([ADR 0018](../decisions/0018-icons-and-motion.md)): Lucide through `ui/Icon.tsx`
+  (`<Icon name="edit" />`, or `icon="edit"` on `Button` and menu actions), always beside a visible
+  label, `aria-hidden`, in the colour of the text. Table row actions stay text only.
 - **Interaction states** (React Aria data attributes, `ui/ui.css`): hover darkens control borders
   (inputs, select, checkbox, radio) or the background (buttons); pressed buttons scale to 0.97
   (`--duration-fast`, ease-out); disabled controls are dimmed with `cursor: not-allowed`; busy
@@ -106,6 +113,7 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 | badge (`.badge`) | A short state next to a value, e.g. "edited" for an Override. |
 | `ErrorBoundary` | Keeps a failing part (e.g. the chart) from blanking the page. |
 | `BrandMark` | The diver-down flag. |
+| `Icon` | A Lucide icon by meaning (`edit`, `import`, `move`, …); the set lives in `ui/Icon.tsx`. |
 
 ## Writing
 
