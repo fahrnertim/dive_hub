@@ -2,7 +2,7 @@
 title: Agent skills
 summary: Which agent skills the project uses, which were considered and rejected, and why.
 status: living
-date: 2026-10-02
+date: 2026-10-03
 ---
 
 # Agent skills
@@ -38,6 +38,7 @@ specialized skills, vet them, propose them to the user, and record the outcome h
 | postgres-drizzle | ccheney/robust-skills | Drizzle schema, queries, migrations | 2026-10-02 |
 | better-auth-best-practices | better-auth/skills | Better Auth setup and usage | 2026-10-02 |
 | better-auth-security-best-practices | better-auth/skills | Better Auth hardening | 2026-10-02 |
+| email-and-password-best-practices | better-auth/skills | password policy, reset flows, hashing | 2026-10-03 |
 
 Install with telemetry off: `DISABLE_TELEMETRY=1 npx skills add <owner/repo> -s <skill> -a claude-code --copy -y`.
 
@@ -47,7 +48,7 @@ Details and commands: [skills vetting](research/2026-10-02-agent-skills-vetting.
 
 | When | Skill |
 |---|---|
-| Email/password flows, 2FA built | better-auth/skills `email-and-password-best-practices`, `two-factor-authentication-best-practices` |
+| 2FA built | better-auth/skills `two-factor-authentication-best-practices` |
 | End-to-end tests | microsoft/playwright-cli `playwright-cli` |
 | UI design work | anthropics/skills `frontend-design` |
 | Code exists, refactoring | mattpocock/skills `improve-codebase-architecture` |
@@ -65,3 +66,6 @@ Details and commands: [skills vetting](research/2026-10-02-agent-skills-vetting.
 | 2026-10-02 | honojs/skills hono, kadajett nestjs-best-practices | not needed | Fastify chosen instead of Hono/NestJS |
 | 2026-10-02 | postgres-drizzle (ccheney/robust-skills) | installed | Drizzle chosen ([ADR 0008](decisions/0008-drizzle-database-access.md)); version-aware, asks before migrating |
 | 2026-10-02 | better-auth-best-practices, better-auth-security-best-practices (better-auth/skills) | installed | Better Auth chosen ([ADR 0011](decisions/0011-better-auth.md)); CLI/migration overrides in AGENTS.md |
+| 2026-10-03 | email-and-password-best-practices (better-auth/skills) | installed | Official; one SKILL.md, no scripts (commit 20c9e88, 2026-09-01). Thin, but covers reset tokens, session revocation and length limits. Its Quick Start runs `npx auth@latest migrate` and its argon2 example (64 MiB, p = 4) is too heavy for 2 GB NAS boxes; AGENTS.md overrides both |
+| 2026-10-03 | better-auth/skills organization-best-practices | not needed | we don't use the organization plugin; ADR 0012 builds invitations |
+| 2026-10-03 | `npx skills find` for "better auth", "invitation", "authentication session" | nothing new | only the better-auth/skills set and unrelated vendor skills |

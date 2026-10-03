@@ -1,6 +1,7 @@
 # Dive Hub: app (API + web client + in-process worker) and PostgreSQL (ADR 0004).
 # Put your own reverse proxy with TLS in front of port 3000.
-# Required: set POSTGRES_PASSWORD in a .env file next to this file.
+# Required: set POSTGRES_PASSWORD and DIVEHUB_BASE_URL (e.g. https://dives.example.com) in a .env file next to this file.
+# On first start the log shows a setup token for creating the first admin: docker compose logs app
 services:
   app:
     image: dive-hub:dev   # replace with a pinned release tag once images are published
@@ -9,6 +10,9 @@ services:
     environment:
       DATABASE_URL: postgres://divehub:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/divehub
       DIVEHUB_MAX_UPLOAD_MB: ${DIVEHUB_MAX_UPLOAD_MB:-512}
+      DIVEHUB_BASE_URL: ${DIVEHUB_BASE_URL:?set DIVEHUB_BASE_URL to the public URL}
+      # IPs/CIDRs of your reverse proxy, so rate limiting sees real client IPs (comma-separated).
+      DIVEHUB_TRUSTED_PROXIES: ${DIVEHUB_TRUSTED_PROXIES:-}
     ports:
       - "${DIVEHUB_BIND:-127.0.0.1}:${DIVEHUB_PORT:-3000}:3000"
     volumes:

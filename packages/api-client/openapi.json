@@ -2,12 +2,775 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Dive Hub API",
-    "version": "0.1.0"
+    "version": "0.2.0",
+    "description": "Sign in with POST /api/auth/sign-in/email (Better Auth); the session cookie authenticates every other call."
   },
   "components": {
     "schemas": {}
   },
   "paths": {
+    "/api/setup": {
+      "get": {
+        "summary": "Whether this instance still needs its first admin",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "needed"
+                  ],
+                  "properties": {
+                    "needed": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create the first admin with the setup token printed to the server log",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token",
+                  "email",
+                  "name",
+                  "password"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 16,
+                    "maxLength": 128
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 15,
+                    "maxLength": 128,
+                    "description": "At least 15 characters"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "email",
+                    "name",
+                    "role",
+                    "createdAt"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "user"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "admin"
+                          ]
+                        }
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/invitations/lookup": {
+      "post": {
+        "summary": "The open invitation behind an invitation token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 16,
+                    "maxLength": 128
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "email",
+                    "expiresAt"
+                  ],
+                  "properties": {
+                    "email": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/invitations/accept": {
+      "post": {
+        "summary": "Accept an invitation: become a User and get signed in",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token",
+                  "name",
+                  "password"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 16,
+                    "maxLength": 128
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 15,
+                    "maxLength": 128,
+                    "description": "At least 15 characters"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "email",
+                    "name",
+                    "role",
+                    "createdAt"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "user"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "admin"
+                          ]
+                        }
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me": {
+      "get": {
+        "summary": "The signed-in User and their own Diver",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "user",
+                    "ownDiver"
+                  ],
+                  "properties": {
+                    "user": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "email",
+                        "name",
+                        "role",
+                        "createdAt"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "user"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "admin"
+                              ]
+                            }
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    },
+                    "ownDiver": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "summary": "All Users of this instance (admins only)",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "email",
+                      "name",
+                      "role",
+                      "createdAt"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "email": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "role": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "user"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "admin"
+                            ]
+                          }
+                        ]
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/invitations": {
+      "get": {
+        "summary": "Invitations, newest first (admins only)",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "email",
+                      "role",
+                      "createdAt",
+                      "expiresAt",
+                      "status"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "email": {
+                        "type": "string"
+                      },
+                      "role": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "user"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "admin"
+                            ]
+                          }
+                        ]
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "expiresAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "status": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "pending"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "accepted"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "revoked"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "expired"
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Invite a person by e-mail; returns the link to pass on (admins only)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  },
+                  "role": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "user"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "admin"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "email",
+                        "role",
+                        "createdAt",
+                        "expiresAt",
+                        "status"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "user"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "admin"
+                              ]
+                            }
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "expiresAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "status": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "pending"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "accepted"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "revoked"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "expired"
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "url"
+                      ],
+                      "properties": {
+                        "url": {
+                          "type": "string",
+                          "description": "The invitation link. Shown only now: only its hash is stored."
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/invitations/{id}": {
+      "delete": {
+        "summary": "Revoke an open invitation (admins only)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/imports": {
       "post": {
         "summary": "Upload a FIT file or a zip archive (e.g. Garmin \"Export Original\") for import",
@@ -158,7 +921,7 @@
         }
       },
       "get": {
-        "summary": "Recent Imports of the current user",
+        "summary": "Recent Imports of the signed-in User",
         "responses": {
           "200": {
             "description": "Default Response",
@@ -418,7 +1181,7 @@
     },
     "/api/dives": {
       "get": {
-        "summary": "Dives of the Divers the current user manages, newest first",
+        "summary": "Dives of the Divers the signed-in User manages, newest first",
         "responses": {
           "200": {
             "description": "Default Response",

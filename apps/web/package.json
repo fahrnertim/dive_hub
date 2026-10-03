@@ -10,6 +10,7 @@
   "dependencies": {
     "@dive-hub/api-client": "workspace:*",
     "@tanstack/react-query": "^5.104.0",
+    "better-auth": "^1.7.7",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "uplot": "^1.6.32"

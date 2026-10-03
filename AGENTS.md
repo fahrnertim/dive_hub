@@ -59,3 +59,6 @@ rejected, and why — in [docs/skills.md](docs/skills.md).
 - **better-auth-\***: follow [ADR 0011](docs/decisions/0011-better-auth.md). Run the auth CLI at the
   project's pinned version (not `@latest`), generate into its own schema file, never `drizzle-kit push`
   (migrations are generated, reviewed and committed), and don't run `npx auth mcp`.
+- **email-and-password-best-practices**: same rules as better-auth-\* (never `npx auth@latest migrate`; use
+  `auth:generate` + drizzle-kit). Keep our argon2id parameters (m = 19 MiB, t = 2, p = 1) and 15-character
+  minimum from [ADR 0012](docs/decisions/0012-invitations-and-admin-bootstrap.md), not the skill's example values.

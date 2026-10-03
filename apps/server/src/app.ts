@@ -5,25 +5,43 @@ import fastifyStatic from '@fastify/static';
 import swagger from '@fastify/swagger';
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { sql } from 'drizzle-orm';
+import type { Auth } from './auth/auth.js';
+import { authHandler } from './auth/fastify.js';
 import type { Db } from './db/client.js';
 import type { ImportService } from './imports/import-service.js';
 import { apiRoutes } from './routes.js';
+import type { Invitations } from './users/invitations.js';
+import { userRoutes } from './users/routes.js';
+import type { Setup } from './users/setup.js';
 
 export interface AppDeps {
   db: Db;
   imports: ImportService;
+  auth: Auth;
+  setup: Setup;
+  invitations: Invitations;
+  /** Public URL of the instance; invitation links point there. */
+  baseUrl: string;
   maxUploadBytes: number;
-  currentUserId: () => string;
+  /** Reverse proxies whose X-Forwarded-For is believed; empty means none. */
+  trustedProxies?: string[];
   webDir?: string | undefined;
 }
 
 export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}) {
-  const app = Fastify(options).withTypeProvider<TypeBoxTypeProvider>();
+  const trustedProxies = deps.trustedProxies ?? [];
+  const app = Fastify({ ...options, ...(trustedProxies.length > 0 && { trustProxy: trustedProxies }) })
+    .withTypeProvider<TypeBoxTypeProvider>();
+  app.decorateRequest('user', null);
 
   await app.register(swagger, {
     openapi: {
       openapi: '3.1.0',
-      info: { title: 'Dive Hub API', version: '0.1.0' },
+      info: {
+        title: 'Dive Hub API',
+        version: '0.2.0',
+        description: 'Sign in with POST /api/auth/sign-in/email (Better Auth); the session cookie authenticates every other call.',
+      },
     },
   });
   await app.register(multipart, { limits: { files: 1, fileSize: deps.maxUploadBytes } });
@@ -35,6 +53,8 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
   });
   app.get('/api/openapi.json', { schema: { hide: true } }, async () => app.swagger());
 
+  await app.register(authHandler, { auth: deps.auth });
+  await app.register(userRoutes, { prefix: '/api', ...deps });
   await app.register(apiRoutes, { prefix: '/api', ...deps });
 
   if (deps.webDir && existsSync(deps.webDir)) {

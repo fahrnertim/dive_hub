@@ -1,7 +1,6 @@
 // Database schema for the first slice: Garmin FIT import → Dive with Recording and samples.
 // Terms follow docs/glossary.md; structure follows docs/spec/data-model.md.
-// Users and sign-in come with Better Auth in the next slice (ADR 0011); until then `user_id`
-// holds the id of the single development user and has no foreign key.
+// Users, sessions and credentials are Better Auth's tables in ./auth-schema.ts (ADR 0011).
 import { sql } from 'drizzle-orm';
 import {
   bigint,
@@ -18,6 +17,9 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { user } from './auth-schema.js';
+
+export * from './auth-schema.js';
 
 const id = () => uuid('id').primaryKey().default(sql`uuidv7()`);
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
@@ -36,7 +38,7 @@ export const diver = pgTable('diver', {
 export const diverManagement = pgTable(
   'diver_management',
   {
-    userId: text('user_id').notNull(),
+    userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
     diverId: uuid('diver_id').notNull().references(() => diver.id),
     isOwn: boolean('is_own').notNull().default(false),
     createdAt: createdAt(),
@@ -44,6 +46,32 @@ export const diverManagement = pgTable(
   (t) => [
     primaryKey({ columns: [t.userId, t.diverId] }),
     uniqueIndex('diver_management_own_uq').on(t.userId).where(sql`${t.isOwn}`),
+  ],
+);
+
+export const userRole = pgEnum('user_role', ['user', 'admin']);
+
+/**
+ * An admin's offer to a person to become a User: a single-use, expiring link bound to an e-mail.
+ * Only the SHA-256 of the token is stored; the link is shown once, when it is created.
+ */
+export const invitation = pgTable(
+  'invitation',
+  {
+    id: id(),
+    tokenSha256: text('token_sha256').notNull(),
+    email: text('email').notNull(),
+    role: userRole('role').notNull().default('user'),
+    createdBy: uuid('created_by').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: createdAt(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+    acceptedBy: uuid('accepted_by').references(() => user.id, { onDelete: 'set null' }),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('invitation_token_uq').on(t.tokenSha256),
+    index('invitation_created_by_idx').on(t.createdBy),
   ],
 );
 
@@ -73,7 +101,7 @@ export const original = pgTable(
   'original',
   {
     id: id(),
-    userId: text('user_id').notNull(),
+    userId: uuid('user_id').notNull().references(() => user.id),
     sha256: text('sha256').notNull(),
     mediaType: text('media_type').notNull(),
     sizeBytes: bigint('size_bytes', { mode: 'number' }).notNull(),
@@ -99,7 +127,7 @@ export const importJob = pgTable(
   'import',
   {
     id: id(),
-    userId: text('user_id').notNull(),
+    userId: uuid('user_id').notNull().references(() => user.id),
     status: importStatus('status').notNull().default('pending'),
     /** Uploaded file (single FIT or archive) awaiting processing; removed once processed. */
     uploadName: text('upload_name').notNull(),

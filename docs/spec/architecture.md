@@ -68,8 +68,16 @@ Backup = `pg_dump` + the file volume.
 
 ## Authentication
 
-Built-in accounts (e-mail + password). Sessions use tokens that both browser and
-mobile clients can use. OIDC (Authentik, Authelia, Keycloak, …) is planned for later.
+Built-in accounts (e-mail + password) with Better Auth ([ADR 0011](../decisions/0011-better-auth.md)),
+invite-only, first admin from a setup token ([ADR 0012](../decisions/0012-invitations-and-admin-bootstrap.md)).
+Sessions are stored in the database. The web client uses an `HttpOnly`, `SameSite=Lax` cookie on the same origin;
+mobile will use the bearer plugin or the Expo integration. OIDC (Authentik, Authelia, Keycloak, …) is planned for later.
+
+| Setting | Meaning |
+|---|---|
+| `DIVEHUB_BASE_URL` | Public URL users open (required in production). With https, cookies are `Secure` and use the `__Secure-` prefix. Invitation links point here. |
+| `DIVEHUB_TRUSTED_PROXIES` | Comma-separated IPs/CIDRs of the reverse proxy. Only their `X-Forwarded-For` counts for the client IP (rate limiting, session records). |
+| `DIVEHUB_AUTH_SECRET` | Cookie signing secret; generated into the data directory when unset. |
 
 ## Open questions
 
@@ -92,8 +100,6 @@ import-driven changes; Sample series as arrays; OpenAPI-generated client; React 
 uPlot depth profile; Docker image and Compose files.
 
 Deliberate simplifications, to revisit:
-- **No sign-in yet:** one development user (`user_id = 'dev'`) with one own Diver; `user_id`
-  columns have no foreign key until Better Auth's `user` table exists (next slice, ADR 0011).
 - **Sample series:** each channel stores its own time offsets (simpler than a shared time axis
   for dense channels, at roughly double the storage for time).
 - **No Overrides, Conflicts or Duplicate-candidate resolution UI yet**; Duplicate candidates are
@@ -101,3 +107,28 @@ Deliberate simplifications, to revisit:
 - **Parsed FIT values** are checked with small type guards, not TypeBox schemas (ADR 0009 intent).
 - **Uploads** are plain multipart (limit `DIVEHUB_MAX_UPLOAD_MB`, default 512); resumable uploads
   for multi-GB account exports come later.
+
+**Slice 2 (2026-10-03): sign-in** ([ADR 0011](../decisions/0011-better-auth.md), [ADR 0012](../decisions/0012-invitations-and-admin-bootstrap.md)).
+
+Implemented:
+- Better Auth 1.7.7 at `/api/auth/*`: Drizzle adapter, tables in `apps/server/src/db/auth-schema.ts`, uuid ids.
+- argon2id password hashing; public sign-up off.
+- First admin via setup token; Invitations as copy links.
+- Every User gets their own Diver.
+- `user_id` columns are uuid foreign keys.
+- Every logbook route requires a session and is scoped to the signed-in User.
+- Imports only write to Divers the User manages: a file from another User's Device is skipped.
+- Rate limiting backed by the database in production.
+- Client IP taken only from trusted proxies.
+- Origin/CSRF checks on in every environment; admins can't impersonate.
+- Web client: sign-in, setup, accept-invitation and admin pages; sign-out.
+
+Migration `0001_auth` deletes slice-1 development data (`user_id = 'dev'`).
+
+Deliberate simplifications, to revisit:
+- **No password reset** and no admin UI to ban, remove or change Users yet.
+- **No 2FA** (later slice, ADR 0012); no session list in the UI.
+- **OpenAPI:** our own endpoints (`/api/me`, setup, invitations) are described; Better
+  Auth's aren't yet (its OpenAPI plugin, ADR 0011).
+- **Recording keys** stay globally unique. If two Users each import a Recording without a Device
+  that starts in the same second, the second Import is reported as failed.

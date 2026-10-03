@@ -131,7 +131,10 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
   async function placeRecording(
     tx: Tx, userId: string, importId: string, originalId: string, fileName: string, rec: ParsedRecording, actor: Actor,
   ): Promise<ImportOutcome[number]> {
-    const diverId = await resolveDiver(tx, userId, rec);
+    // A User only ever writes to the logbooks of Divers they manage.
+    const managed = await managedDivers(tx, userId);
+    const diverId = await resolveDiver(tx, userId, rec, managed);
+    if (!diverId) return { fileName, result: 'skipped', message: NOT_YOUR_DIVER };
     const deviceId = rec.device ? await resolveDevice(tx, diverId, rec) : null;
     const values = {
       deviceId, originalId, importId, recordingKey: rec.recordingKey,
@@ -145,6 +148,7 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
     const [known] = await tx.select().from(recording)
       .where(and(eq(recording.recordingKey, rec.recordingKey), isNull(recording.deletedAt)));
     if (known) {
+      if (!(await recordingIsManaged(tx, known, userId, managed))) return { fileName, result: 'skipped', message: NOT_YOUR_DIVER };
       await tx.update(recording).set(values).where(eq(recording.id, known.id));
       await writeSamples(tx, known.id, rec, true);
       await writeRevision(tx, 'recording', known.id, actor, 'reimport', { originalId: { from: known.originalId, to: originalId } });
@@ -189,14 +193,17 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
     return { fileName, result: 'duplicate-candidate', recordingId: created!.id, message: decision.reason };
   }
 
-  /** Recordings go to the Diver their Device is assigned to; unknown Devices default to the User's own Diver. */
-  async function resolveDiver(tx: Tx, userId: string, rec: ParsedRecording): Promise<string> {
+  /**
+   * Recordings go to the Diver their Device is assigned to; unknown Devices default to the User's own
+   * Diver. Null when the Device belongs to a Diver this User doesn't manage.
+   */
+  async function resolveDiver(tx: Tx, userId: string, rec: ParsedRecording, managed: Set<string>): Promise<string | null> {
     if (rec.device) {
       const [known] = await tx.select({ diverId: device.diverId }).from(device).where(and(
         eq(device.manufacturer, rec.device.manufacturer), eq(device.serialNumber, rec.device.serialNumber),
         isNull(device.deletedAt),
       ));
-      if (known) return known.diverId;
+      if (known) return managed.has(known.diverId) ? known.diverId : null;
     }
     const [own] = await tx.select({ diverId: diverManagement.diverId }).from(diverManagement)
       .where(and(eq(diverManagement.userId, userId), eq(diverManagement.isOwn, true)));
@@ -247,6 +254,29 @@ async function writeRevision(
   changes: Record<string, { from: unknown; to: unknown }>,
 ) {
   await tx.insert(revision).values({ entityType, entityId, actorType: actor.type, actorId: actor.id, cause, changes });
+}
+
+const NOT_YOUR_DIVER = 'Recorded for a Diver you don’t manage';
+
+async function managedDivers(tx: Tx, userId: string): Promise<Set<string>> {
+  const rows = await tx.select({ id: diverManagement.diverId }).from(diverManagement).where(eq(diverManagement.userId, userId));
+  return new Set(rows.map((r) => r.id));
+}
+
+/** Whether an existing Recording is in a logbook this User manages (via its Dive, else its Device, else its Original). */
+async function recordingIsManaged(
+  tx: Tx, rec: typeof recording.$inferSelect, userId: string, managed: Set<string>,
+): Promise<boolean> {
+  if (rec.diveId) {
+    const [d] = await tx.select({ diverId: dive.diverId }).from(dive).where(eq(dive.id, rec.diveId));
+    return !!d && managed.has(d.diverId);
+  }
+  if (rec.deviceId) {
+    const [d] = await tx.select({ diverId: device.diverId }).from(device).where(eq(device.id, rec.deviceId));
+    return !!d && managed.has(d.diverId);
+  }
+  const [o] = await tx.select({ userId: original.userId }).from(original).where(eq(original.id, rec.originalId));
+  return o?.userId === userId;
 }
 
 export type ImportService = ReturnType<typeof createImportService>;

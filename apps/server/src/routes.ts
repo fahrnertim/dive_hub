@@ -1,6 +1,9 @@
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
+import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
+import type { Auth } from './auth/auth.js';
+import { requireUser } from './auth/fastify.js';
 import type { Db } from './db/client.js';
 import { dive, diverManagement, importJob, recording, sampleSeries } from './db/schema.js';
 import { downsampleMinMax } from './dives/downsample.js';
@@ -11,8 +14,7 @@ export interface RouteDeps {
   db: Db;
   imports: ImportService;
   maxUploadBytes: number;
-  /** Until sign-in exists (ADR 0011, next slice) every request acts as the development user. */
-  currentUserId: () => string;
+  auth: Auth;
 }
 
 const Problem = Type.Object({ error: Type.String() });
@@ -86,10 +88,14 @@ const toDiveSummary = (d: typeof dive.$inferSelect): Static<typeof DiveSummaryVi
 export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps) => {
   const { db, imports } = deps;
 
-  /** Divers the current user manages; all logbook reads are scoped to them. */
-  const managedDiverIds = async () =>
+  // Every logbook route needs a signed-in User and only shows what that User may see.
+  app.addHook('onRequest', requireUser(deps.auth));
+  const userId = (request: FastifyRequest) => request.user!.id;
+
+  /** Divers the signed-in User manages; all logbook reads are scoped to them. */
+  const managedDiverIds = async (request: FastifyRequest) =>
     (await db.select({ id: diverManagement.diverId }).from(diverManagement)
-      .where(eq(diverManagement.userId, deps.currentUserId()))).map((r) => r.id);
+      .where(eq(diverManagement.userId, userId(request)))).map((r) => r.id);
 
   app.post('/imports', {
     schema: {
@@ -101,7 +107,7 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
     const file = await request.file();
     if (!file) return reply.code(400).send({ error: 'Expected a file in the "file" field' });
     try {
-      const created = await imports.createImport(deps.currentUserId(), file.filename, file.file, deps.maxUploadBytes);
+      const created = await imports.createImport(userId(request), file.filename, file.file, deps.maxUploadBytes);
       return reply.code(202).send(toImportView(created));
     } catch (error) {
       if (error instanceof UploadTooLargeError) return reply.code(413).send({ error: error.message });
@@ -110,9 +116,9 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
   });
 
   app.get('/imports', {
-    schema: { summary: 'Recent Imports of the current user', response: { 200: Type.Array(ImportView) } },
-  }, async () => {
-    const rows = await db.select().from(importJob).where(eq(importJob.userId, deps.currentUserId()))
+    schema: { summary: 'Recent Imports of the signed-in User', response: { 200: Type.Array(ImportView) } },
+  }, async (request) => {
+    const rows = await db.select().from(importJob).where(eq(importJob.userId, userId(request)))
       .orderBy(desc(importJob.createdAt)).limit(50);
     return rows.map(toImportView);
   });
@@ -121,14 +127,14 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
     schema: { summary: 'One Import with its outcome', params: IdParams, response: { 200: ImportView, 404: Problem } },
   }, async (request, reply) => {
     const [row] = await db.select().from(importJob)
-      .where(and(eq(importJob.id, request.params.id), eq(importJob.userId, deps.currentUserId())));
+      .where(and(eq(importJob.id, request.params.id), eq(importJob.userId, userId(request))));
     return row ? toImportView(row) : reply.code(404).send({ error: 'Import not found' });
   });
 
   app.get('/dives', {
-    schema: { summary: 'Dives of the Divers the current user manages, newest first', response: { 200: Type.Array(DiveSummaryView) } },
-  }, async () => {
-    const divers = await managedDiverIds();
+    schema: { summary: 'Dives of the Divers the signed-in User manages, newest first', response: { 200: Type.Array(DiveSummaryView) } },
+  }, async (request) => {
+    const divers = await managedDiverIds(request);
     if (divers.length === 0) return [];
     const rows = await db.select().from(dive)
       .where(and(inArray(dive.diverId, divers), isNull(dive.deletedAt))).orderBy(desc(dive.startsAt)).limit(500);
@@ -138,7 +144,7 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
   app.get('/dives/:id', {
     schema: { summary: 'One Dive with its Recordings', params: IdParams, response: { 200: DiveView, 404: Problem } },
   }, async (request, reply) => {
-    const divers = await managedDiverIds();
+    const divers = await managedDiverIds(request);
     const [row] = divers.length === 0 ? [] : await db.select().from(dive)
       .where(and(eq(dive.id, request.params.id), inArray(dive.diverId, divers), isNull(dive.deletedAt)));
     if (!row) return reply.code(404).send({ error: 'Dive not found' });
@@ -162,10 +168,10 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
       params: IdParams, querystring: SamplesQuery, response: { 200: SamplesView, 404: Problem },
     },
   }, async (request, reply) => {
-    const divers = await managedDiverIds();
+    const divers = await managedDiverIds(request);
     const [rec] = divers.length === 0 ? [] : await db.select({ id: recording.id }).from(recording)
       .innerJoin(dive, eq(dive.id, recording.diveId))
-      .where(and(eq(recording.id, request.params.id), inArray(dive.diverId, divers)));
+      .where(and(eq(recording.id, request.params.id), inArray(dive.diverId, divers), isNull(recording.deletedAt)));
     if (!rec) return reply.code(404).send({ error: 'Recording not found' });
     const wanted = request.query.channels?.split(',').map((c) => c.trim()).filter(Boolean);
     const rows = await db.select().from(sampleSeries).where(and(

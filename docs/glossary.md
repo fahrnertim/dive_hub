@@ -16,6 +16,14 @@ dive-related data. This glossary fixes the words we use for it.
 An account that can sign in to a Dive Hub instance. A User manages one or more Divers.
 _Avoid_: Account, member, login
 
+**Admin**:
+A User who may invite people and manage Users of the instance. A role of a User, not a separate account. An admin sees no other User's Dives.
+_Avoid_: Superuser, owner, root
+
+**Invitation**:
+An admin's offer to one e-mail address to become a User: a single-use link that expires. Accepting it creates the User and their own Diver.
+_Avoid_: Invite code, sign-up link
+
 **Diver**:
 A person who dives and whose dives, certifications and equipment can be recorded.
 A Diver may be managed by a User (their own Diver, or someone they log for, such as a child) or exist without one.

@@ -1,35 +1,18 @@
 // Integration test of the import pipeline against PostgreSQL (docs/spec/data-model.md, scenario 1).
 // Uses a throwaway database on the server from TEST_DATABASE_URL / DATABASE_URL; skipped when unreachable.
-import { mkdtemp, readdir, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { Readable } from 'node:stream';
 import { eq } from 'drizzle-orm';
-import pg from 'pg';
+import type pg from 'pg';
 import yazl from 'yazl';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createDb, type Db } from '../src/db/client.js';
-import { migrateDatabase } from '../src/db/migrate.js';
+import type { Db } from '../src/db/client.js';
 import { dive, original, recording, revision, sampleSeries } from '../src/db/schema.js';
-import { DEV_USER_ID, ensureDevUser } from '../src/dev-user.js';
 import { createImportService, type ImportService } from '../src/imports/import-service.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
-
-const baseUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL ?? 'postgres://divehub:divehub-dev@127.0.0.1:5432/divehub';
-const dbName = `divehub_test_${process.pid}_${Date.now()}`;
-
-async function reachable(): Promise<boolean> {
-  const client = new pg.Client({ connectionString: baseUrl, connectionTimeoutMillis: 2000 });
-  try {
-    await client.connect();
-    await client.end();
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { createTestAuth, createTestDatabase, createUser, databaseReachable, type TestDatabase } from './support.js';
 
 const zipOf = (entries: Record<string, Uint8Array>): Promise<Buffer> =>
   new Promise((resolve, reject) => {
@@ -40,15 +23,16 @@ const zipOf = (entries: Record<string, Uint8Array>): Promise<Buffer> =>
     zip.outputStream.on('data', (c: Buffer) => chunks.push(c)).on('end', () => resolve(Buffer.concat(chunks))).on('error', reject);
   });
 
-describe.skipIf(!(await reachable()))('import pipeline (PostgreSQL)', () => {
-  let admin: pg.Client;
+describe.skipIf(!(await databaseReachable()))('import pipeline (PostgreSQL)', () => {
+  let t: TestDatabase;
+  let userId: string;
   let db: Db;
   let pool: pg.Pool;
   let imports: ImportService;
   let dataDir: string;
 
   const runImport = async (name: string, data: Uint8Array) => {
-    const created = await imports.createImport(DEV_USER_ID, name, Readable.from([Buffer.from(data)]), 1 << 26);
+    const created = await imports.createImport(userId, name, Readable.from([Buffer.from(data)]), 1 << 26);
     await imports.processImport(created.id); // what the worker does
     const [{ outcome, status }] = (await pool.query('select outcome, status from import where id = $1', [created.id])).rows;
     expect(status).toBe('done');
@@ -56,23 +40,14 @@ describe.skipIf(!(await reachable()))('import pipeline (PostgreSQL)', () => {
   };
 
   beforeAll(async () => {
-    admin = new pg.Client({ connectionString: baseUrl });
-    await admin.connect();
-    await admin.query(`create database ${dbName}`);
-    const url = new URL(baseUrl);
-    url.pathname = `/${dbName}`;
-    ({ db, pool } = createDb(url.toString()));
-    await migrateDatabase(db, pool, fileURLToPath(new URL('../drizzle', import.meta.url)));
-    await ensureDevUser(db);
-    dataDir = await mkdtemp(join(tmpdir(), 'divehub-test-'));
+    t = await createTestDatabase();
+    ({ db, pool, dataDir } = t);
+    userId = (await createUser(createTestAuth(db), 'diver@example.com')).id;
     imports = createImportService({ db, blobs: createLocalBlobStore(dataDir) });
   });
 
   afterAll(async () => {
-    await pool?.end();
-    await admin?.query(`drop database if exists ${dbName} with (force)`);
-    await admin?.end();
-    if (dataDir) await rm(dataDir, { recursive: true, force: true });
+    await t?.drop();
   });
 
   const garmin = makeSyntheticDive();

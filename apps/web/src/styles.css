@@ -70,3 +70,30 @@ a { color: var(--accent); }
 @media (max-width: 600px) {
   .dives th:nth-child(1), .dives td:nth-child(1) { display: none; }
 }
+
+/* Accounts (sign-in, setup, invitations) and admin */
+.narrow { max-width: 440px; margin-left: auto; margin-right: auto; }
+.form { display: grid; gap: 12px; }
+.form label { display: grid; gap: 4px; font-size: 0.9rem; }
+.form.inline { grid-template-columns: minmax(0, 1fr) auto auto; align-items: end; }
+.form label.check { display: flex; align-items: center; gap: 6px; padding-bottom: 8px; }
+input:not([type='checkbox']) { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+button { font: inherit; border: 1px solid var(--accent); background: var(--accent); color: var(--card); border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+button:disabled { opacity: 0.6; cursor: default; }
+button.link { border: none; background: none; color: var(--accent); padding: 0; }
+.user-menu { display: flex; align-items: baseline; gap: 14px; }
+.invite-link { margin-top: 12px; }
+.copy { display: flex; gap: 8px; }
+.copy input { flex: 1; font-family: ui-monospace, monospace; font-size: 0.85rem; }
+.table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.table th, .table td { text-align: left; padding: 6px; border-top: 1px solid var(--border); overflow-wrap: anywhere; }
+.table th { color: var(--muted); font-weight: 500; font-size: 0.85rem; border-top: none; }
+.status.pending { color: var(--accent); }
+.status.revoked, .status.expired { color: var(--muted); }
+.status.accepted { color: var(--ok); }
+code { font-family: ui-monospace, monospace; font-size: 0.9em; }
+
+@media (max-width: 600px) {
+  .form.inline { grid-template-columns: 1fr; }
+}

@@ -2,7 +2,7 @@
 title: Documentation index
 summary: Map of all project knowledge. One line per document.
 status: living
-date: 2026-10-02
+date: 2026-10-03
 ---
 
 # Documentation index
@@ -15,7 +15,7 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [spec/architecture.md](spec/architecture.md) — Components, import flow, Docker Compose deployment, auth.
 
 ## Glossary
-- [glossary.md](glossary.md) — Domain language: User, Diver, Dive, Recording, Import, Push, …
+- [glossary.md](glossary.md) — Domain language: User, Admin, Invitation, Diver, Dive, Recording, Import, Push, …
 
 ## Development
 - [development.md](development.md) — setup, layout, common tasks, tooling notes.
@@ -38,6 +38,7 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [0009 TypeBox for API schemas](decisions/0009-typebox-schemas.md) — Fastify-native JSON Schema; OpenAPI without conversion.
 - [0010 Graphile Worker as job queue](decisions/0010-graphile-worker-job-queue.md) — enqueue via SQL in the Import transaction; LISTEN/NOTIFY.
 - [0011 Better Auth for accounts and sessions](decisions/0011-better-auth.md) — ≥ 1.7.7, argon2id, invite-only, database sessions, small plugin set.
+- [0012 Invitation links, setup token for the first admin, 2FA later](decisions/0012-invitations-and-admin-bootstrap.md) — copy-link invitations, setup token in the log, no impersonation.
 - [Template](decisions/template.md) — copy for new ADRs.
 
 ## References

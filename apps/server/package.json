@@ -9,13 +9,16 @@
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
     "db:generate": "drizzle-kit generate",
-    "openapi": "tsx src/scripts/write-openapi.ts"
+    "openapi": "tsx src/scripts/write-openapi.ts",
+    "auth:generate": "auth generate --config src/auth/cli-config.ts --output src/db/auth-schema.ts --yes"
   },
   "dependencies": {
     "@fastify/multipart": "^10.1.2",
     "@fastify/static": "^10.1.5",
     "@fastify/swagger": "^9.9.1",
     "@fastify/type-provider-typebox": "^6.1.0",
+    "@node-rs/argon2": "^2.2.1",
+    "better-auth": "^1.7.7",
     "drizzle-orm": "^0.45.3",
     "fastify": "^5.12.5",
     "fit-file-parser": "^6.1.2",
@@ -30,6 +33,7 @@
     "@types/pg": "^8.23.1",
     "@types/yauzl": "^3.4.0",
     "@types/yazl": "^3.3.1",
+    "auth": "1.7.7",
     "drizzle-kit": "^0.31.11",
     "tsup": "^8.5.1",
     "tsx": "^4.23.15",
