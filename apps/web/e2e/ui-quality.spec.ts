@@ -1,5 +1,6 @@
 // Every page against the UI review's rules (docs/research/2026-10-03-ui-review.md), in English on a
-// light desktop and in German on a dark phone: see expectGoodPage. Plus the behaviour the review
+// light desktop and in German on a dark phone, plus the narrowest phone (320 px, WCAG 1.4.10 reflow)
+// and a German tablet in between (responsiveness, 2026-10-04): see expectGoodPage. Plus the behaviour the review
 // asked for: focus after navigation, a quick "not found", field names with units, admin safeguards.
 // Runs after the other specs (file order), so the data has two Divers and a split-off Dive by then.
 import { readFileSync } from 'node:fs';
@@ -10,6 +11,28 @@ const headers = { origin: E2E_BASE_URL };
 let diveId: string;
 let invitationToken: string;
 let resetToken: string;
+
+/**
+ * A crowded instance, so narrow widths meet long names and full rows: two more Users (each row with
+ * all the admin's actions) and a Diver with a long name. Not admins: the tests below expect Erika to
+ * be the only one.
+ */
+async function addCrowd(request: APIRequestContext, browser: Browser) {
+  const stamp = Date.now();
+  const people = [
+    { email: `maximiliane.schwarzenberger-uebermuth-${stamp}@tauchclub-beispiel.example`, name: 'Maximiliane Schwarzenberger-Übermuth' },
+    { email: `bartholomaeus.oberhuber-${stamp}@example.com`, name: 'Bartholomäus Oberhuber-Kirchmayr' },
+  ];
+  const anonymous = await browser.newContext({ baseURL: E2E_BASE_URL, storageState: { cookies: [], origins: [] } });
+  for (const p of people) {
+    const invitation = await (await request.post('/api/invitations', { headers, data: { email: p.email } })).json();
+    await anonymous.request.post('/api/invitations/accept', {
+      headers, data: { token: invitation.url.split('/invite/')[1], name: p.name, password: 'a long enough test password' },
+    });
+  }
+  await anonymous.close();
+  await request.post('/api/divers', { headers, data: { name: 'Konstantin von Hohenzollern-Sigmaringen' } });
+}
 
 /** A second, signed-out User's links: an Invitation, and a reset link for a User who accepted one. */
 async function makeLinks(request: APIRequestContext, browser: Browser) {
@@ -31,11 +54,14 @@ test.beforeAll(async ({ request, browser }) => {
   await setPreferences(request, { language: null, units: null }); // the browser's language decides
   diveId = await seededDiveId(request);
   await makeLinks(request, browser);
+  await addCrowd(request, browser);
 });
 
 const variants = [
   { name: 'English, light, desktop', locale: 'en-GB', colorScheme: 'light' as const, viewport: { width: 1280, height: 900 }, english: true },
   { name: 'German, dark, phone', locale: 'de-DE', colorScheme: 'dark' as const, viewport: { width: 390, height: 844 }, english: false },
+  { name: 'English, light, small phone', locale: 'en-GB', colorScheme: 'light' as const, viewport: { width: 320, height: 640 }, english: true },
+  { name: 'German, light, tablet', locale: 'de-DE', colorScheme: 'light' as const, viewport: { width: 768, height: 1024 }, english: false },
 ];
 
 for (const v of variants) {
@@ -83,8 +109,10 @@ for (const v of variants) {
       await page.getByRole('button', { name: v.english ? 'Create invitation link' : 'Einladungslink erstellen' }).click();
       await expect(page.getByRole('button', { name: v.english ? 'Copy' : 'Kopieren' })).toBeVisible();
       await expectGoodPage(page, title('Admin'));
-      // On a phone the rows are cards: the actions stay in sight instead of scrolling away.
-      await expect(page.getByRole('button', { name: v.english ? /^Revoke:/ : /^Zurückziehen:/ }).first()).toBeInViewport();
+      // On a phone the rows are cards: the actions stay in sight instead of scrolling away sideways.
+      // (Below the fold is fine on a short screen; off to the right is not.)
+      const revoke = await page.getByRole('button', { name: v.english ? /^Revoke:/ : /^Zurückziehen:/ }).first().boundingBox();
+      expect(revoke!.x + revoke!.width).toBeLessThanOrEqual(v.viewport.width);
     });
 
     test.describe('signed out', () => {
@@ -119,6 +147,36 @@ for (const v of variants) {
 
 test.describe('behaviour', () => {
   test.use({ locale: 'en-GB' });
+
+  test('every page fits every width from 320 to 1440 px: no page or table scrolls sideways', async ({ page }) => {
+    // The variants above check four widths in depth; this sweeps the widths in between (tablets, split
+    // screens), where tables switch layouts by the room they have (container queries).
+    for (const width of [320, 480, 640, 800, 960, 1120, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/account', '/#/admin']) {
+        await page.goto(path);
+        await page.getByRole('heading', { level: 1 }).waitFor();
+        const overflow = await page.evaluate(() => ({
+          page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+          tables: [...document.querySelectorAll('.table-scroll')].map((t) => t.scrollWidth - t.clientWidth).filter((o) => o > 0),
+        }));
+        expect(overflow, `${path} at ${width} px`).toEqual({ page: 0, tables: [] });
+      }
+    }
+  });
+
+  test('text at 200 % still fits: nothing scrolls sideways (WCAG 1.4.4)', async ({ page }) => {
+    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/account', '/#/admin']) {
+      await page.goto(path);
+      await page.getByRole('heading', { level: 1 }).waitFor();
+      await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
+      const overflow = await page.evaluate(() => ({
+        page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        tables: [...document.querySelectorAll('.table-scroll')].map((t) => t.scrollWidth - t.clientWidth).filter((o) => o > 0),
+      }));
+      expect(overflow, path).toEqual({ page: 0, tables: [] });
+    }
+  });
 
   test('moving to another page puts focus on its heading', async ({ page }) => {
     await page.goto('/');

@@ -113,7 +113,7 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 | `PageHeader` | The page's h1 with optional meta (a dive's date and Diver), a lead sentence and the page's actions. |
 | `Panel` | A titled area of a page; `narrow` for single forms; `attention` for something waiting for the User. |
 | `Notice` | What just happened: `info`, `success`, `danger` (announced at once). |
-| `Table` | Data tables that scroll sideways on phones; numeric columns are right-aligned, header included. The first and last columns line up with the panel's text. `cards`: on a phone each row becomes a block of label–value lines, separated by dividers (tables with an actions column). `stacked`: on a phone each row becomes two lines (`cell-lead` and `cell-main`, then the `cell-sub` cells), as in the logbook. |
+| `Table` | Data tables; numeric columns are right-aligned, header included. The first and last columns line up with the panel's text. A table switches layout by its own width (container query), not the window's: `cards` (tables with an actions column) below 48rem become blocks of label–value lines separated by dividers, and below 22rem the label sits above its value; `stacked` (the logbook) below 40rem becomes two lines per row (`cell-lead` and `cell-main`, then the `cell-sub` cells). Date cells (`date`) don't wrap; e-mail cells (`email`) may break anywhere. |
 | `Dialog` | Modal with focus kept inside, for confirmations that need input (deleting a User). |
 | `ConfirmButton`, `ConfirmDialog` | An action that is hard to undo asks first, in a dialog that says what will happen. The dialog alone serves menu items. |
 | `ActionMenu` | Secondary actions behind one button ("Recording actions", "More", the account menu). The panel shows only its main action. |
@@ -169,16 +169,19 @@ on the document and on the language names in the picker.
 ## Rules every page follows
 
 From the [UI review](../research/2026-10-03-ui-review.md). `expectGoodPage` in `apps/web/e2e/support.ts`
-checks them. `e2e/ui-quality.spec.ts` runs it on every page, in English on a light desktop and in
-German on a dark phone. **A new page gets a test there.**
+checks them. `e2e/ui-quality.spec.ts` runs it on every page in four variants: English light desktop (1280), German dark phone (390),
+English light small phone (320) and German light tablet (768), with crowded data (long names and e-mail addresses).
+It also sweeps every page from 320 to 1440 px and checks text at 200 % ([responsiveness](../research/2026-10-04-responsiveness.md)).
+**A new page gets a test there.**
 
 - **One `h1` per page.** It is the page's title, in `PageHeader` (single forms: `<Panel narrow level={1}>`).
   Headings inside a panel go one level down (`h2.subheading`).
 - **The browser tab names the page.** Each page calls `usePageTitle()` (`lib/page.ts`) with its
   h1 text, giving e.g. "Dive 42 – Dive Hub". After navigating, focus moves to the new h1.
 - **axe-core finds nothing** (WCAG 2.2 AA plus best practices), in both themes.
-- **Nothing scrolls the page sideways** at 390 px. Wide tables scroll inside `Table`, whose box
-  is positioned so that visually hidden labels stay inside it.
+- **Nothing scrolls sideways**, neither the page nor a table, from 320 to 1440 px and at 200 % text (WCAG 1.4.10,
+  1.4.4). A table that would scroll uses `cards` or `stacked` instead. The `Table` box is positioned so that
+  visually hidden labels stay inside it.
 - **No two buttons have the same name.** A button repeated per row (Revoke, Rename, Sign out) gets
   `aria-label={t('common.forItem', { action, item })}` ("Revoke: new@example.com"). The visible
   text comes first, so voice control still works (WCAG 2.5.3).

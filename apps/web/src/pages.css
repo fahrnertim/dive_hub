@@ -129,8 +129,8 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .empty-state { display: grid; justify-items: start; gap: var(--space-4); }
 .empty-state > p { margin: 0; }
 
-@media (max-width: 40rem) {
-  /* The logbook on a phone: number and date link on the first line, Diver, depth and duration under the
+@container table (max-width: 40rem) {
+  /* The logbook on a phone (or in any column this narrow): number and date link on the first line, Diver, depth and duration under the
      date, so nothing is cut off at the side (visual refresh 6). */
   .table-stacked thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
   .table-stacked, .table-stacked tbody { display: block; }

@@ -45,7 +45,8 @@ export async function setPreferences(api: APIRequestContext, preferences: { lang
 /**
  * The checks every page must pass (UI review 2026-10-03, so its problems don't come back):
  * axe-core finds no WCAG 2.2 AA or best-practice violation, the page has one h1 and its own title,
- * nothing scrolls the page sideways, and no two buttons have the same name (screen readers list
+ * nothing scrolls the page or a table sideways (a table that scrolls hides its last columns, often
+ * the actions; it should switch to its narrow layout instead), and no two buttons have the same name (screen readers list
  * buttons by name, so "Revoke" on every row can't be told apart). `title` is the expected h1 text,
  * checked against document.title; leave it out to check only that the page set one.
  */
@@ -63,6 +64,11 @@ export async function expectGoodPage(page: Page, title?: string) {
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow, 'the page scrolls sideways').toBeLessThanOrEqual(0);
+  const tables = await page.locator('.table-scroll').evaluateAll((boxes) => boxes
+    .filter((b) => b.checkVisibility())
+    .map((b) => ({ label: b.getAttribute('aria-label'), overflow: b.scrollWidth - b.clientWidth }))
+    .filter((t) => t.overflow > 0));
+  expect(tables, 'tables that scroll sideways').toEqual([]);
 
   const names = await page.getByRole('button').evaluateAll((buttons) => buttons
     .filter((b) => b.checkVisibility())

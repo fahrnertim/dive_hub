@@ -167,8 +167,8 @@ function Sessions() {
             <tr key={s.id}>
               <td>{describe(s.userAgent)}{s.current && <> (<strong>{t('account.thisDevice')}</strong>)</>}</td>
               <td>{s.ipAddress ?? t('common.none')}</td>
-              <td>{display.dateTime(s.createdAt)}</td>
-              <td>{s.lastActiveAt ? display.dateTime(s.lastActiveAt) : t('common.none')}</td>
+              <td className="date">{display.dateTime(s.createdAt)}</td>
+              <td className="date">{s.lastActiveAt ? display.dateTime(s.lastActiveAt) : t('common.none')}</td>
               <td>
                 {s.current ? (
                   <ConfirmButton

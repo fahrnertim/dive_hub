@@ -162,7 +162,9 @@
    without it they stretch the page sideways on phones (UI review A2). */
 /* The negative margin lets the cell padding sit outside the text, so the first and last columns line
    up with the panel's heading (visual refresh 5). */
-.table-scroll { overflow-x: auto; position: relative; margin-inline: calc(-1 * var(--space-3)); }
+/* The table's box is a size container: a table switches to its phone layout by the room it has, not by
+   the window's width, so a narrow column on a tablet gets it too (responsiveness, 2026-10-04). */
+.table-scroll { overflow-x: auto; position: relative; margin-inline: calc(-1 * var(--space-3)); container: table / inline-size; }
 .table-scroll:focus-visible { outline: 2px solid var(--color-focus); }
 .table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
 .table th, .table td { text-align: left; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); vertical-align: middle; }
@@ -171,6 +173,9 @@
 /* Links in tables keep an underline (WCAG 1.4.1), but a lighter one. */
 .table td a { text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
 .table td.num, .table th.num { text-align: right; }
+/* A date stays on one line; an e-mail address may break anywhere instead, so a table never grows wider than its box. */
+.table td.date { white-space: nowrap; }
+.table td.email { overflow-wrap: anywhere; }
 .table tr.is-disabled td { color: var(--color-text-muted); }
 .table tr.row-link { cursor: pointer; }
 
@@ -225,19 +230,6 @@
 .user-menu-button { color: var(--color-text); }
 
 @media (max-width: 40rem) {
-  /* Tables with cards: one card per row, the column name next to each value (UI review C5). */
-  .table-cards thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
-  .table-cards, .table-cards tbody, .table-cards tr, .table-cards td { display: block; }
-  /* Rows are separated by a line, not boxed: no boxes inside panels (visual refresh 6). */
-  .table-cards tr { border-bottom: 1px solid var(--color-border); padding: var(--space-3); }
-  .table-cards tbody tr:last-child { border-bottom: none; }
-  .table-cards td { border: none; padding: var(--space-1) 0; display: grid; grid-template-columns: 8rem minmax(0, 1fr); gap: var(--space-3); align-items: baseline; }
-  .table-cards td.num { text-align: left; }
-  .table-cards td::before { content: attr(data-label); color: var(--color-text-muted); }
-  .table-cards td[data-label=''] { display: block; }
-  .table-cards td[data-label='']::before { content: none; }
-  .table-cards td > .badge { justify-self: start; }
-
   /* Phone header: brand and user menu on the first row, the navigation on its own second row. */
   .app-header-inner { gap: var(--space-2) var(--space-3); }
   .app-nav { order: 3; flex-basis: 100%; overflow-x: auto; }
@@ -245,4 +237,27 @@
   .copy-field { flex-direction: column; }
   /* On a phone the button wraps under the field anyway; no alignment margin. */
   .form-inline > :not(.field):not(.radio-group) { margin-top: 0; }
+}
+
+/* Tables with an actions column turn into cards earlier than the logbook (48rem, a tablet held upright):
+   below that, five actions per row squeeze the other columns into many short lines. */
+@container table (max-width: 48rem) {
+  /* Tables with cards: one card per row, the column name next to each value (UI review C5). */
+  .table-cards thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+  .table-cards, .table-cards tbody, .table-cards tr, .table-cards td { display: block; }
+  /* Rows are separated by a line, not boxed: no boxes inside panels (visual refresh 6). */
+  .table-cards tr { border-bottom: 1px solid var(--color-border); padding: var(--space-3); }
+  .table-cards tbody tr:last-child { border-bottom: none; }
+  /* Long values (e-mail addresses, names) wrap instead of pushing the row wider; the label column gives way first. */
+  .table-cards td { border: none; padding: var(--space-1) 0; display: grid; grid-template-columns: minmax(5rem, 8rem) minmax(0, 1fr); gap: var(--space-3); align-items: baseline; overflow-wrap: break-word; }
+  .table-cards td.num { text-align: left; }
+  .table-cards td::before { content: attr(data-label); color: var(--color-text-muted); }
+  .table-cards td[data-label=''] { display: block; }
+  .table-cards td[data-label='']::before { content: none; }
+  .table-cards td > .badge { justify-self: start; }
+}
+
+/* Very narrow (a 320 px phone): the column name above its value, so the value gets the whole width. */
+@container table (max-width: 22rem) {
+  .table-cards td { grid-template-columns: minmax(0, 1fr); gap: 0; }
 }

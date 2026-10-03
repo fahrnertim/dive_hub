@@ -177,7 +177,7 @@ function DeviceRow({ device: d, divers }: { device: DeviceView; divers: DiverVie
       <td translate="no">{deviceName(d.manufacturer, d.product)}</td>
       <td translate="no">{d.serialNumber}</td>
       <td className="num">{d.recordingCount}</td>
-      <td>{d.lastUsedAt ? display.dateTime(d.lastUsedAt) : t('common.none')}</td>
+      <td className="date">{d.lastUsedAt ? display.dateTime(d.lastUsedAt) : t('common.none')}</td>
       <td className="device-owner">
         <Select
           label={<span className="visually-hidden">{t('divers.belongsToDevice', { device: `${deviceName(d.manufacturer, d.product)} ${d.serialNumber}` })}</span>}

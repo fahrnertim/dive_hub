@@ -84,10 +84,10 @@ function Invitations() {
       <Table cards label={t('admin.invitations')} head={[t('admin.email'), t('admin.role'), t('admin.status'), t('admin.expires'), { label: t('common.actions'), hidden: true }]}>
         {invitations.data.map((i) => (
           <tr key={i.id}>
-            <td>{i.email}</td>
+            <td className="email">{i.email}</td>
             <td>{t(`admin.roles.${i.role}`)}</td>
             <td><Badge tone={i.status === 'accepted' ? 'success' : 'neutral'}>{t(`admin.invitationStatus.${i.status}`)}</Badge></td>
-            <td>{i.status === 'pending' ? display.dateTime(i.expiresAt) : t('common.none')}</td>
+            <td className="date">{i.status === 'pending' ? display.dateTime(i.expiresAt) : t('common.none')}</td>
             <td>
               {i.status === 'pending' && (
                 <ConfirmButton
@@ -194,9 +194,9 @@ function UserRow({ user: u, isMe, isLastAdmin, onRemoved }: { user: UserView; is
     <>
       <tr className={u.disabled ? 'is-disabled' : undefined}>
         <td>{u.name}{isMe && ` (${t('admin.you')})`}</td>
-        <td>{u.email}</td>
+        <td className="email">{u.email}</td>
         <td>{t(`admin.roles.${u.role}`)}{u.disabled && `, ${t('admin.disabled')}`}</td>
-        <td>{display.dateTime(u.createdAt)}</td>
+        <td className="date">{display.dateTime(u.createdAt)}</td>
         <td>
           <div className="actions">
             {u.role === 'user' && actionButton('make-admin', t('admin.makeAdmin'))}
