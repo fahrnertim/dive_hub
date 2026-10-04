@@ -327,7 +327,8 @@
     "site_import_not_found": "Diesen Import gibt es nicht.",
     "source_unavailable": "Die Quelle hat nicht oder unerwartet geantwortet. Versuch es später noch einmal.",
     "source_rate_limited": "Die Quelle hat uns gebeten, langsamer zu machen. Versuch es in ein paar Minuten noch einmal.",
-    "site_import_interrupted": "Der Server wurde während des Imports gestoppt. Starte ihn noch einmal."
+    "site_import_interrupted": "Der Server wurde während des Imports gestoppt. Starte ihn noch einmal.",
+    "site_merge_self": "Ein Tauchplatz kann nicht mit sich selbst zusammengeführt werden."
   },
   "vocabulary": {
     "waterType": {
@@ -376,7 +377,9 @@
       "auto-site": "Tauchplatz vom Import gewählt",
       "delete": "Gelöscht",
       "update": "Aus der Quelle aktualisiert",
-      "link": "Mit der Quelle verknüpft"
+      "link": "Mit der Quelle verknüpft",
+      "site-merge": "Tauchplatz mit einem anderen zusammengeführt",
+      "merge": "Tauchplätze zusammengeführt"
     },
     "field": {
       "number": "Tauchgangsnummer",
@@ -527,7 +530,27 @@
     "from": "Aus {{source}}",
     "alsoIn": "Auch in {{source}}",
     "containsOsm": "Enthält Daten von OpenStreetMap:",
-    "limited": "Nur die ersten {{count}} Tauchplätze werden gezeigt. Suche, um die anderen zu finden."
+    "range_one": "{{from}}–{{to}} von {{count}} Tauchplatz",
+    "range_other": "{{from}}–{{to}} von {{count}} Tauchplätzen",
+    "pages": "Seiten der Tauchplätze",
+    "allCountries": "Alle Länder",
+    "onlyMine": "Nur Plätze mit meinen Tauchgängen",
+    "noMatchFilters": "Keine Tauchplätze passen zu diesen Filtern.",
+    "closeBy": "In der Nähe",
+    "closeByIntro": "Andere Tauchplätze im Umkreis von {{distance}}. Ist einer derselbe Ort, führe ihn mit diesem zusammen.",
+    "away": "{{distance}} entfernt",
+    "mergeHere": "Mit diesem Platz zusammenführen",
+    "mergeTitle": "{{name}} mit {{into}} zusammenführen?",
+    "mergeGone": "{{name}} verschwindet, und seine Links führen hierher.",
+    "mergeFills": "Dieser Platz behält seine Werte; seine leeren Felder übernehmen {{fields}} von dort.",
+    "mergeKeeps": "Dieser Platz behält seine Werte.",
+    "mergeYourDives_one": "Dein {{count}} Tauchgang dort kommt hierher.",
+    "mergeYourDives_other": "Deine {{count}} Tauchgänge dort kommen hierher.",
+    "mergeOthersToo": "Tauchgänge anderer Benutzer dort kommen auch hierher.",
+    "mergeOthersDives": "Tauchgänge anderer Benutzer dort kommen hierher.",
+    "mergeNoUndo": "Das lässt sich nicht rückgängig machen.",
+    "mergeConfirm": "Zusammenführen",
+    "merged": "{{name}} mit {{into}} zusammengeführt."
   },
   "siteHistory": {
     "by": {
@@ -551,8 +574,11 @@
       "edit": "Bearbeitet",
       "update": "Aus der Quelle aktualisiert",
       "link": "Mit der Quelle verknüpft",
-      "delete": "Gelöscht"
-    }
+      "delete": "Gelöscht",
+      "merge": "Zusammengeführt"
+    },
+    "mergedIn": "{{name}} mit diesem Platz zusammengeführt",
+    "mergedInto": "Mit {{name}} zusammengeführt"
   },
   "siteImport": {
     "title": "Tauchplätze importieren",

@@ -66,7 +66,7 @@ describe.skipIf(!(await databaseReachable()))('Dive sites', () => {
 
       const seen = await json<Site>('GET', `/api/dive-sites/${site.id}`, anna);
       expect(seen).toMatchObject({ name: 'Lighthouse', canDelete: false });
-      expect((await json<Site[]>('GET', '/api/dive-sites', anna)).map((s) => s.id)).toContain(site.id);
+      expect((await json<{ sites: Site[] }>('GET', '/api/dive-sites', anna)).sites.map((s) => s.id)).toContain(site.id);
     });
 
     it('any User edits a site, naming the version they started from', async () => {
@@ -102,7 +102,7 @@ describe.skipIf(!(await databaseReachable()))('Dive sites', () => {
       expect((await json<Site>('GET', `/api/dive-sites/${site.id}`, admin)).canDelete).toBe(true);
       expect((await call('DELETE', `/api/dive-sites/${site.id}`, admin)).statusCode).toBe(204);
       expect((await call('GET', `/api/dive-sites/${site.id}`, tim)).json()).toMatchObject({ code: 'site_not_found' });
-      expect((await json<Site[]>('GET', '/api/dive-sites')).map((s) => s.id)).not.toContain(site.id);
+      expect((await json<{ sites: Site[] }>('GET', '/api/dive-sites')).sites.map((s) => s.id)).not.toContain(site.id);
     });
 
     it('needs a signed-in User', async () => {
@@ -119,7 +119,7 @@ describe.skipIf(!(await databaseReachable()))('Dive sites', () => {
       await createSite({ name: 'Far', position: metresNorth(origin, 5000) });
       await createSite({ name: 'Nowhere in particular' });
 
-      const found = await json<Site[]>('GET', `/api/dive-sites?latitude=${origin.latitude}&longitude=${origin.longitude}&within=2000`);
+      const found = (await json<{ sites: Site[] }>('GET', `/api/dive-sites?latitude=${origin.latitude}&longitude=${origin.longitude}&within=2000`)).sites;
       expect(found.map((s) => s.id)).toEqual([nearer.id, near.id]);
       expect(found[0]!.distanceM).toBeCloseTo(50, -1);
       expect(found[1]!.distanceM).toBeCloseTo(300, -1);
@@ -127,14 +127,14 @@ describe.skipIf(!(await databaseReachable()))('Dive sites', () => {
 
     it('finds sites on the other side of the date line', async () => {
       const west = await createSite({ name: 'Taveuni west', position: { latitude: -16.8, longitude: 179.999 } });
-      const found = await json<Site[]>('GET', '/api/dive-sites?latitude=-16.8&longitude=-179.999&within=1000');
+      const found = (await json<{ sites: Site[] }>('GET', '/api/dive-sites?latitude=-16.8&longitude=-179.999&within=1000')).sites;
       expect(found.map((s) => s.id)).toEqual([west.id]);
     });
 
     it('searches names and bodies of water', async () => {
       const lake = await createSite({ name: 'Kohlbachmühle', waterBody: 'Attersee' });
-      expect((await json<Site[]>('GET', '/api/dive-sites?q=atters')).map((s) => s.id)).toEqual([lake.id]);
-      expect((await json<Site[]>('GET', '/api/dive-sites?q=kohlbach')).map((s) => s.id)).toEqual([lake.id]);
+      expect((await json<{ sites: Site[] }>('GET', '/api/dive-sites?q=atters')).sites.map((s) => s.id)).toEqual([lake.id]);
+      expect((await json<{ sites: Site[] }>('GET', '/api/dive-sites?q=kohlbach')).sites.map((s) => s.id)).toEqual([lake.id]);
     });
   });
 

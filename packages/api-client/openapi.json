@@ -282,6 +282,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -351,6 +352,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -470,6 +472,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -632,6 +635,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -701,6 +705,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -1226,6 +1231,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -1316,6 +1322,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -1430,6 +1437,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -1586,6 +1594,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -1762,6 +1771,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -1996,6 +2006,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -2065,6 +2076,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -2134,6 +2146,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -2242,6 +2255,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -2311,6 +2325,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -2380,6 +2395,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -2520,6 +2536,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -2589,6 +2606,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -2658,6 +2676,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -2798,6 +2817,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -2867,6 +2887,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -2936,6 +2957,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -3026,6 +3048,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -3095,6 +3118,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -3164,6 +3188,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -3275,6 +3300,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -3344,6 +3370,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -3413,6 +3440,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -3639,6 +3667,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -3708,6 +3737,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -4103,6 +4133,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -4456,6 +4487,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -5052,6 +5084,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -5803,6 +5836,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -5872,6 +5906,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -5941,6 +5976,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -6560,6 +6596,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -6629,6 +6666,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -6698,6 +6736,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -7317,6 +7356,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -7386,6 +7426,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -7511,6 +7552,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -7580,6 +7622,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -7687,7 +7730,9 @@
                           "delete",
                           "auto-site",
                           "update",
-                          "link"
+                          "link",
+                          "merge",
+                          "site-merge"
                         ]
                       },
                       "changes": {
@@ -7761,6 +7806,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -8089,6 +8135,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -8158,6 +8205,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -8227,6 +8275,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -8340,6 +8389,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -8409,6 +8459,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -8478,6 +8529,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -8591,6 +8643,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -8660,6 +8713,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -8729,6 +8783,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -8842,6 +8897,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -8911,6 +8967,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -8980,6 +9037,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -9154,6 +9212,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -9223,6 +9282,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -9292,6 +9352,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -9434,6 +9495,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -9503,6 +9565,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -9572,6 +9635,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -9660,6 +9724,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -9729,6 +9794,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -9798,6 +9864,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -9985,6 +10052,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -10054,6 +10122,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -10123,6 +10192,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -10146,7 +10216,7 @@
     },
     "/api/dive-sites": {
       "get": {
-        "summary": "The instance's Dive sites by name; with latitude and longitude only those nearby, nearest first",
+        "summary": "One page of the instance's Dive sites, with how many match; with latitude and longitude only those nearby, nearest first",
         "parameters": [
           {
             "schema": {
@@ -10190,6 +10260,72 @@
             "name": "within",
             "required": false,
             "description": "Metres around latitude/longitude"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$"
+            },
+            "in": "query",
+            "name": "country",
+            "required": false,
+            "description": "Only sites in this country (ISO 3166-1 alpha-2)"
+          },
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "mine",
+            "required": false,
+            "description": "Only sites where the signed-in User has dives"
+          },
+          {
+            "schema": {
+              "enum": [
+                "name",
+                "country",
+                "diveCount"
+              ],
+              "default": "name"
+            },
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "description": "Ignored near a position (nearest first)"
+          },
+          {
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            },
+            "in": "query",
+            "name": "order",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "in": "query",
+            "name": "offset",
+            "required": false
           }
         ],
         "responses": {
@@ -10198,200 +10334,225 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "required": [
-                      "id",
-                      "name",
-                      "position",
-                      "country",
-                      "waterBody",
-                      "description",
-                      "maxDepthM",
-                      "ssiSiteId",
-                      "externalIds",
-                      "version",
-                      "diveCount",
-                      "inUse",
-                      "canDelete"
-                    ],
-                    "properties": {
-                      "id": {
-                        "type": "string"
-                      },
-                      "name": {
-                        "type": "string"
-                      },
-                      "position": {
-                        "anyOf": [
-                          {
-                            "type": "null"
+                  "type": "object",
+                  "required": [
+                    "sites",
+                    "total"
+                  ],
+                  "properties": {
+                    "sites": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "name",
+                          "position",
+                          "country",
+                          "waterBody",
+                          "description",
+                          "maxDepthM",
+                          "ssiSiteId",
+                          "externalIds",
+                          "version",
+                          "diveCount",
+                          "inUse",
+                          "canDelete",
+                          "mergedInto"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
                           },
-                          {
-                            "type": "object",
-                            "required": [
-                              "latitude",
-                              "longitude"
-                            ],
-                            "properties": {
-                              "latitude": {
-                                "type": "number",
-                                "minimum": -90,
-                                "maximum": 90
+                          "name": {
+                            "type": "string"
+                          },
+                          "position": {
+                            "anyOf": [
+                              {
+                                "type": "null"
                               },
-                              "longitude": {
-                                "type": "number",
-                                "minimum": -180,
-                                "maximum": 180
-                              }
-                            },
-                            "additionalProperties": false,
-                            "description": "WGS84 degrees"
-                          }
-                        ]
-                      },
-                      "country": {
-                        "anyOf": [
-                          {
-                            "type": "null"
-                          },
-                          {
-                            "type": "string"
-                          }
-                        ]
-                      },
-                      "waterBody": {
-                        "anyOf": [
-                          {
-                            "type": "null"
-                          },
-                          {
-                            "type": "string"
-                          }
-                        ]
-                      },
-                      "description": {
-                        "anyOf": [
-                          {
-                            "type": "null"
-                          },
-                          {
-                            "type": "string"
-                          }
-                        ]
-                      },
-                      "maxDepthM": {
-                        "anyOf": [
-                          {
-                            "type": "null"
-                          },
-                          {
-                            "type": "number",
-                            "description": "Metres"
-                          }
-                        ]
-                      },
-                      "ssiSiteId": {
-                        "anyOf": [
-                          {
-                            "type": "null"
-                          },
-                          {
-                            "type": "string"
-                          }
-                        ]
-                      },
-                      "externalIds": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "required": [
-                            "source",
-                            "name",
-                            "externalId",
-                            "url",
-                            "providesData",
-                            "attribution"
-                          ],
-                          "properties": {
-                            "source": {
-                              "enum": [
-                                "osm",
-                                "wikidata",
-                                "ssi"
-                              ]
-                            },
-                            "name": {
-                              "type": "string",
-                              "description": "The Source's name, e.g. \"OpenStreetMap\""
-                            },
-                            "externalId": {
-                              "type": "string",
-                              "description": "e.g. \"node/123\", \"Q42\", \"3314\""
-                            },
-                            "url": {
-                              "anyOf": [
-                                {
-                                  "type": "null"
-                                },
-                                {
-                                  "type": "string",
-                                  "description": "The object's page at the Source"
-                                }
-                              ]
-                            },
-                            "providesData": {
-                              "type": "boolean",
-                              "description": "The site was created or filled from this Source (\"From OpenStreetMap\"); otherwise a reference only (\"Also in …\")"
-                            },
-                            "attribution": {
-                              "anyOf": [
-                                {
-                                  "type": "null"
-                                },
-                                {
-                                  "type": "object",
-                                  "required": [
-                                    "text",
-                                    "url"
-                                  ],
-                                  "properties": {
-                                    "text": {
-                                      "type": "string"
-                                    },
-                                    "url": {
-                                      "type": "string"
-                                    }
+                              {
+                                "type": "object",
+                                "required": [
+                                  "latitude",
+                                  "longitude"
+                                ],
+                                "properties": {
+                                  "latitude": {
+                                    "type": "number",
+                                    "minimum": -90,
+                                    "maximum": 90
                                   },
-                                  "description": "What the Source's license asks to show with its data"
+                                  "longitude": {
+                                    "type": "number",
+                                    "minimum": -180,
+                                    "maximum": 180
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "description": "WGS84 degrees"
+                              }
+                            ]
+                          },
+                          "country": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "waterBody": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "description": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "description": "Metres"
+                              }
+                            ]
+                          },
+                          "ssiSiteId": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "externalIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "source",
+                                "name",
+                                "externalId",
+                                "url",
+                                "providesData",
+                                "attribution"
+                              ],
+                              "properties": {
+                                "source": {
+                                  "enum": [
+                                    "osm",
+                                    "wikidata",
+                                    "ssi"
+                                  ]
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "description": "The Source's name, e.g. \"OpenStreetMap\""
+                                },
+                                "externalId": {
+                                  "type": "string",
+                                  "description": "e.g. \"node/123\", \"Q42\", \"3314\""
+                                },
+                                "url": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "string",
+                                      "description": "The object's page at the Source"
+                                    }
+                                  ]
+                                },
+                                "providesData": {
+                                  "type": "boolean",
+                                  "description": "The site was created or filled from this Source (\"From OpenStreetMap\"); otherwise a reference only (\"Also in …\")"
+                                },
+                                "attribution": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "text",
+                                        "url"
+                                      ],
+                                      "properties": {
+                                        "text": {
+                                          "type": "string"
+                                        },
+                                        "url": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "description": "What the Source's license asks to show with its data"
+                                    }
+                                  ]
                                 }
-                              ]
+                              },
+                              "description": "Where a site comes from, or where else it is known (ADR 0021)"
                             }
                           },
-                          "description": "Where a site comes from, or where else it is known (ADR 0021)"
+                          "version": {
+                            "type": "integer",
+                            "description": "Send it back with an edit; it changes with every change"
+                          },
+                          "diveCount": {
+                            "type": "integer",
+                            "description": "How many of the signed-in User's Dives are at the site"
+                          },
+                          "inUse": {
+                            "type": "boolean",
+                            "description": "Whether any Dive (of any User) is at the site; then it can't be deleted"
+                          },
+                          "canDelete": {
+                            "type": "boolean",
+                            "description": "Whether the signed-in User may delete it: its creator or an admin"
+                          },
+                          "distanceM": {
+                            "type": "number",
+                            "description": "Metres from the position asked for (with latitude/longitude)"
+                          },
+                          "mergedInto": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "Set when this site was merged into another (ADR 0022): open that one instead"
+                              }
+                            ]
+                          }
                         }
-                      },
-                      "version": {
-                        "type": "integer",
-                        "description": "Send it back with an edit; it changes with every change"
-                      },
-                      "diveCount": {
-                        "type": "integer",
-                        "description": "How many of the signed-in User's Dives are at the site"
-                      },
-                      "inUse": {
-                        "type": "boolean",
-                        "description": "Whether any Dive (of any User) is at the site; then it can't be deleted"
-                      },
-                      "canDelete": {
-                        "type": "boolean",
-                        "description": "Whether the signed-in User may delete it: its creator or an admin"
-                      },
-                      "distanceM": {
-                        "type": "number",
-                        "description": "Metres from the position asked for (with latitude/longitude)"
                       }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Sites matching, on all pages"
                     }
                   }
                 }
@@ -10449,6 +10610,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -10601,7 +10763,8 @@
                     "version",
                     "diveCount",
                     "inUse",
-                    "canDelete"
+                    "canDelete",
+                    "mergedInto"
                   ],
                   "properties": {
                     "id": {
@@ -10778,6 +10941,17 @@
                     "distanceM": {
                       "type": "number",
                       "description": "Metres from the position asked for (with latitude/longitude)"
+                    },
+                    "mergedInto": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "description": "Set when this site was merged into another (ADR 0022): open that one instead"
+                        }
+                      ]
                     }
                   }
                 }
@@ -10835,6 +11009,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -10904,6 +11079,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -10973,6 +11149,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -11042,6 +11219,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -11097,7 +11275,8 @@
                     "version",
                     "diveCount",
                     "inUse",
-                    "canDelete"
+                    "canDelete",
+                    "mergedInto"
                   ],
                   "properties": {
                     "id": {
@@ -11274,6 +11453,17 @@
                     "distanceM": {
                       "type": "number",
                       "description": "Metres from the position asked for (with latitude/longitude)"
+                    },
+                    "mergedInto": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "description": "Set when this site was merged into another (ADR 0022): open that one instead"
+                        }
+                      ]
                     }
                   }
                 }
@@ -11331,6 +11521,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -11499,7 +11690,8 @@
                     "version",
                     "diveCount",
                     "inUse",
-                    "canDelete"
+                    "canDelete",
+                    "mergedInto"
                   ],
                   "properties": {
                     "id": {
@@ -11676,6 +11868,17 @@
                     "distanceM": {
                       "type": "number",
                       "description": "Metres from the position asked for (with latitude/longitude)"
+                    },
+                    "mergedInto": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "description": "Set when this site was merged into another (ADR 0022): open that one instead"
+                        }
+                      ]
                     }
                   }
                 }
@@ -11733,6 +11936,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -11802,6 +12006,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -11871,6 +12076,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -11940,6 +12146,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -12028,6 +12235,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -12097,6 +12305,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -12166,6 +12375,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -12235,6 +12445,551 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
+                        "odbl_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dive-sites/{id}/merge": {
+      "post": {
+        "summary": "Merge this Dive site into another (any User; no undo)",
+        "description": "The kept site keeps its values and fills its gaps from this one; Dives and External IDs move to it (ADR 0022). Send both versions; 409 site_changed if either changed.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "intoId",
+                  "version",
+                  "intoVersion"
+                ],
+                "properties": {
+                  "intoId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "The site to keep"
+                  },
+                  "version": {
+                    "type": "integer",
+                    "description": "The version of the site being merged, as the User saw it"
+                  },
+                  "intoVersion": {
+                    "type": "integer",
+                    "description": "The version of the kept site, as the User saw it"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "name",
+                    "position",
+                    "country",
+                    "waterBody",
+                    "description",
+                    "maxDepthM",
+                    "ssiSiteId",
+                    "externalIds",
+                    "version",
+                    "diveCount",
+                    "inUse",
+                    "canDelete",
+                    "mergedInto"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "position": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "latitude",
+                            "longitude"
+                          ],
+                          "properties": {
+                            "latitude": {
+                              "type": "number",
+                              "minimum": -90,
+                              "maximum": 90
+                            },
+                            "longitude": {
+                              "type": "number",
+                              "minimum": -180,
+                              "maximum": 180
+                            }
+                          },
+                          "additionalProperties": false,
+                          "description": "WGS84 degrees"
+                        }
+                      ]
+                    },
+                    "country": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "waterBody": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "description": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "maxDepthM": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number",
+                          "description": "Metres"
+                        }
+                      ]
+                    },
+                    "ssiSiteId": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "externalIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "source",
+                          "name",
+                          "externalId",
+                          "url",
+                          "providesData",
+                          "attribution"
+                        ],
+                        "properties": {
+                          "source": {
+                            "enum": [
+                              "osm",
+                              "wikidata",
+                              "ssi"
+                            ]
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "The Source's name, e.g. \"OpenStreetMap\""
+                          },
+                          "externalId": {
+                            "type": "string",
+                            "description": "e.g. \"node/123\", \"Q42\", \"3314\""
+                          },
+                          "url": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "The object's page at the Source"
+                              }
+                            ]
+                          },
+                          "providesData": {
+                            "type": "boolean",
+                            "description": "The site was created or filled from this Source (\"From OpenStreetMap\"); otherwise a reference only (\"Also in …\")"
+                          },
+                          "attribution": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "text",
+                                  "url"
+                                ],
+                                "properties": {
+                                  "text": {
+                                    "type": "string"
+                                  },
+                                  "url": {
+                                    "type": "string"
+                                  }
+                                },
+                                "description": "What the Source's license asks to show with its data"
+                              }
+                            ]
+                          }
+                        },
+                        "description": "Where a site comes from, or where else it is known (ADR 0021)"
+                      }
+                    },
+                    "version": {
+                      "type": "integer",
+                      "description": "Send it back with an edit; it changes with every change"
+                    },
+                    "diveCount": {
+                      "type": "integer",
+                      "description": "How many of the signed-in User's Dives are at the site"
+                    },
+                    "inUse": {
+                      "type": "boolean",
+                      "description": "Whether any Dive (of any User) is at the site; then it can't be deleted"
+                    },
+                    "canDelete": {
+                      "type": "boolean",
+                      "description": "Whether the signed-in User may delete it: its creator or an admin"
+                    },
+                    "distanceM": {
+                      "type": "number",
+                      "description": "Metres from the position asked for (with latitude/longitude)"
+                    },
+                    "mergedInto": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "description": "Set when this site was merged into another (ADR 0022): open that one instead"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_merge_self",
+                        "odbl_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_merge_self",
+                        "odbl_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_merge_self",
+                        "odbl_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -12339,7 +13094,9 @@
                           "delete",
                           "auto-site",
                           "update",
-                          "link"
+                          "link",
+                          "merge",
+                          "site-merge"
                         ]
                       },
                       "changes": {
@@ -12413,6 +13170,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -12762,6 +13520,7 @@
                             "linked",
                             "skippedNoName",
                             "skippedDeleted",
+                            "skippedMerged",
                             "gone"
                           ],
                           "properties": {
@@ -12786,11 +13545,14 @@
                             "skippedDeleted": {
                               "type": "integer"
                             },
+                            "skippedMerged": {
+                              "type": "integer"
+                            },
                             "gone": {
                               "type": "integer"
                             }
                           },
-                          "description": "Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name or because their site was deleted in the hub; objects gone from the Source"
+                          "description": "Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name, because their site was deleted in the hub, or because it was merged into another; objects gone from the Source"
                         }
                       ]
                     },
@@ -12877,6 +13639,7 @@
                             "site_in_use",
                             "site_not_deletable",
                             "external_id_taken",
+                            "site_merge_self",
                             "odbl_not_confirmed",
                             "site_import_running",
                             "site_import_not_found",
@@ -12959,6 +13722,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -13028,6 +13792,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -13097,6 +13862,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -13331,6 +14097,7 @@
                                   "linked",
                                   "skippedNoName",
                                   "skippedDeleted",
+                                  "skippedMerged",
                                   "gone"
                                 ],
                                 "properties": {
@@ -13355,11 +14122,14 @@
                                   "skippedDeleted": {
                                     "type": "integer"
                                   },
+                                  "skippedMerged": {
+                                    "type": "integer"
+                                  },
                                   "gone": {
                                     "type": "integer"
                                   }
                                 },
-                                "description": "Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name or because their site was deleted in the hub; objects gone from the Source"
+                                "description": "Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name, because their site was deleted in the hub, or because it was merged into another; objects gone from the Source"
                               }
                             ]
                           },
@@ -13446,6 +14216,7 @@
                                   "site_in_use",
                                   "site_not_deletable",
                                   "external_id_taken",
+                                  "site_merge_self",
                                   "odbl_not_confirmed",
                                   "site_import_running",
                                   "site_import_not_found",
@@ -13531,6 +14302,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -13770,6 +14542,7 @@
                             "linked",
                             "skippedNoName",
                             "skippedDeleted",
+                            "skippedMerged",
                             "gone"
                           ],
                           "properties": {
@@ -13794,11 +14567,14 @@
                             "skippedDeleted": {
                               "type": "integer"
                             },
+                            "skippedMerged": {
+                              "type": "integer"
+                            },
                             "gone": {
                               "type": "integer"
                             }
                           },
-                          "description": "Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name or because their site was deleted in the hub; objects gone from the Source"
+                          "description": "Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name, because their site was deleted in the hub, or because it was merged into another; objects gone from the Source"
                         }
                       ]
                     },
@@ -13885,6 +14661,7 @@
                             "site_in_use",
                             "site_not_deletable",
                             "external_id_taken",
+                            "site_merge_self",
                             "odbl_not_confirmed",
                             "site_import_running",
                             "site_import_not_found",
@@ -13967,6 +14744,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
@@ -14036,6 +14814,7 @@
                         "site_in_use",
                         "site_not_deletable",
                         "external_id_taken",
+                        "site_merge_self",
                         "odbl_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",

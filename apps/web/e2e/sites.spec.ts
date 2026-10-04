@@ -121,3 +121,56 @@ test('a site with dives says why it can\'t be deleted', async ({ page }) => {
   await expect(page.getByText('Dives are at this dive site, so it can’t be deleted.')).toBeVisible();
   await expect(page.getByRole('button', { name: /^More actions/ })).toHaveCount(0);
 });
+
+test('a duplicate close by is merged into the site (ADR 0022)', async ({ page, request }) => {
+  const lighthouse = (await (await request.get('/api/dive-sites?q=Lighthouse')).json()).sites.find((s: { name: string }) => s.name === 'Lighthouse');
+  const duplicate = await (await request.post('/api/dive-sites', {
+    headers, data: { name: 'Light House', position: { latitude: 28.5007, longitude: 34.5197 }, maxDepthM: 18 },
+  })).json() as { id: string };
+
+  await page.goto(`/#/sites/${lighthouse.id}`);
+  await expect(page.getByRole('heading', { name: 'Close by' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Light House' })).toBeVisible();
+  await page.getByRole('button', { name: 'Merge into this site: Light House' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Merge Light House into Lighthouse?' });
+  await expect(dialog).toContainText('Light House disappears, and its links lead here.');
+  await expect(dialog).toContainText('its empty fields take Maximum depth from there');
+  await expect(dialog).toContainText('This can’t be undone.');
+  await expectGoodPage(page, 'Lighthouse');
+  await dialog.getByRole('button', { name: 'Merge' }).click();
+
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.locator('dl.facts')).toContainText('18 m');
+  await expect(page.getByRole('heading', { name: 'Close by' })).toHaveCount(0);
+  await expect(page.locator('.history > li').first()).toContainText('Light House merged into this site');
+
+  // The duplicate's link leads to the kept site.
+  await page.goto(`/#/sites/${duplicate.id}`);
+  await expect(page.getByRole('heading', { name: 'Lighthouse', level: 1 })).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`#/sites/${lighthouse.id}$`));
+});
+
+test('the Dive sites list pages, sorts and filters, keeping it in the address', async ({ page, request }) => {
+  for (let i = 1; i <= 55; i++) {
+    await request.post('/api/dive-sites', { headers, data: { name: `Test Pinnacle ${String(i).padStart(2, '0')}`, country: 'PW' } });
+  }
+  await page.goto('/#/sites');
+  await expect(page.getByText(/^1–50 of \d+ dive sites$/)).toBeVisible();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page).toHaveURL(/#\/sites\?page=2$/);
+  await expect(page.getByText(/^51–\d+ of \d+ dive sites$/)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Country' }).click();
+  await page.getByRole('option', { name: 'Palau' }).click();
+  await expect(page).toHaveURL(/#\/sites\?country=PW$/);
+  await expect(page.getByText('1–50 of 55 dive sites')).toBeVisible();
+  await page.getByRole('button', { name: 'Name' }).click();
+  await expect(page).toHaveURL(/country=PW&sort=name&order=desc|country=PW&order=desc/);
+  await expect(page.getByRole('row').nth(1)).toContainText('Test Pinnacle 55');
+
+  await page.getByText('Only sites with my dives').click();
+  await expect(page.getByText('No dive sites match these filters.')).toBeVisible();
+  await expectGoodPage(page, 'Dive sites');
+  await page.goBack();
+  await expect(page.getByRole('row').nth(1)).toContainText('Test Pinnacle 55');
+});

@@ -16,7 +16,7 @@ let importedSiteId: string;
 
 /** A site imported from OpenStreetMap (ADR 0021): the recorded Malta answer, imported unless site-import.spec did. */
 async function importedSite(request: APIRequestContext) {
-  const find = async () => (await (await request.get('/api/dive-sites?q=Ras%20il')).json() as { id: string; name: string }[])
+  const find = async () => (await (await request.get('/api/dive-sites?q=Ras%20il')).json() as { sites: { id: string; name: string }[] }).sites
     .find((s) => s.name === 'Ras il-Ħobż')?.id;
   if (!(await find())) {
     const started = await (await request.post('/api/admin/site-imports', {
@@ -57,6 +57,8 @@ async function addCrowd(request: APIRequestContext, browser: Browser) {
     },
   })).json() as { id: string };
   siteId = site.id;
+  // A duplicate 20 m away, so the site page lists it under "Close by" with its merge button (ADR 0022).
+  await request.post('/api/dive-sites', { headers, data: { name: 'Ras Mohammed – Shark Reef (duplicate from an old logbook)', position: { latitude: 27.7357, longitude: 34.2522 } } });
 }
 
 /** A second, signed-out User's links: an Invitation, and a reset link for a User who accepted one. */
@@ -132,6 +134,13 @@ for (const v of variants) {
       await expectGoodPage(page);
       await page.getByRole('button', { name: v.english ? 'Edit dive site' : 'Tauchplatz bearbeiten' }).click();
       await expect(page.getByRole('button', { name: v.english ? 'Save dive site' : 'Tauchplatz speichern' })).toBeVisible();
+      await expectGoodPage(page);
+    });
+
+    test('merging a dive site close by', async ({ page }) => {
+      await page.goto(`/#/sites/${siteId}`);
+      await page.getByRole('button', { name: v.english ? /^Merge into this site:/ : /^Mit diesem Platz zusammenführen:/ }).first().click();
+      await expect(page.getByRole('dialog')).toBeVisible();
       await expectGoodPage(page);
     });
 

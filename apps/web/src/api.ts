@@ -1,6 +1,7 @@
 import { createApiClient, type paths } from '@dive-hub/api-client';
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import { createAuthClient } from 'better-auth/client';
+import { SITES_PAGE, type SitesParams } from './lib/sites-list.ts';
 
 export const api = createApiClient();
 /** Better Auth's own endpoints (sign-in, sign-out) at /api/auth on this origin; the session is a cookie. */
@@ -186,10 +187,17 @@ async function fetchSite(id: string) {
 }
 
 /** Dive sites (ADR 0020): searched by words, or the ones near a position, nearest first. */
-export const sitesQuery = (p: { q?: string | undefined; near?: Position | undefined } = {}) => queryOptions({
-  queryKey: [...keys.sites, { q: p.q, near: p.near }],
+export const sitesQuery = (p: SitesParams & { near?: Position | undefined; within?: number | undefined } = {}) => queryOptions({
+  queryKey: [...keys.sites, { q: p.q, country: p.country, mine: p.mine, sort: p.sort, order: p.order, page: p.page, near: p.near, within: p.within }],
   queryFn: async () => unwrap(await api.GET('/api/dive-sites', {
-    params: { query: { ...(p.q && { q: p.q }), ...(p.near && { latitude: p.near.latitude, longitude: p.near.longitude }) } },
+    params: {
+      query: {
+        ...(p.q && { q: p.q }), ...(p.country && { country: p.country }), ...(p.mine && { mine: true }),
+        ...(p.sort && { sort: p.sort }), ...(p.order && { order: p.order }),
+        ...(p.near && { latitude: p.near.latitude, longitude: p.near.longitude }), ...(p.within && { within: p.within }),
+        limit: SITES_PAGE, offset: ((p.page ?? 1) - 1) * SITES_PAGE,
+      },
+    },
   })),
   placeholderData: keepPreviousData,
 });

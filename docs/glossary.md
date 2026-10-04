@@ -132,6 +132,11 @@ A place where dives happen, shared across the whole instance: every User can use
 _Avoid_: Spot, location, divesite
 _German_: Tauchplatz
 
+**Merge (of Dive sites)**:
+Folding a duplicate Dive site into another: the kept site keeps its values and fills its gaps from the merged one; Dives and External IDs move to it. The merged site is gone, and its links lead to the kept one. Any User can merge; it can't be undone.
+_Avoid_: Combine, join, deduplicate, link
+_German_: zusammenführen (Tauchplätze)
+
 **Position**:
 Where on Earth something is, as latitude and longitude (WGS84). A Recording has an entry position and an exit position from its Device; a Dive shows its Primary recording's. A Dive site has one shared position.
 _Avoid_: Location, coordinates (alone), GPS

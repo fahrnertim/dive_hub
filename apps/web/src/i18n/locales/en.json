@@ -327,7 +327,8 @@
     "site_import_not_found": "This import doesn’t exist.",
     "source_unavailable": "The source didn’t answer or sent something unexpected. Try again later.",
     "source_rate_limited": "The source asked us to slow down. Try again in a few minutes.",
-    "site_import_interrupted": "The server stopped during the import. Start it again."
+    "site_import_interrupted": "The server stopped during the import. Start it again.",
+    "site_merge_self": "A dive site can’t be merged into itself."
   },
   "vocabulary": {
     "waterType": {
@@ -376,7 +377,9 @@
       "auto-site": "Dive site chosen by the import",
       "delete": "Deleted",
       "update": "Updated from its source",
-      "link": "Linked to its source"
+      "link": "Linked to its source",
+      "site-merge": "Dive site merged into another",
+      "merge": "Dive sites merged"
     },
     "field": {
       "number": "Dive number",
@@ -527,7 +530,27 @@
     "from": "From {{source}}",
     "alsoIn": "Also in {{source}}",
     "containsOsm": "Contains data from OpenStreetMap:",
-    "limited": "Only the first {{count}} dive sites are shown. Search to find the others."
+    "range_one": "{{from}}–{{to}} of {{count}} dive site",
+    "range_other": "{{from}}–{{to}} of {{count}} dive sites",
+    "pages": "Pages of dive sites",
+    "allCountries": "All countries",
+    "onlyMine": "Only sites with my dives",
+    "noMatchFilters": "No dive sites match these filters.",
+    "closeBy": "Close by",
+    "closeByIntro": "Other dive sites within {{distance}}. If one is the same place, merge it into this one.",
+    "away": "{{distance}} away",
+    "mergeHere": "Merge into this site",
+    "mergeTitle": "Merge {{name}} into {{into}}?",
+    "mergeGone": "{{name}} disappears, and its links lead here.",
+    "mergeFills": "This site keeps its values; its empty fields take {{fields}} from there.",
+    "mergeKeeps": "This site keeps its values.",
+    "mergeYourDives_one": "Your {{count}} dive there moves here.",
+    "mergeYourDives_other": "Your {{count}} dives there move here.",
+    "mergeOthersToo": "Other Users’ dives there move too.",
+    "mergeOthersDives": "Other Users’ dives there move here.",
+    "mergeNoUndo": "This can’t be undone.",
+    "mergeConfirm": "Merge",
+    "merged": "{{name}} merged into {{into}}."
   },
   "siteHistory": {
     "by": {
@@ -551,8 +574,11 @@
       "edit": "Edited",
       "update": "Updated from its source",
       "link": "Linked to its source",
-      "delete": "Deleted"
-    }
+      "delete": "Deleted",
+      "merge": "Merged"
+    },
+    "mergedIn": "{{name}} merged into this site",
+    "mergedInto": "Merged into {{name}}"
   },
   "siteImport": {
     "title": "Import dive sites",

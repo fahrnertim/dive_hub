@@ -34,6 +34,8 @@ Start at [docs/index.md](docs/index.md) — it lists every document.
 - Markdown with YAML frontmatter: `title`, `summary`, `status`, `date`.
 - Relative Markdown links (not `[[wikilinks]]`).
 - Record significant decisions as ADRs; don't re-litigate accepted ones without a new ADR.
+- A change that gives API clients a new duty (something to show, ask, format or send) updates the
+  [client contract](docs/spec/clients.md) in the same change.
 - Keep this file short; details belong in `docs/`.
 
 ## Skills

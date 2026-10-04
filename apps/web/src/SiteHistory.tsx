@@ -9,7 +9,7 @@ import { Button, Muted, Notice, Panel } from './ui/index.ts';
 const LATEST = 3;
 
 /** Lines in the order of the site's form; the database keeps a Revision's fields in its own order. */
-const ORDER = ['name', 'country', 'waterBody', 'position', 'maxDepthM', 'ssiSiteId', 'description', 'osmId', 'wikidataId'];
+const ORDER = ['mergedSite', 'mergedInto', 'name', 'country', 'waterBody', 'position', 'maxDepthM', 'ssiSiteId', 'description', 'osmId', 'wikidataId'];
 const rank = (key: string) => (ORDER.includes(key) ? ORDER.indexOf(key) : ORDER.length);
 
 const asPosition = (v: unknown) => v as { latitude: number; longitude: number } | null;
@@ -58,6 +58,9 @@ function Entry({ revision: r }: { revision: SiteRevisionView }) {
   const lines = Object.entries(r.changes).sort(([a], [b]) => rank(a) - rank(b)).flatMap(([key, { from, to }]) => {
     if (key === 'deletedAt') return [];
     if (key === 'description') return [t('siteHistory.descriptionChanged')];
+    // Merging (ADR 0022): the other site by the name it had then.
+    if (key === 'mergedSite') return [t('siteHistory.mergedIn', { name: (to as { name: string }).name })];
+    if (key === 'mergedInto') return [t('siteHistory.mergedInto', { name: (to as { name: string }).name })];
     const field = t(`siteHistory.field.${key}`, { defaultValue: key });
     // A new site lists only what it was created with.
     if (r.cause === 'create') return to === null ? [] : [t('history.changeTo', { field, value: show(key, to) })];

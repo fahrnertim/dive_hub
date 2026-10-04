@@ -67,7 +67,7 @@ test('review material', async ({ page, request, browser }) => {
   await page.goto('/#/admin'); await page.getByRole('heading', { name: 'Users' }).waitFor();
   await page.getByRole('textbox', { name: 'E-mail' }).fill('second@example.com');
   await page.getByRole('button', { name: 'Create invitation link' }).click();
-  await page.getByText('Send this link to').waitFor();
+  await page.getByRole('button', { name: 'Copy' }).waitFor(); // the notice's text is also in the live region
   await capture(page, '06-admin');
   await tabOrder(page, '06-admin', 30);
 
@@ -101,6 +101,8 @@ test('review material', async ({ page, request, browser }) => {
       description: 'Shore entry by the café. Sandy slope to 12 m, then the wall; mind the boats at the point.',
     },
   })).json() as { id: string };
+  // A duplicate 25 m from Lighthouse, for the "Close by" list and the merge dialog (ADR 0022).
+  await request.post('/api/dive-sites', { headers, data: { name: 'Lighthouse Point', position: { latitude: 28.5009, longitude: 34.5199 }, maxDepthM: 24 } });
   await request.post('/api/dive-sites', { headers, data: { name: 'Eel Garden', position: { latitude: 28.5101, longitude: 34.5172 }, country: 'EG', waterBody: 'Red Sea' } });
   const diveNow = await (await request.get(`/api/dives/${sitedDive}`)).json() as { version: number };
   await request.patch(`/api/dives/${sitedDive}`, { headers, data: { version: diveNow.version, siteId: site.id } });
@@ -110,7 +112,7 @@ test('review material', async ({ page, request, browser }) => {
     headers, data: { sources: ['osm', 'wikidata'], area: { kind: 'country', country: 'MT' }, language: 'en', confirmOdbl: true },
   })).json() as { id: string };
   await expect.poll(async () => (await (await request.get(`/api/admin/site-imports/${started.id}`)).json()).status, { timeout: 20_000 }).toBe('done');
-  const imported = (await (await request.get('/api/dive-sites?q=Ras%20il')).json() as { id: string; name: string; version: number }[])
+  const imported = (await (await request.get('/api/dive-sites?q=Ras%20il')).json() as { sites: { id: string; name: string; version: number }[] }).sites
     .find((s) => s.name === 'Ras il-Ħobż')!;
   await request.patch(`/api/dive-sites/${imported.id}`, { headers, data: { version: imported.version, ssiSiteId: '3314', maxDepthM: 32 } });
 
@@ -118,8 +120,14 @@ test('review material', async ({ page, request, browser }) => {
     // A new language needs a reload; moving by hash keeps the one the app started with.
     await page.goto('/#/sites'); await page.reload(); await page.locator('table').waitFor();
     await capture(page, `${prefix}-sites`, { aria: false });
+    await page.goto('/#/sites?country=EG&sort=diveCount&order=desc'); await page.locator('table').waitFor();
+    await capture(page, `${prefix}-sites-filtered`, { aria: false });
     await page.goto(`/#/sites/${site.id}`); await page.getByRole('heading', { name: 'Lighthouse' }).waitFor();
     await capture(page, `${prefix}-site`, { aria: false });
+    await page.getByRole('button', { name: de ? /^Mit diesem Platz zusammenführen:/ : /^Merge into this site:/ }).click();
+    await page.getByRole('dialog').waitFor();
+    await capture(page, `${prefix}-site-merge`, { full: false, aria: false });
+    await page.keyboard.press('Escape');
     await page.getByRole('button', { name: de ? 'Tauchplatz bearbeiten' : 'Edit dive site' }).click();
     await capture(page, `${prefix}-site-edit`, { aria: false });
     await page.goto(`/#/dives/${sitedDive}`); await page.getByRole('heading', { name: de ? /Tauchgang 7/ : /Dive 7/ }).waitFor();

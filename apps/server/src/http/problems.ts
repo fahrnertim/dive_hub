@@ -42,6 +42,7 @@ export const PROBLEMS = {
   site_in_use: 'Dives are at this site; it can only be deleted while none is',
   site_not_deletable: 'Only whoever created the dive site, or an admin, can delete it',
   external_id_taken: 'Another dive site already has this ID',
+  site_merge_self: 'A dive site can\'t be merged into itself',
   odbl_not_confirmed: 'Importing from OpenStreetMap needs the ODbL explanation confirmed (confirmOdbl)',
   site_import_running: 'A site import is already running; wait until it is done',
   site_import_not_found: 'Site import not found',

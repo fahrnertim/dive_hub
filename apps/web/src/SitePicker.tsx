@@ -30,7 +30,7 @@ export function SitePicker({ dive: d, onClose }: { dive: DiveView; onClose: () =
   const [creating, setCreating] = useState(false);
   const nearby = useQuery({ ...sitesQuery({ near: d.position ?? undefined }), enabled: !!d.position && !q });
   const found = useQuery({ ...sitesQuery({ q }), enabled: !!q || !d.position });
-  const list: SiteView[] = (q || !d.position ? found.data : nearby.data) ?? [];
+  const list: SiteView[] = (q || !d.position ? found.data?.sites : nearby.data?.sites) ?? [];
 
   const choose = useMutation({
     mutationFn: async (siteId: string | null) =>
@@ -50,7 +50,7 @@ export function SitePicker({ dive: d, onClose }: { dive: DiveView; onClose: () =
   if (d.site && !shown.some((s) => s.id === d.site!.id)) shown.unshift({ id: d.site.id, name: d.site.name } as SiteView);
   const label = (s: SiteView) => (s.distanceM !== undefined ? t('sites.optionAway', { name: s.name, distance: display.distance(s.distanceM) }) : s.name);
   const heading = q ? t('sites.matching', { q }) : d.position ? t('sites.nearby') : t('sites.all');
-  const empty = !q && d.position && nearby.data?.length === 0;
+  const empty = !q && d.position && nearby.data?.total === 0;
 
   return (
     <Dialog title={t('sites.pickerTitle')} isOpen onOpenChange={(open) => !open && onClose()}>
@@ -65,7 +65,7 @@ export function SitePicker({ dive: d, onClose }: { dive: DiveView; onClose: () =
         <div className="form">
           <TextField label={t('sites.find')} type="search" value={text} onChange={setText} autoComplete="off" />
           {empty && <Muted>{t('sites.noneNearby', { distance: display.distance(2000) })}</Muted>}
-          {q && found.data?.length === 0 && <Muted>{t('sites.noMatch', { q })}</Muted>}
+          {q && found.data?.total === 0 && <Muted>{t('sites.noMatch', { q })}</Muted>}
           <RadioGroup
             label={heading}
             value={chosen}

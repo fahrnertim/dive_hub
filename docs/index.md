@@ -12,11 +12,12 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 ## Spec
 - [spec/README.md](spec/README.md) — Product specification: vision, sources → hub → targets, open questions.
 - [spec/data-model.md](spec/data-model.md) — Entities, ownership, relationships; UDDF checklist, gap coverage, scenarios.
-- [spec/architecture.md](spec/architecture.md) — Components, import flow, Docker Compose deployment, auth; implementation status per slice (8: external site IDs, Site import); operator notes on site data licenses.
+- [spec/architecture.md](spec/architecture.md) — Components, import flow, Docker Compose deployment, auth; implementation status per slice (9: merging sites, paged site list, client contract); operator notes on site data licenses.
+- [spec/clients.md](spec/clients.md) — Client contract: what every API client must do (licenses, privacy, versions, error codes, units), for the web client and the mobile app to come.
 - [spec/design-system.md](spec/design-system.md) — Visual direction, tokens, components, writing, localization, units, accessibility.
 
 ## Glossary
-- [glossary.md](glossary.md) — Domain language with German UI words: User, Admin, Invitation, Password reset link, Disabled, Diver, Dive, Recording, Dive site, Position, Source, External ID, Attribution, Site import, Import, Push, …
+- [glossary.md](glossary.md) — Domain language with German UI words: User, Admin, Invitation, Password reset link, Disabled, Diver, Dive, Recording, Dive site, Merge, Position, Source, External ID, Attribution, Site import, Import, Push, …
 
 ## Development
 - [development.md](development.md) — setup, layout, common tasks, tooling notes.
@@ -49,6 +50,7 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [0019 Tonal surfaces, comfortable density, no component library](decisions/0019-tonal-surfaces.md) — panels lift off the page by tone (no outline), attention is a tint; React Aria stays, no Tailwind. Amends 0014.
 - [0020 Dive sites shared by all Users, positions without PostGIS, no map yet](decisions/0020-dive-sites.md) — any User edits (versions, Revisions), creator/admin deletes unused; entry/exit positions on Recordings; auto-link to the only site within 200 m; "open in maps" link.
 - [0021 External site IDs and an admin import of Dive sites from OpenStreetMap and Wikidata](decisions/0021-site-external-ids-and-import.md) — external IDs per Source (osm, wikidata, ssi) show where a site comes from; admin-only worker import by country/box/everywhere, ODbL explained and confirmed; per-field 3-way re-import; link, then 100 m + name matching; SSI ID by hand; maximum depth.
+- [0022 Merging duplicate Dive sites; paging the site list; a client contract](decisions/0022-merging-sites-and-site-list-paging.md) — any User merges (kept site wins, gaps filled, no undo); Dives and External IDs move, imports follow; nearby sites on the site page; site list pages, sorts, filters; docs/spec/clients.md.
 - [Template](decisions/template.md) — copy for new ADRs.
 
 ## References

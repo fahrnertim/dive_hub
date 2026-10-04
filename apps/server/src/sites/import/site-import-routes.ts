@@ -35,8 +35,8 @@ const StartBody = Type.Object({
 
 const Counts = Type.Object({
   created: Type.Integer(), updated: Type.Integer(), unchanged: Type.Integer(), kept: Type.Integer(), linked: Type.Integer(),
-  skippedNoName: Type.Integer(), skippedDeleted: Type.Integer(), gone: Type.Integer(),
-}, { description: 'Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name or because their site was deleted in the hub; objects gone from the Source' });
+  skippedNoName: Type.Integer(), skippedDeleted: Type.Integer(), skippedMerged: Type.Integer(), gone: Type.Integer(),
+}, { description: 'Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name, because their site was deleted in the hub, or because it was merged into another; objects gone from the Source' });
 
 export const SiteImportView = Type.Object({
   id: Type.String(),

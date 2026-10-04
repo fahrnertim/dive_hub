@@ -282,11 +282,37 @@ Found while building and in the screenshot review, and fixed:
   names bring it to about 0.3 s for 1,750 objects against 1,700 sites.
 
 Deliberate simplifications, to revisit:
-- **The Dive sites list** shows at most 500 sites (it says so; search finds the rest). With a worldwide import
-  (~1,700) it needs paging like the logbook.
 - **A Site import saves in batches of 50.** A failure while saving (not while fetching) leaves the batches
   before it saved, and the import says it failed.
 - **OSM↔Wikidata matches are rare in today's data.** No cross-link connects the two dive-site sets, and one pair
   meets the 100 m + name rule
   ([research](../research/2026-10-04-dive-site-sources.md#follow-up-while-building-the-import-2026-10-04)).
 - **No ODbL export** of the site table for public instances (ADR 0021).
+
+**Slice 9 (2026-10-04): merging sites, paging the site list, the client contract** ([ADR 0022](../decisions/0022-merging-sites-and-site-list-paging.md)).
+
+Implemented:
+- **Merging** (`POST /api/dive-sites/:id/merge`, any User, both versions):
+  - The kept site's values stay and its gaps are filled.
+  - Every User's Dives move, each with a Revision by the system (`site-merge`).
+  - External IDs move where the kept site has none from that Source.
+  - The merged site gets `merged_into` (and `deleted_at`), and earlier merges are re-pointed.
+  - Both sites' histories record it (`merge`).
+  - Site imports skip IDs on merged sites (`skippedMerged`).
+- **Site page:** a "Close by" panel (sites within 200 m) with "Merge into this site", and a dialog that says
+  what happens. A merged site's link leads to the kept one.
+- **`GET /api/dive-sites`** returns `{ sites, total }` with `limit`/`offset`, `sort` (`name`, `country`,
+  `diveCount`), `order`, `country`, `mine`. The Dive sites page has search, a country filter, "only sites with
+  my dives", sortable columns and a pager, kept in the address (`lib/sites-list.ts`).
+- **The client contract** ([clients.md](clients.md)), and a rule in AGENTS.md to keep it current.
+
+Found in the screenshot review and fixed:
+- The filter row's fields stood out of line (the search field's hint pushed the others down). It now aligns
+  at the top, with the checkbox level with the inputs.
+- On phones, a short country fitted beside a short site name, so the second line began with its "·". In a
+  stacked table without a leading column, the name now takes the whole first line.
+- The review capture waited for the invitation notice's text, which the live region also holds. It now waits
+  for the Copy button.
+
+Deliberate simplifications, to revisit:
+- **No undo** for a merge (ADR 0022), and no instance-wide duplicate scan; duplicates are found where they're seen.

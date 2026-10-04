@@ -179,6 +179,9 @@ import, or an SSI ID typed in). License, Attribution and link pattern belong to 
 everywhere), language for names, who confirmed ODbL and when, status, progress, counts (created, updated,
 unchanged, kept, linked, skipped, gone from the Source, failed) and findings (new sites near existing ones).
 Revisions it writes on sites have the actor `site_import` (ADR 0021).
+*Merging (ADR 0022):* any User merges a site into another. The kept site wins and its gaps are filled; Dives move
+(Revision by the system, cause `site-merge`); External IDs move where the kept site has none from that Source;
+`merged into` points to the kept site, and imports follow it.
 
 **Site note** — a Diver's private notes and rating for a Dive site.
 

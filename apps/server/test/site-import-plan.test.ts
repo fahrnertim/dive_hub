@@ -19,7 +19,7 @@ const wd = (id: string, v: Partial<ImportedValues> = {}, osmId?: string): Source
 
 /** A site as it is in the hub; `from` lists its External IDs with the values their Source delivered last. */
 const site = (id: string, v: Partial<ImportedValues>, from: ExistingSite['externalIds'] = [], deleted = false): ExistingSite => ({
-  id, deleted, values: values(v), externalIds: from,
+  id, deleted, mergedInto: null, values: values(v), externalIds: from,
 });
 const fromOsm = (externalId: string, imported: Partial<ImportedValues>) => ({ source: 'osm' as const, externalId, providesData: true, imported: values(imported) });
 const fromWd = (externalId: string, imported: Partial<ImportedValues>) => ({ source: 'wikidata' as const, externalId, providesData: true, imported: values(imported) });
@@ -84,6 +84,13 @@ describe('a re-import', () => {
     expect(p.creates).toEqual([]);
     expect(p.updates).toEqual([]);
     expect(p.counts.skippedDeleted).toBe(1);
+  });
+
+  it('never re-creates a site merged into another, and never matches it by distance (ADR 0022)', () => {
+    const merged = { ...site('s1', {}, [fromOsm('node/1', {})]), mergedInto: 's2' };
+    const p = plan([osm('node/1'), osm('node/2', { name: 'House Reef', position: metresNorth(5) })], [merged]);
+    expect(p.counts).toMatchObject({ skippedMerged: 1, created: 1 });
+    expect(p.creates[0]).toMatchObject({ externalIds: [{ externalId: 'node/2' }], near: null });
   });
 
   it('counts objects gone from the Source within the area, and changes nothing about them', () => {

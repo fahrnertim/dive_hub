@@ -7,10 +7,12 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { mapsUrl } from './lib/geo.ts';
 import { logbookHref } from './lib/logbook.ts';
 import { usePageTitle } from './lib/page.ts';
+import { countryOptions } from './lib/geo.ts';
 import { needsOsmAttribution, siteOrigin } from './lib/site-origin.ts';
+import { SITES_PAGE, sitesHref, type SiteSort, type SitesParams } from './lib/sites-list.ts';
 import { SiteForm } from './SiteForm.tsx';
 import { SiteHistory } from './SiteHistory.tsx';
-import { ActionMenu, Button, ConfirmDialog, Icon, Muted, Notice, PageHeader, Panel, Table, TextField } from './ui/index.ts';
+import { ActionMenu, Button, Checkbox, ConfirmDialog, Icon, Muted, Notice, PageHeader, Panel, Select, Table, TextField } from './ui/index.ts';
 
 /** "Egypt · Red Sea": where a site is, in words. */
 function useSitePlace() {
@@ -18,9 +20,6 @@ function useSitePlace() {
   return (s: Pick<SiteView, 'country' | 'waterBody'>) =>
     [s.country && display.country(s.country), s.waterBody].filter(Boolean).join(' · ');
 }
-
-/** The list shows at most this many sites (the server's limit); a search finds the others. */
-const LIST_LIMIT = 500;
 
 /** The credit OpenStreetMap's license asks for wherever its data is shown (ADR 0021). */
 function OsmAttribution({ attribution }: { attribution: { text: string; url: string } }) {
@@ -33,26 +32,71 @@ function OsmAttribution({ attribution }: { attribution: { text: string; url: str
   );
 }
 
-/** The instance's Dive sites (ADR 0020): searchable, and new ones created here. */
-export function SitesPage() {
+const ALL_COUNTRIES = 'all';
+
+/**
+ * The instance's Dive sites (ADR 0020), a page at a time: searched, filtered by country and by the User's own
+ * dives, sorted by column (ADR 0022). The settings live in the address; new sites are created here.
+ */
+export function SitesPage({ params }: { params: SitesParams }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
+  const display = useDisplay();
   const place = useSitePlace();
   usePageTitle(t('sites.title'));
   const [creating, setCreating] = useState(false);
-  const [text, setText] = useState('');
-  const [q, setQ] = useState('');
-  useEffect(() => {
-    const timer = setTimeout(() => setQ(text.trim()), 250);
-    return () => clearTimeout(timer);
-  }, [text]);
-  const sites = useQuery(sitesQuery({ q: q || undefined }));
+  const sites = useQuery(sitesQuery(params));
   const any = useQuery(sitesQuery());
   const me = useQuery(meQuery());
-  const osmAttribution = sites.data && needsOsmAttribution(sites.data)
-    ? sites.data.flatMap((s) => s.externalIds).find((e) => e.source === 'osm' && e.attribution)?.attribution : undefined;
   const newButton = useRef<HTMLButtonElement>(null);
   const close = () => { setCreating(false); requestAnimationFrame(() => newButton.current?.focus()); };
+  const go = (changes: Partial<SitesParams>) => { location.hash = sitesHref({ ...params, ...changes, page: undefined }); };
+
+  // Typing searches after a short pause; the address is replaced, not added to the history.
+  const [text, setText] = useState(params.q ?? '');
+  useEffect(() => {
+    if (text.trim() === (params.q ?? '')) return;
+    const timer = setTimeout(() => location.replace(sitesHref({ ...params, q: text.trim() || undefined, page: undefined })), 300);
+    return () => clearTimeout(timer);
+  }, [text, params]);
+
+  const page = params.page ?? 1;
+  const total = sites.data?.total ?? 0;
+  const pages = Math.ceil(total / SITES_PAGE);
+  const range = t('sites.range', { from: total === 0 ? 0 : (page - 1) * SITES_PAGE + 1, to: Math.min(page * SITES_PAGE, total), count: total });
+  // Reaching the first or last page disables the button just pressed; focus moves to the other one.
+  const previous = useRef<HTMLButtonElement>(null);
+  const next = useRef<HTMLButtonElement>(null);
+  const goTo = (target: number) => {
+    location.hash = sitesHref({ ...params, page: target });
+    if (target <= 1) requestAnimationFrame(() => next.current?.focus());
+    else if (target >= pages) requestAnimationFrame(() => previous.current?.focus());
+  };
+  const shownPage = useRef(page);
+  useEffect(() => {
+    if (sites.data && !sites.isPlaceholderData && shownPage.current !== page) announce(range);
+    shownPage.current = page;
+  }, [page, sites.data, sites.isPlaceholderData, range]);
+
+  const sortable = (sort: SiteSort, label: string, numeric: boolean) => {
+    const active = (params.sort ?? 'name') === sort;
+    const order = active ? (params.order ?? (sort === 'diveCount' ? 'desc' : 'asc')) : undefined;
+    return {
+      label, ...(numeric && { numeric: true as const }),
+      sort: {
+        direction: order === 'asc' ? 'ascending' as const : order === 'desc' ? 'descending' as const : undefined,
+        // First press: A to Z, or the most dives first; again: the other way.
+        onSort: () => {
+          const first = sort === 'diveCount' ? 'desc' : 'asc';
+          const nextOrder = active ? (order === 'asc' ? 'desc' : 'asc') : first;
+          location.hash = sitesHref({ ...params, sort, order: nextOrder, page: undefined });
+        },
+      },
+    };
+  };
+  const filtered = !!(params.q || params.country || params.mine);
+  const osmAttribution = sites.data && needsOsmAttribution(sites.data.sites)
+    ? sites.data.sites.flatMap((s) => s.externalIds).find((e) => e.source === 'osm' && e.attribution)?.attribution : undefined;
 
   return (
     <>
@@ -79,31 +123,50 @@ export function SitesPage() {
         </Panel>
       )}
       <Panel>
-        {/* A search field only when there is something to search (page rules). */}
-        {(any.data?.length ?? 0) > 0 && (
-          <div className="logbook-search">
+        {/* Search and filters only when there is something to search (page rules). */}
+        {(any.data?.total ?? 0) > 0 && (
+          <div className="site-filters">
             <TextField label={t('sites.search')} description={t('sites.searchHint')} type="search" value={text} onChange={setText} autoComplete="off" />
+            <Select
+              label={t('sites.country')}
+              value={params.country ?? ALL_COUNTRIES}
+              onChange={(v) => go({ country: !v || v === ALL_COUNTRIES ? undefined : v })}
+              options={[{ id: ALL_COUNTRIES, label: t('sites.allCountries') }, ...countryOptions(display.locale)]}
+            />
+            <Checkbox isSelected={!!params.mine} onChange={(v) => go({ mine: v || undefined })}>{t('sites.onlyMine')}</Checkbox>
           </div>
         )}
         {sites.isPending && <Muted>{t('common.loading')}</Muted>}
         {sites.error && <Notice tone="danger">{errorText(sites.error)}</Notice>}
-        {sites.data?.length === 0 && <Muted>{q ? t('sites.noMatch', { q }) : t('sites.empty')}</Muted>}
-        {sites.data && sites.data.length > 0 && (
-          <Table
-            stacked
-            label={t('sites.title')}
-            head={[t('sites.name'), t('sites.where'), { label: t('sites.yourDives'), numeric: true }]}
-          >
-            {sites.data.map((s) => (
-              <tr key={s.id}>
-                <td className="cell-main"><a href={`#/sites/${s.id}`}>{s.name}</a></td>
-                <td className="cell-sub">{place(s) || t('common.none')}</td>
-                <td className="num cell-sub">{t('sites.dives', { count: s.diveCount })}</td>
-              </tr>
-            ))}
-          </Table>
+        {sites.data?.total === 0 && (
+          <Muted>{params.q && !params.country && !params.mine ? t('sites.noMatch', { q: params.q }) : filtered ? t('sites.noMatchFilters') : t('sites.empty')}</Muted>
         )}
-        {sites.data?.length === LIST_LIMIT && <Muted>{t('sites.limited', { count: LIST_LIMIT })}</Muted>}
+        {sites.data && sites.data.total > 0 && (
+          <>
+            <Table
+              stacked
+              label={t('sites.title')}
+              head={[sortable('name', t('sites.name'), false), sortable('country', t('sites.where'), false), sortable('diveCount', t('sites.yourDives'), true)]}
+            >
+              {sites.data.sites.map((s) => (
+                <tr key={s.id}>
+                  <td className="cell-main"><a href={`#/sites/${s.id}`}>{s.name}</a></td>
+                  <td className="cell-sub">{place(s) || t('common.none')}</td>
+                  <td className="num cell-sub">{t('sites.dives', { count: s.diveCount })}</td>
+                </tr>
+              ))}
+            </Table>
+            <nav className="pager" aria-label={t('sites.pages')}>
+              <span className="meta">{range}</span>
+              {total > SITES_PAGE && (
+                <span className="pager-buttons">
+                  <Button ref={previous} size="small" icon="previous" isDisabled={page <= 1} onPress={() => goTo(page - 1)}>{t('logbook.previous')}</Button>
+                  <Button ref={next} size="small" isDisabled={page >= pages} onPress={() => goTo(page + 1)}>{t('logbook.next')}<Icon name="next" /></Button>
+                </span>
+              )}
+            </nav>
+          </>
+        )}
         {osmAttribution && <OsmAttribution attribution={osmAttribution} />}
       </Panel>
     </>
@@ -127,6 +190,9 @@ export function SitePage({ id }: { id: string }) {
     wasEditing.current = editing;
   }, [editing]);
   const notFound = site.error instanceof ApiError && site.error.status === 404;
+  // A merged site is gone: its links lead to the site it was merged into (ADR 0022).
+  const mergedInto = site.data?.mergedInto;
+  useEffect(() => { if (mergedInto) location.replace(`#/sites/${mergedInto}`); }, [mergedInto]);
   usePageTitle(site.data?.name ?? (notFound ? t('sites.notFound') : undefined));
   const remove = useMutation({
     mutationFn: async () => unwrap(await api.DELETE('/api/dive-sites/{id}', { params: { path: { id } } })),
@@ -137,7 +203,7 @@ export function SitePage({ id }: { id: string }) {
   });
 
   const back = <p><a href="#/sites" className="back-link"><Icon name="back" />{t('sites.back')}</a></p>;
-  if (site.isPending) return <Muted>{t('common.loading')}</Muted>;
+  if (site.isPending || mergedInto) return <Muted>{t('common.loading')}</Muted>;
   if (notFound) {
     return (
       <>
@@ -223,6 +289,7 @@ export function SitePage({ id }: { id: string }) {
           </>
         )}
       </Panel>
+      {!editing && <NearbySites site={s} />}
       <SiteHistory site={s} />
       <ConfirmDialog
         isOpen={deleting} onOpenChange={setDeleting}
@@ -262,5 +329,78 @@ function SiteOrigin({ externalIds }: { externalIds: ExternalIdView[] }) {
         {alsoIn.map((e) => <li key={e.source}>{t('sites.alsoIn', { source: e.name })}: {link(e)}</li>)}
       </ul>
     </>
+  );
+}
+
+/** Sites this close may be the same place (ADR 0022). */
+const SAME_PLACE_M = 200;
+
+/**
+ * Other sites within 200 m, each of which can be merged into this one (ADR 0022). Merging can't be undone,
+ * so the dialog says what happens: this site keeps its values and fills its gaps, Dives move here.
+ */
+function NearbySites({ site }: { site: SiteView }) {
+  const { t } = useTranslation();
+  const display = useDisplay();
+  const queryClient = useQueryClient();
+  const nearby = useQuery({ ...sitesQuery({ near: site.position ?? undefined, within: SAME_PLACE_M }), enabled: !!site.position });
+  const others = nearby.data?.sites.filter((o) => o.id !== site.id) ?? [];
+  const [merging, setMerging] = useState<SiteView | null>(null);
+  const merge = useMutation({
+    mutationFn: async (other: SiteView) => unwrap(await api.POST('/api/dive-sites/{id}/merge', {
+      params: { path: { id: other.id } }, body: { intoId: site.id, version: other.version, intoVersion: site.version },
+    })),
+    onSuccess: async (kept, other) => {
+      queryClient.setQueryData(keys.site(kept.id), kept);
+      queryClient.removeQueries({ queryKey: keys.site(other.id) });
+      await queryClient.invalidateQueries({ queryKey: keys.sites });
+      await queryClient.invalidateQueries({ queryKey: keys.dives });
+    },
+  });
+  if (!site.position || others.length === 0) return null;
+
+  const filled = (other: SiteView) => {
+    const gaps: string[] = [];
+    if (!site.country && other.country) gaps.push(t('sites.country'));
+    if (!site.waterBody && other.waterBody) gaps.push(t('sites.waterBody'));
+    if (site.maxDepthM === null && other.maxDepthM !== null) gaps.push(t('sites.maxDepth'));
+    if (!site.ssiSiteId && other.ssiSiteId) gaps.push(t('sites.ssiSiteId'));
+    if (!site.description && other.description) gaps.push(t('sites.description'));
+    return gaps;
+  };
+  const body = (other: SiteView) => [
+    t('sites.mergeGone', { name: other.name }),
+    filled(other).length > 0 ? t('sites.mergeFills', { fields: filled(other).join(', ') }) : t('sites.mergeKeeps'),
+    other.diveCount > 0 ? t('sites.mergeYourDives', { count: other.diveCount }) : '',
+    // Whether other Users dive there, never how many (ADR 0020).
+    other.inUse && other.diveCount === 0 ? t('sites.mergeOthersDives') : other.inUse ? t('sites.mergeOthersToo') : '',
+    t('sites.mergeNoUndo'),
+  ].filter(Boolean).join(' ');
+
+  return (
+    <Panel title={t('sites.closeBy')}>
+      <Muted>{t('sites.closeByIntro', { distance: display.distance(SAME_PLACE_M) })}</Muted>
+      <ul className="nearby-sites">
+        {others.map((o) => (
+          <li key={o.id}>
+            <span>
+              <a href={`#/sites/${o.id}`}>{o.name}</a>
+              <span className="meta"> · {t('sites.away', { distance: display.distance(o.distanceM ?? 0) })}</span>
+            </span>
+            <Button size="small" aria-label={t('common.forItem', { action: t('sites.mergeHere'), item: o.name })} onPress={() => setMerging(o)}>
+              {t('sites.mergeHere')}
+            </Button>
+          </li>
+        ))}
+      </ul>
+      <ConfirmDialog
+        isOpen={merging !== null} onOpenChange={(open) => { if (!open) setMerging(null); }}
+        title={merging ? t('sites.mergeTitle', { name: merging.name, into: site.name }) : ''}
+        body={merging ? body(merging) : ''}
+        confirmLabel={t('sites.mergeConfirm')}
+        onConfirm={() => merge.mutateAsync(merging!)}
+        onDone={() => announce(t('sites.merged', { name: merging?.name ?? '', into: site.name }))}
+      />
+    </Panel>
   );
 }

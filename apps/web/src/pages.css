@@ -76,6 +76,15 @@
 /* Terms to confirm before going on (the ODbL before an OSM import): the attention tint, as it waits for the admin. */
 .terms { background: var(--color-accent-soft); border-radius: var(--radius-md); padding: var(--space-4); display: grid; gap: var(--space-2); }
 .terms p { margin: 0; }
+/* The Dive sites list's search and filters (ADR 0022). */
+.site-filters { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-3) var(--space-5); margin-bottom: var(--space-4); }
+.site-filters > .field { flex: 1 1 14rem; max-width: 24rem; }
+/* Level with the inputs, below their labels (a label is one small line plus the field's gap). */
+.site-filters > .checkbox { margin-top: calc(var(--text-sm) * var(--leading-normal) + var(--space-1)); }
+/* Sites close by, each with its merge button (ADR 0022). */
+.nearby-sites { list-style: none; margin: var(--space-3) 0 0; padding: 0; }
+.nearby-sites > li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); padding: var(--space-3) 0; border-top: 1px solid var(--color-border); overflow-wrap: anywhere; }
+.nearby-sites > li:first-child { border-top: none; }
 .site-imports { list-style: none; margin: 0; padding: 0; }
 .site-imports > li { padding: var(--space-3) 0; border-top: 1px solid var(--color-border); overflow-wrap: anywhere; }
 .site-imports > li:first-child { border-top: none; padding-top: 0; }
@@ -166,7 +175,9 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
   .table-stacked .cell-main { flex: 1 1 calc(100% - 2rem - var(--space-3)); }
   .table-stacked .cell-sub { color: var(--color-text-muted); font-size: var(--text-sm); text-align: left; }
   .table-stacked .cell-main + .cell-sub { margin-left: calc(2rem + var(--space-3)); }
-  /* Without a leading column (the Dive sites list) the second line starts under the first. */
+  /* Without a leading column (the Dive sites list) the name takes the first line, and the second starts under it
+     (a short country beside a short name left the second line starting with its dot). */
+  .table-stacked tr:not(:has(.cell-lead)) .cell-main { flex-basis: 100%; }
   .table-stacked tr:not(:has(.cell-lead)) .cell-main + .cell-sub { margin-left: 0; }
   /* The dot is decoration; screen readers read the cells as cells. */
   .table-stacked .cell-sub + .cell-sub::before { content: '·' / ''; margin: 0 var(--space-2); }

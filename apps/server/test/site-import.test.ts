@@ -63,7 +63,7 @@ describe.skipIf(!(await databaseReachable()))('Site import and external site IDs
     ctx.app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload && { payload }) });
   const json = async <T>(method: Method, url: string, cookie: string, payload?: object) => (await call(method, url, cookie, payload)).json() as T;
   const siteNamed = async (name: string, cookie = tim) =>
-    (await json<Site[]>('GET', `/api/dive-sites?q=${encodeURIComponent(name)}`, cookie)).find((s) => s.name === name);
+    (await json<{ sites: Site[] }>('GET', `/api/dive-sites?q=${encodeURIComponent(name)}`, cookie)).sites.find((s) => s.name === name);
 
   /** Starts a Site import as the admin and runs it the way the worker would. */
   async function runImport(body: object = { sources: ['osm'], area: EGYPT, language: 'en', confirmOdbl: true }) {

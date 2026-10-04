@@ -5,6 +5,7 @@ import { AcceptInvitation, ResetPassword, Setup, SignIn, useSignOut } from './Ac
 import { divesQuery, meQuery, setupQuery, type LogbookParams, type Me } from './api.ts';
 import { DiveList, LogbookHeader } from './DiveList.tsx';
 import { logbookParams } from './lib/logbook.ts';
+import { sitesParams } from './lib/sites-list.ts';
 import { pickLanguage } from './i18n/index.ts';
 import { Decisions } from './Decisions.tsx';
 import { ImportFilesButton, ImportPanel, ImportProvider, RecentImports } from './ImportPanel.tsx';
@@ -24,7 +25,7 @@ const SiteImportPage = lazy(() => import('./SiteImportPage.tsx').then((m) => ({ 
 
 /**
  * Minimal hash routing: "#/" (logbook, "#/?diver=<id>" for one Diver, "#/?site=<id>" for one Dive site),
- * "#/dives/<id>" ("?recording=<id>"), "#/divers", "#/sites", "#/sites/<id>", "#/account", "#/admin", "#/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
+ * "#/dives/<id>" ("?recording=<id>"), "#/divers", "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/account", "#/admin", "#/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
  */
 function useRoute(): string {
   const [route, setRoute] = useState(() => location.hash.slice(1) || '/');
@@ -90,7 +91,7 @@ function Navigation({ route, me }: { route: string; me: Me }) {
       <nav className="app-nav" aria-label={t('nav.main')}>
         <a href="#/" {...current(route === '/' || route.startsWith('/?') || route.startsWith('/dives/'))}><Icon name="logbook" />{t('nav.logbook')}</a>
         <a href="#/divers" {...current(route === '/divers')}><Icon name="divers" />{t('nav.divers')}</a>
-        <a href="#/sites" {...current(route === '/sites' || route.startsWith('/sites/'))}><Icon name="site" />{t('nav.sites')}</a>
+        <a href="#/sites" {...current(route === '/sites' || route.startsWith('/sites/') || route.startsWith('/sites?'))}><Icon name="site" />{t('nav.sites')}</a>
         {me.user.role === 'admin' && <a href="#/admin" {...current(route === '/admin' || route.startsWith('/admin/'))}><Icon name="admin" />{t('nav.admin')}</a>}
       </nav>
       {/* The account is a labelled menu, not a bare name link (UI review C6). */}
@@ -125,7 +126,7 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   if (diveId) return <DiveDetail key={diveId} id={diveId} recordingId={params.get('recording') ?? undefined} />;
   if (route === '/account') return <AccountPage />;
   if (route === '/divers') return <DiversPage />;
-  if (route === '/sites') return <SitesPage />;
+  if (path === '/sites') return <SitesPage params={sitesParams(params)} />;
   const siteId = /^\/sites\/([\w-]+)$/.exec(path!)?.[1];
   if (siteId) return <SitePage key={siteId} id={siteId} />;
   if (route === '/admin' || route === '/admin/site-imports') {

@@ -62,7 +62,7 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
     const bySite = new Map<string, typeof ids>();
     for (const e of ids) bySite.set(e.siteId, [...(bySite.get(e.siteId) ?? []), e]);
     return sites.map((s) => ({
-      id: s.id, deleted: s.deletedAt !== null, values: valuesOf(s),
+      id: s.id, deleted: s.deletedAt !== null, mergedInto: s.mergedInto, values: valuesOf(s),
       externalIds: (bySite.get(s.id) ?? []).map((e) => ({ source: e.source, externalId: e.externalId, providesData: e.providesData, imported: e.imported })),
     }));
   }

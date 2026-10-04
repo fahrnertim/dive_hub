@@ -13,6 +13,8 @@ export const REVISION_CAUSES = [
   'delete', 'auto-site',
   // A Site import (ADR 0021) updating a site from its Source, or linking a hand-made site to one.
   'update', 'link',
+  // Merging Dive sites (ADR 0022): on both sites, and on each Dive that moved (by the system, so no User is named).
+  'merge', 'site-merge',
 ] as const;
 export type RevisionCause = (typeof REVISION_CAUSES)[number];
 

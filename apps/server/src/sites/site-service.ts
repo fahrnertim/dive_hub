@@ -1,13 +1,13 @@
 // Dive sites, shared by every User of the instance (ADR 0020): anyone creates and edits them (with
 // optimistic locking and Revisions), their creator or an admin deletes them while no Dive is there.
-import { and, asc, desc, eq, ilike, isNull, ne, or, sql, type SQL, type SQLWrapper } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, ne, or, sql, type SQL, type SQLWrapper } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { dive, diveSite, diveSiteExternalId, revision, siteImport } from '../db/schema.js';
 import { writeRevision, type Changes } from '../dives/revisions.js';
 import { SOURCE_INFO, type SiteSource } from './sources.js';
 
 export class SiteError extends Error {
-  constructor(readonly code: 'site_not_found' | 'site_changed' | 'site_in_use' | 'site_not_deletable' | 'external_id_taken') {
+  constructor(readonly code: 'site_not_found' | 'site_changed' | 'site_in_use' | 'site_not_deletable' | 'external_id_taken' | 'site_merge_self') {
     super(code);
   }
 }
@@ -82,7 +82,14 @@ export function nearSql(from: Position, withinM: number): SQL {
   return and(...box, sql`${distanceSql(from)} <= ${float(withinM)}`)!;
 }
 
+/** Neither deleted nor merged: a merge also sets `deletedAt`, so lists, the picker and auto-links skip merged sites. */
 const live = isNull(diveSite.deletedAt);
+
+export const SITE_SORTS = ['name', 'country', 'diveCount'] as const;
+export type SiteSort = (typeof SITE_SORTS)[number];
+
+/** Fields a merge fills on the kept site where it has nothing (ADR 0022). */
+const FILLED = ['position', 'country', 'waterBody', 'description', 'maxDepthM', 'ssiSiteId'] as const;
 
 /** Sites within this distance of a Dive's position are offered on the dive page. */
 export const NEARBY_M = 2000;
@@ -152,26 +159,45 @@ export function createSiteService(db: Db) {
   }
 
   return {
-    /** Sites by name, or by distance from `near` (within `withinM` metres); `q` searches name and body of water. */
-    async list(actor: SiteActor, options: { q?: string | undefined; near?: { position: Position; withinM: number } | undefined; limit?: number }) {
+    /**
+     * One page of sites and how many match (ADR 0022): by name (default), country or the User's dives there;
+     * near a position, nearest first. `q` searches name and body of water; `mine` keeps sites with the User's dives.
+     */
+    async list(actor: SiteActor, options: {
+      q?: string | undefined; near?: { position: Position; withinM: number } | undefined; country?: string | undefined;
+      mine?: boolean | undefined; sort?: SiteSort | undefined; order?: 'asc' | 'desc' | undefined; limit?: number | undefined; offset?: number | undefined;
+    }) {
       const text = options.q?.trim();
       const pattern = text && `%${text.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
       const near = options.near;
+      const cols = columns(actor);
       const where = and(
         live,
         pattern ? or(ilike(diveSite.name, pattern), ilike(diveSite.waterBody, pattern)) : undefined,
         near ? nearSql(near.position, near.withinM) : undefined,
+        options.country ? eq(diveSite.country, options.country) : undefined,
+        options.mine ? sql`${cols.diveCount} > 0` : undefined,
       );
       const distance = near ? distanceSql(near.position) : undefined;
-      const rows = await db.select({ ...columns(actor), ...(distance && { distanceM: distance }) })
-        .from(diveSite).where(where)
-        .orderBy(...(distance ? [asc(distance)] : []), sql`lower(${diveSite.name})`, diveSite.id)
-        .limit(options.limit ?? 500);
-      return rows.map((r) => view(actor, r));
+      const desc_ = options.order === 'desc';
+      const sortBy: SQL[] = distance ? [asc(distance)]
+        : options.sort === 'country' ? [sql`${diveSite.country} ${sql.raw(desc_ ? 'desc' : 'asc')} nulls last`]
+        : options.sort === 'diveCount' ? [sql`${cols.diveCount} ${sql.raw(desc_ ? 'desc' : 'asc')}`]
+        : desc_ ? [sql`lower(${diveSite.name}) desc`] : [];
+      const [rows, [count]] = await Promise.all([
+        db.select({ ...cols, ...(distance && { distanceM: distance }) })
+          .from(diveSite).where(where)
+          .orderBy(...sortBy, sql`lower(${diveSite.name})`, diveSite.id)
+          .limit(options.limit ?? 50).offset(options.offset ?? 0),
+        db.select({ total: sql<number>`count(*)::int`.mapWith(Number) }).from(diveSite).where(where),
+      ]);
+      return { sites: rows.map((r) => view(actor, r)), total: count?.total ?? 0 };
     },
 
+    /** One site; a merged one too, so its links can lead to the site it was merged into (`mergedInto`). */
     async get(actor: SiteActor, id: string) {
-      const [row] = await db.select(columns(actor)).from(diveSite).where(and(eq(diveSite.id, id), live));
+      const [row] = await db.select(columns(actor)).from(diveSite)
+        .where(and(eq(diveSite.id, id), or(live, isNotNull(diveSite.mergedInto))));
       if (!row) throw new SiteError('site_not_found');
       return view(actor, row);
     },
@@ -209,11 +235,68 @@ export function createSiteService(db: Db) {
     },
 
     /**
+     * Merges site `id` into `intoId` (ADR 0022). Any User may. The kept site keeps its values and fills its gaps
+     * from the merged one; Dives move (a Revision by the system each, so no User is named in a Dive's history);
+     * External IDs move where the kept site has none from that Source; earlier merges are re-pointed.
+     */
+    async merge(actor: SiteActor, id: string, version: number, intoId: string, intoVersion: number) {
+      if (id === intoId) throw new SiteError('site_merge_self');
+      await db.transaction(async (tx) => {
+        // Locked in id order, so two opposite merges can't deadlock.
+        const [first, second] = id < intoId ? [id, intoId] : [intoId, id];
+        const a = await lock(tx, first);
+        const b = await lock(tx, second);
+        const merged = a.id === id ? a : b;
+        const kept = a.id === id ? b : a;
+        if (merged.version !== version || kept.version !== intoVersion) throw new SiteError('site_changed');
+
+        const mergedFields = fields(merged, await ssiOf(tx, merged.id));
+        const keptFields = fields(kept, await ssiOf(tx, kept.id));
+        const changes: Changes = { mergedSite: { from: null, to: { id: merged.id, name: merged.name } } };
+        const fill: Partial<SiteInput> = {};
+        for (const key of FILLED) {
+          const value = mergedFields[key];
+          if (keptFields[key] !== null || value === null) continue;
+          (fill as Record<string, unknown>)[key] = value;
+          changes[key] = { from: null, to: value };
+        }
+
+        // External IDs: to the kept site where it has none from that Source (an SSI ID only through `fill`).
+        const ids = await tx.select().from(diveSiteExternalId).where(inArray(diveSiteExternalId.siteId, [merged.id, kept.id]));
+        const keptSources = new Set(ids.filter((e) => e.siteId === kept.id).map((e) => e.source));
+        const moving = ids.filter((e) => e.siteId === merged.id && !keptSources.has(e.source));
+        if (moving.length > 0) {
+          await tx.update(diveSiteExternalId).set({ siteId: kept.id, updatedAt: new Date() }).where(inArray(diveSiteExternalId.id, moving.map((e) => e.id)));
+        }
+        for (const e of moving) if (e.source !== 'ssi') changes[`${e.source}Id`] = { from: null, to: e.externalId };
+
+        // The Dives, every User's, each with its own Revision and version.
+        const moved = await tx.update(dive).set({ siteId: kept.id, version: sql`${dive.version} + 1`, updatedAt: new Date() })
+          .where(eq(dive.siteId, merged.id)).returning({ id: dive.id });
+        for (const d of moved) {
+          await writeRevision(tx, 'dive', d.id, { type: 'system', id: 'site-merge' }, 'site-merge', {
+            site: { from: { id: merged.id, name: merged.name }, to: { id: kept.id, name: kept.name } },
+          });
+        }
+
+        await tx.update(diveSite).set({ ...toColumns(fill), version: sql`${diveSite.version} + 1`, updatedAt: new Date() }).where(eq(diveSite.id, kept.id));
+        await tx.update(diveSite).set({ mergedInto: kept.id, deletedAt: new Date(), version: sql`${diveSite.version} + 1`, updatedAt: new Date() })
+          .where(eq(diveSite.id, merged.id));
+        // No chains: whatever was merged into the merged site now points to the kept one.
+        await tx.update(diveSite).set({ mergedInto: kept.id }).where(eq(diveSite.mergedInto, merged.id));
+
+        const by = { type: 'user' as const, id: actor.userId };
+        await writeRevision(tx, 'dive_site', kept.id, by, 'merge', changes);
+        await writeRevision(tx, 'dive_site', merged.id, by, 'merge', { mergedInto: { from: null, to: { id: kept.id, name: kept.name } } });
+      });
+    },
+
+    /**
      * The site's history, newest first. A User is named only to themselves ("you"): Users don't see who
      * else created or edits a site (ADR 0020). A Site import is named by its Sources (ADR 0021).
      */
     async revisions(actor: SiteActor, id: string) {
-      const [site] = await db.select({ id: diveSite.id }).from(diveSite).where(and(eq(diveSite.id, id), live));
+      const [site] = await db.select({ id: diveSite.id }).from(diveSite).where(and(eq(diveSite.id, id), or(live, isNotNull(diveSite.mergedInto))));
       if (!site) throw new SiteError('site_not_found');
       const rows = await db.select({ r: revision, sources: siteImport.sources }).from(revision)
         .leftJoin(siteImport, and(eq(revision.actorType, 'site_import'), sql`${siteImport.id}::text = ${revision.actorId}`))

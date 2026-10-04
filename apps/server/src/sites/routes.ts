@@ -6,7 +6,7 @@ import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import { Problem, problem } from '../http/problems.js';
 import { REVISION_CAUSES } from '../dives/revisions.js';
-import { NEARBY_M, SiteError, type ExternalIdRow, type SiteActor, type SiteService } from './site-service.js';
+import { NEARBY_M, SITE_SORTS, SiteError, type ExternalIdRow, type SiteActor, type SiteService } from './site-service.js';
 import { SITE_SOURCES, SOURCE_INFO } from './sources.js';
 
 export interface SiteRouteDeps {
@@ -75,6 +75,7 @@ export const SiteView = Type.Object({
   inUse: Type.Boolean({ description: 'Whether any Dive (of any User) is at the site; then it can\'t be deleted' }),
   canDelete: Type.Boolean({ description: 'Whether the signed-in User may delete it: its creator or an admin' }),
   distanceM: Type.Optional(Type.Number({ description: 'Metres from the position asked for (with latitude/longitude)' })),
+  mergedInto: Nullable(Type.String({ description: 'Set when this site was merged into another (ADR 0022): open that one instead' })),
 });
 
 const ListQuery = Type.Object({
@@ -82,7 +83,19 @@ const ListQuery = Type.Object({
   latitude: Type.Optional(Type.Number({ minimum: -90, maximum: 90, description: 'With longitude: only sites near here, nearest first' })),
   longitude: Type.Optional(Type.Number({ minimum: -180, maximum: 180 })),
   within: Type.Optional(Type.Integer({ minimum: 1, maximum: 50_000, default: NEARBY_M, description: 'Metres around latitude/longitude' })),
+  country: Type.Optional(Type.String({ pattern: '^[A-Z]{2}$', description: 'Only sites in this country (ISO 3166-1 alpha-2)' })),
+  mine: Type.Optional(Type.Boolean({ description: 'Only sites where the signed-in User has dives' })),
+  sort: Type.Optional(Type.Enum([...SITE_SORTS], { default: 'name', description: 'Ignored near a position (nearest first)' })),
+  order: Type.Optional(Type.Enum(['asc', 'desc'], { default: 'asc' })),
+  limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200, default: 50 })),
+  offset: Type.Optional(Type.Integer({ minimum: 0, default: 0 })),
 });
+
+const MergeBody = Type.Object({
+  intoId: Type.String({ format: 'uuid', description: 'The site to keep' }),
+  version: Type.Integer({ description: 'The version of the site being merged, as the User saw it' }),
+  intoVersion: Type.Integer({ description: 'The version of the kept site, as the User saw it' }),
+}, { additionalProperties: false });
 
 const SiteRevisionView = Type.Object({
   id: Type.String(),
@@ -111,11 +124,11 @@ export const toSiteView = ({ site: s, diveCount, inUse, canDelete, externalIds, 
   position: s.latitude === null || s.longitude === null ? null : { latitude: s.latitude, longitude: s.longitude },
   country: s.country, waterBody: s.waterBody, description: s.description, maxDepthM: s.maxDepthM, ssiSiteId,
   externalIds: externalIds.map(externalIdView), version: s.version,
-  diveCount, inUse, canDelete, ...(distanceM !== undefined && { distanceM: Math.round(distanceM) }),
+  diveCount, inUse, canDelete, mergedInto: s.mergedInto, ...(distanceM !== undefined && { distanceM: Math.round(distanceM) }),
 });
 
 const STATUS: Record<SiteError['code'], number> = {
-  site_not_found: 404, site_changed: 409, site_in_use: 409, site_not_deletable: 403, external_id_taken: 409,
+  site_not_found: 404, site_changed: 409, site_in_use: 409, site_not_deletable: 403, external_id_taken: 409, site_merge_self: 400,
 };
 const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
 
@@ -132,16 +145,18 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
 
   app.get('/dive-sites', {
     schema: {
-      summary: 'The instance\'s Dive sites by name; with latitude and longitude only those nearby, nearest first',
-      querystring: ListQuery, response: { 200: Type.Array(SiteView), 400: Problem },
+      summary: 'One page of the instance\'s Dive sites, with how many match; with latitude and longitude only those nearby, nearest first',
+      querystring: ListQuery,
+      response: { 200: Type.Object({ sites: Type.Array(SiteView), total: Type.Integer({ description: 'Sites matching, on all pages' }) }), 400: Problem },
     },
   }, async (request, reply) => {
-    const { q, latitude, longitude, within = NEARBY_M } = request.query;
+    const { q, latitude, longitude, within = NEARBY_M, country, mine, sort, order, limit, offset } = request.query;
     if ((latitude === undefined) !== (longitude === undefined)) {
       return reply.code(400).send(problem('invalid_input', 'latitude and longitude go together'));
     }
     const near = latitude !== undefined && longitude !== undefined ? { position: { latitude, longitude }, withinM: within } : undefined;
-    return (await sites.list(actorOf(request), { q, near })).map(toSiteView);
+    const page = await sites.list(actorOf(request), { q, near, country, mine, sort, order, limit, offset });
+    return { sites: page.sites.map(toSiteView), total: page.total };
   });
 
   app.get('/dive-sites/:id', {
@@ -178,6 +193,18 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
       ...(ssiSiteId !== undefined && { ssiSiteId }),
     });
     return toSiteView(await sites.get(actorOf(request), request.params.id));
+  });
+
+  app.post('/dive-sites/:id/merge', {
+    schema: {
+      summary: 'Merge this Dive site into another (any User; no undo)',
+      description: 'The kept site keeps its values and fills its gaps from this one; Dives and External IDs move to it (ADR 0022). Send both versions; 409 site_changed if either changed.',
+      params: IdParams, body: MergeBody, response: { 200: SiteView, ...errors },
+    },
+  }, async (request) => {
+    const { intoId, version, intoVersion } = request.body;
+    await sites.merge(actorOf(request), request.params.id, version, intoId, intoVersion);
+    return toSiteView(await sites.get(actorOf(request), intoId));
   });
 
   app.get('/dive-sites/:id/revisions', {

@@ -10,6 +10,8 @@ import { IMPORTED_FIELDS, inBox, type ImportArea, type ImportedValues, type Sour
 export interface ExistingSite {
   id: string;
   deleted: boolean;
+  /** Merged into another site (ADR 0022): its External IDs still point here, and imports skip them. */
+  mergedInto: string | null;
   values: ImportedValues;
   externalIds: { source: SiteSource; externalId: string; providesData: boolean; imported: ImportedValues | null }[];
 }
@@ -51,6 +53,7 @@ export interface SiteImportCounts {
   linked: number;
   skippedNoName: number;
   skippedDeleted: number;
+  skippedMerged: number;
   gone: number;
 }
 
@@ -151,7 +154,7 @@ export function planSiteImport(input: {
   incoming: SourceSite[];
   existing: ExistingSite[];
 }): SiteImportPlan {
-  const counts: SiteImportCounts = { created: 0, updated: 0, unchanged: 0, kept: 0, linked: 0, skippedNoName: 0, skippedDeleted: 0, gone: 0 };
+  const counts: SiteImportCounts = { created: 0, updated: 0, unchanged: 0, kept: 0, linked: 0, skippedNoName: 0, skippedDeleted: 0, skippedMerged: 0, gone: 0 };
   const byId = new Map<string, ExistingSite>();
   for (const site of input.existing) for (const e of site.externalIds) byId.set(`${e.source}:${e.externalId}`, site);
   const seen = new Set<string>();
@@ -184,6 +187,7 @@ export function planSiteImport(input: {
     if (!o.values.name) { counts.skippedNoName++; continue; }
     const site = byId.get(key);
     if (!site) { pending.push(o); continue; }
+    if (site.mergedInto) { counts.skippedMerged++; continue; }
     if (site.deleted) { counts.skippedDeleted++; continue; }
     join(targetOfSite(site), o);
   }
@@ -199,7 +203,7 @@ export function planSiteImport(input: {
     const named = o.sameAs[other];
     const linkedSite = named ? byId.get(`${other}:${named}`) : undefined;
     const target = (named ? targetOfObject.get(`${other}:${named}`) : undefined)
-      ?? (linkedSite && !linkedSite.deleted ? targetOfSite(linkedSite) : undefined)
+      ?? (linkedSite && !linkedSite.deleted && !linkedSite.mergedInto ? targetOfSite(linkedSite) : undefined)
       ?? targets.find((t) => t.members.get(other)?.sameAs[o.source] === o.externalId);
     if (target && !has(target, o.source)) { join(target, o); continue; }
     const partner = named ? pendingByKey.get(`${other}:${named}`)
@@ -215,7 +219,7 @@ export function planSiteImport(input: {
   }
 
   // 3. Within 100 m and the same name: the other Source's objects first, then the sites in the hub.
-  const live = input.existing.filter((s) => !s.deleted);
+  const live = input.existing.filter((s) => !s.deleted && !s.mergedInto);
   for (const o of unlinked) {
     if (placed(o)) continue;
     const position = o.values.position;
