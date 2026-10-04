@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import { parseEncryptionKey } from './secrets/secret-box.js';
 
 export interface Config {
   databaseUrl: string;
@@ -22,6 +23,10 @@ export interface Config {
   contact: string | undefined;
   overpassUrl: string | undefined;
   wikidataSparqlUrl: string | undefined;
+  /** Key for secrets kept for Targets (ADR 0024), e.g. SSI passwords; without it passwords are never kept. */
+  encryptionKey: Buffer | undefined;
+  /** SSI's app API; another endpoint only for tests. */
+  ssiUrl: string | undefined;
 }
 
 function required(name: string): string {
@@ -50,5 +55,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     contact: env.DIVEHUB_CONTACT?.trim() || undefined,
     overpassUrl: env.DIVEHUB_OVERPASS_URL || undefined,
     wikidataSparqlUrl: env.DIVEHUB_WIKIDATA_SPARQL_URL || undefined,
+    encryptionKey: parseEncryptionKey(env.DIVEHUB_ENCRYPTION_KEY),
+    ssiUrl: env.DIVEHUB_SSI_URL || undefined,
   };
 }

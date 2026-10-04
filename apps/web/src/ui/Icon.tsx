@@ -3,8 +3,8 @@
 // Names were checked with the suggest-lucide-icons skill against the installed version.
 import {
   ArrowDown, ArrowRightLeft, ArrowUp, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert,
-  CircleCheck, CircleUser, CloudDownload, Copy, Ellipsis, ExternalLink, Info, KeyRound, Link, LogOut, MapPin, Pencil, Plus, Scissors, Shield, ShieldOff,
-  Star, Trash, Undo2, Upload, User, UserCheck, Users, UserX, type LucideIcon,
+  CircleCheck, CircleUser, CloudDownload, CloudUpload, Copy, Ellipsis, ExternalLink, Info, KeyRound, Link, LogIn, LogOut, MapPin, Pencil, Plus, Scissors, Shield, ShieldOff,
+  Star, Trash, Undo2, Unlink, Upload, User, UserCheck, Users, UserX, type LucideIcon,
 } from 'lucide-react';
 
 const ICONS = {
@@ -45,6 +45,10 @@ const ICONS = {
   info: Info,
   success: CircleCheck,
   danger: CircleAlert,
+  /** Sending a Dive to a Target, and connecting to one (ADR 0024). */
+  send: CloudUpload,
+  signIn: LogIn,
+  disconnect: Unlink,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

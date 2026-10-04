@@ -49,6 +49,8 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 | `apps/server/src/dives/` | Dive service: Overrides, Primary recording, Revisions, split off, move; Duplicate candidates; dive routes (ADR 0015, 0016) |
 | `apps/server/src/divers/` | The User's Divers and Devices (ADR 0016) |
 | `apps/server/src/sites/` | Dive sites, nearby search in SQL, a Dive's site and the Import's auto-link (ADR 0020); `sources.ts`: the Sources of site data (ADR 0021) |
+| `apps/server/src/ssi/` | SSI as a Target (ADR 0024): the app API client, Dive → SSI record, Connections and Pushes, routes; [reference](references/ssi-app-api.md) |
+| `apps/server/src/secrets/` | Encrypting what Dive Hub keeps for Targets (`DIVEHUB_ENCRYPTION_KEY`) |
 | `apps/server/src/sites/import/` | Site import (ADR 0021): Overpass and Wikidata adapters, the plan (matching, 3-way merge), the service and admin routes |
 | `apps/server/src/vocabulary.ts`, `src/fit/fit-vocabulary.ts` | Our words for device values, and the FIT mapping |
 | `apps/web/e2e/` | Playwright browser tests and their fixtures |
@@ -72,6 +74,7 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 | Browser tests | `pnpm --filter @dive-hub/web test:e2e`:<br>• **What it does:** builds the web client, starts one e2e server per worker (2 by default, `E2E_SERVERS`) on ports 3300, 3301, … with its own fresh database (`divehub_e2e_<n>`) and a seeded User and Dive (`apps/server/test/e2e-server.ts`), prepares each once (`e2e/prepare.ts`), and runs `apps/web/e2e` in the installed Edge (`PLAYWRIGHT_CHANNEL=chrome` for Chrome). Needs PostgreSQL.<br>• **Areas:** every test carries one (`@dives`, `@divers`, `@sites`, `@account`, `@admin`, `@layout`); `-- --grep "@sites"` runs one.<br>• **Failures:** no trace is recorded; to see why a test fails, run it again with `--trace=on`.<br>• **ui-quality:** `e2e/ui-quality.spec.ts` checks every page with the [page rules](spec/design-system.md#rules-every-page-follows) and with axe-core (`@axe-core/playwright`, dev only) in two of its four variants ([ADR 0023](decisions/0023-faster-checks.md)).<br>• **Specs stand alone:** no spec may rely on what another did. |
 | Regenerate the e2e fixture with a position (`sited-computer.fit`) | `pnpm --filter @dive-hub/server exec tsx test/fixtures/write-sited-fixture.ts` |
 | Re-record the Overpass and Wikidata answers the Site import tests replay | `pnpm --filter @dive-hub/server exec tsx test/fixtures/site-sources/record.ts` (calls the live services once; set `DIVEHUB_CONTACT` first). Tests never call them. |
+| Check SSI's app API with your own account | `SSI_EMAIL=… SSI_PASSWORD=… pnpm --filter @dive-hub/server exec tsx test/fixtures/ssi/round-trip.ts read` (then `token` later, or `write --pause` with `SSI_SITE_ID`). Writes SSI's answers to `samples/private/ssi/` (personal data, git-ignored). Tests never reach SSI; they use `test/fake-ssi.ts` ([SSI app API](references/ssi-app-api.md#when-ssi-changes-something)). |
 | Regenerate the synthetic FIT fixture | `pnpm --filter @dive-hub/server exec tsx test/fixtures/synthetic-dive.ts` |
 | Build and run the image | `docker build -t dive-hub:dev .`, then `POSTGRES_PASSWORD=… docker compose up -d` |
 

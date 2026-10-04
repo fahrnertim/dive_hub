@@ -25,17 +25,19 @@ const AREAS = [
   [/^apps\/web\/src\/SitePicker\.tsx$/, ['@sites', '@dives']],
   [/^apps\/web\/src\/(DiveDetail|DiveEditForm|DiveHistory|DiveList|DepthProfile|Decisions|ImportPanel)\.tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|logbook|devices|importable)\.ts$/, ['@dives']],
   [/^apps\/web\/src\/DiversPage\.tsx$/, ['@divers']],
-  [/^apps\/web\/src\/(Account|AccountPage)\.tsx$/, ['@account']],
+  [/^apps\/web\/src\/(Account|AccountPage|SsiConnections)\.tsx$/, ['@account']],
+  [/^apps\/web\/src\/SsiPanel\.tsx$/, ['@dives']],
   [/^apps\/web\/src\/Admin\.tsx$/, ['@admin']],
   [/^apps\/server\/src\/sites\/import\//, ['@admin', '@sites']],
   [/^apps\/server\/src\/sites\//, ['@sites', '@dives']],
   [/^apps\/server\/src\/(dives|imports|fit)\/|^apps\/server\/src\/(routes|vocabulary)\.ts$/, ['@dives']],
   [/^apps\/server\/src\/divers\//, ['@divers']],
   [/^apps\/server\/src\/(users|auth)\//, ['@account', '@admin']],
+  [/^apps\/server\/src\/(ssi|secrets)\//, ['@dives', '@account']],
   [/^apps\/server\/test\/fixtures\/site-sources\//, ['@admin', '@sites']],
 ];
 /** Paths that change no behaviour: no tests. */
-const QUIET = /^(docs\/|samples\/|\.claude\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|skills-lock\.json$|\.gitignore$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$)/;
+const QUIET = /^(docs\/|samples\/|\.claude\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|skills-lock\.json$|\.gitignore$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$)/;
 
 const plan = { typecheck: full, server: full ? 'all' : 'none', web: full ? 'all' : 'none', e2e: full ? 'all' : 'none', areas: new Set(), specs: new Set() };
 const everything = () => Object.assign(plan, { typecheck: true, server: 'all', web: 'all', e2e: 'all' });

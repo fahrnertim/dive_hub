@@ -118,6 +118,11 @@ async function deleteUserData(tx: Tx, userId: string) {
   // A surviving Dive (of a Diver someone else also manages) loses its Primary recording if it was one of these.
   await tx.execute(sql`update dive set primary_recording_id = null where primary_recording_id in (select id from doomed_recording)`);
   await tx.execute(sql`delete from recording where id in (select id from doomed_recording)`); // samples, events cascade
+  // Pushes record what reached a Target (ADR 0024); they go with their Dive. The User's Connections hold
+  // their secrets for Targets, and a doomed Diver's External IDs go with the Diver.
+  await tx.execute(sql`delete from push where dive_id in (select id from doomed_dive)`);
+  await tx.execute(sql`delete from connection where user_id = ${userId}`);
+  await tx.execute(sql`delete from diver_external_id where diver_id in (select id from doomed_diver)`);
   await tx.execute(sql`delete from dive where id in (select id from doomed_dive)`);
   await tx.execute(sql`update recording set device_id = null where device_id in (select id from device where diver_id in (select id from doomed_diver))`);
   await tx.execute(sql`delete from device where diver_id in (select id from doomed_diver)`);

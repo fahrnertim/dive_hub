@@ -78,7 +78,9 @@ mobile will use the bearer plugin or the Expo integration. OIDC (Authentik, Auth
 | `DIVEHUB_BASE_URL` | Public URL users open (required in production). With https, cookies are `Secure` and use the `__Secure-` prefix. Invitation links point here. |
 | `DIVEHUB_TRUSTED_PROXIES` | Comma-separated IPs/CIDRs of the reverse proxy. Only their `X-Forwarded-For` counts for the client IP (rate limiting, session records). |
 | `DIVEHUB_AUTH_SECRET` | Cookie signing secret; generated into the data directory when unset. |
-| `DIVEHUB_CONTACT` | Optional: the operator's e-mail address or URL, added to the User-Agent of Site imports ([below](#dive-site-imports-and-licenses)). |
+| `DIVEHUB_CONTACT` | Optional: the operator's e-mail address or URL, added to the User-Agent of Site imports ([below](#dive-site-imports-and-licenses)) and of calls to SSI. |
+| `DIVEHUB_ENCRYPTION_KEY` | Optional: 32 bytes as base64 (`openssl rand -base64 32`). Encrypts what Dive Hub keeps for Targets (SSI tokens and passwords, [ADR 0024](../decisions/0024-ssi-target-via-app-api.md)). Without it, Users can't choose "Keep me signed in" for SSI, and tokens are stored as they are. Keep it apart from database backups; losing it means every User signs in to SSI again. A wrong length stops the server at start. |
+| `DIVEHUB_SSI_URL` | Only for tests: another endpoint for SSI's app API. |
 | `DIVEHUB_OVERPASS_URL`, `DIVEHUB_WIKIDATA_SPARQL_URL` | Optional: other endpoints for Site imports (default `overpass-api.de`, `query.wikidata.org`). |
 
 ## Dive site imports and licenses
@@ -327,3 +329,34 @@ Found while writing the client contract and fixed (rules only the web client kep
 
 Deliberate simplifications, to revisit:
 - **No undo** for a merge (ADR 0022), and no instance-wide duplicate scan; duplicates are found where they're seen.
+
+**Slice 10 (2026-10-04): sending Dives to SSI** ([ADR 0024](../decisions/0024-ssi-target-via-app-api.md), [SSI app API](../references/ssi-app-api.md)).
+
+Implemented:
+- **Connections** (`connection`): one per User and Diver, for SSI. Connecting signs in once and keeps SSI's token,
+  and the password only when the User chooses "Keep me signed in". Both are encrypted with `DIVEHUB_ENCRYPTION_KEY`
+  (AES-256-GCM, bound to the row and purpose; `src/secrets/secret-box.ts`). An expired token is renewed silently with a
+  kept password; otherwise the Connection needs the User to sign in again. Disconnecting deletes both.
+  Routes: `/api/connections/ssi` (list, connect, sign in again, disconnect).
+- **Diver External IDs** (`diver_external_id`): the SSI account (`mid`) of the connected Diver, unique per Source.
+- **Pushes** (`push`): create, update, link, delete, with SSI's dive ID and number, our reference
+  (`divehub-<Dive id>`), the record sent (without samples), a fingerprint and the read-back differences.
+  "Outdated" is worked out from the fingerprint, not stored. Routes: `/api/dives/{id}/ssi` (state, send, delete) and
+  `…/ssi/sites` (sites of the User's SSI logbook, nearest first).
+- **Sending:** reads the SSI logbook; updates the SSI dive the Dive has, or offers a dive at the same time (±2 min)
+  before creating; creates with SSI's next number, the Dive's summary and the profile on SSI's 5 s grid; reads back.
+  One action per Dive at a time (`ssi_busy`).
+- **SSI client** (`src/ssi/ssi-client.ts`): never logs or returns a URL, since SSI takes the password and token in the
+  query string. Tests and the browser tests' server use an in-memory SSI (`test/fake-ssi.ts`).
+- **Web client:** an SSI panel on the account page (connect with the choice, sign in again, disconnect) and on the dive
+  page (state, choosing the SSI site, send, update, delete in SSI, the history of sending).
+- `test/fixtures/ssi/round-trip.ts`: the owner's checks against the real SSI.
+
+Deliberate simplifications, to revisit:
+- **Sending runs in the request** (two logbook reads and a save, seconds), not as a worker job.
+- **One process:** the "one action per Dive" guard lives in memory.
+- **Not sent yet:** conditions other than water type, tank and pressures, buddies, gear, photos. QR payload, the SSI
+  site import and an import from SSI come later (ADR 0024).
+- **Deleting a Dive** in the hub doesn't exist yet, so nothing offers deletion in SSI from there.
+- **A Diver's External ID** is set only by connecting; a clash with another Diver is refused (`ssi_account_taken`)
+  instead of proposing to link the two.

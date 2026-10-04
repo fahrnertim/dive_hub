@@ -14,6 +14,7 @@ import { focusHeading } from './lib/focus.ts';
 import { mapsUrl } from './lib/geo.ts';
 import { usePageTitle } from './lib/page.ts';
 import { SitePicker } from './SitePicker.tsx';
+import { SsiPanel } from './SsiPanel.tsx';
 import { ActionMenu, Button, ConfirmDialog, Dialog, ErrorBoundary, Icon, Muted, Notice, PageHeader, Panel, Select } from './ui/index.ts';
 
 /** One Dive (ADR 0015): its values with Overrides marked, notes, Recordings, and its history. */
@@ -99,6 +100,7 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
           : <DiveFacts dive={d} />}
       </Panel>
       <Recordings dive={d} initial={recordingId} />
+      <SsiPanel dive={d} diverName={diverName} />
       <DiveHistory dive={d} />
       {moving && <MoveDialog dive={d} onClose={() => setMoving(false)} />}
     </>

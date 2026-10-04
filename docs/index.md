@@ -12,7 +12,7 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 ## Spec
 - [spec/README.md](spec/README.md) — Product specification: vision, sources → hub → targets, open questions.
 - [spec/data-model.md](spec/data-model.md) — Entities, ownership, relationships; UDDF checklist, gap coverage, scenarios.
-- [spec/architecture.md](spec/architecture.md) — Components, import flow, Docker Compose deployment, auth; implementation status per slice (9: merging sites, paged site list, client contract); operator notes on site data licenses.
+- [spec/architecture.md](spec/architecture.md) — Components, import flow, Docker Compose deployment, auth; implementation status per slice (9: merging sites, paged site list, client contract); operator notes on site data licenses; slice 10: sending Dives to SSI, `DIVEHUB_ENCRYPTION_KEY`.
 - [spec/clients.md](spec/clients.md) — Client contract: what every API client must do, from a walk through the web client (licenses, privacy, security, confirmations, versions, each area's duties, units, accessibility); two server gaps found and fixed.
 - [spec/design-system.md](spec/design-system.md) — Visual direction, tokens, components, writing, localization, units, accessibility.
 
@@ -63,6 +63,7 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [Subsurface](references/subsurface.md) — leading open-source dive log; import source, model ideas.
 - [divetracx](references/divetracx.md) — self-hosted dive log; closest prior art.
 - [DiveJSON](references/divejson.md) — new draft JSON dive log schema; format-quirk mappings.
+- [SSI app API](references/ssi-app-api.md) — SSI's private MySSI API as Dive Hub uses it: sign-in, logbook, create/update/delete, the dive record and samples, quirks, what to do when it changes, the owner's pending checks.
 
 ## Research
 - [2026-10-02 Knowledge base practices](research/2026-10-02-knowledge-base-practices.md) — AGENTS.md, LLM wiki, ADRs, spec-driven dev, Diátaxis.

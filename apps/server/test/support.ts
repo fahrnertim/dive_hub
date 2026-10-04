@@ -14,7 +14,11 @@ import { createImportService, type ImportService } from '../src/imports/import-s
 import { createSiteImportService } from '../src/sites/import/site-import-service.js';
 import type { SiteSourceAdapter } from '../src/sites/import/site-source.js';
 import type { ImportSource } from '../src/sites/sources.js';
+import { createSecretBox } from '../src/secrets/secret-box.js';
+import { createSsiClient } from '../src/ssi/ssi-client.js';
+import { createSsiService } from '../src/ssi/ssi-service.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
+import { createFakeSsi, type FakeSsi } from './fake-ssi.js';
 import { createInvitations } from '../src/users/invitations.js';
 import { createSetup, type Setup } from '../src/users/setup.js';
 
@@ -71,17 +75,28 @@ const unreachable = (source: ImportSource): SiteSourceAdapter => ({
   source, fetch: () => Promise.reject(new Error(`the test reached the ${source} Source`)),
 });
 
-export async function createTestApp(t: TestDatabase, options: { rateLimit?: boolean; webDir?: string; siteSources?: Record<ImportSource, SiteSourceAdapter> } = {}) {
-  const { webDir, siteSources, ...authOptions } = options;
+/** A key for DIVEHUB_ENCRYPTION_KEY in tests (32 bytes). */
+export const TEST_ENCRYPTION_KEY = Buffer.alloc(32, 7);
+
+export async function createTestApp(t: TestDatabase, options: {
+  rateLimit?: boolean; webDir?: string; siteSources?: Record<ImportSource, SiteSourceAdapter>;
+  /** SSI as tests see it (default: a fresh fake); `encryptionKey: null` runs without DIVEHUB_ENCRYPTION_KEY. */
+  fakeSsi?: FakeSsi; encryptionKey?: Buffer | null;
+} = {}) {
+  const { webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, ...authOptions } = options;
   const auth = createTestAuth(t.db, authOptions);
   const setup: Setup = createSetup(t.db);
   const blobs = createLocalBlobStore(t.dataDir);
   const imports: ImportService = createImportService({ db: t.db, blobs });
   const siteImports = createSiteImportService({ db: t.db, sources: siteSources ?? { osm: unreachable('osm'), wikidata: unreachable('wikidata') } });
-  const app = await buildApp({
-    db: t.db, imports, siteImports, blobs, auth, setup, invitations: createInvitations(t.db), baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir,
+  const ssi = createSsiService({
+    db: t.db, secrets: createSecretBox(encryptionKey ?? undefined),
+    client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch, userAgent: 'DiveHub (test)' }),
   });
-  return { app, auth, setup, imports, siteImports, blobs };
+  const app = await buildApp({
+    db: t.db, imports, siteImports, ssi, blobs, auth, setup, invitations: createInvitations(t.db), baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir,
+  });
+  return { app, auth, setup, imports, siteImports, ssi, fakeSsi, blobs };
 }
 
 /** Creates a User the way an admin would (Better Auth's admin API, server-side). */

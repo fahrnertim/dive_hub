@@ -94,6 +94,8 @@ Diver has at most one per Source. They record the person's account at a service 
 Setting one that another Diver already has proposes linking the two Divers (as in the claim case). Certification
 numbers (SSI card ID, PADI diver number) stay on Certification; professional numbers (SSI and PADI pro numbers) stay on
 Membership.
+*Implemented (slice 10):* `diver_external_id` (Sources `ssi`, `padi`), set by connecting a Diver to SSI; a clash is
+refused for now (`ssi_account_taken`) instead of proposing a link.
 
 **Diver management** — `(User, Diver, role)`. A User's *own* Diver is flagged. Several
 Users can manage one Diver (two parents; a dive center handing a guest's log over to
@@ -216,6 +218,8 @@ password only if the User chose "Keep me signed in" (both encrypted with the ope
 state `active`, `needs sign-in` or `failed`. Disconnecting deletes the password and token.
 *Diver mappings:* `(Connection, Diver, remote id)` for Targets whose people are records of one account, such as an
 entry in the User's SSI buddy list. They're set by the User, or matched through the Diver's SSI External ID.
+*Implemented (slice 10):* `connection` for SSI, one per User and Diver, with `state` and `keep_signed_in`; Diver
+mappings are not built yet (buddies aren't sent).
 
 **Original** — User, content hash, media type, size, received at, stored bytes. It's immutable.
 The same hash received again **from the same User** is not processed a second time. Originals are
@@ -241,6 +245,9 @@ state (`pending`, `handed over`, `confirmed`, `failed`, `outdated`), remote ID i
 reference** (a stable value we send, for finding the dive again when an answer is lost) and **read-back result**
 (fields the Target stored differently). `confirmed` means delivered with an ID back; it isn't SSI's dive-centre
 confirmation. Re-pushing an `outdated` Push updates the same remote dive: a new Push with the same remote ID.
+*Implemented (slice 10):* `push` with `action` (`create`, `update`, `link`, `delete`), `state`, remote ID, number and
+reference, the record sent (without samples) and a `fingerprint` of it; `outdated` is the fingerprint differing from
+the Dive's current one, worked out when asked, not stored.
 
 ## UDDF checklist
 

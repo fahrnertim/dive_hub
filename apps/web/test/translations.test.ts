@@ -69,6 +69,9 @@ describe('codes from the API', () => {
     ['circuit', 'vocabulary.circuit'],
     ['cause', 'history.cause'],
     ['overrides', 'history.field'],
+    ['action', 'ssi.action'],
+    ['field', 'ssi.field'],
+    ['outcome', 'ssi.result'],
   ])('every %s has an English text under %s', (property, prefix) => {
     const codes = enumsOf(property);
     expect(codes.length).toBeGreaterThan(0);

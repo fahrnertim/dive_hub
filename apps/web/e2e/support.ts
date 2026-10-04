@@ -98,3 +98,47 @@ export async function expectGoodPage(page: Page, title?: string, options: { axe?
   const repeated = names.filter((n, i) => names.indexOf(n) !== i);
   expect(repeated, 'buttons with the same name').toEqual([]);
 }
+
+/** The SSI account the e2e server's fake SSI knows (ADR 0024); its password is not Erika's Dive Hub password. */
+export const SSI_ACCOUNT = { email: 'erika@example.com', password: 'ssi-password' };
+type SsiConnection = { id: string; diverId: string; state: string };
+
+/** Erika's own Diver connected to the fake SSI, password kept, signed in. */
+export async function connectSsi(api: APIRequestContext) {
+  const me = await (await api.get('/api/me')).json() as { ownDiver: { id: string } };
+  const { connections } = await (await api.get('/api/connections/ssi')).json() as { connections: SsiConnection[] };
+  const own = connections.find((c) => c.diverId === me.ownDiver.id);
+  if (own?.state === 'active') return;
+  const response = own
+    ? await api.post(`/api/connections/ssi/${own.id}/sign-in`, { data: { password: SSI_ACCOUNT.password, keepSignedIn: true }, headers })
+    : await api.post('/api/connections/ssi', { data: { diverId: me.ownDiver.id, ...SSI_ACCOUNT, keepSignedIn: true }, headers });
+  if (!response.ok()) throw new Error(`connecting to SSI failed: ${response.status()} ${await response.text()}`);
+}
+
+/** No SSI Connections at all. */
+export async function disconnectSsi(api: APIRequestContext) {
+  const { connections } = await (await api.get('/api/connections/ssi')).json() as { connections: SsiConnection[] };
+  for (const c of connections) await api.delete(`/api/connections/ssi/${c.id}`, { headers });
+}
+
+/**
+ * The Dive ready to go to SSI, but not there: at the site "SSI test reef" without an SSI site ID, and with
+ * no SSI dive (deleted there if an earlier test sent it). Needs a Connection.
+ */
+export async function readyForSsi(api: APIRequestContext, diveId: string) {
+  const name = 'SSI test reef';
+  const { sites } = await (await api.get(`/api/dive-sites?q=${encodeURIComponent(name)}`)).json() as { sites: { id: string; name: string; version: number }[] };
+  let site = sites.find((s) => s.name === name);
+  if (!site) site = await (await api.post('/api/dive-sites', { data: { name, position: { latitude: 47.851, longitude: 13.5512 } }, headers })).json() as { id: string; name: string; version: number };
+  else await api.patch(`/api/dive-sites/${site.id}`, { data: { version: site.version, ssiSiteId: null }, headers });
+  const dive = await (await api.get(`/api/dives/${diveId}`)).json() as Dive;
+  await api.patch(`/api/dives/${diveId}`, { data: { version: dive.version, siteId: site.id }, headers });
+  const status = await (await api.get(`/api/dives/${diveId}/ssi`)).json() as { current: unknown };
+  if (status.current) await api.delete(`/api/dives/${diveId}/ssi`, { headers });
+}
+
+/** Takes the Dive off the test reef again: other specs expect the seeded Dive without a site (as sites.spec.ts leaves it). */
+export async function leaveSsi(api: APIRequestContext, diveId: string) {
+  const dive = await (await api.get(`/api/dives/${diveId}`)).json() as Dive;
+  await api.patch(`/api/dives/${diveId}`, { data: { version: dive.version, siteId: null }, headers });
+}

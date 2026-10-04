@@ -48,6 +48,10 @@ export type ExternalIdView = SiteView['externalIds'][number];
 export type SiteRevisionView = Awaited<ReturnType<typeof fetchSiteRevisions>>[number];
 export type SiteImportView = Awaited<ReturnType<typeof fetchSiteImport>>;
 export type SiteImportArea = SiteImportView['area'];
+export type SsiConnectionView = Awaited<ReturnType<typeof fetchSsiConnections>>['connections'][number];
+export type SsiStatusView = Awaited<ReturnType<typeof fetchSsiStatus>>;
+export type SsiPushView = SsiStatusView['pushes'][number];
+export type SsiSiteSuggestion = Awaited<ReturnType<typeof fetchSsiSites>>[number];
 
 /** Query keys in one place (hierarchical, so invalidating ['dives'] covers every dive query). */
 export const keys = {
@@ -68,6 +72,9 @@ export const keys = {
   site: (id: string) => ['sites', id] as const,
   siteRevisions: (id: string) => ['sites', id, 'revisions'] as const,
   siteImports: ['site-imports'] as const,
+  ssiConnections: ['connections', 'ssi'] as const,
+  ssi: (diveId: string) => ['dives', diveId, 'ssi'] as const,
+  ssiSites: (diveId: string) => ['dives', diveId, 'ssi', 'sites'] as const,
 };
 
 /**
@@ -229,3 +236,19 @@ export async function uploadFile(file: File) {
     throw new ApiError(problem.error ?? `Upload failed (${response.status})`, response.status, problem.code);
   }
 }
+
+async function fetchSsiConnections() {
+  return unwrap(await api.GET('/api/connections/ssi'));
+}
+async function fetchSsiStatus(diveId: string) {
+  return unwrap(await api.GET('/api/dives/{id}/ssi', { params: { path: { id: diveId } } }));
+}
+async function fetchSsiSites(diveId: string) {
+  return unwrap(await api.GET('/api/dives/{id}/ssi/sites', { params: { path: { id: diveId } } }));
+}
+/** The User's SSI Connections (ADR 0024), and whether the server can keep passwords. */
+export const ssiConnectionsQuery = () => queryOptions({ queryKey: keys.ssiConnections, queryFn: fetchSsiConnections });
+/** A Dive at SSI: its Diver's Connection, the SSI site ID, the SSI dive it has, its Pushes. */
+export const ssiStatusQuery = (diveId: string) => queryOptions({ queryKey: keys.ssi(diveId), queryFn: () => fetchSsiStatus(diveId) });
+/** Sites from the User's SSI logbook, nearest first; asks SSI, so only when the User wants to pick one. */
+export const ssiSitesQuery = (diveId: string) => queryOptions({ queryKey: keys.ssiSites(diveId), queryFn: () => fetchSsiSites(diveId), staleTime: 5 * 60_000 });

@@ -472,6 +472,104 @@ export const duplicateCandidate = pgTable(
   (t) => [index('duplicate_candidate_recording_idx').on(t.recordingId)],
 );
 
+export const diverSource = pgEnum('diver_source', ['ssi', 'padi']);
+
+/**
+ * A Diver's account at a service (ADR 0024), e.g. the SSI user master ID: unique per Source, at most one per
+ * Source and Diver. Certification and membership numbers are not External IDs.
+ */
+export const diverExternalId = pgTable(
+  'diver_external_id',
+  {
+    id: id(),
+    diverId: uuid('diver_id').notNull().references(() => diver.id),
+    source: diverSource('source').notNull(),
+    externalId: text('external_id').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex('diver_external_id_source_uq').on(t.source, t.externalId),
+    uniqueIndex('diver_external_id_diver_source_uq').on(t.diverId, t.source),
+  ],
+);
+
+export const target = pgEnum('target', ['ssi']);
+export const connectionState = pgEnum('connection_state', ['active', 'needs_sign_in']);
+
+/**
+ * One User's link to a Target for one of their Divers (ADR 0024): the account there, and what lets Dive Hub
+ * act for it. `token` and `password` are sealed (src/secrets/secret-box.ts); the password is kept only when
+ * the User chose "Keep me signed in".
+ */
+export const connection = pgTable(
+  'connection',
+  {
+    id: id(),
+    userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    diverId: uuid('diver_id').notNull().references(() => diver.id),
+    target: target('target').notNull(),
+    /** The account at the Target (SSI: user master ID) and the e-mail it signs in with. */
+    accountId: text('account_id').notNull(),
+    accountEmail: text('account_email').notNull(),
+    keepSignedIn: boolean('keep_signed_in').notNull(),
+    token: text('token'),
+    password: text('password'),
+    state: connectionState('state').notNull().default('active'),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex('connection_user_diver_target_uq').on(t.userId, t.diverId, t.target),
+    check('connection_password_ck', sql`${t.password} is null or ${t.keepSignedIn}`),
+  ],
+);
+
+export const pushMode = pgEnum('push_mode', ['api', 'qr']);
+export const pushAction = pgEnum('push_action', ['create', 'update', 'link', 'delete']);
+export const pushState = pgEnum('push_state', ['pending', 'handed_over', 'confirmed', 'failed']);
+
+/** A field SSI stored differently from what was sent (read back after saving). */
+export interface PushDifference {
+  field: string;
+  sent: string | number | null;
+  stored: string | number | null;
+}
+
+/**
+ * One Dive sent to one Target (ADR 0024): what was done (create, update, link to a dive already there,
+ * delete), the Target's own ID and number for it, what was sent and what it stored. Whether a Push is
+ * outdated is worked out from `fingerprint`, not stored.
+ */
+export const push = pgTable(
+  'push',
+  {
+    id: id(),
+    diveId: uuid('dive_id').notNull().references(() => dive.id),
+    connectionId: uuid('connection_id').references(() => connection.id, { onDelete: 'set null' }),
+    userId: uuid('user_id').references(() => user.id, { onDelete: 'set null' }),
+    target: target('target').notNull(),
+    mode: pushMode('mode').notNull(),
+    action: pushAction('action').notNull(),
+    state: pushState('state').notNull(),
+    /** The Target's ID and number of the dive (SSI dive ID, SSI dive number). */
+    remoteId: text('remote_id'),
+    remoteNumber: integer('remote_number'),
+    /** What we sent to find the dive again (SSI: the dive computer's dive reference). */
+    remoteReference: text('remote_reference'),
+    diveVersion: integer('dive_version').notNull(),
+    /** A hash of the Dive's values as sent; the Push is outdated when the Dive's differs. */
+    fingerprint: text('fingerprint'),
+    /** The record sent, without its sample datasets. */
+    payload: jsonb('payload').$type<Record<string, unknown>>(),
+    differences: jsonb('differences').$type<PushDifference[]>(),
+    /** Why it failed, as a problem code. */
+    errorCode: text('error_code'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('push_dive_idx').on(t.diveId, t.createdAt)],
+);
+
 export const actorType = pgEnum('actor_type', ['user', 'import', 'system', 'site_import']);
 
 /** A recorded change to logbook data: who or what changed which values, and when. */

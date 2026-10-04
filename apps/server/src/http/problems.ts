@@ -49,6 +49,20 @@ export const PROBLEMS = {
   source_unavailable: 'The source did not answer, or answered with something else than data; try again later',
   source_rate_limited: 'The source asked us to slow down; try again later',
   site_import_interrupted: 'The server stopped while the import was running',
+  connection_not_found: 'No such connection',
+  encryption_key_missing: 'Keeping the password needs DIVEHUB_ENCRYPTION_KEY on the server; choose not to store it instead',
+  ssi_already_connected: 'This Diver is already connected to SSI; disconnect first to connect another account',
+  ssi_account_taken: 'This SSI account is already connected to another Diver',
+  ssi_other_account: 'This e-mail and password belong to another SSI account; disconnect and connect that one instead',
+  ssi_wrong_credentials: 'SSI did not accept this e-mail and password',
+  ssi_not_connected: "This dive's Diver is not connected to SSI",
+  ssi_sign_in_needed: 'SSI wants you to sign in again',
+  ssi_unavailable: 'SSI did not answer, or answered with something unexpected; try again later',
+  ssi_refused: 'SSI did not save the dive',
+  ssi_site_missing: "The dive's site has no SSI site ID",
+  ssi_not_sent: 'This dive is not in SSI',
+  ssi_dive_gone: 'The dive is no longer in SSI; it was deleted there',
+  ssi_busy: 'This dive is being sent to SSI right now',
 } as const;
 
 export type ProblemCode = keyof typeof PROBLEMS;

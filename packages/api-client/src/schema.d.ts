@@ -85,7 +85,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -102,7 +102,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -165,7 +165,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -236,7 +236,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -253,7 +253,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -464,7 +464,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -518,7 +518,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -578,7 +578,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -648,7 +648,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -768,7 +768,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -876,7 +876,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -893,7 +893,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -910,7 +910,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -967,7 +967,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -984,7 +984,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1001,7 +1001,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1061,7 +1061,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1078,7 +1078,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1095,7 +1095,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1159,7 +1159,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1176,7 +1176,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1193,7 +1193,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1247,7 +1247,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1264,7 +1264,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1281,7 +1281,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1340,7 +1340,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1357,7 +1357,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1374,7 +1374,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1497,7 +1497,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1514,7 +1514,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1592,7 +1592,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1722,7 +1722,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -1863,7 +1863,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2019,7 +2019,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2036,7 +2036,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2053,7 +2053,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2197,7 +2197,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2214,7 +2214,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2231,7 +2231,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2381,7 +2381,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2398,7 +2398,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2465,7 +2465,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2482,7 +2482,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2554,7 +2554,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2689,7 +2689,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2706,7 +2706,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2723,7 +2723,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2780,7 +2780,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2797,7 +2797,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2814,7 +2814,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2871,7 +2871,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2888,7 +2888,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2905,7 +2905,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2962,7 +2962,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2979,7 +2979,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -2996,7 +2996,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3089,7 +3089,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3106,7 +3106,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3123,7 +3123,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3177,7 +3177,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3194,7 +3194,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3211,7 +3211,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3266,7 +3266,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3283,7 +3283,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3300,7 +3300,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3405,7 +3405,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3422,7 +3422,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3439,7 +3439,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3545,7 +3545,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3637,7 +3637,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3654,7 +3654,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3671,7 +3671,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3688,7 +3688,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3779,7 +3779,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3819,7 +3819,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3836,7 +3836,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3853,7 +3853,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3870,7 +3870,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3970,7 +3970,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -3987,7 +3987,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -4004,7 +4004,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -4021,7 +4021,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -4127,7 +4127,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -4144,7 +4144,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -4161,7 +4161,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -4178,7 +4178,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -4254,7 +4254,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -4342,7 +4342,7 @@ export interface paths {
                                     distanceM: number;
                                 }[];
                                 /** @description Why it failed (a problem code) */
-                                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted");
+                                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy");
                                 /** Format: date-time */
                                 createdAt: string;
                                 finishedAt: null | string;
@@ -4361,7 +4361,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -4464,7 +4464,7 @@ export interface paths {
                                 distanceM: number;
                             }[];
                             /** @description Why it failed (a problem code) */
-                            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted");
+                            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy");
                             /** Format: date-time */
                             createdAt: string;
                             finishedAt: null | string;
@@ -4482,7 +4482,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -4499,7 +4499,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -4516,7 +4516,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -4603,7 +4603,7 @@ export interface paths {
                                 distanceM: number;
                             }[];
                             /** @description Why it failed (a problem code) */
-                            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted");
+                            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy");
                             /** Format: date-time */
                             createdAt: string;
                             finishedAt: null | string;
@@ -4621,7 +4621,7 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };
@@ -4638,7 +4638,869 @@ export interface paths {
                              * @description Stable, machine-readable reason; clients translate it
                              * @enum {unknown}
                              */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted";
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/connections/ssi": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The User's SSI Connections (one per Diver at most) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description The server can keep passwords (DIVEHUB_ENCRYPTION_KEY is set); offer "Keep me signed in" only then */
+                            canKeepPasswords: boolean;
+                            connections: {
+                                id: string;
+                                /** @description The Diver whose SSI account this is */
+                                diverId: string;
+                                diverName: string;
+                                /** @description SSI's user master ID */
+                                accountId: string;
+                                accountEmail: string;
+                                /** @description The password is kept (encrypted); otherwise only SSI's token, which can expire */
+                                keepSignedIn: boolean;
+                                /**
+                                 * @description needs_sign_in: SSI no longer accepts the token; sign in again
+                                 * @enum {unknown}
+                                 */
+                                state: "active" | "needs_sign_in";
+                                lastUsedAt: null | string;
+                                /** Format: date-time */
+                                createdAt: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Connect a Diver to their SSI account: signs in to SSI once and keeps the token (and the password, if asked)
+         * @description SSI's token can expire at any time. Without keepSignedIn the Connection then needs the User to sign in again.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        diverId: string;
+                        email: string;
+                        password: string;
+                        /** @description Keep the password, encrypted, so Dive Hub signs in again by itself when SSI's token expires. Needs canKeepPasswords */
+                        keepSignedIn: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @description The Diver whose SSI account this is */
+                            diverId: string;
+                            diverName: string;
+                            /** @description SSI's user master ID */
+                            accountId: string;
+                            accountEmail: string;
+                            /** @description The password is kept (encrypted); otherwise only SSI's token, which can expire */
+                            keepSignedIn: boolean;
+                            /**
+                             * @description needs_sign_in: SSI no longer accepts the token; sign in again
+                             * @enum {unknown}
+                             */
+                            state: "active" | "needs_sign_in";
+                            lastUsedAt: null | string;
+                            /** Format: date-time */
+                            createdAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/connections/ssi/{id}/sign-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sign in to SSI again with the Connection's e-mail (after SSI's token expired), and choose again whether to keep the password */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        password: string;
+                        /** @description Keep the password, encrypted, so Dive Hub signs in again by itself when SSI's token expires. Needs canKeepPasswords */
+                        keepSignedIn: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @description The Diver whose SSI account this is */
+                            diverId: string;
+                            diverName: string;
+                            /** @description SSI's user master ID */
+                            accountId: string;
+                            accountEmail: string;
+                            /** @description The password is kept (encrypted); otherwise only SSI's token, which can expire */
+                            keepSignedIn: boolean;
+                            /**
+                             * @description needs_sign_in: SSI no longer accepts the token; sign in again
+                             * @enum {unknown}
+                             */
+                            state: "active" | "needs_sign_in";
+                            lastUsedAt: null | string;
+                            /** Format: date-time */
+                            createdAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/connections/ssi/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Disconnect: forgets SSI's token and the password. Dives already in SSI stay there; their history stays here */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dives/{id}/ssi": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The Dive at SSI: the Connection of its Diver, the SSI site ID, the SSI dive it has now, and every Push */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            connection: null | {
+                                id: string;
+                                /** @enum {unknown} */
+                                state: "active" | "needs_sign_in";
+                                accountEmail: string;
+                            };
+                            siteId: null | string;
+                            siteSsiId: null | string;
+                            current: null | {
+                                remoteId: string;
+                                remoteNumber: null | number;
+                                /** Format: date-time */
+                                sentAt: string;
+                                /** @description false: the Dive changed since it was sent (outdated), or it was linked and never sent */
+                                upToDate: boolean;
+                            };
+                            /** @description Newest first */
+                            pushes: {
+                                id: string;
+                                /**
+                                 * @description link: tied to a dive already in SSI, nothing sent
+                                 * @enum {unknown}
+                                 */
+                                action: "create" | "update" | "link" | "delete";
+                                /**
+                                 * @description confirmed: SSI accepted it and gave its ID; not SSI's dive-center confirmation
+                                 * @enum {unknown}
+                                 */
+                                state: "pending" | "handed_over" | "confirmed" | "failed";
+                                remoteId: null | string;
+                                remoteNumber: null | number;
+                                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy");
+                                differences: null | {
+                                    /** @enum {unknown} */
+                                    field: "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC" | "maxTemperatureC" | "notes" | "site" | "gas" | "device" | "profile";
+                                    sent: null | (string | number);
+                                    stored: null | (string | number);
+                                }[];
+                                /** Format: date-time */
+                                createdAt: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Send the Dive to SSI: updates its SSI dive, or creates one
+         * @description Before creating, a dive at the same time already in SSI is answered with outcome exists and nothing is sent; send again with onExisting link (tie the Dive to it) or create (a second dive). SSI shows dives sent this way as unconfirmed.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {unknown} */
+                        onExisting?: "link" | "create";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description exists: nothing was sent; a dive at the same time is in SSI. Send again with onExisting link or create
+                             * @enum {unknown}
+                             */
+                            outcome: "created" | "updated" | "linked" | "exists";
+                            existing: null | {
+                                remoteId: string;
+                                number: null | number;
+                                startsAt: null | string;
+                                maxDepthM: null | number;
+                                durationMinutes: null | number;
+                            };
+                            status: {
+                                connection: null | {
+                                    id: string;
+                                    /** @enum {unknown} */
+                                    state: "active" | "needs_sign_in";
+                                    accountEmail: string;
+                                };
+                                siteId: null | string;
+                                siteSsiId: null | string;
+                                current: null | {
+                                    remoteId: string;
+                                    remoteNumber: null | number;
+                                    /** Format: date-time */
+                                    sentAt: string;
+                                    /** @description false: the Dive changed since it was sent (outdated), or it was linked and never sent */
+                                    upToDate: boolean;
+                                };
+                                /** @description Newest first */
+                                pushes: {
+                                    id: string;
+                                    /**
+                                     * @description link: tied to a dive already in SSI, nothing sent
+                                     * @enum {unknown}
+                                     */
+                                    action: "create" | "update" | "link" | "delete";
+                                    /**
+                                     * @description confirmed: SSI accepted it and gave its ID; not SSI's dive-center confirmation
+                                     * @enum {unknown}
+                                     */
+                                    state: "pending" | "handed_over" | "confirmed" | "failed";
+                                    remoteId: null | string;
+                                    remoteNumber: null | number;
+                                    failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy");
+                                    differences: null | {
+                                        /** @enum {unknown} */
+                                        field: "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC" | "maxTemperatureC" | "notes" | "site" | "gas" | "device" | "profile";
+                                        sent: null | (string | number);
+                                        stored: null | (string | number);
+                                    }[];
+                                    /** Format: date-time */
+                                    createdAt: string;
+                                }[];
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        /** Delete the Dive's copy in SSI (SSI hides it; its app has no way back). The Dive stays here */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            connection: null | {
+                                id: string;
+                                /** @enum {unknown} */
+                                state: "active" | "needs_sign_in";
+                                accountEmail: string;
+                            };
+                            siteId: null | string;
+                            siteSsiId: null | string;
+                            current: null | {
+                                remoteId: string;
+                                remoteNumber: null | number;
+                                /** Format: date-time */
+                                sentAt: string;
+                                /** @description false: the Dive changed since it was sent (outdated), or it was linked and never sent */
+                                upToDate: boolean;
+                            };
+                            /** @description Newest first */
+                            pushes: {
+                                id: string;
+                                /**
+                                 * @description link: tied to a dive already in SSI, nothing sent
+                                 * @enum {unknown}
+                                 */
+                                action: "create" | "update" | "link" | "delete";
+                                /**
+                                 * @description confirmed: SSI accepted it and gave its ID; not SSI's dive-center confirmation
+                                 * @enum {unknown}
+                                 */
+                                state: "pending" | "handed_over" | "confirmed" | "failed";
+                                remoteId: null | string;
+                                remoteNumber: null | number;
+                                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy");
+                                differences: null | {
+                                    /** @enum {unknown} */
+                                    field: "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC" | "maxTemperatureC" | "notes" | "site" | "gas" | "device" | "profile";
+                                    sent: null | (string | number);
+                                    stored: null | (string | number);
+                                }[];
+                                /** Format: date-time */
+                                createdAt: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dives/{id}/ssi/sites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dive sites from the User's own SSI logbook, nearest to the Dive first, to pick the SSI site ID from */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description SSI site ID */
+                            id: string;
+                            name: string;
+                            latitude: null | number;
+                            longitude: null | number;
+                            country: null | string;
+                            distanceM: null | number;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "odbl_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
                             /** @description English description, for logs and scripts */
                             error: string;
                         };

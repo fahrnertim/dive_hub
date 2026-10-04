@@ -7,7 +7,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_BASE_URL, setPreferences } from './support.ts';
+import { E2E_BASE_URL, connectSsi, disconnectSsi, editElsewhere, leaveSsi, readyForSsi, setPreferences } from './support.ts';
 
 const out = process.env.REVIEW_OUT ?? 'review-output/';
 mkdirSync(out, { recursive: true });
@@ -174,6 +174,44 @@ test('review material', async ({ page, request, browser }) => {
   await page.goto(`/#/?site=${site.id}`); await page.locator('table').waitFor();
   await capture(page, '23-de-light-320-logbook-at-site', { aria: false });
   await setPreferences(request, { language: null });
+
+  // SSI (ADR 0024): the account panel before and after connecting; a Dive ready to send, the SSI site picker,
+  // sent, and changed since sent; the same in German on a dark phone.
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await disconnectSsi(request);
+  await setPreferences(request, { language: 'en' });
+  // Changing the hash doesn't reload the app, which keeps the language it had: reload to take the new one.
+  await page.goto('/#/account'); await page.reload(); await page.getByRole('button', { name: 'Connect to SSI' }).waitFor();
+  await capture(page, '24-account-ssi-connect');
+  await connectSsi(request);
+  await page.reload(); await page.getByText('Connected, password kept').waitFor();
+  await capture(page, '25-account-ssi-connected', { aria: false });
+  await readyForSsi(request, dive42);
+  await page.goto(`/#/dives/${dive42}`); await page.getByRole('button', { name: 'Choose the SSI site' }).waitFor();
+  await capture(page, '26-dive-ssi-ready');
+  await page.getByRole('button', { name: 'Choose the SSI site' }).click();
+  await page.getByRole('dialog').getByRole('radio').first().waitFor();
+  await capture(page, '27-dive-ssi-picker', { full: false });
+  await page.getByRole('dialog').getByText('Attersee – Schwarzenbach').click();
+  await page.getByRole('button', { name: 'Save SSI site ID' }).click();
+  await page.getByRole('button', { name: 'Send to SSI' }).click();
+  await page.getByText('Up to date').waitFor();
+  await capture(page, '28-dive-ssi-sent', { aria: false });
+  await editElsewhere(request, dive42, 'Changed after sending');
+  await page.reload(); await page.getByText('Changed since sent').waitFor();
+  await capture(page, '29-dive-ssi-changed');
+  await setPreferences(request, { language: 'de' });
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload(); await page.getByText('Seit dem Senden geändert').waitFor();
+  await capture(page, '30-dive-ssi-de-dark-390', { aria: false });
+  await page.goto('/#/account'); await page.getByText('Verbunden, Passwort gespeichert').waitFor();
+  await capture(page, '31-account-ssi-de-dark-390', { aria: false });
+  await setPreferences(request, { language: null });
+  await page.emulateMedia({ colorScheme: 'light' });
+  await request.delete(`/api/dives/${dive42}/ssi`, { headers });
+  await leaveSsi(request, dive42);
 
   const fresh = await browser.newContext({ baseURL: E2E_BASE_URL, locale: 'en-GB', storageState: { cookies: [], origins: [] } });
   const p2 = await fresh.newPage();

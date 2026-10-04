@@ -7,12 +7,13 @@ import { auth } from '../auth/cli-config.js';
 import type { Db } from '../db/client.js';
 import type { ImportService } from '../imports/import-service.js';
 import type { SiteImportService } from '../sites/import/site-import-service.js';
+import type { SsiService } from '../ssi/ssi-service.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import type { Invitations } from '../users/invitations.js';
 import type { Setup } from '../users/setup.js';
 
 const app = await buildApp({
-  db: {} as Db, imports: {} as ImportService, siteImports: {} as SiteImportService, blobs: {} as BlobStore, auth, setup: {} as Setup, invitations: {} as Invitations,
+  db: {} as Db, imports: {} as ImportService, siteImports: {} as SiteImportService, ssi: {} as SsiService, blobs: {} as BlobStore, auth, setup: {} as Setup, invitations: {} as Invitations,
   baseUrl: 'http://localhost', maxUploadBytes: 1,
 });
 const response = await app.inject({ method: 'GET', url: '/api/openapi.json' });

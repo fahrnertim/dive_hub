@@ -42,6 +42,11 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   Every User sees a site's position, while a Dive's own position stays private (ADR 0020).
   *Web:* `SiteForm.tsx` (`sites.sharedHint`).
 - **Must warn before merging sites that other Users' Dives move too,** without counting them (ADR 0022).
+- **Must say what Dive Hub keeps for SSI** before connecting ([ADR 0024](../decisions/0024-ssi-target-via-app-api.md)):
+  that it signs in to SSI for the User, through an interface SSI doesn't support; and the choice between keeping the
+  password (encrypted) and keeping only SSI's sign-in, which can expire at any time. Offer the choice only when
+  `canKeepPasswords` is true, and default to not keeping it. Offer "Disconnect", and say that dives already in SSI stay
+  there. *Web:* `SsiConnections.tsx`.
 - **Must not send positions anywhere by itself.** "Open in maps" is a plain link the User follows. A map with
   tiles needs its own ADR first (tile source, privacy).
 
@@ -60,6 +65,9 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **Changing the password ends the User's other sessions.** The server enforces it, whatever
   `revokeOtherSessions` says. Tell the User afterwards that their other sessions were signed out. *Web:* `AccountPage.tsx` (`ChangePassword`).
 - **Must ask for the current password** to change it, and the server checks it (`INVALID_PASSWORD`).
+- **Must treat the SSI password as SSI's** (ADR 0024): send it only to `POST /api/connections/ssi` and
+  `…/sign-in`, never keep it on the device, and keep password managers from saving it as the Dive Hub password
+  (`autocomplete="off"`). The API never sends it, or SSI's token, back. *Web:* `SsiConnections.tsx`.
 - **Should let password managers work:** mark fields `username`, `current-password` and `new-password`, and on
   the invitation and reset forms include the (read-only) e-mail so the manager saves the pair.
 
@@ -129,6 +137,9 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **There is no self sign-up.** Say that access comes from an admin's Invitation.
 
 ### The User's account
+- **SSI connections** (ADR 0024): one per Diver. Show the account, whether the password is kept, and the state.
+  `needs_sign_in` means SSI no longer accepts the sign-in: offer "Sign in again" (password, and the choice again).
+  *Web:* `SsiConnections.tsx`.
 - **Display settings:** language and units, each "same as the device" (null) or a choice, saved at once
   (`PATCH /api/me/preferences`). The UI follows them immediately, including number and date input.
   *Web:* `AccountPage.tsx`, `main.tsx` (`I18nProvider`), `App.tsx` (`useLanguage`).
@@ -174,6 +185,22 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **The depth profile needs a text alternative:** a summary (deepest point and when, duration, temperature range)
   and the samples per minute as a table (WCAG 1.1.1). *Web:* `DepthProfile.tsx`, `lib/profile.ts`.
 - **A Dive's position is private.** Show it only to the Users who manage the Diver, as the API does.
+
+### Sending a Dive to SSI
+From `GET /api/dives/{id}/ssi` (ADR 0024). *Web:* `SsiPanel.tsx`.
+- **Show where the Dive is at SSI:** not there yet, or SSI's dive number and when it was sent, with "changed since
+  sent" when `current.upToDate` is false. Offer "Send to SSI" or "Update in SSI" accordingly.
+- **Without a Connection** for the Dive's Diver, say so and lead to the account page. With `needs_sign_in`, or the
+  error `ssi_sign_in_needed`, lead to signing in again.
+- **The Dive site's SSI site ID is needed** (`siteSsiId`). Offer the sites of the User's SSI logbook, nearest first
+  (`GET /api/dives/{id}/ssi/sites`, which asks SSI, so only on request), and typing the ID; save it on the site
+  (`PATCH /api/dive-sites/{id}`, `ssiSiteId`). Without a site, ask for one first.
+- **`outcome: exists`:** nothing was sent; a dive at the same time is in SSI. Show it (number, time, depth, minutes)
+  and ask: link to it (`onExisting: link`) or send a new one (`create`).
+- **Must say that SSI shows the dive as unconfirmed:** only a dive center can confirm it there.
+- **Must ask before "Delete in SSI"**, saying SSI's app can't bring it back and the Dive stays here.
+- **Show what went wrong:** the latest Push's `failureCode`, and its read-back `differences` (fields SSI stored
+  differently). A history of Pushes is optional.
 
 ### Duplicate candidates
 - **Show them where the User decides,** first on the logbook ("Needs your decision"), with the Recording (time,

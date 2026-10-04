@@ -8,6 +8,10 @@ import { buildApp } from './app.js';
 import { createImportService } from './imports/import-service.js';
 import { createSiteSources } from './sites/import/create-site-sources.js';
 import { createSiteImportService } from './sites/import/site-import-service.js';
+import { userAgent } from './sites/import/polite-http.js';
+import { createSecretBox } from './secrets/secret-box.js';
+import { createSsiClient } from './ssi/ssi-client.js';
+import { createSsiService } from './ssi/ssi-service.js';
 import { createLocalBlobStore } from './storage/blob-store.js';
 import { createInvitations } from './users/invitations.js';
 import { createSetup } from './users/setup.js';
@@ -20,6 +24,10 @@ const imports = createImportService({ db, blobs });
 const siteImports = createSiteImportService({
   db, sources: createSiteSources({ contact: config.contact, overpassUrl: config.overpassUrl, wikidataUrl: config.wikidataSparqlUrl }),
 });
+const ssi = createSsiService({
+  db, secrets: createSecretBox(config.encryptionKey),
+  client: createSsiClient({ url: config.ssiUrl, userAgent: userAgent(config.contact) }),
+});
 const auth = createAuth({
   db, baseUrl: config.baseUrl, secret: await loadAuthSecret(config.authSecret, config.dataDir),
   // The Vite dev server proxies /api from its own origin.
@@ -29,7 +37,7 @@ const setup = createSetup(db);
 
 const app = await buildApp(
   {
-    db, imports, siteImports, blobs, auth, setup, invitations: createInvitations(db), baseUrl: config.baseUrl,
+    db, imports, siteImports, ssi, blobs, auth, setup, invitations: createInvitations(db), baseUrl: config.baseUrl,
     maxUploadBytes: config.maxUploadBytes, trustedProxies: config.trustedProxies, webDir: config.webDir,
   },
   { logger: { level: config.logLevel } },

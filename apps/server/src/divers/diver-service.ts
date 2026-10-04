@@ -1,7 +1,7 @@
 // The Divers a User manages, and their Devices (ADR 0016). Sharing a Diver with another User comes later.
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { device, dive, diver, diverManagement, recording } from '../db/schema.js';
+import { connection, device, dive, diver, diverExternalId, diverManagement, recording } from '../db/schema.js';
 import { managedDiverIds } from '../dives/dive-service.js';
 import { writeRevision } from '../dives/revisions.js';
 
@@ -57,6 +57,9 @@ export function createDiverService(db: Db) {
         const [used] = await tx.select({ n: sql<number>`count(*)::int` }).from(dive).where(eq(dive.diverId, diverId));
         const [devices] = await tx.select({ n: sql<number>`count(*)::int` }).from(device).where(eq(device.diverId, diverId));
         if ((used?.n ?? 0) > 0 || (devices?.n ?? 0) > 0) throw new DiverError('diver_not_empty');
+        // Its accounts at Targets go with it, and so do the User's Connections for it (ADR 0024).
+        await tx.delete(connection).where(eq(connection.diverId, diverId));
+        await tx.delete(diverExternalId).where(eq(diverExternalId.diverId, diverId));
         await tx.delete(diverManagement).where(eq(diverManagement.diverId, diverId));
         await tx.delete(diver).where(eq(diver.id, diverId));
       });

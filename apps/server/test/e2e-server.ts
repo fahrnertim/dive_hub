@@ -15,7 +15,11 @@ import { createImportService } from '../src/imports/import-service.js';
 import { createSiteSources } from '../src/sites/import/create-site-sources.js';
 import type { Fetch } from '../src/sites/import/polite-http.js';
 import { createSiteImportService } from '../src/sites/import/site-import-service.js';
+import { createSecretBox } from '../src/secrets/secret-box.js';
+import { createSsiClient } from '../src/ssi/ssi-client.js';
+import { createSsiService } from '../src/ssi/ssi-service.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
+import { createFakeSsi } from './fake-ssi.js';
 import { createInvitations } from '../src/users/invitations.js';
 import { createSetup } from '../src/users/setup.js';
 import { startWorker } from '../src/worker.js';
@@ -59,9 +63,23 @@ const replay: Fetch = async (url, init) => {
 const siteImports = createSiteImportService({
   db, sources: createSiteSources({ fetch: replay, overpassUrl: 'https://overpass.invalid/api/interpreter', wikidataUrl: 'https://wikidata.invalid/sparql' }),
 });
+// SSI as the fake answers it (ADR 0024): the browser tests never reach SSI. Its account is Erika's,
+// with the password below; the e2e server keeps passwords (it has an encryption key).
+const fakeSsi = createFakeSsi({
+  accounts: [{ email: 'erika@example.com', password: 'ssi-password', accountId: 5_012_047 }],
+  // Hausreef's 3314 is the ID site-import.spec.ts types by hand; ssi.spec.ts picks Schwarzenbach.
+  sites: [
+    { odin_dive_sites_id: 3314, odin_dive_sites_name: 'Hausreef', odin_dive_sites_lat: 27.29, odin_dive_sites_lon: 33.82, odin_countries_code_iso: 'EG' },
+    { odin_dive_sites_id: 5120, odin_dive_sites_name: 'Attersee – Schwarzenbach', odin_dive_sites_lat: 47.8512, odin_dive_sites_lon: 13.5514, odin_countries_code_iso: 'AT' },
+  ],
+});
+const ssi = createSsiService({
+  db, secrets: createSecretBox(Buffer.alloc(32, 9)),
+  client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch, userAgent: 'DiveHub (e2e)' }),
+});
 const auth = createAuth({ db, baseUrl: `http://localhost:${port}`, secret: 'e2e-secret-with-enough-entropy-0123456789abcdef' });
 const app = await buildApp({
-  db, imports, siteImports, blobs, auth, setup: createSetup(db), invitations: createInvitations(db),
+  db, imports, siteImports, ssi, blobs, auth, setup: createSetup(db), invitations: createInvitations(db),
   baseUrl: `http://localhost:${port}`, maxUploadBytes: 1 << 26, webDir: here('../../web/dist'),
 });
 

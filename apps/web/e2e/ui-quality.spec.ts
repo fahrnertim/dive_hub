@@ -6,7 +6,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { dataFile, type PreparedData } from './prepare.ts';
-import { E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, expectGoodPage, resetDive, setPreferences } from './support.ts';
+import { E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, connectSsi, expectGoodPage, leaveSsi, readyForSsi, resetDive, setPreferences } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
 test.describe.configure({ mode: 'parallel' });
@@ -132,8 +132,29 @@ for (const v of variants) {
 
     test('my account', { tag: ['@account'] }, async ({ page }) => {
       await page.goto('/#/account');
-      await expect(page.getByRole('table')).toBeVisible();
+      await expect(page.getByRole('table').first()).toBeVisible();
       await expectGoodPage(page, title('My account'), v);
+    });
+
+    test('my account, connected to SSI, signing in again', { tag: ['@account'] }, async ({ page, request }) => {
+      await connectSsi(request);
+      await page.goto('/#/account');
+      await page.getByRole('button', { name: v.english ? /^Sign in again: / : /^Neu anmelden: / }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await expectGoodPage(page, title('My account'), v);
+    });
+
+    test('a dive at SSI, choosing the SSI site', { tag: ['@dives'] }, async ({ page, request }) => {
+      await connectSsi(request);
+      await readyForSsi(request, diveId);
+      await page.goto(`/#/dives/${diveId}`);
+      const choose = page.getByRole('button', { name: v.english ? 'Choose the SSI site' : 'SSI-Tauchplatz wählen' });
+      await expect(choose).toBeVisible();
+      await expectGoodPage(page, title('Dive 42'), v);
+      await choose.click();
+      await expect(page.getByRole('dialog').getByRole('radio').first()).toBeVisible();
+      await expectGoodPage(page, title('Dive 42'), v);
+      await leaveSsi(request, diveId);
     });
 
     test('admin, with a link to pass on', { tag: ['@admin'] }, async ({ page }) => {
