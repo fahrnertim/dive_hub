@@ -12,6 +12,20 @@ let diveId: string;
 let invitationToken: string;
 let resetToken: string;
 let siteId: string;
+let importedSiteId: string;
+
+/** A site imported from OpenStreetMap (ADR 0021): the recorded Malta answer, imported unless site-import.spec did. */
+async function importedSite(request: APIRequestContext) {
+  const find = async () => (await (await request.get('/api/dive-sites?q=Ras%20il')).json() as { id: string; name: string }[])
+    .find((s) => s.name === 'Ras il-Ħobż')?.id;
+  if (!(await find())) {
+    const started = await (await request.post('/api/admin/site-imports', {
+      headers, data: { sources: ['osm'], area: { kind: 'country', country: 'MT' }, language: 'en', confirmOdbl: true },
+    })).json() as { id: string };
+    await expect.poll(async () => (await (await request.get(`/api/admin/site-imports/${started.id}`)).json()).status, { timeout: 20_000 }).toBe('done');
+  }
+  return (await find())!;
+}
 
 /**
  * A crowded instance, so narrow widths meet long names and full rows: two more Users (each row with
@@ -66,6 +80,7 @@ test.beforeAll(async ({ request, browser }) => {
   diveId = await seededDiveId(request);
   await makeLinks(request, browser);
   await addCrowd(request, browser);
+  importedSiteId = await importedSite(request);
 });
 
 const variants = [
@@ -118,6 +133,24 @@ for (const v of variants) {
       await page.getByRole('button', { name: v.english ? 'Edit dive site' : 'Tauchplatz bearbeiten' }).click();
       await expect(page.getByRole('button', { name: v.english ? 'Save dive site' : 'Tauchplatz speichern' })).toBeVisible();
       await expectGoodPage(page);
+    });
+
+    test('an imported dive site, with its source and history', async ({ page }) => {
+      await page.goto(`/#/sites/${importedSiteId}`);
+      await expect(page.getByRole('link', { name: 'node/4159831401' })).toBeVisible();
+      await expect(page.locator('.history > li').first()).toBeVisible();
+      await expectGoodPage(page, title('Ras il-Ħobż'));
+    });
+
+    test('importing dive sites, by country and by area', async ({ page }) => {
+      await page.goto('/#/admin/site-imports');
+      await expect(page.locator('.site-imports > li').first()).toBeVisible();
+      await expectGoodPage(page, title('Import dive sites'));
+      await page.getByText(v.english ? 'An area by coordinates' : 'Ein Gebiet nach Koordinaten').click();
+      await expect(page.getByRole('textbox', { name: v.english ? 'South edge' : 'Südrand' })).toBeVisible();
+      await page.getByRole('button', { name: v.english ? 'Start import' : 'Import starten' }).click();
+      await expect(page.getByText(v.english ? 'Enter all four edges' : 'Gib alle vier Ränder an', { exact: false })).toBeVisible();
+      await expectGoodPage(page, title('Import dive sites'));
     });
 
     test('unknown dive site', async ({ page }) => {
@@ -198,7 +231,7 @@ test.describe('behaviour', () => {
     // screens), where tables switch layouts by the room they have (container queries).
     for (const width of [320, 480, 640, 800, 960, 1120, 1440]) {
       await page.setViewportSize({ width, height: 900 });
-      for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, '/#/account', '/#/admin']) {
+      for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/account', '/#/admin', '/#/admin/site-imports']) {
         await page.goto(path);
         await page.getByRole('heading', { level: 1 }).waitFor();
         const overflow = await page.evaluate(() => ({
@@ -211,7 +244,7 @@ test.describe('behaviour', () => {
   });
 
   test('text at 200 % still fits: nothing scrolls sideways (WCAG 1.4.4)', async ({ page }) => {
-    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, '/#/account', '/#/admin']) {
+    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/account', '/#/admin', '/#/admin/site-imports']) {
       await page.goto(path);
       await page.getByRole('heading', { level: 1 }).waitFor();
       await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });

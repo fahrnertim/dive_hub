@@ -20,10 +20,11 @@ const Admin = lazy(() => import('./Admin.tsx').then((m) => ({ default: m.Admin }
 const DiversPage = lazy(() => import('./DiversPage.tsx').then((m) => ({ default: m.DiversPage })));
 const SitesPage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitesPage })));
 const SitePage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitePage })));
+const SiteImportPage = lazy(() => import('./SiteImportPage.tsx').then((m) => ({ default: m.SiteImportPage })));
 
 /**
  * Minimal hash routing: "#/" (logbook, "#/?diver=<id>" for one Diver, "#/?site=<id>" for one Dive site),
- * "#/dives/<id>" ("?recording=<id>"), "#/divers", "#/sites", "#/sites/<id>", "#/account", "#/admin", "#/setup", "#/invite/<token>", "#/reset/<token>".
+ * "#/dives/<id>" ("?recording=<id>"), "#/divers", "#/sites", "#/sites/<id>", "#/account", "#/admin", "#/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
  */
 function useRoute(): string {
   const [route, setRoute] = useState(() => location.hash.slice(1) || '/');
@@ -90,7 +91,7 @@ function Navigation({ route, me }: { route: string; me: Me }) {
         <a href="#/" {...current(route === '/' || route.startsWith('/?') || route.startsWith('/dives/'))}><Icon name="logbook" />{t('nav.logbook')}</a>
         <a href="#/divers" {...current(route === '/divers')}><Icon name="divers" />{t('nav.divers')}</a>
         <a href="#/sites" {...current(route === '/sites' || route.startsWith('/sites/'))}><Icon name="site" />{t('nav.sites')}</a>
-        {me.user.role === 'admin' && <a href="#/admin" {...current(route === '/admin')}><Icon name="admin" />{t('nav.admin')}</a>}
+        {me.user.role === 'admin' && <a href="#/admin" {...current(route === '/admin' || route.startsWith('/admin/'))}><Icon name="admin" />{t('nav.admin')}</a>}
       </nav>
       {/* The account is a labelled menu, not a bare name link (UI review C6). */}
       <div className="user-menu">
@@ -127,8 +128,9 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   if (route === '/sites') return <SitesPage />;
   const siteId = /^\/sites\/([\w-]+)$/.exec(path!)?.[1];
   if (siteId) return <SitePage key={siteId} id={siteId} />;
-  if (route === '/admin') {
-    return me.user.role === 'admin' ? <Admin /> : <><PageHeader title={t('nav.admin')} /><Notice tone="danger">{t('errors.admins_only')}</Notice></>;
+  if (route === '/admin' || route === '/admin/site-imports') {
+    if (me.user.role !== 'admin') return <><PageHeader title={t('nav.admin')} /><Notice tone="danger">{t('errors.admins_only')}</Notice></>;
+    return route === '/admin' ? <Admin /> : <SiteImportPage />;
   }
   return <Logbook params={logbookParams(params)} />;
 }

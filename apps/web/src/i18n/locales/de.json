@@ -320,7 +320,14 @@
     "site_not_found": "Diesen Tauchplatz gibt es nicht (mehr).",
     "site_changed": "Jemand hat diesen Tauchplatz inzwischen geändert. Lade ihn neu und mach deine Änderungen noch einmal.",
     "site_in_use": "An diesem Tauchplatz sind Tauchgänge, deshalb lässt er sich nicht löschen.",
-    "site_not_deletable": "Nur wer den Tauchplatz angelegt hat, oder ein Admin, kann ihn löschen."
+    "site_not_deletable": "Nur wer den Tauchplatz angelegt hat, oder ein Admin, kann ihn löschen.",
+    "external_id_taken": "Ein anderer Tauchplatz hat diese ID schon.",
+    "odbl_not_confirmed": "Bestätige zuerst die Bedingungen der Daten von OpenStreetMap.",
+    "site_import_running": "Ein Import läuft schon. Starte den nächsten, wenn er fertig ist.",
+    "site_import_not_found": "Diesen Import gibt es nicht.",
+    "source_unavailable": "Die Quelle hat nicht oder unerwartet geantwortet. Versuch es später noch einmal.",
+    "source_rate_limited": "Die Quelle hat uns gebeten, langsamer zu machen. Versuch es in ein paar Minuten noch einmal.",
+    "site_import_interrupted": "Der Server wurde während des Imports gestoppt. Starte ihn noch einmal."
   },
   "vocabulary": {
     "waterType": {
@@ -352,7 +359,8 @@
       "user": "{{name}}",
       "import": "Import von {{name}}",
       "system": "Dive Hub",
-      "unknown": "ein gelöschter Benutzer"
+      "unknown": "ein gelöschter Benutzer",
+      "site_import": "Import aus {{name}}"
     },
     "cause": {
       "import-create": "Aus einem Import angelegt",
@@ -366,7 +374,9 @@
       "move": "Zu einem anderen Taucher verschoben",
       "assign-device": "Gerät zugeordnet",
       "auto-site": "Tauchplatz vom Import gewählt",
-      "delete": "Gelöscht"
+      "delete": "Gelöscht",
+      "update": "Aus der Quelle aktualisiert",
+      "link": "Mit der Quelle verknüpft"
     },
     "field": {
       "number": "Tauchgangsnummer",
@@ -507,6 +517,115 @@
     "noneNearby": "Noch keine Tauchplätze im Umkreis von {{distance}} um diesen Tauchgang.",
     "choose": "Auswählen",
     "chosen": "Tauchplatz: {{name}}.",
-    "cleared": "Kein Tauchplatz."
+    "cleared": "Kein Tauchplatz.",
+    "maxDepth": "Maximale Tiefe",
+    "notKnown": "Nicht bekannt",
+    "ssiSiteId": "SSI-Tauchplatz-ID",
+    "ssiSiteIdHint": "Die Zahl im QR-Code von SSI für diesen Platz, z. B. 3314 aus „site:3314“",
+    "ssiSiteIdInvalid": "Eine SSI-Tauchplatz-ID ist eine Zahl, z. B. 3314.",
+    "origin": "Quelle",
+    "from": "Aus {{source}}",
+    "alsoIn": "Auch in {{source}}",
+    "containsOsm": "Enthält Daten von OpenStreetMap:",
+    "limited": "Nur die ersten {{count}} Tauchplätze werden gezeigt. Suche, um die anderen zu finden."
+  },
+  "siteHistory": {
+    "by": {
+      "siteImport": "Import aus {{sources}}",
+      "you": "du",
+      "user": "ein anderer Benutzer"
+    },
+    "descriptionChanged": "Beschreibung geändert",
+    "field": {
+      "name": "Name",
+      "position": "Position",
+      "country": "Land",
+      "waterBody": "Gewässer",
+      "maxDepthM": "Maximale Tiefe",
+      "ssiSiteId": "SSI-Tauchplatz-ID",
+      "osmId": "OpenStreetMap-ID",
+      "wikidataId": "Wikidata-ID"
+    },
+    "cause": {
+      "create": "Angelegt",
+      "edit": "Bearbeitet",
+      "update": "Aus der Quelle aktualisiert",
+      "link": "Mit der Quelle verknüpft",
+      "delete": "Gelöscht"
+    }
+  },
+  "siteImport": {
+    "title": "Tauchplätze importieren",
+    "intro": "Hol dir Tauchplätze aus offenen Daten in diesen Dive Hub. Plätze, die schon hier sind, werden aktualisiert, wo niemand sie geändert hat; was Benutzer geändert haben, bleibt.",
+    "adminLead": "Fülle die Tauchplätze mit offenen Daten aus OpenStreetMap und Wikidata, für ein Land, ein Gebiet oder überall.",
+    "open": "Tauchplätze importieren",
+    "new": "Neuer Import",
+    "sources": "Quellen",
+    "sourceWikidata": "Wikidata (CC0, frei nutzbar)",
+    "sourceOsm": "OpenStreetMap (ODbL)",
+    "sourceName": {
+      "osm": "OpenStreetMap",
+      "wikidata": "Wikidata"
+    },
+    "odblTitle": "Die Daten von OpenStreetMap haben Bedingungen (Open Database License).",
+    "odblCredit": "Wo ihre Daten gezeigt werden, muss OpenStreetMap genannt werden. Dive Hub macht das bei jedem Platz mit ihren Daten und in der Liste der Tauchplätze.",
+    "odblShareAlike": "Wenn du die Liste der Tauchplätze öffentlich zugänglich machst, musst du sie unter derselben Lizenz anbieten. Ein Dive Hub, den nur eingeladene Leute nutzen, etwa von einer Familie oder einem Verein, tut das nicht.",
+    "odblMore": "Lies die <license>Open Database License</license>.",
+    "odblConfirm": "Ich habe das verstanden und importiere Daten von OpenStreetMap unter diesen Bedingungen",
+    "area": "Wo",
+    "areaCountry": "Ein Land",
+    "areaBoxOption": "Ein Gebiet nach Koordinaten",
+    "areaWorld": "Überall",
+    "chooseCountry": "Land wählen",
+    "boxHint": "Grad; Süden und Westen sind negativ.",
+    "south": "Südrand",
+    "north": "Nordrand",
+    "west": "Westrand",
+    "east": "Ostrand",
+    "worldHint": "Etwa 1.700 Tauchplätze weltweit.",
+    "language": "Namen auf",
+    "languageHint": "Wo eine Quelle Namen in mehreren Sprachen hat (Wikidata). Die örtlichen Namen aus OpenStreetMap bleiben.",
+    "needSource": "Wähle mindestens eine Quelle.",
+    "needCountry": "Wähle ein Land.",
+    "needBox": "Gib alle vier Ränder an, den Südrand unter dem Nordrand.",
+    "needOdbl": "Bestätige die Bedingungen der Daten von OpenStreetMap, oder importiere nur aus Wikidata.",
+    "busy": "Ein Import läuft. Starte den nächsten, wenn er fertig ist.",
+    "start": "Import starten",
+    "started": "Import gestartet.",
+    "finished": "Import fertig.",
+    "failedNow": "Import fehlgeschlagen.",
+    "latest": "Letzte Importe",
+    "none": "Noch keine Importe.",
+    "status": {
+      "queued": "wartet",
+      "running": "läuft",
+      "done": "fertig",
+      "failed": "fehlgeschlagen"
+    },
+    "areaBox": "{{southWest}} bis {{northEast}}",
+    "saving": "Speichere {{done}} von {{total}} Tauchplätzen …",
+    "fetching": "Frage {{source}} …",
+    "count": {
+      "created_one": "{{count}} neu",
+      "created_other": "{{count}} neu",
+      "updated_one": "{{count}} aktualisiert",
+      "updated_other": "{{count}} aktualisiert",
+      "unchanged_one": "{{count}} unverändert",
+      "unchanged_other": "{{count}} unverändert",
+      "kept_one": "{{count}} behalten, weil Benutzer ihn geändert haben",
+      "kept_other": "{{count}} behalten, weil Benutzer sie geändert haben",
+      "linked_one": "{{count}} von unseren mit seiner Quelle verknüpft",
+      "linked_other": "{{count}} von unseren mit ihrer Quelle verknüpft",
+      "skippedNoName_one": "{{count}} ohne Namen übersprungen",
+      "skippedNoName_other": "{{count}} ohne Namen übersprungen",
+      "skippedDeleted_one": "{{count}} hier gelöscht, nicht zurückgeholt",
+      "skippedDeleted_other": "{{count}} hier gelöscht, nicht zurückgeholt",
+      "gone_one": "{{count}} nicht mehr in der Quelle (hier behalten)",
+      "gone_other": "{{count}} nicht mehr in der Quelle (hier behalten)"
+    },
+    "nothingFound": "Die Quellen haben dort keine Tauchplätze.",
+    "nearIntro_one": "Dieser neue Tauchplatz liegt nah an einem, der schon hier war. Prüfe, ob es derselbe Ort ist:",
+    "nearIntro_other": "Diese neuen Tauchplätze liegen nah an solchen, die schon hier waren. Prüfe, ob es derselbe Ort ist:",
+    "nearOf": "ist {{distance}} entfernt von"
   }
 }

@@ -18,6 +18,10 @@ export interface Config {
   authSecret: string | undefined;
   /** Reverse proxies (IPs or CIDR ranges) whose X-Forwarded-For is trusted for the client IP. */
   trustedProxies: string[];
+  /** Site import (ADR 0021): the operator's contact for the User-Agent, and other service endpoints (e.g. a paid Overpass). */
+  contact: string | undefined;
+  overpassUrl: string | undefined;
+  wikidataSparqlUrl: string | undefined;
 }
 
 function required(name: string): string {
@@ -43,5 +47,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     baseUrl: new URL(baseUrl).origin,
     authSecret: env.DIVEHUB_AUTH_SECRET || undefined,
     trustedProxies: (env.DIVEHUB_TRUSTED_PROXIES ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+    contact: env.DIVEHUB_CONTACT?.trim() || undefined,
+    overpassUrl: env.DIVEHUB_OVERPASS_URL || undefined,
+    wikidataSparqlUrl: env.DIVEHUB_WIKIDATA_SPARQL_URL || undefined,
   };
 }

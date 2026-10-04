@@ -66,6 +66,23 @@
 /* What changed, as plain lines under the entry (visual refresh 10). */
 .history-changes { list-style: none; margin: var(--space-1) 0 0; padding: 0; font-size: var(--text-sm); }
 
+/* Where a site comes from, and the Attribution its license asks for (ADR 0021). */
+.site-origin { list-style: none; margin: var(--space-2) 0 var(--space-4); padding: 0; display: grid; gap: var(--space-1); overflow-wrap: anywhere; }
+.attribution { margin: var(--space-4) 0 0; }
+
+/* Site imports (ADR 0021): the form's group of sources, and the latest runs. */
+.field-set { border: none; margin: 0; padding: 0; display: grid; gap: 0; min-width: 0; }
+.field-set > legend { padding: 0; margin-bottom: var(--space-1); }
+/* Terms to confirm before going on (the ODbL before an OSM import): the attention tint, as it waits for the admin. */
+.terms { background: var(--color-accent-soft); border-radius: var(--radius-md); padding: var(--space-4); display: grid; gap: var(--space-2); }
+.terms p { margin: 0; }
+.site-imports { list-style: none; margin: 0; padding: 0; }
+.site-imports > li { padding: var(--space-3) 0; border-top: 1px solid var(--color-border); overflow-wrap: anywhere; }
+.site-imports > li:first-child { border-top: none; padding-top: 0; }
+.site-imports p { margin: var(--space-1) 0 0; }
+.site-import-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); }
+.site-import-findings { margin: var(--space-1) 0 0; padding-left: var(--space-5); font-size: var(--text-sm); }
+
 /* Decisions, Divers, Devices (ADR 0016) */
 .decisions { list-style: none; margin: 0 0 var(--space-3); padding: 0; }
 /* A decision: what, why, then the choices (visual refresh 4). */

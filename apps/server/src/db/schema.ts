@@ -20,6 +20,9 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import type { SiteImportCounts } from '../sites/import/import-plan.js';
+import type { ImportArea, ImportedValues } from '../sites/import/site-source.js';
+import type { ImportSource } from '../sites/sources.js';
 import { WATER_TYPES, type DecoModel, type DiveMode, type GasCircuit, type WaterType } from '../vocabulary.js';
 import { user } from './auth-schema.js';
 
@@ -220,6 +223,8 @@ export const diveSite = pgTable(
     /** Free text, e.g. "Red Sea" or "Attersee". */
     waterBody: text('water_body'),
     description: text('description'),
+    /** Deepest point divers reach here, in metres (ADR 0021). */
+    maxDepthM: doublePrecision('max_depth_m'),
     createdBy: uuid('created_by').references(() => user.id, { onDelete: 'set null' }),
     /** Set when this site was merged into another (merging comes later). */
     mergedInto: uuid('merged_into').references((): AnyPgColumn => diveSite.id),
@@ -231,6 +236,86 @@ export const diveSite = pgTable(
   (t) => [
     index('dive_site_position_idx').on(t.latitude, t.longitude),
     check('dive_site_position_ck', sql`(${t.latitude} is null) = (${t.longitude} is null) and ${t.latitude} between -90 and 90 and ${t.longitude} between -180 and 180`),
+    check('dive_site_max_depth_ck', sql`${t.maxDepthM} > 0 and ${t.maxDepthM} <= 400`),
+  ],
+);
+
+export const siteSource = pgEnum('site_source', ['osm', 'wikidata', 'ssi']);
+
+/**
+ * A Dive site's identifier at a Source (ADR 0021): unique per Source, at most one per Source and site.
+ * `providesData`: the site was created or filled from this Source; `imported` holds what the Source
+ * delivered last, the base of the next import's 3-way merge. Otherwise it is a reference only.
+ */
+export const diveSiteExternalId = pgTable(
+  'dive_site_external_id',
+  {
+    id: id(),
+    siteId: uuid('site_id').notNull().references(() => diveSite.id),
+    source: siteSource('source').notNull(),
+    externalId: text('external_id').notNull(),
+    providesData: boolean('provides_data').notNull().default(false),
+    imported: jsonb('imported').$type<ImportedValues>(),
+    /** The Site import that last delivered it; null when a User entered it. */
+    siteImportId: uuid('site_import_id').references((): AnyPgColumn => siteImport.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex('dive_site_external_id_source_uq').on(t.source, t.externalId),
+    uniqueIndex('dive_site_external_id_site_source_uq').on(t.siteId, t.source),
+    check('dive_site_external_id_imported_ck', sql`${t.providesData} = (${t.imported} is not null)`),
+  ],
+);
+
+export const siteImportStatus = pgEnum('site_import_status', ['queued', 'running', 'done', 'failed']);
+
+export interface SiteImportProgress {
+  /** What the import is doing now. */
+  step: 'waiting' | 'osm' | 'wikidata' | 'saving';
+  /** While saving: sites done of all. */
+  done: number;
+  total: number;
+}
+
+export interface SiteImportFinding {
+  /** A new site within 200 m of one that was there before; merging comes later. */
+  kind: 'near';
+  siteId: string;
+  name: string;
+  nearSiteId: string;
+  nearName: string;
+  distanceM: number;
+}
+
+/**
+ * An admin's run that fetches Dive sites from open Sources (ADR 0021). Only one is queued or running at
+ * a time; the partial unique index refuses a second.
+ */
+export const siteImport = pgTable(
+  'site_import',
+  {
+    id: id(),
+    startedBy: uuid('started_by').references(() => user.id, { onDelete: 'set null' }),
+    sources: jsonb('sources').$type<ImportSource[]>().notNull(),
+    area: jsonb('area').$type<ImportArea>().notNull(),
+    /** Language of names where a Source has several (Wikidata labels). */
+    language: text('language').notNull(),
+    /** When the admin confirmed the ODbL explanation (OSM imports only). */
+    odblConfirmedAt: timestamp('odbl_confirmed_at', { withTimezone: true }),
+    status: siteImportStatus('status').notNull().default('queued'),
+    progress: jsonb('progress').$type<SiteImportProgress>().notNull().default({ step: 'waiting', done: 0, total: 0 }),
+    counts: jsonb('counts').$type<SiteImportCounts>(),
+    findings: jsonb('findings').$type<SiteImportFinding[]>().notNull().default([]),
+    /** Why it failed, as a problem code (e.g. source_unavailable). */
+    errorCode: text('error_code'),
+    errorDetail: text('error_detail'),
+    createdAt: createdAt(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('site_import_one_active_uq').on(sql`(true)`).where(sql`${t.status} in ('queued', 'running')`),
+    index('site_import_created_idx').on(t.createdAt),
   ],
 );
 
@@ -387,7 +472,7 @@ export const duplicateCandidate = pgTable(
   (t) => [index('duplicate_candidate_recording_idx').on(t.recordingId)],
 );
 
-export const actorType = pgEnum('actor_type', ['user', 'import', 'system']);
+export const actorType = pgEnum('actor_type', ['user', 'import', 'system', 'site_import']);
 
 /** A recorded change to logbook data: who or what changed which values, and when. */
 export const revision = pgTable(

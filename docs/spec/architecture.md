@@ -78,6 +78,29 @@ mobile will use the bearer plugin or the Expo integration. OIDC (Authentik, Auth
 | `DIVEHUB_BASE_URL` | Public URL users open (required in production). With https, cookies are `Secure` and use the `__Secure-` prefix. Invitation links point here. |
 | `DIVEHUB_TRUSTED_PROXIES` | Comma-separated IPs/CIDRs of the reverse proxy. Only their `X-Forwarded-For` counts for the client IP (rate limiting, session records). |
 | `DIVEHUB_AUTH_SECRET` | Cookie signing secret; generated into the data directory when unset. |
+| `DIVEHUB_CONTACT` | Optional: the operator's e-mail address or URL, added to the User-Agent of Site imports ([below](#dive-site-imports-and-licenses)). |
+| `DIVEHUB_OVERPASS_URL`, `DIVEHUB_WIKIDATA_SPARQL_URL` | Optional: other endpoints for Site imports (default `overpass-api.de`, `query.wikidata.org`). |
+
+## Dive site imports and licenses
+
+Admins can import Dive sites from Wikidata and OpenStreetMap ([ADR 0021](../decisions/0021-site-external-ids-and-import.md)).
+The image contains no site data. Each operator imports for their own instance, so the license obligations
+are the operator's:
+
+- **Wikidata** is CC0: no conditions.
+- **OpenStreetMap** is under the [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/).
+  - Dive Hub shows the Attribution ("© OpenStreetMap contributors", linked to
+    [openstreetmap.org/copyright](https://www.openstreetmap.org/copyright)) on every site with OSM data and on the
+    Dive sites page.
+  - Mixing OSM sites with your own makes the site table a derivative database. While the instance is
+    private (invite-only family, club or dive center), it is not used publicly. If you make the site list
+    available to the public, you must offer that site table under ODbL as well.
+  - Users' own dive data is not part of it.
+- **Fair use of the public services:**
+  - An import makes one query per Source and run, with a User-Agent naming Dive Hub. Set
+    `DIVEHUB_CONTACT` (an e-mail address or URL) so the services can reach you, as Wikimedia's User-Agent policy asks.
+  - Overpass asks commercial users to use their own or a paid server: point `DIVEHUB_OVERPASS_URL` at it.
+    `DIVEHUB_WIKIDATA_SPARQL_URL` does the same for the query service.
 
 ## Open questions
 
@@ -221,3 +244,49 @@ Deliberate simplifications, to revisit:
 - **No map**, no merging of duplicate sites, no aliases, entry points or external IDs yet.
 - **A Dive's position** isn't an Override; a hand-logged dive gets one only through its site.
 - **Sites created later** aren't linked to earlier Dives nearby; the dive page offers them.
+
+**Slice 8 (2026-10-04): external site IDs and the Site import** ([ADR 0021](../decisions/0021-site-external-ids-and-import.md)).
+
+Implemented:
+- **External IDs** (`dive_site_external_id`): unique per Source, at most one per Source and site. Each is either
+  data-providing (it keeps what its Source delivered last) or a reference. The Sources (`osm`, `wikidata`, `ssi`)
+  and their license, Attribution and link pattern are defined in `src/sites/sources.ts`.
+- **Dive sites:**
+  - maximum depth (`max_depth_m`);
+  - an SSI site ID in the site form (digits, or SSI's "site:3314");
+  - `externalIds` with links and Attribution in the API;
+  - the site's history (`GET /api/dive-sites/:id/revisions`), naming only the signed-in User.
+- **Site import** for admins (`/api/admin/site-imports`, page `#/admin/site-imports`):
+  - Wikidata and/or OpenStreetMap, by country, box or everywhere;
+  - OSM only after the ODbL explanation is confirmed;
+  - one at a time, run by the `import_dive_sites` worker job with progress, counts and findings.
+- **Planning without the database** (`src/sites/import/import-plan.ts`):
+  - matching by own ID, then the link between the Sources, then 100 m plus the same name;
+  - a per-field 3-way merge with OSM before Wikidata;
+  - references on hand-made sites.
+- **Overpass and Wikidata adapters** behind `SiteSourceAdapter`. Requests go out with a User-Agent, one at a
+  time, and retry once after 429/406/503/504. An HTML answer counts as unavailable. Tests and the browser tests'
+  server replay recorded answers (`test/fixtures/site-sources/`).
+- **Web client:**
+  - the site page says where the site comes from ("From OpenStreetMap: node/…" with "© OpenStreetMap contributors");
+  - the Dive sites page carries the Attribution when it lists OSM data;
+  - an admin shortcut to the import.
+
+Found while building and in the screenshot review, and fixed:
+- The ODbL explanation was a `Notice`, which announces its text, so screen readers read it out on page load.
+  Standing terms to confirm are now a tinted box (`.terms`) that doesn't announce itself.
+- A checkbox with a label that wraps (the ODbL confirmation at 320–390 px) sat at the middle of the label.
+  Checkboxes and radios now align with the label's first line, and one-line choices keep their 2.5rem height.
+- The site history listed fields in PostgreSQL's jsonb key order. It now follows the form's order.
+- Planning a worldwide import took 5 s (name normalising for every pair). A latitude check first and cached
+  names bring it to about 0.3 s for 1,750 objects against 1,700 sites.
+
+Deliberate simplifications, to revisit:
+- **The Dive sites list** shows at most 500 sites (it says so; search finds the rest). With a worldwide import
+  (~1,700) it needs paging like the logbook.
+- **A Site import saves in batches of 50.** A failure while saving (not while fetching) leaves the batches
+  before it saved, and the import says it failed.
+- **OSM↔Wikidata matches are rare in today's data.** No cross-link connects the two dive-site sets, and one pair
+  meets the 100 m + name rule
+  ([research](../research/2026-10-04-dive-site-sources.md#follow-up-while-building-the-import-2026-10-04)).
+- **No ODbL export** of the site table for public instances (ADR 0021).

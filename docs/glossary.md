@@ -128,7 +128,7 @@ _German_: Tauchreise
 ## Places
 
 **Dive site**:
-A place where dives happen, shared across the whole instance: every User can use and edit it, its creator or an admin can delete it while no Dive is there.
+A place where dives happen, shared across the whole instance: every User can use and edit it, its creator or an admin can delete it while no Dive is there. A Site import can create it from a Source; its External IDs say where it comes from.
 _Avoid_: Spot, location, divesite
 _German_: Tauchplatz
 
@@ -145,9 +145,24 @@ _German_: Anbieter
 ## Data in and out
 
 **Source**:
-A system or format that dive data comes from, such as Garmin, Suunto or a UDDF file.
-_Avoid_: Provider, integration, inbound
+A system or format that data comes from: dive data from Garmin, Suunto or a UDDF file, or Dive site data from OpenStreetMap or Wikidata. SSI is a Source of site IDs. A Source's license, Attribution and link pattern are defined once in code.
+_Avoid_: Provider, integration, inbound, origin
 _German_: Quelle
+
+**External ID**:
+The identifier a Source gives a record, such as an OpenStreetMap object (`node/123`), a Wikidata item (`Q…`) or an SSI site ID. Unique per Source; a Dive site has at most one per Source. It either provides data (the site was created or filled from that Source: "From OpenStreetMap") or is only a reference ("Also in OpenStreetMap"). A site without data-providing IDs was made in this instance.
+_Avoid_: Foreign key, remote ID, reference number
+_German_: externe ID (on screen: "SSI-Tauchplatz-ID")
+
+**Attribution**:
+The credit a Source's license requires wherever its data is shown, such as "© OpenStreetMap contributors" with a link to OSM's copyright page.
+_Avoid_: Credits, copyright notice, source note
+_German_: Namensnennung
+
+**Site import**:
+An admin's run that fetches Dive sites from open Sources (OpenStreetMap, Wikidata) for a country, an area or everywhere, and creates, updates or links sites. It shows in the history of every site it changed. Not an Import, which is a User's dive data.
+_Avoid_: Sync, seed, site Import
+_German_: Tauchplatz-Import
 
 **Target**:
 An outside service that Dive Hub sends dives to, such as SSI or PADI.

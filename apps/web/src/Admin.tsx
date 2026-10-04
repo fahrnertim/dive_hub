@@ -5,7 +5,7 @@ import { api, invitationsQuery, keys, meQuery, unwrap, usersQuery, type UserView
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { focusHeading } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Badge, Button, Checkbox, ConfirmButton, CopyField, Dialog, Form, Notice, PageHeader, Panel, Table, TextField } from './ui/index.ts';
+import { Badge, Button, Checkbox, ConfirmButton, CopyField, Dialog, Form, Icon, Notice, PageHeader, Panel, Table, TextField } from './ui/index.ts';
 
 /** Admins invite people (copy the link, there's no mail yet) and manage Users (ADR 0012, 0013). */
 export function Admin() {
@@ -17,6 +17,10 @@ export function Admin() {
       <Invite />
       <Invitations />
       <Users />
+      <Panel title={t('siteImport.title')}>
+        <p>{t('siteImport.adminLead')}</p>
+        <a href="#/admin/site-imports" className="btn btn-secondary"><Icon name="siteImport" />{t('siteImport.open')}</a>
+      </Panel>
     </>
   );
 }

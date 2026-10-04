@@ -65,6 +65,22 @@ Counts checked 2026-10-04 (taginfo API, Wikidata SPARQL).
    to the object (ODbL requires the attribution); the history shows the import that created or updated it.
    Decided with the owner on 2026-10-04 to build this with the import slice, not before.
 
+## Follow-up while building the import (2026-10-04)
+
+All 1,401 OSM dive spots (Overpass) and all 345 Wikidata items were compared:
+- **Cross-links: none in practice.** The 37 OSM `wikidata=` tags name reefs and wrecks that Wikidata doesn't class
+  as dive sites. Wikidata's 12 OSM IDs name objects without `scuba_diving:divespot=yes`.
+- **Distance:** 6 Wikidata items lie within 1 km of an OSM dive spot. One (Vortex Spring, 96 m) has the same name.
+- **Where:** 302 of the Wikidata items are in South Africa, 17 in Egypt, and none in Malta or Austria. OSM's
+  Egyptian dive spots are on the mainland coast and the Tiran area, not near Wikidata's (27–96 km).
+- **Names:** 88 OSM dive spots have no name. One Wikidata item's English label is "P31" (vandalism or a mistake).
+- **Depth:** `scuba_diving:maxdepth` is mostly a plain number ("30", "30m", "30 m", "30 metres"; rarely ">30" or
+  "-40M"). `scuba_diving:depth` is the *typical* depth, sometimes several values separated by ";" (OSM wiki).
+- **Overpass under load** answered once with an HTML page ("Dispatcher_Client … timeout") instead of JSON. A
+  retry after half a minute worked.
+
+Decisions: [ADR 0021](../decisions/0021-site-external-ids-and-import.md).
+
 ## Sources
 
 - OSM wiki: [Tag:sport=scuba_diving](https://wiki.openstreetmap.org/wiki/Tag:sport=scuba_diving),

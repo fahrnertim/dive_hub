@@ -48,7 +48,8 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 | `apps/server/src/http/problems.ts` | The API's error codes (one registry, published in OpenAPI) |
 | `apps/server/src/dives/` | Dive service: Overrides, Primary recording, Revisions, split off, move; Duplicate candidates; dive routes (ADR 0015, 0016) |
 | `apps/server/src/divers/` | The User's Divers and Devices (ADR 0016) |
-| `apps/server/src/sites/` | Dive sites, nearby search in SQL, a Dive's site and the Import's auto-link (ADR 0020) |
+| `apps/server/src/sites/` | Dive sites, nearby search in SQL, a Dive's site and the Import's auto-link (ADR 0020); `sources.ts`: the Sources of site data (ADR 0021) |
+| `apps/server/src/sites/import/` | Site import (ADR 0021): Overpass and Wikidata adapters, the plan (matching, 3-way merge), the service and admin routes |
 | `apps/server/src/vocabulary.ts`, `src/fit/fit-vocabulary.ts` | Our words for device values, and the FIT mapping |
 | `apps/web/e2e/` | Playwright browser tests and their fixtures |
 | `packages/api-client` | Typed client generated from the server's OpenAPI description |
@@ -68,6 +69,7 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 | UI review material | `pnpm --filter @dive-hub/web review:capture`: screenshots, axe results, accessibility trees, Tab order of every page into `apps/web/review-output/` ([UI review](research/2026-10-03-ui-review.md)). Runs alone; changes the seeded data. |
 | Browser tests | `pnpm --filter @dive-hub/web test:e2e`: builds the web client, starts the app on port 3300 with a fresh `divehub_e2e` database and a seeded User and Dive (`apps/server/test/e2e-server.ts`), runs `apps/web/e2e` in the installed Edge (`PLAYWRIGHT_CHANNEL=chrome` for Chrome). Needs PostgreSQL. `e2e/ui-quality.spec.ts` checks every page with axe-core (`@axe-core/playwright`, dev only) and the [page rules](spec/design-system.md#rules-every-page-follows). |
 | Regenerate the e2e fixture with a position (`sited-computer.fit`) | `pnpm --filter @dive-hub/server exec tsx test/fixtures/write-sited-fixture.ts` |
+| Re-record the Overpass and Wikidata answers the Site import tests replay | `pnpm --filter @dive-hub/server exec tsx test/fixtures/site-sources/record.ts` (calls the live services once; set `DIVEHUB_CONTACT` first). Tests never call them. |
 | Regenerate the synthetic FIT fixture | `pnpm --filter @dive-hub/server exec tsx test/fixtures/synthetic-dive.ts` |
 | Build and run the image | `docker build -t dive-hub:dev .`, then `POSTGRES_PASSWORD=… docker compose up -d` |
 

@@ -17,7 +17,7 @@ Every entity belongs to exactly one tier. This answers "who can see/change it" a
 
 | Tier | Entities |
 |---|---|
-| **Instance** (shared by all Users) | User, Dive site, Operator, Agency catalog |
+| **Instance** (shared by all Users) | User, Dive site (→ External IDs), Site import, Operator, Agency catalog |
 | **User** | Connection, Import, Original, external Divers they created |
 | **Diver** (via the Users who manage it) | Dive (→ Recordings, Cylinders, Participants, Media, Signatures, Pushes), Trip, Certification, Membership, Insurance, Medical exam, Equipment (incl. Devices), Site note |
 
@@ -170,6 +170,15 @@ for Pushes, shared site databases; B14), creator, `merged into`.
 water, description, creator, `merged into` (merging later), version; any User edits (Revisions), the
 creator or an admin deletes while unused. A Dive links to one site (`site`, the Dive's own value);
 an Import links a new Dive to the only site within 200 m of its position.
+*Implemented (ADR 0021):* maximum depth; **External IDs** `(site, Source, external id)`, unique per Source, at
+most one per Source and site (`osm`, `wikidata`, `ssi`). Each either *provides data* (keeps the values its Source
+delivered last, the base for the next import's 3-way merge) or is a *reference* (hand-made site linked by an
+import, or an SSI ID typed in). License, Attribution and link pattern belong to the Source, defined once in code.
+
+**Site import** — instance-wide, started by an admin: Sources (OSM, Wikidata), area (country, box or
+everywhere), language for names, who confirmed ODbL and when, status, progress, counts (created, updated,
+unchanged, kept, linked, skipped, gone from the Source, failed) and findings (new sites near existing ones).
+Revisions it writes on sites have the actor `site_import` (ADR 0021).
 
 **Site note** — a Diver's private notes and rating for a Dive site.
 

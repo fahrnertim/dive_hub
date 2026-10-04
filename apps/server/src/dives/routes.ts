@@ -111,7 +111,8 @@ const RevisionView = Type.Object({
   id: Type.String(),
   at: DateTime,
   actor: Type.Object({
-    type: Type.Enum(['user', 'import', 'system']),
+    // A Site import changes Dive sites, never a Dive; the type is shared with the Revision table.
+    type: Type.Enum(['user', 'import', 'system', 'site_import']),
     id: Type.String({ description: 'User id, Import id, or the system actor' }),
     name: Nullable(Type.String({ description: 'User name or uploaded file name' })),
   }),

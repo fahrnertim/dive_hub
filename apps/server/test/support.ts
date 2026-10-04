@@ -11,6 +11,9 @@ import { buildApp } from '../src/app.js';
 import { createDb, type Db } from '../src/db/client.js';
 import { migrateDatabase } from '../src/db/migrate.js';
 import { createImportService, type ImportService } from '../src/imports/import-service.js';
+import { createSiteImportService } from '../src/sites/import/site-import-service.js';
+import type { SiteSourceAdapter } from '../src/sites/import/site-source.js';
+import type { ImportSource } from '../src/sites/sources.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { createInvitations } from '../src/users/invitations.js';
 import { createSetup, type Setup } from '../src/users/setup.js';
@@ -63,16 +66,22 @@ export function createTestAuth(db: Db, options: { rateLimit?: boolean } = {}): A
   return createAuth({ db, baseUrl: BASE_URL, secret: 'test-secret-with-enough-entropy-0123456789abcdef', ...options });
 }
 
-export async function createTestApp(t: TestDatabase, options: { rateLimit?: boolean; webDir?: string } = {}) {
-  const { webDir, ...authOptions } = options;
+/** Sources that must not be reached: tests that import pass their own stand-ins. */
+const unreachable = (source: ImportSource): SiteSourceAdapter => ({
+  source, fetch: () => Promise.reject(new Error(`the test reached the ${source} Source`)),
+});
+
+export async function createTestApp(t: TestDatabase, options: { rateLimit?: boolean; webDir?: string; siteSources?: Record<ImportSource, SiteSourceAdapter> } = {}) {
+  const { webDir, siteSources, ...authOptions } = options;
   const auth = createTestAuth(t.db, authOptions);
   const setup: Setup = createSetup(t.db);
   const blobs = createLocalBlobStore(t.dataDir);
   const imports: ImportService = createImportService({ db: t.db, blobs });
+  const siteImports = createSiteImportService({ db: t.db, sources: siteSources ?? { osm: unreachable('osm'), wikidata: unreachable('wikidata') } });
   const app = await buildApp({
-    db: t.db, imports, blobs, auth, setup, invitations: createInvitations(t.db), baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir,
+    db: t.db, imports, siteImports, blobs, auth, setup, invitations: createInvitations(t.db), baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir,
   });
-  return { app, auth, setup, imports, blobs };
+  return { app, auth, setup, imports, siteImports, blobs };
 }
 
 /** Creates a User the way an admin would (Better Auth's admin API, server-side). */

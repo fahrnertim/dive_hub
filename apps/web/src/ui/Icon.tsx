@@ -3,7 +3,7 @@
 // Names were checked with the suggest-lucide-icons skill against the installed version.
 import {
   ArrowDown, ArrowRightLeft, ArrowUp, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert,
-  CircleCheck, CircleUser, Copy, Ellipsis, ExternalLink, Info, KeyRound, Link, LogOut, MapPin, Pencil, Plus, Scissors, Shield, ShieldOff,
+  CircleCheck, CircleUser, CloudDownload, Copy, Ellipsis, ExternalLink, Info, KeyRound, Link, LogOut, MapPin, Pencil, Plus, Scissors, Shield, ShieldOff,
   Star, Trash, Undo2, Upload, User, UserCheck, Users, UserX, type LucideIcon,
 } from 'lucide-react';
 
@@ -25,6 +25,8 @@ const ICONS = {
   edit: Pencil,
   more: Ellipsis,
   import: Upload,
+  /** Fetching Dive sites from open data (ADR 0021). */
+  siteImport: CloudDownload,
   copy: Copy,
   copied: Check,
   save: Check,

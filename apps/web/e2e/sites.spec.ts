@@ -111,7 +111,8 @@ test('the Dive sites page creates, edits and deletes a site', async ({ page }) =
   await page.getByRole('menuitem', { name: 'Delete dive site' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
   await expect(page.getByRole('heading', { name: 'Dive sites', level: 1 })).toBeVisible();
-  await expect(page.getByText('Blue Hole')).toHaveCount(0);
+  // The list, not the announcement ("Blue Hole deleted.") that the live region keeps for a while.
+  await expect(page.getByRole('link', { name: 'Blue Hole' })).toHaveCount(0);
 });
 
 test('a site with dives says why it can\'t be deleted', async ({ page }) => {

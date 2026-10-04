@@ -6,6 +6,8 @@ import { createDb } from './db/client.js';
 import { findChangedMigrations, migrateDatabase } from './db/migrate.js';
 import { buildApp } from './app.js';
 import { createImportService } from './imports/import-service.js';
+import { createSiteSources } from './sites/import/create-site-sources.js';
+import { createSiteImportService } from './sites/import/site-import-service.js';
 import { createLocalBlobStore } from './storage/blob-store.js';
 import { createInvitations } from './users/invitations.js';
 import { createSetup } from './users/setup.js';
@@ -15,6 +17,9 @@ const config = loadConfig();
 const { db, pool } = createDb(config.databaseUrl);
 const blobs = createLocalBlobStore(config.dataDir);
 const imports = createImportService({ db, blobs });
+const siteImports = createSiteImportService({
+  db, sources: createSiteSources({ contact: config.contact, overpassUrl: config.overpassUrl, wikidataUrl: config.wikidataSparqlUrl }),
+});
 const auth = createAuth({
   db, baseUrl: config.baseUrl, secret: await loadAuthSecret(config.authSecret, config.dataDir),
   // The Vite dev server proxies /api from its own origin.
@@ -24,7 +29,7 @@ const setup = createSetup(db);
 
 const app = await buildApp(
   {
-    db, imports, blobs, auth, setup, invitations: createInvitations(db), baseUrl: config.baseUrl,
+    db, imports, siteImports, blobs, auth, setup, invitations: createInvitations(db), baseUrl: config.baseUrl,
     maxUploadBytes: config.maxUploadBytes, trustedProxies: config.trustedProxies, webDir: config.webDir,
   },
   { logger: { level: config.logLevel } },
@@ -42,7 +47,7 @@ if (setupToken) {
   // Deliberately logged: whoever can read the server log may create the first admin (ADR 0012).
   app.log.warn(`No admin yet. Open ${config.baseUrl}/#/setup and enter this setup token (valid 24 h, until the first admin exists): ${setupToken}`);
 }
-const worker = config.inProcessWorker ? await startWorker(pool, imports, app.log) : undefined;
+const worker = config.inProcessWorker ? await startWorker(pool, imports, siteImports, app.log) : undefined;
 await app.listen({ host: config.host, port: config.port });
 
 const shutdown = async () => {

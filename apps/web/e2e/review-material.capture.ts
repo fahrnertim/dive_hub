@@ -105,6 +105,15 @@ test('review material', async ({ page, request, browser }) => {
   const diveNow = await (await request.get(`/api/dives/${sitedDive}`)).json() as { version: number };
   await request.patch(`/api/dives/${sitedDive}`, { headers, data: { version: diveNow.version, siteId: site.id } });
 
+  // Site import (ADR 0021): Malta from the recorded OpenStreetMap answer; one site with the SSI ID and depth set.
+  const started = await (await request.post('/api/admin/site-imports', {
+    headers, data: { sources: ['osm', 'wikidata'], area: { kind: 'country', country: 'MT' }, language: 'en', confirmOdbl: true },
+  })).json() as { id: string };
+  await expect.poll(async () => (await (await request.get(`/api/admin/site-imports/${started.id}`)).json()).status, { timeout: 20_000 }).toBe('done');
+  const imported = (await (await request.get('/api/dive-sites?q=Ras%20il')).json() as { id: string; name: string; version: number }[])
+    .find((s) => s.name === 'Ras il-Ħobż')!;
+  await request.patch(`/api/dive-sites/${imported.id}`, { headers, data: { version: imported.version, ssiSiteId: '3314', maxDepthM: 32 } });
+
   const sitePages = async (prefix: string, de: boolean) => {
     // A new language needs a reload; moving by hash keeps the one the app started with.
     await page.goto('/#/sites'); await page.reload(); await page.locator('table').waitFor();
@@ -121,6 +130,15 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('dialog').getByRole('button', { name: de ? 'Neuer Tauchplatz' : 'New dive site' }).click();
     await capture(page, `${prefix}-site-picker-new`, { full: false, aria: false });
     await page.keyboard.press('Escape');
+    await page.goto(`/#/sites/${imported.id}`); await page.getByRole('heading', { name: 'Ras il-Ħobż' }).waitFor();
+    await capture(page, `${prefix}-imported-site`, { aria: false });
+    await page.getByRole('button', { name: de ? 'Tauchplatz bearbeiten' : 'Edit dive site' }).click();
+    await capture(page, `${prefix}-imported-site-edit`, { aria: false });
+    await page.goto('/#/admin/site-imports'); await page.locator('.site-imports > li').first().waitFor();
+    await capture(page, `${prefix}-site-import`, { aria: false });
+    await page.getByText(de ? 'Ein Gebiet nach Koordinaten' : 'An area by coordinates').click();
+    await page.getByRole('button', { name: de ? 'Import starten' : 'Start import' }).click();
+    await capture(page, `${prefix}-site-import-box`, { aria: false });
   };
   await page.setViewportSize({ width: 1280, height: 900 });
   await sitePages('17-en-light-desktop', false);

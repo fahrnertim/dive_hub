@@ -1,13 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, keys, siteQuery, sitesQuery, unwrap, type SiteView } from './api.ts';
+import { api, ApiError, keys, meQuery, siteQuery, sitesQuery, unwrap, type ExternalIdView, type SiteView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { mapsUrl } from './lib/geo.ts';
 import { logbookHref } from './lib/logbook.ts';
 import { usePageTitle } from './lib/page.ts';
+import { needsOsmAttribution, siteOrigin } from './lib/site-origin.ts';
 import { SiteForm } from './SiteForm.tsx';
+import { SiteHistory } from './SiteHistory.tsx';
 import { ActionMenu, Button, ConfirmDialog, Icon, Muted, Notice, PageHeader, Panel, Table, TextField } from './ui/index.ts';
 
 /** "Egypt · Red Sea": where a site is, in words. */
@@ -15,6 +17,20 @@ function useSitePlace() {
   const display = useDisplay();
   return (s: Pick<SiteView, 'country' | 'waterBody'>) =>
     [s.country && display.country(s.country), s.waterBody].filter(Boolean).join(' · ');
+}
+
+/** The list shows at most this many sites (the server's limit); a search finds the others. */
+const LIST_LIMIT = 500;
+
+/** The credit OpenStreetMap's license asks for wherever its data is shown (ADR 0021). */
+function OsmAttribution({ attribution }: { attribution: { text: string; url: string } }) {
+  const { t } = useTranslation();
+  return (
+    <p className="meta attribution">
+      {t('sites.containsOsm')}{' '}
+      <a href={attribution.url} target="_blank" rel="noopener noreferrer" className="external-link">{attribution.text}<Icon name="external" /></a>
+    </p>
+  );
 }
 
 /** The instance's Dive sites (ADR 0020): searchable, and new ones created here. */
@@ -32,6 +48,9 @@ export function SitesPage() {
   }, [text]);
   const sites = useQuery(sitesQuery({ q: q || undefined }));
   const any = useQuery(sitesQuery());
+  const me = useQuery(meQuery());
+  const osmAttribution = sites.data && needsOsmAttribution(sites.data)
+    ? sites.data.flatMap((s) => s.externalIds).find((e) => e.source === 'osm' && e.attribution)?.attribution : undefined;
   const newButton = useRef<HTMLButtonElement>(null);
   const close = () => { setCreating(false); requestAnimationFrame(() => newButton.current?.focus()); };
 
@@ -40,7 +59,14 @@ export function SitesPage() {
       <PageHeader
         title={t('sites.title')}
         lead={t('sites.intro')}
-        actions={!creating && <Button ref={newButton} variant="primary" icon="add" onPress={() => setCreating(true)}>{t('sites.new')}</Button>}
+        actions={!creating && (
+          <>
+            <Button ref={newButton} variant="primary" icon="add" onPress={() => setCreating(true)}>{t('sites.new')}</Button>
+            {me.data?.user.role === 'admin' && (
+              <a href="#/admin/site-imports" className="btn btn-secondary"><Icon name="siteImport" />{t('siteImport.title')}</a>
+            )}
+          </>
+        )}
       />
       {creating && (
         <Panel title={t('sites.new')}>
@@ -77,6 +103,8 @@ export function SitesPage() {
             ))}
           </Table>
         )}
+        {sites.data?.length === LIST_LIMIT && <Muted>{t('sites.limited', { count: LIST_LIMIT })}</Muted>}
+        {osmAttribution && <OsmAttribution attribution={osmAttribution} />}
       </Panel>
     </>
   );
@@ -171,6 +199,14 @@ export function SitePage({ id }: { id: string }) {
                 </dd>
               </div>
               <div>
+                <dt>{t('sites.maxDepth')}</dt>
+                <dd>{s.maxDepthM === null ? t('sites.notKnown') : display.depth(s.maxDepthM)}</dd>
+              </div>
+              <div>
+                <dt>{t('sites.ssiSiteId')}</dt>
+                <dd>{s.ssiSiteId ?? t('common.none')}</dd>
+              </div>
+              <div>
                 <dt>{t('sites.yourDives')}</dt>
                 <dd>
                   {s.diveCount > 0
@@ -181,17 +217,50 @@ export function SitePage({ id }: { id: string }) {
             </dl>
             <h2 className="subheading">{t('sites.description')}</h2>
             {s.description ? <p className="notes">{s.description}</p> : <Muted>{t('sites.noDescription')}</Muted>}
+            <SiteOrigin externalIds={s.externalIds} />
             <Muted>{t('sites.sharedHint')}</Muted>
             {s.canDelete && s.inUse && <Muted>{t('sites.inUse')}</Muted>}
           </>
         )}
       </Panel>
+      <SiteHistory site={s} />
       <ConfirmDialog
         isOpen={deleting} onOpenChange={setDeleting}
         title={t('sites.deleteTitle')} body={t('sites.deleteBody')} confirmLabel={t('sites.deleteConfirm')}
         onConfirm={() => remove.mutateAsync()}
         onDone={() => { announce(t('sites.deleted', { name: s.name })); location.hash = '/sites'; }}
       />
+    </>
+  );
+}
+
+/**
+ * "From OpenStreetMap: node/123" with the Attribution its license asks for, or "Also in Wikidata: Q42"
+ * for a reference (ADR 0021). Nothing for a site made in this Dive Hub.
+ */
+function SiteOrigin({ externalIds }: { externalIds: ExternalIdView[] }) {
+  const { t } = useTranslation();
+  const { from, alsoIn } = siteOrigin(externalIds);
+  if (from.length === 0 && alsoIn.length === 0) return null;
+  const link = (e: ExternalIdView) => (e.url
+    ? <a href={e.url} target="_blank" rel="noopener noreferrer" className="external-link">{e.externalId}<Icon name="external" /></a>
+    : e.externalId);
+  return (
+    <>
+      <h2 className="subheading">{t('sites.origin')}</h2>
+      <ul className="site-origin">
+        {from.map((e) => (
+          <li key={e.source}>
+            {t('sites.from', { source: e.name })}: {link(e)}
+            {e.attribution && (
+              <span className="meta">
+                {' · '}<a href={e.attribution.url} target="_blank" rel="noopener noreferrer" className="external-link">{e.attribution.text}<Icon name="external" /></a>
+              </span>
+            )}
+          </li>
+        ))}
+        {alsoIn.map((e) => <li key={e.source}>{t('sites.alsoIn', { source: e.name })}: {link(e)}</li>)}
+      </ul>
     </>
   );
 }

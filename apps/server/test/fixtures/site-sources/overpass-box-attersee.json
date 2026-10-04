@@ -1,0 +1,314 @@
+{
+ "version": 0.6,
+ "generator": "Overpass API 0.7.62.11 87bfad18",
+ "osm3s": {
+  "timestamp_osm_base": "2026-10-03T20:05:34Z",
+  "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+ },
+ "elements": [
+  {
+   "type": "node",
+   "id": 437310413,
+   "lat": 47.8496044,
+   "lon": 13.5528489,
+   "tags": {
+    "name": "Ofen",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 437310414,
+   "lat": 47.8539788,
+   "lon": 13.5568233,
+   "tags": {
+    "name": "Schwarze Brücke",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 437310415,
+   "lat": 47.8571532,
+   "lon": 13.5588831,
+   "tags": {
+    "name": "Steinschlag - Tafel",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 437310417,
+   "lat": 47.8643951,
+   "lon": 13.5628978,
+   "tags": {
+    "alt_name": "Segelboot",
+    "name": "Attersee - Wrack Dixie",
+    "scuba_diving:divespot": "yes",
+    "source": "www.dive-links.com",
+    "sport": "scuba_diving",
+    "website": "http://www.dive-links.com/tauchplatz.php?id=1711"
+   }
+  },
+  {
+   "type": "node",
+   "id": 437310420,
+   "lat": 47.8811618,
+   "lon": 13.5686826,
+   "tags": {
+    "name": "Steinwand",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 437310431,
+   "lat": 47.9234956,
+   "lon": 13.5807556,
+   "tags": {
+    "name": "Unterwasserwald",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 437310434,
+   "lat": 47.9247625,
+   "lon": 13.5818585,
+   "tags": {
+    "name": "Nöhmer",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 437310436,
+   "lat": 47.9325043,
+   "lon": 13.5845955,
+   "tags": {
+    "name": "Surfplatz",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 663870745,
+   "lat": 47.7972939,
+   "lon": 13.5281003,
+   "tags": {
+    "name": "Attersee - Weißenbacheinlauf (Leitplanke)",
+    "natural": "cliff",
+    "scuba_diving:divespot": "yes",
+    "source": "www.dive-links.com",
+    "sport": "scuba_diving",
+    "website": "http://www.dive-links.com/tauchplatz.php?id=1718"
+   }
+  },
+  {
+   "type": "node",
+   "id": 663870807,
+   "lat": 47.86,
+   "lon": 13.5599333,
+   "tags": {
+    "name": "Attersee - Liebesbrücke",
+    "scuba_diving:divespot": "yes",
+    "source": "www.dive-links.com",
+    "sport": "scuba_diving",
+    "verified": "no, please check and del this tag",
+    "website": "http://www.dive-links.com/tauchplatz.php?id=1712"
+   }
+  },
+  {
+   "type": "node",
+   "id": 663870808,
+   "lat": 47.840122,
+   "lon": 13.5459514,
+   "tags": {
+    "name": "Attersee - Föttinger",
+    "scuba_diving:divespot": "yes",
+    "source": "www.dive-links.com",
+    "sport": "scuba_diving",
+    "verified": "no, please check and del this tag",
+    "website": "http://www.dive-links.com/tauchplatz.php?id=1715"
+   }
+  },
+  {
+   "type": "node",
+   "id": 663870818,
+   "lat": 47.8294232,
+   "lon": 13.5457169,
+   "tags": {
+    "name": "Attersee - Schlierwand",
+    "scuba_diving:divespot": "yes",
+    "source": "www.dive-links.com",
+    "sport": "scuba_diving",
+    "verified": "no, please check and del this tag",
+    "website": "http://www.dive-links.com/tauchplatz.php?id=1716"
+   }
+  },
+  {
+   "type": "node",
+   "id": 663870821,
+   "lat": 47.790956,
+   "lon": 13.4859428,
+   "tags": {
+    "name": "Attersee - Ferrari-Kapelle",
+    "scuba_diving:divespot": "yes",
+    "source": "www.dive-links.com",
+    "sport": "scuba_diving",
+    "verified": "no, please check and del this tag",
+    "website": "http://www.dive-links.com/tauchplatz.php?id=1721"
+   }
+  },
+  {
+   "type": "node",
+   "id": 663870823,
+   "lat": 47.86722,
+   "lon": 13.5650424,
+   "tags": {
+    "name": "Attersee - Twin Towers",
+    "scuba_diving:divespot": "yes",
+    "source": "www.dive-links.com",
+    "sport": "scuba_diving",
+    "verified": "no, please check and del this tag",
+    "website": "http://www.dive-links.com/tauchplatz.php?id=1710"
+   }
+  },
+  {
+   "type": "node",
+   "id": 663870826,
+   "lat": 47.906176,
+   "lon": 13.566823,
+   "tags": {
+    "name": "Attersee - Nautilus (Divesport)",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving",
+    "website": "http://www.divesport.at"
+   }
+  },
+  {
+   "type": "node",
+   "id": 663870828,
+   "lat": 47.87295,
+   "lon": 13.5672166,
+   "tags": {
+    "name": "Attersee - Alexenau",
+    "scuba_diving:divespot": "yes",
+    "source": "www.dive-links.com",
+    "sport": "scuba_diving",
+    "verified": "no, please check and del this tag",
+    "website": "http://www.dive-links.com/tauchplatz.php?id=1709"
+   }
+  },
+  {
+   "type": "node",
+   "id": 663870830,
+   "lat": 47.9247833,
+   "lon": 13.5822,
+   "tags": {
+    "name": "Attersee - Nöhmer",
+    "scuba_diving:divespot": "yes",
+    "source": "www.dive-links.com",
+    "sport": "scuba_diving",
+    "verified": "no, please check and del this tag",
+    "website": "http://www.dive-links.com/tauchplatz.php?id=1707"
+   }
+  },
+  {
+   "type": "node",
+   "id": 663870840,
+   "lat": 47.8197227,
+   "lon": 13.5094404,
+   "tags": {
+    "name": "Attersee - Kohlbauernaufsatz",
+    "scuba_diving:divespot": "yes",
+    "source": "www.dive-links.com",
+    "sport": "scuba_diving",
+    "verified": "no, please check and del this tag",
+    "website": "http://www.dive-links.com/tauchplatz.php?id=48"
+   }
+  },
+  {
+   "type": "node",
+   "id": 663870842,
+   "lat": 47.9236166,
+   "lon": 13.5812166,
+   "tags": {
+    "name": "Attersee - Unterwasserwald Kammer",
+    "scuba_diving:divespot": "yes",
+    "source": "www.dive-links.com",
+    "sport": "scuba_diving",
+    "verified": "no, please check and del this tag",
+    "website": "http://www.dive-links.com/tauchplatz.php?id=50"
+   }
+  },
+  {
+   "type": "node",
+   "id": 663870844,
+   "lat": 47.7923824,
+   "lon": 13.5085081,
+   "tags": {
+    "alt_name": "Attersee - Camping Eitzinger",
+    "name": "Attersee - Ebenmann-Aufsatz",
+    "scuba_diving:divespot": "yes",
+    "source": "www.dive-links.com",
+    "sport": "scuba_diving",
+    "verified": "no, please check and del this tag",
+    "website": "http://www.dive-links.com/tauchplatz.php?id=51"
+   }
+  },
+  {
+   "type": "node",
+   "id": 1607388460,
+   "lat": 47.7918212,
+   "lon": 13.4853154,
+   "tags": {
+    "name": "BMW Dixi",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 1607922266,
+   "lat": 47.7901537,
+   "lon": 13.4876795,
+   "tags": {
+    "name": "Attersee Wandl",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:filling": "no",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 2339137612,
+   "lat": 47.8046072,
+   "lon": 13.5469422,
+   "tags": {
+    "access": "private",
+    "name": "Badeplatz Nixe",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 11970204814,
+   "lat": 47.8800181,
+   "lon": 13.5299444,
+   "tags": {
+    "name": "Nußdorf Hausboot",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving"
+   }
+  }
+ ]
+}

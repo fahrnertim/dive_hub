@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { api, ApiError, keys, unwrap, type Position, type SiteView } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { countryOptions } from './lib/geo.ts';
+import { depthFromDisplay, depthIn } from './lib/units.ts';
 import { releaseLeaveGuard, useLeaveGuard } from './lib/leave-guard.ts';
 import { Button, Form, Muted, Notice, NumberField, Select, TextArea, TextField } from './ui/index.ts';
 
@@ -16,16 +17,26 @@ interface Draft {
   latitude: number;
   longitude: number;
   description: string;
+  /** In the User's units, as typed. */
+  maxDepth: number;
+  ssiSiteId: string;
 }
 
-const draftOf = (s: Partial<SiteView>): Draft => ({
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
+const draftOf = (s: Partial<SiteView>, units: 'metric' | 'imperial'): Draft => ({
   name: s.name ?? '',
   country: s.country ?? null,
   waterBody: s.waterBody ?? '',
   latitude: s.position?.latitude ?? Number.NaN,
   longitude: s.position?.longitude ?? Number.NaN,
   description: s.description ?? '',
+  maxDepth: s.maxDepthM == null ? Number.NaN : round1(depthIn(s.maxDepthM, units)),
+  ssiSiteId: s.ssiSiteId ?? '',
 });
+
+/** What SSI's site QR code says ("site:3314"), or just the digits. */
+const SSI_ID = /^(?:site:)?\s*([1-9]\d{0,9})$/;
 
 /** Both or neither: a half position is no position (ADR 0020). */
 function positionOf(d: Draft): Position | null | 'half' {
@@ -50,9 +61,10 @@ export function SiteForm({ site, initial, submitLabel, onSaved, onCancel }: {
   const errorText = useErrorText();
   const display = useDisplay();
   const queryClient = useQueryClient();
-  const start = draftOf(site ?? initial ?? {});
+  const start = draftOf(site ?? initial ?? {}, display.units);
   const [draft, setDraft] = useState(start);
   const [half, setHalf] = useState(false);
+  const [badSsi, setBadSsi] = useState(false);
   // The "both or neither" message stays until the next submit: clearing it as a field commits (on blur)
   // would move the buttons under a pointer that is pressing one.
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft((d) => ({ ...d, [key]: value }));
@@ -64,7 +76,10 @@ export function SiteForm({ site, initial, submitLabel, onSaved, onCancel }: {
   useEffect(() => { form.current?.querySelector<HTMLInputElement>('input')?.focus(); }, []);
 
   const save = useMutation({
-    mutationFn: async (body: { name: string; position: Position | null; country: string | null; waterBody: string | null; description: string | null }) => (site
+    mutationFn: async (body: {
+      name: string; position: Position | null; country: string | null; waterBody: string | null; description: string | null;
+      maxDepthM: number | null; ssiSiteId: string | null;
+    }) => (site
       ? unwrap(await api.PATCH('/api/dive-sites/{id}', { params: { path: { id: site.id } }, body: { version: site.version, ...body } }))
       : unwrap(await api.POST('/api/dive-sites', { body }))),
     onSuccess: async (saved) => {
@@ -80,11 +95,16 @@ export function SiteForm({ site, initial, submitLabel, onSaved, onCancel }: {
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const position = positionOf(draft);
+    const ssi = draft.ssiSiteId.trim();
+    const ssiSiteId = ssi ? SSI_ID.exec(ssi)?.[1] : null;
     setHalf(position === 'half');
-    if (position === 'half') return;
+    setBadSsi(ssiSiteId === undefined);
+    if (position === 'half' || ssiSiteId === undefined) return;
     save.mutate({
       name: draft.name.trim(), position, country: draft.country,
       waterBody: draft.waterBody.trim() || null, description: draft.description.trim() || null,
+      maxDepthM: Number.isNaN(draft.maxDepth) ? null : Math.round(depthFromDisplay(draft.maxDepth, display.units) * 100) / 100,
+      ssiSiteId,
     });
   };
 
@@ -114,6 +134,17 @@ export function SiteForm({ site, initial, submitLabel, onSaved, onCancel }: {
         />
       </div>
       {half && <Notice tone="danger">{t('sites.positionHalf')}</Notice>}
+      <div className="form-grid">
+        <NumberField
+          label={t('sites.maxDepth')} unit={display.unit('depth')} value={draft.maxDepth} onChange={(v) => set('maxDepth', v)}
+          minValue={0.1} maxValue={depthIn(400, display.units)} formatOptions={{ maximumFractionDigits: 1 }}
+        />
+        <TextField
+          label={t('sites.ssiSiteId')} name="ssiSiteId" description={t('sites.ssiSiteIdHint')} inputMode="numeric" autoComplete="off"
+          maxLength={20} value={draft.ssiSiteId} onChange={(v) => set('ssiSiteId', v)}
+        />
+      </div>
+      {badSsi && <Notice tone="danger">{t('sites.ssiSiteIdInvalid')}</Notice>}
       <TextArea label={t('sites.description')} name="description" maxLength={5000} value={draft.description} onChange={(v) => set('description', v)} />
       {save.error && (
         <Notice tone="danger">

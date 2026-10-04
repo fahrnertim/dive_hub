@@ -1,14 +1,23 @@
 // Dive sites, shared by every User of the instance (ADR 0020): anyone creates and edits them (with
 // optimistic locking and Revisions), their creator or an admin deletes them while no Dive is there.
-import { and, asc, eq, ilike, isNull, or, sql, type SQL, type SQLWrapper } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, isNull, ne, or, sql, type SQL, type SQLWrapper } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
-import { dive, diveSite } from '../db/schema.js';
+import { dive, diveSite, diveSiteExternalId, revision, siteImport } from '../db/schema.js';
 import { writeRevision, type Changes } from '../dives/revisions.js';
+import { SOURCE_INFO, type SiteSource } from './sources.js';
 
 export class SiteError extends Error {
-  constructor(readonly code: 'site_not_found' | 'site_changed' | 'site_in_use' | 'site_not_deletable') {
+  constructor(readonly code: 'site_not_found' | 'site_changed' | 'site_in_use' | 'site_not_deletable' | 'external_id_taken') {
     super(code);
   }
+}
+
+/** A PostgreSQL unique violation, however deep the driver and Drizzle wrapped it. */
+export function isUniqueViolation(error: unknown, constraint?: string): boolean {
+  for (let e = error as { code?: string; constraint?: string; cause?: unknown } | undefined; e; e = e.cause as typeof e) {
+    if (e.code === '23505') return !constraint || e.constraint === constraint;
+  }
+  return false;
 }
 
 /** WGS84 degrees. */
@@ -29,6 +38,16 @@ export interface SiteInput {
   country: string | null;
   waterBody: string | null;
   description: string | null;
+  maxDepthM: number | null;
+  /** Entered by hand (ADR 0021); stored as the site's External ID at the Source `ssi`. */
+  ssiSiteId: string | null;
+}
+
+/** An External ID as the site's columns carry it; `SOURCE_INFO` says what it means. */
+export interface ExternalIdRow {
+  source: SiteSource;
+  externalId: string;
+  providesData: boolean;
 }
 
 /** Mean Earth radius in metres (IUGG), for the haversine distance. */
@@ -80,10 +99,14 @@ export function createSiteService(db: Db) {
       join diver_management m on m.diver_id = d.diver_id and m.user_id = ${actor.userId}
       where d.site_id = "dive_site"."id" and d.deleted_at is null)`.mapWith(Number),
     inUse: sql<boolean>`exists (select 1 from dive d where d.site_id = "dive_site"."id" and d.deleted_at is null)`,
+    externalIds: sql<ExternalIdRow[]>`coalesce((select json_agg(json_build_object(
+        'source', e.source, 'externalId', e.external_id, 'providesData', e.provides_data) order by e.source)
+      from dive_site_external_id e where e.site_id = "dive_site"."id"), '[]'::json)`,
   });
 
-  const view = (actor: SiteActor, row: { site: typeof diveSite.$inferSelect; diveCount: number; inUse: boolean; distanceM?: number }) => ({
+  const view = (actor: SiteActor, row: { site: typeof diveSite.$inferSelect; diveCount: number; inUse: boolean; externalIds: ExternalIdRow[]; distanceM?: number }) => ({
     ...row,
+    ssiSiteId: row.externalIds.find((e) => e.source === 'ssi')?.externalId ?? null,
     canDelete: actor.isAdmin || row.site.createdBy === actor.userId,
   });
 
@@ -93,19 +116,40 @@ export function createSiteService(db: Db) {
     return row;
   }
 
-  const fields = (site: typeof diveSite.$inferSelect): SiteInput => ({
+  const ssiOf = async (tx: Tx, siteId: string) => (await tx.select({ id: diveSiteExternalId.externalId }).from(diveSiteExternalId)
+    .where(and(eq(diveSiteExternalId.siteId, siteId), eq(diveSiteExternalId.source, 'ssi'))))[0]?.id ?? null;
+
+  const fields = (site: typeof diveSite.$inferSelect, ssiSiteId: string | null): SiteInput => ({
     name: site.name,
     position: site.latitude === null || site.longitude === null ? null : { latitude: site.latitude, longitude: site.longitude },
-    country: site.country, waterBody: site.waterBody, description: site.description,
+    country: site.country, waterBody: site.waterBody, description: site.description, maxDepthM: site.maxDepthM, ssiSiteId,
   });
 
   const toColumns = (input: Partial<SiteInput>) => {
-    const { position, ...rest } = input;
+    const { position, ssiSiteId: _ssi, ...rest } = input;
     return {
       ...rest,
       ...(position !== undefined && { latitude: position?.latitude ?? null, longitude: position?.longitude ?? null }),
     };
   };
+
+  /** Sets or clears the site's SSI site ID; another site having it is refused. */
+  async function setSsi(tx: Tx, siteId: string, ssiSiteId: string | null) {
+    if (ssiSiteId !== null) {
+      const [taken] = await tx.select({ id: diveSiteExternalId.id }).from(diveSiteExternalId)
+        .where(and(eq(diveSiteExternalId.source, 'ssi'), eq(diveSiteExternalId.externalId, ssiSiteId), ne(diveSiteExternalId.siteId, siteId)));
+      if (taken) throw new SiteError('external_id_taken');
+    }
+    await tx.delete(diveSiteExternalId).where(and(eq(diveSiteExternalId.siteId, siteId), eq(diveSiteExternalId.source, 'ssi')));
+    if (ssiSiteId !== null) {
+      try {
+        await tx.insert(diveSiteExternalId).values({ siteId, source: 'ssi', externalId: ssiSiteId });
+      } catch (error) {
+        if (isUniqueViolation(error)) throw new SiteError('external_id_taken');
+        throw error;
+      }
+    }
+  }
 
   return {
     /** Sites by name, or by distance from `near` (within `withinM` metres); `q` searches name and body of water. */
@@ -134,10 +178,11 @@ export function createSiteService(db: Db) {
 
     async create(actor: SiteActor, input: SiteInput) {
       return db.transaction(async (tx) => {
-        const { position, ...rest } = input;
+        const { position, ssiSiteId, ...rest } = input;
         const [created] = await tx.insert(diveSite).values({
           ...rest, latitude: position?.latitude ?? null, longitude: position?.longitude ?? null, createdBy: actor.userId,
         }).returning();
+        if (ssiSiteId !== null) await setSsi(tx, created!.id, ssiSiteId);
         const changes: Changes = Object.fromEntries(Object.entries(input).map(([k, v]) => [k, { from: null, to: v }]));
         await writeRevision(tx, 'dive_site', created!.id, { type: 'user', id: actor.userId }, 'create', changes);
         return created!.id;
@@ -149,17 +194,37 @@ export function createSiteService(db: Db) {
       await db.transaction(async (tx) => {
         const current = await lock(tx, id);
         if (current.version !== version) throw new SiteError('site_changed');
-        const before = fields(current);
+        const before = fields(current, await ssiOf(tx, id));
         const changes: Changes = {};
         for (const [key, to] of Object.entries(input) as [keyof SiteInput, unknown][]) {
           if (to !== undefined && JSON.stringify(before[key]) !== JSON.stringify(to)) changes[key] = { from: before[key], to };
         }
         if (Object.keys(changes).length === 0) return;
+        if ('ssiSiteId' in changes) await setSsi(tx, id, input.ssiSiteId ?? null);
         await tx.update(diveSite)
           .set({ ...toColumns(input), version: sql`${diveSite.version} + 1`, updatedAt: new Date() })
           .where(eq(diveSite.id, id));
         await writeRevision(tx, 'dive_site', id, { type: 'user', id: actor.userId }, 'edit', changes);
       });
+    },
+
+    /**
+     * The site's history, newest first. A User is named only to themselves ("you"): Users don't see who
+     * else created or edits a site (ADR 0020). A Site import is named by its Sources (ADR 0021).
+     */
+    async revisions(actor: SiteActor, id: string) {
+      const [site] = await db.select({ id: diveSite.id }).from(diveSite).where(and(eq(diveSite.id, id), live));
+      if (!site) throw new SiteError('site_not_found');
+      const rows = await db.select({ r: revision, sources: siteImport.sources }).from(revision)
+        .leftJoin(siteImport, and(eq(revision.actorType, 'site_import'), sql`${siteImport.id}::text = ${revision.actorId}`))
+        .where(and(eq(revision.entityType, 'dive_site'), eq(revision.entityId, id)))
+        .orderBy(desc(revision.at), desc(revision.id)).limit(200);
+      return rows.map(({ r, sources }) => ({
+        id: r.id, at: r.at.toISOString(), cause: r.cause, changes: r.changes,
+        actor: r.actorType === 'user' ? { type: r.actorId === actor.userId ? 'you' as const : 'user' as const, name: null }
+          : r.actorType === 'site_import' ? { type: 'site_import' as const, name: sources?.map((s) => SOURCE_INFO[s].name).join(', ') ?? null }
+          : { type: r.actorType, name: null },
+      }));
     },
 
     /** The creator or an admin, and only while no Dive (of any User) is at the site. */

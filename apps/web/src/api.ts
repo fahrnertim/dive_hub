@@ -43,6 +43,10 @@ export type DeviceView = Awaited<ReturnType<typeof fetchDevices>>[number];
 export type CandidateView = Awaited<ReturnType<typeof fetchCandidates>>[number];
 export type SiteView = Awaited<ReturnType<typeof fetchSite>>;
 export type Position = NonNullable<SiteView['position']>;
+export type ExternalIdView = SiteView['externalIds'][number];
+export type SiteRevisionView = Awaited<ReturnType<typeof fetchSiteRevisions>>[number];
+export type SiteImportView = Awaited<ReturnType<typeof fetchSiteImport>>;
+export type SiteImportArea = SiteImportView['area'];
 
 /** Query keys in one place (hierarchical, so invalidating ['dives'] covers every dive query). */
 export const keys = {
@@ -61,6 +65,8 @@ export const keys = {
   samples: (recordingId: string) => ['recordings', recordingId, 'samples'] as const,
   sites: ['sites'] as const,
   site: (id: string) => ['sites', id] as const,
+  siteRevisions: (id: string) => ['sites', id, 'revisions'] as const,
+  siteImports: ['site-imports'] as const,
 };
 
 /**
@@ -188,6 +194,23 @@ export const sitesQuery = (p: { q?: string | undefined; near?: Position | undefi
   placeholderData: keepPreviousData,
 });
 export const siteQuery = (id: string) => queryOptions({ queryKey: keys.site(id), queryFn: () => fetchSite(id) });
+
+async function fetchSiteRevisions(id: string) {
+  return unwrap(await api.GET('/api/dive-sites/{id}/revisions', { params: { path: { id } } }));
+}
+/** A Dive site's history (ADR 0021): every User reads it; other Users are never named. */
+export const siteRevisionsQuery = (id: string) => queryOptions({ queryKey: keys.siteRevisions(id), queryFn: () => fetchSiteRevisions(id) });
+
+async function fetchSiteImport(id: string) {
+  return unwrap(await api.GET('/api/admin/site-imports/{id}', { params: { path: { id } } }));
+}
+const running = (i: SiteImportView) => i.status === 'queued' || i.status === 'running';
+/** The latest Site imports (admins, ADR 0021); asked again every two seconds while one runs. */
+export const siteImportsQuery = () => queryOptions({
+  queryKey: keys.siteImports,
+  queryFn: async () => unwrap(await api.GET('/api/admin/site-imports')).imports,
+  refetchInterval: (query) => (query.state.data?.some(running) ? 2000 : false),
+});
 
 export async function uploadFile(file: File) {
   const body = new FormData();

@@ -320,7 +320,14 @@
     "site_not_found": "This dive site doesn’t exist (anymore).",
     "site_changed": "Someone changed this dive site meanwhile. Reload it and make your changes again.",
     "site_in_use": "Dives are at this dive site, so it can’t be deleted.",
-    "site_not_deletable": "Only whoever created this dive site, or an admin, can delete it."
+    "site_not_deletable": "Only whoever created this dive site, or an admin, can delete it.",
+    "external_id_taken": "Another dive site already has this ID.",
+    "odbl_not_confirmed": "Confirm the conditions of OpenStreetMap’s data first.",
+    "site_import_running": "An import is already running. Start the next one when it’s done.",
+    "site_import_not_found": "This import doesn’t exist.",
+    "source_unavailable": "The source didn’t answer or sent something unexpected. Try again later.",
+    "source_rate_limited": "The source asked us to slow down. Try again in a few minutes.",
+    "site_import_interrupted": "The server stopped during the import. Start it again."
   },
   "vocabulary": {
     "waterType": {
@@ -352,7 +359,8 @@
       "user": "{{name}}",
       "import": "Import of {{name}}",
       "system": "Dive Hub",
-      "unknown": "a deleted User"
+      "unknown": "a deleted User",
+      "site_import": "Import from {{name}}"
     },
     "cause": {
       "import-create": "Created from an import",
@@ -366,7 +374,9 @@
       "move": "Moved to another Diver",
       "assign-device": "Device assigned",
       "auto-site": "Dive site chosen by the import",
-      "delete": "Deleted"
+      "delete": "Deleted",
+      "update": "Updated from its source",
+      "link": "Linked to its source"
     },
     "field": {
       "number": "Dive number",
@@ -507,6 +517,115 @@
     "noneNearby": "No dive sites within {{distance}} of this dive yet.",
     "choose": "Choose",
     "chosen": "Dive site: {{name}}.",
-    "cleared": "No dive site."
+    "cleared": "No dive site.",
+    "maxDepth": "Maximum depth",
+    "notKnown": "Not known",
+    "ssiSiteId": "SSI site ID",
+    "ssiSiteIdHint": "The number in SSI’s QR code for this site, e.g. 3314 from “site:3314”",
+    "ssiSiteIdInvalid": "An SSI site ID is a number, e.g. 3314.",
+    "origin": "Source",
+    "from": "From {{source}}",
+    "alsoIn": "Also in {{source}}",
+    "containsOsm": "Contains data from OpenStreetMap:",
+    "limited": "Only the first {{count}} dive sites are shown. Search to find the others."
+  },
+  "siteHistory": {
+    "by": {
+      "siteImport": "Import from {{sources}}",
+      "you": "you",
+      "user": "another User"
+    },
+    "descriptionChanged": "Description changed",
+    "field": {
+      "name": "Name",
+      "position": "Position",
+      "country": "Country",
+      "waterBody": "Body of water",
+      "maxDepthM": "Maximum depth",
+      "ssiSiteId": "SSI site ID",
+      "osmId": "OpenStreetMap ID",
+      "wikidataId": "Wikidata ID"
+    },
+    "cause": {
+      "create": "Created",
+      "edit": "Edited",
+      "update": "Updated from its source",
+      "link": "Linked to its source",
+      "delete": "Deleted"
+    }
+  },
+  "siteImport": {
+    "title": "Import dive sites",
+    "intro": "Fetch dive sites from open data into this Dive Hub. Sites that are already here are updated where nobody changed them; what Users changed stays.",
+    "adminLead": "Fill the dive sites with open data from OpenStreetMap and Wikidata, for a country, an area or everywhere.",
+    "open": "Import dive sites",
+    "new": "New import",
+    "sources": "Sources",
+    "sourceWikidata": "Wikidata (CC0, free to use)",
+    "sourceOsm": "OpenStreetMap (ODbL)",
+    "sourceName": {
+      "osm": "OpenStreetMap",
+      "wikidata": "Wikidata"
+    },
+    "odblTitle": "OpenStreetMap’s data comes with conditions (Open Database License).",
+    "odblCredit": "Wherever its data is shown, OpenStreetMap must be credited. Dive Hub does this on every site that has its data and on the list of dive sites.",
+    "odblShareAlike": "If you make the list of dive sites available to the public, you must offer it under the same license. A Dive Hub only invited people use, such as a family’s or club’s, doesn’t do that.",
+    "odblMore": "Read the <license>Open Database License</license>.",
+    "odblConfirm": "I understand and import OpenStreetMap data under these conditions",
+    "area": "Where",
+    "areaCountry": "One country",
+    "areaBoxOption": "An area by coordinates",
+    "areaWorld": "Everywhere",
+    "chooseCountry": "Choose a country",
+    "boxHint": "Degrees; south and west are negative.",
+    "south": "South edge",
+    "north": "North edge",
+    "west": "West edge",
+    "east": "East edge",
+    "worldHint": "About 1,700 dive sites worldwide.",
+    "language": "Names in",
+    "languageHint": "Where a source has names in several languages (Wikidata). OpenStreetMap’s local names are kept.",
+    "needSource": "Choose at least one source.",
+    "needCountry": "Choose a country.",
+    "needBox": "Enter all four edges, with the south edge below the north edge.",
+    "needOdbl": "Confirm the conditions of OpenStreetMap’s data, or import from Wikidata only.",
+    "busy": "An import is running. Start the next one when it’s done.",
+    "start": "Start import",
+    "started": "Import started.",
+    "finished": "Import done.",
+    "failedNow": "Import failed.",
+    "latest": "Latest imports",
+    "none": "No imports yet.",
+    "status": {
+      "queued": "waiting",
+      "running": "running",
+      "done": "done",
+      "failed": "failed"
+    },
+    "areaBox": "{{southWest}} to {{northEast}}",
+    "saving": "Saving {{done}} of {{total}} dive sites…",
+    "fetching": "Asking {{source}}…",
+    "count": {
+      "created_one": "{{count}} new",
+      "created_other": "{{count}} new",
+      "updated_one": "{{count}} updated",
+      "updated_other": "{{count}} updated",
+      "unchanged_one": "{{count}} unchanged",
+      "unchanged_other": "{{count}} unchanged",
+      "kept_one": "{{count}} kept as Users changed it",
+      "kept_other": "{{count}} kept as Users changed them",
+      "linked_one": "{{count}} of ours linked to its source",
+      "linked_other": "{{count}} of ours linked to their source",
+      "skippedNoName_one": "{{count}} without a name skipped",
+      "skippedNoName_other": "{{count}} without a name skipped",
+      "skippedDeleted_one": "{{count}} deleted here, not brought back",
+      "skippedDeleted_other": "{{count}} deleted here, not brought back",
+      "gone_one": "{{count}} no longer at the source (kept here)",
+      "gone_other": "{{count}} no longer at the source (kept here)"
+    },
+    "nothingFound": "The sources have no dive sites there.",
+    "nearIntro_one": "This new dive site is close to one that was already here. Check whether they’re the same place:",
+    "nearIntro_other": "These new dive sites are close to ones that were already here. Check whether they’re the same place:",
+    "nearOf": "is {{distance}} from"
   }
 }

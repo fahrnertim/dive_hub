@@ -1,0 +1,619 @@
+{
+ "version": 0.6,
+ "generator": "Overpass API 0.7.62.11 87bfad18",
+ "osm3s": {
+  "timestamp_osm_base": "2026-10-03T20:05:34Z",
+  "timestamp_areas_base": "2026-10-02T10:26:16Z",
+  "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+ },
+ "elements": [
+  {
+   "type": "node",
+   "id": 315493984,
+   "lat": 23.426923,
+   "lon": 35.8763941,
+   "tags": {
+    "alt_name": "Habili Gaffar;Habili Jaffar;Small Habili",
+    "name": "St John's Habili Gaffar",
+    "natural": "reef",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 663869778,
+   "lat": 26.6397175,
+   "lon": 34.0615772,
+   "tags": {
+    "historic": "wreck",
+    "name": "Salem Express",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:type": "wreck",
+    "seamark:type": "wreck",
+    "sport": "scuba_diving",
+    "verified": "yes, through track",
+    "wreck:date_sunk": "11:13pm on December 14th, 1991"
+   }
+  },
+  {
+   "type": "node",
+   "id": 663869779,
+   "lat": 26.3156833,
+   "lon": 34.84145,
+   "tags": {
+    "historic": "wreck",
+    "name": "نوميديا",
+    "name:ar": "نوميديا",
+    "name:de": "Numidia",
+    "name:en": "Numidia",
+    "name:fr": "Numidia",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:type:wreck": "yes",
+    "seamark:type": "wreck",
+    "source": "https://www.redseawreckproject.com/2013/08/19/numidia/",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 663869780,
+   "lat": 26.3138104,
+   "lon": 34.8432379,
+   "tags": {
+    "brand": "عايدة",
+    "brand:ar": "عايدة",
+    "brand:wikidata": "Q293469",
+    "brand:wikipedia": "ar:عايدة (سفن سياحية)",
+    "historic": "wreck",
+    "name": "عايدة",
+    "name:ar": "عايدة",
+    "name:de": "Aida",
+    "name:en": "Aida",
+    "name:fr": "Aida",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:type:wreck": "yes",
+    "seamark:type": "wreck",
+    "source": "https://www.wrecksite.eu/wreck.aspx?165153;https://www.redseawreckproject.com/2013/08/17/aida/",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 663869787,
+   "lat": 26.840722,
+   "lon": 34.000684,
+   "tags": {
+    "name": "Ras Abu Soma Garden",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 663869789,
+   "lat": 26.8312268,
+   "lon": 33.9859068,
+   "tags": {
+    "name": "Tobia Hamra",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 663869790,
+   "lat": 26.8150661,
+   "lon": 33.9785314,
+   "tags": {
+    "name": "Sandy Island",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 700999364,
+   "lat": 27.34571,
+   "lon": 33.83949,
+   "tags": {
+    "alt_name": "Abo El Nogar",
+    "name": "Abu Nugar",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 1556438805,
+   "lat": 26.8382668,
+   "lon": 33.9964122,
+   "tags": {
+    "name": "Soma Gatden",
+    "natural": "reef",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 2894107064,
+   "lat": 27.3416824,
+   "lon": 33.7829269,
+   "tags": {
+    "name": "Abu Salama",
+    "name:de": "Gummibärchenriff",
+    "natural": "reef",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:type:reef": "yes",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 5610583021,
+   "lat": 26.3007944,
+   "lon": 34.862559,
+   "tags": {
+    "addr:city": "جزر الإخوة",
+    "attraction": "sport",
+    "name": "موقع الغوص - جزيرة الأخ الصغير",
+    "name:ar": "موقع الغوص - جزيرة الأخ الصغير",
+    "name:en": "Little Brother Dive Site",
+    "name:fr": "Little Brother",
+    "name:uk": "Малий Брат місце для занурення",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving",
+    "tourism": "attraction"
+   }
+  },
+  {
+   "type": "node",
+   "id": 11331356919,
+   "lat": 25.072444,
+   "lon": 34.9373952,
+   "tags": {
+    "historic": "wreck",
+    "name": "Legend",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "scuba_diving:type": "wreck",
+    "seamark:type": "wreck",
+    "sport": "scuba_diving",
+    "wreck:date_sunk": "2002-10-17"
+   }
+  },
+  {
+   "type": "node",
+   "id": 12754199512,
+   "lat": 24.9262582,
+   "lon": 34.9635606,
+   "tags": {
+    "name": "Marsa Nakari South reef",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 12754199513,
+   "lat": 24.9278382,
+   "lon": 34.9629789,
+   "tags": {
+    "name": "Marsa Nakari North reef",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "node",
+   "id": 13395759833,
+   "lat": 26.7941145,
+   "lon": 33.9413036,
+   "tags": {
+    "name": "Abu Soma Paradise House Reef",
+    "scuba_diving:depth": "16",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:drift": "no",
+    "scuba_diving:entry": "shore",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "way",
+   "id": 91978564,
+   "center": {
+    "lat": 24.7885272,
+    "lon": 35.1787788
+   },
+   "tags": {
+    "alt_name": "Gota Sharm",
+    "name": "Shaab Sharm",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "way",
+   "id": 197754185,
+   "center": {
+    "lat": 26.7070044,
+    "lon": 34.1001445
+   },
+   "tags": {
+    "name": "الإسم العربي ؟",
+    "name:ar": "الإسم العربي ؟",
+    "name:en": "Middle Reef",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving",
+    "subsea": "reef"
+   }
+  },
+  {
+   "type": "way",
+   "id": 197754187,
+   "center": {
+    "lat": 26.6556512,
+    "lon": 34.1076488
+   },
+   "tags": {
+    "alt_name": "Abu Kefan",
+    "name": "Abu Kafan",
+    "natural": "reef",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving",
+    "subsea": "reef"
+   }
+  },
+  {
+   "type": "way",
+   "id": 197754194,
+   "center": {
+    "lat": 26.7529844,
+    "lon": 34.0800887
+   },
+   "tags": {
+    "int_name": "Panorama Reef",
+    "name": "Panorama Reef",
+    "name:ar": "الإسم العربي ؟",
+    "natural": "reef",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving",
+    "sub_sea": "reef"
+   }
+  },
+  {
+   "type": "way",
+   "id": 644356549,
+   "center": {
+    "lat": 25.3093037,
+    "lon": 34.8607108
+   },
+   "tags": {
+    "alt_name": "Shabrour Shagra",
+    "int_name": "Abu Hamra",
+    "name": "Elphinstone Reef",
+    "name:de": "Elphinstone-Riff",
+    "name:en": "Elphinstone Reef",
+    "name:fr": "Récif d'Elphinstone",
+    "natural": "reef",
+    "scuba_diving:divespot": "yes",
+    "sport": "scuba_diving",
+    "wikidata": "Q1333272",
+    "wikipedia": "de:Elphinstone-Riff"
+   }
+  },
+  {
+   "type": "way",
+   "id": 1213850349,
+   "center": {
+    "lat": 23.4295735,
+    "lon": 35.9033203
+   },
+   "tags": {
+    "alt_name": "Gota Soraya",
+    "name": "St John's Small Gota",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "way",
+   "id": 1213850350,
+   "center": {
+    "lat": 23.4175138,
+    "lon": 35.9872198
+   },
+   "tags": {
+    "alt_name": "Shark Point",
+    "name": "Habili Ali",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "way",
+   "id": 1213850351,
+   "center": {
+    "lat": 23.4146981,
+    "lon": 35.9306143
+   },
+   "tags": {
+    "name": "St John's Gota Kebir",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "way",
+   "id": 1396277160,
+   "center": {
+    "lat": 26.7740091,
+    "lon": 33.9924096
+   },
+   "tags": {
+    "name": "Safaga Soraya",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "way",
+   "id": 1396426964,
+   "center": {
+    "lat": 26.6434815,
+    "lon": 34.0496239
+   },
+   "tags": {
+    "name": "Shaab Sheer Soraya",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "way",
+   "id": 1396426968,
+   "center": {
+    "lat": 26.6300218,
+    "lon": 34.0612306
+   },
+   "tags": {
+    "name": "Shaab Hamdallah",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving"
+   }
+  },
+  {
+   "type": "relation",
+   "id": 16660674,
+   "center": {
+    "lat": 23.4310407,
+    "lon": 35.8645841
+   },
+   "tags": {
+    "alt_name": "Um Arouk;Um Erug",
+    "name": "St John's Um Arouk",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving",
+    "type": "multipolygon"
+   }
+  },
+  {
+   "type": "relation",
+   "id": 19266049,
+   "center": {
+    "lat": 26.7958246,
+    "lon": 33.992026
+   },
+   "tags": {
+    "name": "Gamul Soraya",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving",
+    "type": "multipolygon"
+   }
+  },
+  {
+   "type": "relation",
+   "id": 19266139,
+   "center": {
+    "lat": 26.8050512,
+    "lon": 33.9943083
+   },
+   "tags": {
+    "name": "Tobia Soraya",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving",
+    "type": "multipolygon"
+   }
+  },
+  {
+   "type": "relation",
+   "id": 19266140,
+   "center": {
+    "lat": 26.8103188,
+    "lon": 33.9950932
+   },
+   "tags": {
+    "name": "Tobia Kebir",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving",
+    "type": "multipolygon"
+   }
+  },
+  {
+   "type": "relation",
+   "id": 19266162,
+   "center": {
+    "lat": 26.7864131,
+    "lon": 33.9871618
+   },
+   "tags": {
+    "name": "Gamul Kebir",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving",
+    "type": "multipolygon"
+   }
+  },
+  {
+   "type": "relation",
+   "id": 19266688,
+   "center": {
+    "lat": 26.8366775,
+    "lon": 33.9913097
+   },
+   "tags": {
+    "name": "Tobia Araba",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving",
+    "type": "multipolygon"
+   }
+  },
+  {
+   "type": "relation",
+   "id": 19266689,
+   "center": {
+    "lat": 26.6573803,
+    "lon": 34.0487575
+   },
+   "tags": {
+    "name": "Shaab Sheer",
+    "name:eg": "Shoab Sheer",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving",
+    "type": "multipolygon"
+   }
+  },
+  {
+   "type": "relation",
+   "id": 19266690,
+   "center": {
+    "lat": 26.6515025,
+    "lon": 34.0635483
+   },
+   "tags": {
+    "name": "Shaab Claude",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving",
+    "type": "multipolygon"
+   }
+  },
+  {
+   "type": "relation",
+   "id": 19266691,
+   "center": {
+    "lat": 26.6568311,
+    "lon": 33.9912338
+   },
+   "tags": {
+    "alt_name": "Shaab Bagul",
+    "name": "الإسم العربي ؟",
+    "name:ar": "الإسم العربي ؟",
+    "name:en": "Cannon Reef",
+    "name:fr": "Cannon Reef",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving",
+    "type": "multipolygon",
+    "wikidata": "Q23952048",
+    "wikipedia": "ceb:Cannon Reef"
+   }
+  },
+  {
+   "type": "relation",
+   "id": 19269583,
+   "center": {
+    "lat": 25.0742697,
+    "lon": 34.9357909
+   },
+   "tags": {
+    "name": "Shaab Marsa Alam",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving",
+    "subsea": "reef",
+    "type": "multipolygon",
+    "wikidata": "Q108898080"
+   }
+  },
+  {
+   "type": "relation",
+   "id": 19269652,
+   "center": {
+    "lat": 23.6284921,
+    "lon": 35.8220587
+   },
+   "tags": {
+    "alt_name": "Orabi",
+    "name": "Paradise Reef",
+    "natural": "reef",
+    "reef": "coral",
+    "scuba_diving:divespot": "yes",
+    "scuba_diving:entry": "boat",
+    "sport": "scuba_diving",
+    "type": "multipolygon"
+   }
+  }
+ ]
+}

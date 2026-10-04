@@ -64,6 +64,13 @@
       "when": 1791053000489,
       "tag": "0008_drop_has_end_position",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791058409702,
+      "tag": "0009_site_external_ids",
+      "breakpoints": true
     }
   ]
 }

@@ -13,6 +13,11 @@ services:
       DIVEHUB_BASE_URL: ${DIVEHUB_BASE_URL:?set DIVEHUB_BASE_URL to the public URL}
       # IPs/CIDRs of your reverse proxy, so rate limiting sees real client IPs (comma-separated).
       DIVEHUB_TRUSTED_PROXIES: ${DIVEHUB_TRUSTED_PROXIES:-}
+      # Importing dive sites (docs/spec/architecture.md#dive-site-imports-and-licenses): your e-mail or URL for
+      # the services' User-Agent, and other endpoints (e.g. your own or a paid Overpass server).
+      DIVEHUB_CONTACT: ${DIVEHUB_CONTACT:-}
+      DIVEHUB_OVERPASS_URL: ${DIVEHUB_OVERPASS_URL:-}
+      DIVEHUB_WIKIDATA_SPARQL_URL: ${DIVEHUB_WIKIDATA_SPARQL_URL:-}
     ports:
       - "${DIVEHUB_BIND:-127.0.0.1}:${DIVEHUB_PORT:-3000}:3000"
     volumes:

@@ -20,6 +20,8 @@ import { diverRoutes } from './divers/routes.js';
 import { apiRoutes } from './routes.js';
 import { createSiteService } from './sites/site-service.js';
 import { siteRoutes } from './sites/routes.js';
+import type { SiteImportService } from './sites/import/site-import-service.js';
+import { siteImportRoutes } from './sites/import/site-import-routes.js';
 import type { BlobStore } from './storage/blob-store.js';
 import { accountRoutes } from './users/account-routes.js';
 import { adminRoutes } from './users/admin-routes.js';
@@ -32,6 +34,7 @@ import { createUserAdmin } from './users/user-admin.js';
 export interface AppDeps {
   db: Db;
   imports: ImportService;
+  siteImports: SiteImportService;
   blobs: BlobStore;
   auth: Auth;
   setup: Setup;
@@ -81,6 +84,7 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
   await app.register(candidateRoutes, { prefix: '/api', ...deps, candidates: createCandidates(deps.db) });
   await app.register(diverRoutes, { prefix: '/api', ...deps, divers: createDiverService(deps.db) });
   await app.register(siteRoutes, { prefix: '/api', ...deps, sites: createSiteService(deps.db) });
+  await app.register(siteImportRoutes, { prefix: '/api', ...deps });
 
   const serveWeb = !!deps.webDir && existsSync(deps.webDir);
   if (serveWeb) await app.register(fastifyStatic, { root: deps.webDir!, wildcard: false });

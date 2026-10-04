@@ -75,7 +75,7 @@ boundary uses `--color-border-strong`. Panels have no outline (ADR 0019).
   panel), `--radius-lg` 14 px (panels).
 - **Surfaces** ([ADR 0019](../decisions/0019-tonal-surfaces.md)): white panels on the slightly deeper page tone,
   no outline, `--panel-padding` 32 px (24/16 px on a phone). Something that waits for the User (Duplicate
-  candidates) is tinted with `--color-accent-soft` (`Panel attention`). One comfortable density: table rows
+  candidates) is tinted with `--color-accent-soft` (`Panel attention`). Terms to confirm before going on (the ODbL before an OSM import) use the same tint in a box (`.terms`), not a `Notice`, which announces itself. One comfortable density: table rows
   keep `--space-3` vertical padding.
 - **Text roles:** `.muted` is colour only, so leads and sentences stay at body size; `.meta` is small, muted
   secondary text (counts, entry dates). Large headings use `--tracking-heading` (−0.01em).

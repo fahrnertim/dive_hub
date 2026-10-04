@@ -12,6 +12,9 @@ import { buildApp } from '../src/app.js';
 import { createDb } from '../src/db/client.js';
 import { migrateDatabase } from '../src/db/migrate.js';
 import { createImportService } from '../src/imports/import-service.js';
+import { createSiteSources } from '../src/sites/import/create-site-sources.js';
+import type { Fetch } from '../src/sites/import/polite-http.js';
+import { createSiteImportService } from '../src/sites/import/site-import-service.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { createInvitations } from '../src/users/invitations.js';
 import { createSetup } from '../src/users/setup.js';
@@ -36,9 +39,27 @@ const { db, pool } = createDb(url.toString());
 await migrateDatabase(db, pool, here('../drizzle'));
 const blobs = createLocalBlobStore(await mkdtemp(join(tmpdir(), 'divehub-e2e-')));
 const imports = createImportService({ db, blobs });
+
+/**
+ * Overpass and Wikidata as recorded (test/fixtures/site-sources): the browser tests never reach the live
+ * services. Overpass answers Malta and Egypt by country and the Attersee box; anything else has no dive spots.
+ */
+const recorded = (file: string) => readFileSync(here(`fixtures/site-sources/${file}`), 'utf8');
+const replay: Fetch = async (url, init) => {
+  const query = new URLSearchParams(init.body ?? '').get('data') ?? '';
+  const body = url.includes('wikidata') ? recorded('wikidata-en.json')
+    : query.includes('"MT"') ? recorded('overpass-country-MT.json')
+    : query.includes('"EG"') ? recorded('overpass-country-EG.json')
+    : query.includes('(47.75,13.45,47.95,13.62)') ? recorded('overpass-box-attersee.json')
+    : JSON.stringify({ elements: [] });
+  return { status: 200, headers: { get: () => null }, text: async () => body };
+};
+const siteImports = createSiteImportService({
+  db, sources: createSiteSources({ fetch: replay, overpassUrl: 'https://overpass.invalid/api/interpreter', wikidataUrl: 'https://wikidata.invalid/sparql' }),
+});
 const auth = createAuth({ db, baseUrl: `http://localhost:${port}`, secret: 'e2e-secret-with-enough-entropy-0123456789abcdef' });
 const app = await buildApp({
-  db, imports, blobs, auth, setup: createSetup(db), invitations: createInvitations(db),
+  db, imports, siteImports, blobs, auth, setup: createSetup(db), invitations: createInvitations(db),
   baseUrl: `http://localhost:${port}`, maxUploadBytes: 1 << 26, webDir: here('../../web/dist'),
 });
 
@@ -51,7 +72,7 @@ for (const file of ['main-computer.fit', 'backup-computer.fit']) {
 }
 
 // Uploads made by the tests are processed in the background, as in the real app.
-const worker = await startWorker(pool, imports, app.log);
+const worker = await startWorker(pool, imports, siteImports, app.log);
 await app.listen({ host: '127.0.0.1', port });
 console.log(`e2e server ready on http://localhost:${port}`);
 

@@ -41,6 +41,13 @@ export const PROBLEMS = {
   site_changed: 'The dive site was changed meanwhile; reload it and apply your changes again',
   site_in_use: 'Dives are at this site; it can only be deleted while none is',
   site_not_deletable: 'Only whoever created the dive site, or an admin, can delete it',
+  external_id_taken: 'Another dive site already has this ID',
+  odbl_not_confirmed: 'Importing from OpenStreetMap needs the ODbL explanation confirmed (confirmOdbl)',
+  site_import_running: 'A site import is already running; wait until it is done',
+  site_import_not_found: 'Site import not found',
+  source_unavailable: 'The source did not answer, or answered with something else than data; try again later',
+  source_rate_limited: 'The source asked us to slow down; try again later',
+  site_import_interrupted: 'The server stopped while the import was running',
 } as const;
 
 export type ProblemCode = keyof typeof PROBLEMS;

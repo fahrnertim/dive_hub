@@ -113,8 +113,9 @@
 .input[data-disabled], .field [data-disabled] { opacity: 0.55; cursor: not-allowed; }
 .input[readonly] { background: var(--color-surface-sunken); }
 
-.checkbox, .radio { display: inline-flex; align-items: center; gap: var(--space-2); cursor: pointer; min-height: 2.5rem; }
-.checkbox-box, .radio-dot { flex: none; width: 1.125rem; height: 1.125rem; border: 1px solid var(--color-border-strong);
+/* The box sits on the label's first line, also when the label wraps (the ODbL confirmation on a phone); one line stays 2.5rem tall. */
+.checkbox, .radio { display: inline-flex; align-items: flex-start; gap: var(--space-2); cursor: pointer; min-height: 2.5rem; padding-block: calc((2.5rem - 1lh) / 2); }
+.checkbox-box, .radio-dot { flex: none; width: 1.125rem; height: 1.125rem; margin-top: calc((1lh - 1.125rem) / 2); border: 1px solid var(--color-border-strong);
   background: var(--color-surface); display: grid; place-items: center; }
 .checkbox-box { border-radius: var(--radius-sm); }
 .checkbox-box svg { width: 0.875rem; height: 0.875rem; fill: none; stroke: var(--color-on-accent); stroke-width: 2.2; visibility: hidden; }
