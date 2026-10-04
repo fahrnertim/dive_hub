@@ -150,12 +150,12 @@ _German_: Anbieter
 ## Data in and out
 
 **Source**:
-A system or format that data comes from: dive data from Garmin, Suunto or a UDDF file, or Dive site data from OpenStreetMap or Wikidata. SSI is a Source of site IDs. A Source's license, Attribution and link pattern are defined once in code.
+A system or format that data comes from: dive data from Garmin, Suunto or a UDDF file, or Dive site data from OpenStreetMap, Wikidata or SSI. SSI is also a Source of site IDs typed in by Users, and of account IDs on Divers. A Source's license, Attribution and link pattern are defined once in code.
 _Avoid_: Provider, integration, inbound, origin
 _German_: Quelle
 
 **External ID**:
-The identifier a Source gives a record, such as an OpenStreetMap object (`node/123`), a Wikidata item (`Q…`) or an SSI site ID. Unique per Source; a Dive site has at most one per Source. It either provides data (the site was created or filled from that Source: "From OpenStreetMap") or is only a reference ("Also in OpenStreetMap"). A site without data-providing IDs was made in this instance.
+The identifier a Source gives a record, such as an OpenStreetMap object (`node/123`), a Wikidata item (`Q…`), an SSI site ID, or a Diver's account at a service (SSI account ID). Unique per Source; a Dive site or a Diver has at most one per Source. Certification and membership numbers are not External IDs. It either provides data (the site was created or filled from that Source: "From OpenStreetMap") or is only a reference ("Also in OpenStreetMap"). A site without data-providing IDs was made in this instance.
 _Avoid_: Foreign key, remote ID, reference number
 _German_: externe ID (on screen: "SSI-Tauchplatz-ID")
 
@@ -175,7 +175,7 @@ _Avoid_: Destination, integration, outbound
 _German_: Ziel
 
 **Connection**:
-One User's configured link to a Source or a Target.
+One User's configured link to a Source or a Target. For SSI it holds the SSI account, a token that may expire, and the password only if the User chose "Keep me signed in" (encrypted).
 _Avoid_: Account link, integration
 _German_: Verbindung
 
@@ -196,7 +196,7 @@ _Avoid_: Merge error, Duplicate candidate
 _German_: Konflikt
 
 **Push**:
-One Dive sent to one Target, with what was sent, when, and what the Target answered.
+One Dive sent to one Target, with what was sent, when, and what the Target answered (such as SSI's dive ID). A Push is *confirmed* when the Target accepted it and gave an ID back; that is not SSI's "confirmed" (a dive center's verification), which Dive Hub can't set.
 _Avoid_: Export, sync, share, broadcast
 _German_: Übertragung
 

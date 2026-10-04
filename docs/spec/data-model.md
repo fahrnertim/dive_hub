@@ -18,8 +18,8 @@ Every entity belongs to exactly one tier. This answers "who can see/change it" a
 | Tier | Entities |
 |---|---|
 | **Instance** (shared by all Users) | User, Dive site (→ External IDs), Site import, Operator, Agency catalog |
-| **User** | Connection, Import, Original, external Divers they created |
-| **Diver** (via the Users who manage it) | Dive (→ Recordings, Cylinders, Participants, Media, Signatures, Pushes), Trip, Certification, Membership, Insurance, Medical exam, Equipment (incl. Devices), Site note |
+| **User** | Connection (→ Diver mappings), Import, Original, external Divers they created |
+| **Diver** (via the Users who manage it) | External IDs, Dive (→ Recordings, Cylinders, Participants, Media, Signatures, Pushes), Trip, Certification, Membership, Insurance, Medical exam, Equipment (incl. Devices), Site note |
 
 ## Overview
 
@@ -89,6 +89,11 @@ These apply to every entity unless stated otherwise. They close gaps A2, A3, A5 
 **Diver** — personal data (name, birth date, contact details, emergency contact), plus
 merge pointer (`merged into`) for the claim case. A Diver either has a logbook
 (managed Divers) or is only referenced (external Divers / "contacts").
+*External IDs (ADR 0024):* `(Diver, Source, external id)`. They're unique per Source among Divers that aren't merged, and a
+Diver has at most one per Source. They record the person's account at a service (SSI account ID, a PADI account).
+Setting one that another Diver already has proposes linking the two Divers (as in the claim case). Certification
+numbers (SSI card ID, PADI diver number) stay on Certification; professional numbers (SSI and PADI pro numbers) stay on
+Membership.
 
 **Diver management** — `(User, Diver, role)`. A User's *own* Diver is flagged. Several
 Users can manage one Diver (two parents; a dive center handing a guest's log over to
@@ -175,7 +180,8 @@ most one per Source and site (`osm`, `wikidata`, `ssi`). Each either *provides d
 delivered last, the base for the next import's 3-way merge) or is a *reference* (hand-made site linked by an
 import, or an SSI ID typed in). License, Attribution and link pattern belong to the Source, defined once in code.
 
-**Site import** — instance-wide, started by an admin: Sources (OSM, Wikidata), area (country, box or
+**Site import** — instance-wide, started by an admin: Sources (OSM, Wikidata; SSI planned in ADR 0024, where an
+imported SSI ID provides data and the admin confirms that SSI's list has no licence), area (country, box or
 everywhere), language for names, who confirmed ODbL and when, status, progress, counts (created, updated,
 unchanged, kept, linked, skipped, gone from the Source, failed) and findings (new sites near existing ones).
 Revisions it writes on sites have the actor `site_import` (ADR 0021).
@@ -205,6 +211,11 @@ serial number, firmware history. Assigning a Device to a Diver is how Imports at
 
 **Connection** — User, Source or Target type, configuration (watched folder, credentials
 reference, account ID), state.
+*SSI (ADR 0024):* the SSI account ID (it also becomes the External ID of the User's own Diver); the token, and the
+password only if the User chose "Keep me signed in" (both encrypted with the operator's key); last successful use;
+state `active`, `needs sign-in` or `failed`. Disconnecting deletes the password and token.
+*Diver mappings:* `(Connection, Diver, remote id)` for Targets whose people are records of one account, such as an
+entry in the User's SSI buddy list. They're set by the User, or matched through the Diver's SSI External ID.
 
 **Original** — User, content hash, media type, size, received at, stored bytes. It's immutable.
 The same hash received again **from the same User** is not processed a second time. Originals are
@@ -226,6 +237,10 @@ from (Import or client edit), resolution.
 **Push** — Dive, Connection (Target), mode (`QR payload`, `API`, `browser automation`),
 state (`pending`, `handed over`, `confirmed`, `failed`, `outdated`), remote ID if known,
 **pushed snapshot** (Revision plus the payload). It becomes `outdated` when a pushed field changes (A6).
+*API mode (ADR 0024):* also **remote number** (the Target's own dive number, which differs from the Dive's), **remote
+reference** (a stable value we send, for finding the dive again when an answer is lost) and **read-back result**
+(fields the Target stored differently). `confirmed` means delivered with an ID back; it isn't SSI's dive-centre
+confirmation. Re-pushing an `outdated` Push updates the same remote dive: a new Push with the same remote ID.
 
 ## UDDF checklist
 
@@ -344,15 +359,26 @@ If the Subsurface dive has **no Device data** (manually logged), the key falls b
 
 Outbound comes in a later phase (see [spec](README.md)), but the model already supports it.
 
-1. Tim pushes D1 to SSI via QR payload. The Push P1 records mode `QR payload`, the pushed snapshot, and
-   state `handed over`: a QR code can't confirm delivery, and SSI shows such dives as unconfirmed.
-   The payload needs D1's site's **SSI site ID** (an external ID on the Dive site).
-   Without one, Tim is asked to map the site first.
+With an SSI Connection, Dives go through SSI's app API ([ADR 0024](../decisions/0024-ssi-target-via-app-api.md)):
+
+1. Tim sends D1 to SSI. The hub reads Tim's SSI logbook once and finds no dive within ±2 min of D1, so it creates one
+   with D1's summary and profile. The Push P1 records mode `API`, the pushed snapshot, SSI's dive ID and number, and
+   state `confirmed` (delivered). It reads the dive back and notes that SSI rounded the duration to whole minutes.
+   SSI still shows the dive as unconfirmed: only a dive center can confirm it there.
+   The payload needs D1's site's **SSI site ID** (an External ID on the Dive site). Without one, Tim picks or types it first.
 2. Tim then corrects max depth. A pushed field changed, so P1 becomes `outdated`.
-3. SSI can't update a dive it already has. Pushing again would create a second SSI entry,
-   so the hub warns and lets Tim either fix it in SSI by hand or re-push. A re-push creates P2,
-   and P1 stays in the history.
-4. Tim deletes D1. It's a soft delete; P1 stays and the hub reminds Tim the dive still exists in SSI.
+3. Tim re-pushes. P2 has P1's remote ID: the hub fetches SSI's current record, puts its changes on top (so a rating
+   Tim set in the app survives) and updates the same SSI dive. P1 stays in the history.
+4. Tim deletes D1. It's a soft delete. The hub asks whether to delete the dive in SSI too. If Tim says no, P2 stays
+   and the hub reminds Tim the dive still exists in SSI.
+
+Edge cases:
+- *Token expired:* Tim chose "Don't store my password". The Push waits, and the Connection shows "Sign in to SSI again".
+- *Without a Connection (QR payload, later):* P1 is `handed over`, because a QR code can't confirm delivery. SSI can't
+  update such a dive, so re-pushing would create a second SSI entry: the hub warns, and Tim fixes it in SSI by hand
+  or re-pushes (P2, with P1 kept).
+- *The answer is lost:* the next attempt finds the dive in SSI's logbook by the Push's remote reference and links it,
+  instead of creating it twice.
 
 ## Open questions
 

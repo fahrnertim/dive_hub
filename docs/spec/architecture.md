@@ -96,6 +96,9 @@ are the operator's:
     private (invite-only family, club or dive center), it is not used publicly. If you make the site list
     available to the public, you must offer that site table under ODbL as well.
   - Users' own dive data is not part of it.
+- **SSI** (planned, [ADR 0024](../decisions/0024-ssi-target-via-app-api.md)) publishes its site list without any licence,
+  and in the EU it is protected as a database. Unlike OSM, there are no conditions to meet that would make copying it
+  allowed. Importing it is your decision and your risk; the admin confirms this before an SSI import.
 - **Fair use of the public services:**
   - An import makes one query per Source and run, with a User-Agent naming Dive Hub. Set
     `DIVEHUB_CONTACT` (an e-mail address or URL) so the services can reach you, as Wikimedia's User-Agent policy asks.

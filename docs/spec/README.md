@@ -45,8 +45,10 @@ vendor or platform.
 - **Duplicates:** several Recordings per Dive; one is primary, manual Overrides win.
   Unambiguous time overlaps are auto-attached (undoable); otherwise the User decides.
 - **Re-imports:** 3-way merge against the previous Import; hub edits win and conflicts are flagged.
-- **Outbound:** modelled now (Target, Push state), built in a later phase. First candidate
-  is the SSI QR payload (no stored credentials).
+- **Outbound:** modelled now (Target, Push state), built in a later phase. The first Target is SSI, through
+  its private app API: dives with profile, updated in place, with SSI's dive ID kept on the Push. Passwords
+  are stored only when the User chooses, always encrypted. QR payload follows as the fallback
+  ([ADR 0024](../decisions/0024-ssi-target-via-app-api.md), [SSI API research](../research/2026-10-04-ssi-api.md)).
 - **Phase 1 ingestion:** file import only, and only Garmin FIT files. No cloud APIs
   (Garmin's and Suunto's are business-only, see [dive data sources](../research/2026-10-02-dive-data-sources.md)).
   Suunto (FIT + JSON) follows in a later phase; the data model already covers it.
@@ -71,7 +73,7 @@ vendor or platform.
 
 | Target | Status |
 |---|---|
-| SSI | later phase (QR payload first) |
+| SSI | next: app API ([ADR 0024](../decisions/0024-ssi-target-via-app-api.md)); QR payload later as fallback |
 | Others | open |
 
 ## Non-goals (so far)
