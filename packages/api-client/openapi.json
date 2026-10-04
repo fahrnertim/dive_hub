@@ -3479,7 +3479,6 @@
                     "createdAt",
                     "finishedAt",
                     "errorCode",
-                    "error",
                     "outcome"
                   ],
                   "properties": {
@@ -3539,18 +3538,7 @@
                             "unsupported_file",
                             "processing_failed"
                           ],
-                          "description": "Why the Import failed; clients translate it"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ]
-                    },
-                    "error": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "description": "English detail for processing_failed"
+                          "description": "Why the Import failed; clients translate it. The detail stays in the server log"
                         },
                         {
                           "type": "null"
@@ -3594,10 +3582,8 @@
                               "overlaps_several_dives",
                               "max_depth_differs",
                               "file_failed"
-                            ]
-                          },
-                          "message": {
-                            "type": "string"
+                            ],
+                            "description": "Why; clients translate it. A failure’s detail stays in the server log"
                           },
                           "decision": {
                             "enum": [
@@ -3776,7 +3762,6 @@
                       "createdAt",
                       "finishedAt",
                       "errorCode",
-                      "error",
                       "outcome"
                     ],
                     "properties": {
@@ -3836,18 +3821,7 @@
                               "unsupported_file",
                               "processing_failed"
                             ],
-                            "description": "Why the Import failed; clients translate it"
-                          },
-                          {
-                            "type": "null"
-                          }
-                        ]
-                      },
-                      "error": {
-                        "anyOf": [
-                          {
-                            "type": "string",
-                            "description": "English detail for processing_failed"
+                            "description": "Why the Import failed; clients translate it. The detail stays in the server log"
                           },
                           {
                             "type": "null"
@@ -3891,10 +3865,8 @@
                                 "overlaps_several_dives",
                                 "max_depth_differs",
                                 "file_failed"
-                              ]
-                            },
-                            "message": {
-                              "type": "string"
+                              ],
+                              "description": "Why; clients translate it. A failure’s detail stays in the server log"
                             },
                             "decision": {
                               "enum": [
@@ -3945,7 +3917,6 @@
                     "createdAt",
                     "finishedAt",
                     "errorCode",
-                    "error",
                     "outcome"
                   ],
                   "properties": {
@@ -4005,18 +3976,7 @@
                             "unsupported_file",
                             "processing_failed"
                           ],
-                          "description": "Why the Import failed; clients translate it"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ]
-                    },
-                    "error": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "description": "English detail for processing_failed"
+                          "description": "Why the Import failed; clients translate it. The detail stays in the server log"
                         },
                         {
                           "type": "null"
@@ -4060,10 +4020,8 @@
                               "overlaps_several_dives",
                               "max_depth_differs",
                               "file_failed"
-                            ]
-                          },
-                          "message": {
-                            "type": "string"
+                            ],
+                            "description": "Why; clients translate it. A failure’s detail stays in the server log"
                           },
                           "decision": {
                             "enum": [

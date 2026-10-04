@@ -82,10 +82,11 @@ export function SiteForm({ site, initial, submitLabel, onSaved, onCancel }: {
     }) => (site
       ? unwrap(await api.PATCH('/api/dive-sites/{id}', { params: { path: { id: site.id } }, body: { version: site.version, ...body } }))
       : unwrap(await api.POST('/api/dive-sites', { body }))),
-    onSuccess: async (saved) => {
+    onSuccess: (saved) => {
       releaseLeaveGuard();
       queryClient.setQueryData(keys.site(saved.id), saved);
-      await queryClient.invalidateQueries({ queryKey: keys.sites });
+      // Close at once; lists, nearby sites and the history refresh behind it (waiting kept the form open).
+      void queryClient.invalidateQueries({ queryKey: keys.sites, predicate: (q) => q.queryKey[1] !== saved.id || q.queryKey.length > 2 });
       onSaved(saved);
     },
   });

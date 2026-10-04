@@ -314,5 +314,13 @@ Found in the screenshot review and fixed:
 - The review capture waited for the invitation notice's text, which the live region also holds. It now waits
   for the Copy button.
 
+Found while writing the client contract and fixed (rules only the web client kept):
+- Changing a password now ends the other sessions on the server, whatever `revokeOtherSessions` says
+  (`hooks.before` in `src/auth/auth.ts`, ADR 0013).
+- Import failures reach clients as codes only. The parser's own words (`message`, a failed Import's `error`) left
+  the API; the worker logs them.
+- Saving a site waited for every site query to refetch before closing the form, which took seconds under load
+  (a flaky browser test showed it). The form now closes at once and the lists refresh behind it.
+
 Deliberate simplifications, to revisit:
 - **No undo** for a merge (ADR 0022), and no instance-wide duplicate scan; duplicates are found where they're seen.

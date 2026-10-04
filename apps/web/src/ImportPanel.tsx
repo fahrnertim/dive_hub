@@ -215,14 +215,15 @@ function ImportRow({ item }: { item: ImportView }) {
       <Badge tone={statusTone(item)}>{t(`import.status.${item.status}`)}</Badge>
       {item.errorCode && (
         <span className="import-error">
-          {t(`import.errorCode.${item.errorCode}`)}{item.error && ` (${item.error})`}
+          {t(`import.errorCode.${item.errorCode}`)}
         </span>
       )}
       {item.outcome.map((o, n) => {
         // A Duplicate candidate decided since the Import says what became of it (UI review A9).
         const decision = o.result === 'duplicate-candidate' && o.decision && o.decision !== 'open' ? o.decision : undefined;
         const result = decision ? t(`import.decision.${decision}`) : t(`import.result.${o.result}`);
-        const detail = decision ? '' : [o.reason && t(`import.reason.${o.reason}`), o.message].filter(Boolean).join(', ');
+        // The reason by its code only; the parser's own words stay in the server log (client contract §6).
+        const detail = decision || !o.reason ? '' : t(`import.reason.${o.reason}`);
         return (
           <span key={n} className="import-outcome">
             {o.diveId ? <a href={`#/dives/${o.diveId}`}>{result}</a> : result}

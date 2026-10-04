@@ -15,7 +15,9 @@ export async function startWorker(pool: pg.Pool, imports: ImportService, siteImp
       [PROCESS_IMPORT_TASK]: async (payload) => {
         const { importId } = payload as { importId: string };
         log.info({ importId }, 'processing import');
-        await imports.processImport(importId);
+        const outcome = await imports.processImport(importId);
+        // The detail Users don't see (they get the reason code): here for the operator.
+        for (const o of outcome) if (o.result === 'failed') log.warn({ importId, file: o.fileName, reason: o.reason, detail: o.message }, 'import file failed');
       },
       [IMPORT_SITES_TASK]: async (payload) => {
         const { siteImportId } = payload as { siteImportId: string };

@@ -59,10 +59,13 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
     }
   }
 
-  /** Worker task: unpack, store Originals, parse, and place each Recording. */
-  async function processImport(importId: string): Promise<void> {
+  /**
+   * Worker task: unpack, store Originals, parse, and place each Recording. Returns the outcome, whose
+   * failures carry the parser's detail (`message`) for the server log; the API never shows it.
+   */
+  async function processImport(importId: string): Promise<ImportOutcome> {
     const [job] = await db.select().from(importJob).where(eq(importJob.id, importId));
-    if (!job || job.status === 'done') return;
+    if (!job || job.status === 'done') return [];
     await db.update(importJob).set({ status: 'processing' }).where(eq(importJob.id, importId));
     const actor: Actor = { type: 'import', id: importId };
 
@@ -84,6 +87,7 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
         .set({ status: 'done', outcome, finishedAt: new Date(), uploadStorageKey: null })
         .where(eq(importJob.id, importId));
       await blobs.delete(job.uploadStorageKey!);
+      return outcome;
     } catch (error) {
       await db
         .update(importJob)

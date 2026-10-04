@@ -1,6 +1,7 @@
 // Better Auth setup (ADR 0011): e-mail + password, invite-only, database sessions, admin plugin.
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { createAuthMiddleware } from 'better-auth/api';
 import { admin } from 'better-auth/plugins/admin';
 import { adminAc, defaultAc, userAc } from 'better-auth/plugins/admin/access';
 import { openAPI } from 'better-auth/plugins';
@@ -79,6 +80,16 @@ export function createAuth({ db, baseUrl, secret, trustedOrigins = [], rateLimit
       // Only for describing PUBLIC_AUTH_PATHS in our OpenAPI document; its own pages stay off.
       openAPI({ disableDefaultReference: true }),
     ],
+    hooks: {
+      /**
+       * Changing one's password always ends one's other sessions (ADR 0013), whatever the client sends:
+       * a client that leaves `revokeOtherSessions` out must not keep a stolen session alive.
+       */
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== '/change-password') return;
+        return { context: { ...ctx, body: { ...(ctx.body as object), revokeOtherSessions: true } } };
+      }),
+    },
     databaseHooks: {
       user: {
         create: {

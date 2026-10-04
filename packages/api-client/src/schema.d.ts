@@ -1419,16 +1419,17 @@ export interface paths {
                             createdAt: string;
                             finishedAt: string | null;
                             errorCode: ("unsupported_file" | "processing_failed") | null;
-                            error: string | null;
                             outcome: {
                                 fileName: string;
                                 /** @enum {unknown} */
                                 result: "created" | "attached" | "updated" | "unchanged" | "duplicate-candidate" | "skipped" | "failed";
                                 diveId?: string;
                                 recordingId?: string;
-                                /** @enum {unknown} */
+                                /**
+                                 * @description Why; clients translate it. A failure’s detail stays in the server log
+                                 * @enum {unknown}
+                                 */
                                 reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed";
-                                message?: string;
                                 /**
                                  * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
                                  * @enum {unknown}
@@ -1465,16 +1466,17 @@ export interface paths {
                             createdAt: string;
                             finishedAt: string | null;
                             errorCode: ("unsupported_file" | "processing_failed") | null;
-                            error: string | null;
                             outcome: {
                                 fileName: string;
                                 /** @enum {unknown} */
                                 result: "created" | "attached" | "updated" | "unchanged" | "duplicate-candidate" | "skipped" | "failed";
                                 diveId?: string;
                                 recordingId?: string;
-                                /** @enum {unknown} */
+                                /**
+                                 * @description Why; clients translate it. A failure’s detail stays in the server log
+                                 * @enum {unknown}
+                                 */
                                 reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed";
-                                message?: string;
                                 /**
                                  * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
                                  * @enum {unknown}
@@ -1559,16 +1561,17 @@ export interface paths {
                             createdAt: string;
                             finishedAt: string | null;
                             errorCode: ("unsupported_file" | "processing_failed") | null;
-                            error: string | null;
                             outcome: {
                                 fileName: string;
                                 /** @enum {unknown} */
                                 result: "created" | "attached" | "updated" | "unchanged" | "duplicate-candidate" | "skipped" | "failed";
                                 diveId?: string;
                                 recordingId?: string;
-                                /** @enum {unknown} */
+                                /**
+                                 * @description Why; clients translate it. A failure’s detail stays in the server log
+                                 * @enum {unknown}
+                                 */
                                 reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed";
-                                message?: string;
                                 /**
                                  * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
                                  * @enum {unknown}

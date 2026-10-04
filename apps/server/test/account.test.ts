@@ -104,6 +104,23 @@ describe.skipIf(!(await databaseReachable()))('own account', () => {
       expect(await canSignIn('changer@example.com', NEW_PASSWORD)).toBe(true);
     });
 
+    it('always ends the other sessions, whatever the client asks (ADR 0013, client contract §6)', async () => {
+      const here = await signIn(ctx.app, 'changer@example.com', NEW_PASSWORD);
+      const there = await signIn(ctx.app, 'changer@example.com', NEW_PASSWORD);
+      const changed = await inject('POST', '/api/auth/change-password', here, {
+        currentPassword: NEW_PASSWORD, newPassword: `${NEW_PASSWORD} again`, revokeOtherSessions: false,
+      });
+      expect(changed.statusCode).toBe(200);
+      expect(await status('/api/me', there)).toBe(401);
+      // The session that changed it goes on (Better Auth gives it a new token).
+      expect(await status('/api/me', cookieHeader(changed) || here)).toBe(200);
+      // Back to the password the tests below expect.
+      const back = await inject('POST', '/api/auth/change-password', cookieHeader(changed) || here, {
+        currentPassword: `${NEW_PASSWORD} again`, newPassword: NEW_PASSWORD,
+      });
+      expect(back.statusCode).toBe(200);
+    });
+
     it('rejects a too short new password', async () => {
       const here = await signIn(ctx.app, 'changer@example.com', NEW_PASSWORD);
       const response = await inject('POST', '/api/auth/change-password', here, { currentPassword: NEW_PASSWORD, newPassword: 'short one' });

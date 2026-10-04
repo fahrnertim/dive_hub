@@ -30,15 +30,13 @@ const ImportView = Type.Object({
   uploadName: Type.String(),
   createdAt: DateTime,
   finishedAt: Nullable(DateTime),
-  errorCode: Nullable(Type.Enum([...IMPORT_ERROR_CODES], { description: 'Why the Import failed; clients translate it' })),
-  error: Nullable(Type.String({ description: 'English detail for processing_failed' })),
+  errorCode: Nullable(Type.Enum([...IMPORT_ERROR_CODES], { description: 'Why the Import failed; clients translate it. The detail stays in the server log' })),
   outcome: Type.Array(Type.Object({
     fileName: Type.String(),
     result: Type.Enum(['created', 'attached', 'updated', 'unchanged', 'duplicate-candidate', 'skipped', 'failed']),
     diveId: Type.Optional(Type.String()),
     recordingId: Type.Optional(Type.String()),
-    reason: Type.Optional(Type.Enum([...OUTCOME_REASONS])),
-    message: Type.Optional(Type.String()),
+    reason: Type.Optional(Type.Enum([...OUTCOME_REASONS], { description: 'Why; clients translate it. A failure’s detail stays in the server log' })),
     decision: Type.Optional(Type.Enum(['open', 'attached', 'new_dive', 'discarded'], {
       description: 'For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to',
     })),
@@ -87,9 +85,9 @@ const SamplesView = Type.Object({
 const iso = (d: Date | null) => (d ? d.toISOString() : null);
 const toImportView = (j: typeof importJob.$inferSelect): Static<typeof ImportView> => ({
   id: j.id, status: j.status, uploadName: j.uploadName, createdAt: j.createdAt.toISOString(),
-  finishedAt: iso(j.finishedAt), outcome: j.outcome,
+  // A parser's own words (English, internals) stay in the database and the server log (client contract §6).
+  finishedAt: iso(j.finishedAt), outcome: j.outcome.map(({ message: _detail, ...o }) => o),
   errorCode: j.error === null ? null : j.error === 'unsupported_file' ? 'unsupported_file' : 'processing_failed',
-  error: j.error === 'unsupported_file' ? null : j.error,
 });
 /**
  * An Import's outcome is stored once; a Duplicate candidate is decided later. Adds the current

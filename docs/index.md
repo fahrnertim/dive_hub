@@ -13,7 +13,7 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [spec/README.md](spec/README.md) — Product specification: vision, sources → hub → targets, open questions.
 - [spec/data-model.md](spec/data-model.md) — Entities, ownership, relationships; UDDF checklist, gap coverage, scenarios.
 - [spec/architecture.md](spec/architecture.md) — Components, import flow, Docker Compose deployment, auth; implementation status per slice (9: merging sites, paged site list, client contract); operator notes on site data licenses.
-- [spec/clients.md](spec/clients.md) — Client contract: what every API client must do (licenses, privacy, versions, error codes, units), for the web client and the mobile app to come.
+- [spec/clients.md](spec/clients.md) — Client contract: what every API client must do, from a walk through the web client (licenses, privacy, security, confirmations, versions, each area's duties, units, accessibility); two server gaps found and fixed.
 - [spec/design-system.md](spec/design-system.md) — Visual direction, tokens, components, writing, localization, units, accessibility.
 
 ## Glossary

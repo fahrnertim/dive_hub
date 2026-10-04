@@ -2,10 +2,21 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import yazl from 'yazl';
 import { PROBLEMS } from '../src/http/problems.js';
+import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
   BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase,
 } from './support.js';
+
+const zipOf = (entries: Record<string, Uint8Array>): Promise<Buffer> =>
+  new Promise((resolve, reject) => {
+    const zip = new yazl.ZipFile();
+    for (const [name, data] of Object.entries(entries)) zip.addBuffer(Buffer.from(data), name);
+    zip.end();
+    const chunks: Buffer[] = [];
+    zip.outputStream.on('data', (c: Buffer) => chunks.push(c)).on('end', () => resolve(Buffer.concat(chunks))).on('error', reject);
+  });
 
 describe.skipIf(!(await databaseReachable()))('preferences and error codes', () => {
   let t: TestDatabase;
@@ -81,7 +92,20 @@ describe.skipIf(!(await databaseReachable()))('preferences and error codes', () 
       const created = await ctx.app.inject({ method: 'POST', url: '/api/imports', payload, headers: { ...headers, cookie } });
       await ctx.imports.processImport(created.json().id).catch(() => {});
       const view = (await inject('GET', `/api/imports/${created.json().id}`)).json();
-      expect(view).toMatchObject({ status: 'failed', errorCode: 'unsupported_file', error: null });
+      expect(view).toMatchObject({ status: 'failed', errorCode: 'unsupported_file' });
+      expect(view).not.toHaveProperty('error');
+    });
+
+    it('tell why one file of an archive failed by its code only, never the parser’s own words (client contract §6)', async () => {
+      const broken = makeSyntheticDive({ serialNumber: 7001 }).slice(0, 60);
+      const zip = await zipOf({ 'good.fit': makeSyntheticDive({ serialNumber: 7002 }), 'broken.fit': broken });
+      const { payload, headers } = multipartFile('export.zip', zip);
+      const created = await ctx.app.inject({ method: 'POST', url: '/api/imports', payload, headers: { ...headers, cookie } });
+      await ctx.imports.processImport(created.json().id);
+      const view = (await inject('GET', `/api/imports/${created.json().id}`)).json() as { outcome: Record<string, unknown>[] };
+      const failed = view.outcome.find((o) => o.fileName === 'broken.fit');
+      expect(failed).toEqual({ fileName: 'broken.fit', result: 'failed', reason: 'file_failed' });
+      expect(view.outcome.find((o) => o.fileName === 'good.fit')).toMatchObject({ result: 'created' });
     });
   });
 });
