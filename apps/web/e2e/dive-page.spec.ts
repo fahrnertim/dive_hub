@@ -9,7 +9,7 @@ test.beforeEach(async ({ request }) => {
   diveId = (await resetDive(request)).id;
 });
 
-test('shows the dive with the recording\'s values, the device data and how it came to be', async ({ page }) => {
+test('shows the dive with the recording\'s values, the device data and how it came to be', { tag: ['@dives'] }, async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Jan 15, 2026, 11:00 AM (UTC+2)' }).click();
   await expect(page.getByRole('heading', { name: /Dive 42/ })).toBeVisible();
@@ -19,13 +19,16 @@ test('shows the dive with the recording\'s values, the device data and how it ca
   await expect(facts).toContainText('Salt water');
   await expect(page.getByText('edited')).toHaveCount(0);
   await expect(page.getByText('Bühlmann ZHL-16C, GF 40/85')).toBeVisible();
-  await page.getByRole('button', { name: 'Show the whole history' }).click();
+  // More than three entries hide behind "Show the whole history"; how many there are depends on what
+  // other specs did on this server before (ADR 0023).
+  const showAll = page.getByRole('button', { name: 'Show the whole history' });
+  if (await showAll.isVisible()) await showAll.click();
   await expect(page.getByText('Created from an import')).toBeVisible();
   // The depth profile was drawn (its canvas exists and the page didn't fail).
   await expect(page.getByRole('img', { name: 'Depth profile' }).locator('canvas').first()).toBeVisible();
 });
 
-test('edits values and notes, marks them as edited and records the change', async ({ page }) => {
+test('edits values and notes, marks them as edited and records the change', { tag: ['@dives'] }, async ({ page }) => {
   await page.goto(`/#/dives/${diveId}`);
   await page.getByRole('button', { name: 'Edit dive' }).click();
   await page.getByRole('textbox', { name: 'Max depth' }).fill('19.2');
@@ -42,7 +45,7 @@ test('edits values and notes, marks them as edited and records the change', asyn
   await expect(latest).toContainText('Notes changed');
 });
 
-test('goes back to the recording\'s value', async ({ page }) => {
+test('goes back to the recording\'s value', { tag: ['@dives'] }, async ({ page }) => {
   await page.goto(`/#/dives/${diveId}`);
   await page.getByRole('button', { name: 'Edit dive' }).click();
   await page.getByRole('textbox', { name: 'Max depth' }).fill('25');
@@ -59,7 +62,7 @@ test('goes back to the recording\'s value', async ({ page }) => {
   await expect(page.locator('.history > li').first()).not.toContainText('Max depth');
 });
 
-test('switches the Primary recording; values without Override follow it', async ({ page }) => {
+test('switches the Primary recording; values without Override follow it', { tag: ['@dives'] }, async ({ page }) => {
   await page.goto(`/#/dives/${diveId}`);
   await page.getByRole('tab', { name: /\(999\)/ }).click();
   await page.getByRole('button', { name: /^Recording actions/ }).click();
@@ -69,7 +72,7 @@ test('switches the Primary recording; values without Override follow it', async 
   await expect(page.locator('.history > li').first()).toContainText('Primary recording changed');
 });
 
-test('refuses to overwrite a change made elsewhere meanwhile', async ({ page, request }) => {
+test('refuses to overwrite a change made elsewhere meanwhile', { tag: ['@dives'] }, async ({ page, request }) => {
   await page.goto(`/#/dives/${diveId}`);
   await page.getByRole('button', { name: 'Edit dive' }).click();
   await editElsewhere(request, diveId, 'Written on the phone');
@@ -80,7 +83,7 @@ test('refuses to overwrite a change made elsewhere meanwhile', async ({ page, re
   await expect(page.getByText('Written on the phone')).toBeVisible();
 });
 
-test('speaks German and works in feet, including typing a decimal comma', async ({ page, request }) => {
+test('speaks German and works in feet, including typing a decimal comma', { tag: ['@dives'] }, async ({ page, request }) => {
   await setPreferences(request, { language: 'de', units: 'imperial' });
   await page.goto(`/#/dives/${diveId}`);
   await expect(page.getByRole('heading', { name: /Tauchgang 42/ })).toBeVisible();

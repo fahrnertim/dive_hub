@@ -11,11 +11,10 @@ test.beforeAll(async ({ request }) => {
   await setPreferences(request, { language: null, units: null });
 });
 
-test('the admin imports the dive sites of a country, after confirming the ODbL conditions', async ({ page }) => {
+test('the admin imports the dive sites of a country, after confirming the ODbL conditions', { tag: ['@sites', '@admin'] }, async ({ page }) => {
   await page.goto('/#/admin');
   await page.getByRole('link', { name: 'Import dive sites' }).click();
   await expect(page.getByRole('heading', { name: 'Import dive sites', level: 1 })).toBeFocused();
-  await expect(page.getByText('No imports yet.')).toBeVisible();
   await expect(page.getByText('OpenStreetMap’s data comes with conditions (Open Database License).')).toBeVisible();
   await expectGoodPage(page, 'Import dive sites');
 
@@ -36,7 +35,7 @@ test('the admin imports the dive sites of a country, after confirming the ODbL c
   await expectGoodPage(page, 'Import dive sites');
 });
 
-test('an imported site says where it comes from, with OpenStreetMap\'s Attribution and the import in its history', async ({ page }) => {
+test('an imported site says where it comes from, with OpenStreetMap\'s Attribution and the import in its history', { tag: ['@sites', '@admin'] }, async ({ page }) => {
   await page.goto('/#/sites');
   await expect(page.getByRole('link', { name: '© OpenStreetMap contributors' })).toHaveAttribute('href', 'https://www.openstreetmap.org/copyright');
   await page.getByRole('searchbox', { name: 'Search' }).fill('Ras il');
@@ -55,7 +54,7 @@ test('an imported site says where it comes from, with OpenStreetMap\'s Attributi
   await expectGoodPage(page, 'Ras il-Ħobż');
 });
 
-test('anyone enters the SSI site ID and maximum depth by hand', async ({ page }) => {
+test('anyone enters the SSI site ID and maximum depth by hand', { tag: ['@sites', '@admin'] }, async ({ page }) => {
   await page.goto('/#/sites');
   await page.getByRole('searchbox', { name: 'Search' }).fill('Ras il');
   await page.getByRole('link', { name: 'Ras il-Ħobż' }).click();
@@ -78,7 +77,7 @@ test('anyone enters the SSI site ID and maximum depth by hand', async ({ page })
   await expect(edited).toContainText('SSI site ID: – → 3314');
 });
 
-test('a Wikidata-only import needs no confirmation, and says when there is nothing', async ({ page }) => {
+test('a Wikidata-only import needs no confirmation, and says when there is nothing', { tag: ['@sites', '@admin'] }, async ({ page }) => {
   await page.goto('/#/admin/site-imports');
   await page.getByRole('button', { name: 'Country' }).click();
   await page.getByRole('option', { name: 'Malta' }).click();

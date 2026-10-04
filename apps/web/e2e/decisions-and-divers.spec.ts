@@ -18,7 +18,7 @@ test.beforeAll(async ({ request }) => {
   await expect.poll(async () => (await (await request.get(`/api/imports/${(await upload.json()).id}`)).json()).status).toBe('done');
 });
 
-test('a recording that doesn\'t clearly fit is put aside, brought back and added to a dive', async ({ page }) => {
+test('a recording that doesn\'t clearly fit is put aside, brought back and added to a dive', { tag: ['@dives'] }, async ({ page }) => {
   await page.goto('/');
   const panel = page.locator('section.panel').filter({ has: page.getByRole('heading', { name: 'Needs your decision' }) });
   await expect(panel).toContainText('One recording doesn’t clearly belong to a dive.');
@@ -42,7 +42,7 @@ test('a recording that doesn\'t clearly fit is put aside, brought back and added
   await expect(page.locator('.history > li').first()).toContainText('Recording added');
 });
 
-test('a recording that belongs elsewhere is split off into its own dive', async ({ page }) => {
+test('a recording that belongs elsewhere is split off into its own dive', { tag: ['@dives'] }, async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Jan 15, 2026, 11:00 AM (UTC+2)' }).click();
   await page.getByRole('tab', { name: /\(777\)/ }).click();
@@ -56,7 +56,7 @@ test('a recording that belongs elsewhere is split off into its own dive', async 
   await expect(page.getByRole('link', { name: 'Jan 15, 2026, 11:01 AM (UTC+2)' })).toBeVisible();
 });
 
-test('a second Diver gets a dive and a device; the logbook can show one Diver', async ({ page }) => {
+test('a second Diver gets a dive and a device; the logbook can show one Diver', { tag: ['@divers', '@dives'] }, async ({ page }) => {
   await page.goto('/#/divers');
   await page.getByRole('textbox', { name: 'Add a Diver' }).fill('Mia');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
@@ -73,6 +73,9 @@ test('a second Diver gets a dive and a device; the logbook can show one Diver', 
   await page.getByRole('link', { name: 'Jan 15, 2026, 11:01 AM (UTC+2)' }).click();
   await page.getByRole('button', { name: /^More/ }).click();
   await page.getByRole('menuitem', { name: 'Move to another Diver…' }).click();
+  // The server may keep more Divers (e2e/prepare.ts): choose Mia, don't rely on the first one.
+  await page.getByRole('dialog').getByRole('button', { name: /Diver/ }).click();
+  await page.getByRole('option', { name: 'Mia' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Move', exact: true }).click();
   await expect(page.getByText('Diver: Mia')).toBeVisible();
   await expect(page.locator('.history > li').first()).toContainText('Moved to another Diver');
@@ -85,7 +88,7 @@ test('a second Diver gets a dive and a device; the logbook can show one Diver', 
   await expect(page.getByRole('cell', { name: 'Mia' })).toBeVisible();
 });
 
-test('the Divers page speaks German', async ({ page, request }) => {
+test('the Divers page speaks German', { tag: ['@divers'] }, async ({ page, request }) => {
   await setPreferences(request, { language: 'de' });
   await page.goto('/#/divers');
   await expect(page.getByRole('heading', { name: 'Taucher', level: 1 })).toBeVisible();

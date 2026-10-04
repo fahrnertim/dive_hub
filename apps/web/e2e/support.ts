@@ -1,8 +1,23 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
 
-export const E2E_PORT = 3300;
-export const E2E_BASE_URL = `http://localhost:${E2E_PORT}`;
+/**
+ * Browser tests run in parallel (ADR 0023): one e2e server with its own database per worker, on ports
+ * 3300, 3301, … Each worker talks only to its own; Playwright tells a worker its slot in TEST_PARALLEL_INDEX.
+ * The review capture uses one server (`--project=review`).
+ */
+export const E2E_REVIEW = process.argv.some((a) => a.includes('project=review'));
+/** Measured 2026-10-04 (full suite, 14-core laptop): 1 worker 285 s, 2: 215 s, 3: 222 s, 4: 229 s. */
+export const E2E_SERVERS = E2E_REVIEW ? 1 : Number(process.env.E2E_SERVERS ?? 2);
+export const E2E_FIRST_PORT = 3300;
+export const serverUrl = (slot: number) => `http://localhost:${E2E_FIRST_PORT + slot}`;
+/** The signed-in session for one server (written by global-setup.ts). */
+export const sessionFile = (slot: number) => `e2e/.state/user-${slot}.json`;
+const slot = Number(process.env.TEST_PARALLEL_INDEX ?? 0) % E2E_SERVERS;
+/** This worker's server. */
+export const E2E_PORT = E2E_FIRST_PORT + slot;
+export const E2E_BASE_URL = serverUrl(slot);
+export const E2E_SESSION = sessionFile(slot);
 
 /** Mirrors the User seeded by apps/server/test/e2e-server.ts. */
 export const E2E_USER = { email: 'erika@example.com', name: 'Erika', password: 'correct horse battery staple' };
@@ -50,17 +65,20 @@ export async function setPreferences(api: APIRequestContext, preferences: { lang
  * buttons by name, so "Revoke" on every row can't be told apart). `title` is the expected h1 text,
  * checked against document.title; leave it out to check only that the page set one.
  */
-export async function expectGoodPage(page: Page, title?: string) {
+export async function expectGoodPage(page: Page, title?: string, options: { axe?: boolean } = {}) {
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   if (title) await expect(page).toHaveTitle(`${title} – Dive Hub`);
   else await expect(page).toHaveTitle(/^.+ – Dive Hub$/);
 
-  const axe = await new AxeBuilder({ page })
-    // React Aria's live announcer briefly keeps a role=img pointing at a pending button that may be gone.
-    .exclude('[data-live-announcer]')
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-    .analyze();
-  expect(axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.html.slice(0, 120)).join(' | ')}`)).toEqual([]);
+  // axe is the slowest check; ui-quality runs it in two of its four variants (ADR 0023).
+  if (options.axe !== false) {
+    const axe = await new AxeBuilder({ page })
+      // React Aria's live announcer briefly keeps a role=img pointing at a pending button that may be gone.
+      .exclude('[data-live-announcer]')
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
+      .analyze();
+    expect(axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.html.slice(0, 120)).join(' | ')}`)).toEqual([]);
+  }
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow, 'the page scrolls sideways').toBeLessThanOrEqual(0);

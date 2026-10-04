@@ -34,6 +34,9 @@ Start at [docs/index.md](docs/index.md) — it lists every document.
 - Markdown with YAML frontmatter: `title`, `summary`, `status`, `date`.
 - Relative Markdown links (not `[[wikilinks]]`).
 - Record significant decisions as ADRs; don't re-litigate accepted ones without a new ADR.
+- **Checks** ([ADR 0023](docs/decisions/0023-faster-checks.md)): `pnpm check` while working (only what the change touches),
+  `pnpm check:full` before proposing a commit, and the review capture with `REVIEW_AREAS` only when UI changed.
+  A new page or module gets its path in `scripts/check.mjs`, and a new browser test gets an area tag.
 - A change that gives API clients a new duty (something to show, ask, format or send) updates the
   [client contract](docs/spec/clients.md) in the same change.
 - Keep this file short; details belong in `docs/`.
@@ -65,7 +68,7 @@ rejected, and why — in [docs/skills.md](docs/skills.md).
   [docs/spec/design-system.md](docs/spec/design-system.md) and the tokens in `apps/web/src/design/tokens.css`:
   extend them, don't restyle single pages.
 - **accessibility**: target WCAG 2.2 AA; build on the React Aria components in `apps/web/src/ui/`.
-- **playwright-cli**: tests live in `apps/web/e2e` and run with `pnpm --filter @dive-hub/web test:e2e`
+- **playwright-cli**: tests live in `apps/web/e2e` and run with `pnpm --filter @dive-hub/web test:e2e` (every test has an area tag, [ADR 0023](docs/decisions/0023-faster-checks.md))
   (installed Edge/Chrome; don't run `npx playwright install`). Keep tests at the User's level: roles,
   labels and visible text, not CSS classes. A new page or state gets a case in `e2e/ui-quality.spec.ts`
   ([page rules](docs/spec/design-system.md#rules-every-page-follows)).

@@ -24,7 +24,9 @@ export const E2E_USER = { email: 'erika@example.com', name: 'Erika', password: '
 
 const port = Number(process.env.E2E_PORT ?? 3300);
 const baseDbUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL ?? 'postgres://divehub:divehub-dev@127.0.0.1:5432/divehub';
-const dbName = 'divehub_e2e';
+// One database per e2e server: the browser tests run one server per worker (ADR 0023).
+const dbName = process.env.E2E_DB ?? 'divehub_e2e';
+if (!/^[a-z0-9_]+$/.test(dbName)) throw new Error(`E2E_DB must be a plain name: ${dbName}`);
 const here = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
 const admin = new pg.Client({ connectionString: baseDbUrl });

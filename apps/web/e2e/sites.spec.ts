@@ -32,7 +32,7 @@ test.afterAll(async ({ request }) => {
   await resetDive(request);
 });
 
-test('a dive with a position: a new dive site is made from it and chosen', async ({ page }) => {
+test('a dive with a position: a new dive site is made from it and chosen', { tag: ['@sites', '@dives'] }, async ({ page }) => {
   await page.goto(`/#/dives/${sitedDiveId}`);
   const facts = page.locator('dl.facts').first();
   await expect(facts).toContainText('28.5003° N, 34.5197° E');
@@ -69,7 +69,7 @@ test('a dive with a position: a new dive site is made from it and chosen', async
   await expect(page).toHaveURL(/#\/$/);
 });
 
-test('a dive without a position picks a site by searching, and can go back to none', async ({ page }) => {
+test('a dive without a position picks a site by searching, and can go back to none', { tag: ['@sites', '@dives'] }, async ({ page }) => {
   await page.goto(`/#/dives/${diveId}`);
   await page.getByRole('button', { name: 'Choose dive site' }).click();
   const dialog = page.getByRole('dialog', { name: 'Dive site' });
@@ -85,7 +85,7 @@ test('a dive without a position picks a site by searching, and can go back to no
   await expect(page.getByRole('button', { name: 'Choose dive site' })).toBeVisible();
 });
 
-test('the Dive sites page creates, edits and deletes a site', async ({ page }) => {
+test('the Dive sites page creates, edits and deletes a site', { tag: ['@sites'] }, async ({ page }) => {
   await page.goto('/');
   await page.getByRole('navigation').getByRole('link', { name: 'Dive sites' }).click();
   await expect(page.getByRole('heading', { name: 'Dive sites', level: 1 })).toBeFocused();
@@ -115,14 +115,14 @@ test('the Dive sites page creates, edits and deletes a site', async ({ page }) =
   await expect(page.getByRole('link', { name: 'Blue Hole' })).toHaveCount(0);
 });
 
-test('a site with dives says why it can\'t be deleted', async ({ page }) => {
+test('a site with dives says why it can\'t be deleted', { tag: ['@sites'] }, async ({ page }) => {
   await page.goto('/#/sites');
   await page.getByRole('link', { name: 'Lighthouse' }).click();
   await expect(page.getByText('Dives are at this dive site, so it can’t be deleted.')).toBeVisible();
   await expect(page.getByRole('button', { name: /^More actions/ })).toHaveCount(0);
 });
 
-test('a duplicate close by is merged into the site (ADR 0022)', async ({ page, request }) => {
+test('a duplicate close by is merged into the site (ADR 0022)', { tag: ['@sites'] }, async ({ page, request }) => {
   const lighthouse = (await (await request.get('/api/dive-sites?q=Lighthouse')).json()).sites.find((s: { name: string }) => s.name === 'Lighthouse');
   const duplicate = await (await request.post('/api/dive-sites', {
     headers, data: { name: 'Light House', position: { latitude: 28.5007, longitude: 34.5197 }, maxDepthM: 18 },
@@ -150,7 +150,7 @@ test('a duplicate close by is merged into the site (ADR 0022)', async ({ page, r
   await expect(page).toHaveURL(new RegExp(`#/sites/${lighthouse.id}$`));
 });
 
-test('the Dive sites list pages, sorts and filters, keeping it in the address', async ({ page, request }) => {
+test('the Dive sites list pages, sorts and filters, keeping it in the address', { tag: ['@sites'] }, async ({ page, request }) => {
   for (let i = 1; i <= 55; i++) {
     await request.post('/api/dive-sites', { headers, data: { name: `Test Pinnacle ${String(i).padStart(2, '0')}`, country: 'PW' } });
   }

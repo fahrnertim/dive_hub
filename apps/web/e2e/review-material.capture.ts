@@ -1,6 +1,8 @@
 // UI/UX review material (docs/research/2026-10-03-ui-review.md): screenshots, axe-core results,
 // accessibility trees and Tab orders of every page and state. Not a test; run it on purpose:
 //   pnpm --filter @dive-hub/web review:capture        (output: apps/web/review-output/, git-ignored)
+//   REVIEW_AREAS=sites,admin pnpm --filter @dive-hub/web review:capture   only those areas (ADR 0023):
+//   dives, divers, account, admin, sites
 // It changes the seeded data (adds a Duplicate candidate, a Diver, invitations), so run it alone.
 import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -12,7 +14,14 @@ mkdirSync(out, { recursive: true });
 const headers = { origin: E2E_BASE_URL };
 const findings: Record<string, unknown> = {};
 
+const areas = process.env.REVIEW_AREAS?.split(',').map((a) => a.trim()).filter(Boolean);
+const want = (area: string) => !areas || areas.includes(area);
+/** Which area a capture belongs to, by its name. */
+const areaOf = (name: string) => (/site/.test(name) ? 'sites' : /divers/.test(name) ? 'divers'
+  : /account|signin|invitation/.test(name) ? 'account' : /admin/.test(name) ? 'admin' : 'dives');
+
 async function capture(page: Page, name: string, opts: { full?: boolean; axe?: boolean; aria?: boolean } = {}) {
+  if (!want(areaOf(name))) return;
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${out}${name}.png`, fullPage: opts.full ?? true });
   if (opts.aria !== false) writeFileSync(`${out}${name}.aria.yml`, await page.locator('body').ariaSnapshot());
@@ -117,6 +126,7 @@ test('review material', async ({ page, request, browser }) => {
   await request.patch(`/api/dive-sites/${imported.id}`, { headers, data: { version: imported.version, ssiSiteId: '3314', maxDepthM: 32 } });
 
   const sitePages = async (prefix: string, de: boolean) => {
+    if (!want('sites')) return;
     // A new language needs a reload; moving by hash keeps the one the app started with.
     await page.goto('/#/sites'); await page.reload(); await page.locator('table').waitFor();
     await capture(page, `${prefix}-sites`, { aria: false });

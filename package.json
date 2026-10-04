@@ -10,6 +10,8 @@
     "dev": "pnpm --parallel --filter ./apps/* dev",
     "build": "pnpm --recursive build",
     "test": "pnpm --recursive test",
-    "typecheck": "pnpm --recursive typecheck"
+    "typecheck": "pnpm --recursive typecheck",
+    "check": "node scripts/check.mjs",
+    "check:full": "node scripts/check.mjs --full"
   }
 }

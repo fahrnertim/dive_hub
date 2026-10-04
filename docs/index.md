@@ -51,6 +51,7 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [0020 Dive sites shared by all Users, positions without PostGIS, no map yet](decisions/0020-dive-sites.md) — any User edits (versions, Revisions), creator/admin deletes unused; entry/exit positions on Recordings; auto-link to the only site within 200 m; "open in maps" link.
 - [0021 External site IDs and an admin import of Dive sites from OpenStreetMap and Wikidata](decisions/0021-site-external-ids-and-import.md) — external IDs per Source (osm, wikidata, ssi) show where a site comes from; admin-only worker import by country/box/everywhere, ODbL explained and confirmed; per-field 3-way re-import; link, then 100 m + name matching; SSI ID by hand; maximum depth.
 - [0022 Merging duplicate Dive sites; paging the site list; a client contract](decisions/0022-merging-sites-and-site-list-paging.md) — any User merges (kept site wins, gaps filled, no undo); Dives and External IDs move, imports follow; nearby sites on the site page; site list pages, sorts, filters; docs/spec/clients.md.
+- [0023 Checks by what changed, and a faster full check](decisions/0023-faster-checks.md) — `pnpm check` by changed area (tags), `pnpm check:full` before a commit; browser tests on 2 workers with a server each, no traces, axe in 2 of 4 variants; review capture by area. 10½ → 3 min.
 - [Template](decisions/template.md) — copy for new ADRs.
 
 ## References
