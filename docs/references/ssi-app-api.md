@@ -1,8 +1,8 @@
 ---
 title: SSI app API (MySSI)
-summary: SSI's private, undocumented app API as Dive Hub uses it - endpoint, sign-in, reading the logbook, saving (create, update, delete), the dive record and its samples, quirks, and what to do when SSI changes it. Each fact is marked with where it comes from.
+summary: SSI's private, undocumented app API as Dive Hub uses it - endpoint, sign-in, reading the logbook, saving (create, update, delete), the dive record and its samples, the site list (checked 2026-10-05), quirks, and what to do when SSI changes it. Each fact is marked with where it comes from.
 status: living
-date: 2026-10-04
+date: 2026-10-05
 url: https://api.divessi.com/app/a21.php
 ---
 
@@ -19,11 +19,12 @@ This page records what Dive Hub relies on, so that when something breaks there i
 Keep it current: when SSI changes something, or the owner's checks confirm or refute a line, change the line and its marker.
 
 Markers:
-- **[R]**: confirmed against the real SSI with the owner's account (`round-trip.ts`, below), with date and app version.
+- **[R]**: confirmed against the real SSI with the owner's account (`round-trip.ts`, below), with date and app version,
+  or for the site list (no account needed) against a download, with date.
 - **[S]**: reported by a community project (see the research note), not yet confirmed by us.
 - **[?]**: open; the projects disagree or nobody checked.
 
-As of 2026-10-04 nothing is [R] yet. The owner's checks are pending.
+As of 2026-10-05 only the site list is [R]. The owner's account checks are pending.
 
 ## What Dive Hub uses
 
@@ -83,7 +84,7 @@ From `ownFields()` in `apps/server/src/ssi/ssi-record.ts`. On an update, a field
 | `odin_user_log_divetime` | duration | whole minutes; SSI rounds [S] |
 | `odin_user_log_depth_m` / `_ft`, `_avg_depth_m` / `_ft` | max / average depth | both units are sent |
 | `odin_user_log_watertemp_c` / `_f`, `_watertemp_max_c` / `_f` | lowest / highest water temperature | |
-| `odin_user_log_var_watertype_id` | water type | 4 fresh, 5 salt [S] (one project had them swapped) |
+| `odin_user_log_var_watertype_id` | the Dive site's water type (ADR 0025) | 4 fresh, 5 salt, brackish nothing [S] (one project had them swapped) |
 | `odin_user_log_dive_sites_id` | the Dive site's SSI site ID | required by Dive Hub; the web form refuses a dive without one [S] |
 | `odin_user_log_comment` | notes | |
 | `odin_user_log_ean`, `_ean_percent` | first gas | 1 + O₂ % for nitrox; 0 + 0 for air [S] |
@@ -133,8 +134,41 @@ itself (`samplesJson()`).
 | `get_buddies` | buddy list (`id` per account, `buddy_master_id` = the buddy's SSI account, `leader_nr`) | [S]; no call to add a buddy is known |
 | `get_ccards` | certifications (card ID `ccard_uid`, course, date, instructor and centre numbers) | [S]; for an import from SSI later |
 | `get_gear`, `save_gear`, `delete_gear`, `get_gearsets`, `save_gearset` | equipment | [S] |
-| `APP_CACHE_SITES.zip`, `APP_CACHE_CENTER.zip` (`/app/…`, no sign-in) | SSI's whole site list (24,304 sites, 2026-08-15), dive centres | [S]; no licence: see ADR 0024 before any use. Moderation comments contain IP addresses |
+| `APP_CACHE_CENTER.zip` (`/app/…`, no sign-in) | dive centres | [S]; no licence, like the site list |
 | `my.divessi.com` web logbook | form posts with a session cookie, SSO via `rest.divessi.com/sso/login` | [S]; the fallback if the app API closes |
+
+## The site list: `APP_CACHE_SITES.zip`
+
+Used by the admin's SSI site import ([ADR 0025](../decisions/0025-ssi-site-import-and-site-water-type.md)), at the
+operator's risk: **SSI gives no licence for it**, and the EU database right protects it (ADR 0024). Checked [R] on
+2026-10-05 against one download into `samples/private/` (git-ignored, never committed, nothing derived from it kept).
+
+- `GET https://api.divessi.com/app/APP_CACHE_SITES.zip`, **no sign-in**. Answer: `200`, `application/zip`, 2.5 MB [R].
+- One file inside, `sites.json`, 19 MB [R]:
+  `{ created, divesites_total, divesites_locked_total, divesites_deleted_total, divesites: [...] }`.
+  On 2026-10-04: 24,510 entries in `divesites` (36,639 total, 24,468 locked, 333,914 deleted) [R].
+- Per site [R]:
+
+  | Key | What | Dive Hub |
+  |---|---|---|
+  | `odin_dive_sites_id` | integer, unique | the External ID `(ssi, id)` |
+  | `odin_dive_sites_name` | string; 4 are numbers | name (as text) |
+  | `odin_dive_sites_lat`, `_lon` | degrees; mostly 4 decimals, 2,276 with 3, 245 with 2, 34 with 1 | position |
+  | `odin_countries_code_iso` | ISO 3166-1 **alpha-3**; 639 empty; withdrawn `ANT` (Netherlands Antilles) still used | country (alpha-2; `ANT` → none) |
+  | `bow` | body of water: `salt` 20,664, `fresh` 2,992, `artificial` 835, missing 19 | water type (artificial → none) |
+  | `odin_dive_sites_deleted` | `0`, or `""` for 66 sites | truthy → left out; `""` is not deleted |
+  | `odin_dive_sites_is_private`, `_is_private_owner` | 43 private sites, with an SSI user ID | **left out entirely** |
+  | `odin_dive_sites_comment` | moderation notes, 18,217 non-empty; **contain submitters' IP addresses** | **never kept** |
+  | `alias_names`, `alias_names_search` | other names, 7,623 sites | not kept (no field yet) |
+  | `iso2` | a **language** code (`ja`, `el`), empty for 14,452; not a country | ignored |
+  | `current`, `odin_user_log_animal_ids` | current statistics, wildlife IDs | never kept |
+  | `odin_dive_sites_meta_address`, `_meta_region`, `_meta_country`, `_geo_locked`, `_alias_ids`, `timestamp` | | ignored |
+
+- Code: `apps/server/src/sites/import/ssi-sites.ts`; tests use a hand-made file in this format
+  (`apps/server/test/fixtures/site-sources/ssi-sites.json`), never the real one.
+- **If it changes:** the import fails with `source_unavailable` (no zip, no JSON, no `divesites`), or single sites
+  are skipped. Download it once into `samples/private/`, compare with this table, and update the adapter, the fixture
+  and this section.
 
 ## In Dive Hub
 
@@ -142,6 +176,7 @@ itself (`samplesJson()`).
 |---|---|
 | `apps/server/src/ssi/ssi-client.ts` | the calls; errors as reasons (`wrong_credentials`, `signed_out`, `refused`, `unavailable`, `bad_response`), never with a URL |
 | `apps/server/src/ssi/ssi-record.ts` | Dive → record, samples, update and delete records, read-back comparison, fingerprint |
+| `apps/server/src/sites/import/ssi-sites.ts` | the site list for the admin's SSI site import |
 | `apps/server/src/ssi/ssi-service.ts` | Connections, signing in again, create / update / link / delete, Pushes |
 | `apps/server/test/fake-ssi.ts` | an in-memory SSI for tests and the browser tests' server |
 | `apps/server/test/fixtures/ssi/round-trip.ts` | the owner's checks against the real SSI |

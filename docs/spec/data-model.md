@@ -2,7 +2,7 @@
 title: Data model
 summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios.
 status: draft
-date: 2026-10-02
+date: 2026-10-05
 ---
 
 # Data model
@@ -116,12 +116,16 @@ coverage, validity; B5), **Medical exam** (date, result, valid until, examiner),
 - *Owner:* Diver. *Number:* the Diver's own dive number.
 - *Time and depth:* start (UTC + offset), duration, max/avg depth, surface interval.
   These are derived from the Primary recording; any of them can be an **Override**.
-  *Implemented (ADR 0015):* number, start + offset, duration, max/avg depth, water temperature and
-  water type are columns holding the value in effect, with `overrides` naming the fields set by
+  *Implemented (ADR 0015):* number, start + offset, duration, max/avg depth and water temperature
+  are columns holding the value in effect, with `overrides` naming the fields set by
   hand; `version` grows with every change (optimistic locking); notes are the Dive's own.
+  The water type was one of them until ADR 0025 moved it to the Dive site.
 - *Place:* Dive site; entry and exit positions (B6); Operator (dive center / boat, B7); Trip.
 - *Conditions (B9):* water type (salt/fresh/brackish), water/air temperature,
   visibility, current, surface conditions, weather.
+  *Implemented (ADR 0025):* the **water type is the Dive site's**, not a Dive value: a Dive without a site has
+  none. When the Primary recording's computer was set to other water, the Dive says so (`waterMismatch`, with how
+  far its depths read off).
 - *Gas and gear:* Cylinders, weights, Equipment uses (B10, B11).
 - *Experience:* dive type/purpose, rating, notes, tags, problems.
 - *Social:* Participants, Joint dive, Visibility, Signatures.
@@ -139,7 +143,8 @@ suggestion** is raised. Nothing appears in that User's logbook until they accept
 - *Recording key* for re-imports: `(Device serial, device-native dive number or start time)`;
   without a Device, `(Source, external id)`.
 - Device summary: the union of libdivecomputer's parser fields and FIT `dive_summary`/`dive_settings`
-  (dive mode OC/CCR/SCR/gauge/apnea, deco model and GF, salinity, atmospheric pressure,
+  (dive mode OC/CCR/SCR/gauge/apnea, deco model and GF, salinity (the computer's water setting and density,
+  kept here: ADR 0025), atmospheric pressure,
   CNS/OTU start/end, SAC/RMV, ascent rates, TTS at end, gas mixes, tanks, location) (B8).
 - **Sample series**: time, depth, temperature, pressure per sensor, PO2 (set/measured/
   per sensor), CNS, NDL, deco stop/ceiling, TTS, heading, heart rate, GPS (B6), events
@@ -181,11 +186,18 @@ an Import links a new Dive to the only site within 200 m of its position.
 most one per Source and site (`osm`, `wikidata`, `ssi`). Each either *provides data* (keeps the values its Source
 delivered last, the base for the next import's 3-way merge) or is a *reference* (hand-made site linked by an
 import, or an SSI ID typed in). License, Attribution and link pattern belong to the Source, defined once in code.
+*Implemented (ADR 0025):* **water type** (fresh, salt or brackish), the water type of every Dive at the site;
+any User edits it, imports merge it per field (only SSI fills it), merging fills it as a gap. A reference on a
+hand-made site keeps its Source's values as an **offer**; any User takes it ("Use SSI's data": empty fields
+fill, the reference then provides data, Revision cause `adopt`). An SSI ID typed on a site with import data
+provides data once an SSI import finds it. Which Source's value wins is set per field (SSI first for name,
+country and water type; OSM for position).
 
-**Site import** — instance-wide, started by an admin: Sources (OSM, Wikidata; SSI planned in ADR 0024, where an
-imported SSI ID provides data and the admin confirms that SSI's list has no licence), area (country, box or
-everywhere), language for names, who confirmed ODbL and when, status, progress, counts (created, updated,
-unchanged, kept, linked, skipped, gone from the Source, failed) and findings (new sites near existing ones).
+**Site import** — instance-wide, started by an admin: Sources (OSM, Wikidata, SSI; an imported SSI ID provides
+data, ADR 0025), area (country, box or everywhere), whether it creates sites or only fills those already here,
+language for names, who confirmed ODbL and when, when the SSI explanation was confirmed, status, progress, counts
+(created, updated, unchanged, kept, linked, offered, skipped, skipped as new, gone from the Source, failed) and
+findings (new sites near existing ones; hand-made sites that now offer a Source's data).
 Revisions it writes on sites have the actor `site_import` (ADR 0021).
 *Merging (ADR 0022):* any User merges a site into another. The kept site wins and its gaps are filled; Dives move
 (Revision by the system, cause `site-merge`); External IDs move where the kept site has none from that Source;

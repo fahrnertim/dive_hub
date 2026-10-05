@@ -6,8 +6,9 @@ import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import { Problem, problem } from '../http/problems.js';
 import { REVISION_CAUSES } from '../dives/revisions.js';
+import { SITE_WATER_TYPES } from '../vocabulary.js';
 import { NEARBY_M, SITE_SORTS, SiteError, type ExternalIdRow, type SiteActor, type SiteService } from './site-service.js';
-import { SITE_SOURCES, SOURCE_INFO } from './sources.js';
+import { IMPORT_SOURCES, SITE_SOURCES, SOURCE_INFO } from './sources.js';
 
 export interface SiteRouteDeps {
   auth: Auth;
@@ -29,6 +30,9 @@ const WaterBody = Nullable(Type.String({ maxLength: 120, description: 'e.g. "Red
 const Description = Nullable(Type.String({ maxLength: 5000 }));
 const MaxDepth = Nullable(Type.Number({ exclusiveMinimum: 0, maximum: 400, description: 'Deepest point divers reach here, in metres' }));
 const SsiSiteId = Nullable(Type.String({ pattern: '^[1-9][0-9]{0,9}$', description: 'The site\'s ID at SSI (digits), as in its QR code "site:3314"' }));
+const WaterType = Nullable(Type.Enum([...SITE_WATER_TYPES], {
+  description: 'The water at the site (ADR 0025); it is the water type of every Dive here. Clients say so where it is edited',
+}));
 
 const CreateBody = Type.Object({
   name: Name,
@@ -37,6 +41,7 @@ const CreateBody = Type.Object({
   waterBody: Type.Optional(WaterBody),
   description: Type.Optional(Description),
   maxDepthM: Type.Optional(MaxDepth),
+  waterType: Type.Optional(WaterType),
   ssiSiteId: Type.Optional(SsiSiteId),
 }, { additionalProperties: false });
 
@@ -48,8 +53,20 @@ const EditBody = Type.Object({
   waterBody: Type.Optional(WaterBody),
   description: Type.Optional(Description),
   maxDepthM: Type.Optional(MaxDepth),
+  waterType: Type.Optional(WaterType),
   ssiSiteId: Type.Optional(SsiSiteId),
 }, { additionalProperties: false });
+
+/** A Source's values for a site, as offered beside a reference. */
+const OfferedValues = Type.Object({
+  name: Nullable(Type.String()),
+  position: Nullable(PositionSchema),
+  country: Nullable(Type.String()),
+  waterBody: Nullable(Type.String()),
+  description: Nullable(Type.String()),
+  maxDepthM: Nullable(Type.Number()),
+  waterType: Nullable(Type.Enum([...SITE_WATER_TYPES])),
+});
 
 const ExternalIdView = Type.Object({
   source: Type.Enum([...SITE_SOURCES]),
@@ -58,6 +75,9 @@ const ExternalIdView = Type.Object({
   url: Nullable(Type.String({ description: 'The object\'s page at the Source' })),
   providesData: Type.Boolean({ description: 'The site was created or filled from this Source ("From OpenStreetMap"); otherwise a reference only ("Also in …")' }),
   attribution: Nullable(Type.Object({ text: Type.String(), url: Type.String() }, { description: 'What the Source\'s license asks to show with its data' })),
+  offered: Nullable(Type.Object(OfferedValues.properties, {
+    description: 'A reference\'s values from its Source, which any User can take up with POST …/adopt (ADR 0025): empty fields take them',
+  })),
 }, { description: 'Where a site comes from, or where else it is known (ADR 0021)' });
 
 export const SiteView = Type.Object({
@@ -68,6 +88,7 @@ export const SiteView = Type.Object({
   waterBody: Nullable(Type.String()),
   description: Nullable(Type.String()),
   maxDepthM: Nullable(Type.Number({ description: 'Metres' })),
+  waterType: Nullable(Type.Enum([...SITE_WATER_TYPES], { description: 'The water type of every Dive at the site (ADR 0025)' })),
   ssiSiteId: Nullable(Type.String()),
   externalIds: Type.Array(ExternalIdView),
   version: Type.Integer({ description: 'Send it back with an edit; it changes with every change' }),
@@ -97,6 +118,11 @@ const MergeBody = Type.Object({
   intoVersion: Type.Integer({ description: 'The version of the kept site, as the User saw it' }),
 }, { additionalProperties: false });
 
+const AdoptBody = Type.Object({
+  source: Type.Enum([...IMPORT_SOURCES], { description: 'The Source whose offered values to take' }),
+  version: Type.Integer({ description: 'The version the User saw' }),
+}, { additionalProperties: false });
+
 const SiteRevisionView = Type.Object({
   id: Type.String(),
   at: Type.String({ format: 'date-time' }),
@@ -115,6 +141,11 @@ export const externalIdView = (e: ExternalIdRow) => {
   return {
     source: e.source, name: info.name, externalId: e.externalId, url: info.link?.(e.externalId) ?? null,
     providesData: e.providesData, attribution: e.providesData ? info.attribution : null,
+    offered: e.offered && {
+      name: e.offered.name ?? null, position: e.offered.position ?? null, country: e.offered.country ?? null,
+      waterBody: e.offered.waterBody ?? null, description: e.offered.description ?? null,
+      maxDepthM: e.offered.maxDepthM ?? null, waterType: e.offered.waterType ?? null,
+    },
   };
 };
 
@@ -122,13 +153,14 @@ type Row = Awaited<ReturnType<SiteService['get']>> & { distanceM?: number };
 export const toSiteView = ({ site: s, diveCount, inUse, canDelete, externalIds, ssiSiteId, distanceM }: Row): Static<typeof SiteView> => ({
   id: s.id, name: s.name,
   position: s.latitude === null || s.longitude === null ? null : { latitude: s.latitude, longitude: s.longitude },
-  country: s.country, waterBody: s.waterBody, description: s.description, maxDepthM: s.maxDepthM, ssiSiteId,
+  country: s.country, waterBody: s.waterBody, description: s.description, maxDepthM: s.maxDepthM, waterType: s.waterType, ssiSiteId,
   externalIds: externalIds.map(externalIdView), version: s.version,
   diveCount, inUse, canDelete, mergedInto: s.mergedInto, ...(distanceM !== undefined && { distanceM: Math.round(distanceM) }),
 });
 
 const STATUS: Record<SiteError['code'], number> = {
   site_not_found: 404, site_changed: 409, site_in_use: 409, site_not_deletable: 403, external_id_taken: 409, site_merge_self: 400,
+  site_offer_not_found: 404,
 };
 const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
 
@@ -170,7 +202,7 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
     const id = await sites.create(actorOf(request), {
       name: b.name.trim(), position: b.position ?? null, country: b.country ?? null,
       waterBody: text(b.waterBody) ?? null, description: text(b.description) ?? null,
-      maxDepthM: b.maxDepthM ?? null, ssiSiteId: b.ssiSiteId ?? null,
+      maxDepthM: b.maxDepthM ?? null, waterType: b.waterType ?? null, ssiSiteId: b.ssiSiteId ?? null,
     });
     return reply.code(201).send(toSiteView(await sites.get(actorOf(request), id)));
   });
@@ -182,7 +214,7 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
       params: IdParams, body: EditBody, response: { 200: SiteView, ...errors },
     },
   }, async (request) => {
-    const { version, name, position, country, waterBody, description, maxDepthM, ssiSiteId } = request.body;
+    const { version, name, position, country, waterBody, description, maxDepthM, waterType, ssiSiteId } = request.body;
     await sites.edit(actorOf(request), request.params.id, version, {
       ...(name !== undefined && { name: name.trim() }),
       ...(position !== undefined && { position }),
@@ -190,6 +222,7 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
       ...(waterBody !== undefined && { waterBody: text(waterBody) ?? null }),
       ...(description !== undefined && { description: text(description) ?? null }),
       ...(maxDepthM !== undefined && { maxDepthM }),
+      ...(waterType !== undefined && { waterType }),
       ...(ssiSiteId !== undefined && { ssiSiteId }),
     });
     return toSiteView(await sites.get(actorOf(request), request.params.id));
@@ -205,6 +238,17 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
     const { intoId, version, intoVersion } = request.body;
     await sites.merge(actorOf(request), request.params.id, version, intoId, intoVersion);
     return toSiteView(await sites.get(actorOf(request), intoId));
+  });
+
+  app.post('/dive-sites/:id/adopt', {
+    schema: {
+      summary: 'Take up the data a Source offers for this hand-made Dive site (any User)',
+      description: 'Empty fields take the Source\'s values, filled ones stay; the Source then provides data, so later imports keep those fields current (ADR 0025). 404 site_offer_not_found without an offer; 409 site_changed if the version differs.',
+      params: IdParams, body: AdoptBody, response: { 200: SiteView, ...errors },
+    },
+  }, async (request) => {
+    await sites.adopt(actorOf(request), request.params.id, request.body.version, request.body.source);
+    return toSiteView(await sites.get(actorOf(request), request.params.id));
   });
 
   app.get('/dive-sites/:id/revisions', {

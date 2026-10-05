@@ -4,7 +4,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { ImportedValues, SiteSourceAdapter, SourceSite } from '../src/sites/import/site-source.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
-import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase } from './support.js';
+import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, unreachable, type TestDatabase } from './support.js';
 
 type Position = { latitude: number; longitude: number };
 type Site = {
@@ -51,7 +51,7 @@ describe.skipIf(!(await databaseReachable()))('Dive sites: the list and merging'
 
   beforeAll(async () => {
     t = await createTestDatabase();
-    ctx = await createTestApp(t, { siteSources: { osm, wikidata } });
+    ctx = await createTestApp(t, { siteSources: { osm, wikidata, ssi: unreachable('ssi') } });
     await createUser(ctx.auth, 'tim@example.com');
     await createUser(ctx.auth, 'anna@example.com');
     await createUser(ctx.auth, 'admin@example.com', 'admin');
@@ -109,7 +109,7 @@ describe.skipIf(!(await databaseReachable()))('Dive sites: the list and merging'
   describe('merging', () => {
     it('keeps the kept site\'s values, fills its gaps, and moves every Dive there, also other Users\'', async () => {
       const kept = await createSite({ name: 'Lighthouse', position: metresNorth(10_000), country: 'EG' });
-      const duplicate = await createSite({ name: 'Light House', position: metresNorth(10_050), country: 'IL', waterBody: 'Red Sea', maxDepthM: 28, ssiSiteId: '3314', description: 'Steps by the café' }, anna);
+      const duplicate = await createSite({ name: 'Light House', position: metresNorth(10_050), country: 'IL', waterBody: 'Red Sea', maxDepthM: 28, waterType: 'salt', ssiSiteId: '3314', description: 'Steps by the café' }, anna);
       const timsDive = await diveAt(duplicate.id, tim);
       const annasDive = await diveAt(duplicate.id, anna);
 
@@ -118,11 +118,13 @@ describe.skipIf(!(await databaseReachable()))('Dive sites: the list and merging'
       expect(merged.statusCode).toBe(200);
       expect(merged.json()).toMatchObject({
         id: kept.id, name: 'Lighthouse', position: metresNorth(10_000), country: 'EG',
-        waterBody: 'Red Sea', maxDepthM: 28, ssiSiteId: '3314', description: 'Steps by the café', version: kept.version + 1, diveCount: 1,
+        waterBody: 'Red Sea', maxDepthM: 28, waterType: 'salt', ssiSiteId: '3314', description: 'Steps by the café', version: kept.version + 1, diveCount: 1,
       });
 
-      const timsNow = await json<{ site: { id: string } | null }>('GET', `/api/dives/${timsDive}`, tim);
+      const timsNow = await json<{ site: { id: string } | null; waterType: string | null }>('GET', `/api/dives/${timsDive}`, tim);
       expect(timsNow.site?.id).toBe(kept.id);
+      // The Dive's water type is its site's (ADR 0025), so it came along with the filled gap.
+      expect(timsNow.waterType).toBe('salt');
       expect((await json<{ site: { id: string } | null }>('GET', `/api/dives/${annasDive}`, anna)).site?.id).toBe(kept.id);
       // Anna's Dive tells her what happened, without naming Tim.
       const [annasLatest] = await json<Revision[]>('GET', `/api/dives/${annasDive}/revisions`, anna);
@@ -186,7 +188,7 @@ describe.skipIf(!(await databaseReachable()))('Dive sites: the list and merging'
   describe('External IDs and imports', () => {
     const fromOsm = (id: string, v: Partial<ImportedValues>): SourceSite => ({
       source: 'osm', externalId: id, sameAs: {},
-      values: { name: 'x', position: null, country: null, waterBody: null, description: null, maxDepthM: null, ...v },
+      values: { name: 'x', position: null, country: null, waterBody: null, description: null, maxDepthM: null, waterType: null, ...v },
     });
     const runImport = async () => {
       const started = await call('POST', '/api/admin/site-imports', admin, { sources: ['osm'], area: { kind: 'world' }, language: 'en', confirmOdbl: true });

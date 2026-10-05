@@ -15,11 +15,13 @@ type AreaKind = SiteImportArea['kind'];
 const NO_COUNTRY = 'none';
 const ODBL_URL = 'https://opendatacommons.org/licenses/odbl/1-0/';
 const running = (i: SiteImportView) => i.status === 'queued' || i.status === 'running';
+/** Findings shown per kind; a worldwide SSI run can report thousands. */
+const FINDINGS_SHOWN = 50;
 
 /**
- * An admin imports Dive sites from open data (ADR 0021): Wikidata (CC0) and OpenStreetMap (ODbL, whose
- * obligations the admin confirms first), for a country, a box or everywhere. The import runs on the server;
- * this page follows it.
+ * An admin imports Dive sites (ADR 0021, 0025): Wikidata (CC0), OpenStreetMap (ODbL, whose obligations the admin
+ * confirms first) and SSI (no licence: the admin confirms the explanation and the risk), for a country, a box or
+ * everywhere, optionally only filling sites already here. The import runs on the server; this page follows it.
  */
 export function SiteImportPage() {
   const { t } = useTranslation();
@@ -41,17 +43,19 @@ function StartImport() {
   const queryClient = useQueryClient();
   const imports = useQuery(siteImportsQuery());
   const busy = imports.data?.some(running) ?? false;
-  const [sources, setSources] = useState<Record<Source, boolean>>({ osm: true, wikidata: true });
+  const [sources, setSources] = useState<Record<Source, boolean>>({ osm: true, wikidata: true, ssi: false });
   const [kind, setKind] = useState<AreaKind>('country');
   const [country, setCountry] = useState<string | null>(null);
   const [box, setBox] = useState({ south: Number.NaN, west: Number.NaN, north: Number.NaN, east: Number.NaN });
   const [language, setLanguage] = useState<string>(pickLanguage(i18n.language, []));
   const [odbl, setOdbl] = useState(false);
+  const [ssiConfirmed, setSsiConfirmed] = useState(false);
+  const [onlyFill, setOnlyFill] = useState(false);
   // Says what is missing; set on submit only, so nothing moves under a pointer while fields commit.
   const [problem, setProblem] = useState<string | null>(null);
 
   const start = useMutation({
-    mutationFn: async (body: { sources: Source[]; area: SiteImportArea; language: string; confirmOdbl: boolean }) =>
+    mutationFn: async (body: { sources: Source[]; area: SiteImportArea; language: string; confirmOdbl: boolean; confirmSsi: boolean; createSites: boolean }) =>
       unwrap(await api.POST('/api/admin/site-imports', { body })),
     onSuccess: async () => {
       announce(t('siteImport.started'));
@@ -61,16 +65,19 @@ function StartImport() {
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const chosen = (['osm', 'wikidata'] as const).filter((s) => sources[s]);
+    const chosen = (['osm', 'wikidata', 'ssi'] as const).filter((s) => sources[s]);
     const area: SiteImportArea | null = kind === 'world' ? { kind }
       : kind === 'country' ? (country ? { kind, country } : null)
       : Object.values(box).some(Number.isNaN) || box.south >= box.north ? null : { kind, ...box };
     const missing = chosen.length === 0 ? t('siteImport.needSource')
       : !area ? (kind === 'country' ? t('siteImport.needCountry') : t('siteImport.needBox'))
-      : sources.osm && !odbl ? t('siteImport.needOdbl') : null;
+      : sources.osm && !odbl ? t('siteImport.needOdbl')
+      : sources.ssi && !ssiConfirmed ? t('siteImport.needSsi') : null;
     setProblem(missing);
     if (missing || !area) return;
-    start.mutate({ sources: chosen, area, language, confirmOdbl: sources.osm && odbl });
+    start.mutate({
+      sources: chosen, area, language, confirmOdbl: sources.osm && odbl, confirmSsi: sources.ssi && ssiConfirmed, createSites: !onlyFill,
+    });
   };
 
   return (
@@ -80,6 +87,7 @@ function StartImport() {
           <legend className="field-label">{t('siteImport.sources')}</legend>
           <Checkbox isSelected={sources.wikidata} onChange={(v) => setSources((s) => ({ ...s, wikidata: v }))}>{t('siteImport.sourceWikidata')}</Checkbox>
           <Checkbox isSelected={sources.osm} onChange={(v) => setSources((s) => ({ ...s, osm: v }))}>{t('siteImport.sourceOsm')}</Checkbox>
+          <Checkbox isSelected={sources.ssi} onChange={(v) => setSources((s) => ({ ...s, ssi: v }))}>{t('siteImport.sourceSsi')}</Checkbox>
         </fieldset>
         {sources.osm && (
           // Standing terms that wait for the admin's confirmation: tinted, not a Notice (which announces itself).
@@ -94,6 +102,17 @@ function StartImport() {
               />
             </p>
             <Checkbox isSelected={odbl} onChange={setOdbl}>{t('siteImport.odblConfirm')}</Checkbox>
+          </div>
+        )}
+        {sources.ssi && (
+          // No licence to accept: the admin confirms they understood and take the decision (ADR 0025).
+          <div className="terms">
+            <p><strong>{t('siteImport.ssiTitle')}</strong></p>
+            <p>{t('siteImport.ssiNoConditions')}</p>
+            <p>{t('siteImport.ssiDatabase')}</p>
+            <p>{t('siteImport.ssiRisk')}</p>
+            <p>{t('siteImport.ssiTaken')}</p>
+            <Checkbox isSelected={ssiConfirmed} onChange={setSsiConfirmed}>{t('siteImport.ssiConfirm')}</Checkbox>
           </div>
         )}
         <RadioGroup
@@ -126,6 +145,10 @@ function StartImport() {
           </>
         )}
         {kind === 'world' && <Muted>{t('siteImport.worldHint')}</Muted>}
+        <div className="field-block">
+          <Checkbox isSelected={onlyFill} onChange={setOnlyFill}>{t('siteImport.onlyFill')}</Checkbox>
+          <Muted>{t('siteImport.onlyFillHint')}</Muted>
+        </div>
         <Select
           label={t('siteImport.language')}
           description={t('siteImport.languageHint')}
@@ -170,7 +193,7 @@ function LatestImports() {
 }
 
 const STATUS_TONE = { queued: 'neutral', running: 'neutral', done: 'success', failed: 'danger' } as const;
-const COUNTED = ['created', 'updated', 'unchanged', 'kept', 'linked', 'skippedNoName', 'skippedDeleted', 'gone'] as const;
+const COUNTED = ['created', 'updated', 'unchanged', 'kept', 'linked', 'offered', 'skippedNoName', 'skippedDeleted', 'skippedNew', 'gone'] as const;
 
 function ImportItem({ item: i }: { item: SiteImportView }) {
   const { t } = useTranslation();
@@ -186,6 +209,8 @@ function ImportItem({ item: i }: { item: SiteImportView }) {
     : i.progress.step === 'saving' ? t('siteImport.saving', { done: i.progress.done, total: i.progress.total })
     : i.progress.step === 'waiting' ? null : t('siteImport.fetching', { source: t(`siteImport.sourceName.${i.progress.step}`) });
   const counts = i.counts && COUNTED.filter((k) => i.counts![k] > 0).map((k) => t(`siteImport.count.${k}`, { count: i.counts![k] }));
+  const near = i.findings.flatMap((f) => (f.kind === 'near' ? [f] : []));
+  const offers = i.findings.flatMap((f) => (f.kind === 'offer' ? [f] : []));
 
   return (
     <li>
@@ -193,15 +218,15 @@ function ImportItem({ item: i }: { item: SiteImportView }) {
         <strong>{sources} · {area}</strong>
         <Badge tone={STATUS_TONE[i.status]}>{t(`siteImport.status.${i.status}`)}</Badge>
       </div>
-      <p className="meta">{display.dateTime(i.createdAt)}</p>
+      <p className="meta">{display.dateTime(i.createdAt)}{!i.createSites && ` · ${t('siteImport.onlyFilled')}`}</p>
       {progress && <p>{progress}</p>}
       {counts && <p>{counts.length > 0 ? counts.join(', ') : t('siteImport.nothingFound')}</p>}
       {i.failureCode && <p className="import-error">{t(`errors.${i.failureCode}`)}</p>}
-      {i.findings.length > 0 && (
+      {near.length > 0 && (
         <>
-          <p>{t('siteImport.nearIntro', { count: i.findings.length })}</p>
+          <p>{t('siteImport.nearIntro', { count: near.length })}</p>
           <ul className="site-import-findings">
-            {i.findings.map((f) => (
+            {near.slice(0, FINDINGS_SHOWN).map((f) => (
               <li key={f.siteId}>
                 <a href={`#/sites/${f.siteId}`}>{f.name}</a>
                 {' '}{t('siteImport.nearOf', { distance: display.distance(f.distanceM) })}{' '}
@@ -209,6 +234,20 @@ function ImportItem({ item: i }: { item: SiteImportView }) {
               </li>
             ))}
           </ul>
+          {near.length > FINDINGS_SHOWN && <p className="meta">{t('siteImport.moreFindings', { count: near.length - FINDINGS_SHOWN })}</p>}
+        </>
+      )}
+      {offers.length > 0 && (
+        <>
+          <p>{t('siteImport.offerIntro', { count: offers.length })}</p>
+          <ul className="site-import-findings">
+            {offers.slice(0, FINDINGS_SHOWN).map((f) => (
+              <li key={`${f.siteId}-${f.source}`}>
+                <a href={`#/sites/${f.siteId}`}>{f.name}</a> ({t(`siteImport.sourceName.${f.source}`)})
+              </li>
+            ))}
+          </ul>
+          {offers.length > FINDINGS_SHOWN && <p className="meta">{t('siteImport.moreFindings', { count: offers.length - FINDINGS_SHOWN })}</p>}
         </>
       )}
     </li>

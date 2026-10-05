@@ -8,10 +8,7 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { useLeaveGuard } from './lib/leave-guard.ts';
 import { useFormatValue } from './lib/dive-values.ts';
 import { depthFromDisplay, depthIn, temperatureFromDisplay, temperatureIn } from './lib/units.ts';
-import { Badge, Button, DateTimeField, Form, Notice, NumberField, Select, TextArea } from './ui/index.ts';
-
-type WaterType = NonNullable<DiveValues['waterType']>;
-const WATER_TYPES: WaterType[] = ['fresh', 'salt', 'brackish', 'en13319', 'custom'];
+import { Badge, Button, DateTimeField, Form, Notice, NumberField, TextArea } from './ui/index.ts';
 
 /** The form's values, in the User's display units (feet, °F, minutes, local time at the site). */
 interface Draft {
@@ -22,7 +19,6 @@ interface Draft {
   maxDepth: number;
   avgDepth: number;
   waterTemperature: number;
-  waterType: WaterType | null;
 }
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
@@ -47,14 +43,13 @@ function draftOf(v: DiveValues, units: 'metric' | 'imperial'): Draft {
     maxDepth: v.maxDepthM === null ? Number.NaN : round1(depthIn(v.maxDepthM, units)),
     avgDepth: v.avgDepthM === null ? Number.NaN : round1(depthIn(v.avgDepthM, units)),
     waterTemperature: v.waterTemperatureC === null ? Number.NaN : round1(temperatureIn(v.waterTemperatureC, units)),
-    waterType: v.waterType,
   };
 }
 
 /** Draft fields → the Dive value they edit. */
 const FIELD_OF: Record<keyof Draft, OverridableField> = {
   number: 'number', start: 'startsAt', offsetHours: 'startsAt', durationMin: 'durationSeconds',
-  maxDepth: 'maxDepthM', avgDepth: 'avgDepthM', waterTemperature: 'waterTemperatureC', waterType: 'waterType',
+  maxDepth: 'maxDepthM', avgDepth: 'avgDepthM', waterTemperature: 'waterTemperatureC',
 };
 
 export function DiveEditForm({ dive: d, onDone }: { dive: DiveView; onDone: () => void }) {
@@ -103,7 +98,6 @@ export function DiveEditForm({ dive: d, onDone }: { dive: DiveView; onDone: () =
           case 'waterTemperatureC':
             set.waterTemperatureC = Number.isNaN(draft.waterTemperature) ? null : temperatureFromDisplay(draft.waterTemperature, units);
             break;
-          case 'waterType': set.waterType = draft.waterType; break;
         }
       }
       return unwrap(await api.PATCH('/api/dives/{id}', {
@@ -188,16 +182,6 @@ export function DiveEditForm({ dive: d, onDone }: { dive: DiveView; onDone: () =
         <div className="field-block">
           <NumberField label={t('dive.waterTemperature')} description={hint('waterTemperatureC')} unit={display.unit('temperature')} value={draft.waterTemperature} onChange={(n) => change('waterTemperature', n)} onInput={typing('waterTemperatureC')} formatOptions={{ maximumFractionDigits: 1 }} />
           {origin('waterTemperatureC')}
-        </div>
-        <div className="field-block">
-          <Select<WaterType>
-            label={t('dive.waterType')}
-            description={hint('waterType')}
-            value={draft.waterType}
-            onChange={(v) => change('waterType', v)}
-            options={WATER_TYPES.map((w) => ({ id: w, label: t(`vocabulary.waterType.${w}`) }))}
-          />
-          {origin('waterType')}
         </div>
       </div>
       <TextArea label={t('dive.notes')} value={notes} onChange={setNotes} maxLength={20_000} />

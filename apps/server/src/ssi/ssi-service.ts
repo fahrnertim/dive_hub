@@ -174,13 +174,14 @@ export function createSsiService(deps: { db: Db; client: SsiClient; secrets: Sec
         .where(and(eq(diveSiteExternalId.siteId, row.siteId), eq(diveSiteExternalId.source, 'ssi')))
       : [];
     const [site] = row.siteId
-      ? await db.select({ latitude: diveSite.latitude, longitude: diveSite.longitude }).from(diveSite).where(eq(diveSite.id, row.siteId))
+      ? await db.select({ latitude: diveSite.latitude, longitude: diveSite.longitude, waterType: diveSite.waterType }).from(diveSite).where(eq(diveSite.id, row.siteId))
       : [];
     const summary = rec?.summary ?? {};
     const forSsi: DiveForSsi = {
       startsAt: row.startsAt, utcOffsetSeconds: row.utcOffsetSeconds, durationSeconds: row.durationSeconds,
       maxDepthM: row.maxDepthM, avgDepthM: row.avgDepthM, waterTemperatureC: row.waterTemperatureC,
-      maxTemperatureC: summary.maxTemperatureC ?? null, waterType: row.waterType, notes: row.notes,
+      // The Dive's water is its site's (ADR 0025), not the computer's setting.
+      maxTemperatureC: summary.maxTemperatureC ?? null, waterType: site?.waterType ?? null, notes: row.notes,
       siteSsiId: ssiSite?.externalId ?? '',
       entry: rec?.entryLatitude != null && rec.entryLongitude != null ? { latitude: rec.entryLatitude, longitude: rec.entryLongitude } : null,
       exit: rec?.exitLatitude != null && rec.exitLongitude != null ? { latitude: rec.exitLatitude, longitude: rec.exitLongitude } : null,

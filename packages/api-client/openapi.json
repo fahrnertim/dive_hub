@@ -283,7 +283,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -367,7 +369,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -501,7 +505,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -678,7 +684,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -762,7 +770,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -1302,7 +1312,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -1407,7 +1419,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -1536,7 +1550,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -1707,7 +1723,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -1898,7 +1916,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -2147,7 +2167,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -2231,7 +2253,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -2315,7 +2339,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -2438,7 +2464,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -2522,7 +2550,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -2606,7 +2636,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -2761,7 +2793,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -2845,7 +2879,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -2929,7 +2965,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -3084,7 +3122,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -3168,7 +3208,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -3252,7 +3294,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -3357,7 +3401,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -3441,7 +3487,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -3525,7 +3573,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -3651,7 +3701,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -3735,7 +3787,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -3819,7 +3873,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -4046,7 +4102,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -4130,7 +4188,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -4512,7 +4572,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -4880,7 +4942,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -4945,6 +5009,8 @@
                     "fromRecording",
                     "notes",
                     "site",
+                    "waterType",
+                    "waterMismatch",
                     "position",
                     "recordings"
                   ],
@@ -4968,8 +5034,7 @@
                         "durationSeconds",
                         "maxDepthM",
                         "avgDepthM",
-                        "waterTemperatureC",
-                        "waterType"
+                        "waterTemperatureC"
                       ],
                       "properties": {
                         "number": {
@@ -5050,22 +5115,6 @@
                               "maximum": 50
                             }
                           ]
-                        },
-                        "waterType": {
-                          "anyOf": [
-                            {
-                              "type": "null"
-                            },
-                            {
-                              "enum": [
-                                "fresh",
-                                "salt",
-                                "brackish",
-                                "en13319",
-                                "custom"
-                              ]
-                            }
-                          ]
                         }
                       }
                     },
@@ -5078,8 +5127,7 @@
                           "durationSeconds",
                           "maxDepthM",
                           "avgDepthM",
-                          "waterTemperatureC",
-                          "waterType"
+                          "waterTemperatureC"
                         ],
                         "description": "A Dive value that can be overridden"
                       },
@@ -5098,8 +5146,7 @@
                             "durationSeconds",
                             "maxDepthM",
                             "avgDepthM",
-                            "waterTemperatureC",
-                            "waterType"
+                            "waterTemperatureC"
                           ],
                           "properties": {
                             "number": {
@@ -5180,22 +5227,6 @@
                                   "maximum": 50
                                 }
                               ]
-                            },
-                            "waterType": {
-                              "anyOf": [
-                                {
-                                  "type": "null"
-                                },
-                                {
-                                  "enum": [
-                                    "fresh",
-                                    "salt",
-                                    "brackish",
-                                    "en13319",
-                                    "custom"
-                                  ]
-                                }
-                              ]
                             }
                           }
                         }
@@ -5231,6 +5262,67 @@
                             }
                           },
                           "description": "The Dive site (ADR 0020)"
+                        }
+                      ]
+                    },
+                    "waterType": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "fresh",
+                            "salt",
+                            "brackish"
+                          ],
+                          "description": "The Dive site's water type (ADR 0025); null without a site, or when the site has none. Not editable on the Dive"
+                        }
+                      ]
+                    },
+                    "waterMismatch": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "computer",
+                            "site",
+                            "depthPercent"
+                          ],
+                          "properties": {
+                            "computer": {
+                              "enum": [
+                                "fresh",
+                                "salt",
+                                "brackish",
+                                "en13319",
+                                "custom"
+                              ],
+                              "description": "What the Primary recording's computer was set to"
+                            },
+                            "site": {
+                              "enum": [
+                                "fresh",
+                                "salt",
+                                "brackish"
+                              ]
+                            },
+                            "depthPercent": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "description": "Recorded vs true depth in percent: negative reads shallow, positive deep; null where a density is unknown"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "Set when the computer was set to other water than the site's: clients say so (docs/spec/clients.md)"
                         }
                       ]
                     },
@@ -5369,10 +5461,12 @@
                                   "brackish",
                                   "en13319",
                                   "custom"
-                                ]
+                                ],
+                                "description": "The computer's salinity setting, not the water of the Dive (that is the site's)"
                               },
                               "waterDensity": {
-                                "type": "number"
+                                "type": "number",
+                                "description": "Density the computer computed depths with, kg/m³"
                               },
                               "gases": {
                                 "type": "array",
@@ -5491,7 +5585,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -5622,22 +5718,6 @@
                             "maximum": 50
                           }
                         ]
-                      },
-                      "waterType": {
-                        "anyOf": [
-                          {
-                            "type": "null"
-                          },
-                          {
-                            "enum": [
-                              "fresh",
-                              "salt",
-                              "brackish",
-                              "en13319",
-                              "custom"
-                            ]
-                          }
-                        ]
                       }
                     }
                   },
@@ -5650,8 +5730,7 @@
                         "durationSeconds",
                         "maxDepthM",
                         "avgDepthM",
-                        "waterTemperatureC",
-                        "waterType"
+                        "waterTemperatureC"
                       ],
                       "description": "A Dive value that can be overridden"
                     }
@@ -5711,6 +5790,8 @@
                     "fromRecording",
                     "notes",
                     "site",
+                    "waterType",
+                    "waterMismatch",
                     "position",
                     "recordings"
                   ],
@@ -5734,8 +5815,7 @@
                         "durationSeconds",
                         "maxDepthM",
                         "avgDepthM",
-                        "waterTemperatureC",
-                        "waterType"
+                        "waterTemperatureC"
                       ],
                       "properties": {
                         "number": {
@@ -5816,22 +5896,6 @@
                               "maximum": 50
                             }
                           ]
-                        },
-                        "waterType": {
-                          "anyOf": [
-                            {
-                              "type": "null"
-                            },
-                            {
-                              "enum": [
-                                "fresh",
-                                "salt",
-                                "brackish",
-                                "en13319",
-                                "custom"
-                              ]
-                            }
-                          ]
                         }
                       }
                     },
@@ -5844,8 +5908,7 @@
                           "durationSeconds",
                           "maxDepthM",
                           "avgDepthM",
-                          "waterTemperatureC",
-                          "waterType"
+                          "waterTemperatureC"
                         ],
                         "description": "A Dive value that can be overridden"
                       },
@@ -5864,8 +5927,7 @@
                             "durationSeconds",
                             "maxDepthM",
                             "avgDepthM",
-                            "waterTemperatureC",
-                            "waterType"
+                            "waterTemperatureC"
                           ],
                           "properties": {
                             "number": {
@@ -5946,22 +6008,6 @@
                                   "maximum": 50
                                 }
                               ]
-                            },
-                            "waterType": {
-                              "anyOf": [
-                                {
-                                  "type": "null"
-                                },
-                                {
-                                  "enum": [
-                                    "fresh",
-                                    "salt",
-                                    "brackish",
-                                    "en13319",
-                                    "custom"
-                                  ]
-                                }
-                              ]
                             }
                           }
                         }
@@ -5997,6 +6043,67 @@
                             }
                           },
                           "description": "The Dive site (ADR 0020)"
+                        }
+                      ]
+                    },
+                    "waterType": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "fresh",
+                            "salt",
+                            "brackish"
+                          ],
+                          "description": "The Dive site's water type (ADR 0025); null without a site, or when the site has none. Not editable on the Dive"
+                        }
+                      ]
+                    },
+                    "waterMismatch": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "computer",
+                            "site",
+                            "depthPercent"
+                          ],
+                          "properties": {
+                            "computer": {
+                              "enum": [
+                                "fresh",
+                                "salt",
+                                "brackish",
+                                "en13319",
+                                "custom"
+                              ],
+                              "description": "What the Primary recording's computer was set to"
+                            },
+                            "site": {
+                              "enum": [
+                                "fresh",
+                                "salt",
+                                "brackish"
+                              ]
+                            },
+                            "depthPercent": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "description": "Recorded vs true depth in percent: negative reads shallow, positive deep; null where a density is unknown"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "Set when the computer was set to other water than the site's: clients say so (docs/spec/clients.md)"
                         }
                       ]
                     },
@@ -6135,10 +6242,12 @@
                                   "brackish",
                                   "en13319",
                                   "custom"
-                                ]
+                                ],
+                                "description": "The computer's salinity setting, not the water of the Dive (that is the site's)"
                               },
                               "waterDensity": {
-                                "type": "number"
+                                "type": "number",
+                                "description": "Density the computer computed depths with, kg/m³"
                               },
                               "gases": {
                                 "type": "array",
@@ -6257,7 +6366,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -6341,7 +6452,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -6425,7 +6538,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -6513,6 +6628,8 @@
                     "fromRecording",
                     "notes",
                     "site",
+                    "waterType",
+                    "waterMismatch",
                     "position",
                     "recordings"
                   ],
@@ -6536,8 +6653,7 @@
                         "durationSeconds",
                         "maxDepthM",
                         "avgDepthM",
-                        "waterTemperatureC",
-                        "waterType"
+                        "waterTemperatureC"
                       ],
                       "properties": {
                         "number": {
@@ -6618,22 +6734,6 @@
                               "maximum": 50
                             }
                           ]
-                        },
-                        "waterType": {
-                          "anyOf": [
-                            {
-                              "type": "null"
-                            },
-                            {
-                              "enum": [
-                                "fresh",
-                                "salt",
-                                "brackish",
-                                "en13319",
-                                "custom"
-                              ]
-                            }
-                          ]
                         }
                       }
                     },
@@ -6646,8 +6746,7 @@
                           "durationSeconds",
                           "maxDepthM",
                           "avgDepthM",
-                          "waterTemperatureC",
-                          "waterType"
+                          "waterTemperatureC"
                         ],
                         "description": "A Dive value that can be overridden"
                       },
@@ -6666,8 +6765,7 @@
                             "durationSeconds",
                             "maxDepthM",
                             "avgDepthM",
-                            "waterTemperatureC",
-                            "waterType"
+                            "waterTemperatureC"
                           ],
                           "properties": {
                             "number": {
@@ -6748,22 +6846,6 @@
                                   "maximum": 50
                                 }
                               ]
-                            },
-                            "waterType": {
-                              "anyOf": [
-                                {
-                                  "type": "null"
-                                },
-                                {
-                                  "enum": [
-                                    "fresh",
-                                    "salt",
-                                    "brackish",
-                                    "en13319",
-                                    "custom"
-                                  ]
-                                }
-                              ]
                             }
                           }
                         }
@@ -6799,6 +6881,67 @@
                             }
                           },
                           "description": "The Dive site (ADR 0020)"
+                        }
+                      ]
+                    },
+                    "waterType": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "fresh",
+                            "salt",
+                            "brackish"
+                          ],
+                          "description": "The Dive site's water type (ADR 0025); null without a site, or when the site has none. Not editable on the Dive"
+                        }
+                      ]
+                    },
+                    "waterMismatch": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "computer",
+                            "site",
+                            "depthPercent"
+                          ],
+                          "properties": {
+                            "computer": {
+                              "enum": [
+                                "fresh",
+                                "salt",
+                                "brackish",
+                                "en13319",
+                                "custom"
+                              ],
+                              "description": "What the Primary recording's computer was set to"
+                            },
+                            "site": {
+                              "enum": [
+                                "fresh",
+                                "salt",
+                                "brackish"
+                              ]
+                            },
+                            "depthPercent": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "description": "Recorded vs true depth in percent: negative reads shallow, positive deep; null where a density is unknown"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "Set when the computer was set to other water than the site's: clients say so (docs/spec/clients.md)"
                         }
                       ]
                     },
@@ -6937,10 +7080,12 @@
                                   "brackish",
                                   "en13319",
                                   "custom"
-                                ]
+                                ],
+                                "description": "The computer's salinity setting, not the water of the Dive (that is the site's)"
                               },
                               "waterDensity": {
-                                "type": "number"
+                                "type": "number",
+                                "description": "Density the computer computed depths with, kg/m³"
                               },
                               "gases": {
                                 "type": "array",
@@ -7059,7 +7204,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -7143,7 +7290,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -7227,7 +7376,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -7315,6 +7466,8 @@
                     "fromRecording",
                     "notes",
                     "site",
+                    "waterType",
+                    "waterMismatch",
                     "position",
                     "recordings"
                   ],
@@ -7338,8 +7491,7 @@
                         "durationSeconds",
                         "maxDepthM",
                         "avgDepthM",
-                        "waterTemperatureC",
-                        "waterType"
+                        "waterTemperatureC"
                       ],
                       "properties": {
                         "number": {
@@ -7420,22 +7572,6 @@
                               "maximum": 50
                             }
                           ]
-                        },
-                        "waterType": {
-                          "anyOf": [
-                            {
-                              "type": "null"
-                            },
-                            {
-                              "enum": [
-                                "fresh",
-                                "salt",
-                                "brackish",
-                                "en13319",
-                                "custom"
-                              ]
-                            }
-                          ]
                         }
                       }
                     },
@@ -7448,8 +7584,7 @@
                           "durationSeconds",
                           "maxDepthM",
                           "avgDepthM",
-                          "waterTemperatureC",
-                          "waterType"
+                          "waterTemperatureC"
                         ],
                         "description": "A Dive value that can be overridden"
                       },
@@ -7468,8 +7603,7 @@
                             "durationSeconds",
                             "maxDepthM",
                             "avgDepthM",
-                            "waterTemperatureC",
-                            "waterType"
+                            "waterTemperatureC"
                           ],
                           "properties": {
                             "number": {
@@ -7550,22 +7684,6 @@
                                   "maximum": 50
                                 }
                               ]
-                            },
-                            "waterType": {
-                              "anyOf": [
-                                {
-                                  "type": "null"
-                                },
-                                {
-                                  "enum": [
-                                    "fresh",
-                                    "salt",
-                                    "brackish",
-                                    "en13319",
-                                    "custom"
-                                  ]
-                                }
-                              ]
                             }
                           }
                         }
@@ -7601,6 +7719,67 @@
                             }
                           },
                           "description": "The Dive site (ADR 0020)"
+                        }
+                      ]
+                    },
+                    "waterType": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "fresh",
+                            "salt",
+                            "brackish"
+                          ],
+                          "description": "The Dive site's water type (ADR 0025); null without a site, or when the site has none. Not editable on the Dive"
+                        }
+                      ]
+                    },
+                    "waterMismatch": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "computer",
+                            "site",
+                            "depthPercent"
+                          ],
+                          "properties": {
+                            "computer": {
+                              "enum": [
+                                "fresh",
+                                "salt",
+                                "brackish",
+                                "en13319",
+                                "custom"
+                              ],
+                              "description": "What the Primary recording's computer was set to"
+                            },
+                            "site": {
+                              "enum": [
+                                "fresh",
+                                "salt",
+                                "brackish"
+                              ]
+                            },
+                            "depthPercent": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "description": "Recorded vs true depth in percent: negative reads shallow, positive deep; null where a density is unknown"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "Set when the computer was set to other water than the site's: clients say so (docs/spec/clients.md)"
                         }
                       ]
                     },
@@ -7739,10 +7918,12 @@
                                   "brackish",
                                   "en13319",
                                   "custom"
-                                ]
+                                ],
+                                "description": "The computer's salinity setting, not the water of the Dive (that is the site's)"
                               },
                               "waterDensity": {
-                                "type": "number"
+                                "type": "number",
+                                "description": "Density the computer computed depths with, kg/m³"
                               },
                               "gases": {
                                 "type": "array",
@@ -7861,7 +8042,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -7945,7 +8128,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -8085,7 +8270,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -8169,7 +8356,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -8292,7 +8481,8 @@
                           "update",
                           "link",
                           "merge",
-                          "site-merge"
+                          "site-merge",
+                          "adopt"
                         ]
                       },
                       "changes": {
@@ -8367,7 +8557,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -8710,7 +8902,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -8794,7 +8988,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -8878,7 +9074,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -9006,7 +9204,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -9090,7 +9290,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -9174,7 +9376,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -9302,7 +9506,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -9386,7 +9592,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -9470,7 +9678,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -9598,7 +9808,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -9682,7 +9894,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -9766,7 +9980,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -9955,7 +10171,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -10039,7 +10257,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -10123,7 +10343,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -10280,7 +10502,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -10364,7 +10588,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -10448,7 +10674,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -10551,7 +10779,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -10635,7 +10865,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -10719,7 +10951,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -10921,7 +11155,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -11005,7 +11241,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -11089,7 +11327,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -11262,6 +11502,7 @@
                           "waterBody",
                           "description",
                           "maxDepthM",
+                          "waterType",
                           "ssiSiteId",
                           "externalIds",
                           "version",
@@ -11346,6 +11587,21 @@
                               }
                             ]
                           },
+                          "waterType": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "enum": [
+                                  "fresh",
+                                  "salt",
+                                  "brackish"
+                                ],
+                                "description": "The water type of every Dive at the site (ADR 0025)"
+                              }
+                            ]
+                          },
                           "ssiSiteId": {
                             "anyOf": [
                               {
@@ -11366,7 +11622,8 @@
                                 "externalId",
                                 "url",
                                 "providesData",
-                                "attribution"
+                                "attribution",
+                                "offered"
                               ],
                               "properties": {
                                 "source": {
@@ -11419,6 +11676,120 @@
                                         }
                                       },
                                       "description": "What the Source's license asks to show with its data"
+                                    }
+                                  ]
+                                },
+                                "offered": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "name",
+                                        "position",
+                                        "country",
+                                        "waterBody",
+                                        "description",
+                                        "maxDepthM",
+                                        "waterType"
+                                      ],
+                                      "properties": {
+                                        "name": {
+                                          "anyOf": [
+                                            {
+                                              "type": "null"
+                                            },
+                                            {
+                                              "type": "string"
+                                            }
+                                          ]
+                                        },
+                                        "position": {
+                                          "anyOf": [
+                                            {
+                                              "type": "null"
+                                            },
+                                            {
+                                              "type": "object",
+                                              "required": [
+                                                "latitude",
+                                                "longitude"
+                                              ],
+                                              "properties": {
+                                                "latitude": {
+                                                  "type": "number",
+                                                  "minimum": -90,
+                                                  "maximum": 90
+                                                },
+                                                "longitude": {
+                                                  "type": "number",
+                                                  "minimum": -180,
+                                                  "maximum": 180
+                                                }
+                                              },
+                                              "additionalProperties": false,
+                                              "description": "WGS84 degrees"
+                                            }
+                                          ]
+                                        },
+                                        "country": {
+                                          "anyOf": [
+                                            {
+                                              "type": "null"
+                                            },
+                                            {
+                                              "type": "string"
+                                            }
+                                          ]
+                                        },
+                                        "waterBody": {
+                                          "anyOf": [
+                                            {
+                                              "type": "null"
+                                            },
+                                            {
+                                              "type": "string"
+                                            }
+                                          ]
+                                        },
+                                        "description": {
+                                          "anyOf": [
+                                            {
+                                              "type": "null"
+                                            },
+                                            {
+                                              "type": "string"
+                                            }
+                                          ]
+                                        },
+                                        "maxDepthM": {
+                                          "anyOf": [
+                                            {
+                                              "type": "null"
+                                            },
+                                            {
+                                              "type": "number"
+                                            }
+                                          ]
+                                        },
+                                        "waterType": {
+                                          "anyOf": [
+                                            {
+                                              "type": "null"
+                                            },
+                                            {
+                                              "enum": [
+                                                "fresh",
+                                                "salt",
+                                                "brackish"
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "description": "A reference's values from its Source, which any User can take up with POST …/adopt (ADR 0025): empty fields take them"
                                     }
                                   ]
                                 }
@@ -11521,7 +11892,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -11649,6 +12022,21 @@
                       }
                     ]
                   },
+                  "waterType": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "enum": [
+                          "fresh",
+                          "salt",
+                          "brackish"
+                        ],
+                        "description": "The water at the site (ADR 0025); it is the water type of every Dive here. Clients say so where it is edited"
+                      }
+                    ]
+                  },
                   "ssiSiteId": {
                     "anyOf": [
                       {
@@ -11682,6 +12070,7 @@
                     "waterBody",
                     "description",
                     "maxDepthM",
+                    "waterType",
                     "ssiSiteId",
                     "externalIds",
                     "version",
@@ -11766,6 +12155,21 @@
                         }
                       ]
                     },
+                    "waterType": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "fresh",
+                            "salt",
+                            "brackish"
+                          ],
+                          "description": "The water type of every Dive at the site (ADR 0025)"
+                        }
+                      ]
+                    },
                     "ssiSiteId": {
                       "anyOf": [
                         {
@@ -11786,7 +12190,8 @@
                           "externalId",
                           "url",
                           "providesData",
-                          "attribution"
+                          "attribution",
+                          "offered"
                         ],
                         "properties": {
                           "source": {
@@ -11839,6 +12244,120 @@
                                   }
                                 },
                                 "description": "What the Source's license asks to show with its data"
+                              }
+                            ]
+                          },
+                          "offered": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "name",
+                                  "position",
+                                  "country",
+                                  "waterBody",
+                                  "description",
+                                  "maxDepthM",
+                                  "waterType"
+                                ],
+                                "properties": {
+                                  "name": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "position": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "latitude",
+                                          "longitude"
+                                        ],
+                                        "properties": {
+                                          "latitude": {
+                                            "type": "number",
+                                            "minimum": -90,
+                                            "maximum": 90
+                                          },
+                                          "longitude": {
+                                            "type": "number",
+                                            "minimum": -180,
+                                            "maximum": 180
+                                          }
+                                        },
+                                        "additionalProperties": false,
+                                        "description": "WGS84 degrees"
+                                      }
+                                    ]
+                                  },
+                                  "country": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "waterBody": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "description": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxDepthM": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "number"
+                                      }
+                                    ]
+                                  },
+                                  "waterType": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "enum": [
+                                          "fresh",
+                                          "salt",
+                                          "brackish"
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                },
+                                "description": "A reference's values from its Source, which any User can take up with POST …/adopt (ADR 0025): empty fields take them"
                               }
                             ]
                           }
@@ -11934,7 +12453,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -12018,7 +12539,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -12102,7 +12625,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -12186,7 +12711,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -12250,6 +12777,7 @@
                     "waterBody",
                     "description",
                     "maxDepthM",
+                    "waterType",
                     "ssiSiteId",
                     "externalIds",
                     "version",
@@ -12334,6 +12862,21 @@
                         }
                       ]
                     },
+                    "waterType": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "fresh",
+                            "salt",
+                            "brackish"
+                          ],
+                          "description": "The water type of every Dive at the site (ADR 0025)"
+                        }
+                      ]
+                    },
                     "ssiSiteId": {
                       "anyOf": [
                         {
@@ -12354,7 +12897,8 @@
                           "externalId",
                           "url",
                           "providesData",
-                          "attribution"
+                          "attribution",
+                          "offered"
                         ],
                         "properties": {
                           "source": {
@@ -12407,6 +12951,120 @@
                                   }
                                 },
                                 "description": "What the Source's license asks to show with its data"
+                              }
+                            ]
+                          },
+                          "offered": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "name",
+                                  "position",
+                                  "country",
+                                  "waterBody",
+                                  "description",
+                                  "maxDepthM",
+                                  "waterType"
+                                ],
+                                "properties": {
+                                  "name": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "position": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "latitude",
+                                          "longitude"
+                                        ],
+                                        "properties": {
+                                          "latitude": {
+                                            "type": "number",
+                                            "minimum": -90,
+                                            "maximum": 90
+                                          },
+                                          "longitude": {
+                                            "type": "number",
+                                            "minimum": -180,
+                                            "maximum": 180
+                                          }
+                                        },
+                                        "additionalProperties": false,
+                                        "description": "WGS84 degrees"
+                                      }
+                                    ]
+                                  },
+                                  "country": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "waterBody": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "description": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxDepthM": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "number"
+                                      }
+                                    ]
+                                  },
+                                  "waterType": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "enum": [
+                                          "fresh",
+                                          "salt",
+                                          "brackish"
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                },
+                                "description": "A reference's values from its Source, which any User can take up with POST …/adopt (ADR 0025): empty fields take them"
                               }
                             ]
                           }
@@ -12502,7 +13160,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -12635,6 +13295,21 @@
                       }
                     ]
                   },
+                  "waterType": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "enum": [
+                          "fresh",
+                          "salt",
+                          "brackish"
+                        ],
+                        "description": "The water at the site (ADR 0025); it is the water type of every Dive here. Clients say so where it is edited"
+                      }
+                    ]
+                  },
                   "ssiSiteId": {
                     "anyOf": [
                       {
@@ -12679,6 +13354,7 @@
                     "waterBody",
                     "description",
                     "maxDepthM",
+                    "waterType",
                     "ssiSiteId",
                     "externalIds",
                     "version",
@@ -12763,6 +13439,21 @@
                         }
                       ]
                     },
+                    "waterType": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "fresh",
+                            "salt",
+                            "brackish"
+                          ],
+                          "description": "The water type of every Dive at the site (ADR 0025)"
+                        }
+                      ]
+                    },
                     "ssiSiteId": {
                       "anyOf": [
                         {
@@ -12783,7 +13474,8 @@
                           "externalId",
                           "url",
                           "providesData",
-                          "attribution"
+                          "attribution",
+                          "offered"
                         ],
                         "properties": {
                           "source": {
@@ -12836,6 +13528,120 @@
                                   }
                                 },
                                 "description": "What the Source's license asks to show with its data"
+                              }
+                            ]
+                          },
+                          "offered": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "name",
+                                  "position",
+                                  "country",
+                                  "waterBody",
+                                  "description",
+                                  "maxDepthM",
+                                  "waterType"
+                                ],
+                                "properties": {
+                                  "name": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "position": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "latitude",
+                                          "longitude"
+                                        ],
+                                        "properties": {
+                                          "latitude": {
+                                            "type": "number",
+                                            "minimum": -90,
+                                            "maximum": 90
+                                          },
+                                          "longitude": {
+                                            "type": "number",
+                                            "minimum": -180,
+                                            "maximum": 180
+                                          }
+                                        },
+                                        "additionalProperties": false,
+                                        "description": "WGS84 degrees"
+                                      }
+                                    ]
+                                  },
+                                  "country": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "waterBody": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "description": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxDepthM": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "number"
+                                      }
+                                    ]
+                                  },
+                                  "waterType": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "enum": [
+                                          "fresh",
+                                          "salt",
+                                          "brackish"
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                },
+                                "description": "A reference's values from its Source, which any User can take up with POST …/adopt (ADR 0025): empty fields take them"
                               }
                             ]
                           }
@@ -12931,7 +13737,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -13015,7 +13823,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -13099,7 +13909,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -13183,7 +13995,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -13286,7 +14100,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -13370,7 +14186,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -13454,7 +14272,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -13538,7 +14358,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -13634,6 +14456,7 @@
                     "waterBody",
                     "description",
                     "maxDepthM",
+                    "waterType",
                     "ssiSiteId",
                     "externalIds",
                     "version",
@@ -13718,6 +14541,21 @@
                         }
                       ]
                     },
+                    "waterType": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "fresh",
+                            "salt",
+                            "brackish"
+                          ],
+                          "description": "The water type of every Dive at the site (ADR 0025)"
+                        }
+                      ]
+                    },
                     "ssiSiteId": {
                       "anyOf": [
                         {
@@ -13738,7 +14576,8 @@
                           "externalId",
                           "url",
                           "providesData",
-                          "attribution"
+                          "attribution",
+                          "offered"
                         ],
                         "properties": {
                           "source": {
@@ -13791,6 +14630,120 @@
                                   }
                                 },
                                 "description": "What the Source's license asks to show with its data"
+                              }
+                            ]
+                          },
+                          "offered": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "name",
+                                  "position",
+                                  "country",
+                                  "waterBody",
+                                  "description",
+                                  "maxDepthM",
+                                  "waterType"
+                                ],
+                                "properties": {
+                                  "name": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "position": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "latitude",
+                                          "longitude"
+                                        ],
+                                        "properties": {
+                                          "latitude": {
+                                            "type": "number",
+                                            "minimum": -90,
+                                            "maximum": 90
+                                          },
+                                          "longitude": {
+                                            "type": "number",
+                                            "minimum": -180,
+                                            "maximum": 180
+                                          }
+                                        },
+                                        "additionalProperties": false,
+                                        "description": "WGS84 degrees"
+                                      }
+                                    ]
+                                  },
+                                  "country": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "waterBody": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "description": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxDepthM": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "number"
+                                      }
+                                    ]
+                                  },
+                                  "waterType": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "enum": [
+                                          "fresh",
+                                          "salt",
+                                          "brackish"
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                },
+                                "description": "A reference's values from its Source, which any User can take up with POST …/adopt (ADR 0025): empty fields take them"
                               }
                             ]
                           }
@@ -13886,7 +14839,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -13970,7 +14925,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -14054,7 +15011,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -14138,7 +15097,746 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "ssi_already_connected",
+                        "ssi_account_taken",
+                        "ssi_other_account",
+                        "ssi_wrong_credentials",
+                        "ssi_not_connected",
+                        "ssi_sign_in_needed",
+                        "ssi_unavailable",
+                        "ssi_refused",
+                        "ssi_site_missing",
+                        "ssi_not_sent",
+                        "ssi_dive_gone",
+                        "ssi_busy"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dive-sites/{id}/adopt": {
+      "post": {
+        "summary": "Take up the data a Source offers for this hand-made Dive site (any User)",
+        "description": "Empty fields take the Source's values, filled ones stay; the Source then provides data, so later imports keep those fields current (ADR 0025). 404 site_offer_not_found without an offer; 409 site_changed if the version differs.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "source",
+                  "version"
+                ],
+                "properties": {
+                  "source": {
+                    "enum": [
+                      "osm",
+                      "wikidata",
+                      "ssi"
+                    ],
+                    "description": "The Source whose offered values to take"
+                  },
+                  "version": {
+                    "type": "integer",
+                    "description": "The version the User saw"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "name",
+                    "position",
+                    "country",
+                    "waterBody",
+                    "description",
+                    "maxDepthM",
+                    "waterType",
+                    "ssiSiteId",
+                    "externalIds",
+                    "version",
+                    "diveCount",
+                    "inUse",
+                    "canDelete",
+                    "mergedInto"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "position": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "latitude",
+                            "longitude"
+                          ],
+                          "properties": {
+                            "latitude": {
+                              "type": "number",
+                              "minimum": -90,
+                              "maximum": 90
+                            },
+                            "longitude": {
+                              "type": "number",
+                              "minimum": -180,
+                              "maximum": 180
+                            }
+                          },
+                          "additionalProperties": false,
+                          "description": "WGS84 degrees"
+                        }
+                      ]
+                    },
+                    "country": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "waterBody": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "description": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "maxDepthM": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number",
+                          "description": "Metres"
+                        }
+                      ]
+                    },
+                    "waterType": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "fresh",
+                            "salt",
+                            "brackish"
+                          ],
+                          "description": "The water type of every Dive at the site (ADR 0025)"
+                        }
+                      ]
+                    },
+                    "ssiSiteId": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "externalIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "source",
+                          "name",
+                          "externalId",
+                          "url",
+                          "providesData",
+                          "attribution",
+                          "offered"
+                        ],
+                        "properties": {
+                          "source": {
+                            "enum": [
+                              "osm",
+                              "wikidata",
+                              "ssi"
+                            ]
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "The Source's name, e.g. \"OpenStreetMap\""
+                          },
+                          "externalId": {
+                            "type": "string",
+                            "description": "e.g. \"node/123\", \"Q42\", \"3314\""
+                          },
+                          "url": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "The object's page at the Source"
+                              }
+                            ]
+                          },
+                          "providesData": {
+                            "type": "boolean",
+                            "description": "The site was created or filled from this Source (\"From OpenStreetMap\"); otherwise a reference only (\"Also in …\")"
+                          },
+                          "attribution": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "text",
+                                  "url"
+                                ],
+                                "properties": {
+                                  "text": {
+                                    "type": "string"
+                                  },
+                                  "url": {
+                                    "type": "string"
+                                  }
+                                },
+                                "description": "What the Source's license asks to show with its data"
+                              }
+                            ]
+                          },
+                          "offered": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "name",
+                                  "position",
+                                  "country",
+                                  "waterBody",
+                                  "description",
+                                  "maxDepthM",
+                                  "waterType"
+                                ],
+                                "properties": {
+                                  "name": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "position": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "latitude",
+                                          "longitude"
+                                        ],
+                                        "properties": {
+                                          "latitude": {
+                                            "type": "number",
+                                            "minimum": -90,
+                                            "maximum": 90
+                                          },
+                                          "longitude": {
+                                            "type": "number",
+                                            "minimum": -180,
+                                            "maximum": 180
+                                          }
+                                        },
+                                        "additionalProperties": false,
+                                        "description": "WGS84 degrees"
+                                      }
+                                    ]
+                                  },
+                                  "country": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "waterBody": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "description": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxDepthM": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "number"
+                                      }
+                                    ]
+                                  },
+                                  "waterType": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "enum": [
+                                          "fresh",
+                                          "salt",
+                                          "brackish"
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                },
+                                "description": "A reference's values from its Source, which any User can take up with POST …/adopt (ADR 0025): empty fields take them"
+                              }
+                            ]
+                          }
+                        },
+                        "description": "Where a site comes from, or where else it is known (ADR 0021)"
+                      }
+                    },
+                    "version": {
+                      "type": "integer",
+                      "description": "Send it back with an edit; it changes with every change"
+                    },
+                    "diveCount": {
+                      "type": "integer",
+                      "description": "How many of the signed-in User's Dives are at the site"
+                    },
+                    "inUse": {
+                      "type": "boolean",
+                      "description": "Whether any Dive (of any User) is at the site; then it can't be deleted"
+                    },
+                    "canDelete": {
+                      "type": "boolean",
+                      "description": "Whether the signed-in User may delete it: its creator or an admin"
+                    },
+                    "distanceM": {
+                      "type": "number",
+                      "description": "Metres from the position asked for (with latitude/longitude)"
+                    },
+                    "mergedInto": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "description": "Set when this site was merged into another (ADR 0022): open that one instead"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "ssi_already_connected",
+                        "ssi_account_taken",
+                        "ssi_other_account",
+                        "ssi_wrong_credentials",
+                        "ssi_not_connected",
+                        "ssi_sign_in_needed",
+                        "ssi_unavailable",
+                        "ssi_refused",
+                        "ssi_site_missing",
+                        "ssi_not_sent",
+                        "ssi_dive_gone",
+                        "ssi_busy"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "ssi_already_connected",
+                        "ssi_account_taken",
+                        "ssi_other_account",
+                        "ssi_wrong_credentials",
+                        "ssi_not_connected",
+                        "ssi_sign_in_needed",
+                        "ssi_unavailable",
+                        "ssi_refused",
+                        "ssi_site_missing",
+                        "ssi_not_sent",
+                        "ssi_dive_gone",
+                        "ssi_busy"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "ssi_already_connected",
+                        "ssi_account_taken",
+                        "ssi_other_account",
+                        "ssi_wrong_credentials",
+                        "ssi_not_connected",
+                        "ssi_sign_in_needed",
+                        "ssi_unavailable",
+                        "ssi_refused",
+                        "ssi_site_missing",
+                        "ssi_not_sent",
+                        "ssi_dive_gone",
+                        "ssi_busy"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -14258,7 +15956,8 @@
                           "update",
                           "link",
                           "merge",
-                          "site-merge"
+                          "site-merge",
+                          "adopt"
                         ]
                       },
                       "changes": {
@@ -14333,7 +16032,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -14370,8 +16071,8 @@
     },
     "/api/admin/site-imports": {
       "post": {
-        "summary": "Start importing Dive sites from OpenStreetMap and/or Wikidata (admins)",
-        "description": "Runs in the background; follow it with GET. OpenStreetMap data is under ODbL: send confirmOdbl. One import at a time (409 site_import_running).",
+        "summary": "Start importing Dive sites from OpenStreetMap, Wikidata and/or SSI (admins)",
+        "description": "Runs in the background; follow it with GET. OpenStreetMap data is under ODbL: send confirmOdbl. SSI gives no licence: send confirmSsi after showing the explanation (docs/spec/clients.md). One import at a time (409 site_import_running).",
         "requestBody": {
           "required": true,
           "content": {
@@ -14389,11 +16090,12 @@
                     "items": {
                       "enum": [
                         "osm",
-                        "wikidata"
+                        "wikidata",
+                        "ssi"
                       ]
                     },
                     "minItems": 1,
-                    "maxItems": 2,
+                    "maxItems": 3,
                     "uniqueItems": true
                   },
                   "area": {
@@ -14485,6 +16187,15 @@
                   "confirmOdbl": {
                     "type": "boolean",
                     "description": "The admin read the ODbL explanation and confirms it; needed for osm"
+                  },
+                  "confirmSsi": {
+                    "type": "boolean",
+                    "description": "The admin read that SSI gives no licence for its site list, that the EU protects it as a database, and that importing is the operator's decision and risk; needed for ssi"
+                  },
+                  "createSites": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "false: only match and fill sites already in the hub, create none"
                   }
                 },
                 "additionalProperties": false
@@ -14505,6 +16216,7 @@
                     "sources",
                     "area",
                     "language",
+                    "createSites",
                     "progress",
                     "counts",
                     "findings",
@@ -14549,7 +16261,8 @@
                       "items": {
                         "enum": [
                           "osm",
-                          "wikidata"
+                          "wikidata",
+                          "ssi"
                         ]
                       }
                     },
@@ -14637,6 +16350,10 @@
                     "language": {
                       "type": "string"
                     },
+                    "createSites": {
+                      "type": "boolean",
+                      "description": "false: the run only matched and filled sites already in the hub"
+                    },
                     "progress": {
                       "type": "object",
                       "required": [
@@ -14663,6 +16380,12 @@
                               "type": "string",
                               "enum": [
                                 "wikidata"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "ssi"
                               ]
                             },
                             {
@@ -14697,6 +16420,8 @@
                             "skippedNoName",
                             "skippedDeleted",
                             "skippedMerged",
+                            "skippedNew",
+                            "offered",
                             "gone"
                           ],
                           "properties": {
@@ -14724,50 +16449,91 @@
                             "skippedMerged": {
                               "type": "integer"
                             },
+                            "skippedNew": {
+                              "type": "integer"
+                            },
+                            "offered": {
+                              "type": "integer"
+                            },
                             "gone": {
                               "type": "integer"
                             }
                           },
-                          "description": "Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name, because their site was deleted in the hub, or because it was merged into another; objects gone from the Source"
+                          "description": "Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name, because their site was deleted in the hub, because it was merged into another, or because the run created no sites; hand-made sites whose page now offers the data; objects gone from the Source"
                         }
                       ]
                     },
                     "findings": {
                       "type": "array",
                       "items": {
-                        "type": "object",
-                        "required": [
-                          "kind",
-                          "siteId",
-                          "name",
-                          "nearSiteId",
-                          "nearName",
-                          "distanceM"
-                        ],
-                        "properties": {
-                          "kind": {
-                            "type": "string",
-                            "enum": [
-                              "near"
-                            ]
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind",
+                              "siteId",
+                              "name",
+                              "nearSiteId",
+                              "nearName",
+                              "distanceM"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "near"
+                                ]
+                              },
+                              "siteId": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "nearSiteId": {
+                                "type": "string"
+                              },
+                              "nearName": {
+                                "type": "string"
+                              },
+                              "distanceM": {
+                                "type": "integer"
+                              }
+                            },
+                            "description": "A new site within 200 m of one that was there before"
                           },
-                          "siteId": {
-                            "type": "string"
-                          },
-                          "name": {
-                            "type": "string"
-                          },
-                          "nearSiteId": {
-                            "type": "string"
-                          },
-                          "nearName": {
-                            "type": "string"
-                          },
-                          "distanceM": {
-                            "type": "integer"
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind",
+                              "siteId",
+                              "name",
+                              "source"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "offer"
+                                ]
+                              },
+                              "siteId": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "source": {
+                                "enum": [
+                                  "osm",
+                                  "wikidata",
+                                  "ssi"
+                                ]
+                              }
+                            },
+                            "description": "A hand-made site the Source describes: its page offers the Source's data"
                           }
-                        },
-                        "description": "A new site within 200 m of one that was there before"
+                        ]
                       }
                     },
                     "failureCode": {
@@ -14816,7 +16582,9 @@
                             "site_not_deletable",
                             "external_id_taken",
                             "site_merge_self",
+                            "site_offer_not_found",
                             "odbl_not_confirmed",
+                            "ssi_not_confirmed",
                             "site_import_running",
                             "site_import_not_found",
                             "source_unavailable",
@@ -14913,7 +16681,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -14997,7 +16767,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -15081,7 +16853,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -15138,6 +16912,7 @@
                           "sources",
                           "area",
                           "language",
+                          "createSites",
                           "progress",
                           "counts",
                           "findings",
@@ -15182,7 +16957,8 @@
                             "items": {
                               "enum": [
                                 "osm",
-                                "wikidata"
+                                "wikidata",
+                                "ssi"
                               ]
                             }
                           },
@@ -15270,6 +17046,10 @@
                           "language": {
                             "type": "string"
                           },
+                          "createSites": {
+                            "type": "boolean",
+                            "description": "false: the run only matched and filled sites already in the hub"
+                          },
                           "progress": {
                             "type": "object",
                             "required": [
@@ -15296,6 +17076,12 @@
                                     "type": "string",
                                     "enum": [
                                       "wikidata"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "ssi"
                                     ]
                                   },
                                   {
@@ -15330,6 +17116,8 @@
                                   "skippedNoName",
                                   "skippedDeleted",
                                   "skippedMerged",
+                                  "skippedNew",
+                                  "offered",
                                   "gone"
                                 ],
                                 "properties": {
@@ -15357,50 +17145,91 @@
                                   "skippedMerged": {
                                     "type": "integer"
                                   },
+                                  "skippedNew": {
+                                    "type": "integer"
+                                  },
+                                  "offered": {
+                                    "type": "integer"
+                                  },
                                   "gone": {
                                     "type": "integer"
                                   }
                                 },
-                                "description": "Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name, because their site was deleted in the hub, or because it was merged into another; objects gone from the Source"
+                                "description": "Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name, because their site was deleted in the hub, because it was merged into another, or because the run created no sites; hand-made sites whose page now offers the data; objects gone from the Source"
                               }
                             ]
                           },
                           "findings": {
                             "type": "array",
                             "items": {
-                              "type": "object",
-                              "required": [
-                                "kind",
-                                "siteId",
-                                "name",
-                                "nearSiteId",
-                                "nearName",
-                                "distanceM"
-                              ],
-                              "properties": {
-                                "kind": {
-                                  "type": "string",
-                                  "enum": [
-                                    "near"
-                                  ]
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "kind",
+                                    "siteId",
+                                    "name",
+                                    "nearSiteId",
+                                    "nearName",
+                                    "distanceM"
+                                  ],
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "enum": [
+                                        "near"
+                                      ]
+                                    },
+                                    "siteId": {
+                                      "type": "string"
+                                    },
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "nearSiteId": {
+                                      "type": "string"
+                                    },
+                                    "nearName": {
+                                      "type": "string"
+                                    },
+                                    "distanceM": {
+                                      "type": "integer"
+                                    }
+                                  },
+                                  "description": "A new site within 200 m of one that was there before"
                                 },
-                                "siteId": {
-                                  "type": "string"
-                                },
-                                "name": {
-                                  "type": "string"
-                                },
-                                "nearSiteId": {
-                                  "type": "string"
-                                },
-                                "nearName": {
-                                  "type": "string"
-                                },
-                                "distanceM": {
-                                  "type": "integer"
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "kind",
+                                    "siteId",
+                                    "name",
+                                    "source"
+                                  ],
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "enum": [
+                                        "offer"
+                                      ]
+                                    },
+                                    "siteId": {
+                                      "type": "string"
+                                    },
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "source": {
+                                      "enum": [
+                                        "osm",
+                                        "wikidata",
+                                        "ssi"
+                                      ]
+                                    }
+                                  },
+                                  "description": "A hand-made site the Source describes: its page offers the Source's data"
                                 }
-                              },
-                              "description": "A new site within 200 m of one that was there before"
+                              ]
                             }
                           },
                           "failureCode": {
@@ -15449,7 +17278,9 @@
                                   "site_not_deletable",
                                   "external_id_taken",
                                   "site_merge_self",
+                                  "site_offer_not_found",
                                   "odbl_not_confirmed",
+                                  "ssi_not_confirmed",
                                   "site_import_running",
                                   "site_import_not_found",
                                   "source_unavailable",
@@ -15549,7 +17380,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -15611,6 +17444,7 @@
                     "sources",
                     "area",
                     "language",
+                    "createSites",
                     "progress",
                     "counts",
                     "findings",
@@ -15655,7 +17489,8 @@
                       "items": {
                         "enum": [
                           "osm",
-                          "wikidata"
+                          "wikidata",
+                          "ssi"
                         ]
                       }
                     },
@@ -15743,6 +17578,10 @@
                     "language": {
                       "type": "string"
                     },
+                    "createSites": {
+                      "type": "boolean",
+                      "description": "false: the run only matched and filled sites already in the hub"
+                    },
                     "progress": {
                       "type": "object",
                       "required": [
@@ -15769,6 +17608,12 @@
                               "type": "string",
                               "enum": [
                                 "wikidata"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "ssi"
                               ]
                             },
                             {
@@ -15803,6 +17648,8 @@
                             "skippedNoName",
                             "skippedDeleted",
                             "skippedMerged",
+                            "skippedNew",
+                            "offered",
                             "gone"
                           ],
                           "properties": {
@@ -15830,50 +17677,91 @@
                             "skippedMerged": {
                               "type": "integer"
                             },
+                            "skippedNew": {
+                              "type": "integer"
+                            },
+                            "offered": {
+                              "type": "integer"
+                            },
                             "gone": {
                               "type": "integer"
                             }
                           },
-                          "description": "Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name, because their site was deleted in the hub, or because it was merged into another; objects gone from the Source"
+                          "description": "Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name, because their site was deleted in the hub, because it was merged into another, or because the run created no sites; hand-made sites whose page now offers the data; objects gone from the Source"
                         }
                       ]
                     },
                     "findings": {
                       "type": "array",
                       "items": {
-                        "type": "object",
-                        "required": [
-                          "kind",
-                          "siteId",
-                          "name",
-                          "nearSiteId",
-                          "nearName",
-                          "distanceM"
-                        ],
-                        "properties": {
-                          "kind": {
-                            "type": "string",
-                            "enum": [
-                              "near"
-                            ]
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind",
+                              "siteId",
+                              "name",
+                              "nearSiteId",
+                              "nearName",
+                              "distanceM"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "near"
+                                ]
+                              },
+                              "siteId": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "nearSiteId": {
+                                "type": "string"
+                              },
+                              "nearName": {
+                                "type": "string"
+                              },
+                              "distanceM": {
+                                "type": "integer"
+                              }
+                            },
+                            "description": "A new site within 200 m of one that was there before"
                           },
-                          "siteId": {
-                            "type": "string"
-                          },
-                          "name": {
-                            "type": "string"
-                          },
-                          "nearSiteId": {
-                            "type": "string"
-                          },
-                          "nearName": {
-                            "type": "string"
-                          },
-                          "distanceM": {
-                            "type": "integer"
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind",
+                              "siteId",
+                              "name",
+                              "source"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "offer"
+                                ]
+                              },
+                              "siteId": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "source": {
+                                "enum": [
+                                  "osm",
+                                  "wikidata",
+                                  "ssi"
+                                ]
+                              }
+                            },
+                            "description": "A hand-made site the Source describes: its page offers the Source's data"
                           }
-                        },
-                        "description": "A new site within 200 m of one that was there before"
+                        ]
                       }
                     },
                     "failureCode": {
@@ -15922,7 +17810,9 @@
                             "site_not_deletable",
                             "external_id_taken",
                             "site_merge_self",
+                            "site_offer_not_found",
                             "odbl_not_confirmed",
+                            "ssi_not_confirmed",
                             "site_import_running",
                             "site_import_not_found",
                             "source_unavailable",
@@ -16019,7 +17909,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -16103,7 +17995,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -16385,7 +18279,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -16469,7 +18365,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -16553,7 +18451,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -16637,7 +18537,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -16831,7 +18733,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -16915,7 +18819,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -16999,7 +18905,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -17083,7 +18991,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -17188,7 +19098,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -17448,7 +19360,9 @@
                                   "site_not_deletable",
                                   "external_id_taken",
                                   "site_merge_self",
+                                  "site_offer_not_found",
                                   "odbl_not_confirmed",
+                                  "ssi_not_confirmed",
                                   "site_import_running",
                                   "site_import_not_found",
                                   "source_unavailable",
@@ -17607,7 +19521,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -17966,7 +19882,9 @@
                                       "site_not_deletable",
                                       "external_id_taken",
                                       "site_merge_self",
+                                      "site_offer_not_found",
                                       "odbl_not_confirmed",
+                                      "ssi_not_confirmed",
                                       "site_import_running",
                                       "site_import_not_found",
                                       "source_unavailable",
@@ -18127,7 +20045,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -18211,7 +20131,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -18295,7 +20217,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -18379,7 +20303,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -18637,7 +20563,9 @@
                                   "site_not_deletable",
                                   "external_id_taken",
                                   "site_merge_self",
+                                  "site_offer_not_found",
                                   "odbl_not_confirmed",
+                                  "ssi_not_confirmed",
                                   "site_import_running",
                                   "site_import_not_found",
                                   "source_unavailable",
@@ -18796,7 +20724,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -18880,7 +20810,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -18964,7 +20896,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -19048,7 +20982,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -19222,7 +21158,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -19306,7 +21244,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -19390,7 +21330,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -19474,7 +21416,9 @@
                         "site_not_deletable",
                         "external_id_taken",
                         "site_merge_self",
+                        "site_offer_not_found",
                         "odbl_not_confirmed",
+                        "ssi_not_confirmed",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",

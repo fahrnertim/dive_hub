@@ -87,6 +87,7 @@ export function parseWikidata(body: string, area: ImportArea): SourceSite[] {
         waterBody: value(b, 'waterLang') ?? value(b, 'waterEn'),
         description: null,
         maxDepthM: null,
+        waterType: null,
       },
       sameAs: osm && /^(node|way|relation)\/[1-9]\d*$/.test(osm) ? { osm } : {},
     }];

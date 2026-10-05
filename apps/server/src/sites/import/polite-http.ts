@@ -13,6 +13,7 @@ export type Fetch = (url: string, init: { method: 'GET' | 'POST'; headers: Recor
   status: number;
   headers: { get(name: string): string | null };
   text(): Promise<string>;
+  arrayBuffer(): Promise<ArrayBuffer>;
 }>;
 
 export interface PoliteHttpOptions {
@@ -28,7 +29,11 @@ const RETRY_STATUSES = new Set([429, 406, 503, 504]);
 const DEFAULT_PAUSE_MS = 30_000;
 const MAX_PAUSE_MS = 120_000;
 
-export type PoliteHttp = (source: ImportSource, url: string, init: { method: 'GET' | 'POST'; headers?: Record<string, string>; body?: string }) => Promise<string>;
+type Init = { method: 'GET' | 'POST'; headers?: Record<string, string>; body?: string };
+/** Answers as text; `bytes` for a binary answer (SSI's zip). */
+export type PoliteHttp = ((source: ImportSource, url: string, init: Init) => Promise<string>) & {
+  bytes(source: ImportSource, url: string, init: Init): Promise<Buffer>;
+};
 
 export function createPoliteHttp(options: PoliteHttpOptions = {}): PoliteHttp {
   const fetchImpl: Fetch = options.fetch ?? ((url, init) => fetch(url, init));
@@ -36,7 +41,7 @@ export function createPoliteHttp(options: PoliteHttpOptions = {}): PoliteHttp {
   const timeoutMs = options.timeoutMs ?? 300_000;
   const agent = userAgent(options.contact);
 
-  return async (source, url, init) => {
+  const request = async (source: ImportSource, url: string, init: Init) => {
     for (let attempt = 1; ; attempt++) {
       let response: Awaited<ReturnType<Fetch>>;
       try {
@@ -46,7 +51,7 @@ export function createPoliteHttp(options: PoliteHttpOptions = {}): PoliteHttp {
       } catch (error) {
         throw new SiteSourceError(source, 'unavailable', error instanceof Error ? error.message : String(error));
       }
-      if (response.status >= 200 && response.status < 300) return response.text();
+      if (response.status >= 200 && response.status < 300) return response;
       if (RETRY_STATUSES.has(response.status) && attempt === 1) {
         const retryAfter = Number(response.headers.get('retry-after'));
         await sleep(Number.isFinite(retryAfter) && retryAfter > 0 ? Math.min(retryAfter * 1000, MAX_PAUSE_MS) : DEFAULT_PAUSE_MS);
@@ -55,4 +60,24 @@ export function createPoliteHttp(options: PoliteHttpOptions = {}): PoliteHttp {
       throw new SiteSourceError(source, response.status === 429 ? 'rate_limited' : 'unavailable', `HTTP ${response.status}`);
     }
   };
+  const read = async <T>(source: ImportSource, body: () => Promise<T>): Promise<T> => {
+    try {
+      return await body();
+    } catch (error) {
+      // The connection broke or the timeout hit while the answer was arriving.
+      throw new SiteSourceError(source, 'unavailable', error instanceof Error ? error.message : String(error));
+    }
+  };
+  return Object.assign(
+    async (source: ImportSource, url: string, init: Init) => {
+      const response = await request(source, url, init);
+      return read(source, () => response.text());
+    },
+    {
+      async bytes(source: ImportSource, url: string, init: Init) {
+        const response = await request(source, url, init);
+        return read(source, async () => Buffer.from(await response.arrayBuffer()));
+      },
+    },
+  );
 }

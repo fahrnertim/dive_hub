@@ -45,7 +45,8 @@ export interface TestDatabase {
   drop(): Promise<void>;
 }
 
-export async function createTestDatabase(): Promise<TestDatabase> {
+/** A fresh database with every migration, or those of `migrationsFolder` (a migration's data test stops before it). */
+export async function createTestDatabase(options: { migrationsFolder?: string } = {}): Promise<TestDatabase> {
   const name = `divehub_test_${process.pid}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
   const admin = new pg.Client({ connectionString: baseDbUrl });
   await admin.connect();
@@ -53,7 +54,7 @@ export async function createTestDatabase(): Promise<TestDatabase> {
   const url = new URL(baseDbUrl);
   url.pathname = `/${name}`;
   const { db, pool } = createDb(url.toString());
-  await migrateDatabase(db, pool, fileURLToPath(new URL('../drizzle', import.meta.url)));
+  await migrateDatabase(db, pool, options.migrationsFolder ?? fileURLToPath(new URL('../drizzle', import.meta.url)));
   const dataDir = await mkdtemp(join(tmpdir(), 'divehub-test-'));
   return {
     db, pool, dataDir,
@@ -71,7 +72,7 @@ export function createTestAuth(db: Db, options: { rateLimit?: boolean } = {}): A
 }
 
 /** Sources that must not be reached: tests that import pass their own stand-ins. */
-const unreachable = (source: ImportSource): SiteSourceAdapter => ({
+export const unreachable = (source: ImportSource): SiteSourceAdapter => ({
   source, fetch: () => Promise.reject(new Error(`the test reached the ${source} Source`)),
 });
 
@@ -88,7 +89,7 @@ export async function createTestApp(t: TestDatabase, options: {
   const setup: Setup = createSetup(t.db);
   const blobs = createLocalBlobStore(t.dataDir);
   const imports: ImportService = createImportService({ db: t.db, blobs });
-  const siteImports = createSiteImportService({ db: t.db, sources: siteSources ?? { osm: unreachable('osm'), wikidata: unreachable('wikidata') } });
+  const siteImports = createSiteImportService({ db: t.db, sources: siteSources ?? { osm: unreachable('osm'), wikidata: unreachable('wikidata'), ssi: unreachable('ssi') } });
   const ssi = createSsiService({
     db: t.db, secrets: createSecretBox(encryptionKey ?? undefined),
     client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch, userAgent: 'DiveHub (test)' }),

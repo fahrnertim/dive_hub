@@ -15,6 +15,8 @@ export const REVISION_CAUSES = [
   'update', 'link',
   // Merging Dive sites (ADR 0022): on both sites, and on each Dive that moved (by the system, so no User is named).
   'merge', 'site-merge',
+  // A User taking up the data a Source offers for a hand-made site (ADR 0025).
+  'adopt',
 ] as const;
 export type RevisionCause = (typeof REVISION_CAUSES)[number];
 

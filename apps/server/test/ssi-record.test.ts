@@ -87,6 +87,12 @@ describe('records', () => {
     expect(typeof r.odin_user_log_diveSamples).toBe('string');
   });
 
+  it("sends the Dive site's water type: fresh and salt by SSI's IDs, nothing for brackish or none (ADR 0025)", () => {
+    expect(createRecord(dive({ waterType: 'fresh' }), ids).odin_user_log_var_watertype_id).toBe(4);
+    expect(createRecord(dive({ waterType: 'brackish' }), ids).odin_user_log_var_watertype_id).toBeNull();
+    expect(createRecord(dive({ waterType: null }), ids).odin_user_log_var_watertype_id).toBeNull();
+  });
+
   it('air is EAN 0 with 0 %', () => {
     expect(createRecord(dive({ gases: [{ o2: 21, he: 0 }] }), ids)).toMatchObject({ odin_user_log_ean: 0, odin_user_log_ean_percent: 0 });
   });

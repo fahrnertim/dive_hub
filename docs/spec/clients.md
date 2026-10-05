@@ -2,7 +2,7 @@
 title: Client contract
 summary: What every client of the Dive Hub API must do (web client, native mobile app, scripts) - obligations first, then each area's duties and conventions; with reasons, ADRs and where the web client does it; plus server gaps found while writing it.
 status: living
-date: 2026-10-04
+date: 2026-10-05
 ---
 
 # Client contract
@@ -32,6 +32,12 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   without the flag, but the explanation is the client's job (ADR 0021). *Web:* `SiteImportPage.tsx`.
 - **Must take license, Attribution and link from the API** (`externalIds[].attribution`, `.url`), never
   hard-code them. They are defined once on the server (`src/sites/sources.ts`).
+- **Must explain SSI's missing licence and get a confirmation before an SSI Site import** (`confirmSsi`): SSI gives no
+  licence for its list (unlike OSM, no conditions make copying allowed); in the EU it is protected as a database, so
+  copying large parts can infringe SSI's rights; importing is the operator's decision and risk; what is taken and what
+  is never stored. Show it as standing text with a checkbox, not as a notice. The API refuses without the flag
+  (`ssi_not_confirmed`) ([ADR 0025](../decisions/0025-ssi-site-import-and-site-water-type.md)). *Web:* `SiteImportPage.tsx`.
+- **SSI data shows "From SSI" without a link** (`url` is null, no Attribution): SSI has no page per site.
 
 ### Privacy
 - **Must not show who else created, edited or dives at a Dive site.**
@@ -185,6 +191,13 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **The depth profile needs a text alternative:** a summary (deepest point and when, duration, temperature range)
   and the samples per minute as a table (WCAG 1.1.1). *Web:* `DepthProfile.tsx`, `lib/profile.ts`.
 - **A Dive's position is private.** Show it only to the Users who manage the Diver, as the API does.
+- **Water type** (ADR 0025): the Dive's `waterType` is its site's and can't be edited on the Dive. Without a site,
+  suggest choosing one; with a site that has none, say it isn't known for the site. Label the Recording's
+  `summary.waterType` as the computer's water setting ("Water setting on the computer"), not as the Dive's water.
+  *Web:* `DiveDetail.tsx` (`WaterFact`, `RecordingDetails`).
+- **Must say when the computer was set to other water** (`waterMismatch`): name both ("Your computer was set to salt
+  water; this site is fresh water.") and how the depths read: `depthPercent` negative reads shallow, positive deep,
+  rounded ("about 2 % shallow"); `null` means they may read a little off. Depths are not corrected. *Web:* `DiveDetail.tsx`.
 
 ### Sending a Dive to SSI
 From `GET /api/dives/{id}/ssi` (ADR 0024). *Web:* `SsiPanel.tsx`.
@@ -228,16 +241,25 @@ From `GET /api/dives/{id}/ssi` (ADR 0024). *Web:* `SsiPanel.tsx`.
   distance), or search by name. "No dive site" is a choice. *Web:* `SitePicker.tsx`.
 - **SSI site ID:** accept what SSI's QR code says ("site:3314") as well as the number, and send the digits.
   `external_id_taken` means another site has it.
-- **Where a site comes from:** "From OpenStreetMap: node/…" with the Attribution, "Also in …" for a reference,
-  nothing for a site made here ([Licenses](#licenses)).
+- **Water type** (fresh, salt, brackish, or not known): **the form must say that changing it changes the water type of
+  every Dive at the site** (other Users' too). After saving, refresh the Dives a client holds. *Web:* `SiteForm.tsx`.
+- **Where a site comes from:** "From OpenStreetMap: node/…" with the Attribution, "From SSI: 3314" without a link,
+  "Also in …" for a reference, nothing for a site made here ([Licenses](#licenses)). An SSI reference without an
+  offer is shown as the SSI site ID field only.
+- **Offers** (ADR 0025): a reference with `offered` values gets "Use SSI's data" (any Source, any User). Before
+  confirming, say which empty fields take the Source's values and which filled ones stay although the Source differs,
+  and that the site then says "From …" and imports keep those fields current. `POST /api/dive-sites/{id}/adopt` with
+  the version; `site_offer_not_found` means it was taken meanwhile. *Web:* `SitesPage.tsx` (`SiteOrigin`).
 - **Merging:** offer the other sites within 200 m. Explain before confirming, then follow the kept site
   ([Privacy](#privacy), [Data safety](#data-safety)).
 - **Site imports (admins):**
-  - sources, area (country, box or everywhere) and the language of names;
-  - the ODbL explanation and confirmation for OSM;
+  - sources (OSM, Wikidata, SSI), area (country, box or everywhere), the language of names, and "only fill dive
+    sites that are already here" (`createSites: false`);
+  - the ODbL explanation and confirmation for OSM, and the SSI explanation and confirmation ([Licenses](#licenses));
   - one import at a time (`site_import_running`);
   - progress while running;
-  - counts and the new sites near existing ones when done, each linked.
+  - counts and findings when done, each linked: new sites near existing ones, and hand-made sites that now offer a
+    Source's data. A worldwide run can report thousands; show a first part and how many more.
 
 ## 4. Showing values
 - **Units:** values come in SI (metres, seconds, °C, WGS84 degrees). Show them in the User's units

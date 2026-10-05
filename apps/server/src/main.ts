@@ -22,7 +22,7 @@ const { db, pool } = createDb(config.databaseUrl);
 const blobs = createLocalBlobStore(config.dataDir);
 const imports = createImportService({ db, blobs });
 const siteImports = createSiteImportService({
-  db, sources: createSiteSources({ contact: config.contact, overpassUrl: config.overpassUrl, wikidataUrl: config.wikidataSparqlUrl }),
+  db, sources: createSiteSources({ contact: config.contact, overpassUrl: config.overpassUrl, wikidataUrl: config.wikidataSparqlUrl, ssiSitesUrl: config.ssiSitesUrl }),
 });
 const ssi = createSsiService({
   db, secrets: createSecretBox(config.encryptionKey),

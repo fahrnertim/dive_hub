@@ -2,7 +2,7 @@
 title: Glossary
 summary: Canonical domain language of Dive Hub. One term per concept; avoided synonyms listed.
 status: living
-date: 2026-10-04
+date: 2026-10-05
 ---
 
 # Dive Hub
@@ -132,6 +132,16 @@ A place where dives happen, shared across the whole instance: every User can use
 _Avoid_: Spot, location, divesite
 _German_: Tauchplatz
 
+**Water type (of a Dive site)**:
+The water at a Dive site: fresh, salt or brackish. It is the water type of every Dive there; a Dive without a site has none. Any User sets it on the site; an SSI site import fills it. Not the computer's water setting.
+_Avoid_: Salinity, water (alone), body of water (that is the lake or sea's name)
+_German_: Wasserart
+
+**Water setting (of a computer)**:
+The water a dive computer was set to (fresh, salt, EN 13319 or a custom density), which it computes depths with. Part of a Recording's device data. When it differs from the site's water type, the dive page says so and how far the depths read off.
+_Avoid_: Water type (that is the site's), salinity
+_German_: Wassereinstellung am Computer
+
 **Merge (of Dive sites)**:
 Folding a duplicate Dive site into another: the kept site keeps its values and fills its gaps from the merged one; Dives and External IDs move to it. The merged site is gone, and its links lead to the kept one. Any User can merge; it can't be undone.
 _Avoid_: Combine, join, deduplicate, link
@@ -155,7 +165,7 @@ _Avoid_: Provider, integration, inbound, origin
 _German_: Quelle
 
 **External ID**:
-The identifier a Source gives a record, such as an OpenStreetMap object (`node/123`), a Wikidata item (`Q…`), an SSI site ID, or a Diver's account at a service (SSI account ID). Unique per Source; a Dive site or a Diver has at most one per Source. Certification and membership numbers are not External IDs. It either provides data (the site was created or filled from that Source: "From OpenStreetMap") or is only a reference ("Also in OpenStreetMap"). A site without data-providing IDs was made in this instance.
+The identifier a Source gives a record, such as an OpenStreetMap object (`node/123`), a Wikidata item (`Q…`), an SSI site ID, or a Diver's account at a service (SSI account ID). Unique per Source; a Dive site or a Diver has at most one per Source. Certification and membership numbers are not External IDs. It either provides data (the site was created or filled from that Source: "From OpenStreetMap", "From SSI") or is only a reference ("Also in OpenStreetMap"). A site without data-providing IDs was made in this instance.
 _Avoid_: Foreign key, remote ID, reference number
 _German_: externe ID (on screen: "SSI-Tauchplatz-ID")
 
@@ -164,8 +174,13 @@ The credit a Source's license requires wherever its data is shown, such as "© O
 _Avoid_: Credits, copyright notice, source note
 _German_: Namensnennung
 
+**Offer (of a Source's data)**:
+The values a Site import found for a hand-made Dive site, kept beside its reference instead of changing the site. Any User can take it ("Use SSI's data"): empty fields take the Source's values, filled ones stay, and the reference then provides data. Taking it is called adopting in the code and history.
+_Avoid_: Suggestion, proposal, sync
+_German_: Daten übernehmen (the action)
+
 **Site import**:
-An admin's run that fetches Dive sites from open Sources (OpenStreetMap, Wikidata) for a country, an area or everywhere, and creates, updates or links sites. It shows in the history of every site it changed. Not an Import, which is a User's dive data.
+An admin's run that fetches Dive sites from OpenStreetMap, Wikidata or SSI for a country, an area or everywhere, and creates, updates or links sites, or only fills sites already here. Hand-made sites are never changed; they get an Offer. SSI's list has no licence, so the admin confirms an explanation first. It shows in the history of every site it changed. Not an Import, which is a User's dive data.
 _Avoid_: Sync, seed, site Import
 _German_: Tauchplatz-Import
 

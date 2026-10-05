@@ -106,7 +106,7 @@ test('review material', async ({ page, request, browser }) => {
   const site = await (await request.post('/api/dive-sites', {
     headers,
     data: {
-      name: 'Lighthouse', position: { latitude: 28.5007, longitude: 34.5199 }, country: 'EG', waterBody: 'Red Sea',
+      name: 'Lighthouse', position: { latitude: 28.5007, longitude: 34.5199 }, country: 'EG', waterBody: 'Red Sea', waterType: 'salt',
       description: 'Shore entry by the café. Sandy slope to 12 m, then the wall; mind the boats at the point.',
     },
   })).json() as { id: string };
@@ -124,6 +124,21 @@ test('review material', async ({ page, request, browser }) => {
   const imported = (await (await request.get('/api/dive-sites?q=Ras%20il')).json() as { sites: { id: string; name: string; version: number }[] }).sites
     .find((s) => s.name === 'Ras il-Ħobż')!;
   await request.patch(`/api/dive-sites/${imported.id}`, { headers, data: { version: imported.version, ssiSiteId: '3314', maxDepthM: 32 } });
+
+  // SSI (ADR 0025): a site made here with SSI's ID typed in, filled by an SSI import of Switzerland that creates
+  // nothing, so its page offers SSI's data; and Dive 42 at a fresh-water site, for the dive page's hint.
+  const ours = await (await request.post('/api/dive-sites', {
+    headers, data: { name: 'Ouchy – Seeufer (club notes)', position: { latitude: 46.5001, longitude: 6.62 }, waterBody: 'Lac Léman', ssiSiteId: '7008' },
+  })).json() as { id: string };
+  const ssiRun = await (await request.post('/api/admin/site-imports', {
+    headers, data: { sources: ['ssi'], area: { kind: 'country', country: 'CH' }, language: 'en', confirmSsi: true, createSites: false },
+  })).json() as { id: string };
+  await expect.poll(async () => (await (await request.get(`/api/admin/site-imports/${ssiRun.id}`)).json()).status, { timeout: 20_000 }).toBe('done');
+  const lake = await (await request.post('/api/dive-sites', {
+    headers, data: { name: 'Gosausee', position: { latitude: 47.5326, longitude: 13.4995 }, country: 'AT', waterType: 'fresh' },
+  })).json() as { id: string };
+  const dive42Now = await (await request.get(`/api/dives/${dive42}`)).json() as { version: number };
+  await request.patch(`/api/dives/${dive42}`, { headers, data: { version: dive42Now.version, siteId: lake.id } });
 
   const sitePages = async (prefix: string, de: boolean) => {
     if (!want('sites')) return;
@@ -152,11 +167,22 @@ test('review material', async ({ page, request, browser }) => {
     await capture(page, `${prefix}-imported-site`, { aria: false });
     await page.getByRole('button', { name: de ? 'Tauchplatz bearbeiten' : 'Edit dive site' }).click();
     await capture(page, `${prefix}-imported-site-edit`, { aria: false });
+    await page.goto(`/#/sites/${ours.id}`); await page.getByRole('heading', { name: 'Ouchy – Seeufer (club notes)' }).waitFor();
+    await capture(page, `${prefix}-site-offer`, { aria: false });
+    await page.getByRole('button', { name: de ? 'Daten von SSI übernehmen' : 'Use SSI’s data' }).click();
+    await page.getByRole('dialog').waitFor();
+    await capture(page, `${prefix}-site-adopt`, { full: false, aria: false });
+    await page.keyboard.press('Escape');
+    await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: de ? /Tauchgang 42/ : /Dive 42/ }).waitFor();
+    await capture(page, `${prefix}-dive-at-fresh-water-site`, { aria: false });
     await page.goto('/#/admin/site-imports'); await page.locator('.site-imports > li').first().waitFor();
     await capture(page, `${prefix}-site-import`, { aria: false });
     await page.getByText(de ? 'Ein Gebiet nach Koordinaten' : 'An area by coordinates').click();
     await page.getByRole('button', { name: de ? 'Import starten' : 'Start import' }).click();
     await capture(page, `${prefix}-site-import-box`, { aria: false });
+    await page.getByText(de ? 'SSI (ohne Lizenz, siehe unten)' : 'SSI (no licence, see below)').click();
+    await page.getByText(de ? 'Nur Tauchplätze ergänzen, die schon hier sind' : 'Only fill dive sites that are already here').click();
+    await capture(page, `${prefix}-site-import-ssi`, { aria: false });
   };
   await page.setViewportSize({ width: 1280, height: 900 });
   await sitePages('17-en-light-desktop', false);
@@ -174,6 +200,8 @@ test('review material', async ({ page, request, browser }) => {
   await page.goto(`/#/?site=${site.id}`); await page.locator('table').waitFor();
   await capture(page, '23-de-light-320-logbook-at-site', { aria: false });
   await setPreferences(request, { language: null });
+  const dive42Then = await (await request.get(`/api/dives/${dive42}`)).json() as { version: number };
+  await request.patch(`/api/dives/${dive42}`, { headers, data: { version: dive42Then.version, siteId: null } });
 
   // SSI (ADR 0024): the account panel before and after connecting; a Dive ready to send, the SSI site picker,
   // sent, and changed since sent; the same in German on a dark phone.

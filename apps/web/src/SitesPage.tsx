@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, keys, meQuery, siteQuery, sitesQuery, unwrap, type ExternalIdView, type SiteView } from './api.ts';
+import { api, ApiError, keys, meQuery, siteQuery, sitesQuery, unwrap, type ExternalIdView, type Position, type SiteView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { mapsUrl } from './lib/geo.ts';
@@ -265,6 +265,10 @@ export function SitePage({ id }: { id: string }) {
                 </dd>
               </div>
               <div>
+                <dt>{t('sites.waterType')}</dt>
+                <dd>{s.waterType ? t(`vocabulary.waterType.${s.waterType}`) : t('sites.notKnown')}</dd>
+              </div>
+              <div>
                 <dt>{t('sites.maxDepth')}</dt>
                 <dd>{s.maxDepthM === null ? t('sites.notKnown') : display.depth(s.maxDepthM)}</dd>
               </div>
@@ -283,7 +287,7 @@ export function SitePage({ id }: { id: string }) {
             </dl>
             <h2 className="subheading">{t('sites.description')}</h2>
             {s.description ? <p className="notes">{s.description}</p> : <Muted>{t('sites.noDescription')}</Muted>}
-            <SiteOrigin externalIds={s.externalIds} />
+            <SiteOrigin site={s} />
             <Muted>{t('sites.sharedHint')}</Muted>
             {s.canDelete && s.inUse && <Muted>{t('sites.inUse')}</Muted>}
           </>
@@ -301,14 +305,60 @@ export function SitePage({ id }: { id: string }) {
   );
 }
 
+type Offered = NonNullable<ExternalIdView['offered']>;
+const OFFERED_FIELDS = ['name', 'position', 'country', 'waterBody', 'waterType', 'maxDepthM', 'description'] as const satisfies readonly (keyof Offered)[];
+const FIELD_LABELS = {
+  name: 'sites.name', position: 'sites.position', country: 'sites.country', waterBody: 'sites.waterBody',
+  waterType: 'sites.waterType', maxDepthM: 'sites.maxDepth', description: 'sites.description',
+} as const satisfies Record<keyof Offered, string>;
+
 /**
- * "From OpenStreetMap: node/123" with the Attribution its license asks for, or "Also in Wikidata: Q42"
- * for a reference (ADR 0021). Nothing for a site made in this Dive Hub.
+ * "From OpenStreetMap: node/123" with the Attribution its license asks for, "From SSI: 3314" (no page to link),
+ * or "Also in Wikidata: Q42" for a reference (ADR 0021). A reference whose Source offers data has
+ * "Use …'s data" (ADR 0025): like a merge, empty fields fill and filled ones stay; the dialog says which.
+ * Nothing for a site made in this Dive Hub.
  */
-function SiteOrigin({ externalIds }: { externalIds: ExternalIdView[] }) {
+function SiteOrigin({ site }: { site: SiteView }) {
   const { t } = useTranslation();
-  const { from, alsoIn } = siteOrigin(externalIds);
+  const display = useDisplay();
+  const queryClient = useQueryClient();
+  const [adopting, setAdopting] = useState<ExternalIdView | null>(null);
+  const adopt = useMutation({
+    mutationFn: async (e: ExternalIdView) => unwrap(await api.POST('/api/dive-sites/{id}/adopt', {
+      params: { path: { id: site.id } }, body: { source: e.source as 'osm' | 'wikidata' | 'ssi', version: site.version },
+    })),
+    onSuccess: async (saved) => {
+      queryClient.setQueryData(keys.site(saved.id), saved);
+      await queryClient.invalidateQueries({ queryKey: keys.sites });
+      await queryClient.invalidateQueries({ queryKey: keys.dives });
+    },
+  });
+  const { from, alsoIn } = siteOrigin(site.externalIds);
   if (from.length === 0 && alsoIn.length === 0) return null;
+
+  const label = (field: keyof Offered) => t(FIELD_LABELS[field]);
+  const show = (field: keyof Offered, v: Offered[keyof Offered]) => (
+    field === 'position' ? display.position(v as Position)
+      : field === 'country' ? display.country(v as string)
+      : field === 'maxDepthM' ? display.depth(v as number)
+      : field === 'waterType' ? t(`vocabulary.waterType.${v as NonNullable<Offered['waterType']>}`)
+      : String(v));
+  const current = (field: keyof Offered) => site[field];
+  const body = (e: ExternalIdView) => {
+    const offered = e.offered!;
+    const fills = OFFERED_FIELDS.filter((f) => current(f) === null && offered[f] !== null);
+    const differs = OFFERED_FIELDS.filter((f) => current(f) !== null && offered[f] !== null && JSON.stringify(current(f)) !== JSON.stringify(offered[f]));
+    const list = (items: string[]) => new Intl.ListFormat(display.locale, { type: 'conjunction' }).format(items);
+    return [
+      fills.length > 0 ? t('sites.adoptFills', { fields: list(fills.map(label)), source: e.name }) : t('sites.adoptNothing', { source: e.name }),
+      differs.length > 0 ? t('sites.adoptDiffers', {
+        source: e.name,
+        // A description is too long to quote here; the field's name is enough.
+        list: list(differs.map((f) => (f === 'description' ? label(f) : `${label(f)} (${show(f, offered[f])})`))),
+      }) : '',
+      t('sites.adoptAfter', { source: e.name }),
+    ].filter(Boolean).join(' ');
+  };
   const link = (e: ExternalIdView) => (e.url
     ? <a href={e.url} target="_blank" rel="noopener noreferrer" className="external-link">{e.externalId}<Icon name="external" /></a>
     : e.externalId);
@@ -326,8 +376,26 @@ function SiteOrigin({ externalIds }: { externalIds: ExternalIdView[] }) {
             )}
           </li>
         ))}
-        {alsoIn.map((e) => <li key={e.source}>{t('sites.alsoIn', { source: e.name })}: {link(e)}</li>)}
+        {alsoIn.map((e) => (
+          <li key={e.source}>
+            {t('sites.alsoIn', { source: e.name })}: {link(e)}
+            {e.offered && (
+              <>
+                {' '}
+                <Button size="small" onPress={() => setAdopting(e)}>{t('sites.useData', { source: e.name })}</Button>
+              </>
+            )}
+          </li>
+        ))}
       </ul>
+      <ConfirmDialog
+        isOpen={adopting !== null} onOpenChange={(open) => { if (!open) setAdopting(null); }}
+        title={adopting ? t('sites.adoptTitle', { source: adopting.name, name: site.name }) : ''}
+        body={adopting ? body(adopting) : ''}
+        confirmLabel={t('sites.adoptConfirm')} tone="primary"
+        onConfirm={() => adopt.mutateAsync(adopting!)}
+        onDone={() => announce(t('sites.adopted', { source: adopting?.name ?? '', name: site.name }))}
+      />
     </>
   );
 }
@@ -364,6 +432,7 @@ function NearbySites({ site }: { site: SiteView }) {
     if (!site.country && other.country) gaps.push(t('sites.country'));
     if (!site.waterBody && other.waterBody) gaps.push(t('sites.waterBody'));
     if (site.maxDepthM === null && other.maxDepthM !== null) gaps.push(t('sites.maxDepth'));
+    if (site.waterType === null && other.waterType !== null) gaps.push(t('sites.waterType'));
     if (!site.ssiSiteId && other.ssiSiteId) gaps.push(t('sites.ssiSiteId'));
     if (!site.description && other.description) gaps.push(t('sites.description'));
     return gaps;

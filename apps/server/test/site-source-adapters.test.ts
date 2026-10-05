@@ -1,18 +1,21 @@
-// The open Sources a Site import reads (ADR 0021), replaying answers recorded from the live services
-// (test/fixtures/site-sources, refreshed by record.ts); tests never call Overpass or Wikidata.
+// The Sources a Site import reads (ADR 0021, 0025), replaying answers recorded from the live services
+// (test/fixtures/site-sources, refreshed by record.ts) or, for SSI, a hand-made file in its format;
+// tests never call Overpass, Wikidata or SSI.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createOverpassSource } from '../src/sites/import/overpass.js';
 import { createPoliteHttp, type Fetch } from '../src/sites/import/polite-http.js';
-import { SiteSourceError } from '../src/sites/import/site-source.js';
+import { IMPORTED_FIELDS, SiteSourceError } from '../src/sites/import/site-source.js';
+import { createSsiSiteSource } from '../src/sites/import/ssi-sites.js';
 import { createWikidataSource } from '../src/sites/import/wikidata.js';
+import { ssiSitesZip, zipOf } from './zip.js';
 
 const recorded = (file: string) => readFileSync(new URL(`./fixtures/site-sources/${file}`, import.meta.url), 'utf8');
 
 interface Sent { url: string; method: string; headers: Record<string, string>; body: string }
 
 /** A stand-in for the network: answers each request with the next of `answers`, and keeps what was sent. */
-function replay(...answers: { status?: number; body: string; headers?: Record<string, string> }[]) {
+function replay(...answers: { status?: number; body: string | Buffer; headers?: Record<string, string> }[]) {
   const sent: Sent[] = [];
   const fetch: Fetch = async (url, init) => {
     sent.push({ url, method: init.method, headers: init.headers, body: init.body ?? '' });
@@ -20,7 +23,11 @@ function replay(...answers: { status?: number; body: string; headers?: Record<st
     return {
       status: answer.status ?? 200,
       headers: { get: (name: string) => answer.headers?.[name.toLowerCase()] ?? null },
-      text: async () => answer.body,
+      text: async () => answer.body.toString(),
+      arrayBuffer: async () => {
+        const bytes = Buffer.from(answer.body);
+        return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+      },
     };
   };
   const pauses: number[] = [];
@@ -46,7 +53,7 @@ describe('OpenStreetMap through Overpass', () => {
     expect(sites.find((s) => s.externalId === 'node/4159831401')).toEqual({
       source: 'osm', externalId: 'node/4159831401', sameAs: {},
       // scuba_diving:depth is the typical depth, not the maximum (OSM wiki).
-      values: { name: 'Ras il-Ħobż', position: { latitude: 36.0156263, longitude: 14.2793976 }, country: 'MT', waterBody: null, description: null, maxDepthM: null },
+      values: { name: 'Ras il-Ħobż', position: { latitude: 36.0156263, longitude: 14.2793976 }, country: 'MT', waterBody: null, description: null, maxDepthM: null, waterType: null },
     });
   });
 
@@ -144,7 +151,7 @@ describe('Wikidata through its Query Service', () => {
     expect(sites).toHaveLength(17);
     expect(sites.find((s) => s.externalId === 'Q32276')).toEqual({
       source: 'wikidata', externalId: 'Q32276', sameAs: { osm: 'node/255316037' },
-      values: { name: 'SS Thistlegorm', position: { latitude: 27.814166666, longitude: 33.92 }, country: 'EG', waterBody: null, description: null, maxDepthM: null },
+      values: { name: 'SS Thistlegorm', position: { latitude: 27.814166666, longitude: 33.92 }, country: 'EG', waterBody: null, description: null, maxDepthM: null, waterType: null },
     });
     expect(sites.find((s) => s.externalId === 'Q335216')?.sameAs).toEqual({ osm: 'relation/16662777' });
   });
@@ -182,5 +189,90 @@ describe('Wikidata through its Query Service', () => {
   it('refuses an answer that is not a query result', async () => {
     const net = replay({ body: 'java.util.concurrent.TimeoutException' });
     await expect(createWikidataSource(net.http).fetch({ kind: 'world' }, 'en')).rejects.toMatchObject({ source: 'wikidata', reason: 'unavailable' });
+  });
+});
+
+describe("SSI's site list", () => {
+  const url = 'https://ssi.example/app/APP_CACHE_SITES.zip';
+  const fetchSites = async (area: Parameters<ReturnType<typeof createSsiSiteSource>['fetch']>[0], zip?: Buffer) => {
+    const net = replay({ body: zip ?? await ssiSitesZip() });
+    return { net, sites: await createSsiSiteSource(net.http, url).fetch(area, 'en') };
+  };
+
+  it('downloads the file once, without signing in, saying who is asking', async () => {
+    const { net, sites } = await fetchSites({ kind: 'world' });
+    expect(net.sent).toHaveLength(1);
+    expect(net.sent[0]).toMatchObject({ url, method: 'GET', body: '' });
+    expect(net.sent[0]!.headers['User-Agent']).toBe('DiveHub (+https://github.com/fahrnertim/dive_hub; ops@example.org)');
+    expect(sites.find((s) => s.externalId === '3314')).toEqual({
+      source: 'ssi', externalId: '3314', sameAs: {},
+      values: { name: 'Hausreef', position: { latitude: 27.29, longitude: 33.82 }, country: 'EG', waterBody: null, description: null, maxDepthM: null, waterType: 'salt' },
+    });
+  });
+
+  it('leaves out deleted and private sites; an empty "deleted" is not deleted', async () => {
+    const { sites } = await fetchSites({ kind: 'world' });
+    const ids = sites.map((s) => s.externalId).sort();
+    expect(ids).toEqual(['3314', '5120', '6101', '6102', '7002', '7003', '7005', '7006', '7007', '7008']);
+  });
+
+  it('takes the water type from the body of water: salt, fresh, and nothing for artificial or none', async () => {
+    const { sites } = await fetchSites({ kind: 'world' });
+    const water = Object.fromEntries(sites.map((s) => [s.externalId, s.values.waterType]));
+    expect(water).toMatchObject({ 3314: 'salt', 5120: 'fresh', 7002: null, 7007: null });
+  });
+
+  it("turns SSI's alpha-3 countries into ours, and leaves a withdrawn code empty", async () => {
+    const { sites } = await fetchSites({ kind: 'world' });
+    const of = (id: string) => sites.find((s) => s.externalId === id)!.values;
+    expect(of('5120').country).toBe('AT');
+    expect(of('7005').country).toBeNull(); // ANT: Bonaire, Curaçao or Sint Maarten
+    expect(of('7007').name).toBe('2015'); // a name SSI sends as a number
+  });
+
+  it('keeps only name, position, country, water type and the ID: never comments, statistics, wildlife, aliases or owners', async () => {
+    const { sites } = await fetchSites({ kind: 'world' });
+    for (const s of sites) {
+      expect(Object.keys(s.values).sort()).toEqual([...IMPORTED_FIELDS].sort());
+      expect(s.values).toMatchObject({ waterBody: null, description: null, maxDepthM: null });
+    }
+    const all = JSON.stringify(sites);
+    for (const leak of ['203.0.113.45', 'member 99', '4711', 'Seestraße', 'Upper Austria', 'strong_current']) expect(all).not.toContain(leak);
+  });
+
+  it('keeps the sites of a country, or inside a box', async () => {
+    const austria = await fetchSites({ kind: 'country', country: 'AT' });
+    expect(austria.sites.map((s) => s.externalId).sort()).toEqual(['5120', '6102']);
+    const attersee = await fetchSites({ kind: 'box', south: 47.75, west: 13.45, north: 47.95, east: 13.62 });
+    expect(attersee.sites.map((s) => s.values.name).sort()).toEqual(['Attersee – Schwarzenbach', 'Wrack Dixie']);
+  });
+
+  it('treats anything but a zip with the site list inside as unavailable', async () => {
+    const answers = [
+      Buffer.from('<html><body>Maintenance</body></html>'),
+      await zipOf({ 'readme.txt': 'nothing here' }),
+      await zipOf({ 'sites.json': '{"divesites": ' }),
+      await zipOf({ 'sites.json': JSON.stringify({ sites: [] }) }),
+    ];
+    for (const body of answers) {
+      await expect(createSsiSiteSource(replay({ body }).http, url).fetch({ kind: 'world' }, 'en'))
+        .rejects.toMatchObject({ source: 'ssi', reason: 'unavailable' });
+    }
+  });
+
+  it("skips single sites it can't read instead of failing the run", async () => {
+    const zip = await ssiSitesZip((file) => {
+      file.divesites.push({ odin_dive_sites_id: 'abc', odin_dive_sites_name: 'Bad id' });
+      file.divesites.push({ odin_dive_sites_id: 9001, odin_dive_sites_name: 'Off the map', odin_dive_sites_lat: 123, odin_dive_sites_lon: 5 });
+    });
+    const { sites } = await fetchSites({ kind: 'world' }, zip);
+    expect(sites.find((s) => s.values.name === 'Bad id')).toBeUndefined();
+    expect(sites.find((s) => s.externalId === '9001')?.values.position).toBeNull();
+  });
+
+  it('waits and tries once more when SSI is busy, like the open Sources', async () => {
+    const net = replay({ status: 503, body: 'busy' }, { body: await ssiSitesZip() });
+    await expect(createSsiSiteSource(net.http, url).fetch({ kind: 'world' }, 'en')).resolves.toHaveLength(10);
+    expect(net.pauses).toEqual([30_000]);
   });
 });

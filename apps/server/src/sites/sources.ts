@@ -4,8 +4,8 @@
 export const SITE_SOURCES = ['osm', 'wikidata', 'ssi'] as const;
 export type SiteSource = (typeof SITE_SOURCES)[number];
 
-/** Sources a Site import fetches from, in precedence order: the first one's value wins for a field both have. */
-export const IMPORT_SOURCES = ['osm', 'wikidata'] as const satisfies readonly SiteSource[];
+/** Sources a Site import fetches from, in the order a run asks them. Which value wins per field: `FIELD_PRECEDENCE`. */
+export const IMPORT_SOURCES = ['osm', 'wikidata', 'ssi'] as const satisfies readonly SiteSource[];
 export type ImportSource = (typeof IMPORT_SOURCES)[number];
 
 export interface SourceInfo {

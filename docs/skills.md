@@ -2,7 +2,7 @@
 title: Agent skills
 summary: Which agent skills the project uses, which were considered and rejected, and why.
 status: living
-date: 2026-10-04
+date: 2026-10-05
 ---
 
 # Agent skills
@@ -124,3 +124,4 @@ Details and commands: [skills vetting](research/2026-10-02-agent-skills-vetting.
 | 2026-10-04 | `npx skills find` for "pagination", "deduplication", "merge records", "api contract", "client sdk", "mobile client" (merging sites, list paging, client contract, [ADR 0022](decisions/0022-merging-sites-and-site-list-paging.md)) | nothing installed | Only unrelated hits (marketing, git merge conflicts, vendor SDKs, Expo dev client). Our `api-and-interface-design` and `ux-tables` cover paging and the contract |
 | 2026-10-04 | `npx skills find` for "reverse engineering", "api research", "openapi from traffic", "mobile app api", "deep research", "terms of service" (SSI API research) | nothing installed | no skill for API reverse engineering or traffic capture; hits were design, Lark/Azure and vendor skills. mattpocock/skills `research` (SKILL.md only, no scripts) read and not needed: it only says "use a background agent, cite primary sources, write a Markdown note", which our research-note convention already covers |
 | 2026-10-04 | `npx skills find` for "encryption secrets", "credential storage", "api client", "third party integration" (SSI slice) | nothing new | only skills we have (`security-and-hardening`, better-auth) or vendor skills (Azure, Lark, Convex) |
+| 2026-10-05 | `npx skills find` for "zip", "data import", "geospatial", "database migration", "etl" (SSI site import, water type of a site, [ADR 0024](decisions/0024-ssi-target-via-app-api.md)) | nothing installed | only unrelated or vendor hits (OKX, Salesforce, Azure, Prisma, marketing SEO, a CTF zip skill); `supabase-postgres-best-practices` was rejected on 2026-10-02. Our `postgres-drizzle`, `tdd` and `security-and-hardening` cover the work |

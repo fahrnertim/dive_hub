@@ -100,7 +100,7 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Target', () => {
       expect((await call('GET', `/api/dives/${diveId}/ssi/sites`, tim)).json()).toEqual([
         { id: '3314', name: 'Hausreef', latitude: 27.29, longitude: 33.82, country: 'EG', distanceM: null },
       ]);
-      const site = (await call('POST', '/api/dive-sites', tim, { name: 'Hausreef', position: { latitude: 27.29, longitude: 33.82 }, ssiSiteId: '3314' })).json();
+      const site = (await call('POST', '/api/dive-sites', tim, { name: 'Hausreef', position: { latitude: 27.29, longitude: 33.82 }, ssiSiteId: '3314', waterType: 'salt' })).json();
       for (const id of [diveId, secondDiveId]) {
         const { version } = (await call('GET', `/api/dives/${id}`, tim)).json();
         expect((await call('PATCH', `/api/dives/${id}`, tim, { version, siteId: site.id })).statusCode).toBe(200);

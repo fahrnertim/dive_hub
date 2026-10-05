@@ -176,6 +176,31 @@ function Fact({ label, children, mark, wide }: { label: string; children: ReactN
   return <div {...(wide && { className: 'fact-wide' })}><dt>{label}</dt><dd>{children}{mark}</dd></div>;
 }
 
+/**
+ * The Dive's water type is its site's (ADR 0025): shown here, set on the site. When the Primary recording's computer
+ * was set to other water, a line says so and how far off its depths read (the client contract's duty).
+ */
+function WaterFact({ dive: d }: { dive: DiveView }) {
+  const { t, i18n } = useTranslation();
+  const m = d.waterMismatch;
+  const note = m ? [
+    t('dive.waterMismatch', { computer: t(`vocabulary.waterTypeInSentence.${m.computer}`), site: t(`vocabulary.waterTypeInSentence.${m.site}`) }),
+    m.depthPercent === null ? t('dive.waterReadsOff')
+      : t(m.depthPercent < 0 ? 'dive.waterReadsShallow' : 'dive.waterReadsDeep', {
+        percent: new Intl.NumberFormat(i18n.language).format(Math.round(Math.abs(m.depthPercent))),
+      }),
+  ].join(' ')
+    : !d.site ? t('dive.chooseSiteForWater')
+    : !d.waterType ? t('dive.waterTypeUnknown')
+    : t('dive.waterTypeFromSite');
+  return (
+    <Fact label={t('dive.waterType')} wide={!!m}>
+      {d.waterType ? t(`vocabulary.waterType.${d.waterType}`) : t('common.none')}
+      <span className="recorded-value">{note}</span>
+    </Fact>
+  );
+}
+
 function DiveFacts({ dive: d }: { dive: DiveView }) {
   const { t } = useTranslation();
   const format = useFormatValue();
@@ -191,7 +216,7 @@ function DiveFacts({ dive: d }: { dive: DiveView }) {
         {fact('avgDepthM', t('dive.avgDepth'))}
         {fact('durationSeconds', t('dive.duration'))}
         {fact('waterTemperatureC', t('dive.waterTemperature'))}
-        {fact('waterType', t('dive.waterType'))}
+        <WaterFact dive={d} />
         <Fact label={t('dive.site')}>
           <span className="site-fact">
             {d.site ? <a href={`#/sites/${d.site.id}`}>{d.site.name}</a> : t('common.none')}
@@ -320,7 +345,13 @@ function RecordingDetails({ recording }: { recording: DiveView['recordings'][num
             {gases.map((g) => gasName(g, t('dive.air')) + (g.circuit === 'diluent' ? ` (${t('vocabulary.circuit.diluent')})` : '')).join(', ')}
           </Fact>
         )}
-        {s.waterType && <Fact label={t('dive.waterType')}>{t(`vocabulary.waterType.${s.waterType}`)}</Fact>}
+        {/* The computer's setting, not the Dive's water (that is the site's, ADR 0025). */}
+        {s.waterType && (
+          <Fact label={t('dive.computerWater')}>
+            {t(`vocabulary.waterType.${s.waterType}`)}
+            {s.waterDensity !== undefined && s.waterType !== 'en13319' && ` (${new Intl.NumberFormat(display.locale).format(s.waterDensity)} kg/m³)`}
+          </Fact>
+        )}
         {s.minTemperatureC !== undefined && (
           <Fact label={t('dive.temperatureRange')}>
             {display.temperature(s.minTemperatureC)}

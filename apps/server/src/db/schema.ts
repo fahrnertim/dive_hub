@@ -23,7 +23,7 @@ import {
 import type { SiteImportCounts } from '../sites/import/import-plan.js';
 import type { ImportArea, ImportedValues } from '../sites/import/site-source.js';
 import type { ImportSource } from '../sites/sources.js';
-import { WATER_TYPES, type DecoModel, type DiveMode, type GasCircuit, type WaterType } from '../vocabulary.js';
+import { WATER_TYPES, type DecoModel, type DiveMode, type GasCircuit, type SiteWaterType, type WaterType } from '../vocabulary.js';
 import { user } from './auth-schema.js';
 
 export * from './auth-schema.js';
@@ -225,6 +225,11 @@ export const diveSite = pgTable(
     description: text('description'),
     /** Deepest point divers reach here, in metres (ADR 0021). */
     maxDepthM: doublePrecision('max_depth_m'),
+    /**
+     * Fresh, salt or brackish (ADR 0025): the water type of every Dive here. The device-only words of the enum
+     * (en13319, custom) are the computer's setting, kept in the Recording's summary, never here.
+     */
+    waterType: waterType('water_type').$type<SiteWaterType>(),
     createdBy: uuid('created_by').references(() => user.id, { onDelete: 'set null' }),
     /** Set when this site was merged into another (merging comes later). */
     mergedInto: uuid('merged_into').references((): AnyPgColumn => diveSite.id),
@@ -237,6 +242,7 @@ export const diveSite = pgTable(
     index('dive_site_position_idx').on(t.latitude, t.longitude),
     check('dive_site_position_ck', sql`(${t.latitude} is null) = (${t.longitude} is null) and ${t.latitude} between -90 and 90 and ${t.longitude} between -180 and 180`),
     check('dive_site_max_depth_ck', sql`${t.maxDepthM} > 0 and ${t.maxDepthM} <= 400`),
+    check('dive_site_water_type_ck', sql`${t.waterType} in ('fresh', 'salt', 'brackish')`),
   ],
 );
 
@@ -245,7 +251,8 @@ export const siteSource = pgEnum('site_source', ['osm', 'wikidata', 'ssi']);
 /**
  * A Dive site's identifier at a Source (ADR 0021): unique per Source, at most one per Source and site.
  * `providesData`: the site was created or filled from this Source; `imported` holds what the Source
- * delivered last, the base of the next import's 3-way merge. Otherwise it is a reference only.
+ * delivered last, the base of the next import's 3-way merge. Otherwise it is a reference only; on a
+ * hand-made site an import still keeps the Source's values in `imported`, offered on the site page (ADR 0025).
  */
 export const diveSiteExternalId = pgTable(
   'dive_site_external_id',
@@ -264,7 +271,7 @@ export const diveSiteExternalId = pgTable(
   (t) => [
     uniqueIndex('dive_site_external_id_source_uq').on(t.source, t.externalId),
     uniqueIndex('dive_site_external_id_site_source_uq').on(t.siteId, t.source),
-    check('dive_site_external_id_imported_ck', sql`${t.providesData} = (${t.imported} is not null)`),
+    check('dive_site_external_id_imported_ck', sql`not ${t.providesData} or ${t.imported} is not null`),
   ],
 );
 
@@ -272,21 +279,17 @@ export const siteImportStatus = pgEnum('site_import_status', ['queued', 'running
 
 export interface SiteImportProgress {
   /** What the import is doing now. */
-  step: 'waiting' | 'osm' | 'wikidata' | 'saving';
+  step: 'waiting' | 'osm' | 'wikidata' | 'ssi' | 'saving';
   /** While saving: sites done of all. */
   done: number;
   total: number;
 }
 
-export interface SiteImportFinding {
-  /** A new site within 200 m of one that was there before; merging comes later. */
-  kind: 'near';
-  siteId: string;
-  name: string;
-  nearSiteId: string;
-  nearName: string;
-  distanceM: number;
-}
+export type SiteImportFinding =
+  /** A new site within 200 m of one that was there before (merge it there, ADR 0022). */
+  | { kind: 'near'; siteId: string; name: string; nearSiteId: string; nearName: string; distanceM: number }
+  /** A hand-made site that a Source describes: its page offers the Source's data (ADR 0025). */
+  | { kind: 'offer'; siteId: string; name: string; source: ImportSource };
 
 /**
  * An admin's run that fetches Dive sites from open Sources (ADR 0021). Only one is queued or running at
@@ -303,6 +306,10 @@ export const siteImport = pgTable(
     language: text('language').notNull(),
     /** When the admin confirmed the ODbL explanation (OSM imports only). */
     odblConfirmedAt: timestamp('odbl_confirmed_at', { withTimezone: true }),
+    /** When the admin confirmed that SSI gives no licence and importing is their risk (SSI imports only, ADR 0025). */
+    ssiConfirmedAt: timestamp('ssi_confirmed_at', { withTimezone: true }),
+    /** False: the run only matched and filled sites already in the hub. */
+    createSites: boolean('create_sites').notNull().default(true),
     status: siteImportStatus('status').notNull().default('queued'),
     progress: jsonb('progress').$type<SiteImportProgress>().notNull().default({ step: 'waiting', done: 0, total: 0 }),
     counts: jsonb('counts').$type<SiteImportCounts>(),
@@ -324,7 +331,7 @@ export const siteImport = pgTable(
  * `startsAt` covers the start time and its UTC offset together.
  */
 export const OVERRIDABLE_FIELDS = [
-  'number', 'startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM', 'waterTemperatureC', 'waterType',
+  'number', 'startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM', 'waterTemperatureC',
 ] as const;
 export type OverridableField = (typeof OVERRIDABLE_FIELDS)[number];
 
@@ -346,7 +353,6 @@ export const dive = pgTable(
     avgDepthM: real('avg_depth_m'),
     /** Lowest water temperature (UDDF: lowesttemperature). */
     waterTemperatureC: real('water_temperature_c'),
-    waterType: waterType('water_type'),
     /** The Dive's own notes; not a recording value. */
     notes: text('notes'),
     /** Where the Dive was (ADR 0020); the Dive's own value, not an Override. */
@@ -370,7 +376,9 @@ export type RecordingSummary = {
   decoModel?: DecoModel;
   gfLow?: number;
   gfHigh?: number;
+  /** The computer's salinity setting; the water of the Dive is its site's (ADR 0025). */
   waterType?: WaterType;
+  /** Density the computer computed depths with, kg/m³. */
   waterDensity?: number;
   gases?: { o2: number; he: number; circuit?: GasCircuit }[];
   minTemperatureC?: number;

@@ -8,7 +8,8 @@ date: 2026-10-04
 # ADR 0024: SSI as the first Target, through its private app API
 
 ## Status
-Accepted – 2026-10-04
+Accepted – 2026-10-04. SSI site import built and amended by [ADR 0025](0025-ssi-site-import-and-site-water-type.md)
+(2026-10-05): no alias names, private sites left out, "only fill" runs; sending uses the Dive site's water type.
 
 ## Context
 The [spec](../spec/README.md) planned the SSI QR payload as the first Target mode, because it needs no stored credentials.

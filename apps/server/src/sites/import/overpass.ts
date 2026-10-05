@@ -80,6 +80,7 @@ export function parseOverpass(body: string, area: ImportArea): SourceSite[] {
         waterBody: null,
         description: text(tags.description),
         maxDepthM: parseMaxDepth(tags['scuba_diving:maxdepth']),
+        waterType: null,
       },
       sameAs: wikidata && /^Q[1-9]\d*$/.test(wikidata) ? { wikidata } : {},
     }];

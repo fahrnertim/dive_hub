@@ -8,7 +8,8 @@ date: 2026-10-03
 # ADR 0015: Overrides as marked fields, optimistic locking, our own device vocabulary, browser tests
 
 ## Status
-Accepted – 2026-10-03
+Accepted – 2026-10-03. Amended by [ADR 0025](0025-ssi-site-import-and-site-water-type.md) (2026-10-05): the water type
+is no longer a Dive value or Override; it is the Dive site's, and the computer's setting stays on the Recording.
 
 ## Context
 Slice 5 makes the dive page the place to keep a Dive: setting values by hand (**Overrides**, as the

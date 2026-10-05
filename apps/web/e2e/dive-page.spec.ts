@@ -16,7 +16,9 @@ test('shows the dive with the recording\'s values, the device data and how it ca
   const facts = page.locator('dl.facts').first();
   await expect(facts).toContainText('18.5 m');
   await expect(facts).toContainText('30 min');
-  await expect(facts).toContainText('Salt water');
+  // The water type is the dive site's (ADR 0025); the computer's own setting is with its data.
+  await expect(facts).toContainText('Choose a dive site, and the dive takes its water type.');
+  await expect(page.locator('dl.facts-small')).toContainText('Water setting on the computerSalt water (1,025 kg/m³)');
   await expect(page.getByText('edited')).toHaveCount(0);
   await expect(page.getByText('Bühlmann ZHL-16C, GF 40/85')).toBeVisible();
   // More than three entries hide behind "Show the whole history"; how many there are depends on what
@@ -88,7 +90,7 @@ test('speaks German and works in feet, including typing a decimal comma', { tag:
   await page.goto(`/#/dives/${diveId}`);
   await expect(page.getByRole('heading', { name: /Tauchgang 42/ })).toBeVisible();
   await expect(page.locator('dl.facts').first()).toContainText('60,7 ft');
-  await expect(page.locator('dl.facts').first()).toContainText('Salzwasser');
+  await expect(page.locator('dl.facts-small')).toContainText('Wassereinstellung am ComputerSalzwasser (1.025 kg/m³)');
 
   await page.getByRole('button', { name: 'Tauchgang bearbeiten' }).click();
   await page.getByRole('textbox', { name: 'Maximaltiefe' }).fill('65,6');

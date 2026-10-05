@@ -1,5 +1,6 @@
 // Keeping a Dive through the HTTP API (ADR 0015): Overrides, resetting them, the Primary recording,
 // re-imports, concurrent edits and the history. Scenario 1 of the data model: a main computer and a backup.
+// The water type comes from the Dive site, with a hint when the computer was set to other water (ADR 0025).
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
@@ -8,6 +9,7 @@ import {
 
 type DiveView = {
   id: string; version: number; notes: string | null; overrides: string[];
+  waterType: string | null; waterMismatch: { computer: string; site: string; depthPercent: number | null } | null;
   values: Record<string, unknown> & { maxDepthM: number; durationSeconds: number; startsAt: { at: string; utcOffsetSeconds: number | null } };
   fromRecording: Record<string, unknown> & { maxDepthM: number; durationSeconds: number };
   recordings: { id: string; isPrimary: boolean; summary: Record<string, unknown> }[];
@@ -62,9 +64,12 @@ describe.skipIf(!(await databaseReachable()))('keeping a Dive', () => {
     expect(d.overrides).toEqual([]);
     expect(d.values).toEqual(d.fromRecording);
     expect(d.values.maxDepthM).toBeCloseTo(18.5, 2);
-    expect(d.values).toMatchObject({ number: 42, waterType: 'salt', durationSeconds: 1800 });
+    expect(d.values).toMatchObject({ number: 42, durationSeconds: 1800 });
     expect(d.recordings.map((r) => [r.id, r.isPrimary])).toEqual([[mainId, true], [backupId, false]]);
-    expect(d.recordings[0]!.summary).toMatchObject({ decoModel: 'buhlmann_zhl16c', waterType: 'salt' });
+    // The computer's salinity setting stays with the Recording; without a site the Dive has no water type.
+    expect(d.recordings[0]!.summary).toMatchObject({ decoModel: 'buhlmann_zhl16c', waterType: 'salt', waterDensity: 1025 });
+    expect(d.values).not.toHaveProperty('waterType');
+    expect(d).toMatchObject({ waterType: null, waterMismatch: null });
   });
 
   it('turns edited values into Overrides, in one Revision, and moves the version on', async () => {
@@ -168,5 +173,41 @@ describe.skipIf(!(await databaseReachable()))('keeping a Dive', () => {
     expect((await inject('GET', `/api/dives/${diveId}/revisions`, other)).statusCode).toBe(404);
     expect((await inject('PUT', `/api/dives/${diveId}/primary-recording`, other, { recordingId: backupId, version: d.version })).statusCode).toBe(404);
     expect((await getDive()).notes).toBe('Turtle at the wreck');
+  });
+
+  describe('the water type comes from the Dive site (ADR 0025)', () => {
+    const site = async (waterType: string | null) => (await ctx.app.inject({
+      method: 'POST', url: '/api/dive-sites', headers: { cookie: tim, origin: BASE_URL }, payload: { name: `Site ${waterType}`, waterType },
+    })).json() as { id: string };
+    const atSite = async (siteId: string | null) => {
+      const d = await getDive();
+      expect((await edit({ version: d.version, siteId })).statusCode).toBe(200);
+      return getDive();
+    };
+
+    it('is the site\'s, and says so when the computer was set to other water', async () => {
+      // The synthetic computer was set to salt water (1025 kg/m³).
+      const lake = await atSite((await site('fresh')).id);
+      expect(lake.waterType).toBe('fresh');
+      expect(lake.waterMismatch).toEqual({ computer: 'salt', site: 'fresh', depthPercent: -2.4 });
+
+      const sea = await atSite((await site('salt')).id);
+      expect(sea).toMatchObject({ waterType: 'salt', waterMismatch: null });
+
+      const lagoon = await atSite((await site('brackish')).id);
+      expect(lagoon.waterMismatch).toEqual({ computer: 'salt', site: 'brackish', depthPercent: null });
+
+      const unknown = await atSite((await site(null)).id);
+      expect(unknown).toMatchObject({ waterType: null, waterMismatch: null });
+      expect(await atSite(null)).toMatchObject({ waterType: null, waterMismatch: null });
+    });
+
+    it('is no Dive value: setting it on the Dive changes nothing, resetting it is refused', async () => {
+      const d = await getDive();
+      // Unknown fields are dropped (Fastify's default), so an old client's water type does nothing.
+      const ignored = (await edit({ version: d.version, set: { waterType: 'fresh' } })).json() as DiveView;
+      expect(ignored).toMatchObject({ version: d.version, overrides: d.overrides, waterType: d.waterType });
+      expect((await edit({ version: d.version, reset: ['waterType'] })).statusCode).toBe(400);
+    });
   });
 });

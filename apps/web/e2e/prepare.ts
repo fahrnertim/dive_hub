@@ -13,6 +13,8 @@ export interface PreparedData {
   siteId: string;
   /** "Elphinstone Reef", imported from the recorded OpenStreetMap answer for Egypt (site-import.spec.ts imports Malta). */
   importedSiteId: string;
+  /** A site made here that SSI's list describes: its page offers SSI's data (ADR 0025). */
+  offerSiteId: string;
 }
 
 export const dataFile = (slot: number) => `e2e/.state/data-${slot}.json`;
@@ -74,6 +76,21 @@ async function importEgypt(api: APIRequestContext) {
   return sites.find((s) => s.name === 'Elphinstone Reef')!.id;
 }
 
+/**
+ * A site made here with SSI's ID typed in, then an SSI import of Switzerland that only fills (ADR 0025), so the site
+ * offers SSI's data. Switzerland is in no other spec; the import creates nothing.
+ */
+async function offerSsiData(api: APIRequestContext) {
+  const site = await (await api.post('/api/dive-sites', {
+    data: { name: 'Ouchy – Seeufer (club notes)', position: { latitude: 46.5001, longitude: 6.62 }, waterBody: 'Lac Léman', ssiSiteId: '7008' },
+  })).json() as { id: string };
+  const started = await (await api.post('/api/admin/site-imports', {
+    data: { sources: ['ssi'], area: { kind: 'country', country: 'CH' }, language: 'en', confirmSsi: true, createSites: false },
+  })).json() as { id: string };
+  await expect.poll(async () => (await (await api.get(`/api/admin/site-imports/${started.id}`)).json()).status, { timeout: 30_000 }).toBe('done');
+  return site.id;
+}
+
 export async function prepareServer(baseURL: string, session: string, slot: number) {
   const api = await request.newContext({ baseURL, storageState: session, extraHTTPHeaders: { origin: baseURL } });
   const { dives } = await (await api.get('/api/dives?q=42')).json() as { dives: { id: string; number: number | null }[] };
@@ -82,6 +99,7 @@ export async function prepareServer(baseURL: string, session: string, slot: numb
     ...(await makeLinks(api, baseURL)),
     siteId: await addCrowd(api, baseURL),
     importedSiteId: await importEgypt(api),
+    offerSiteId: await offerSsiData(api),
   };
   writeFileSync(dataFile(slot), JSON.stringify(data, null, 2));
   await api.dispose();

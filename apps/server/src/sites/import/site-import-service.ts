@@ -1,4 +1,4 @@
-// The admin's Site import (ADR 0021): started over the API, run by the worker. It asks each Source once,
+// The admin's Site import (ADR 0021, 0025): started over the API, run by the worker. It asks each Source once,
 // plans against the sites in the hub (import-plan.ts), then saves in small transactions so the admin page
 // can show progress. Every site it creates, updates or links gets a Revision with the Site import as actor.
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
@@ -14,7 +14,7 @@ import { IMPORTED_FIELDS, SiteSourceError, type ImportArea, type ImportedValues,
 export const IMPORT_SITES_TASK = 'import_dive_sites';
 
 export class SiteImportError extends Error {
-  constructor(readonly code: 'odbl_not_confirmed' | 'site_import_running' | 'site_import_not_found') {
+  constructor(readonly code: 'odbl_not_confirmed' | 'ssi_not_confirmed' | 'site_import_running' | 'site_import_not_found') {
     super(code);
   }
 }
@@ -25,6 +25,10 @@ export interface SiteImportRequest {
   language: string;
   /** The admin ticked "I understand" under the ODbL explanation (needed for OSM). */
   confirmOdbl: boolean;
+  /** The admin confirmed that SSI gives no licence and that importing is their decision and risk (needed for SSI). */
+  confirmSsi: boolean;
+  /** False: only match and fill sites already in the hub. */
+  createSites: boolean;
 }
 
 /** Saved per transaction; small enough that a User's edit never waits long for a site's row lock. */
@@ -43,12 +47,12 @@ const columnsOf = (v: Partial<ImportedValues>) => {
 const valuesOf = (s: typeof diveSite.$inferSelect): ImportedValues => ({
   name: s.name,
   position: s.latitude === null || s.longitude === null ? null : { latitude: s.latitude, longitude: s.longitude },
-  country: s.country, waterBody: s.waterBody, description: s.description, maxDepthM: s.maxDepthM,
+  country: s.country, waterBody: s.waterBody, description: s.description, maxDepthM: s.maxDepthM, waterType: s.waterType,
 });
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
-/** How an External ID shows in a Revision: `osmId`, `wikidataId` (as `ssiSiteId` for SSI). */
-const idKey = (source: ImportSource) => `${source}Id`;
+/** How an External ID shows in a Revision: `osmId`, `wikidataId`, and `ssiSiteId` as the site form names it. */
+const idKey = (source: ImportSource) => (source === 'ssi' ? 'ssiSiteId' : `${source}Id`);
 
 export function createSiteImportService(deps: { db: Db; sources: Record<ImportSource, SiteSourceAdapter> }) {
   const { db } = deps;
@@ -99,7 +103,7 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
         });
         changes[idKey(e.source)] = { from: null, to: e.externalId };
       } else {
-        await tx.update(diveSiteExternalId).set({ imported: e.imported, siteImportId: actor.id, updatedAt: new Date() })
+        await tx.update(diveSiteExternalId).set({ providesData: e.providesData, imported: e.imported, siteImportId: actor.id, updatedAt: new Date() })
           .where(and(eq(diveSiteExternalId.source, e.source), eq(diveSiteExternalId.externalId, e.externalId)));
       }
     }
@@ -114,6 +118,7 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
     /** Queues a Site import (admins only, checked by the route); one at a time. */
     async start(userId: string, request: SiteImportRequest) {
       if (request.sources.includes('osm') && !request.confirmOdbl) throw new SiteImportError('odbl_not_confirmed');
+      if (request.sources.includes('ssi') && !request.confirmSsi) throw new SiteImportError('ssi_not_confirmed');
       try {
         return await db.transaction(async (tx) => {
           const [row] = await tx.insert(siteImport).values({
@@ -122,6 +127,8 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
             area: request.area,
             language: request.language,
             odblConfirmedAt: request.sources.includes('osm') ? new Date() : null,
+            ssiConfirmedAt: request.sources.includes('ssi') ? new Date() : null,
+            createSites: request.createSites,
           }).returning();
           // One attempt: a failed import says why and is started again by the admin, not retried behind their back.
           await tx.execute(sql`select graphile_worker.add_job(${IMPORT_SITES_TASK}, json_build_object('siteImportId', ${row!.id}::text), max_attempts => 1)`);
@@ -158,7 +165,7 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
         }
         const existing = await loadExisting();
         const snapshots = new Map(existing.map((s) => [s.id, s.values]));
-        const plan = planSiteImport({ sources: row.sources, area: row.area, incoming, existing });
+        const plan = planSiteImport({ sources: row.sources, area: row.area, incoming, existing, createSites: row.createSites });
         const work = [...plan.creates.map((c) => ({ create: c })), ...plan.updates.map((u) => ({ update: u }))];
         const findings: SiteImportFinding[] = [];
         await setProgress(id, { step: 'saving', done: 0, total: work.length });
@@ -171,6 +178,9 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
                 if (near) findings.push({ kind: 'near', siteId, name: item.create.values.name!, nearSiteId: near.siteId, nearName: near.name, distanceM: near.distanceM });
               } else {
                 await update(tx, actor, item.update, snapshots.get(item.update.siteId)!);
+                for (const source of item.update.offers) {
+                  findings.push({ kind: 'offer', siteId: item.update.siteId, name: snapshots.get(item.update.siteId)!.name!, source });
+                }
               }
             }
           });

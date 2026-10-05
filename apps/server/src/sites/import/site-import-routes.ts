@@ -1,4 +1,4 @@
-// The admin's Site import over HTTP (ADR 0021): start one, follow its progress, see the latest.
+// The admin's Site import over HTTP (ADR 0021, 0025): start one, follow its progress, see the latest.
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../../auth/auth.js';
@@ -31,12 +31,17 @@ const StartBody = Type.Object({
   area: Area,
   language: Type.String({ pattern: '^[a-z]{2,3}$', description: 'Language of names where a Source has several (Wikidata labels)' }),
   confirmOdbl: Type.Optional(Type.Boolean({ description: 'The admin read the ODbL explanation and confirms it; needed for osm' })),
+  confirmSsi: Type.Optional(Type.Boolean({
+    description: 'The admin read that SSI gives no licence for its site list, that the EU protects it as a database, and that importing is the operator\'s decision and risk; needed for ssi',
+  })),
+  createSites: Type.Optional(Type.Boolean({ default: true, description: 'false: only match and fill sites already in the hub, create none' })),
 }, { additionalProperties: false });
 
 const Counts = Type.Object({
   created: Type.Integer(), updated: Type.Integer(), unchanged: Type.Integer(), kept: Type.Integer(), linked: Type.Integer(),
-  skippedNoName: Type.Integer(), skippedDeleted: Type.Integer(), skippedMerged: Type.Integer(), gone: Type.Integer(),
-}, { description: 'Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name, because their site was deleted in the hub, or because it was merged into another; objects gone from the Source' });
+  skippedNoName: Type.Integer(), skippedDeleted: Type.Integer(), skippedMerged: Type.Integer(),
+  skippedNew: Type.Integer(), offered: Type.Integer(), gone: Type.Integer(),
+}, { description: 'Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name, because their site was deleted in the hub, because it was merged into another, or because the run created no sites; hand-made sites whose page now offers the data; objects gone from the Source' });
 
 export const SiteImportView = Type.Object({
   id: Type.String(),
@@ -44,26 +49,32 @@ export const SiteImportView = Type.Object({
   sources: Type.Array(Source),
   area: Area,
   language: Type.String(),
+  createSites: Type.Boolean({ description: 'false: the run only matched and filled sites already in the hub' }),
   progress: Type.Object({
-    step: Type.Union([Type.Literal('waiting'), Type.Literal('osm'), Type.Literal('wikidata'), Type.Literal('saving')]),
+    step: Type.Union([Type.Literal('waiting'), Type.Literal('osm'), Type.Literal('wikidata'), Type.Literal('ssi'), Type.Literal('saving')]),
     done: Type.Integer(), total: Type.Integer(),
   }),
   counts: Type.Union([Type.Null(), Counts]),
-  findings: Type.Array(Type.Object({
-    kind: Type.Literal('near'), siteId: Type.String(), name: Type.String(), nearSiteId: Type.String(), nearName: Type.String(), distanceM: Type.Integer(),
-  }, { description: 'A new site within 200 m of one that was there before' })),
+  findings: Type.Array(Type.Union([
+    Type.Object({
+      kind: Type.Literal('near'), siteId: Type.String(), name: Type.String(), nearSiteId: Type.String(), nearName: Type.String(), distanceM: Type.Integer(),
+    }, { description: 'A new site within 200 m of one that was there before' }),
+    Type.Object({
+      kind: Type.Literal('offer'), siteId: Type.String(), name: Type.String(), source: Source,
+    }, { description: 'A hand-made site the Source describes: its page offers the Source\'s data' }),
+  ])),
   failureCode: Type.Union([Type.Null(), Type.Enum(Object.keys(PROBLEMS) as ProblemCode[])], { description: 'Why it failed (a problem code)' }),
   createdAt: Type.String({ format: 'date-time' }),
   finishedAt: Type.Union([Type.Null(), Type.String({ format: 'date-time' })]),
 });
 
 const toView = (r: typeof siteImport.$inferSelect): Static<typeof SiteImportView> => ({
-  id: r.id, status: r.status, sources: r.sources, area: r.area, language: r.language, progress: r.progress,
+  id: r.id, status: r.status, sources: r.sources, area: r.area, language: r.language, createSites: r.createSites, progress: r.progress,
   counts: r.counts, findings: r.findings, failureCode: (r.errorCode as ProblemCode | null) ?? null,
   createdAt: r.createdAt.toISOString(), finishedAt: r.finishedAt?.toISOString() ?? null,
 });
 
-const STATUS: Record<SiteImportError['code'], number> = { odbl_not_confirmed: 400, site_import_running: 409, site_import_not_found: 404 };
+const STATUS: Record<SiteImportError['code'], number> = { odbl_not_confirmed: 400, ssi_not_confirmed: 400, site_import_running: 409, site_import_not_found: 404 };
 
 export const siteImportRoutes: FastifyPluginAsyncTypebox<SiteImportRouteDeps> = async (app, { auth, siteImports }) => {
   app.addHook('onRequest', requireUser(auth));
@@ -75,14 +86,16 @@ export const siteImportRoutes: FastifyPluginAsyncTypebox<SiteImportRouteDeps> = 
 
   app.post('/admin/site-imports', {
     schema: {
-      summary: 'Start importing Dive sites from OpenStreetMap and/or Wikidata (admins)',
-      description: 'Runs in the background; follow it with GET. OpenStreetMap data is under ODbL: send confirmOdbl. One import at a time (409 site_import_running).',
+      summary: 'Start importing Dive sites from OpenStreetMap, Wikidata and/or SSI (admins)',
+      description: 'Runs in the background; follow it with GET. OpenStreetMap data is under ODbL: send confirmOdbl. SSI gives no licence: send confirmSsi after showing the explanation (docs/spec/clients.md). One import at a time (409 site_import_running).',
       body: StartBody, response: { 202: SiteImportView, 400: Problem, 403: Problem, 409: Problem },
     },
   }, async (request, reply) => {
-    const { sources, area, language, confirmOdbl } = request.body;
+    const { sources, area, language, confirmOdbl, confirmSsi, createSites } = request.body;
     if (area.kind === 'box' && area.south >= area.north) return reply.code(400).send(problem('invalid_input', 'south must be less than north'));
-    const row = await siteImports.start(request.user!.id, { sources, area, language, confirmOdbl: confirmOdbl ?? false });
+    const row = await siteImports.start(request.user!.id, {
+      sources, area, language, confirmOdbl: confirmOdbl ?? false, confirmSsi: confirmSsi ?? false, createSites: createSites ?? true,
+    });
     return reply.code(202).send(toView(row));
   });
 

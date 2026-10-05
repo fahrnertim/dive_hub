@@ -9,6 +9,10 @@ import { releaseLeaveGuard, useLeaveGuard } from './lib/leave-guard.ts';
 import { Button, Form, Muted, Notice, NumberField, Select, TextArea, TextField } from './ui/index.ts';
 
 const NO_COUNTRY = 'none';
+const NO_WATER = 'none';
+
+type WaterType = NonNullable<SiteView['waterType']>;
+const WATER_TYPES: WaterType[] = ['salt', 'fresh', 'brackish'];
 
 interface Draft {
   name: string;
@@ -19,6 +23,7 @@ interface Draft {
   description: string;
   /** In the User's units, as typed. */
   maxDepth: number;
+  waterType: WaterType | null;
   ssiSiteId: string;
 }
 
@@ -32,6 +37,7 @@ const draftOf = (s: Partial<SiteView>, units: 'metric' | 'imperial'): Draft => (
   longitude: s.position?.longitude ?? Number.NaN,
   description: s.description ?? '',
   maxDepth: s.maxDepthM == null ? Number.NaN : round1(depthIn(s.maxDepthM, units)),
+  waterType: s.waterType ?? null,
   ssiSiteId: s.ssiSiteId ?? '',
 });
 
@@ -78,7 +84,7 @@ export function SiteForm({ site, initial, submitLabel, onSaved, onCancel }: {
   const save = useMutation({
     mutationFn: async (body: {
       name: string; position: Position | null; country: string | null; waterBody: string | null; description: string | null;
-      maxDepthM: number | null; ssiSiteId: string | null;
+      maxDepthM: number | null; waterType: WaterType | null; ssiSiteId: string | null;
     }) => (site
       ? unwrap(await api.PATCH('/api/dive-sites/{id}', { params: { path: { id: site.id } }, body: { version: site.version, ...body } }))
       : unwrap(await api.POST('/api/dive-sites', { body }))),
@@ -87,6 +93,8 @@ export function SiteForm({ site, initial, submitLabel, onSaved, onCancel }: {
       queryClient.setQueryData(keys.site(saved.id), saved);
       // Close at once; lists, nearby sites and the history refresh behind it (waiting kept the form open).
       void queryClient.invalidateQueries({ queryKey: keys.sites, predicate: (q) => q.queryKey[1] !== saved.id || q.queryKey.length > 2 });
+      // A Dive's water type is its site's (ADR 0025), and its site's name shows on it.
+      if (site) void queryClient.invalidateQueries({ queryKey: keys.dives });
       onSaved(saved);
     },
   });
@@ -105,6 +113,7 @@ export function SiteForm({ site, initial, submitLabel, onSaved, onCancel }: {
       name: draft.name.trim(), position, country: draft.country,
       waterBody: draft.waterBody.trim() || null, description: draft.description.trim() || null,
       maxDepthM: Number.isNaN(draft.maxDepth) ? null : Math.round(depthFromDisplay(draft.maxDepth, display.units) * 100) / 100,
+      waterType: draft.waterType,
       ssiSiteId,
     });
   };
@@ -136,10 +145,20 @@ export function SiteForm({ site, initial, submitLabel, onSaved, onCancel }: {
       </div>
       {half && <Notice tone="danger">{t('sites.positionHalf')}</Notice>}
       <div className="form-grid">
+        {/* Every Dive here takes this water type (ADR 0025); the field says so (client contract). */}
+        <Select
+          label={t('sites.waterType')}
+          description={t('sites.waterTypeHint')}
+          value={draft.waterType ?? NO_WATER}
+          onChange={(v) => set('waterType', !v || v === NO_WATER ? null : v as WaterType)}
+          options={[{ id: NO_WATER, label: t('sites.notKnown') }, ...WATER_TYPES.map((w) => ({ id: w, label: t(`vocabulary.waterType.${w}`) }))]}
+        />
         <NumberField
           label={t('sites.maxDepth')} unit={display.unit('depth')} value={draft.maxDepth} onChange={(v) => set('maxDepth', v)}
           minValue={0.1} maxValue={depthIn(400, display.units)} formatOptions={{ maximumFractionDigits: 1 }}
         />
+      </div>
+      <div className="form-grid">
         <TextField
           label={t('sites.ssiSiteId')} name="ssiSiteId" description={t('sites.ssiSiteIdHint')} inputMode="numeric" autoComplete="off"
           maxLength={20} value={draft.ssiSiteId} onChange={(v) => set('ssiSiteId', v)}

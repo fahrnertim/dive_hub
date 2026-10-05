@@ -2,7 +2,7 @@
 title: System architecture
 summary: Components of Dive Hub, how they talk to each other and how they are deployed.
 status: draft
-date: 2026-10-02
+date: 2026-10-05
 ---
 
 # System architecture
@@ -82,10 +82,12 @@ mobile will use the bearer plugin or the Expo integration. OIDC (Authentik, Auth
 | `DIVEHUB_ENCRYPTION_KEY` | Optional: 32 bytes as base64 (`openssl rand -base64 32`). Encrypts what Dive Hub keeps for Targets (SSI tokens and passwords, [ADR 0024](../decisions/0024-ssi-target-via-app-api.md)). Without it, Users can't choose "Keep me signed in" for SSI, and tokens are stored as they are. Keep it apart from database backups; losing it means every User signs in to SSI again. A wrong length stops the server at start. |
 | `DIVEHUB_SSI_URL` | Only for tests: another endpoint for SSI's app API. |
 | `DIVEHUB_OVERPASS_URL`, `DIVEHUB_WIKIDATA_SPARQL_URL` | Optional: other endpoints for Site imports (default `overpass-api.de`, `query.wikidata.org`). |
+| `DIVEHUB_SSI_SITES_URL` | Optional: another address for SSI's site list (default `api.divessi.com/app/APP_CACHE_SITES.zip`, ADR 0025). |
 
 ## Dive site imports and licenses
 
-Admins can import Dive sites from Wikidata and OpenStreetMap ([ADR 0021](../decisions/0021-site-external-ids-and-import.md)).
+Admins can import Dive sites from Wikidata, OpenStreetMap ([ADR 0021](../decisions/0021-site-external-ids-and-import.md))
+and SSI ([ADR 0025](../decisions/0025-ssi-site-import-and-site-water-type.md)).
 The image contains no site data. Each operator imports for their own instance, so the license obligations
 are the operator's:
 
@@ -98,9 +100,17 @@ are the operator's:
     private (invite-only family, club or dive center), it is not used publicly. If you make the site list
     available to the public, you must offer that site table under ODbL as well.
   - Users' own dive data is not part of it.
-- **SSI** (planned, [ADR 0024](../decisions/0024-ssi-target-via-app-api.md)) publishes its site list without any licence,
-  and in the EU it is protected as a database. Unlike OSM, there are no conditions to meet that would make copying it
-  allowed. Importing it is your decision and your risk; the admin confirms this before an SSI import.
+- **SSI** ([ADR 0024](../decisions/0024-ssi-target-via-app-api.md), [ADR 0025](../decisions/0025-ssi-site-import-and-site-water-type.md))
+  publishes its site list without any licence, and in the EU it is protected as a database: copying large parts of it
+  can infringe SSI's rights. Unlike OSM, there are no conditions to meet that would make copying it allowed.
+  - Importing it is your decision and your risk. The admin confirms an explanation before every SSI import, and the
+    Site import records when (`ssi_confirmed_at`).
+  - To keep the copy small, use **"Only fill dive sites that are already here"**: it adds SSI IDs and water types to
+    your sites and creates none. Hand-made sites are never changed; their pages offer SSI's data, and a User decides.
+  - Dive Hub never stores SSI's moderation comments (they contain submitters' IP addresses), private sites, statistics
+    or wildlife. Sites show "From SSI" without a link (SSI has no page per site).
+  - The file is downloaded at run time without signing in to SSI; nothing of it is in the image or the repository.
+    `DIVEHUB_SSI_SITES_URL` points elsewhere if needed.
 - **Fair use of the public services:**
   - An import makes one query per Source and run, with a User-Agent naming Dive Hub. Set
     `DIVEHUB_CONTACT` (an e-mail address or URL) so the services can reach you, as Wikimedia's User-Agent policy asks.
@@ -360,3 +370,34 @@ Deliberate simplifications, to revisit:
 - **Deleting a Dive** in the hub doesn't exist yet, so nothing offers deletion in SSI from there.
 - **A Diver's External ID** is set only by connecting; a clash with another Diver is refused (`ssi_account_taken`)
   instead of proposing to link the two.
+
+**Slice 11 (2026-10-05): SSI site import, offers on hand-made sites, the water type on the Dive site** ([ADR 0025](../decisions/0025-ssi-site-import-and-site-water-type.md), [SSI app API](../references/ssi-app-api.md#the-site-list-app_cache_siteszip)).
+
+Implemented:
+- **SSI as a Site import Source** (`src/sites/import/ssi-sites.ts`): one GET of `APP_CACHE_SITES.zip` through the polite
+  HTTP client (now also for bytes), unpacked with yauzl, filtered by country (alpha-3 → alpha-2, `src/sites/countries.ts`),
+  box or everywhere. Private and deleted sites are left out; only ID, name, position, country and water type are kept.
+- **Per-field precedence** (`FIELD_PRECEDENCE` in `site-source.ts`): SSI first for name, country and water type, OSM for
+  position.
+- **"Only fill"** (`create_sites` on the Site import, count `skippedNew`), the **SSI confirmation** (`ssi_confirmed_at`,
+  `ssi_not_confirmed`), the import page's SSI choice and explanation (`.terms`), findings capped at 50 per kind.
+- **Offers:** references on hand-made sites keep the Source's values (`imported`; the check constraint now only requires
+  values for data-providing IDs). The API returns them as `offered`; `POST /api/dive-sites/:id/adopt` takes them (empty
+  fields fill, cause `adopt`). The site page has "Use SSI's data" with a dialog; the import lists the sites (`offer`
+  findings, count `offered`).
+- **Matching by latitude bands** in the plan (30,000 SSI objects against 3,000 sites plan in about 0.3 s in the test).
+- **Water type on the Dive site:** column `dive_site.water_type` (the `water_type` enum, limited to fresh, salt, brackish
+  by `dive_site_water_type_ck`), in the site API, form (with its note), page, merge and Revisions. The Dive's column is
+  gone (migration 0011) and its Overrides too (custom migration 0012). The Dive's API has `waterType` (the site's) and
+  `waterMismatch` (`src/dives/water.ts`); the dive page shows both, and the device data shows "Water setting on the
+  computer". SSI sending reads the site's water type.
+
+Found in the browser tests and fixed:
+- After a site's water type changed, the dive page showed the old one from its cache. Saving a site now refreshes Dives.
+- On creation, the site history said "Description changed" for a site without a description.
+
+Deliberate simplifications, to revisit:
+- **No alias names** (no field); they could later help matching.
+- **No depth correction** when the computer was set to other water; only the hint.
+- **No Revision on Dives** when their site's water type changes, and none when migration 0012 dropped Overrides.
+- **Pushes sent before this slice** show as outdated once (the fingerprint covered the computer's setting).

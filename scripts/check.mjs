@@ -35,6 +35,8 @@ const AREAS = [
   [/^apps\/server\/src\/(users|auth)\//, ['@account', '@admin']],
   [/^apps\/server\/src\/(ssi|secrets)\//, ['@dives', '@account']],
   [/^apps\/server\/test\/fixtures\/site-sources\//, ['@admin', '@sites']],
+  // Zips SSI's site list for the tests and the browser tests' server (ADR 0025).
+  [/^apps\/server\/test\/zip\.ts$/, ['@admin', '@sites']],
 ];
 /** Paths that change no behaviour: no tests. */
 const QUIET = /^(docs\/|samples\/|\.claude\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|skills-lock\.json$|\.gitignore$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$)/;

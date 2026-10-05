@@ -1,0 +1,105 @@
+{
+  "_comment": "Hand-made test data in the shape of sites.json inside SSI's APP_CACHE_SITES.zip (ADR 0025). Invented sites, never real SSI data. Tests and the browser tests' server zip it at run time.",
+  "created": "2026-10-01 06:00:00",
+  "divesites_total": 12,
+  "divesites_locked_total": 12,
+  "divesites_deleted_total": 1,
+  "divesites": [
+    {
+      "odin_dive_sites_id": 3314, "odin_dive_sites_name": "Hausreef", "odin_countries_code_iso": "EGY",
+      "odin_dive_sites_meta_address": "", "odin_dive_sites_lat": 27.29, "odin_dive_sites_lon": 33.82,
+      "odin_dive_sites_geo_locked": 1, "odin_dive_sites_is_private": 0, "odin_dive_sites_deleted": 0,
+      "odin_dive_sites_alias_ids": "", "timestamp": "2025-03-01 10:00:00", "odin_dive_sites_meta_country": "",
+      "odin_dive_sites_meta_region": "", "odin_dive_sites_comment": "", "iso2": "", "odin_user_log_animal_ids": [1, 2],
+      "current": { "no_current": 3, "light_current": 1 }, "bow": "salt"
+    },
+    {
+      "odin_dive_sites_id": 5120, "odin_dive_sites_name": "Attersee – Schwarzenbach", "odin_countries_code_iso": "AUT",
+      "odin_dive_sites_meta_address": "Seestraße 1", "odin_dive_sites_lat": 47.8512, "odin_dive_sites_lon": 13.5514,
+      "odin_dive_sites_geo_locked": 1, "odin_dive_sites_is_private": 0, "odin_dive_sites_deleted": 0,
+      "odin_dive_sites_alias_ids": "", "timestamp": "2025-04-01 10:00:00", "odin_dive_sites_meta_country": "Austria",
+      "odin_dive_sites_meta_region": "Upper Austria", "odin_dive_sites_comment": "", "iso2": "de", "odin_user_log_animal_ids": [],
+      "current": { "no_current": 5 }, "bow": "fresh", "alias_names": ["Schwarzenbach"], "alias_names_search": "schwarzenbach"
+    },
+    {
+      "odin_dive_sites_id": 6101, "odin_dive_sites_name": "Ras il-Hobz", "odin_countries_code_iso": "MLT",
+      "odin_dive_sites_meta_address": "", "odin_dive_sites_lat": 36.0157, "odin_dive_sites_lon": 14.2794,
+      "odin_dive_sites_geo_locked": 1, "odin_dive_sites_is_private": 0, "odin_dive_sites_deleted": 0,
+      "odin_dive_sites_alias_ids": "", "timestamp": "2025-05-01 10:00:00", "odin_dive_sites_meta_country": "",
+      "odin_dive_sites_meta_region": "", "odin_dive_sites_comment": "", "iso2": "", "odin_user_log_animal_ids": [],
+      "current": {}, "bow": "salt"
+    },
+    {
+      "odin_dive_sites_id": 6102, "odin_dive_sites_name": "Wrack Dixie", "odin_countries_code_iso": "AUT",
+      "odin_dive_sites_meta_address": "", "odin_dive_sites_lat": 47.8644, "odin_dive_sites_lon": 13.5629,
+      "odin_dive_sites_geo_locked": 1, "odin_dive_sites_is_private": 0, "odin_dive_sites_deleted": 0,
+      "odin_dive_sites_alias_ids": "", "timestamp": "2025-05-02 10:00:00", "odin_dive_sites_meta_country": "",
+      "odin_dive_sites_meta_region": "", "odin_dive_sites_comment": "", "iso2": "de", "odin_user_log_animal_ids": [7],
+      "current": {}, "bow": "fresh"
+    },
+    {
+      "odin_dive_sites_id": 7001, "odin_dive_sites_name": "Alter Steg", "odin_countries_code_iso": "DEU",
+      "odin_dive_sites_meta_address": "", "odin_dive_sites_lat": 47.66, "odin_dive_sites_lon": 9.17,
+      "odin_dive_sites_geo_locked": 1, "odin_dive_sites_is_private": 0, "odin_dive_sites_deleted": 1,
+      "odin_dive_sites_alias_ids": "", "timestamp": "2025-06-01 10:00:00", "odin_dive_sites_meta_country": "",
+      "odin_dive_sites_meta_region": "", "odin_dive_sites_comment": "", "iso2": "de", "odin_user_log_animal_ids": [],
+      "current": {}, "bow": "fresh"
+    },
+    {
+      "odin_dive_sites_id": 7002, "odin_dive_sites_name": "Tauchturm Hallenbad", "odin_countries_code_iso": "DEU",
+      "odin_dive_sites_meta_address": "", "odin_dive_sites_lat": 48.1, "odin_dive_sites_lon": 11.5,
+      "odin_dive_sites_geo_locked": 1, "odin_dive_sites_is_private": 0, "odin_dive_sites_deleted": 0,
+      "odin_dive_sites_alias_ids": "", "timestamp": "2025-06-02 10:00:00", "odin_dive_sites_meta_country": "",
+      "odin_dive_sites_meta_region": "", "odin_dive_sites_comment": "", "iso2": "de", "odin_user_log_animal_ids": [],
+      "current": {}, "bow": "artificial"
+    },
+    {
+      "odin_dive_sites_id": 7003, "odin_dive_sites_name": "Blue Corner", "odin_countries_code_iso": "PLW",
+      "odin_dive_sites_meta_address": "", "odin_dive_sites_lat": 7.1406, "odin_dive_sites_lon": 134.2207,
+      "odin_dive_sites_geo_locked": 1, "odin_dive_sites_is_private": 0, "odin_dive_sites_deleted": 0,
+      "odin_dive_sites_alias_ids": "", "timestamp": "2025-06-03 10:00:00", "odin_dive_sites_meta_country": "",
+      "odin_dive_sites_meta_region": "", "odin_dive_sites_comment": "Position checked. Submitted from 203.0.113.45 by member 99",
+      "iso2": "en", "odin_user_log_animal_ids": [3, 4, 5], "current": { "strong_current": 9 }, "bow": "salt"
+    },
+    {
+      "odin_dive_sites_id": 7004, "odin_dive_sites_name": "Private jetty", "odin_countries_code_iso": "AUT",
+      "odin_dive_sites_meta_address": "", "odin_dive_sites_lat": 47.85, "odin_dive_sites_lon": 13.55,
+      "odin_dive_sites_geo_locked": 1, "odin_dive_sites_is_private": 1, "odin_dive_sites_is_private_owner": 4711,
+      "odin_dive_sites_deleted": 0, "odin_dive_sites_alias_ids": "", "timestamp": "2025-06-04 10:00:00",
+      "odin_dive_sites_meta_country": "", "odin_dive_sites_meta_region": "", "odin_dive_sites_comment": "", "iso2": "de",
+      "odin_user_log_animal_ids": [], "current": {}, "bow": "fresh"
+    },
+    {
+      "odin_dive_sites_id": 7005, "odin_dive_sites_name": "Klein Bonaire", "odin_countries_code_iso": "ANT",
+      "odin_dive_sites_meta_address": "", "odin_dive_sites_lat": 12.16, "odin_dive_sites_lon": -68.31,
+      "odin_dive_sites_geo_locked": 1, "odin_dive_sites_is_private": 0, "odin_dive_sites_deleted": 0,
+      "odin_dive_sites_alias_ids": "", "timestamp": "2025-06-05 10:00:00", "odin_dive_sites_meta_country": "",
+      "odin_dive_sites_meta_region": "", "odin_dive_sites_comment": "", "iso2": "", "odin_user_log_animal_ids": [],
+      "current": {}, "bow": "salt"
+    },
+    {
+      "odin_dive_sites_id": 7006, "odin_dive_sites_name": "Great Blue Hole", "odin_countries_code_iso": "BLZ",
+      "odin_dive_sites_meta_address": "", "odin_dive_sites_lat": 17.3159, "odin_dive_sites_lon": -87.5346,
+      "odin_dive_sites_geo_locked": 1, "odin_dive_sites_is_private": 0, "odin_dive_sites_deleted": "",
+      "odin_dive_sites_alias_ids": "", "timestamp": "2025-06-06 10:00:00", "odin_dive_sites_meta_country": "",
+      "odin_dive_sites_meta_region": "", "odin_dive_sites_comment": "", "iso2": "", "odin_user_log_animal_ids": [],
+      "current": {}, "bow": "salt"
+    },
+    {
+      "odin_dive_sites_id": 7007, "odin_dive_sites_name": 2015, "odin_countries_code_iso": "IDN",
+      "odin_dive_sites_meta_address": "", "odin_dive_sites_lat": 8, "odin_dive_sites_lon": 115,
+      "odin_dive_sites_geo_locked": 1, "odin_dive_sites_is_private": 0, "odin_dive_sites_deleted": 0,
+      "odin_dive_sites_alias_ids": "", "timestamp": "2025-06-07 10:00:00", "odin_dive_sites_meta_country": "",
+      "odin_dive_sites_meta_region": "", "odin_dive_sites_comment": "", "iso2": "", "odin_user_log_animal_ids": [],
+      "current": {}
+    },
+    {
+      "odin_dive_sites_id": 7008, "odin_dive_sites_name": "Seeufer Lausanne", "odin_countries_code_iso": "CHE",
+      "odin_dive_sites_meta_address": "", "odin_dive_sites_lat": 46.5, "odin_dive_sites_lon": 6.62,
+      "odin_dive_sites_geo_locked": 1, "odin_dive_sites_is_private": 0, "odin_dive_sites_deleted": 0,
+      "odin_dive_sites_alias_ids": "", "timestamp": "2025-06-08 10:00:00", "odin_dive_sites_meta_country": "",
+      "odin_dive_sites_meta_region": "", "odin_dive_sites_comment": "", "iso2": "fr", "odin_user_log_animal_ids": [],
+      "current": {}, "bow": "fresh"
+    }
+  ]
+}

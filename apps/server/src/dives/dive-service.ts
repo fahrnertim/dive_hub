@@ -117,7 +117,7 @@ export async function createDiveFromRecording(
   const [created] = await tx.insert(dive).values({
     diverId, number: v.number, startsAt: v.startsAt.at, utcOffsetSeconds: v.startsAt.utcOffsetSeconds,
     durationSeconds: v.durationSeconds, maxDepthM: v.maxDepthM, avgDepthM: v.avgDepthM,
-    waterTemperatureC: v.waterTemperatureC, waterType: v.waterType, primaryRecordingId: rec.id,
+    waterTemperatureC: v.waterTemperatureC, primaryRecordingId: rec.id,
   }).returning({ id: dive.id });
   await tx.update(recording).set({ diveId: created!.id, updatedAt: new Date() }).where(eq(recording.id, rec.id));
   await writeRevision(tx, 'dive', created!.id, actor, cause, { primaryRecordingId: { from: null, to: rec.id } });

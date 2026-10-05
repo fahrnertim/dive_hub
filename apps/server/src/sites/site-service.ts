@@ -1,13 +1,16 @@
 // Dive sites, shared by every User of the instance (ADR 0020): anyone creates and edits them (with
 // optimistic locking and Revisions), their creator or an admin deletes them while no Dive is there.
+// Any User can take up the data a Source offers for a hand-made site (ADR 0025).
 import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, ne, or, sql, type SQL, type SQLWrapper } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { dive, diveSite, diveSiteExternalId, revision, siteImport } from '../db/schema.js';
 import { writeRevision, type Changes } from '../dives/revisions.js';
+import type { SiteWaterType } from '../vocabulary.js';
+import { IMPORTED_FIELDS, type ImportedValues } from './import/site-source.js';
 import { SOURCE_INFO, type SiteSource } from './sources.js';
 
 export class SiteError extends Error {
-  constructor(readonly code: 'site_not_found' | 'site_changed' | 'site_in_use' | 'site_not_deletable' | 'external_id_taken' | 'site_merge_self') {
+  constructor(readonly code: 'site_not_found' | 'site_changed' | 'site_in_use' | 'site_not_deletable' | 'external_id_taken' | 'site_merge_self' | 'site_offer_not_found') {
     super(code);
   }
 }
@@ -39,6 +42,8 @@ export interface SiteInput {
   waterBody: string | null;
   description: string | null;
   maxDepthM: number | null;
+  /** Fresh, salt or brackish (ADR 0025): every Dive at the site has this water type. */
+  waterType: SiteWaterType | null;
   /** Entered by hand (ADR 0021); stored as the site's External ID at the Source `ssi`. */
   ssiSiteId: string | null;
 }
@@ -48,6 +53,8 @@ export interface ExternalIdRow {
   source: SiteSource;
   externalId: string;
   providesData: boolean;
+  /** A reference's values from its Source, which a User can take up ("Use SSI's data", ADR 0025); else null. */
+  offered: ImportedValues | null;
 }
 
 /** Mean Earth radius in metres (IUGG), for the haversine distance. */
@@ -89,7 +96,7 @@ export const SITE_SORTS = ['name', 'country', 'diveCount'] as const;
 export type SiteSort = (typeof SITE_SORTS)[number];
 
 /** Fields a merge fills on the kept site where it has nothing (ADR 0022). */
-const FILLED = ['position', 'country', 'waterBody', 'description', 'maxDepthM', 'ssiSiteId'] as const;
+const FILLED = ['position', 'country', 'waterBody', 'description', 'maxDepthM', 'waterType', 'ssiSiteId'] as const;
 
 /** Sites within this distance of a Dive's position are offered on the dive page. */
 export const NEARBY_M = 2000;
@@ -107,7 +114,8 @@ export function createSiteService(db: Db) {
       where d.site_id = "dive_site"."id" and d.deleted_at is null)`.mapWith(Number),
     inUse: sql<boolean>`exists (select 1 from dive d where d.site_id = "dive_site"."id" and d.deleted_at is null)`,
     externalIds: sql<ExternalIdRow[]>`coalesce((select json_agg(json_build_object(
-        'source', e.source, 'externalId', e.external_id, 'providesData', e.provides_data) order by e.source)
+        'source', e.source, 'externalId', e.external_id, 'providesData', e.provides_data,
+        'offered', case when e.provides_data then null else e.imported end) order by e.source)
       from dive_site_external_id e where e.site_id = "dive_site"."id"), '[]'::json)`,
   });
 
@@ -129,7 +137,8 @@ export function createSiteService(db: Db) {
   const fields = (site: typeof diveSite.$inferSelect, ssiSiteId: string | null): SiteInput => ({
     name: site.name,
     position: site.latitude === null || site.longitude === null ? null : { latitude: site.latitude, longitude: site.longitude },
-    country: site.country, waterBody: site.waterBody, description: site.description, maxDepthM: site.maxDepthM, ssiSiteId,
+    country: site.country, waterBody: site.waterBody, description: site.description, maxDepthM: site.maxDepthM,
+    waterType: site.waterType, ssiSiteId,
   });
 
   const toColumns = (input: Partial<SiteInput>) => {
@@ -288,6 +297,33 @@ export function createSiteService(db: Db) {
         const by = { type: 'user' as const, id: actor.userId };
         await writeRevision(tx, 'dive_site', kept.id, by, 'merge', changes);
         await writeRevision(tx, 'dive_site', merged.id, by, 'merge', { mergedInto: { from: null, to: { id: kept.id, name: kept.name } } });
+      });
+    },
+
+    /**
+     * Takes up what a Source offers for a hand-made site (ADR 0025), like merging the Source's record into it:
+     * empty fields take the Source's values, filled ones stay. The reference then provides data, so the site says
+     * "From SSI" and later imports keep the taken fields current. Any User may; `version` as with editing.
+     */
+    async adopt(actor: SiteActor, id: string, version: number, source: SiteSource) {
+      await db.transaction(async (tx) => {
+        const current = await lock(tx, id);
+        if (current.version !== version) throw new SiteError('site_changed');
+        const [offer] = await tx.select().from(diveSiteExternalId)
+          .where(and(eq(diveSiteExternalId.siteId, id), eq(diveSiteExternalId.source, source))).for('update');
+        if (!offer || offer.providesData || !offer.imported) throw new SiteError('site_offer_not_found');
+        const before = fields(current, null);
+        const fill: Partial<SiteInput> = {};
+        const changes: Changes = { adopted: { from: null, to: { source, externalId: offer.externalId } } };
+        for (const field of IMPORTED_FIELDS) {
+          const value = offer.imported[field] ?? null;
+          if (before[field] !== null || value === null) continue;
+          (fill as Record<string, unknown>)[field] = value;
+          changes[field] = { from: null, to: value };
+        }
+        await tx.update(diveSiteExternalId).set({ providesData: true, updatedAt: new Date() }).where(eq(diveSiteExternalId.id, offer.id));
+        await tx.update(diveSite).set({ ...toColumns(fill), version: sql`${diveSite.version} + 1`, updatedAt: new Date() }).where(eq(diveSite.id, id));
+        await writeRevision(tx, 'dive_site', id, { type: 'user', id: actor.userId }, 'adopt', changes);
       });
     },
 

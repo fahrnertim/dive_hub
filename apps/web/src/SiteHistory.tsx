@@ -9,7 +9,8 @@ import { Button, Muted, Notice, Panel } from './ui/index.ts';
 const LATEST = 3;
 
 /** Lines in the order of the site's form; the database keeps a Revision's fields in its own order. */
-const ORDER = ['mergedSite', 'mergedInto', 'name', 'country', 'waterBody', 'position', 'maxDepthM', 'ssiSiteId', 'description', 'osmId', 'wikidataId'];
+const ORDER = ['mergedSite', 'mergedInto', 'adopted', 'name', 'country', 'waterBody', 'position', 'waterType', 'maxDepthM', 'ssiSiteId', 'description', 'osmId', 'wikidataId'];
+const WATER_TYPES = ['fresh', 'salt', 'brackish'] as const;
 const rank = (key: string) => (ORDER.includes(key) ? ORDER.indexOf(key) : ORDER.length);
 
 const asPosition = (v: unknown) => v as { latitude: number; longitude: number } | null;
@@ -53,14 +54,22 @@ function Entry({ revision: r }: { revision: SiteRevisionView }) {
     if (key === 'position') return display.position(asPosition(v)!);
     if (key === 'country') return display.country(String(v));
     if (key === 'maxDepthM') return display.depth(Number(v));
-    return String(v);
+    const water = key === 'waterType' && WATER_TYPES.find((w) => w === v);
+    if (water) return t(`vocabulary.waterType.${water}`);
+    return typeof v === 'string' || typeof v === 'number' ? String(v) : JSON.stringify(v);
   };
   const lines = Object.entries(r.changes).sort(([a], [b]) => rank(a) - rank(b)).flatMap(([key, { from, to }]) => {
     if (key === 'deletedAt') return [];
-    if (key === 'description') return [t('siteHistory.descriptionChanged')];
+    // A site created without a description has nothing to say about it.
+    if (key === 'description') return r.cause === 'create' && to === null ? [] : [t('siteHistory.descriptionChanged')];
     // Merging (ADR 0022): the other site by the name it had then.
     if (key === 'mergedSite') return [t('siteHistory.mergedIn', { name: (to as { name: string }).name })];
     if (key === 'mergedInto') return [t('siteHistory.mergedInto', { name: (to as { name: string }).name })];
+    // Taking up a Source's offer (ADR 0025).
+    if (key === 'adopted') {
+      const source = (to as { source: 'osm' | 'wikidata' | 'ssi' }).source;
+      return [t('siteHistory.adopted', { source: t(`siteImport.sourceName.${source}`) })];
+    }
     const field = t(`siteHistory.field.${key}`, { defaultValue: key });
     // A new site lists only what it was created with.
     if (r.cause === 'create') return to === null ? [] : [t('history.changeTo', { field, value: show(key, to) })];

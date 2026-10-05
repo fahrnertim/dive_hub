@@ -5,6 +5,7 @@
 // on top of empty defaults; an update re-sends SSI's current record with our values on top, so fields
 // edited in the app survive; a delete re-sends it with `deleted` set.
 import { createHash } from 'node:crypto';
+import type { SiteWaterType } from '../vocabulary.js';
 import type { SsiRecord } from './ssi-client.js';
 
 export interface Series {
@@ -22,7 +23,8 @@ export interface DiveForSsi {
   /** Lowest water temperature, as on the Dive. */
   waterTemperatureC: number | null;
   maxTemperatureC: number | null;
-  waterType: string | null;
+  /** The Dive site's water type (ADR 0025); SSI knows fresh and salt, so brackish sends nothing. */
+  waterType: SiteWaterType | null;
   notes: string | null;
   siteSsiId: string;
   entry: { latitude: number; longitude: number } | null;
@@ -128,7 +130,7 @@ export function samplesJson(samples: SsiSample[]): string {
 }
 const listJson = (values: (number | null)[]) => `[${values.map(decimal).join(',')}]`;
 
-const WATER_TYPE_IDS: Record<string, number> = { fresh: 4, salt: 5 };
+const WATER_TYPE_IDS: Partial<Record<SiteWaterType, number>> = { fresh: 4, salt: 5 };
 
 /** Fields of SSI's record that Dive Hub fills from the Dive. On an update, null leaves SSI's value. */
 export function ownFields(d: DiveForSsi): SsiRecord {

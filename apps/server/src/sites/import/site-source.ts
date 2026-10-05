@@ -1,5 +1,6 @@
 // What a Site import asks of an open Source (ADR 0021): the dive sites of an area, as plain values.
 // One adapter per Source (Overpass for OpenStreetMap, the Wikidata Query Service); tests replay recorded answers.
+import type { SiteWaterType } from '../../vocabulary.js';
 import type { Position } from '../site-service.js';
 import type { ImportSource } from '../sources.js';
 
@@ -17,9 +18,26 @@ export interface ImportedValues {
   waterBody: string | null;
   description: string | null;
   maxDepthM: number | null;
+  /** Only SSI knows it (ADR 0025). Missing in values stored before it existed: read as null. */
+  waterType: SiteWaterType | null;
 }
 
-export const IMPORTED_FIELDS = ['name', 'position', 'country', 'waterBody', 'description', 'maxDepthM'] as const satisfies readonly (keyof ImportedValues)[];
+export const IMPORTED_FIELDS = ['name', 'position', 'country', 'waterBody', 'description', 'maxDepthM', 'waterType'] as const satisfies readonly (keyof ImportedValues)[];
+export type ImportedField = (typeof IMPORTED_FIELDS)[number];
+
+/**
+ * Which Source's value wins, per field, where several describe a site (ADR 0025): SSI's moderated names and
+ * countries first; OpenStreetMap's exact positions first (SSI rounds some to 100 m or more).
+ */
+export const FIELD_PRECEDENCE: Record<ImportedField, readonly ImportSource[]> = {
+  name: ['ssi', 'osm', 'wikidata'],
+  country: ['ssi', 'osm', 'wikidata'],
+  position: ['osm', 'ssi', 'wikidata'],
+  waterType: ['ssi', 'osm', 'wikidata'],
+  waterBody: ['osm', 'wikidata', 'ssi'],
+  description: ['osm', 'wikidata', 'ssi'],
+  maxDepthM: ['osm', 'wikidata', 'ssi'],
+};
 
 /** One dive site as a Source describes it. */
 export interface SourceSite {

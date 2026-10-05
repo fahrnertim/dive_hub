@@ -1,4 +1,4 @@
-// Planning a Site import (ADR 0021): which incoming objects become which sites, what a re-import may
+// Planning a Site import (ADR 0021, 0025): which incoming objects become which sites, what a re-import may
 // change (per field, 3-way, User edits win), and what is skipped, linked or reported.
 import { describe, expect, it } from 'vitest';
 import { namesMatch, planSiteImport, type ExistingSite } from '../src/sites/import/import-plan.js';
@@ -8,11 +8,12 @@ const HOUSE_REEF = { latitude: 28.4950, longitude: 34.5160 };
 const metresNorth = (m: number, from = HOUSE_REEF) => ({ latitude: from.latitude + m / 111_195, longitude: from.longitude });
 
 const values = (v: Partial<ImportedValues>): ImportedValues => ({
-  name: 'House Reef', position: HOUSE_REEF, country: null, waterBody: null, description: null, maxDepthM: null, ...v,
+  name: 'House Reef', position: HOUSE_REEF, country: null, waterBody: null, description: null, maxDepthM: null, waterType: null, ...v,
 });
 const osm = (id: string, v: Partial<ImportedValues> = {}, wikidata?: string): SourceSite => ({
   source: 'osm', externalId: id, values: values(v), sameAs: wikidata ? { wikidata } : {},
 });
+const ssi = (id: string, v: Partial<ImportedValues> = {}): SourceSite => ({ source: 'ssi', externalId: id, values: values(v), sameAs: {} });
 const wd = (id: string, v: Partial<ImportedValues> = {}, osmId?: string): SourceSite => ({
   source: 'wikidata', externalId: id, values: values(v), sameAs: osmId ? { osm: osmId } : {},
 });
@@ -23,10 +24,13 @@ const site = (id: string, v: Partial<ImportedValues>, from: ExistingSite['extern
 });
 const fromOsm = (externalId: string, imported: Partial<ImportedValues>) => ({ source: 'osm' as const, externalId, providesData: true, imported: values(imported) });
 const fromWd = (externalId: string, imported: Partial<ImportedValues>) => ({ source: 'wikidata' as const, externalId, providesData: true, imported: values(imported) });
+const fromSsi = (externalId: string, imported: Partial<ImportedValues>) => ({ source: 'ssi' as const, externalId, providesData: true, imported: values(imported) });
+/** An SSI ID a User typed into the site form: a reference without values. */
+const typedSsi = (externalId: string) => ({ source: 'ssi' as const, externalId, providesData: false, imported: null });
 
 const WORLD: ImportArea = { kind: 'world' };
-const plan = (incoming: SourceSite[], existing: ExistingSite[] = [], sources: ('osm' | 'wikidata')[] = ['osm', 'wikidata'], area: ImportArea = WORLD) =>
-  planSiteImport({ sources, area, incoming, existing });
+const plan = (incoming: SourceSite[], existing: ExistingSite[] = [], sources: ('osm' | 'wikidata' | 'ssi')[] = ['osm', 'wikidata'], area: ImportArea = WORLD, createSites = true) =>
+  planSiteImport({ sources, area, incoming, existing, createSites });
 
 describe('a first import', () => {
   it('creates a site per object, filled from its Source', () => {
@@ -151,25 +155,26 @@ describe('OpenStreetMap and Wikidata describing the same place', () => {
 });
 
 describe('sites already in the hub', () => {
-  it('links a hand-made site close by with the same name as a reference only, never changing it', () => {
+  it('links a hand-made site close by with the same name as a reference, never changing it, and keeps the offer', () => {
     const handMade = site('s1', { name: 'Hausriff', description: 'Our notes', position: metresNorth(30) });
+    const offer = values({ name: 'Hausriff', description: 'OSM text', maxDepthM: 25 });
     const p = plan([osm('node/1', { name: 'Hausriff', description: 'OSM text', maxDepthM: 25 })], [handMade]);
     expect(p.creates).toEqual([]);
     expect(p.updates).toEqual([{
-      siteId: 's1', outcome: 'linked', set: {}, kept: [],
-      externalIds: [{ source: 'osm', externalId: 'node/1', providesData: false, imported: null, added: true }],
+      siteId: 's1', outcome: 'linked', set: {}, kept: [], offers: ['osm'],
+      externalIds: [{ source: 'osm', externalId: 'node/1', providesData: false, imported: offer, added: true }],
     }]);
-    expect(p.counts.linked).toBe(1);
+    expect(p.counts).toMatchObject({ linked: 1, offered: 1 });
   });
 
-  it('keeps a reference a reference on later imports, changing nothing', () => {
-    const linked = site('s1', { name: 'Hausriff', position: metresNorth(30) }, [{ source: 'osm', externalId: 'node/1', providesData: false, imported: null }]);
+  it('keeps a reference a reference on later imports, refreshing only its offer', () => {
+    const linked = site('s1', { name: 'Hausriff', position: metresNorth(30) }, [{ source: 'osm', externalId: 'node/1', providesData: false, imported: values({ name: 'Hausriff' }) }]);
     const p = plan([osm('node/1', { name: 'Hausriff Nord', maxDepthM: 20 })], [linked]);
     expect(p.updates).toEqual([{
-      siteId: 's1', outcome: 'unchanged', set: {}, kept: [],
-      externalIds: [{ source: 'osm', externalId: 'node/1', providesData: false, imported: null, added: false }],
+      siteId: 's1', outcome: 'unchanged', set: {}, kept: [], offers: [],
+      externalIds: [{ source: 'osm', externalId: 'node/1', providesData: false, imported: values({ name: 'Hausriff Nord', maxDepthM: 20 }), added: false }],
     }]);
-    expect(p.counts).toMatchObject({ unchanged: 1, linked: 0 });
+    expect(p.counts).toMatchObject({ unchanged: 1, linked: 0, offered: 0 });
   });
 
   it('creates a new site near a hand-made one with another name, and reports it', () => {
@@ -214,4 +219,84 @@ describe('names that match', () => {
     ['Reef', 'House Reef North'],
     ['Dive Site', 'Tauchplatz'],
   ])('%s ≠ %s', (a, b) => expect(namesMatch(a, b)).toBe(false));
+});
+
+describe('SSI with the other Sources (ADR 0025)', () => {
+  it('makes one site of an OSM object and an SSI site close by with the same name: SSI names it, OSM places it, SSI gives the water type', () => {
+    const p = plan([
+      osm('node/1', { name: 'Attersee - Wrack Dixie', maxDepthM: 34 }),
+      ssi('6102', { name: 'Wrack Dixie', position: metresNorth(12), country: 'AT', waterType: 'fresh' }),
+    ], [], ['osm', 'ssi']);
+    expect(p.creates).toHaveLength(1);
+    expect(p.creates[0]!.values).toEqual(values({ name: 'Wrack Dixie', position: HOUSE_REEF, country: 'AT', maxDepthM: 34, waterType: 'fresh' }));
+    expect(p.creates[0]!.externalIds.map((e) => `${e.source}:${e.externalId}`)).toEqual(['osm:node/1', 'ssi:6102']);
+  });
+
+  it('adds SSI to a site imported from OSM before: its name and water type follow where Users left them', () => {
+    const existing = site('s1', { name: 'Attersee - Wrack Dixie' }, [fromOsm('node/1', { name: 'Attersee - Wrack Dixie' })]);
+    const p = plan([ssi('6102', { name: 'Wrack Dixie', position: metresNorth(12), waterType: 'fresh' })], [existing], ['ssi']);
+    expect(p.updates).toEqual([expect.objectContaining({
+      siteId: 's1', outcome: 'updated', set: { name: 'Wrack Dixie', waterType: 'fresh' },
+      externalIds: [expect.objectContaining({ source: 'ssi', externalId: '6102', providesData: true, added: true })],
+    })]);
+  });
+
+  it('turns an SSI ID a User typed on an imported site into one that provides data', () => {
+    const existing = site('s1', { name: 'Hausreef' }, [fromOsm('node/1', { name: 'Hausreef' }), typedSsi('3314')]);
+    const p = plan([ssi('3314', { name: 'Hausreef', country: 'EG', waterType: 'salt' })], [existing], ['ssi']);
+    expect(p.updates).toEqual([{
+      siteId: 's1', outcome: 'updated', set: { country: 'EG', waterType: 'salt' }, kept: [], offers: [],
+      externalIds: [{ source: 'ssi', externalId: '3314', providesData: true, imported: values({ name: 'Hausreef', country: 'EG', waterType: 'salt' }), added: false }],
+    }]);
+  });
+
+  it("leaves an SSI ID a User typed on a hand-made site a reference, and offers SSI's data once", () => {
+    const handMade = site('s1', { name: 'Unser Hausriff' }, [typedSsi('3314')]);
+    const first = plan([ssi('3314', { name: 'Hausreef', waterType: 'salt' })], [handMade], ['ssi']);
+    expect(first.updates).toEqual([{
+      siteId: 's1', outcome: 'unchanged', set: {}, kept: [], offers: ['ssi'],
+      externalIds: [{ source: 'ssi', externalId: '3314', providesData: false, imported: values({ name: 'Hausreef', waterType: 'salt' }), added: false }],
+    }]);
+    expect(first.counts.offered).toBe(1);
+    const offered = site('s1', { name: 'Unser Hausriff' }, [{ ...typedSsi('3314'), imported: values({ name: 'Hausreef', waterType: 'salt' }) }]);
+    expect(plan([ssi('3314', { name: 'Hausreef', waterType: 'salt' })], [offered], ['ssi']).counts.offered).toBe(0);
+  });
+
+  it('merges the water type per field: it follows SSI unless a User changed it', () => {
+    const untouched = site('s1', { name: 'Blue Hole', waterType: 'salt' }, [fromSsi('7006', { name: 'Blue Hole', waterType: 'salt' })]);
+    const changed = site('s2', { name: 'Cenote', waterType: 'brackish', position: metresNorth(5000) }, [fromSsi('7010', { name: 'Cenote', position: metresNorth(5000), waterType: 'fresh' })]);
+    const p = plan([
+      ssi('7006', { name: 'Blue Hole', waterType: 'brackish' }),
+      ssi('7010', { name: 'Cenote', position: metresNorth(5000), waterType: 'salt' }),
+    ], [untouched, changed], ['ssi']);
+    expect(p.updates.find((u) => u.siteId === 's1')).toMatchObject({ outcome: 'updated', set: { waterType: 'brackish' } });
+    expect(p.updates.find((u) => u.siteId === 's2')).toMatchObject({ outcome: 'kept', set: {}, kept: ['waterType'] });
+  });
+
+  it('reads values stored before the water type existed as having none, so nothing changes', () => {
+    const { waterType: _, ...old } = values({ name: 'Lighthouse' });
+    const existing = site('s1', { name: 'Lighthouse' }, [{ source: 'osm', externalId: 'node/1', providesData: true, imported: old as ImportedValues }]);
+    expect(plan([osm('node/1', { name: 'Lighthouse' })], [existing]).updates[0]).toMatchObject({ outcome: 'unchanged', set: {} });
+  });
+
+  it('creates no sites when asked not to, but still fills and links those in the hub', () => {
+    const imported = site('s1', { name: 'Lighthouse' }, [fromOsm('node/1', { name: 'Lighthouse' })]);
+    const p = plan([
+      ssi('1', { name: 'Lighthouse', position: metresNorth(20), waterType: 'salt' }),
+      ssi('2', { name: 'Canyon', position: metresNorth(5000) }),
+    ], [imported], ['ssi'], WORLD, false);
+    expect(p.creates).toEqual([]);
+    expect(p.updates).toEqual([expect.objectContaining({ siteId: 's1', set: { waterType: 'salt' } })]);
+    expect(p.counts).toMatchObject({ created: 0, skippedNew: 1, updated: 1 });
+  });
+
+  it('plans a worldwide run of tens of thousands of sites in seconds, not minutes', () => {
+    const at = (i: number, north = 0) => ({ latitude: -60 + (i % 1200) * 0.1 + north, longitude: -170 + Math.floor(i / 1200) * 13 });
+    const many = Array.from({ length: 30_000 }, (_, i) => ssi(String(i + 1), { name: `Site ${i}`, position: at(i) }));
+    const existing = Array.from({ length: 3_000 }, (_, i) => site(`s${i}`, { name: `Site ${i * 10}`, position: at(i * 10, 0.0002) }));
+    const started = performance.now();
+    const p = plan(many, existing, ['ssi']);
+    expect(performance.now() - started).toBeLessThan(10_000);
+    expect(p.counts).toMatchObject({ linked: 3_000, created: 27_000 });
+  });
 });

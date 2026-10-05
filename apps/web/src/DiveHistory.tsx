@@ -1,15 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { diversQuery, revisionsQuery, type DiveView, type OverridableField, type RevisionView } from './api.ts';
+import { diversQuery, revisionsQuery, type DiveView, type RevisionView } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { deviceName } from './lib/devices.ts';
-import { useFormatValue } from './lib/dive-values.ts';
+import { useFormatValue, type HistoryField } from './lib/dive-values.ts';
 import { mergeEdits } from './lib/history.ts';
 import { Button, Muted, Notice, Panel } from './ui/index.ts';
 
-const OVERRIDABLE: OverridableField[] = ['number', 'startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM', 'waterTemperatureC', 'waterType'];
-const isOverridable = (key: string): key is OverridableField => (OVERRIDABLE as string[]).includes(key);
+/** Values a Revision can change, with the water type that old Revisions mention (a Dive value before ADR 0025). */
+const VALUES: HistoryField[] = ['number', 'startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM', 'waterTemperatureC', 'waterType'];
+const isValue = (key: string): key is HistoryField => (VALUES as string[]).includes(key);
 
 /** Entries shown before "Show the whole history". */
 const LATEST = 3;
@@ -48,7 +49,7 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
   const diverName = (id: unknown) => divers.data?.find((v) => v.id === id)?.name ?? t('common.none');
   const who = r.actor.type === 'system' ? t('history.by.system')
     : r.actor.name ? t(`history.by.${r.actor.type}`, { name: r.actor.name }) : t('history.by.unknown');
-  const overrides = r.changes.overrides as { from: OverridableField[]; to: OverridableField[] } | undefined;
+  const overrides = r.changes.overrides as { from: HistoryField[]; to: HistoryField[] } | undefined;
   const recordingName = (id: unknown) => {
     const n = dive.recordings.findIndex((rec) => rec.id === id);
     if (n < 0) return t('common.none');
@@ -67,10 +68,10 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
       return [t('history.change', { field: t('history.field.site'), from: name(from), to: name(to) })];
     }
     if (key === 'primaryRecordingId') return [t('history.changeTo', { field: t('history.field.primaryRecordingId'), value: recordingName(to) })];
-    if (!isOverridable(key)) return [key];
+    if (!isValue(key)) return [key];
     const mark = overrides?.to.includes(key) && !overrides.from.includes(key) ? t('history.setByHand')
       : overrides?.from.includes(key) && !overrides.to.includes(key) ? t('history.reset') : undefined;
-    const change = { field: t(`history.field.${key}`), from: format(key, from as never), to: format(key, to as never) };
+    const change = { field: t(`history.field.${key}`), from: format(key, from), to: format(key, to) };
     return [mark ? t('history.changeMarked', { ...change, mark }) : t('history.change', change)];
   });
 

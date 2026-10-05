@@ -15,6 +15,7 @@ import { createImportService } from '../src/imports/import-service.js';
 import { createSiteSources } from '../src/sites/import/create-site-sources.js';
 import type { Fetch } from '../src/sites/import/polite-http.js';
 import { createSiteImportService } from '../src/sites/import/site-import-service.js';
+import { ssiSitesZip } from './zip.js';
 import { createSecretBox } from '../src/secrets/secret-box.js';
 import { createSsiClient } from '../src/ssi/ssi-client.js';
 import { createSsiService } from '../src/ssi/ssi-service.js';
@@ -47,21 +48,31 @@ const blobs = createLocalBlobStore(await mkdtemp(join(tmpdir(), 'divehub-e2e-'))
 const imports = createImportService({ db, blobs });
 
 /**
- * Overpass and Wikidata as recorded (test/fixtures/site-sources): the browser tests never reach the live
- * services. Overpass answers Malta and Egypt by country and the Attersee box; anything else has no dive spots.
+ * Overpass and Wikidata as recorded, SSI's site list hand-made in its format (test/fixtures/site-sources): the
+ * browser tests never reach the live services. Overpass answers Malta and Egypt by country and the Attersee box;
+ * anything else has no dive spots.
  */
 const recorded = (file: string) => readFileSync(here(`fixtures/site-sources/${file}`), 'utf8');
+const ssiZip = await ssiSitesZip();
 const replay: Fetch = async (url, init) => {
   const query = new URLSearchParams(init.body ?? '').get('data') ?? '';
-  const body = url.includes('wikidata') ? recorded('wikidata-en.json')
+  const body: string | Buffer = url.includes('ssi.invalid') ? ssiZip
+    : url.includes('wikidata') ? recorded('wikidata-en.json')
     : query.includes('"MT"') ? recorded('overpass-country-MT.json')
     : query.includes('"EG"') ? recorded('overpass-country-EG.json')
     : query.includes('(47.75,13.45,47.95,13.62)') ? recorded('overpass-box-attersee.json')
     : JSON.stringify({ elements: [] });
-  return { status: 200, headers: { get: () => null }, text: async () => body };
+  const bytes = Buffer.from(body);
+  return {
+    status: 200, headers: { get: () => null }, text: async () => bytes.toString('utf8'),
+    arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
+  };
 };
 const siteImports = createSiteImportService({
-  db, sources: createSiteSources({ fetch: replay, overpassUrl: 'https://overpass.invalid/api/interpreter', wikidataUrl: 'https://wikidata.invalid/sparql' }),
+  db, sources: createSiteSources({
+    fetch: replay, overpassUrl: 'https://overpass.invalid/api/interpreter', wikidataUrl: 'https://wikidata.invalid/sparql',
+    ssiSitesUrl: 'https://ssi.invalid/app/APP_CACHE_SITES.zip',
+  }),
 });
 // SSI as the fake answers it (ADR 0024): the browser tests never reach SSI. Its account is Erika's,
 // with the password below; the e2e server keeps passwords (it has an encryption key).

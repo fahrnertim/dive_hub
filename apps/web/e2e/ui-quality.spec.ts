@@ -17,12 +17,13 @@ let invitationToken: string;
 let resetToken: string;
 let siteId: string;
 let importedSiteId: string;
+let offerSiteId: string;
 
 // Prepared once per server before any test (e2e/prepare.ts): a crowd, links to pass on, an imported site.
 // Read here, not when the file loads: Playwright may load spec files before the global setup wrote it.
 // Other specs on this server may have changed the language; these tests let the browser decide.
 test.beforeAll(async ({ playwright }) => {
-  ({ diveId, invitationToken, resetToken, siteId, importedSiteId } =
+  ({ diveId, invitationToken, resetToken, siteId, importedSiteId, offerSiteId } =
     JSON.parse(readFileSync(dataFile(Number(process.env.TEST_PARALLEL_INDEX ?? 0) % E2E_SERVERS), 'utf8')) as PreparedData);
   const api = await playwright.request.newContext({ baseURL: E2E_BASE_URL, storageState: E2E_SESSION, extraHTTPHeaders: headers });
   await setPreferences(api, { language: null, units: null });
@@ -106,6 +107,39 @@ for (const v of variants) {
       await page.getByRole('button', { name: v.english ? 'Start import' : 'Import starten' }).click();
       await expect(page.getByText(v.english ? 'Enter all four edges' : 'Gib alle vier Ränder an', { exact: false })).toBeVisible();
       await expectGoodPage(page, title('Import dive sites'), v);
+    });
+
+    test('importing dive sites from SSI, with its explanation and only filling', { tag: ['@admin', '@sites'] }, async ({ page }) => {
+      await page.goto('/#/admin/site-imports');
+      await page.getByText(v.english ? 'SSI (no licence, see below)' : 'SSI (ohne Lizenz, siehe unten)').click();
+      await page.getByText(v.english ? 'Only fill dive sites that are already here' : 'Nur Tauchplätze ergänzen, die schon hier sind').click();
+      await expect(page.getByText(v.english ? 'SSI gives no licence for its list of dive sites.' : 'SSI gibt für seine Liste der Tauchplätze keine Lizenz.')).toBeVisible();
+      // The prepared import filled a site made here: the list names it.
+      await expect(page.locator('.site-imports').getByRole('link', { name: 'Ouchy – Seeufer (club notes)' })).toBeVisible();
+      await expectGoodPage(page, title('Import dive sites'), v);
+    });
+
+    test('a dive site offering a source\'s data', { tag: ['@sites'] }, async ({ page }) => {
+      await page.goto(`/#/sites/${offerSiteId}`);
+      await page.getByRole('button', { name: v.english ? 'Use SSI’s data' : 'Daten von SSI übernehmen' }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await expectGoodPage(page, undefined, v);
+    });
+
+    test('a dive whose computer was set to other water than its site', { tag: ['@dives', '@sites'] }, async ({ page, request }) => {
+      const name = 'Gosausee (fresh water)';
+      const { sites } = await (await request.get(`/api/dive-sites?q=${encodeURIComponent(name)}`, { headers })).json() as { sites: { id: string; name: string }[] };
+      const lake = sites.find((s) => s.name === name)
+        ?? await (await request.post('/api/dive-sites', { headers, data: { name, waterType: 'fresh' } })).json() as { id: string };
+      const dive = await (await request.get(`/api/dives/${diveId}`, { headers })).json() as { version: number };
+      await request.patch(`/api/dives/${diveId}`, { headers, data: { version: dive.version, siteId: lake.id } });
+      try {
+        await page.goto(`/#/dives/${diveId}`);
+        await expect(page.getByText(v.english ? /this site is fresh water/ : /dieser Platz ist Süßwasser/)).toBeVisible();
+        await expectGoodPage(page, title('Dive 42'), v);
+      } finally {
+        await leaveSsi(request, diveId);
+      }
     });
 
     test('unknown dive site', { tag: ['@dives'] }, async ({ page }) => {

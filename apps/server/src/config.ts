@@ -23,6 +23,8 @@ export interface Config {
   contact: string | undefined;
   overpassUrl: string | undefined;
   wikidataSparqlUrl: string | undefined;
+  /** Where SSI's site list is downloaded (DIVEHUB_SSI_SITES_URL, ADR 0025). */
+  ssiSitesUrl: string | undefined;
   /** Key for secrets kept for Targets (ADR 0024), e.g. SSI passwords; without it passwords are never kept. */
   encryptionKey: Buffer | undefined;
   /** SSI's app API; another endpoint only for tests. */
@@ -55,6 +57,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     contact: env.DIVEHUB_CONTACT?.trim() || undefined,
     overpassUrl: env.DIVEHUB_OVERPASS_URL || undefined,
     wikidataSparqlUrl: env.DIVEHUB_WIKIDATA_SPARQL_URL || undefined,
+    ssiSitesUrl: env.DIVEHUB_SSI_SITES_URL || undefined,
     encryptionKey: parseEncryptionKey(env.DIVEHUB_ENCRYPTION_KEY),
     ssiUrl: env.DIVEHUB_SSI_URL || undefined,
   };

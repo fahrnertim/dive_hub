@@ -2,7 +2,7 @@
 title: Development guide
 summary: How to set up, run, test and build Dive Hub locally; repository layout and tooling notes.
 status: living
-date: 2026-10-02
+date: 2026-10-05
 ---
 
 # Development guide
@@ -74,6 +74,7 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 | Browser tests | `pnpm --filter @dive-hub/web test:e2e`:<br>• **What it does:** builds the web client, starts one e2e server per worker (2 by default, `E2E_SERVERS`) on ports 3300, 3301, … with its own fresh database (`divehub_e2e_<n>`) and a seeded User and Dive (`apps/server/test/e2e-server.ts`), prepares each once (`e2e/prepare.ts`), and runs `apps/web/e2e` in the installed Edge (`PLAYWRIGHT_CHANNEL=chrome` for Chrome). Needs PostgreSQL.<br>• **Areas:** every test carries one (`@dives`, `@divers`, `@sites`, `@account`, `@admin`, `@layout`); `-- --grep "@sites"` runs one.<br>• **Failures:** no trace is recorded; to see why a test fails, run it again with `--trace=on`.<br>• **ui-quality:** `e2e/ui-quality.spec.ts` checks every page with the [page rules](spec/design-system.md#rules-every-page-follows) and with axe-core (`@axe-core/playwright`, dev only) in two of its four variants ([ADR 0023](decisions/0023-faster-checks.md)).<br>• **Specs stand alone:** no spec may rely on what another did. |
 | Regenerate the e2e fixture with a position (`sited-computer.fit`) | `pnpm --filter @dive-hub/server exec tsx test/fixtures/write-sited-fixture.ts` |
 | Re-record the Overpass and Wikidata answers the Site import tests replay | `pnpm --filter @dive-hub/server exec tsx test/fixtures/site-sources/record.ts` (calls the live services once; set `DIVEHUB_CONTACT` first). Tests never call them. |
+| SSI's site list in tests | Hand-made in SSI's format: `apps/server/test/fixtures/site-sources/ssi-sites.json` (invented sites), zipped at run time by `test/zip.ts`; the browser tests' server replays it. **Never commit the real file or anything derived from it** ([ADR 0025](decisions/0025-ssi-site-import-and-site-water-type.md)). To check SSI's format, download it once into `samples/private/` (git-ignored) and compare with the [reference](references/ssi-app-api.md#the-site-list-app_cache_siteszip). |
 | Check SSI's app API with your own account | `SSI_EMAIL=… SSI_PASSWORD=… pnpm --filter @dive-hub/server exec tsx test/fixtures/ssi/round-trip.ts read` (then `token` later, or `write --pause` with `SSI_SITE_ID`). Writes SSI's answers to `samples/private/ssi/` (personal data, git-ignored). Tests never reach SSI; they use `test/fake-ssi.ts` ([SSI app API](references/ssi-app-api.md#when-ssi-changes-something)). |
 | Regenerate the synthetic FIT fixture | `pnpm --filter @dive-hub/server exec tsx test/fixtures/synthetic-dive.ts` |
 | Build and run the image | `docker build -t dive-hub:dev .`, then `POSTGRES_PASSWORD=… docker compose up -d` |

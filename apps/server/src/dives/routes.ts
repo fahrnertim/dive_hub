@@ -1,4 +1,5 @@
-// One Dive: its values (with Overrides), Recordings, editing, Primary recording, history (ADR 0015).
+// One Dive: its values (with Overrides), Recordings, editing, Primary recording, history (ADR 0015); its water
+// type from its site, and whether the computer was set to other water (ADR 0025).
 import { and, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { FastifyRequest } from 'fastify';
@@ -11,10 +12,11 @@ import {
   type RecordingSummary,
 } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
-import { DECO_MODELS, DIVE_MODES, GAS_CIRCUITS, WATER_TYPES } from '../vocabulary.js';
+import { DECO_MODELS, DIVE_MODES, GAS_CIRCUITS, SITE_WATER_TYPES, WATER_TYPES } from '../vocabulary.js';
 import { DiveError, type DiveService } from './dive-service.js';
 import { valuesFromRecording, type DiveValues } from './dive-values.js';
 import { REVISION_CAUSES } from './revisions.js';
+import { waterMismatch } from './water.js';
 import { recordingPosition } from '../sites/dive-site-link.js';
 import { PositionSchema } from '../sites/routes.js';
 
@@ -33,7 +35,6 @@ const DateTime = Type.String({ format: 'date-time' });
 const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
 
 const Field = Type.Enum([...OVERRIDABLE_FIELDS], { description: 'A Dive value that can be overridden' });
-const WaterTypeSchema = Type.Enum([...WATER_TYPES]);
 /** Start time with the local UTC offset at the dive (gap A8). */
 const StartsAt = Type.Object({
   at: DateTime,
@@ -47,7 +48,6 @@ const ValuesSchema = Type.Object({
   maxDepthM: Nullable(Type.Number({ minimum: 0, maximum: 400 })),
   avgDepthM: Nullable(Type.Number({ minimum: 0, maximum: 400 })),
   waterTemperatureC: Nullable(Type.Number({ minimum: -5, maximum: 50 })),
-  waterType: Nullable(WaterTypeSchema),
 });
 
 const SummaryView = Type.Object({
@@ -56,8 +56,8 @@ const SummaryView = Type.Object({
   decoModel: Type.Optional(Type.Enum([...DECO_MODELS])),
   gfLow: Type.Optional(Type.Number()),
   gfHigh: Type.Optional(Type.Number()),
-  waterType: Type.Optional(WaterTypeSchema),
-  waterDensity: Type.Optional(Type.Number()),
+  waterType: Type.Optional(Type.Enum([...WATER_TYPES], { description: 'The computer\'s salinity setting, not the water of the Dive (that is the site\'s)' })),
+  waterDensity: Type.Optional(Type.Number({ description: 'Density the computer computed depths with, kg/m³' })),
   gases: Type.Optional(Type.Array(Type.Object({
     o2: Type.Number(), he: Type.Number(), circuit: Type.Optional(Type.Enum([...GAS_CIRCUITS])),
   }))),
@@ -93,6 +93,14 @@ const DiveView = Type.Object({
   fromRecording: Nullable(ValuesSchema, ),
   notes: Nullable(Type.String()),
   site: Nullable(Type.Object({ id: Type.String(), name: Type.String() }, { description: 'The Dive site (ADR 0020)' })),
+  waterType: Nullable(Type.Enum([...SITE_WATER_TYPES], {
+    description: 'The Dive site\'s water type (ADR 0025); null without a site, or when the site has none. Not editable on the Dive',
+  })),
+  waterMismatch: Nullable(Type.Object({
+    computer: Type.Enum([...WATER_TYPES], { description: 'What the Primary recording\'s computer was set to' }),
+    site: Type.Enum([...SITE_WATER_TYPES]),
+    depthPercent: Nullable(Type.Number({ description: 'Recorded vs true depth in percent: negative reads shallow, positive deep; null where a density is unknown' })),
+  }, { description: 'Set when the computer was set to other water than the site\'s: clients say so (docs/spec/clients.md)' })),
   position: Nullable(Type.Object(PositionSchema.properties, {
     description: 'Where the Device of the Primary recording placed the dive: its exit, else its entry. Private like the Dive',
   })),
@@ -158,7 +166,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       .where(and(eq(recording.diveId, row.id), isNull(recording.deletedAt))).orderBy(recording.startsAt);
     const primary = recs.find(({ r }) => r.id === row.primaryRecordingId)?.r;
     const [site] = row.siteId
-      ? await db.select({ id: diveSite.id, name: diveSite.name }).from(diveSite).where(eq(diveSite.id, row.siteId))
+      ? await db.select({ id: diveSite.id, name: diveSite.name, waterType: diveSite.waterType }).from(diveSite).where(eq(diveSite.id, row.siteId))
       : [];
     return {
       id: row.id,
@@ -167,12 +175,14 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       values: toValues({
         number: row.number, startsAt: { at: row.startsAt, utcOffsetSeconds: row.utcOffsetSeconds },
         durationSeconds: row.durationSeconds, maxDepthM: row.maxDepthM, avgDepthM: row.avgDepthM,
-        waterTemperatureC: row.waterTemperatureC, waterType: row.waterType,
+        waterTemperatureC: row.waterTemperatureC,
       }),
       overrides: row.overrides,
       fromRecording: primary ? toValues(valuesFromRecording(primary)) : null,
       notes: row.notes,
-      site: site ?? null,
+      site: site ? { id: site.id, name: site.name } : null,
+      waterType: site?.waterType ?? null,
+      waterMismatch: waterMismatch(site?.waterType ?? null, primary?.summary),
       position: primary ? recordingPosition(primary) : null,
       recordings: recs.map(({ r, d, channels }) => ({
         id: r.id, isPrimary: r.id === row.primaryRecordingId,
