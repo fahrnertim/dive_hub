@@ -13,16 +13,33 @@ const out = process.env.REVIEW_OUT ?? 'review-output/';
 mkdirSync(out, { recursive: true });
 const headers = { origin: E2E_BASE_URL };
 const findings: Record<string, unknown> = {};
+// Motion runs on the duration tokens, which drop to 0 here: every capture shows the end state without waiting.
+test.use({ reducedMotion: 'reduce' });
 
 const areas = process.env.REVIEW_AREAS?.split(',').map((a) => a.trim()).filter(Boolean);
-const want = (area: string) => !areas || areas.includes(area);
+const want = (area: string) => !areas?.length || areas.includes(area);
 /** Which area a capture belongs to, by its name. */
 const areaOf = (name: string) => (/site/.test(name) ? 'sites' : /divers/.test(name) ? 'divers'
   : /account|signin|invitation/.test(name) ? 'account' : /admin/.test(name) ? 'admin' : 'dives');
 
+/** Counts the page's requests until their bodies are read, so a capture can wait until the data is on screen. */
+async function trackRequests(page: Page) {
+  await page.addInitScript(() => {
+    const w = window as unknown as { inflight: number }; w.inflight = 0;
+    const original = window.fetch;
+    window.fetch = (...args) => {
+      w.inflight++;
+      const done = () => { w.inflight--; };
+      return original(...args).then((r) => { r.clone().arrayBuffer().then(done, done); return r; }, (e) => { done(); throw e; });
+    };
+  });
+}
+
 async function capture(page: Page, name: string, opts: { full?: boolean; axe?: boolean; aria?: boolean } = {}) {
   if (!want(areaOf(name))) return;
-  await page.waitForTimeout(400);
+  // Wait for no requests in flight, then two frames for React to render what came back.
+  await page.waitForFunction(() => (window as unknown as { inflight: number }).inflight === 0);
+  await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
   await page.screenshot({ path: `${out}${name}.png`, fullPage: opts.full ?? true });
   if (opts.aria !== false) writeFileSync(`${out}${name}.aria.yml`, await page.locator('body').ariaSnapshot());
   if (opts.axe !== false) {
@@ -50,6 +67,7 @@ async function tabOrder(page: Page, name: string, steps = 25) {
 
 test('review material', async ({ page, request, browser }) => {
   test.setTimeout(480_000);
+  await trackRequests(page);
   await setPreferences(request, { language: null, units: null });
   const upload = await request.post('/api/imports', {
     headers, multipart: { file: { name: 'odd-computer.fit', mimeType: 'application/octet-stream', buffer: readFileSync('e2e/fixtures/odd-computer.fit') } },
@@ -60,41 +78,61 @@ test('review material', async ({ page, request, browser }) => {
   const { dives } = await (await request.get('/api/dives')).json() as { dives: { id: string; number: number }[] };
   const dive42 = dives.find((d) => d.number === 42)!.id;
 
+  // Pages of areas left out of REVIEW_AREAS aren't visited at all; capture() only skips the files.
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto('/'); await page.getByRole('heading', { name: 'Logbook' }).waitFor();
-  await capture(page, '01-logbook');
-  await tabOrder(page, '01-logbook');
-  await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: /Dive 42/ }).waitFor();
-  await capture(page, '02-dive');
-  await tabOrder(page, '02-dive', 30);
-  await page.getByRole('button', { name: 'Edit dive' }).click();
-  await capture(page, '03-dive-edit');
-  await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Devices' }).waitFor(); await page.locator('table').waitFor();
-  await capture(page, '04-divers');
-  await page.goto('/#/account'); await page.getByRole('heading', { name: 'My account' }).waitFor(); await page.locator('table').waitFor();
-  await capture(page, '05-account');
-  await page.goto('/#/admin'); await page.getByRole('heading', { name: 'Users' }).waitFor();
-  await page.getByRole('textbox', { name: 'E-mail' }).fill('second@example.com');
-  await page.getByRole('button', { name: 'Create invitation link' }).click();
-  await page.getByRole('button', { name: 'Copy' }).waitFor(); // the notice's text is also in the live region
-  await capture(page, '06-admin');
-  await tabOrder(page, '06-admin', 30);
+  if (want('dives')) {
+    await page.goto('/'); await page.getByRole('heading', { name: 'Logbook' }).waitFor();
+    await capture(page, '01-logbook');
+    await tabOrder(page, '01-logbook');
+    await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: /Dive 42/ }).waitFor();
+    await capture(page, '02-dive');
+    await tabOrder(page, '02-dive', 30);
+    await page.getByRole('button', { name: 'Edit dive' }).click();
+    await capture(page, '03-dive-edit');
+  }
+  if (want('divers')) {
+    await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Devices' }).waitFor(); await page.locator('table').waitFor();
+    await capture(page, '04-divers');
+  }
+  if (want('account')) {
+    await page.goto('/#/account'); await page.getByRole('heading', { name: 'My account' }).waitFor(); await page.locator('table').waitFor();
+    await capture(page, '05-account');
+  }
+  if (want('admin')) {
+    await page.goto('/#/admin'); await page.getByRole('heading', { name: 'Users' }).waitFor();
+    await page.getByRole('textbox', { name: 'E-mail' }).fill('second@example.com');
+    await page.getByRole('button', { name: 'Create invitation link' }).click();
+    await page.getByRole('button', { name: 'Copy' }).waitFor(); // the notice's text is also in the live region
+    await capture(page, '06-admin');
+    await tabOrder(page, '06-admin', 30);
+  }
 
-  await page.emulateMedia({ colorScheme: 'dark' });
-  await page.goto('/'); await page.getByRole('heading', { name: 'Logbook' }).waitFor();
-  await capture(page, '07-logbook-dark', { aria: false });
-  await setPreferences(request, { language: 'de' });
-  await page.emulateMedia({ colorScheme: 'light' });
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/'); await page.getByRole('heading', { name: 'Logbuch' }).waitFor();
-  await capture(page, '08-logbook-de-phone', { aria: false });
-  await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: /Tauchgang 42/ }).waitFor();
-  await capture(page, '09-dive-de-phone', { aria: false });
-  await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Geräte' }).waitFor();
-  await capture(page, '10-divers-de-phone', { aria: false });
-  await page.goto('/#/admin'); await page.getByRole('heading', { name: 'Benutzer' }).waitFor();
-  await capture(page, '11-admin-de-phone', { aria: false });
-  await setPreferences(request, { language: null });
+  if (want('dives')) {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/'); await page.getByRole('heading', { name: 'Logbook' }).waitFor();
+    await capture(page, '07-logbook-dark', { aria: false });
+    await page.emulateMedia({ colorScheme: 'light' });
+  }
+  if (want('dives') || want('divers') || want('admin')) {
+    await setPreferences(request, { language: 'de' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    // A new language needs a full load; moving by hash afterwards keeps it.
+    await page.goto('/'); await page.getByRole('heading', { name: 'Logbuch' }).waitFor();
+    if (want('dives')) {
+      await capture(page, '08-logbook-de-phone', { aria: false });
+      await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: /Tauchgang 42/ }).waitFor();
+      await capture(page, '09-dive-de-phone', { aria: false });
+    }
+    if (want('divers')) {
+      await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Geräte' }).waitFor();
+      await capture(page, '10-divers-de-phone', { aria: false });
+    }
+    if (want('admin')) {
+      await page.goto('/#/admin'); await page.getByRole('heading', { name: 'Benutzer' }).waitFor();
+      await capture(page, '11-admin-de-phone', { aria: false });
+    }
+    await setPreferences(request, { language: null });
+  }
 
   // Dive sites (ADR 0020): a dive with a position, a site near it, and the pages in both themes,
   // both languages, at desktop, phone (390 px) and the narrowest phone (320 px).
@@ -140,127 +178,146 @@ test('review material', async ({ page, request, browser }) => {
   const dive42Now = await (await request.get(`/api/dives/${dive42}`)).json() as { version: number };
   await request.patch(`/api/dives/${dive42}`, { headers, data: { version: dive42Now.version, siteId: lake.id } });
 
-  const sitePages = async (prefix: string, de: boolean) => {
+  // axe in two of the six variants, as in ui-quality (ADR 0023): both colour schemes, both languages.
+  const sitePages = async (prefix: string, de: boolean, axe = false) => {
     if (!want('sites')) return;
     // A new language needs a reload; moving by hash keeps the one the app started with.
     await page.goto('/#/sites'); await page.reload(); await page.locator('table').waitFor();
-    await capture(page, `${prefix}-sites`, { aria: false });
+    await capture(page, `${prefix}-sites`, { aria: false, axe });
     await page.goto('/#/sites?country=EG&sort=diveCount&order=desc'); await page.locator('table').waitFor();
-    await capture(page, `${prefix}-sites-filtered`, { aria: false });
+    await capture(page, `${prefix}-sites-filtered`, { aria: false, axe });
     await page.goto(`/#/sites/${site.id}`); await page.getByRole('heading', { name: 'Lighthouse' }).waitFor();
-    await capture(page, `${prefix}-site`, { aria: false });
+    await capture(page, `${prefix}-site`, { aria: false, axe });
     await page.getByRole('button', { name: de ? /^Mit diesem Platz zusammenführen:/ : /^Merge into this site:/ }).click();
     await page.getByRole('dialog').waitFor();
-    await capture(page, `${prefix}-site-merge`, { full: false, aria: false });
+    await capture(page, `${prefix}-site-merge`, { full: false, aria: false, axe });
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: de ? 'Tauchplatz bearbeiten' : 'Edit dive site' }).click();
-    await capture(page, `${prefix}-site-edit`, { aria: false });
+    await capture(page, `${prefix}-site-edit`, { aria: false, axe });
     await page.goto(`/#/dives/${sitedDive}`); await page.getByRole('heading', { name: de ? /Tauchgang 7/ : /Dive 7/ }).waitFor();
-    await capture(page, `${prefix}-dive-with-site`, { aria: false });
+    await capture(page, `${prefix}-dive-with-site`, { aria: false, axe });
     await page.getByRole('button', { name: de ? 'Tauchplatz ändern' : 'Change dive site' }).click();
     await page.getByRole('dialog').waitFor();
-    await capture(page, `${prefix}-site-picker`, { full: false, aria: false });
+    await capture(page, `${prefix}-site-picker`, { full: false, aria: false, axe });
     await page.getByRole('dialog').getByRole('searchbox').fill('Ligh');
     await page.getByRole('dialog').getByRole('status').filter({ hasText: /Ligh/ }).waitFor();
-    await capture(page, `${prefix}-site-picker-search`, { full: false, aria: false });
+    await capture(page, `${prefix}-site-picker-search`, { full: false, aria: false, axe });
     await page.getByRole('dialog').getByRole('button', { name: de ? 'Neuer Tauchplatz' : 'New dive site' }).click();
-    await capture(page, `${prefix}-site-picker-new`, { full: false, aria: false });
+    await capture(page, `${prefix}-site-picker-new`, { full: false, aria: false, axe });
     await page.keyboard.press('Escape');
     await page.goto(`/#/sites/${imported.id}`); await page.getByRole('heading', { name: 'Ras il-Ħobż' }).waitFor();
-    await capture(page, `${prefix}-imported-site`, { aria: false });
+    await capture(page, `${prefix}-imported-site`, { aria: false, axe });
     await page.getByRole('button', { name: de ? 'Tauchplatz bearbeiten' : 'Edit dive site' }).click();
-    await capture(page, `${prefix}-imported-site-edit`, { aria: false });
+    await capture(page, `${prefix}-imported-site-edit`, { aria: false, axe });
     await page.goto(`/#/sites/${ours.id}`); await page.getByRole('heading', { name: 'Ouchy – Seeufer (club notes)' }).waitFor();
-    await capture(page, `${prefix}-site-offer`, { aria: false });
+    await capture(page, `${prefix}-site-offer`, { aria: false, axe });
     await page.getByRole('button', { name: de ? 'Daten von SSI übernehmen' : 'Use SSI’s data' }).click();
     await page.getByRole('dialog').waitFor();
-    await capture(page, `${prefix}-site-adopt`, { full: false, aria: false });
+    await capture(page, `${prefix}-site-adopt`, { full: false, aria: false, axe });
     await page.keyboard.press('Escape');
     await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: de ? /Tauchgang 42/ : /Dive 42/ }).waitFor();
-    await capture(page, `${prefix}-dive-at-fresh-water-site`, { aria: false });
+    await capture(page, `${prefix}-dive-at-fresh-water-site`, { aria: false, axe });
     await page.goto('/#/admin/site-imports'); await page.locator('.site-imports > li').first().waitFor();
-    await capture(page, `${prefix}-site-import`, { aria: false });
+    await capture(page, `${prefix}-site-import`, { aria: false, axe });
     await page.getByText(de ? 'Ein Gebiet nach Koordinaten' : 'An area by coordinates').click();
     await page.getByRole('button', { name: de ? 'Import starten' : 'Start import' }).click();
-    await capture(page, `${prefix}-site-import-box`, { aria: false });
+    await capture(page, `${prefix}-site-import-box`, { aria: false, axe });
     await page.getByText(de ? 'SSI (ohne Lizenz, siehe unten)' : 'SSI (no licence, see below)').click();
     await page.getByText(de ? 'Nur Tauchplätze ergänzen, die schon hier sind' : 'Only fill dive sites that are already here').click();
-    await capture(page, `${prefix}-site-import-ssi`, { aria: false });
+    await capture(page, `${prefix}-site-import-ssi`, { aria: false, axe });
   };
   await page.setViewportSize({ width: 1280, height: 900 });
-  await sitePages('17-en-light-desktop', false);
+  await sitePages('17-en-light-desktop', false, true);
   await page.emulateMedia({ colorScheme: 'dark' });
   await sitePages('18-en-dark-desktop', false);
   await page.setViewportSize({ width: 320, height: 640 });
   await sitePages('19-en-dark-320', false);
   await setPreferences(request, { language: 'de' });
   await page.setViewportSize({ width: 390, height: 844 });
-  await sitePages('20-de-dark-390', true);
+  await sitePages('20-de-dark-390', true, true);
   await page.emulateMedia({ colorScheme: 'light' });
   await sitePages('21-de-light-390', true);
   await page.setViewportSize({ width: 320, height: 640 });
   await sitePages('22-de-light-320', true);
-  await page.goto(`/#/?site=${site.id}`); await page.locator('table').waitFor();
-  await capture(page, '23-de-light-320-logbook-at-site', { aria: false });
+  if (want('sites')) {
+    await page.goto(`/#/?site=${site.id}`); await page.locator('table').waitFor();
+    await capture(page, '23-de-light-320-logbook-at-site', { aria: false });
+  }
   await setPreferences(request, { language: null });
   const dive42Then = await (await request.get(`/api/dives/${dive42}`)).json() as { version: number };
   await request.patch(`/api/dives/${dive42}`, { headers, data: { version: dive42Then.version, siteId: null } });
 
   // SSI (ADR 0024): the account panel before and after connecting; a Dive ready to send, the SSI site picker,
   // sent, and changed since sent; the same in German on a dark phone.
-  await page.emulateMedia({ colorScheme: 'light' });
-  await page.setViewportSize({ width: 1280, height: 900 });
-  await disconnectSsi(request);
-  await setPreferences(request, { language: 'en' });
-  // Changing the hash doesn't reload the app, which keeps the language it had: reload to take the new one.
-  await page.goto('/#/account'); await page.reload(); await page.getByRole('button', { name: 'Connect to SSI' }).waitFor();
-  await capture(page, '24-account-ssi-connect');
-  await connectSsi(request);
-  await page.reload(); await page.getByText('Connected, password kept').waitFor();
-  await capture(page, '25-account-ssi-connected', { aria: false });
-  await readyForSsi(request, dive42);
-  await page.goto(`/#/dives/${dive42}`); await page.getByRole('button', { name: 'Choose the SSI site' }).waitFor();
-  await capture(page, '26-dive-ssi-ready');
-  await page.getByRole('button', { name: 'Choose the SSI site' }).click();
-  await page.getByRole('dialog').getByRole('option').first().waitFor();
-  await capture(page, '27-dive-ssi-picker', { full: false });
-  await page.getByRole('dialog').getByRole('option', { name: /Attersee – Schwarzenbach/ }).click();
-  await page.getByRole('button', { name: 'Send to SSI' }).click();
-  await page.getByText('Up to date').waitFor();
-  await capture(page, '28-dive-ssi-sent', { aria: false });
-  await editElsewhere(request, dive42, 'Changed after sending');
-  await page.reload(); await page.getByText('Changed since sent').waitFor();
-  await capture(page, '29-dive-ssi-changed');
-  await setPreferences(request, { language: 'de' });
-  await page.emulateMedia({ colorScheme: 'dark' });
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.reload(); await page.getByText('Seit dem Senden geändert').waitFor();
-  await capture(page, '30-dive-ssi-de-dark-390', { aria: false });
-  await page.goto('/#/account'); await page.getByText('Verbunden, Passwort gespeichert').waitFor();
-  await capture(page, '31-account-ssi-de-dark-390', { aria: false });
-  await setPreferences(request, { language: null });
-  await page.emulateMedia({ colorScheme: 'light' });
-  await request.delete(`/api/dives/${dive42}/ssi`, { headers });
-  await leaveSsi(request, dive42);
+  if (want('account') || want('dives')) {
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await disconnectSsi(request);
+    await setPreferences(request, { language: 'en' });
+    // Changing the hash doesn't reload the app, which keeps the language it had: reload to take the new one.
+    if (want('account')) {
+      await page.goto('/#/account'); await page.reload(); await page.getByRole('button', { name: 'Connect to SSI' }).waitFor();
+      await capture(page, '24-account-ssi-connect');
+    }
+    await connectSsi(request);
+    if (want('account')) {
+      await page.reload(); await page.getByText('Connected, password kept').waitFor();
+      await capture(page, '25-account-ssi-connected', { aria: false });
+    }
+    if (want('dives')) {
+      await readyForSsi(request, dive42);
+      await page.goto(`/#/dives/${dive42}`); await page.reload(); await page.getByRole('button', { name: 'Choose the SSI site' }).waitFor();
+      await capture(page, '26-dive-ssi-ready');
+      await page.getByRole('button', { name: 'Choose the SSI site' }).click();
+      await page.getByRole('dialog').getByRole('option').first().waitFor();
+      await capture(page, '27-dive-ssi-picker', { full: false });
+      await page.getByRole('dialog').getByRole('option', { name: /Attersee – Schwarzenbach/ }).click();
+      await page.getByRole('button', { name: 'Send to SSI' }).click();
+      await page.getByText('Up to date').waitFor();
+      await capture(page, '28-dive-ssi-sent', { aria: false });
+      await editElsewhere(request, dive42, 'Changed after sending');
+      await page.reload(); await page.getByText('Changed since sent').waitFor();
+      await capture(page, '29-dive-ssi-changed');
+    }
+    await setPreferences(request, { language: 'de' });
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    if (want('dives')) {
+      await page.reload(); await page.getByText('Seit dem Senden geändert').waitFor();
+      await capture(page, '30-dive-ssi-de-dark-390', { aria: false });
+    }
+    if (want('account')) {
+      await page.goto('/#/account'); await page.reload(); await page.getByText('Verbunden, Passwort gespeichert').waitFor();
+      await capture(page, '31-account-ssi-de-dark-390', { aria: false });
+    }
+    await setPreferences(request, { language: null });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await request.delete(`/api/dives/${dive42}/ssi`, { headers });
+    await leaveSsi(request, dive42);
+  }
 
-  const fresh = await browser.newContext({ baseURL: E2E_BASE_URL, locale: 'en-GB', storageState: { cookies: [], origins: [] } });
-  const p2 = await fresh.newPage();
-  await p2.setViewportSize({ width: 1280, height: 900 });
-  await p2.goto('/'); await p2.getByRole('heading', { name: 'Sign in' }).waitFor();
-  await p2.getByRole('button', { name: 'Sign in' }).click();
-  await capture(p2, '12-signin-errors');
-  await p2.goto(`/${new URL(invite.url).hash}`); await p2.getByRole('heading', { name: 'Join Dive Hub' }).waitFor();
-  await capture(p2, '13-invitation');
-  await p2.getByRole('textbox', { name: 'Your name' }).fill('Neu');
-  await p2.getByRole('textbox', { name: 'Password' }).fill('correct horse battery staple');
-  await p2.getByRole('button', { name: 'Create account' }).click();
-  await p2.getByRole('heading', { name: 'Logbook' }).waitFor();
-  await capture(p2, '14-empty-logbook');
-  await p2.goto('/#/divers'); await p2.getByRole('heading', { name: 'Devices' }).waitFor(); await p2.waitForTimeout(500);
-  await capture(p2, '15-empty-divers');
-  await p2.goto('/#/dives/00000000-0000-7000-8000-000000000000'); await p2.waitForTimeout(800);
-  await capture(p2, '16-dive-not-found', { aria: false });
-  await fresh.close();
+  // Signed out, then signed up through the invitation: the empty logbook and Divers belong to the new account.
+  if (want('account') || want('dives') || want('divers')) {
+    const fresh = await browser.newContext({ baseURL: E2E_BASE_URL, locale: 'en-GB', storageState: { cookies: [], origins: [] }, reducedMotion: 'reduce' });
+    const p2 = await fresh.newPage();
+    await trackRequests(p2);
+    await p2.setViewportSize({ width: 1280, height: 900 });
+    await p2.goto('/'); await p2.getByRole('heading', { name: 'Sign in' }).waitFor();
+    await p2.getByRole('button', { name: 'Sign in' }).click();
+    await capture(p2, '12-signin-errors');
+    await p2.goto(`/${new URL(invite.url).hash}`); await p2.getByRole('heading', { name: 'Join Dive Hub' }).waitFor();
+    await capture(p2, '13-invitation');
+    await p2.getByRole('textbox', { name: 'Your name' }).fill('Neu');
+    await p2.getByRole('textbox', { name: 'Password' }).fill('correct horse battery staple');
+    await p2.getByRole('button', { name: 'Create account' }).click();
+    await p2.getByRole('heading', { name: 'Logbook' }).waitFor();
+    await capture(p2, '14-empty-logbook');
+    await p2.goto('/#/divers'); await p2.getByRole('heading', { name: 'Devices' }).waitFor();
+    await capture(p2, '15-empty-divers');
+    await p2.goto('/#/dives/00000000-0000-7000-8000-000000000000'); await p2.getByRole('heading', { name: 'Dive not found' }).waitFor();
+    await capture(p2, '16-dive-not-found', { aria: false });
+    await fresh.close();
+  }
 
   writeFileSync(`${out}findings.json`, JSON.stringify(findings, null, 2));
 });

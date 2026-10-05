@@ -74,6 +74,14 @@ Result (measured 2026-10-04):
   including the build.
 - **A change to the Dive sites page:** 1:37.
 - **Review capture:** admin 29 s, sites 2:24.
+- **Review capture, 2026-10-05** (after the SSI slices added pages: 4:03 for all areas): 2:04 for all areas.
+  axe took 110 s of the 4:03 and a fixed 400 ms wait before every capture 52 s. Now the site pages run axe in the same two
+  variants as ui-quality; the capture emulates reduced motion (the duration tokens drop to 0) and waits until no request
+  is in flight, which also fixed screenshots taken before the data had arrived. Screenshots otherwise match pixel for pixel,
+  apart from times and tokens.
+  Setup takes only about 2 s; a run for some areas was slow because it still visited every page. Now it visits only
+  the pages of those areas: dives 40 s, divers 25 s, account 30 s, admin 23 s, sites 1:24 (build not included).
+  Splitting the capture over 2 workers would save perhaps 30–40 s of a full run; not done (one server, one run).
 
 ## Considered options
 - **Option 2 (owner's fallback):** one browser worker, with the leaner ui-quality and the fast check.
