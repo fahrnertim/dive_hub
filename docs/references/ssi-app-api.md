@@ -24,7 +24,7 @@ Markers:
 - **[S]**: reported by a community project (see the research note), not yet confirmed by us.
 - **[?]**: open; the projects disagree or nobody checked.
 
-As of 2026-10-05 only the site list is [R]. The owner's account checks are pending.
+As of 2026-10-05 the site list, sending, the profile chart, updating and deleting are [R]; the other account checks are pending.
 
 ## What Dive Hub uses
 
@@ -198,10 +198,15 @@ operator's risk: **SSI gives no licence for it**, and the EU database right prot
 ## Owner's checks (pending)
 
 From the research note. Record the result here with date and app version, and turn [S] into [R]:
-- [ ] In-app terms of use: any clause on automated access or third-party apps.
-- [ ] `round-trip.ts write --pause`: the dive is listed as unconfirmed, it opens, the chart renders, the list doesn't go blank (5.x app).
-- [ ] Update and delete show in the app.
-- [ ] The create answer contains `odin_user_log_id`.
-- [ ] Token lifetime: `round-trip.ts token` after 1 h, 1 day, 1 week.
+- [ ] In-app terms of use: any clause on automated access or third-party apps. Not checked (2026-10-05): the owner
+  doesn't know of any. It affects the risk for each User's SSI account (SSI could block it), not whether the code works.
+- [x] A dive sent from Dive Hub shows in the app and its profile chart renders [R] (owner, 2026-10-05, app 5.0.34 on
+  Android).
+- [x] Update and delete show in the app [R] (owner, 2026-10-05, app 5.0.34 on Android).
+- [x] The create answer contains `odin_user_log_id` [R]: sending stored SSI's dive ID, which updating and deleting used.
+- [ ] Token lifetime: still valid one day after connecting (owner, 2026-10-05). Check again after a week
+  (`round-trip.ts token`, or whether the Connection asks to sign in again).
 - [ ] Side effects: after an API sign-in, is the phone still signed in? A "new sign-in" e-mail? 2FA in the account settings?
-- [ ] Surface interval: seconds or minutes.
+- [ ] Surface interval: seconds or minutes. Log a dive in the app with a known surface interval (e.g. 1 h 30 min),
+  run `round-trip.ts read`, and look at the dive's surface interval key in `samples/private/ssi/` (90 = minutes,
+  5400 = seconds).
