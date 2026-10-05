@@ -1,4 +1,4 @@
-import { and, eq, gte, isNull, lte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 import type { Readable } from 'node:stream';
 import type { Db, Tx } from '../db/client.js';
 import {
@@ -123,12 +123,13 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
       await tx.insert(importOriginal).values({ importId, originalId: orig.id }).onConflictDoNothing();
 
       if (existing) {
-        const known = await tx.select({ id: recording.id, diveId: recording.diveId }).from(recording)
-          .where(and(eq(recording.originalId, orig.id), isNull(recording.deletedAt)));
+        const known = await tx.select({ id: recording.id, diveId: recording.diveId, deletedAt: recording.deletedAt }).from(recording)
+          .where(eq(recording.originalId, orig.id));
         if (known.length > 0) {
-          return known.map((r) => ({
-            fileName: file.name, result: 'unchanged' as const, recordingId: r.id, ...(r.diveId && { diveId: r.diveId }),
-          }));
+          // A Recording on a Dive the User deleted stays deleted (ADR 0026).
+          return known.map((r) => (r.deletedAt
+            ? { fileName: file.name, result: 'skipped' as const, reason: 'deleted_earlier' as const, recordingId: r.id }
+            : { fileName: file.name, result: 'unchanged' as const, recordingId: r.id, ...(r.diveId && { diveId: r.diveId }) }));
         }
       }
 
@@ -168,6 +169,16 @@ export function createImportService({ db, blobs, fit = createFitAdapter() }: Imp
       const [owner] = await tx.select({ id: dive.id }).from(dive).where(eq(dive.primaryRecordingId, known.id));
       if (owner) await refreshFromPrimary(tx, owner.id, actor, 'reimport');
       return { fileName, result: 'updated', recordingId: known.id, ...(known.diveId && { diveId: known.diveId }) };
+    }
+    // Deleted with its Dive (ADR 0026): not created again, so re-importing a whole export doesn't bring it back.
+    // Its key stays taken for everyone, or restoring it would clash with a newer Recording.
+    const [deleted] = await tx.select().from(recording)
+      .where(and(eq(recording.recordingKey, rec.recordingKey), isNotNull(recording.deletedAt)))
+      .orderBy(desc(recording.deletedAt)).limit(1);
+    if (deleted) {
+      return (await recordingIsManaged(tx, deleted, userId, managed))
+        ? { fileName, result: 'skipped', reason: 'deleted_earlier', recordingId: deleted.id }
+        : { fileName, result: 'skipped', reason: 'not_your_diver' };
     }
 
     const [created] = await tx.insert(recording).values(values).returning();

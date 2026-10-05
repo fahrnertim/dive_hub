@@ -6,7 +6,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { dataFile, type PreparedData } from './prepare.ts';
-import { E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, connectSsi, expectGoodPage, leaveSsi, readyForSsi, resetDive, setPreferences } from './support.ts';
+import { E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, connectSsi, deletableDive, expectGoodPage, leaveSsi, readyForSsi, resetDive, sendToSsi, setPreferences } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
 test.describe.configure({ mode: 'parallel' });
@@ -203,6 +203,39 @@ for (const v of variants) {
       await expect(page.getByRole('dialog').getByRole('option').first()).toBeVisible();
       await expectGoodPage(page, title('Dive 42'), v);
       await leaveSsi(request, diveId);
+    });
+
+    // Deleting a Dive (ADR 0026): the shared dive 42 only gets the dialog opened; dive 9 is deleted and comes back.
+    const openDelete = async (page: Page, id: string, number: number) => {
+      await page.goto(`/#/dives/${id}`);
+      await page.getByRole('button', { name: v.english ? `More: Dive ${number}` : `Mehr: Tauchgang ${number}` }).click();
+      await page.getByRole('menuitem', { name: v.english ? /^Delete dive/ : /^Tauchgang löschen/ }).click();
+      return page.getByRole('dialog');
+    };
+
+    test('deleting a dive, asked first', { tag: ['@dives'] }, async ({ page }) => {
+      const dialog = await openDelete(page, diveId, 42);
+      await expect(dialog.getByRole('button', { name: v.english ? 'Cancel' : 'Abbrechen' })).toBeVisible();
+      await expectGoodPage(page, title('Dive 42'), v);
+    });
+
+    test('deleting a dive in SSI, then the logbook with Undo and the deleted dives', { tag: ['@dives'] }, async ({ page, request }) => {
+      const id = await deletableDive(request);
+      await sendToSsi(request, id);
+      try {
+        const dialog = await openDelete(page, id, 9);
+        await expect(dialog.getByRole('button', { name: v.english ? 'Delete here and in SSI' : 'Hier und in SSI löschen' })).toBeVisible();
+        await expectGoodPage(page, title('Dive 9'), v);
+        await dialog.getByRole('button', { name: v.english ? 'Delete only here' : 'Nur hier löschen' }).click();
+        await expect(page.getByRole('button', { name: v.english ? 'Undo' : 'Rückgängig' })).toBeVisible();
+        await expectGoodPage(page, title('Logbook'), v);
+        await page.reload();
+        await page.getByRole('button', { name: v.english ? 'Show deleted dives' : 'Gelöschte Tauchgänge zeigen', exact: true }).click();
+        await expect(page.getByRole('button', { name: v.english ? 'Delete in SSI: Dive 9' : 'In SSI löschen: Tauchgang 9' })).toBeVisible();
+        await expectGoodPage(page, title('Logbook'), v);
+      } finally {
+        await deletableDive(request);
+      }
     });
 
     test('admin, with a link to pass on', { tag: ['@admin'] }, async ({ page }) => {

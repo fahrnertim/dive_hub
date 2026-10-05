@@ -367,7 +367,6 @@ Deliberate simplifications, to revisit:
 - **One process:** the "one action per Dive" guard lives in memory.
 - **Not sent yet:** conditions other than water type, tank and pressures, buddies, gear, photos. QR payload, the SSI
   site import and an import from SSI come later (ADR 0024).
-- **Deleting a Dive** in the hub doesn't exist yet, so nothing offers deletion in SSI from there.
 - **A Diver's External ID** is set only by connecting; a clash with another Diver is refused (`ssi_account_taken`)
   instead of proposing to link the two.
 
@@ -410,3 +409,35 @@ Deliberate simplifications, to revisit:
 - **No depth correction** when the computer was set to other water; only the hint.
 - **No Revision on Dives** when their site's water type changes, and none when migration 0012 dropped Overrides.
 - **Pushes sent before this slice** show as outdated once (the fingerprint covered the computer's setting).
+
+**Slice 12 (2026-10-05): deleting a Dive, here and in SSI** ([ADR 0026](../decisions/0026-deleting-dives.md)).
+
+Implemented:
+- **API:** `DELETE /api/dives/{id}` (`version`, `inSsi`; answers `{ ssi: 'deleted' | 'kept' | null }`),
+  `GET /api/dives/deleted` (the newest 100, with `ssi` while still in SSI) and `POST /api/dives/{id}/restore`.
+  `DELETE /api/dives/{id}/ssi` and `GET /api/dives/{id}/ssi` also work for a deleted Dive; sending doesn't.
+- **Soft delete** (`dive-service.ts`, `remove` and `restore`): one `deleted_at` on the Dive and its Recordings, causes
+  `delete` and `restore`. Every read already skipped deleted rows; the Diver's count, the site's `diveCount`/`inUse`,
+  search and Duplicate candidates are tested for it.
+- **Re-imports** (`import-service.ts`): the same Original, or a Recording key of a deleted Recording, gives `skipped`
+  with `deleted_earlier` (other Users: `not_your_diver`). The key stays reserved, so restoring can't clash.
+- **SSI:** the route checks the version, then deletes in SSI (`ssi.remove`), then here; an SSI error deletes nothing.
+  `ssi.currentOf` tells which Dives are still in SSI (for the answer and the list).
+- **Web client:** "Delete dive…" in the dive page's More menu (`DeleteDive.tsx`: one dialog with the SSI question);
+  back to the logbook with a notice and Undo, the SSI reminder and "Deleted dives" with Restore and "Delete in SSI"
+  (`DeletedDives.tsx`, state shared between the pages in `lib/deletion.ts`). The candidates panel says when a
+  candidate's Dives are gone; the history shows "Restored".
+- **Tests:** `test/dive-deletion.test.ts` (server, against the fake SSI), `test/deletion.test.ts` (web),
+  `e2e/dive-deletion.spec.ts` and ui-quality cases for the dialog and the logbook states, with dive 9 from
+  `e2e/fixtures/deletable-computer.fit` (`test/fixtures/write-deletion-fixture.ts`); review captures 32–37.
+
+Found in the screenshot review and fixed: with the list of deleted dives open, the SSI reminder stayed above it with
+only "Dismiss" left. It now hides while the list is open, which names each dive still in SSI.
+
+Deliberate simplifications, to revisit:
+- **The SSI delete runs in the request**, like sending (slice 10).
+- **Deleted Dives stay forever** (with their Originals); there is no purge.
+- **No "Keep it in SSI"**: the reminder only goes when the dive is deleted in SSI or restored here; dismissing the
+  logbook's notice lasts for the visit.
+- **The deleted list isn't paged** (the newest 100).
+- **An Import's outcome** still links to a Dive deleted since; the dive page then says it wasn't found.

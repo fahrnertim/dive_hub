@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
 
@@ -141,4 +142,45 @@ export async function readyForSsi(api: APIRequestContext, diveId: string) {
 export async function leaveSsi(api: APIRequestContext, diveId: string) {
   const dive = await (await api.get(`/api/dives/${diveId}`)).json() as Dive;
   await api.patch(`/api/dives/${diveId}`, { data: { version: dive.version, siteId: null }, headers });
+}
+
+type DeletedDive = { id: string; number: number | null; version: number; ssi: unknown };
+
+/**
+ * Dive 9 (e2e/fixtures/deletable-computer.fit), in the logbook and not in SSI, for the tests that delete it (ADR 0026):
+ * imported the first time, restored when an earlier test left it deleted, and taken out of SSI.
+ */
+export async function deletableDive(api: APIRequestContext): Promise<string> {
+  const { dives } = await (await api.get('/api/dives?q=9')).json() as { dives: { id: string; number: number | null }[] };
+  let id = dives.find((d) => d.number === 9)?.id;
+  if (!id) {
+    const deleted = (await (await api.get('/api/dives/deleted')).json() as { dives: DeletedDive[] }).dives.find((d) => d.number === 9);
+    if (deleted) {
+      await api.post(`/api/dives/${deleted.id}/restore`, { data: { version: deleted.version }, headers });
+      id = deleted.id;
+    } else {
+      const upload = await api.post('/api/imports', {
+        headers, multipart: { file: { name: 'deletable-computer.fit', mimeType: 'application/octet-stream', buffer: readFileSync('e2e/fixtures/deletable-computer.fit') } },
+      });
+      const url = `/api/imports/${(await upload.json() as { id: string }).id}`;
+      await expect.poll(async () => (await (await api.get(url)).json()).status).toBe('done');
+      id = ((await (await api.get(url)).json()) as { outcome: { diveId?: string }[] }).outcome[0]!.diveId!;
+    }
+  }
+  const status = await (await api.get(`/api/dives/${id}/ssi`)).json() as { current: unknown };
+  if (status.current) await api.delete(`/api/dives/${id}/ssi`, { headers });
+  return id;
+}
+
+/** Sends the Dive to the fake SSI, at a site of its own whose SSI ID no other spec uses. */
+export async function sendToSsi(api: APIRequestContext, diveId: string) {
+  await connectSsi(api);
+  const name = 'Deletion test reef';
+  const { sites } = await (await api.get(`/api/dive-sites?q=${encodeURIComponent(name)}`)).json() as { sites: { id: string; name: string }[] };
+  const site = sites.find((s) => s.name === name)
+    ?? await (await api.post('/api/dive-sites', { data: { name, position: { latitude: 47.86, longitude: 13.56 }, ssiSiteId: '6066' }, headers })).json() as { id: string };
+  const dive = await (await api.get(`/api/dives/${diveId}`)).json() as Dive;
+  await api.patch(`/api/dives/${diveId}`, { data: { version: dive.version, siteId: site.id }, headers });
+  const sent = await api.post(`/api/dives/${diveId}/ssi`, { data: {}, headers });
+  if (!sent.ok()) throw new Error(`sending to SSI failed: ${sent.status()} ${await sent.text()}`);
 }

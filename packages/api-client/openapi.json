@@ -4029,7 +4029,8 @@
                               "not_your_diver",
                               "overlaps_several_dives",
                               "max_depth_differs",
-                              "file_failed"
+                              "file_failed",
+                              "deleted_earlier"
                             ],
                             "description": "Why; clients translate it. A failure’s detail stays in the server log"
                           },
@@ -4344,7 +4345,8 @@
                                 "not_your_diver",
                                 "overlaps_several_dives",
                                 "max_depth_differs",
-                                "file_failed"
+                                "file_failed",
+                                "deleted_earlier"
                               ],
                               "description": "Why; clients translate it. A failure’s detail stays in the server log"
                             },
@@ -4499,7 +4501,8 @@
                               "not_your_diver",
                               "overlaps_several_dives",
                               "max_depth_differs",
-                              "file_failed"
+                              "file_failed",
+                              "deleted_earlier"
                             ],
                             "description": "Why; clients translate it. A failure’s detail stays in the server log"
                           },
@@ -6573,6 +6576,332 @@
             }
           }
         }
+      },
+      "delete": {
+        "summary": "Delete a Dive: it leaves the logbook, its counts and search; re-imports skip it; it can be restored",
+        "description": "Send the version you started from (409 dive_changed). When the Dive is in SSI, `inSsi: true` deletes it there first (SSI's app can't bring it back); if that fails (ssi_* codes), nothing is deleted. Without it, the SSI dive stays and the deleted Dive keeps reminding (`ssi` in GET /dives/deleted). ADR 0026.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer"
+                  },
+                  "inSsi": {
+                    "type": "boolean",
+                    "description": "Also delete the Dive's copy in SSI; ask the User first (docs/spec/clients.md)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ssi"
+                  ],
+                  "properties": {
+                    "ssi": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "deleted",
+                            "kept"
+                          ],
+                          "description": "What happened to the SSI copy; null when the Dive wasn't in SSI"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "ssi_already_connected",
+                        "ssi_account_taken",
+                        "ssi_other_account",
+                        "ssi_wrong_credentials",
+                        "ssi_not_connected",
+                        "ssi_sign_in_needed",
+                        "ssi_unavailable",
+                        "ssi_refused",
+                        "ssi_site_missing",
+                        "ssi_not_sent",
+                        "ssi_dive_gone",
+                        "ssi_busy"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "ssi_already_connected",
+                        "ssi_account_taken",
+                        "ssi_other_account",
+                        "ssi_wrong_credentials",
+                        "ssi_not_connected",
+                        "ssi_sign_in_needed",
+                        "ssi_unavailable",
+                        "ssi_refused",
+                        "ssi_site_missing",
+                        "ssi_not_sent",
+                        "ssi_dive_gone",
+                        "ssi_busy"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "ssi_already_connected",
+                        "ssi_account_taken",
+                        "ssi_other_account",
+                        "ssi_wrong_credentials",
+                        "ssi_not_connected",
+                        "ssi_sign_in_needed",
+                        "ssi_unavailable",
+                        "ssi_refused",
+                        "ssi_site_missing",
+                        "ssi_not_sent",
+                        "ssi_dive_gone",
+                        "ssi_busy"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/dives/{id}/primary-recording": {
@@ -8393,6 +8722,897 @@
         }
       }
     },
+    "/api/dives/deleted": {
+      "get": {
+        "summary": "The User's deleted Dives, most recently deleted first (at most 100), to restore them; which are still in SSI",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "dives"
+                  ],
+                  "properties": {
+                    "dives": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "diverId",
+                          "version",
+                          "number",
+                          "startsAt",
+                          "utcOffsetSeconds",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "site",
+                          "deletedAt",
+                          "ssi"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "diverId": {
+                            "type": "string"
+                          },
+                          "version": {
+                            "type": "integer",
+                            "description": "Send it back to restore the Dive"
+                          },
+                          "number": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer"
+                              }
+                            ]
+                          },
+                          "startsAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "utcOffsetSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer"
+                              }
+                            ]
+                          },
+                          "durationSeconds": {
+                            "type": "number"
+                          },
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "site": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "deletedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "ssi": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "remoteNumber"
+                                ],
+                                "properties": {
+                                  "remoteNumber": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "integer",
+                                        "description": "SSI's own dive number"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "description": "Set while the dive is still in SSI: clients remind the User and offer \"Delete in SSI\" (docs/spec/clients.md)"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dives/{id}/restore": {
+      "post": {
+        "summary": "Bring a deleted Dive back with its Recordings (not in SSI: send it again from there)",
+        "description": "Send the version from GET /dives/deleted (409 dive_changed). A site deleted meanwhile becomes the one it was merged into, or none.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "diverId",
+                    "version",
+                    "values",
+                    "overrides",
+                    "fromRecording",
+                    "notes",
+                    "site",
+                    "waterType",
+                    "waterMismatch",
+                    "position",
+                    "recordings"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "diverId": {
+                      "type": "string",
+                      "description": "The Diver whose logbook this Dive is in"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "description": "Send it back with an edit; it changes with every change"
+                    },
+                    "values": {
+                      "type": "object",
+                      "required": [
+                        "number",
+                        "startsAt",
+                        "durationSeconds",
+                        "maxDepthM",
+                        "avgDepthM",
+                        "waterTemperatureC"
+                      ],
+                      "properties": {
+                        "number": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 100000
+                            }
+                          ]
+                        },
+                        "startsAt": {
+                          "type": "object",
+                          "required": [
+                            "at",
+                            "utcOffsetSeconds"
+                          ],
+                          "properties": {
+                            "at": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "utcOffsetSeconds": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "integer",
+                                  "minimum": -43200,
+                                  "maximum": 50400,
+                                  "multipleOf": 900
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "durationSeconds": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 172800
+                        },
+                        "maxDepthM": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 400
+                            }
+                          ]
+                        },
+                        "avgDepthM": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 400
+                            }
+                          ]
+                        },
+                        "waterTemperatureC": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -5,
+                              "maximum": 50
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "overrides": {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "number",
+                          "startsAt",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "avgDepthM",
+                          "waterTemperatureC"
+                        ],
+                        "description": "A Dive value that can be overridden"
+                      },
+                      "description": "Values the User set by hand"
+                    },
+                    "fromRecording": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "number",
+                            "startsAt",
+                            "durationSeconds",
+                            "maxDepthM",
+                            "avgDepthM",
+                            "waterTemperatureC"
+                          ],
+                          "properties": {
+                            "number": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 100000
+                                }
+                              ]
+                            },
+                            "startsAt": {
+                              "type": "object",
+                              "required": [
+                                "at",
+                                "utcOffsetSeconds"
+                              ],
+                              "properties": {
+                                "at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "utcOffsetSeconds": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "integer",
+                                      "minimum": -43200,
+                                      "maximum": 50400,
+                                      "multipleOf": 900
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            "durationSeconds": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 172800
+                            },
+                            "maxDepthM": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": 0,
+                                  "maximum": 400
+                                }
+                              ]
+                            },
+                            "avgDepthM": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": 0,
+                                  "maximum": 400
+                                }
+                              ]
+                            },
+                            "waterTemperatureC": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": -5,
+                                  "maximum": 50
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "notes": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "site": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "name"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          },
+                          "description": "The Dive site (ADR 0020)"
+                        }
+                      ]
+                    },
+                    "waterType": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "fresh",
+                            "salt",
+                            "brackish"
+                          ],
+                          "description": "The Dive site's water type (ADR 0025); null without a site, or when the site has none. Not editable on the Dive"
+                        }
+                      ]
+                    },
+                    "waterMismatch": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "computer",
+                            "site",
+                            "depthPercent"
+                          ],
+                          "properties": {
+                            "computer": {
+                              "enum": [
+                                "fresh",
+                                "salt",
+                                "brackish",
+                                "en13319",
+                                "custom"
+                              ],
+                              "description": "What the Primary recording's computer was set to"
+                            },
+                            "site": {
+                              "enum": [
+                                "fresh",
+                                "salt",
+                                "brackish"
+                              ]
+                            },
+                            "depthPercent": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "description": "Recorded vs true depth in percent: negative reads shallow, positive deep; null where a density is unknown"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "Set when the computer was set to other water than the site's: clients say so (docs/spec/clients.md)"
+                        }
+                      ]
+                    },
+                    "position": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "latitude",
+                            "longitude"
+                          ],
+                          "properties": {
+                            "latitude": {
+                              "type": "number",
+                              "minimum": -90,
+                              "maximum": 90
+                            },
+                            "longitude": {
+                              "type": "number",
+                              "minimum": -180,
+                              "maximum": 180
+                            }
+                          },
+                          "description": "Where the Device of the Primary recording placed the dive: its exit, else its entry. Private like the Dive"
+                        }
+                      ]
+                    },
+                    "recordings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "isPrimary",
+                          "device",
+                          "startsAt",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "parser",
+                          "summary",
+                          "channels"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "isPrimary": {
+                            "type": "boolean"
+                          },
+                          "device": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "manufacturer",
+                                  "product",
+                                  "serialNumber"
+                                ],
+                                "properties": {
+                                  "manufacturer": {
+                                    "type": "string"
+                                  },
+                                  "product": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "serialNumber": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "startsAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "durationSeconds": {
+                            "type": "number"
+                          },
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "parser": {
+                            "type": "string"
+                          },
+                          "summary": {
+                            "type": "object",
+                            "properties": {
+                              "diveNumber": {
+                                "type": "integer"
+                              },
+                              "diveMode": {
+                                "enum": [
+                                  "open_circuit",
+                                  "ccr",
+                                  "scr",
+                                  "gauge",
+                                  "apnea"
+                                ]
+                              },
+                              "decoModel": {
+                                "enum": [
+                                  "buhlmann_zhl16c"
+                                ]
+                              },
+                              "gfLow": {
+                                "type": "number"
+                              },
+                              "gfHigh": {
+                                "type": "number"
+                              },
+                              "waterType": {
+                                "enum": [
+                                  "fresh",
+                                  "salt",
+                                  "brackish",
+                                  "en13319",
+                                  "custom"
+                                ],
+                                "description": "The computer's salinity setting, not the water of the Dive (that is the site's)"
+                              },
+                              "waterDensity": {
+                                "type": "number",
+                                "description": "Density the computer computed depths with, kg/m³"
+                              },
+                              "gases": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "o2",
+                                    "he"
+                                  ],
+                                  "properties": {
+                                    "o2": {
+                                      "type": "number"
+                                    },
+                                    "he": {
+                                      "type": "number"
+                                    },
+                                    "circuit": {
+                                      "enum": [
+                                        "open_circuit",
+                                        "diluent"
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "minTemperatureC": {
+                                "type": "number"
+                              },
+                              "maxTemperatureC": {
+                                "type": "number"
+                              },
+                              "avgHeartRate": {
+                                "type": "number"
+                              },
+                              "surfaceIntervalSeconds": {
+                                "type": "number"
+                              },
+                              "cnsStart": {
+                                "type": "number"
+                              },
+                              "cnsEnd": {
+                                "type": "number"
+                              },
+                              "extras": {
+                                "type": "object",
+                                "description": "Source values without a word in our vocabulary, by source field name",
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          },
+                          "channels": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "ssi_already_connected",
+                        "ssi_account_taken",
+                        "ssi_other_account",
+                        "ssi_wrong_credentials",
+                        "ssi_not_connected",
+                        "ssi_sign_in_needed",
+                        "ssi_unavailable",
+                        "ssi_refused",
+                        "ssi_site_missing",
+                        "ssi_not_sent",
+                        "ssi_dive_gone",
+                        "ssi_busy"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "ssi_already_connected",
+                        "ssi_account_taken",
+                        "ssi_other_account",
+                        "ssi_wrong_credentials",
+                        "ssi_not_connected",
+                        "ssi_sign_in_needed",
+                        "ssi_unavailable",
+                        "ssi_refused",
+                        "ssi_site_missing",
+                        "ssi_not_sent",
+                        "ssi_dive_gone",
+                        "ssi_busy"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/dives/{id}/revisions": {
       "get": {
         "summary": "The Dive's history, newest first: its own Revisions and those of its Recordings",
@@ -8482,7 +9702,8 @@
                           "link",
                           "merge",
                           "site-merge",
-                          "adopt"
+                          "adopt",
+                          "restore"
                         ]
                       },
                       "changes": {
@@ -15957,7 +17178,8 @@
                           "link",
                           "merge",
                           "site-merge",
-                          "adopt"
+                          "adopt",
+                          "restore"
                         ]
                       },
                       "changes": {

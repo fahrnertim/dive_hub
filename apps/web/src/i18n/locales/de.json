@@ -9,7 +9,8 @@
     "none": "–",
     "actions": "Aktionen",
     "forItem": "{{action}}: {{item}}",
-    "undo": "Rückgängig"
+    "undo": "Rückgängig",
+    "dismiss": "Schließen"
   },
   "nav": {
     "main": "Hauptmenü",
@@ -170,7 +171,8 @@
       "not_your_diver": "für einen Taucher aufgezeichnet, den du nicht verwaltest",
       "overlaps_several_dives": "überschneidet sich mit mehreren Tauchgängen",
       "max_depth_differs": "die Maximaltiefe weicht zu stark ab",
-      "file_failed": "die Datei konnte nicht gelesen werden"
+      "file_failed": "die Datei konnte nicht gelesen werden",
+      "deleted_earlier": "gehört zu einem Tauchgang, den du gelöscht hast; unter „Gelöschte Tauchgänge“ im Logbuch kannst du ihn wiederherstellen"
     },
     "errorCode": {
       "unsupported_file": "Das ist weder eine FIT-Datei noch ein ZIP-Archiv.",
@@ -288,7 +290,16 @@
     "site": "Tauchplatz",
     "position": "Position",
     "chooseSite": "Tauchplatz wählen",
-    "changeSite": "Tauchplatz ändern"
+    "changeSite": "Tauchplatz ändern",
+    "deleteMenu": "Tauchgang löschen …",
+    "deleteTitle": "{{name}} löschen?",
+    "deleteBody": "Er verschwindet aus deinem Logbuch, seinen Zählern und der Suche. Unter „Gelöschte Tauchgänge“ im Logbuch kannst du ihn wiederherstellen. Wenn du seine Datei erneut importierst, kommt er nicht zurück.",
+    "deleteAskSsi": "Er ist auch in SSI, als Tauchgang {{number}}. Dort auch löschen? Die SSI-App kann ihn nicht zurückholen. Behältst du ihn dort, erinnert dich das Logbuch daran.",
+    "deleteCannotSsi": "Er ist auch in SSI, als Tauchgang {{number}}, aber dieser Taucher ist nicht mehr mit SSI verbunden, also bleibt er dort. Das Logbuch erinnert dich daran; verbinde dich erneut, um ihn dort zu löschen.",
+    "deleteConfirm": "Tauchgang löschen",
+    "deleteBoth": "Hier und in SSI löschen",
+    "deleteHereOnly": "Nur hier löschen",
+    "deleteNothingDeleted": "Es wurde nichts gelöscht."
   },
   "errors": {
     "unknown": "Etwas ist schiefgegangen. Versuch es noch einmal.",
@@ -411,7 +422,8 @@
       "link": "Mit der Quelle verknüpft",
       "site-merge": "Tauchplatz mit einem anderen zusammengeführt",
       "merge": "Tauchplätze zusammengeführt",
-      "adopt": "Daten aus der Quelle übernommen"
+      "adopt": "Daten aus der Quelle übernommen",
+      "restore": "Wiederhergestellt"
     },
     "field": {
       "number": "Tauchgangsnummer",
@@ -460,7 +472,25 @@
     "hideDiscarded": "Verworfene Aufzeichnungen ausblenden",
     "reopen": "Neu entscheiden",
     "none": "Nichts zu entscheiden.",
-    "discardedNotice": "Aufzeichnung vom {{time}} verworfen."
+    "discardedNotice": "Aufzeichnung vom {{time}} verworfen.",
+    "divesGone": "Die Tauchgänge, zu denen sie gehören könnte, sind nicht mehr in deinem Logbuch."
+  },
+  "deleted": {
+    "notice": "{{name}} gelöscht.",
+    "noticeKept": "{{name}} gelöscht. Er ist noch in SSI, als Tauchgang {{number}}: Unter „Gelöschte Tauchgänge“ kannst du ihn dort löschen.",
+    "noticeBoth": "{{name}} gelöscht, hier und in SSI. Rückgängig holt ihn nur hier zurück.",
+    "ssiReminder_one": "Ein Tauchgang, den du gelöscht hast, ist noch in SSI.",
+    "ssiReminder_other": "{{count}} Tauchgänge, die du gelöscht hast, sind noch in SSI.",
+    "showList": "Gelöschte Tauchgänge zeigen",
+    "show": "Gelöschte Tauchgänge zeigen ({{count}})",
+    "hide": "Gelöschte Tauchgänge ausblenden",
+    "title": "Gelöschte Tauchgänge",
+    "intro": "Sie zählen nirgends, und ihre Dateien erneut zu importieren holt sie nicht zurück. Wiederherstellen holt einen Tauchgang mit seinen Aufzeichnungen und seinem Verlauf zurück, aber nicht nach SSI.",
+    "deletedOn": "Gelöscht am {{date}}",
+    "stillInSsi": "Noch in SSI, als Tauchgang {{number}}.",
+    "restore": "Wiederherstellen",
+    "restored": "{{name}} wiederhergestellt.",
+    "ssiDeleteBody": "SSI-Tauchgang {{number}} verschwindet aus deinem SSI-Logbuch, und die SSI-App kann ihn nicht zurückholen."
   },
   "divers": {
     "title": "Taucher",

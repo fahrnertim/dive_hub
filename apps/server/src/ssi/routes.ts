@@ -81,7 +81,7 @@ const SendResultView = Type.Object({
   status: StatusView,
 });
 
-const STATUS: Partial<Record<ProblemCode, number>> = {
+export const SSI_STATUS: Partial<Record<ProblemCode, number>> = {
   dive_not_found: 404, diver_not_found: 404, connection_not_found: 404,
   encryption_key_missing: 400, ssi_wrong_credentials: 400,
   ssi_already_connected: 409, ssi_account_taken: 409, ssi_other_account: 409, ssi_not_connected: 409, ssi_sign_in_needed: 409,
@@ -99,7 +99,7 @@ const pushView = (p: typeof push.$inferSelect): Static<typeof PushView> => ({
 export const ssiRoutes: FastifyPluginAsyncTypebox<SsiRouteDeps> = async (app, { auth, ssi }) => {
   app.addHook('onRequest', requireUser(auth));
   app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof SsiServiceError) return reply.code(STATUS[error.code] ?? 500).send(problem(error.code));
+    if (error instanceof SsiServiceError) return reply.code(SSI_STATUS[error.code] ?? 500).send(problem(error.code));
     throw error;
   });
 

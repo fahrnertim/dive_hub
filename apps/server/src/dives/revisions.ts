@@ -17,6 +17,8 @@ export const REVISION_CAUSES = [
   'merge', 'site-merge',
   // A User taking up the data a Source offers for a hand-made site (ADR 0025).
   'adopt',
+  // A User bringing back a Dive they deleted (cause 'delete', ADR 0026).
+  'restore',
 ] as const;
 export type RevisionCause = (typeof REVISION_CAUSES)[number];
 

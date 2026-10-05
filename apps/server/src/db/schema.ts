@@ -158,6 +158,8 @@ export const importStatus = pgEnum('import_status', ['pending', 'processing', 'd
 /** Why a file was skipped, failed or needs a decision; clients translate it (ADR 0014). */
 export const OUTCOME_REASONS = [
   'no_fit_file', 'not_a_dive', 'not_your_diver', 'overlaps_several_dives', 'max_depth_differs', 'file_failed',
+  // The Recording is on a Dive the User deleted: it isn't created again (ADR 0026).
+  'deleted_earlier',
 ] as const;
 export type OutcomeReason = (typeof OUTCOME_REASONS)[number];
 

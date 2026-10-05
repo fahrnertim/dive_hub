@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
 import { api, ApiError, diveQuery, diversQuery, keys, unwrap, type DiveView, type OverridableField, type RecordingSummary } from './api.ts';
+import { DeleteDiveDialog } from './DeleteDive.tsx';
 import { DepthProfile } from './DepthProfile.tsx';
 import { DiveEditForm } from './DiveEditForm.tsx';
 import { DiveHistory } from './DiveHistory.tsx';
@@ -26,6 +27,7 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
   const divers = useQuery(diversQuery());
   const [editing, setEditing] = useState(false);
   const [moving, setMoving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   // Closing the edit form puts focus back on "Edit dive" (the form had it; UI review B1).
   const editButton = useRef<HTMLButtonElement>(null);
   const wasEditing = useRef(false);
@@ -84,12 +86,13 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
           actions={!editing && (
             <>
               <Button ref={editButton} icon="edit" onPress={() => setEditing(true)}>{t('dive.edit')}</Button>
-              {several && (
-                <ActionMenu
-                  label={t('dive.moreActions')} aria-label={t('common.forItem', { action: t('dive.moreActions'), item: title ?? '' })}
-                  actions={[{ id: 'move', label: t('dive.moveTo'), icon: 'move', onAction: () => setMoving(true) }]}
-                />
-              )}
+              <ActionMenu
+                label={t('dive.moreActions')} aria-label={t('common.forItem', { action: t('dive.moreActions'), item: title ?? '' })}
+                actions={[
+                  ...(several ? [{ id: 'move', label: t('dive.moveTo'), icon: 'move' as const, onAction: () => setMoving(true) }] : []),
+                  { id: 'delete', label: t('dive.deleteMenu'), icon: 'delete', onAction: () => setDeleting(true) },
+                ]}
+              />
             </>
           )}
         />
@@ -103,6 +106,7 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
       <SsiPanel dive={d} diverName={diverName} />
       <DiveHistory dive={d} />
       {moving && <MoveDialog dive={d} onClose={() => setMoving(false)} />}
+      {deleting && <DeleteDiveDialog dive={d} name={d.values.number !== null ? t('dive.title', { number: d.values.number }) : display.diveTime(d.values.startsAt.at, d.values.startsAt.utcOffsetSeconds)} onClose={() => setDeleting(false)} />}
     </>
   );
 }

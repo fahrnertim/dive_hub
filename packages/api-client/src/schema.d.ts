@@ -1429,7 +1429,7 @@ export interface paths {
                                  * @description Why; clients translate it. A failure’s detail stays in the server log
                                  * @enum {unknown}
                                  */
-                                reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed";
+                                reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "deleted_earlier";
                                 /**
                                  * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
                                  * @enum {unknown}
@@ -1476,7 +1476,7 @@ export interface paths {
                                  * @description Why; clients translate it. A failure’s detail stays in the server log
                                  * @enum {unknown}
                                  */
-                                reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed";
+                                reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "deleted_earlier";
                                 /**
                                  * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
                                  * @enum {unknown}
@@ -1571,7 +1571,7 @@ export interface paths {
                                  * @description Why; clients translate it. A failure’s detail stays in the server log
                                  * @enum {unknown}
                                  */
-                                reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed";
+                                reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "deleted_earlier";
                                 /**
                                  * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
                                  * @enum {unknown}
@@ -1886,7 +1886,93 @@ export interface paths {
         };
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete a Dive: it leaves the logbook, its counts and search; re-imports skip it; it can be restored
+         * @description Send the version you started from (409 dive_changed). When the Dive is in SSI, `inSsi: true` deletes it there first (SSI's app can't bring it back); if that fails (ssi_* codes), nothing is deleted. Without it, the SSI dive stays and the deleted Dive keeps reminding (`ssi` in GET /dives/deleted). ADR 0026.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        version: number;
+                        /** @description Also delete the Dive's copy in SSI; ask the User first (docs/spec/clients.md) */
+                        inSsi?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            ssi: null | ("deleted" | "kept");
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "site_offer_not_found" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "site_offer_not_found" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "site_offer_not_found" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         /**
@@ -2547,6 +2633,244 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/dives/deleted": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The User's deleted Dives, most recently deleted first (at most 100), to restore them; which are still in SSI */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            dives: {
+                                id: string;
+                                diverId: string;
+                                /** @description Send it back to restore the Dive */
+                                version: number;
+                                number: null | number;
+                                /** Format: date-time */
+                                startsAt: string;
+                                utcOffsetSeconds: null | number;
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                site: null | {
+                                    id: string;
+                                    name: string;
+                                };
+                                /** Format: date-time */
+                                deletedAt: string;
+                                ssi: null | {
+                                    remoteNumber: null | number;
+                                };
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dives/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bring a deleted Dive back with its Recordings (not in SSI: send it again from there)
+         * @description Send the version from GET /dives/deleted (409 dive_changed). A site deleted meanwhile becomes the one it was merged into, or none.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        version: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @description The Diver whose logbook this Dive is in */
+                            diverId: string;
+                            /** @description Send it back with an edit; it changes with every change */
+                            version: number;
+                            values: {
+                                number: null | number;
+                                startsAt: {
+                                    /** Format: date-time */
+                                    at: string;
+                                    utcOffsetSeconds: null | number;
+                                };
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                avgDepthM: null | number;
+                                waterTemperatureC: null | number;
+                            };
+                            /** @description Values the User set by hand */
+                            overrides: ("number" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC")[];
+                            fromRecording: null | {
+                                number: null | number;
+                                startsAt: {
+                                    /** Format: date-time */
+                                    at: string;
+                                    utcOffsetSeconds: null | number;
+                                };
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                avgDepthM: null | number;
+                                waterTemperatureC: null | number;
+                            };
+                            notes: null | string;
+                            site: null | {
+                                id: string;
+                                name: string;
+                            };
+                            waterType: null | ("fresh" | "salt" | "brackish");
+                            waterMismatch: null | {
+                                /**
+                                 * @description What the Primary recording's computer was set to
+                                 * @enum {unknown}
+                                 */
+                                computer: "fresh" | "salt" | "brackish" | "en13319" | "custom";
+                                /** @enum {unknown} */
+                                site: "fresh" | "salt" | "brackish";
+                                depthPercent: null | number;
+                            };
+                            position: null | {
+                                latitude: number;
+                                longitude: number;
+                            };
+                            recordings: {
+                                id: string;
+                                isPrimary: boolean;
+                                device: null | {
+                                    manufacturer: string;
+                                    product: null | string;
+                                    serialNumber: string;
+                                };
+                                /** Format: date-time */
+                                startsAt: string;
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                parser: string;
+                                summary: {
+                                    diveNumber?: number;
+                                    /** @enum {unknown} */
+                                    diveMode?: "open_circuit" | "ccr" | "scr" | "gauge" | "apnea";
+                                    /** @enum {unknown} */
+                                    decoModel?: "buhlmann_zhl16c";
+                                    gfLow?: number;
+                                    gfHigh?: number;
+                                    /**
+                                     * @description The computer's salinity setting, not the water of the Dive (that is the site's)
+                                     * @enum {unknown}
+                                     */
+                                    waterType?: "fresh" | "salt" | "brackish" | "en13319" | "custom";
+                                    /** @description Density the computer computed depths with, kg/m³ */
+                                    waterDensity?: number;
+                                    gases?: {
+                                        o2: number;
+                                        he: number;
+                                        /** @enum {unknown} */
+                                        circuit?: "open_circuit" | "diluent";
+                                    }[];
+                                    minTemperatureC?: number;
+                                    maxTemperatureC?: number;
+                                    avgHeartRate?: number;
+                                    surfaceIntervalSeconds?: number;
+                                    cnsStart?: number;
+                                    cnsEnd?: number;
+                                    /** @description Source values without a word in our vocabulary, by source field name */
+                                    extras?: {
+                                        [key: string]: string;
+                                    };
+                                };
+                                channels: string[];
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "site_offer_not_found" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_merge_self" | "site_offer_not_found" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "ssi_already_connected" | "ssi_account_taken" | "ssi_other_account" | "ssi_wrong_credentials" | "ssi_not_connected" | "ssi_sign_in_needed" | "ssi_unavailable" | "ssi_refused" | "ssi_site_missing" | "ssi_not_sent" | "ssi_dive_gone" | "ssi_busy";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/dives/{id}/revisions": {
         parameters: {
             query?: never;
@@ -2584,7 +2908,7 @@ export interface paths {
                                 name: null | string;
                             };
                             /** @enum {unknown} */
-                            cause: "import-create" | "auto-attach" | "reimport" | "edit" | "primary-change" | "attach" | "detach" | "create" | "move" | "assign-device" | "delete" | "auto-site" | "update" | "link" | "merge" | "site-merge" | "adopt";
+                            cause: "import-create" | "auto-attach" | "reimport" | "edit" | "primary-change" | "attach" | "detach" | "create" | "move" | "assign-device" | "delete" | "auto-site" | "update" | "link" | "merge" | "site-merge" | "adopt" | "restore";
                             changes: {
                                 [key: string]: {
                                     from: unknown;
@@ -4523,7 +4847,7 @@ export interface paths {
                                 name: null | string;
                             };
                             /** @enum {unknown} */
-                            cause: "import-create" | "auto-attach" | "reimport" | "edit" | "primary-change" | "attach" | "detach" | "create" | "move" | "assign-device" | "delete" | "auto-site" | "update" | "link" | "merge" | "site-merge" | "adopt";
+                            cause: "import-create" | "auto-attach" | "reimport" | "edit" | "primary-change" | "attach" | "detach" | "create" | "move" | "assign-device" | "delete" | "auto-site" | "update" | "link" | "merge" | "site-merge" | "adopt" | "restore";
                             changes: {
                                 [key: string]: {
                                     from: unknown;

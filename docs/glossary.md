@@ -64,6 +64,11 @@ Each participant of the same descent has their own Dive.
 _Avoid_: Log entry, activity, event
 _German_: Tauchgang
 
+**Deleted dive**:
+A Dive the User deleted. It counts nowhere and isn't imported again, but it is kept and can be restored with its Recordings ([ADR 0026](decisions/0026-deleting-dives.md)).
+_Avoid_: Trash, archived dive, removed dive
+_German_: gelöschter Tauchgang
+
 **Joint dive**:
 The link between the Dives of Divers who made the same descent together.
 _Avoid_: Group dive, shared dive

@@ -12,12 +12,12 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 ## Spec
 - [spec/README.md](spec/README.md) — Product specification: vision, sources → hub → targets, later features (auto-import of sites near imported Dives), open questions.
 - [spec/data-model.md](spec/data-model.md) — Entities, ownership, relationships; UDDF checklist, gap coverage, scenarios.
-- [spec/architecture.md](spec/architecture.md) — Components, import flow, Docker Compose deployment, auth; implementation status per slice (9: merging sites, paged site list, client contract); operator notes on site data licenses; slice 10: sending Dives to SSI, `DIVEHUB_ENCRYPTION_KEY`; slice 11: SSI site import, offers, water type on the site; operator notes on SSI's missing licence.
-- [spec/clients.md](spec/clients.md) — Client contract: what every API client must do, from a walk through the web client (licenses, privacy, security, confirmations, versions, each area's duties, units, accessibility); SSI import confirmation, offers, the water mismatch hint, the site form's water type note; two server gaps found and fixed.
+- [spec/architecture.md](spec/architecture.md) — Components, import flow, Docker Compose deployment, auth; implementation status per slice (9: merging sites, paged site list, client contract); operator notes on site data licenses; slice 10: sending Dives to SSI, `DIVEHUB_ENCRYPTION_KEY`; slice 11: SSI site import, offers, water type on the site; operator notes on SSI's missing licence; slice 12: deleting a Dive, here and in SSI.
+- [spec/clients.md](spec/clients.md) — Client contract: what every API client must do, from a walk through the web client (licenses, privacy, security, confirmations, versions, each area's duties, units, accessibility); SSI import confirmation, offers, the water mismatch hint, the site form's water type note; deleting a Dive (what it says, the SSI question, Undo, the reminder); two server gaps found and fixed.
 - [spec/design-system.md](spec/design-system.md) — Visual direction, tokens, components, writing, localization, units, accessibility.
 
 ## Glossary
-- [glossary.md](glossary.md) — Domain language with German UI words: User, Admin, Invitation, Password reset link, Disabled, Diver, Dive, Recording, Dive site, water type of a site vs the computer's water setting, Merge, Position, Source, External ID, Attribution, Offer, Site import, Import, Push, …
+- [glossary.md](glossary.md) — Domain language with German UI words: User, Admin, Invitation, Password reset link, Disabled, Diver, Dive, Deleted dive, Recording, Dive site, water type of a site vs the computer's water setting, Merge, Position, Source, External ID, Attribution, Offer, Site import, Import, Push, …
 
 ## Development
 - [development.md](development.md) — setup, layout, common tasks (incl. SSI's hand-made site list for tests), tooling notes.
@@ -54,6 +54,7 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [0023 Checks by what changed, and a faster full check](decisions/0023-faster-checks.md) — `pnpm check` by changed area (tags), `pnpm check:full` before a commit; browser tests on 2 workers with a server each, no traces, axe in 2 of 4 variants; review capture by area. 10½ → 3 min.
 - [0024 SSI as the first Target, through its private app API](decisions/0024-ssi-target-via-app-api.md) — create/update/delete with profile, SSI dive ID on the Push; User chooses encrypted password or expiring token at connect; honest User-Agent; Diver External IDs, Connection Diver mappings; admin SSI site import at the operator's risk; API slice first, QR later.
 - [0025 SSI site import, offers on hand-made sites, and the water type on the Dive site](decisions/0025-ssi-site-import-and-site-water-type.md) — SSI imported like OSM after a confirmed explanation (no comments, private sites, aliases); per-field precedence (SSI names, OSM positions); hand-made sites get an offer any User takes; "only fill" runs; water type moves from the Dive to its site, with a hint when the computer was set to other water. Amends 0015, 0021, 0024.
+- [0026 Deleting a Dive: soft, restorable, not imported again; SSI asked in the same dialog](decisions/0026-deleting-dives.md) — Dive and Recordings get one tombstone, Originals stay; re-imports skip as "deleted earlier"; Undo and "Deleted dives" to restore; SSI deleted first, nothing deleted when it fails; a reminder while a deleted dive is still in SSI.
 - [Template](decisions/template.md) — copy for new ADRs.
 
 ## References

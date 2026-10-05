@@ -1,7 +1,7 @@
 // Keeping a Dive: Overrides, resetting them, the Primary recording, and refreshing from it (ADR 0015).
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
-import { OVERRIDABLE_FIELDS, dive, diverManagement, recording, type OverridableField } from '../db/schema.js';
+import { OVERRIDABLE_FIELDS, dive, diveSite, diverManagement, recording, type OverridableField } from '../db/schema.js';
 import {
   columnsOf, plain, sameValue, valuesFromRecording, valuesOfDive, type DiveValues,
 } from './dive-values.js';
@@ -192,6 +192,50 @@ export function createDiveService(db: Db) {
           values, overrides: current.overrides, notes: current.notes, primaryRecordingId: primary,
         }, actor, 'detach', { recordings: { from: rec.id, to: null } });
         return createDiveFromRecording(tx, rec, current.diverId, actor, 'detach');
+      });
+    },
+
+    /**
+     * Deletes the Dive (ADR 0026): a soft delete of the Dive and its Recordings, with the same tombstone, so it leaves
+     * lists and counts, re-imports skip it, and restoring brings back exactly these. Originals and samples stay.
+     */
+    async remove(userId: string, diveId: string, version: number): Promise<void> {
+      await db.transaction(async (tx) => {
+        const current = await lockManagedDive(tx, userId, diveId);
+        if (current.version !== version) throw new DiveError('dive_changed');
+        const at = new Date();
+        await tx.update(recording).set({ deletedAt: at, updatedAt: at })
+          .where(and(eq(recording.diveId, diveId), isNull(recording.deletedAt)));
+        await tx.update(dive).set({ deletedAt: at, version: sql`${dive.version} + 1`, updatedAt: at }).where(eq(dive.id, diveId));
+        await writeRevision(tx, 'dive', diveId, { type: 'user', id: userId }, 'delete', { deletedAt: { from: null, to: at.toISOString() } });
+      });
+    },
+
+    /**
+     * Brings a deleted Dive back with the Recordings deleted with it. A site deleted meanwhile is replaced by the
+     * one it was merged into, else the Dive has none (both in the Revision).
+     */
+    async restore(userId: string, diveId: string, version: number): Promise<void> {
+      await db.transaction(async (tx) => {
+        const [row] = await tx.select({ d: dive }).from(dive)
+          .innerJoin(diverManagement, and(eq(diverManagement.diverId, dive.diverId), eq(diverManagement.userId, userId)))
+          .where(and(eq(dive.id, diveId), isNotNull(dive.deletedAt)))
+          .for('update', { of: dive });
+        if (!row) throw new DiveError('dive_not_found');
+        const current = row.d;
+        if (current.version !== version) throw new DiveError('dive_changed');
+        const changes: Changes = { deletedAt: { from: current.deletedAt!.toISOString(), to: null } };
+        let siteId = current.siteId;
+        if (siteId && !(await liveSite(tx, siteId))) {
+          const [gone] = await tx.select({ mergedInto: diveSite.mergedInto }).from(diveSite).where(eq(diveSite.id, siteId));
+          siteId = gone?.mergedInto && (await liveSite(tx, gone.mergedInto)) ? gone.mergedInto : null;
+          changes.site = { from: await siteRef(tx, current.siteId), to: await siteRef(tx, siteId) };
+        }
+        const at = new Date();
+        await tx.update(recording).set({ deletedAt: null, updatedAt: at })
+          .where(and(eq(recording.diveId, diveId), eq(recording.deletedAt, current.deletedAt!)));
+        await tx.update(dive).set({ deletedAt: null, siteId, version: sql`${dive.version} + 1`, updatedAt: at }).where(eq(dive.id, diveId));
+        await writeRevision(tx, 'dive', diveId, { type: 'user', id: userId }, 'restore', changes);
       });
     },
 

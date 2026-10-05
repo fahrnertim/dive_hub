@@ -42,6 +42,7 @@ export type RecordingSummary = DiveView['recordings'][number]['summary'];
 export type DiverView = Awaited<ReturnType<typeof fetchDivers>>[number];
 export type DeviceView = Awaited<ReturnType<typeof fetchDevices>>[number];
 export type CandidateView = Awaited<ReturnType<typeof fetchCandidates>>[number];
+export type DeletedDiveView = Awaited<ReturnType<typeof fetchDeletedDives>>['dives'][number];
 export type SiteView = Awaited<ReturnType<typeof fetchSite>>;
 export type Position = NonNullable<SiteView['position']>;
 export type ExternalIdView = SiteView['externalIds'][number];
@@ -63,6 +64,8 @@ export const keys = {
   imports: ['imports'] as const,
   dives: ['dives'] as const,
   dive: (id: string) => ['dives', id] as const,
+  /** Under ['dives'], so whatever changes the logbook refreshes it too (ADR 0026). */
+  deletedDives: ['dives', 'deleted'] as const,
   revisions: (id: string) => ['dives', id, 'revisions'] as const,
   divers: ['divers'] as const,
   devices: ['devices'] as const,
@@ -175,6 +178,12 @@ export const diversQuery = () => queryOptions({ queryKey: keys.divers, queryFn: 
 export const devicesQuery = () => queryOptions({ queryKey: keys.devices, queryFn: fetchDevices });
 export const candidatesQuery = (status: 'open' | 'discarded') =>
   queryOptions({ queryKey: keys.candidates(status), queryFn: () => fetchCandidates(status) });
+
+async function fetchDeletedDives() {
+  return unwrap(await api.GET('/api/dives/deleted'));
+}
+/** The User's deleted Dives, to restore them, and which are still in SSI (ADR 0026). */
+export const deletedDivesQuery = () => queryOptions({ queryKey: keys.deletedDives, queryFn: fetchDeletedDives });
 
 export const diveQuery = (id: string) => queryOptions({ queryKey: keys.dive(id), queryFn: () => fetchDive(id) });
 export const revisionsQuery = (id: string) => queryOptions({ queryKey: keys.revisions(id), queryFn: () => fetchRevisions(id) });

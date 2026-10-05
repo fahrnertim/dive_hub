@@ -24,7 +24,9 @@ const AREAS = [
   [/^apps\/web\/src\/(SitesPage|SiteForm|SiteHistory)\.tsx$|^apps\/web\/src\/lib\/(site-origin|sites-list|geo)\.ts$/, ['@sites']],
   [/^apps\/web\/src\/SitePicker\.tsx$/, ['@sites', '@dives']],
   [/^apps\/web\/src\/lib\/address-search\.ts$/, ['@sites', '@dives']],
-  [/^apps\/web\/src\/(DiveDetail|DiveEditForm|DiveHistory|DiveList|DepthProfile|Decisions|ImportPanel)\.tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|logbook|devices|importable)\.ts$/, ['@dives']],
+  [/^apps\/web\/src\/(DiveDetail|DiveEditForm|DiveHistory|DiveList|DepthProfile|Decisions|ImportPanel|DeleteDive|DeletedDives)\.tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|logbook|devices|importable|deletion)\.ts$/, ['@dives']],
+  // The Dive the deletion browser tests delete and restore (ADR 0026).
+  [/^apps\/web\/e2e\/fixtures\/deletable-computer\.fit$/, ['@dives']],
   [/^apps\/web\/src\/DiversPage\.tsx$/, ['@divers']],
   [/^apps\/web\/src\/(Account|AccountPage|SsiConnections)\.tsx$/, ['@account']],
   [/^apps\/web\/src\/SsiPanel\.tsx$/, ['@dives']],

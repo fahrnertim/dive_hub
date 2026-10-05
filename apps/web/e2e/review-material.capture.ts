@@ -7,7 +7,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_BASE_URL, connectSsi, disconnectSsi, editElsewhere, leaveSsi, readyForSsi, setPreferences } from './support.ts';
+import { E2E_BASE_URL, connectSsi, deletableDive, disconnectSsi, editElsewhere, leaveSsi, readyForSsi, sendToSsi, setPreferences } from './support.ts';
 
 const out = process.env.REVIEW_OUT ?? 'review-output/';
 mkdirSync(out, { recursive: true });
@@ -294,6 +294,51 @@ test('review material', async ({ page, request, browser }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await request.delete(`/api/dives/${dive42}/ssi`, { headers });
     await leaveSsi(request, dive42);
+  }
+
+  // Deleting a Dive (ADR 0026), with dive 9: the dialog without and with the SSI question, the logbook with Undo, the
+  // reminder and the deleted dives; the list and the SSI question in German on a dark phone.
+  if (want('dives')) {
+    const openDelete = async (more: string, item: RegExp, button: string) => {
+      await page.getByRole('button', { name: more }).click();
+      await page.getByRole('menuitem', { name: item }).click();
+      await page.getByRole('dialog').getByRole('button', { name: button }).waitFor();
+    };
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await setPreferences(request, { language: 'en' });
+    const nine = await deletableDive(request);
+    await page.goto(`/#/dives/${nine}`); await page.reload(); await page.getByRole('heading', { name: 'Dive 9' }).waitFor();
+    await openDelete('More: Dive 9', /^Delete dive/, 'Delete dive');
+    await capture(page, '32-dive-delete', { full: false });
+    await page.keyboard.press('Escape');
+    await sendToSsi(request, nine);
+    await page.reload(); await page.getByRole('heading', { name: 'Dive 9' }).waitFor();
+    await openDelete('More: Dive 9', /^Delete dive/, 'Delete here and in SSI');
+    await capture(page, '33-dive-delete-ssi', { full: false });
+    await page.getByRole('dialog').getByRole('button', { name: 'Delete only here' }).click();
+    await page.getByRole('button', { name: 'Undo' }).waitFor();
+    await capture(page, '34-logbook-deleted');
+    await page.reload();
+    await page.getByRole('button', { name: 'Show deleted dives', exact: true }).click();
+    await page.getByRole('button', { name: 'Restore: Dive 9' }).waitFor();
+    await capture(page, '35-logbook-deleted-dives');
+    await setPreferences(request, { language: 'de' });
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.reload();
+    await page.getByRole('button', { name: 'Gelöschte Tauchgänge zeigen', exact: true }).click();
+    await page.getByRole('button', { name: 'Wiederherstellen: Tauchgang 9' }).waitFor();
+    await capture(page, '36-logbook-deleted-dives-de-dark-390', { aria: false });
+    await deletableDive(request);
+    await sendToSsi(request, nine);
+    await page.goto(`/#/dives/${nine}`); await page.getByRole('heading', { name: 'Tauchgang 9' }).waitFor();
+    await openDelete('Mehr: Tauchgang 9', /^Tauchgang löschen/, 'Hier und in SSI löschen');
+    await capture(page, '37-dive-delete-ssi-de-dark-390', { full: false, aria: false });
+    await page.keyboard.press('Escape');
+    await deletableDive(request);
+    await setPreferences(request, { language: null });
+    await page.emulateMedia({ colorScheme: 'light' });
   }
 
   // Signed out, then signed up through the invitation: the empty logbook and Divers belong to the new account.

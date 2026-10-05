@@ -130,6 +130,10 @@ coverage, validity; B5), **Medical exam** (date, result, valid until, examiner),
 - *Experience:* dive type/purpose, rating, notes, tags, problems.
 - *Social:* Participants, Joint dive, Visibility, Signatures.
 - *Hub state:* Pushes, Conflicts, Revisions.
+- *Deleting (ADR 0026, implemented):* soft, with a Revision (`delete`). The Dive and its Recordings get the same
+  tombstone; Originals and samples stay. A deleted Dive counts nowhere (lists, search, site and Diver counts, Duplicate
+  candidates, overlap matching) and can be **restored** with the Recordings deleted with it (`restore`; a site deleted
+  meanwhile becomes the one it was merged into, else none). Only Users who manage the Diver delete or restore.
 
 **Joint dive** — the shared facts of one descent (site, time window, Operator) and its
 member Dives. Created when a Buddy suggestion is accepted, or by hand.
@@ -156,6 +160,8 @@ suggestion** is raised. Nothing appears in that User's logbook until they accept
   The Dive shows its Primary recording's (exit, else entry); they stay as private as the Dive.
 - Detaching a Recording from its Dive is always possible. The Recording then gets its
   own Dive or becomes a Duplicate candidate.
+- *Deleted with its Dive (ADR 0026):* a re-import with its key (the same file, or a re-export) is skipped as
+  `deleted_earlier`. The key stays taken for every User, so restoring never clashes with a newer Recording.
 
 **Cylinder** — per Dive: Equipment item (optional), volume, working pressure, material,
 gas mix (O2/He), start/end pressure, usage window. **Sensor mapping** links a
@@ -240,12 +246,14 @@ Archives (zip, nested zips in a Garmin account export) are unpacked; each contai
 an Original, and the Import records the archive's name and hash.
 
 **Import** — User, Connection (optional for manual upload), Originals, started/finished, status,
-outcome per dive (`created`, `attached`, `updated`, `unchanged`, `duplicate candidate`, `failed`).
+outcome per dive (`created`, `attached`, `updated`, `unchanged`, `duplicate candidate`, `skipped`, `failed`; skipped
+with `deleted_earlier` for a Recording of a deleted Dive, ADR 0026).
 An Import can be undone through its Revisions.
 
 **Duplicate candidate** — Recording, candidate Dives, reason (several overlaps, depth mismatch,
 unknown Device), resolution. *Implemented (ADR 0016):* resolutions `attached`, `new_dive`,
-`discarded` (the Recording stays, detached, and can be reopened).
+`discarded` (the Recording stays, detached, and can be reopened). A deleted candidate Dive is no longer offered; the
+candidate keeps it and offers it again once restored (ADR 0026).
 
 **Conflict** — Dive, field, base value, hub value, incoming value, where the incoming value came
 from (Import or client edit), resolution.
@@ -388,8 +396,13 @@ With an SSI Connection, Dives go through SSI's app API ([ADR 0024](../decisions/
 2. Tim then corrects max depth. A pushed field changed, so P1 becomes `outdated`.
 3. Tim re-pushes. P2 has P1's remote ID: the hub fetches SSI's current record, puts its changes on top (so a rating
    Tim set in the app survives) and updates the same SSI dive. P1 stays in the history.
-4. Tim deletes D1. It's a soft delete. The hub asks whether to delete the dive in SSI too. If Tim says no, P2 stays
-   and the hub reminds Tim the dive still exists in SSI.
+4. Tim deletes D1. It's a soft delete (D1 and R1 get a tombstone and a Revision; O1 stays). The same dialog asks
+   whether to delete the dive in SSI too ([ADR 0026](../decisions/0026-deleting-dives.md)):
+   - *Yes:* the hub deletes it in SSI first (P3, action `delete`), then here. If SSI fails, nothing is deleted.
+   - *No:* P2 stays. D1 is listed under "Deleted dives" as still in SSI, with "Delete in SSI", and the logbook reminds
+     Tim until it's gone from SSI.
+   Re-importing O1 (or a re-export of the dive) is skipped as "deleted earlier". Restoring D1 brings it back here, not
+   to SSI.
 
 Edge cases:
 - *Token expired:* Tim chose "Don't store my password". The Push waits, and the Connection shows "Sign in to SSI again".

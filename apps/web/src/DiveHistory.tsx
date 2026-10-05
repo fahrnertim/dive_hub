@@ -58,7 +58,8 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
   };
 
   const lines = Object.entries(r.changes).flatMap(([key, { from, to }]) => {
-    if (key === 'overrides') return [];
+    // Deleting and restoring (ADR 0026): the cause says it all.
+    if (key === 'overrides' || key === 'deletedAt') return [];
     if (key === 'notes') return [t('history.notesChanged')];
     if (key === 'recordings') return [to ? t('history.recordingAdded') : t('history.recordingRemoved')];
     if (key === 'diverId') return [t('history.change', { field: t('history.field.diverId'), from: diverName(from), to: diverName(to) })];

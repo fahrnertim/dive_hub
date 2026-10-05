@@ -155,9 +155,12 @@ export function createSsiService(deps: { db: Db; client: SsiClient; secrets: Sec
     }
   }
 
-  /** The Dive and what goes to SSI, if the User manages its Diver. */
-  async function loadDive(userId: string, diveId: string) {
-    const [row] = await db.select().from(dive).where(and(eq(dive.id, diveId), isNull(dive.deletedAt)));
+  /**
+   * The Dive and what goes to SSI, if the User manages its Diver. A deleted Dive only with `deleted`: its state and
+   * deleting it in SSI still work (the reminder, ADR 0026), sending doesn't.
+   */
+  async function loadDive(userId: string, diveId: string, options: { deleted?: boolean } = {}) {
+    const [row] = await db.select().from(dive).where(and(eq(dive.id, diveId), options.deleted ? undefined : isNull(dive.deletedAt)));
     if (!row || !(await managedDiverIds(db, userId)).has(row.diverId)) throw new SsiServiceError('dive_not_found');
     const [rec] = row.primaryRecordingId
       ? await db.select().from(recording).where(eq(recording.id, row.primaryRecordingId)) : [];
@@ -285,7 +288,7 @@ export function createSsiService(deps: { db: Db; client: SsiClient; secrets: Sec
 
     /** A Dive's state at SSI: its Connection, the SSI site ID, the current SSI dive and every Push. */
     async status(userId: string, diveId: string) {
-      const { row, forSsi, siteSsiId } = await loadDive(userId, diveId);
+      const { row, forSsi, siteSsiId } = await loadDive(userId, diveId, { deleted: true });
       const conn = await connectionFor(userId, row.diverId);
       const pushes = await pushesOf(diveId);
       const current = currentRemote(pushes);
@@ -386,9 +389,24 @@ export function createSsiService(deps: { db: Db; client: SsiClient; secrets: Sec
       }));
     },
 
-    /** Deletes the Dive's SSI copy there (SSI hides it; its app has no way back). The Dive stays in the hub. */
+    /** The SSI dive each of these Dives has now (by Dive id; Dives without one are left out). No access check. */
+    async currentOf(diveIds: string[]): Promise<Map<string, PushRow>> {
+      if (diveIds.length === 0) return new Map();
+      const rows = await db.select().from(push).where(inArray(push.diveId, diveIds)).orderBy(desc(push.createdAt), desc(push.id));
+      const current = new Map<string, PushRow>();
+      for (const id of diveIds) {
+        const remote = currentRemote(rows.filter((p) => p.diveId === id));
+        if (remote) current.set(id, remote);
+      }
+      return current;
+    },
+
+    /**
+     * Deletes the Dive's SSI copy there (SSI hides it; its app has no way back). The Dive stays in the hub; a Dive
+     * deleted in the hub can still be deleted in SSI.
+     */
     async remove(userId: string, diveId: string): Promise<PushRow> {
-      const { row } = await loadDive(userId, diveId);
+      const { row } = await loadDive(userId, diveId, { deleted: true });
       const conn = await connectionFor(userId, row.diverId);
       if (!conn) throw new SsiServiceError('ssi_not_connected');
       const current = currentRemote(await pushesOf(diveId));

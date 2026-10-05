@@ -9,7 +9,8 @@
     "none": "–",
     "actions": "Actions",
     "forItem": "{{action}}: {{item}}",
-    "undo": "Undo"
+    "undo": "Undo",
+    "dismiss": "Dismiss"
   },
   "nav": {
     "main": "Main",
@@ -170,7 +171,8 @@
       "not_your_diver": "recorded for a Diver you don’t manage",
       "overlaps_several_dives": "overlaps several dives",
       "max_depth_differs": "the max depth differs too much",
-      "file_failed": "the file couldn’t be read"
+      "file_failed": "the file couldn’t be read",
+      "deleted_earlier": "on a dive you deleted; restore it under “Deleted dives” on the logbook"
     },
     "errorCode": {
       "unsupported_file": "This is neither a FIT file nor a zip archive.",
@@ -288,7 +290,16 @@
     "site": "Dive site",
     "position": "Position",
     "chooseSite": "Choose dive site",
-    "changeSite": "Change dive site"
+    "changeSite": "Change dive site",
+    "deleteMenu": "Delete dive…",
+    "deleteTitle": "Delete {{name}}?",
+    "deleteBody": "It leaves your logbook, its counts and search. You can restore it under “Deleted dives” on the logbook. Importing its file again won’t bring it back.",
+    "deleteAskSsi": "It is also in SSI, as dive {{number}}. Delete it there too? SSI’s app can’t bring it back. If you keep it there, the logbook reminds you.",
+    "deleteCannotSsi": "It is also in SSI, as dive {{number}}, but this Diver isn’t connected to SSI any more, so it stays there. The logbook reminds you; connect again to delete it there.",
+    "deleteConfirm": "Delete dive",
+    "deleteBoth": "Delete here and in SSI",
+    "deleteHereOnly": "Delete only here",
+    "deleteNothingDeleted": "Nothing was deleted."
   },
   "errors": {
     "unknown": "Something went wrong. Try again.",
@@ -411,7 +422,8 @@
       "link": "Linked to its source",
       "site-merge": "Dive site merged into another",
       "merge": "Dive sites merged",
-      "adopt": "Data taken from its source"
+      "adopt": "Data taken from its source",
+      "restore": "Restored"
     },
     "field": {
       "number": "Dive number",
@@ -460,7 +472,25 @@
     "hideDiscarded": "Hide discarded recordings",
     "reopen": "Decide again",
     "none": "Nothing to decide.",
-    "discardedNotice": "Discarded the recording from {{time}}."
+    "discardedNotice": "Discarded the recording from {{time}}.",
+    "divesGone": "The dives it might have belonged to are no longer in your logbook."
+  },
+  "deleted": {
+    "notice": "{{name}} deleted.",
+    "noticeKept": "{{name}} deleted. It is still in SSI, as dive {{number}}: you can delete it there under “Deleted dives”.",
+    "noticeBoth": "{{name}} deleted, here and in SSI. Undo brings it back here only.",
+    "ssiReminder_one": "A dive you deleted is still in SSI.",
+    "ssiReminder_other": "{{count}} dives you deleted are still in SSI.",
+    "showList": "Show deleted dives",
+    "show": "Show deleted dives ({{count}})",
+    "hide": "Hide deleted dives",
+    "title": "Deleted dives",
+    "intro": "They count nowhere, and importing their files again doesn’t bring them back. Restoring brings a dive back with its recordings and history, but not to SSI.",
+    "deletedOn": "Deleted {{date}}",
+    "stillInSsi": "Still in SSI, as dive {{number}}.",
+    "restore": "Restore",
+    "restored": "{{name}} restored.",
+    "ssiDeleteBody": "SSI dive {{number}} disappears from your SSI logbook, and SSI’s app can’t bring it back."
   },
   "divers": {
     "title": "Divers",

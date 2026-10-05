@@ -8,6 +8,7 @@ import { logbookParams } from './lib/logbook.ts';
 import { sitesParams } from './lib/sites-list.ts';
 import { pickLanguage } from './i18n/index.ts';
 import { Decisions } from './Decisions.tsx';
+import { DeletedDives, DeletedNotices } from './DeletedDives.tsx';
 import { ImportFilesButton, ImportPanel, ImportProvider, RecentImports } from './ImportPanel.tsx';
 import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
@@ -140,7 +141,7 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
 /**
  * The logbook page. On the first run the Import is the main action and comes first; once there are
  * dives, the logbook comes first and importing is a button, or dropping files on the page (UI review B5).
- * The page head comes first in both, then what waits for a decision (visual refresh 2).
+ * The page head comes first in both, then what waits for a decision (visual refresh 2); deleted dives come last (ADR 0026).
  */
 function Logbook({ params }: { params: LogbookParams }) {
   const all = useQuery(divesQuery());
@@ -148,16 +149,19 @@ function Logbook({ params }: { params: LogbookParams }) {
   return (
     <ImportProvider>
       <LogbookHeader params={params} importAction={returning && <ImportFilesButton />} />
+      <DeletedNotices />
       <Decisions />
       {returning ? (
         <>
           <DiveList params={params} />
           <RecentImports />
+          <DeletedDives />
         </>
       ) : (
         <>
           {all.data && <ImportPanel />}
           <DiveList params={params} searchable={false} />
+          <DeletedDives />
         </>
       )}
     </ImportProvider>

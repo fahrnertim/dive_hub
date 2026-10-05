@@ -79,7 +79,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 
 ### Data safety
 - **Must send the version an edit started from:** the Dive's `version` for edits, moving it, the Primary
-  recording and splitting off; the site's `version`; both sites' versions for a merge. On 409 `dive_changed` or
+  recording, splitting off, deleting and restoring it; the site's `version`; both sites' versions for a merge. On 409 `dive_changed` or
   `site_changed`, **offer to reload instead of overwriting**
   ([ADR 0015](../decisions/0015-overrides-vocabulary-and-browser-tests.md)). *Web:* `DiveEditForm.tsx`, `SiteForm.tsx`, `DiveDetail.tsx`.
 - **Must confirm what can't be undone, and say what will happen:**
@@ -94,6 +94,8 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   | Deleting a Dive site | dialog | `SitesPage.tsx` |
   | Merging sites (no undo) | dialog with what moves and fills | `SitesPage.tsx` (`NearbySites`) |
   | Splitting a Recording off | dialog | `DiveDetail.tsx` |
+  | Deleting a Dive | dialog: it leaves the logbook, can be restored, isn't imported again; asks about SSI too (see [Dives](#dives)) | `DeleteDive.tsx` |
+  | Deleting a deleted Dive's copy in SSI | dialog: SSI's app can't bring it back | `DeletedDives.tsx` |
 
   Discarding a Duplicate candidate is not confirmed. It offers **Undo** at once (reopen) and keeps a list of
   discarded ones ([ADR 0016](../decisions/0016-recording-decisions-and-divers.md)). *Web:* `Decisions.tsx`.
@@ -168,8 +170,9 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   *Web:* `api.ts` (`uploadFile`), `lib/importable.ts`.
 - **Name the files that weren't sent** (a dropped `.gpx`), so the User learns why they didn't arrive.
 - **Each file's outcome:** created, attached, updated, unchanged ("already imported": the same User sent the same
-  content before), Duplicate candidate, skipped (for example a Device of another User's Diver), failed. Link to
-  the Dive where there is one, and say what became of a Duplicate candidate since. *Web:* `ImportPanel.tsx` (`ImportRow`).
+  content before), Duplicate candidate, skipped (for example a Device of another User's Diver, or `deleted_earlier`: the
+  dive was deleted, say where to restore it), failed. Link to the Dive where there is one, and say what became of a
+  Duplicate candidate since. *Web:* `ImportPanel.tsx` (`ImportRow`).
 
 ### Dives
 - **Overrides:**
@@ -186,6 +189,21 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - Show which one is primary. Changing it makes values without Override follow the new one.
   - The Dive's last Recording can't be split off; the server refuses (`last_recording`).
 - **Moving a Dive** to another Diver the User manages names that Diver; the Dive's site and values stay.
+- **Deleting a Dive** ([ADR 0026](../decisions/0026-deleting-dives.md), `DELETE /api/dives/{id}` with `version`):
+  - **Must say what happens** before: it leaves the logbook, its counts and search; it can be restored; importing its
+    file again doesn't bring it back. *Web:* `DeleteDive.tsx`.
+  - **Must ask about SSI in the same dialog** when the Dive is in SSI (`GET /api/dives/{id}/ssi`, `current`): "Delete
+    here and in SSI" (`inSsi: true`) or "Delete only here", saying SSI's app can't bring it back. Without a Connection
+    for its Diver, offer only "Delete only here" and say it stays in SSI. Don't preselect either.
+  - **On an ssi_* error nothing was deleted:** say so with the reason, and offer both again.
+  - Afterwards leave the dive page (it answers 404 now) and say what happened (`ssi`: `deleted`, `kept` or null),
+    with **Undo** (restore), which doesn't time out. Undo brings it back here only. *Web:* `DeletedDives.tsx`.
+- **Deleted dives** (`GET /api/dives/deleted`): offer to restore them (`POST /api/dives/{id}/restore` with `version`).
+  - **Must remind while a deleted Dive is still in SSI** (`ssi` set): say so on the Dive with "Delete in SSI"
+    (`DELETE /api/dives/{id}/ssi`, confirmed), and where the User lands (the logbook). The reminder may be dismissed
+    for a visit; it comes back while the dive is in SSI. *Web:* `DeletedDives.tsx`.
+- **History:** a restored Dive's history shows "Deleted" and "Restored" (causes `delete`, `restore`; their change
+  `deletedAt` needs no line of its own). *Web:* `DiveHistory.tsx`.
 - **History:** Revisions newest first, translated by `cause`. The web client groups one person's edits within ten
   minutes into one entry, and shows three entries before "Show the whole history". *Web:* `DiveHistory.tsx`, `lib/history.ts`.
 - **The depth profile needs a text alternative:** a summary (deepest point and when, duration, temperature range)
@@ -211,7 +229,8 @@ From `GET /api/dives/{id}/ssi` (ADR 0024). *Web:* `SsiPanel.tsx`.
 - **`outcome: exists`:** nothing was sent; a dive at the same time is in SSI. Show it (number, time, depth, minutes)
   and ask: link to it (`onExisting: link`) or send a new one (`create`).
 - **Must say that SSI shows the dive as unconfirmed:** only a dive center can confirm it there.
-- **Must ask before "Delete in SSI"**, saying SSI's app can't bring it back and the Dive stays here.
+- **Must ask before "Delete in SSI"**, saying SSI's app can't bring it back and the Dive stays here. Deleting the Dive
+  itself asks about SSI in its own dialog ([Dives](#dives)).
 - **Show what went wrong:** the latest Push's `failureCode`, and its read-back `differences` (fields SSI stored
   differently). A history of Pushes is optional.
 
@@ -220,6 +239,7 @@ From `GET /api/dives/{id}/ssi` (ADR 0024). *Web:* `SsiPanel.tsx`.
   depth, duration, Device), why it waits (`reason`) and the Dives it might belong to (ADR 0016).
 - **Three decisions:** add to one of those Dives, make it a Dive of its own, or discard. Discard offers Undo, and
   discarded ones can be shown and reopened. *Web:* `Decisions.tsx`.
+- **No Dives left** (they were deleted, ADR 0026): say so; making it a Dive of its own and discarding remain.
 - **Several candidates at once:** every button names the Recording or Dive it acts on (in its accessible name).
 
 ### Divers and Devices

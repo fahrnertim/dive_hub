@@ -126,6 +126,8 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
   return (
     <li className="decision">
       <RecordingLine c={c} />
+      {/* The Dives it might belong to were deleted (ADR 0026): what's left is a Dive of its own, or discarding it. */}
+      {c.dives.length === 0 && <p className="muted">{t('decisions.divesGone')}</p>}
       {c.dives.length > 0 && (
         <div>
           <h3 className="decision-subtitle">{t('decisions.maybe')}</h3>
