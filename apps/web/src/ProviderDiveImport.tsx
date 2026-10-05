@@ -142,6 +142,17 @@ function Preview({ provider: p, connection: c, mode, onSettings, onStarted, onCl
           {counted.map((k) => <li key={k}>{pt(`importCount.${k}` as 'importCount.link_one', { count: data.counts[k], n: n.format(data.counts[k]) })}</li>)}
         </ul>
       )}
+      {(['known', 'match', 'create', 'missing'] as const).some((k) => data.sites[k] > 0) && (
+        <div className="provider-import-part">
+          <h4>{pt('importSites')}</h4>
+          <ul className="import-counts">
+            {(['known', 'match', 'create', 'missing'] as const).filter((k) => data.sites[k] > 0).map((k) => (
+              <li key={k}>{pt(`importSite.${k}` as 'importSite.known_one', { count: data.sites[k], n: n.format(data.sites[k]) })}</li>
+            ))}
+          </ul>
+          {data.sites.missing > 0 && <Muted>{pt('importSitesAdmin')}</Muted>}
+        </div>
+      )}
       {data.computers.length > 0 && (
         <div className="provider-import-part">
           <h4>{pt('importComputers')}</h4>

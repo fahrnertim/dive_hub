@@ -4,7 +4,7 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { FastifyReply } from 'fastify';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
-import { requireUser } from '../auth/fastify.js';
+import { requireAdmin, requireUser } from '../auth/fastify.js';
 import { Problem, problem, PROBLEMS, providerProblem, type ProblemCode } from '../http/problems.js';
 import { DIVE_IMPORT_MODES, MATCHING_WINDOWS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES } from '../db/schema.js';
 import { ImportView, toImportView } from '../routes.js';
@@ -391,6 +391,13 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       create: Type.Integer({ description: 'No Dive here: a Dive without a Recording (mode create)' }),
       noMatch: Type.Integer({ description: 'No Dive here, and the mode only adds: left out' }),
     }),
+    sites: Type.Object({
+      known: Type.Integer({ description: 'A site here has the Provider\'s site ID' }),
+      match: Type.Integer({ description: 'A site here is the same by name and position (within 100 m): it gets the ID' }),
+      create: Type.Integer({ description: 'New: made from the Provider\'s site data (allowed by an admin)' }),
+      missing: Type.Integer({ description: 'New, but not allowed (or the Provider says nothing about it): the Dive gets no site' }),
+    }, { description: 'The distinct sites the dives name, for Dives that have no site yet (ADR 0030)' }),
+    sitesAllowed: Type.Boolean({ description: 'An admin allowed creating sites from this Provider\'s site data' }),
     decisions: Type.Array(Type.Object({
       remoteId: Type.String(),
       remoteNumber: Nullable(Type.Integer()),
@@ -436,6 +443,38 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       decisions: Object.fromEntries(request.body.decisions.map((d) => [d.remoteId, d.choice])),
     });
     return reply.code(202).send(toImportView(created));
+  });
+
+  const SiteDataView = Type.Object({
+    provider: Type.String(),
+    name: Type.String(),
+    allowedAt: Nullable(DateTime),
+    allowedBy: Nullable(Type.String({ description: 'The admin who allowed it, by name' })),
+  });
+  const siteDataView = (r: Awaited<ReturnType<DiveImportService['siteData']>>[number]) => ({ ...r, allowedAt: r.allowedAt?.toISOString() ?? null });
+
+  app.get('/admin/provider-site-data', {
+    onRequest: requireAdmin,
+    schema: {
+      summary: 'Admins: per Provider whose dives Users import, whether new Dive sites may be made from its site data (ADR 0030)',
+      response: { 200: Type.Object({ providers: Type.Array(SiteDataView) }), 403: Problem },
+    },
+  }, async () => ({ providers: (await diveImports.siteData()).map(siteDataView) }));
+
+  app.put('/admin/provider-site-data/:provider', {
+    onRequest: requireAdmin,
+    schema: {
+      summary: 'Admins: allow or stop making Dive sites from a Provider\'s site data when Users import dives',
+      description: 'SSI gives no licence for its site data (ADR 0024): allowing needs confirm true, after showing the same '
+        + 'explanation as the SSI site import (provider_site_data_not_confirmed). Without it, imports only link sites already here.',
+      params: Type.Object({ provider: ProviderParam }),
+      body: Type.Object({ allowed: Type.Boolean(), confirm: Type.Optional(Type.Boolean()) }, { additionalProperties: false }),
+      response: { 200: Type.Object({ providers: Type.Array(SiteDataView) }), 400: Problem, 403: Problem },
+    },
+  }, async (request, reply) => {
+    if (request.body.allowed && request.body.confirm !== true) return reply.code(400).send(problem('provider_site_data_not_confirmed'));
+    await diveImports.allowSiteData(request.user!.id, request.params.provider, request.body.allowed);
+    return { providers: (await diveImports.siteData()).map(siteDataView) };
   });
 
   app.delete('/connections/:id', {

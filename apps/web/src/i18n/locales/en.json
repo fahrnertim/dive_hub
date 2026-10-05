@@ -387,7 +387,8 @@
     "provider_dive_gone": "The dive was deleted in {{name}}. Send it again to create it there anew.",
     "provider_busy": "This dive is being sent to {{name}} right now. Wait a moment.",
     "provider_unsupported": "{{name}} doesn’t offer that.",
-    "provider_import_off": "Importing dives from {{name}} is off. Choose what the import may do first."
+    "provider_import_off": "Importing dives from {{name}} is off. Choose what the import may do first.",
+    "provider_site_data_not_confirmed": "Confirm the explanation about {{name}}’s missing licence first."
   },
   "vocabulary": {
     "waterType": {
@@ -1007,7 +1008,31 @@
     "importStart": "Import from {{name}}",
     "importStarted": "Importing from {{name}}.",
     "importRunning": "Import from {{name}}",
-    "importToLogbook": "Go to the logbook"
+    "importToLogbook": "Go to the logbook",
+    "importSites": "Dive sites",
+    "importSite": {
+      "known_one": "{{n}} is here already",
+      "known_other": "{{n}} are here already",
+      "match_one": "{{n}} is here by name and position: it gets {{name}}’s ID",
+      "match_other": "{{n}} are here by name and position: they get {{name}}’s ID",
+      "create_one": "{{n}} isn’t here yet: made from {{name}}’s data",
+      "create_other": "{{n}} aren’t here yet: made from {{name}}’s data",
+      "missing_one": "{{n}} isn’t here: its dives stay without a site",
+      "missing_other": "{{n}} aren’t here: their dives stay without a site"
+    },
+    "importSitesAdmin": "An admin can allow making these sites from {{name}}’s data. Run the import again then, and the dives get their sites.",
+    "siteDataTitle": "Dive sites from {{name}} logbooks",
+    "siteDataLead": "When Users import their dives from {{name}}, a dive’s site that isn’t here yet can be made from what {{name}} says about it.",
+    "siteDataNoLicence": "{{name}} gives no licence for its dive site data.",
+    "siteDataRisk": "In the EU its site list is protected as a database. Allowing it is your decision as the operator of this Dive Hub, and your risk. Without it, imports only link sites already here.",
+    "siteDataTaken": "Taken per site: name, position, country and {{name}}’s ID, only for the sites Users’ dives name.",
+    "siteDataConfirm": "I understand and allow making dive sites from {{name}}’s data at my own risk",
+    "siteDataAllow": "Allow",
+    "siteDataOn": "Allowed",
+    "siteDataAllowed": "by {{by}}, {{date}}. Imports make the sites they need.",
+    "siteDataStop": "Stop making sites",
+    "siteDataAllowedNow": "Dive sites from {{name}} are allowed.",
+    "siteDataStopped": "Imports no longer make sites from {{name}}’s data."
   },
   "providers": {
     "ssi": {

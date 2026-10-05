@@ -16,7 +16,7 @@ const withId = (record: Record<string, unknown>, id = 27_000_001) => ({ ...recor
 
 describe('SSI dives for an import', () => {
   it('keeps of the logbook only accounts and sites as the context, no names of people', () => {
-    expect(context).toEqual({ people: { 3786888: '4989164' }, sites: { 3314: { name: 'Hausreef', latitude: 27.29, longitude: 33.82 } } });
+    expect(context).toEqual({ people: { 3786888: '4989164' }, sites: { 3314: { name: 'Hausreef', latitude: 27.29, longitude: 33.82, country: 'EG' } } });
   });
 
   it('reads a dive typed by hand: rounded values, SSI\'s zeros as none, buddies as their SSI accounts', () => {

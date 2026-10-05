@@ -107,6 +107,8 @@ export const keys = {
   /** What importing the account's dives would do (ADR 0030); under ['connections']. */
   diveImport: (connectionId: string) => ['connections', connectionId, 'dive-import'] as const,
   importOf: (id: string) => ['imports', id] as const,
+  /** Admins: whether Dive sites may be made from a Provider's site data (ADR 0030). */
+  siteData: ['admin', 'provider-site-data'] as const,
 };
 
 /**
@@ -332,6 +334,12 @@ async function fetchDiveImportPreview(connectionId: string) {
 /** What importing the account's dives would do now (ADR 0030); reads the Provider, so only when the User asks. */
 export const diveImportPreviewQuery = (connectionId: string) =>
   queryOptions({ queryKey: keys.diveImport(connectionId), queryFn: () => fetchDiveImportPreview(connectionId), staleTime: Infinity, retry: false });
+
+/** Admins: per Provider whose dives Users import, whether new Dive sites may be made from its site data (ADR 0030). */
+export const siteDataQuery = () => queryOptions({
+  queryKey: keys.siteData, queryFn: async () => unwrap(await api.GET('/api/admin/provider-site-data')).providers,
+});
+export type SiteDataView = Awaited<ReturnType<NonNullable<ReturnType<typeof siteDataQuery>['queryFn']>>>[number];
 
 /** One Import, asked again every second while it runs (an import from a Provider, ADR 0030). */
 export const importQuery = (id: string) => queryOptions({

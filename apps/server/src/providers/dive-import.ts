@@ -5,7 +5,7 @@
 import { and, desc, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import {
-  connection, dive, diveSite, diveSiteExternalId, diver, diverExternalId, device, importJob, importOriginal, original, participant, push,
+  connection, dive, diveSite, diver, diverExternalId, device, importJob, importOriginal, original, participant, providerSiteData, push, user,
   recording, type ComputerChoice, type DiveImportMode, type ImportOutcome, type ProviderImportPlan, type UtcOffsetSource,
 } from '../db/schema.js';
 import { managedDiverIds, participantsOf } from '../dives/dive-service.js';
@@ -16,6 +16,8 @@ import { PROCESS_IMPORT_TASK } from '../imports/import-service.js';
 import { deviceDiver, placeRecording } from '../imports/placement.js';
 import { entryMatches } from '../imports/matching.js';
 import { siteRef } from '../sites/dive-site-link.js';
+import { siteDataAllowed, siteForProvider, siteOutlook, type ProviderSite } from '../sites/provider-sites.js';
+import type { SiteSource } from '../sites/sources.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import type { ConnectionService } from './connection-service.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
@@ -74,6 +76,10 @@ interface Run {
   /** The choice for every computer found. */
   choices: Record<string, ComputerChoice>;
   managed: Set<string>;
+  /** Whose account each person entry is, each site's name and position. */
+  context: ImportContext;
+  /** An admin allowed creating sites from the Provider's site data. */
+  sitesAllowed: boolean;
 }
 
 const DAY_MS = 86_400_000;
@@ -206,6 +212,21 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     return run.mode === 'create' ? { kind: 'create' } : { kind: 'no_match' };
   }
 
+  /**
+   * The sites a Provider's dive names, with what the Provider says about them. A site missing from the context can only be
+   * found by its ID (no name to match or create it by).
+   */
+  function sitesOf(run: Run, d: ImportedDive): ProviderSite[] {
+    return Object.entries(d.siteIds).map(([source, externalId]) => {
+      const known = run.context.sites[externalId];
+      return {
+        source: source as SiteSource, externalId, name: known?.name ?? '',
+        position: known && known.latitude !== null && known.longitude !== null ? { latitude: known.latitude, longitude: known.longitude } : null,
+        country: known?.country ?? null,
+      };
+    });
+  }
+
   /** The start's instant: from the dive's position, else its site's at the Provider, else nearby Dives, else unknown. */
   const placeTime = (q: Db | Tx, run: Run, d: ImportedDive): Promise<PlacedTime> =>
     placeLocalTime(q, run.diverId, wallClockMs(d.localStart)!, [d.exit, d.entry, d.sitePosition]);
@@ -221,14 +242,11 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     const changes: Changes = {};
     const columns: Partial<typeof dive.$inferInsert> = {};
     if (!current.siteId) {
-      for (const [source, externalId] of Object.entries(d.siteIds)) {
-        const [site] = await tx.select({ id: diveSite.id }).from(diveSiteExternalId)
-          .innerJoin(diveSite, eq(diveSite.id, diveSiteExternalId.siteId))
-          .where(and(eq(diveSiteExternalId.source, source as typeof diveSiteExternalId.$inferSelect.source),
-            eq(diveSiteExternalId.externalId, externalId), isNull(diveSite.deletedAt)));
-        if (!site) continue;
-        columns.siteId = site.id;
-        changes.site = { from: null, to: await siteRef(tx, site.id) };
+      for (const site of sitesOf(run, d)) {
+        const siteId = await siteForProvider(tx, site, { allowCreate: run.sitesAllowed, userId: run.userId, actor });
+        if (!siteId) continue;
+        columns.siteId = siteId;
+        changes.site = { from: null, to: await siteRef(tx, siteId) };
         break;
       }
     }
@@ -329,7 +347,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       case 'deleted':
         return { ...base, result: 'skipped', reason: 'deleted_earlier' };
       case 'linked': {
-        if (at.seen) return { ...base, result: 'unchanged', diveId: a.diveId };
+        // Filled where still empty, also when unchanged: what Dive Hub can fill may have grown (a site an admin allowed).
         return { ...base, result: (await fill(tx, run, a.diveId, d, actor)) ? 'updated' : 'unchanged', diveId: a.diveId };
       }
       case 'recording': {
@@ -371,11 +389,32 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
 
   async function runOf(q: Db | Tx, userId: string, adapter: ProviderAdapter, s: {
     diverId: string; connectionId: string | null; mode: DiveImportMode; windowMinutes: number; choices: Record<string, ComputerChoice>;
+    context: ImportContext;
   }): Promise<Run> {
-    return { userId, adapter, ...s, managed: await managedDiverIds(q, userId) };
+    return { userId, adapter, ...s, managed: await managedDiverIds(q, userId), sitesAllowed: await siteDataAllowed(q, adapter.id) };
   }
 
   return {
+    /** Providers whose dives can be imported, and whether an admin allowed creating sites from their site data. */
+    async siteData() {
+      const rows = await db.select({ provider: providerSiteData.provider, allowedAt: providerSiteData.allowedAt, allowedBy: user.name })
+        .from(providerSiteData).leftJoin(user, eq(user.id, providerSiteData.allowedBy));
+      return registry.list().filter((a) => a.capabilities.data.dives?.import?.operations.includes('list')).map((a) => {
+        const row = rows.find((r) => r.provider === a.id);
+        return { provider: a.id, name: a.capabilities.name, allowedAt: row?.allowedAt ?? null, allowedBy: row?.allowedBy ?? null };
+      });
+    },
+
+    /** An admin allows (having confirmed the explanation) or stops creating sites from a Provider's site data. */
+    async allowSiteData(adminId: string, provider: string, allowed: boolean) {
+      importer(provider);
+      if (!allowed) {
+        await db.delete(providerSiteData).where(eq(providerSiteData.provider, provider));
+        return;
+      }
+      await db.insert(providerSiteData).values({ provider, allowedBy: adminId }).onConflictDoNothing();
+    },
+
     /** What an import of the Connection's dives may do (ADR 0030). */
     async settings(userId: string, connectionId: string, set: {
       mode?: DiveImportMode | undefined; windowMinutes?: number | undefined; computers?: Record<string, ComputerChoice> | undefined;
@@ -393,10 +432,10 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
      * computers found with their choice, how many dives go which way, and the logbook entries the User decides.
      */
     async preview(userId: string, connectionId: string) {
-      const { row, adapter, parsed } = await read(userId, connectionId);
+      const { row, adapter, context, parsed } = await read(userId, connectionId);
       const dives = parsed.flatMap((p) => (p.dive ? [p.dive] : []));
       const run = await runOf(db, userId, adapter, {
-        diverId: row.diverId, connectionId: row.id, mode: row.importMode, windowMinutes: row.importWindowMinutes, choices: {},
+        diverId: row.diverId, connectionId: row.id, mode: row.importMode, windowMinutes: row.importWindowMinutes, choices: {}, context,
       });
       const computers = await computersOf(db, run, dives, row.importComputers);
       run.choices = Object.fromEntries(computers.map((c) => [c.key, c.choice]));
@@ -419,7 +458,23 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
           });
         }
       }
-      return { mode: row.importMode, windowMinutes: row.importWindowMinutes, computers, counts, decisions };
+      // The sites the dives name (not those Dive Hub sent): here already, the same as one here, or new.
+      const sites = { known: 0, match: 0, create: 0, missing: 0 };
+      const seen = new Set<string>();
+      for (const d of dives) {
+        if (d.evidence === 'ours') continue;
+        for (const site of sitesOf(run, d)) {
+          const key = `${site.source}:${site.externalId}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          const outlook = site.name ? await siteOutlook(db, site) : { kind: 'taken' as const };
+          if (outlook.kind === 'known') sites.known += 1;
+          else if (outlook.kind === 'match') sites.match += 1;
+          else if (outlook.kind === 'new' && run.sitesAllowed) sites.create += 1;
+          else sites.missing += 1;
+        }
+      }
+      return { mode: row.importMode, windowMinutes: row.importWindowMinutes, computers, counts, sites, sitesAllowed: run.sitesAllowed, decisions };
     },
 
     /**
@@ -431,7 +486,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       const { row, adapter, context, parsed } = await read(userId, connectionId, { recent: true });
       const dives = parsed.flatMap((p) => (p.dive ? [p.dive] : []));
       const run = await runOf(db, userId, adapter, {
-        diverId: row.diverId, connectionId: row.id, mode: row.importMode, windowMinutes: row.importWindowMinutes, choices: {},
+        diverId: row.diverId, connectionId: row.id, mode: row.importMode, windowMinutes: row.importWindowMinutes, choices: {}, context,
       });
       const saved = { ...row.importComputers, ...given.computers };
       const computers = await computersOf(db, run, dives, saved);
@@ -472,6 +527,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       const { adapter, parse } = importer(job.provider!);
       const run = await runOf(db, job.userId, adapter, {
         diverId: plan.diverId, connectionId: job.connectionId, mode: plan.mode, windowMinutes: plan.windowMinutes, choices: plan.computers,
+        context: plan.context,
       });
       const rows = await db.select({ id: original.id, storageKey: original.storageKey, fileName: original.fileName })
         .from(importOriginal).innerJoin(original, eq(original.id, importOriginal.originalId))
@@ -515,7 +571,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
 /** The context as kept on the Import: accounts and sites only, whatever else an adapter might add left behind. */
 const pick = (c: ImportContext): ImportContext => ({
   people: Object.fromEntries(Object.entries(c.people).map(([k, v]) => [k, String(v)])),
-  sites: Object.fromEntries(Object.entries(c.sites).map(([k, s]) => [k, { name: s.name, latitude: s.latitude, longitude: s.longitude }])),
+  sites: Object.fromEntries(Object.entries(c.sites).map(([k, s]) => [k, { name: s.name, latitude: s.latitude, longitude: s.longitude, country: s.country }])),
 });
 
 export type DiveImportService = ReturnType<typeof createDiveImportService>;

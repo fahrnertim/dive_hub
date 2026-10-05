@@ -74,6 +74,7 @@ export const PROBLEMS = {
   provider_busy: 'This dive is being sent to this service right now',
   provider_unsupported: 'This service does not offer that',
   provider_import_off: 'Importing dives from this account is off; choose what the import may do first',
+  provider_site_data_not_confirmed: 'Allowing dive sites from this service needs the explanation about its missing licence confirmed (confirm)',
 } as const;
 
 export type ProblemCode = keyof typeof PROBLEMS;

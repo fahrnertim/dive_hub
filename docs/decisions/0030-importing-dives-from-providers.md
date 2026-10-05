@@ -107,6 +107,23 @@ The owner decided on 2026-10-06 (the design note's points 1–8 and the question
 - **Outcome and history:** an Import has `provider`; results gain `linked`, reasons `sent_by_dive_hub`, `no_match`,
   `ambiguous` and `left_out`; filling is the Revision cause `fill`; a Dive made from an entry has `from_provider`.
 
+## Amended: the sites the dives name (owner, 2026-10-06, slice 15a)
+Replaces "only a site that already has the SSI site ID is used" for a Dive that has no site yet:
+- **A site here with that SSI ID** is used, as before.
+- **Else the same site here by the Site import's rule** (`matchingSite`, shared with ADR 0021's import: within 100 m,
+  the same name, no SSI ID yet) gets the SSI ID as a reference (Revision `link`). No SSI data is copied.
+- **Else, if an admin allowed it, a new site** from the logbook's entry: name, position, country and SSI's ID, marked
+  "From SSI", the User as its creator (Revision `create`). SSI's site data still has no licence (ADR 0024), so it is the
+  operator's decision: an admin confirms the same explanation as for an SSI site import, once per Provider
+  (`provider_site_data`, `PUT /api/admin/provider-site-data/{provider}`), and can stop it again. Without it the Dive
+  stays without a site, and the preview says an admin can allow it.
+- The preview counts the sites the dives name: here already, matched, to create, missing. A linked dive is filled where
+  still empty on every run (no longer skipped when its Original is unchanged), so allowing it later and running the
+  import again gives the dives their sites.
+- *Considered:* always creating (duplicates of hand-made and OpenStreetMap sites), only matching (dives in places Dive
+  Hub doesn't know stay without a site), the User confirming per import (the risk is the operator's, as for the Site
+  import), and running the admin's SSI site import for the IDs (SSI's whole list for a handful of sites).
+
 ## Considered options
 - **One trust switch per Connection:** one account can hold both kinds of dive.
 - **The choice per computer on the Device:** a lent computer's Device belongs to another User's Diver.

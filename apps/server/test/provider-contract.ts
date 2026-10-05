@@ -219,7 +219,7 @@ export function providerContract(name: string, make: () => ContractHarness) {
       expect(records.length).toBeGreaterThanOrEqual(3);
       // The context: accounts and sites only, nothing else the Provider knows about people.
       for (const account of Object.values(context.people)) expect(typeof account).toBe('string');
-      for (const site of Object.values(context.sites)) expect(Object.keys(site).sort()).toEqual(['latitude', 'longitude', 'name']);
+      for (const site of Object.values(context.sites)) expect(Object.keys(site).sort()).toEqual(['country', 'latitude', 'longitude', 'name']);
       const parsed = records.map((r) => h.adapter.dives!.parse!(r.record, context));
       for (const [i, d] of parsed.entries()) {
         expect(d?.remoteId).toBe(records[i]!.remoteId);

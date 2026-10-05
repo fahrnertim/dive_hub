@@ -387,7 +387,8 @@
     "provider_dive_gone": "Der Tauchgang wurde in {{name}} gelöscht. Sende ihn erneut, um ihn dort neu anzulegen.",
     "provider_busy": "Dieser Tauchgang wird gerade an {{name}} gesendet. Warte einen Moment.",
     "provider_unsupported": "{{name}} bietet das nicht an.",
-    "provider_import_off": "Der Import von Tauchgängen aus {{name}} ist aus. Wähle zuerst, was der Import darf."
+    "provider_import_off": "Der Import von Tauchgängen aus {{name}} ist aus. Wähle zuerst, was der Import darf.",
+    "provider_site_data_not_confirmed": "Bestätige zuerst die Erklärung zur fehlenden Lizenz von {{name}}."
   },
   "vocabulary": {
     "waterType": {
@@ -1007,7 +1008,31 @@
     "importStart": "Aus {{name}} importieren",
     "importStarted": "Import aus {{name}} läuft.",
     "importRunning": "Import aus {{name}}",
-    "importToLogbook": "Zum Logbuch"
+    "importToLogbook": "Zum Logbuch",
+    "importSites": "Tauchplätze",
+    "importSite": {
+      "known_one": "{{n}} ist schon hier",
+      "known_other": "{{n}} sind schon hier",
+      "match_one": "{{n}} ist mit Name und Position hier: bekommt die {{name}}-ID",
+      "match_other": "{{n}} sind mit Name und Position hier: bekommen die {{name}}-ID",
+      "create_one": "{{n}} ist noch nicht hier: wird aus den Daten von {{name}} angelegt",
+      "create_other": "{{n}} sind noch nicht hier: werden aus den Daten von {{name}} angelegt",
+      "missing_one": "{{n}} ist nicht hier: die Tauchgänge bleiben ohne Tauchplatz",
+      "missing_other": "{{n}} sind nicht hier: die Tauchgänge bleiben ohne Tauchplatz"
+    },
+    "importSitesAdmin": "Ein Admin kann erlauben, diese Tauchplätze aus den Daten von {{name}} anzulegen. Führe den Import danach noch einmal aus, dann bekommen die Tauchgänge ihre Tauchplätze.",
+    "siteDataTitle": "Tauchplätze aus {{name}}-Logbüchern",
+    "siteDataLead": "Wenn User ihre Tauchgänge aus {{name}} importieren, kann ein Tauchplatz, der noch nicht hier ist, aus den Angaben von {{name}} angelegt werden.",
+    "siteDataNoLicence": "{{name}} gibt keine Lizenz für seine Tauchplatzdaten.",
+    "siteDataRisk": "In der EU ist die Tauchplatzliste als Datenbank geschützt. Es zu erlauben, ist deine Entscheidung als Betreiber dieses Dive Hub, und dein Risiko. Ohne die Erlaubnis verknüpfen Importe nur Tauchplätze, die schon hier sind.",
+    "siteDataTaken": "Übernommen wird je Tauchplatz: Name, Position, Land und die {{name}}-ID, nur für die Tauchplätze, die Tauchgänge von Usern nennen.",
+    "siteDataConfirm": "Ich habe das verstanden und erlaube, Tauchplätze aus den Daten von {{name}} anzulegen, auf mein eigenes Risiko",
+    "siteDataAllow": "Erlauben",
+    "siteDataOn": "Erlaubt",
+    "siteDataAllowed": "von {{by}}, {{date}}. Importe legen die Tauchplätze an, die sie brauchen.",
+    "siteDataStop": "Keine Tauchplätze mehr anlegen",
+    "siteDataAllowedNow": "Tauchplätze aus {{name}} sind erlaubt.",
+    "siteDataStopped": "Importe legen keine Tauchplätze mehr aus den Daten von {{name}} an."
   },
   "providers": {
     "ssi": {

@@ -2,6 +2,7 @@
 // reference ("A dive as SSI returns it"); fields a dive synced by SSI's own app may carry are read defensively.
 import { REFERENCE_PREFIX, type ImportContext, type ImportedDive, type Series } from '../provider.js';
 import type { SsiLogbook, SsiRecord } from './ssi-client.js';
+import { alpha2Of } from '../../sites/countries.js';
 import { buddyIdsOf, SAMPLE_INTERVAL_MS } from './ssi-record.js';
 
 /** The parser a Recording made from an SSI dive names (data model: Recording). */
@@ -17,7 +18,11 @@ const text = (v: unknown) => (typeof v === 'string' && v.trim() !== '' ? v.trim(
 export function contextOf(logbook: SsiLogbook): ImportContext {
   return {
     people: Object.fromEntries(logbook.buddies.flatMap((b) => (b.account ? [[String(b.id), b.account]] : []))),
-    sites: Object.fromEntries(logbook.sites.map((s) => [s.id, { name: s.name, latitude: s.latitude, longitude: s.longitude }])),
+    sites: Object.fromEntries(logbook.sites.map((s) => [s.id, {
+      name: s.name, latitude: s.latitude, longitude: s.longitude,
+      // SSI gives alpha-3, alpha-2 or a country's name.
+      country: alpha2Of(s.country) ?? (s.country && /^[A-Za-z]{2}$/.test(s.country) ? s.country.toUpperCase() : null),
+    }])),
   };
 }
 

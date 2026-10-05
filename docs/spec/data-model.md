@@ -275,6 +275,10 @@ an Original, and the Import records the archive's name and hash.
 *From a Provider ([ADR 0030](../decisions/0030-importing-dives-from-providers.md)):* one Original per dive, that dive's record as JSON (`application/json`), never the whole
 answer (which holds the buddy list's personal data). An unchanged dive has the same hash next time.
 
+**Provider site data** — an admin's permission per Provider (`provider_site_data`: provider, allowed at, allowed by) to
+make Dive sites from its site data when Users import dives (ADR 0030, slice 15a). A dive's site is otherwise only found
+by its ID or matched by name and position (and then gets the ID as a reference).
+
 **Import** — User, Connection (optional for manual upload), Originals, started/finished, status,
 outcome per dive (`created`, `attached`, `updated`, `unchanged`, `duplicate candidate`, `skipped`, `failed`; skipped
 with `deleted_earlier` for a Recording of a deleted Dive, ADR 0026).

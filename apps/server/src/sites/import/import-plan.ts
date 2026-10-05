@@ -118,6 +118,33 @@ const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 
 /** Further apart in latitude than this, two places can't be within `MATCH_WITHIN_M`: skips the haversine. */
 const MATCH_DEGREES = (MATCH_WITHIN_M / (Math.PI * EARTH_RADIUS_M / 180)) * 1.01;
+
+/** A site here as matching sees it: its name and position, and the Sources it has an ID at. */
+export interface MatchableSite {
+  id: string;
+  values: { name: string | null; position: Position | null };
+  externalIds: { source: SiteSource }[];
+}
+
+/**
+ * The site here that a Source's site is (ADR 0021): the nearest of `sites` within MATCH_WITHIN_M whose name matches and
+ * that has no ID at that Source yet. The caller passes live sites only; `skip` leaves out others it has reasons to pass
+ * over. Shared by the Site import and the import of a Provider's dives (ADR 0030).
+ */
+export function matchingSite<S extends MatchableSite>(
+  other: { source: SiteSource; name: string; position: Position }, sites: Iterable<S>, skip?: (site: S) => boolean,
+): S | undefined {
+  let best: { site: S; distance: number } | undefined;
+  for (const site of sites) {
+    const p = site.values.position;
+    if (!p || !site.values.name || Math.abs(p.latitude - other.position.latitude) > MATCH_DEGREES) continue;
+    if (skip?.(site) || site.externalIds.some((e) => e.source === other.source)) continue;
+    const d = distanceM(other.position, p);
+    if (d > MATCH_WITHIN_M || (best && d >= best.distance) || !namesMatch(site.values.name, other.name)) continue;
+    best = { site, distance: d };
+  }
+  return best?.site;
+}
 const NEAR_DEGREES = (NEAR_WITHIN_M / (Math.PI * EARTH_RADIUS_M / 180)) * 1.01;
 
 /** A field of stored values; values stored before a field existed lack it (read as null). */
@@ -289,15 +316,9 @@ export function planSiteImport(input: {
         if (targetNames(t).some((n) => namesMatch(n, o.values.name!))) best = { target: () => t, distance: d };
       }
       if (!best) {
-        for (const site of liveBands.around(position)) {
-          const p = site.values.position;
-          if (!p || Math.abs(p.latitude - position.latitude) > MATCH_DEGREES) continue;
-          if (siteTargets.has(site.id) && has(siteTargets.get(site.id)!, o.source)) continue;
-          if (site.externalIds.some((e) => e.source === o.source)) continue;
-          const d = distanceM(position, p);
-          if (d > MATCH_WITHIN_M || (best && d >= best.distance) || !namesMatch(site.values.name!, o.values.name!)) continue;
-          best = { target: () => targetOfSite(site), distance: d };
-        }
+        const site = matchingSite({ source: o.source, name: o.values.name!, position }, liveBands.around(position),
+          (x) => siteTargets.has(x.id) && has(siteTargets.get(x.id)!, o.source));
+        if (site) best = { target: () => targetOfSite(site), distance: 0 };
       }
     }
     join(best?.target() ?? newTarget(), o);

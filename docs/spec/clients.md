@@ -311,6 +311,9 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
     Connection (`PATCH` with `diveImport.computers`), which refreshes the preview. Say why the suggestion is entries when
     `fromFiles` (Dive Hub has the computer's files, which are more exact), and that `otherDiver` computers come in as
     entries whatever the choice;
+  - **the sites the dives name** (`sites`): here already, the same site here by name and position (it gets the
+    Provider's ID), to be made from the Provider's data, or missing; with `missing` and not `sitesAllowed`, say an admin
+    can allow making them and that running the import again then gives the dives their sites;
   - **every entry to decide** (`decisions`): the Provider's dive (its number, its local time as logged, depth, duration)
     and the Dives here (`candidates`, closest first, each named by its number, time, depth, duration, site), "A new dive"
     only with mode `create`, and "Leave it out", preselected.
@@ -319,6 +322,11 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
   as they are, linked ones are only filled where still empty.
 - **Must not suggest it overwrites anything**, and must not show the Provider's people by more than their name (the
   server keeps only accounts; nothing else of them reaches the client).
+
+- **Admins: sites from a Provider's site data** (`GET /api/admin/provider-site-data`; `PUT …/{provider}`): must show the
+  Provider's missing licence and that allowing it is the operator's decision and risk, and send `confirm: true` only after
+  the admin ticked that (`provider_site_data_not_confirmed`); show who allowed it and when, and offer stopping it.
+  *Web:* `Admin.tsx` (`ProviderSiteData`).
 
 ### Duplicate candidates
 - **Show them where the User decides,** first on the logbook ("Needs your decision"), with the Recording (time,

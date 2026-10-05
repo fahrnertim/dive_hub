@@ -21,7 +21,7 @@ const KAI: FakeSsiBuddy = {
 type Outcome = { result: string; reason?: string; diveId?: string; remoteId?: string };
 type DiveView = {
   id: string; version: number; values: { number: number | null; startsAt: { at: string; utcOffsetSeconds: number | null }; maxDepthM: number | null };
-  utcOffsetSource: string; fromProvider: string | null; notes: string | null; site: { name: string } | null;
+  utcOffsetSource: string; fromProvider: string | null; notes: string | null; site: { id: string; name: string } | null;
   participants: { name: string }[]; recordings: { isPrimary: boolean; parser: string; device: { serialNumber: string } | null }[];
 };
 type Preview = {
@@ -65,7 +65,18 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
 
   beforeAll(async () => {
     t = await createTestDatabase();
-    ctx = await createTestApp(t, { fakeSsi: createFakeSsi({ buddies: [KAI] }) });
+    ctx = await createTestApp(t, {
+      fakeSsi: createFakeSsi({
+        buddies: [KAI],
+        // The sites of Erika's SSI logbook: Hausreef (here with its SSI ID), Schwarzenbach (here by name, without
+        // the ID), the Blue Hole (not here; SSI names its country in alpha-3).
+        sites: [
+          { odin_dive_sites_id: 3314, odin_dive_sites_name: 'Hausreef', odin_dive_sites_lat: 27.29, odin_dive_sites_lon: 33.82, odin_countries_code_iso: 'EG' },
+          { odin_dive_sites_id: 5120, odin_dive_sites_name: 'Attersee – Schwarzenbach', odin_dive_sites_lat: 47.8512, odin_dive_sites_lon: 13.5514, odin_countries_code_iso: 'AT' },
+          { odin_dive_sites_id: 6066, odin_dive_sites_name: 'Blue Hole', odin_dive_sites_lat: 28.5722, odin_dive_sites_lon: 34.5375, odin_countries_code_iso: 'EGY' },
+        ],
+      }),
+    });
     await createUser(ctx.auth, 'tim@example.com');
     tim = await signIn(ctx.app, 'tim@example.com');
     const own = ((await call('GET', '/api/divers')).json() as { id: string; isOwn: boolean }[]).find((d) => d.isOwn)!.id;
@@ -238,6 +249,42 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
       expect((await call('DELETE', `/api/dives/${id}`, { version: (await diveOf(id)).version })).statusCode).toBe(200);
       outcome = await runImport();
       expect(of('nearby')).toMatchObject({ result: 'skipped', reason: 'deleted_earlier' });
+    });
+
+    it('gives a site here that is the same by name and position the SSI ID, and makes no site without an admin\'s permission', async () => {
+      await call('PATCH', `/api/connections/${connectionId}`, { diveImport: { mode: 'create' } });
+      const here = (await call('POST', '/api/dive-sites', { name: 'Schwarzenbach', position: { latitude: 47.8515, longitude: 13.5516 } })).json() as { id: string };
+      remote.schwarzenbach = String(ctx.fakeSsi.addDive(ERIKA, handTypedDive({ at: '2025-11-01 10:00', depthM: 25, minutes: 40, siteId: 5120 })));
+      remote.blueHole = String(ctx.fakeSsi.addDive(ERIKA, handTypedDive({ at: '2025-11-02 10:00', depthM: 30, minutes: 40, siteId: 6066 })));
+      const p = (await preview()) as Preview & { sites: Record<string, number>; sitesAllowed: boolean };
+      expect(p).toMatchObject({ sitesAllowed: false, sites: { match: 1, create: 0, missing: 1 } });
+      outcome = await runImport();
+      expect((await diveOf(of('schwarzenbach').diveId!)).site).toEqual({ id: here.id, name: 'Schwarzenbach' });
+      const site = (await call('GET', `/api/dive-sites/${here.id}`)).json() as { externalIds: { source: string; externalId: string; providesData: boolean }[] };
+      expect(site.externalIds).toEqual([expect.objectContaining({ source: 'ssi', externalId: '5120', providesData: false })]);
+      expect((await diveOf(of('blueHole').diveId!)).site).toBeNull();
+    });
+
+    it('lets only an admin allow SSI\'s site data, after confirming, and then makes the site from SSI\'s values', async () => {
+      expect((await call('PUT', '/api/admin/provider-site-data/ssi', { allowed: true, confirm: true })).statusCode).toBe(403);
+      await createUser(ctx.auth, 'admin@example.com', 'admin');
+      const admin = await signIn(ctx.app, 'admin@example.com');
+      const asAdmin = (method: 'GET' | 'PUT', url: string, payload?: object) =>
+        ctx.app.inject({ method, url, headers: { cookie: admin, origin: BASE_URL }, ...(payload && { payload }) });
+      expect((await asAdmin('GET', '/api/admin/provider-site-data')).json()).toEqual({ providers: [{ provider: 'ssi', name: 'SSI', allowedAt: null, allowedBy: null }] });
+      expect((await asAdmin('PUT', '/api/admin/provider-site-data/ssi', { allowed: true })).json()).toMatchObject({ code: 'provider_site_data_not_confirmed' });
+      expect((await asAdmin('PUT', '/api/admin/provider-site-data/ssi', { allowed: true, confirm: true })).json())
+        .toMatchObject({ providers: [{ provider: 'ssi', allowedAt: expect.any(String), allowedBy: 'admin' }] });
+
+      expect((await preview()) as unknown).toMatchObject({ sitesAllowed: true, sites: { create: 1, missing: 0 } });
+      outcome = await runImport();
+      // A linked dive is filled where still empty: its site now.
+      const made = (await diveOf(of('blueHole').diveId!)).site!;
+      expect(made.name).toBe('Blue Hole');
+      const site = (await call('GET', `/api/dive-sites/${made.id}`)).json() as {
+        country: string; position: { latitude: number }; externalIds: { externalId: string; providesData: boolean }[];
+      };
+      expect(site).toMatchObject({ country: 'EG', position: { latitude: 28.5722 }, externalIds: [{ externalId: '6066', providesData: true }] });
     });
 
     it('only adds to Dives here when told so', async () => {

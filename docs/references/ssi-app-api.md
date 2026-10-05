@@ -236,7 +236,9 @@ a synced dive has been seen:
   accounts through `logbook_buddies`), `_comment`, `_ean` / `_ean_percent`, `_gf_set_1` / `_2`, `_cns_start` / `_end`.
   The samples' `ndl` is minutes; 99 means none.
 - Kept: each dive's record as received, as one JSON Original; the buddy list itself never (only entry → account, on the
-  Import).
+  Import), and of `logbook_sites` each site's name, position and country (alpha-2).
+- A dive's site (slice 15a): the site here with that SSI ID, else the same site by name and position (it gets the ID),
+  else, only if an admin allowed SSI's site data, a site made from the logbook's entry (marked "From SSI").
 
 ## Known but not used
 

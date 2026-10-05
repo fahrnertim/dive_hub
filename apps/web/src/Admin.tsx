@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, type FormEvent } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { api, invitationsQuery, keys, meQuery, unwrap, usersQuery, type UserView } from './api.ts';
+import { api, invitationsQuery, keys, meQuery, siteDataQuery, unwrap, usersQuery, type SiteDataView, type UserView } from './api.ts';
+import { announce } from './lib/announce.ts';
+import { useProviders, useProviderText } from './lib/providers.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { focusHeading } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
@@ -21,7 +23,71 @@ export function Admin() {
         <p>{t('siteImport.adminLead')}</p>
         <a href="#/admin/site-imports" className="btn btn-secondary"><Icon name="siteImport" />{t('siteImport.open')}</a>
       </Panel>
+      <ProviderSiteData />
     </>
+  );
+}
+
+/**
+ * Whether Users' imports may make Dive sites from a Provider's site data (ADR 0030): one panel per Provider whose dives
+ * are imported. Without a licence, it is the operator's decision, confirmed once, like an SSI site import.
+ */
+function ProviderSiteData() {
+  const data = useQuery(siteDataQuery());
+  const providers = useProviders();
+  return (
+    <>
+      {(data.data ?? []).map((s) => {
+        const p = providers.data?.find((x) => x.id === s.provider);
+        return p ? <SiteDataPanel key={s.provider} provider={{ id: p.id, name: p.name }} state={s} /> : null;
+      })}
+    </>
+  );
+}
+
+function SiteDataPanel({ provider: p, state: s }: { provider: { id: string; name: string }; state: SiteDataView }) {
+  const pt = useProviderText(p);
+  const display = useDisplay();
+  const errorText = useErrorText();
+  const queryClient = useQueryClient();
+  const [confirmed, setConfirmed] = useState(false);
+  const set = useMutation({
+    mutationFn: async (allowed: boolean) => unwrap(await api.PUT('/api/admin/provider-site-data/{provider}', {
+      params: { path: { provider: p.id } }, body: allowed ? { allowed, confirm: true } : { allowed },
+    })).providers,
+    onSuccess: (providers, allowed) => {
+      queryClient.setQueryData(keys.siteData, providers);
+      setConfirmed(false);
+      announce(pt(allowed ? 'siteDataAllowedNow' : 'siteDataStopped'));
+    },
+  });
+  return (
+    <Panel title={pt('siteDataTitle')}>
+      <p>{pt('siteDataLead')}</p>
+      {s.allowedAt ? (
+        <>
+          <p><Badge tone="success">{pt('siteDataOn')}</Badge>{' '}
+            {pt('siteDataAllowed', { by: s.allowedBy ?? '', date: display.dateTime(s.allowedAt) })}</p>
+          {set.error && <Notice tone="danger">{errorText(set.error)}</Notice>}
+          <div className="form-actions">
+            <Button isPending={set.isPending} onPress={() => set.mutate(false)}>{pt('siteDataStop')}</Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <Notice tone="info">
+            <p><strong>{pt('siteDataNoLicence')}</strong></p>
+            <p>{pt('siteDataRisk')}</p>
+            <p>{pt('siteDataTaken')}</p>
+          </Notice>
+          <Checkbox isSelected={confirmed} onChange={setConfirmed}>{pt('siteDataConfirm')}</Checkbox>
+          {set.error && <Notice tone="danger">{errorText(set.error)}</Notice>}
+          <div className="form-actions">
+            <Button variant="primary" isDisabled={!confirmed} isPending={set.isPending} onPress={() => set.mutate(true)}>{pt('siteDataAllow')}</Button>
+          </div>
+        </>
+      )}
+    </Panel>
   );
 }
 

@@ -114,6 +114,10 @@ derived from it, [ADR 0030](../decisions/0030-importing-dives-from-providers.md)
   can infringe SSI's rights. Unlike OSM, there are no conditions to meet that would make copying it allowed.
   - Importing it is your decision and your risk. The admin confirms an explanation before every SSI import, and the
     Site import records when (`ssi_confirmed_at`).
+  - **Sites from Users' SSI dives** ([ADR 0030](../decisions/0030-importing-dives-from-providers.md)): when Users import
+    their dives, a dive's site that isn't here is made from their logbook's entry (name, position, country, ID) only
+    after an admin allowed it on the Admin page, with the same explanation; who and when is kept. Without it, imports
+    only give sites already here the SSI ID.
   - To keep the copy small, use **"Only fill dive sites that are already here"**: it adds SSI IDs and water types to
     your sites and creates none. Hand-made sites are never changed; their pages offer SSI's data, and a User decides.
   - Dive Hub never stores SSI's moderation comments (they contain submitters' IP addresses), private sites, statistics
@@ -645,3 +649,18 @@ Deliberate simplifications, to revisit:
   entry alone, so it may say "link" for both.
 - **SSI's dive number, rating, conditions, gear and tanks** stay in the Originals (not taken yet).
 - **Holders of a Device over time** (a lent computer) are their own topic (design note).
+
+**Slice 15a (2026-10-06): the dive sites imported dives name** (ADR 0030, amended by the owner).
+
+Implemented:
+- `src/sites/provider-sites.ts`: a dive's SSI site is the site here with its ID, else the same site by the Site import's
+  rule, else (with the admin's permission) a new site from the logbook's entry; `matchingSite` moved out of
+  `planSiteImport` into an exported function both use. The logbook's context keeps each site's country (alpha-2).
+- `provider_site_data` (migration 0017): an admin's permission per Provider; `GET /api/admin/provider-site-data`,
+  `PUT /api/admin/provider-site-data/{provider}` (`confirm` required to allow; `provider_site_data_not_confirmed`).
+- The preview's `sites` (known, match, create, missing) and `sitesAllowed`; linked dives are filled on every run.
+- Web: the sites in the preview, and a panel per Provider on the Admin page with the explanation, the confirmation,
+  who allowed it and when, and stopping it.
+- Tests: `ssi-dive-import.test.ts` (a match by name and position, nothing made without permission, only admins allow and
+  only after confirming, a site made from SSI's values with its country); `dive-import.spec.ts` and a ui-quality case for
+  the admin panel (@admin).

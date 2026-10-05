@@ -56,3 +56,18 @@ test('imports Lena\'s SSI dives from her Connection: the setting, the preview, a
     await leaveLena(request);
   }
 });
+
+test('an admin allows making dive sites from SSI logbooks, after confirming, and stops it again', { tag: ['@admin'] }, async ({ page, request }) => {
+  await request.put('/api/admin/provider-site-data/ssi', { data: { allowed: false }, headers });
+  await page.goto('/#/admin');
+  const panel = page.locator('section', { has: page.getByRole('heading', { name: 'Dive sites from SSI logbooks' }) });
+  await expect(panel.getByText('SSI gives no licence for its dive site data.')).toBeVisible();
+  const allow = panel.getByRole('button', { name: 'Allow', exact: true });
+  await expect(allow).toBeDisabled();
+  await panel.getByText(/^I understand and allow making dive sites/).click();
+  await allow.click();
+  await expect(panel.getByText('Allowed', { exact: true })).toBeVisible();
+  await expect(panel.getByText(/Allowed by Erika, /)).toBeVisible();
+  await panel.getByRole('button', { name: 'Stop making sites' }).click();
+  await expect(panel.getByRole('button', { name: 'Allow', exact: true })).toBeDisabled();
+});

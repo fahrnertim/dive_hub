@@ -212,7 +212,11 @@ export const MATCHING_WINDOWS = [5, 15, 30, 60] as const;
  * ambiguous logbook entry, and the settings it ran with.
  */
 export interface ProviderImportPlan {
-  context: { people: Record<string, string>; sites: Record<string, { name: string; latitude: number | null; longitude: number | null }> };
+  context: {
+    people: Record<string, string>;
+    /** Country: ISO 3166-1 alpha-2 when the Provider gives one we know. */
+    sites: Record<string, { name: string; latitude: number | null; longitude: number | null; country: string | null }>;
+  };
   computers: Record<string, ComputerChoice>;
   /** Per remote dive ID: a Dive's ID, `new`, or `leave_out`. */
   decisions: Record<string, string>;
@@ -620,6 +624,17 @@ export const connection = pgTable(
     check('connection_import_window_ck', sql`${t.importWindowMinutes} in (5, 15, 30, 60)`),
   ],
 );
+
+/**
+ * An admin's permission (ADR 0030) to create Dive sites from a Provider's site data when Users import their dives: the
+ * sites their dives name that no site here matches. SSI gives no licence for its site data (ADR 0024), so it is the
+ * operator's decision, confirmed once, like an SSI site import. Without it, an import only links sites already here.
+ */
+export const providerSiteData = pgTable('provider_site_data', {
+  provider: text('provider').primaryKey(),
+  allowedAt: timestamp('allowed_at', { withTimezone: true }).notNull().defaultNow(),
+  allowedBy: uuid('allowed_by').references(() => user.id, { onDelete: 'set null' }),
+});
 
 export const pushMode = pgEnum('push_mode', ['api', 'qr']);
 export const pushAction = pgEnum('push_action', ['create', 'update', 'link', 'delete']);

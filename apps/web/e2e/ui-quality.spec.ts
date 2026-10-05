@@ -314,6 +314,17 @@ for (const v of variants) {
       expect(revoke!.x + revoke!.width).toBeLessThanOrEqual(v.viewport.width);
     });
 
+    test('admin, dive sites from SSI logbooks allowed', { tag: ['@admin'] }, async ({ page, request }) => {
+      await request.put('/api/admin/provider-site-data/ssi', { data: { allowed: true, confirm: true }, headers });
+      try {
+        await page.goto('/#/admin');
+        await expect(page.getByRole('button', { name: v.english ? 'Stop making sites' : 'Keine Tauchplätze mehr anlegen' })).toBeVisible();
+        await expectGoodPage(page, title('Admin'), v);
+      } finally {
+        await request.put('/api/admin/provider-site-data/ssi', { data: { allowed: false }, headers });
+      }
+    });
+
     test.describe('signed out', () => {
       test.use({ storageState: { cookies: [], origins: [] } });
 
