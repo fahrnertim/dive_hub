@@ -29,7 +29,6 @@ const Country = Nullable(Type.String({ pattern: '^[A-Z]{2}$', description: 'ISO 
 const WaterBody = Nullable(Type.String({ maxLength: 120, description: 'e.g. "Red Sea"' }));
 const Description = Nullable(Type.String({ maxLength: 5000 }));
 const MaxDepth = Nullable(Type.Number({ exclusiveMinimum: 0, maximum: 400, description: 'Deepest point divers reach here, in metres' }));
-const SsiSiteId = Nullable(Type.String({ pattern: '^[1-9][0-9]{0,9}$', description: 'The site\'s ID at SSI (digits), as in its QR code "site:3314"' }));
 const WaterType = Nullable(Type.Enum([...SITE_WATER_TYPES], {
   description: 'The water at the site (ADR 0025); it is the water type of every Dive here. Clients say so where it is edited',
 }));
@@ -42,7 +41,6 @@ const CreateBody = Type.Object({
   description: Type.Optional(Description),
   maxDepthM: Type.Optional(MaxDepth),
   waterType: Type.Optional(WaterType),
-  ssiSiteId: Type.Optional(SsiSiteId),
 }, { additionalProperties: false });
 
 const EditBody = Type.Object({
@@ -54,7 +52,6 @@ const EditBody = Type.Object({
   description: Type.Optional(Description),
   maxDepthM: Type.Optional(MaxDepth),
   waterType: Type.Optional(WaterType),
-  ssiSiteId: Type.Optional(SsiSiteId),
 }, { additionalProperties: false });
 
 /** A Source's values for a site, as offered beside a reference. */
@@ -89,7 +86,6 @@ export const SiteView = Type.Object({
   description: Nullable(Type.String()),
   maxDepthM: Nullable(Type.Number({ description: 'Metres' })),
   waterType: Nullable(Type.Enum([...SITE_WATER_TYPES], { description: 'The water type of every Dive at the site (ADR 0025)' })),
-  ssiSiteId: Nullable(Type.String()),
   externalIds: Type.Array(ExternalIdView),
   version: Type.Integer({ description: 'Send it back with an edit; it changes with every change' }),
   diveCount: Type.Integer({ description: 'How many of the signed-in User\'s Dives are at the site' }),
@@ -150,17 +146,17 @@ export const externalIdView = (e: ExternalIdRow) => {
 };
 
 type Row = Awaited<ReturnType<SiteService['get']>> & { distanceM?: number };
-export const toSiteView = ({ site: s, diveCount, inUse, canDelete, externalIds, ssiSiteId, distanceM }: Row): Static<typeof SiteView> => ({
+export const toSiteView = ({ site: s, diveCount, inUse, canDelete, externalIds, distanceM }: Row): Static<typeof SiteView> => ({
   id: s.id, name: s.name,
   position: s.latitude === null || s.longitude === null ? null : { latitude: s.latitude, longitude: s.longitude },
-  country: s.country, waterBody: s.waterBody, description: s.description, maxDepthM: s.maxDepthM, waterType: s.waterType, ssiSiteId,
+  country: s.country, waterBody: s.waterBody, description: s.description, maxDepthM: s.maxDepthM, waterType: s.waterType,
   externalIds: externalIds.map(externalIdView), version: s.version,
   diveCount, inUse, canDelete, mergedInto: s.mergedInto, ...(distanceM !== undefined && { distanceM: Math.round(distanceM) }),
 });
 
 const STATUS: Record<SiteError['code'], number> = {
   site_not_found: 404, site_changed: 409, site_in_use: 409, site_not_deletable: 403, external_id_taken: 409, site_merge_self: 400,
-  site_offer_not_found: 404,
+  site_offer_not_found: 404, site_source_not_typed: 400, invalid_input: 400,
 };
 const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
 
@@ -202,7 +198,7 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
     const id = await sites.create(actorOf(request), {
       name: b.name.trim(), position: b.position ?? null, country: b.country ?? null,
       waterBody: text(b.waterBody) ?? null, description: text(b.description) ?? null,
-      maxDepthM: b.maxDepthM ?? null, waterType: b.waterType ?? null, ssiSiteId: b.ssiSiteId ?? null,
+      maxDepthM: b.maxDepthM ?? null, waterType: b.waterType ?? null,
     });
     return reply.code(201).send(toSiteView(await sites.get(actorOf(request), id)));
   });
@@ -214,7 +210,7 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
       params: IdParams, body: EditBody, response: { 200: SiteView, ...errors },
     },
   }, async (request) => {
-    const { version, name, position, country, waterBody, description, maxDepthM, waterType, ssiSiteId } = request.body;
+    const { version, name, position, country, waterBody, description, maxDepthM, waterType } = request.body;
     await sites.edit(actorOf(request), request.params.id, version, {
       ...(name !== undefined && { name: name.trim() }),
       ...(position !== undefined && { position }),
@@ -223,8 +219,24 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
       ...(description !== undefined && { description: text(description) ?? null }),
       ...(maxDepthM !== undefined && { maxDepthM }),
       ...(waterType !== undefined && { waterType }),
-      ...(ssiSiteId !== undefined && { ssiSiteId }),
     });
+    return toSiteView(await sites.get(actorOf(request), request.params.id));
+  });
+
+  app.put('/dive-sites/:id/external-ids/:source', {
+    schema: {
+      summary: 'Set or clear the Dive site\'s External ID at a Source Users may type (SSI today; any User)',
+      description: 'The forms the Source shows are taken (SSI: "3314" or "site:3314", see GET /api/providers, requirements) and '
+        + 'the bare ID is kept. 409 external_id_taken when another site has it; 400 site_source_not_typed for a Source whose IDs '
+        + 'only a Site import brings. The site\'s version stays: this never conflicts with an edit of its other fields (ADR 0029).',
+      params: Type.Object({ id: Type.String({ format: 'uuid' }), source: Type.Enum([...SITE_SOURCES]) }),
+      body: Type.Object({
+        externalId: Nullable(Type.String({ minLength: 1, maxLength: 40, description: 'As the User typed or picked it; null clears it' })),
+      }, { additionalProperties: false }),
+      response: { 200: SiteView, ...errors },
+    },
+  }, async (request) => {
+    await sites.setExternalId(actorOf(request), request.params.id, request.params.source, request.body.externalId);
     return toSiteView(await sites.get(actorOf(request), request.params.id));
   });
 

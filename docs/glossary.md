@@ -43,11 +43,17 @@ _German_: deaktiviert
 **Diver**:
 A person who dives and whose dives, certifications and equipment can be recorded.
 A Diver may be managed by a User (their own Diver, or someone they log for, such as a child) or exist without one.
+Every User sees every Diver of the instance by name, and nothing else of Divers they don't manage ([ADR 0028](decisions/0028-shared-divers-and-participants.md)).
 _Avoid_: Person, profile, owner (in the UDDF sense)
 _German_: Taucher
 
+**External diver**:
+A Diver no User manages: someone Users dived with, such as a buddy taken from an SSI buddy list. Shared like a Dive site: any User adds and renames one; whoever added it, or an admin, deletes it while no Dive lists it.
+_Avoid_: Contact, guest, buddy (that is a role)
+_German_: anderer Taucher
+
 **Participant**:
-A Diver listed on a Dive with a role, such as buddy, guide, instructor or student.
+A Diver listed on someone else's Dive with a role: buddy, guide (led the dive) or instructor (taught on it). Student and team member come when needed. Whether a Dive was a training dive is the Dive's purpose, not a role.
 _Avoid_: Attendee, member
 _German_: Teilnehmer
 
@@ -198,6 +204,16 @@ _German_: Dienst
 A Provider in its role of receiving data from Dive Hub, such as SSI taking dives.
 _Avoid_: Destination, integration, outbound
 _German_: Ziel
+
+**Push requirement**:
+What a Provider needs before it takes a Dive, such as the Dive site's SSI site ID or a way to tell who each Participant is there. Checked against Dive Hub's own data only. *Blocking*: sending waits until it is met. *Advisory*: the Dive is sent without it, and the Push says who was left out ([ADR 0029](decisions/0029-push-requirements-and-buddies.md)).
+_Avoid_: Precondition, validation, prerequisite
+_German_: Voraussetzung (on screen: "SSI braucht zuerst …")
+
+**Connection Diver mapping**:
+A link, within one Connection, from a Diver to a person's record in that account at the Provider, such as an entry in the User's SSI buddy list. Not built: SSI finds a buddy's entry by the Diver's SSI account; mappings come if an entry without an account turns up ([ADR 0029](decisions/0029-push-requirements-and-buddies.md)).
+_Avoid_: Buddy link, contact mapping
+_German_: Taucher-Zuordnung
 
 **Connection**:
 One User's link to a Provider for one of their Divers: the account there and what lets Dive Hub sign in for them, sealed. For SSI that is the e-mail, a sign-in that may expire, and the password only if the User chose "Keep me signed in". When the Provider no longer accepts it, the Connection asks the User to sign in again.

@@ -8,7 +8,8 @@ date: 2026-10-03
 # ADR 0016: Deciding about Recordings; Devices assigned for the future; extra Divers per User
 
 ## Status
-Accepted – 2026-10-03
+Accepted – 2026-10-03. Amended by [ADR 0028](0028-shared-divers-and-participants.md) (2026-10-05): every User sees every
+Diver by name; external Divers are managed by no one; Participants are built.
 
 ## Context
 Slices 1–5 recorded Duplicate candidates but left no way to decide them, filed every Recording

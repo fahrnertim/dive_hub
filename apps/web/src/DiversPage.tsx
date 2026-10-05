@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type FormEvent, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, devicesQuery, diversQuery, keys, unwrap, type DeviceView, type DiverView } from './api.ts';
+import { api, devicesQuery, diversQuery, externalDiversQuery, keys, unwrap, type DeviceView, type DiverView, type ExternalDiverView } from './api.ts';
 import { deviceName } from './lib/devices.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
@@ -9,7 +9,7 @@ import { refocusAfterRemoval } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
 import { Button, Form, Muted, Notice, PageHeader, Panel, Select, Table, TextField } from './ui/index.ts';
 
-/** The Divers whose logbooks the User keeps, and their Devices (ADR 0016). */
+/** The Divers whose logbooks the User keeps, their Devices (ADR 0016), and the other divers Users dived with (ADR 0028). */
 export function DiversPage() {
   const { t } = useTranslation();
   usePageTitle(t('divers.title'));
@@ -17,6 +17,7 @@ export function DiversPage() {
     <>
       <PageHeader title={t('divers.title')} />
       <Divers />
+      <OtherDivers />
       <Devices />
     </>
   );
@@ -123,6 +124,107 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
               {t('divers.rename')}
             </Button>
             {!d.isOwn && empty && (
+              <Button variant="quiet" aria-label={t('common.forItem', { action: t('divers.delete'), item: d.name })} isPending={remove.isPending} onPress={() => remove.mutate()}>
+                {t('divers.delete')}
+              </Button>
+            )}
+          </span>
+        </>
+      )}
+      {(rename.error ?? remove.error) && <Notice tone="danger">{errorText(rename.error ?? remove.error)}</Notice>}
+    </li>
+  );
+}
+
+/**
+ * People Users dived with who keep no logbook here (ADR 0028): every User sees and renames them; whoever added one, or
+ * an admin, deletes one while no dive lists it. Narrowed by name while typing.
+ */
+function OtherDivers() {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const queryClient = useQueryClient();
+  const [q, setQ] = useState('');
+  const others = useQuery(externalDiversQuery(q.trim()));
+  const list = useRef<HTMLUListElement>(null);
+  const [name, setName] = useState('');
+  const create = useMutation({
+    mutationFn: async (n: string) => unwrap(await api.POST('/api/external-divers', { body: { name: n } })),
+    onSuccess: async (created) => {
+      setName('');
+      announce(t('divers.added', { name: created.name }));
+      await queryClient.invalidateQueries({ queryKey: keys.divers });
+    },
+  });
+  const rows = others.data?.divers ?? [];
+
+  return (
+    <Panel title={t('divers.others')}>
+      <Muted>{t('divers.othersIntro')}</Muted>
+      <TextField label={t('divers.findOther')} name="q" type="search" autoComplete="off" value={q} onChange={setQ} />
+      {others.isPending && <Muted>{t('common.loading')}</Muted>}
+      {others.error && <Notice tone="danger">{errorText(others.error)}</Notice>}
+      {others.data && rows.length === 0 && <Muted>{q.trim() ? t('divers.noOtherMatch', { q: q.trim() }) : t('divers.noOthers')}</Muted>}
+      {rows.length > 0 && (
+        <ul className="diver-list" ref={list}>
+          {rows.map((d, index) => <OtherDiverRow key={d.id} diver={d} list={list} index={index} count={rows.length} />)}
+        </ul>
+      )}
+      <Form className="form-inline" onSubmit={(e) => { e.preventDefault(); create.mutate(name.trim()); }}>
+        <TextField label={t('divers.addOther')} name="otherName" isRequired maxLength={100} autoComplete="off" value={name} onChange={setName} />
+        <Button type="submit" icon="add" isPending={create.isPending}>{t('divers.createOther')}</Button>
+      </Form>
+      {create.error && <Notice tone="danger">{errorText(create.error)}</Notice>}
+    </Panel>
+  );
+}
+
+function OtherDiverRow({ diver: d, list, index, count }: { diver: ExternalDiverView; list: RefObject<HTMLUListElement | null>; index: number; count: number }) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const queryClient = useQueryClient();
+  const [renaming, setRenaming] = useState(false);
+  const [newName, setNewName] = useState(d.name);
+  const renameButton = useRef<HTMLButtonElement>(null);
+  const wasRenaming = useRef(false);
+  useEffect(() => {
+    if (wasRenaming.current && !renaming) renameButton.current?.focus();
+    wasRenaming.current = renaming;
+  }, [renaming]);
+  const refresh = () => queryClient.invalidateQueries({ queryKey: keys.divers });
+  const rename = useMutation({
+    mutationFn: async (n: string) => unwrap(await api.PATCH('/api/external-divers/{id}', { params: { path: { id: d.id } }, body: { name: n } })),
+    onSuccess: () => { setRenaming(false); void refresh(); },
+  });
+  const remove = useMutation({
+    mutationFn: async () => unwrap(await api.DELETE('/api/external-divers/{id}', { params: { path: { id: d.id } } })),
+    onSuccess: async () => {
+      await refresh();
+      announce(t('divers.removed', { name: d.name }));
+      refocusAfterRemoval(list.current, index, count);
+    },
+  });
+
+  return (
+    <li className="diver-row">
+      {renaming ? (
+        <Form className="form-inline" onSubmit={(e) => { e.preventDefault(); rename.mutate(newName.trim()); }}>
+          <TextField label={t('divers.newName')} name="name" value={newName} onChange={setNewName} isRequired maxLength={100} autoComplete="off" autoFocus />
+          <Button type="submit" variant="primary" icon="save" isPending={rename.isPending}>{t('divers.save')}</Button>
+          <Button onPress={() => setRenaming(false)}>{t('common.cancel')}</Button>
+        </Form>
+      ) : (
+        <>
+          <span className="diver-name">{d.name}</span>
+          <span className="meta">{[
+            ...d.accounts.map((source) => t('divers.hasAccount', { name: t(`divers.service.${source}`) })),
+            d.inUse ? t('divers.onDives') : t('divers.onNoDive'),
+          ].join(' · ')}</span>
+          <span className="actions">
+            <Button ref={renameButton} variant="quiet" aria-label={t('common.forItem', { action: t('divers.rename'), item: d.name })} onPress={() => { setNewName(d.name); setRenaming(true); }}>
+              {t('divers.rename')}
+            </Button>
+            {d.canDelete && !d.inUse && (
               <Button variant="quiet" aria-label={t('common.forItem', { action: t('divers.delete'), item: d.name })} isPending={remove.isPending} onPress={() => remove.mutate()}>
                 {t('divers.delete')}
               </Button>

@@ -8,7 +8,7 @@ import {
 const dive = (over: Partial<DiveForSsi> = {}): DiveForSsi => ({
   startsAt: new Date('2026-01-15T09:00:00Z'), utcOffsetSeconds: 7200, durationSeconds: 30 * 60 + 20,
   maxDepthM: 18.46, avgDepthM: 12.3, waterTemperatureC: 24, maxTemperatureC: 26.5, waterType: 'salt', notes: 'Turtle',
-  siteSsiId: '3314', entry: { latitude: 27.29, longitude: 33.82 }, exit: null,
+  siteSsiId: '3314', participants: [], entry: { latitude: 27.29, longitude: 33.82 }, exit: null,
   gases: [{ o2: 32, he: 0 }], gfLow: 40, gfHigh: 85, cnsStart: 0, cnsEnd: 12,
   device: { manufacturer: 'garmin', product: 'Descent Mk3', serialNumber: '0034567890', firmware: '27.19' },
   samples: {

@@ -33,9 +33,14 @@ const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull(
 const updatedAt = () => timestamp('updated_at', { withTimezone: true }).notNull().defaultNow();
 const deletedAt = () => timestamp('deleted_at', { withTimezone: true });
 
+/**
+ * A person who dives (ADR 0016, 0028). Every User sees every Diver by name; one without managing Users is external
+ * (a buddy), shared like a Dive site: anyone renames it, `created_by` or an admin deletes it while no Dive lists it.
+ */
 export const diver = pgTable('diver', {
   id: id(),
   name: text('name').notNull(),
+  createdBy: uuid('created_by').references(() => user.id, { onDelete: 'set null' }),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
   deletedAt: deletedAt(),
@@ -371,6 +376,22 @@ export const dive = pgTable(
   (t) => [index('dive_diver_start_idx').on(t.diverId, t.startsAt), index('dive_site_idx').on(t.siteId)],
 );
 
+export const PARTICIPANT_ROLES = ['buddy', 'guide', 'instructor'] as const;
+export type ParticipantRole = (typeof PARTICIPANT_ROLES)[number];
+export const participantRole = pgEnum('participant_role', [...PARTICIPANT_ROLES]);
+
+/** A Diver on a Dive besides its own Diver, with a role (ADR 0028): one role per Diver and Dive. */
+export const participant = pgTable(
+  'participant',
+  {
+    diveId: uuid('dive_id').notNull().references(() => dive.id, { onDelete: 'cascade' }),
+    diverId: uuid('diver_id').notNull().references(() => diver.id),
+    role: participantRole('role').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.diveId, t.diverId] }), index('participant_diver_idx').on(t.diverId)],
+);
+
 /** A Device's own summary of a Recording, in our vocabulary (ADR 0015). */
 export type RecordingSummary = {
   diveNumber?: number;
@@ -549,6 +570,16 @@ export interface PushDifference {
 }
 
 /**
+ * A Participant a Push left out (ADR 0029). `no_reference`: nothing tells the Provider who they are (an advisory
+ * requirement unmet). `not_at_provider`: the Provider doesn't have them (SSI: not in the User's buddy list).
+ */
+export interface PushLeftOut {
+  diverId: string;
+  name: string;
+  reason: 'no_reference' | 'not_at_provider';
+}
+
+/**
  * One Dive sent to one Provider (ADR 0024, 0027): what was done (create, update, link to a dive already there,
  * delete), the Provider's own ID and number for it, what was sent and what it stored. Whether a Push is
  * outdated is worked out from `fingerprint`, not stored.
@@ -579,6 +610,8 @@ export const push = pgTable(
     errorCode: text('error_code'),
     /** The remote dive was found gone (deleted at the Provider): the Dive has none there from here on. */
     remoteGone: boolean('remote_gone').notNull().default(false),
+    /** Participants this Push couldn't carry (ADR 0029): an advisory requirement unmet, or not at the Provider. */
+    leftOut: jsonb('left_out').$type<PushLeftOut[]>(),
     createdAt: createdAt(),
   },
   (t) => [index('push_dive_idx').on(t.diveId, t.createdAt)],

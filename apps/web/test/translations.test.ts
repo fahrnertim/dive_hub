@@ -79,7 +79,8 @@ describe('texts a Provider words itself', () => {
 describe('codes from the API', () => {
   it.each([
     ['code', 'errors'],
-    ['reason', 'import.reason'],
+    // An Import's reasons, and why a Push left a Participant out (ADR 0029).
+    ['reason', 'import.reason', 'provider.leftOut'],
     ['errorCode', 'import.errorCode'],
     ['result', 'import.result'],
     ['waterType', 'vocabulary.waterType'],
@@ -91,9 +92,11 @@ describe('codes from the API', () => {
     ['action', 'provider.action'],
     ['outcome', 'provider.result'],
     ['notices', 'provider.notice'],
-  ])('every %s has an English text under %s', (property, prefix) => {
+    // A User's role on the instance, and a Participant's on a Dive (ADR 0028).
+    ['role', 'admin.roles', 'participants.role'],
+  ])('every %s has an English text under %s', (property, ...prefixes) => {
     const codes = enumsOf(property);
     expect(codes.length).toBeGreaterThan(0);
-    for (const code of codes) expect(english.has(`${prefix}.${code}`), `${prefix}.${code}`).toBe(true);
+    for (const code of codes) expect(prefixes.some((prefix) => english.has(`${prefix}.${code}`)), `${prefixes.join(' or ')}.${code}`).toBe(true);
   });
 });

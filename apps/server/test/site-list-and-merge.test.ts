@@ -9,7 +9,7 @@ import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReacha
 type Position = { latitude: number; longitude: number };
 type Site = {
   id: string; name: string; position: Position | null; country: string | null; waterBody: string | null; description: string | null;
-  maxDepthM: number | null; ssiSiteId: string | null; externalIds: { source: string; externalId: string; providesData: boolean }[];
+  maxDepthM: number | null; externalIds: { source: string; externalId: string; providesData: boolean }[];
   version: number; diveCount: number; mergedInto: string | null;
 };
 type Page = { sites: Site[]; total: number };
@@ -28,7 +28,7 @@ describe.skipIf(!(await databaseReachable()))('Dive sites: the list and merging'
   const osm: SiteSourceAdapter = { source: 'osm', fetch: async () => osmAnswer };
   const wikidata: SiteSourceAdapter = { source: 'wikidata', fetch: async () => [] };
 
-  type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   const call = (method: Method, url: string, cookie: string, payload?: object) =>
     ctx.app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload && { payload }) });
   const json = async <T>(method: Method, url: string, cookie: string, payload?: object) => (await call(method, url, cookie, payload)).json() as T;
@@ -109,7 +109,8 @@ describe.skipIf(!(await databaseReachable()))('Dive sites: the list and merging'
   describe('merging', () => {
     it('keeps the kept site\'s values, fills its gaps, and moves every Dive there, also other Users\'', async () => {
       const kept = await createSite({ name: 'Lighthouse', position: metresNorth(10_000), country: 'EG' });
-      const duplicate = await createSite({ name: 'Light House', position: metresNorth(10_050), country: 'IL', waterBody: 'Red Sea', maxDepthM: 28, waterType: 'salt', ssiSiteId: '3314', description: 'Steps by the café' }, anna);
+      const duplicate = await createSite({ name: 'Light House', position: metresNorth(10_050), country: 'IL', waterBody: 'Red Sea', maxDepthM: 28, waterType: 'salt', description: 'Steps by the café' }, anna);
+      await call('PUT', `/api/dive-sites/${duplicate.id}/external-ids/ssi`, anna, { externalId: '3314' });
       const timsDive = await diveAt(duplicate.id, tim);
       const annasDive = await diveAt(duplicate.id, anna);
 
@@ -118,7 +119,8 @@ describe.skipIf(!(await databaseReachable()))('Dive sites: the list and merging'
       expect(merged.statusCode).toBe(200);
       expect(merged.json()).toMatchObject({
         id: kept.id, name: 'Lighthouse', position: metresNorth(10_000), country: 'EG',
-        waterBody: 'Red Sea', maxDepthM: 28, waterType: 'salt', ssiSiteId: '3314', description: 'Steps by the café', version: kept.version + 1, diveCount: 1,
+        waterBody: 'Red Sea', maxDepthM: 28, waterType: 'salt', description: 'Steps by the café', version: kept.version + 1, diveCount: 1,
+        externalIds: [{ source: 'ssi', externalId: '3314', providesData: false }],
       });
 
       const timsNow = await json<{ site: { id: string } | null; waterType: string | null }>('GET', `/api/dives/${timsDive}`, tim);

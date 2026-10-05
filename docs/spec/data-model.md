@@ -96,10 +96,16 @@ numbers (SSI card ID, PADI diver number) stay on Certification; professional num
 Membership.
 *Implemented (slice 10):* `diver_external_id` (Sources `ssi`, `padi`), set by connecting a Diver to SSI; a clash is
 refused for now (`ssi_account_taken`) instead of proposing a link.
+*Seen by every User (ADR 0028, slice 14):* every User sees every Diver by id and name (`GET /api/divers/search`),
+nothing else of Divers they don't manage. An **external Diver** has no Diver management at all: `diver.created_by`
+keeps who added it; any User renames it, its creator or an admin deletes it (soft) while no Participant points to it.
+External IDs can be set by hand (`PUT /api/divers/{id}/external-ids/{source}`: an external Diver's by anyone, a managed
+one's by its Users), refused while a Connection uses the account or when another Diver has it (naming that Diver).
+Changes to external Divers and External IDs set by hand are Revisions on the Diver (`entity_type = 'diver'`).
 
 **Diver management** — `(User, Diver, role)`. A User's *own* Diver is flagged. Several
 Users can manage one Diver (two parents; a dive center handing a guest's log over to
-the guest). External Divers are managed only by the User who created them.
+the guest). External Divers are managed by no one (ADR 0028): shared like Dive sites.
 
 **Certification** — Diver, Agency (catalog entry or free text), level (catalog or free
 text), number, date, instructor (Diver reference or text), card images (Media),
@@ -141,6 +147,10 @@ member Dives. Created when a Buddy suggestion is accepted, or by hand.
 **Participant** — `(Dive, Diver, role)`, with roles `buddy`, `guide`, `instructor`,
 `student`, `team member` (B7). If the Diver is managed by another User, a **Buddy
 suggestion** is raised. Nothing appears in that User's logbook until they accept.
+*Implemented (ADR 0028, slice 14):* `participant` with roles `buddy`, `guide`, `instructor`; one role per Diver and
+Dive, never the Dive's own Diver; set as one list (`PUT /api/dives/{id}/participants`) with the Dive's version and a
+Revision (`participants`). Buddy suggestions and Joint dives are not built: another User's Diver can be put on a Dive,
+and nothing reaches that User.
 
 **Recording** — data from one Device for one Dive.
 - Device, Import, Original(s) plus position within the Original (one file can hold many dives).
@@ -236,6 +246,8 @@ password only if the User chose "Keep me signed in" (both encrypted with the ope
 state `active`, `needs sign-in` or `failed`. Disconnecting deletes the password and token.
 *Diver mappings:* `(Connection, Diver, remote id)` for Targets whose people are records of one account, such as an
 entry in the User's SSI buddy list. They're set by the User, or matched through the Diver's SSI External ID.
+*Not built (ADR 0029):* SSI finds a buddy's entry by the Diver's SSI External ID at send time; every entry seen has an
+SSI account. Mappings come if an entry without one turns up.
 *Implemented (slice 10):* `connection` for SSI, one per User and Diver, with `state` and `keep_signed_in`; Diver
 mappings are not built yet (buddies aren't sent).
 *Providers (ADR 0027, slice 13):* a Connection belongs to a **Provider** (`provider`, checked against the registry, not an
@@ -357,14 +369,15 @@ Edge cases:
 ### 2. Buddy who is a User, buddy who isn't
 
 **Anna is a User.** Tim adds Anna's own Diver as Participant `buddy` on D1, which raises
-a Buddy suggestion to Anna.
+a Buddy suggestion to Anna. *As built (slice 14):* Tim can add Anna's Diver (he sees her name); the suggestion and
+everything after it come later.
 - Anna already has an overlapping Dive A1 from her Garmin. Accepting links D1 and A1 into
   a Joint dive. Each keeps its own notes, gear and Recordings.
 - Anna has no Dive (no computer). Accepting creates A1 with the shared facts (site,
   time, Operator, Participants) but no Recording. *Open:* may A1 show Tim's Recording?
 - Anna declines. Tim still sees Anna as his buddy, but nothing is created for her.
 
-**Bob is not a User.** Tim creates an external Diver "Bob", managed by Tim only, and
+**Bob is not a User.** Tim creates an external Diver "Bob" (every User sees the name; ADR 0028), and
 adds him as Participant. Bob signs D1 on Tim's phone, which creates an external Signature.
 Later Bob signs up. Tim **links** his "Bob" to Bob's own Diver (`merged into`).
 Tim's Participants now point to Bob's Diver, which raises Buddy suggestions for the past

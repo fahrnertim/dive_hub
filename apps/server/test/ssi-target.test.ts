@@ -15,7 +15,7 @@ const credentials = (row: typeof connection.$inferSelect) =>
   JSON.parse(createSecretBox(TEST_ENCRYPTION_KEY).open(row.credentials!, `connection:${row.id}`)) as { access: string | null; password: string | null };
 
 type Status = {
-  connection: { id: string; state: string } | null; siteExternalId: string | null;
+  connection: { id: string; state: string } | null; unmet: { type: string; siteId?: string | null }[];
   current: { remoteId: string; remoteNumber: number | null; upToDate: boolean } | null;
   pushes: { action: string; state: string; remoteId: string | null; failureCode: string | null; differences: unknown[] | null }[];
 };
@@ -32,7 +32,7 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Provider', () => {
   /** Every response body, to check that no secret ever comes back. */
   const bodies: string[] = [];
 
-  const call = async (method: 'GET' | 'POST' | 'PATCH' | 'DELETE', url: string, cookie: string, payload?: object) => {
+  const call = async (method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', url: string, cookie: string, payload?: object) => {
     const response = await ctx.app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload && { payload }) });
     bodies.push(response.body);
     return response;
@@ -100,12 +100,13 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Provider', () => {
 
   describe('sending a Dive', () => {
     it('needs the Dive site\'s SSI site ID, and suggests sites from the User\'s SSI logbook', async () => {
-      expect(await status()).toMatchObject({ connection: { state: 'active' }, siteExternalId: null, current: null, pushes: [] });
-      expect((await send()).json()).toMatchObject({ code: 'provider_site_id_missing' });
+      expect(await status()).toMatchObject({ connection: { state: 'active' }, unmet: [{ type: 'site_external_id', siteId: null }], current: null, pushes: [] });
+      expect((await send()).json()).toMatchObject({ code: 'provider_requirements_unmet', unmet: [{ type: 'site_external_id' }] });
       expect((await call('GET', `/api/dives/${diveId}/providers/ssi/sites`, tim)).json()).toEqual([
         { id: '3314', name: 'Hausreef', latitude: 27.29, longitude: 33.82, country: 'EG', distanceM: null },
       ]);
-      const site = (await call('POST', '/api/dive-sites', tim, { name: 'Hausreef', position: { latitude: 27.29, longitude: 33.82 }, ssiSiteId: '3314', waterType: 'salt' })).json();
+      const site = (await call('POST', '/api/dive-sites', tim, { name: 'Hausreef', position: { latitude: 27.29, longitude: 33.82 }, waterType: 'salt' })).json();
+      await call('PUT', `/api/dive-sites/${site.id}/external-ids/ssi`, tim, { externalId: '3314' });
       for (const id of [diveId, secondDiveId]) {
         const { version } = (await call('GET', `/api/dives/${id}`, tim)).json();
         expect((await call('PATCH', `/api/dives/${id}`, tim, { version, siteId: site.id })).statusCode).toBe(200);

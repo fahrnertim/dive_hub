@@ -63,7 +63,7 @@ if (mode === 'read') {
   const dive: DiveForSsi = {
     startsAt: new Date('2000-01-01T12:00:00Z'), utcOffsetSeconds: 0, durationSeconds: 60, maxDepthM: 1, avgDepthM: 0.5,
     waterTemperatureC: 20, maxTemperatureC: 21, waterType: 'fresh', notes: 'Dive Hub test – delete me',
-    siteSsiId: process.env.SSI_SITE_ID ?? '', entry: null, exit: null, gases: [{ o2: 21, he: 0 }], gfLow: null, gfHigh: null,
+    siteSsiId: process.env.SSI_SITE_ID ?? '', participants: [], entry: null, exit: null, gases: [{ o2: 21, he: 0 }], gfLow: null, gfHigh: null,
     cnsStart: null, cnsEnd: null, device: null,
     samples: { depth: { offsetsMs: [0, 20_000, 40_000, 60_000], values: [0, 1, 1, 0] }, temperature: { offsetsMs: [0], values: [20] } },
   };

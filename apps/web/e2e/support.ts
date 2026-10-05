@@ -131,7 +131,7 @@ export async function readyForSsi(api: APIRequestContext, diveId: string) {
   const { sites } = await (await api.get(`/api/dive-sites?q=${encodeURIComponent(name)}`)).json() as { sites: { id: string; name: string; version: number }[] };
   let site = sites.find((s) => s.name === name);
   if (!site) site = await (await api.post('/api/dive-sites', { data: { name, position: { latitude: 47.851, longitude: 13.5512 } }, headers })).json() as { id: string; name: string; version: number };
-  else await api.patch(`/api/dive-sites/${site.id}`, { data: { version: site.version, ssiSiteId: null }, headers });
+  else await api.put(`/api/dive-sites/${site.id}/external-ids/ssi`, { data: { externalId: null }, headers });
   const dive = await (await api.get(`/api/dives/${diveId}`)).json() as Dive;
   await api.patch(`/api/dives/${diveId}`, { data: { version: dive.version, siteId: site.id }, headers });
   const status = await (await api.get(`/api/dives/${diveId}/providers/ssi`)).json() as { current: unknown };
@@ -177,10 +177,50 @@ export async function sendToSsi(api: APIRequestContext, diveId: string) {
   await connectSsi(api);
   const name = 'Deletion test reef';
   const { sites } = await (await api.get(`/api/dive-sites?q=${encodeURIComponent(name)}`)).json() as { sites: { id: string; name: string }[] };
-  const site = sites.find((s) => s.name === name)
-    ?? await (await api.post('/api/dive-sites', { data: { name, position: { latitude: 47.86, longitude: 13.56 }, ssiSiteId: '6066' }, headers })).json() as { id: string };
+  let site = sites.find((s) => s.name === name);
+  if (!site) {
+    site = await (await api.post('/api/dive-sites', { data: { name, position: { latitude: 47.86, longitude: 13.56 } }, headers })).json() as { id: string; name: string };
+    await api.put(`/api/dive-sites/${site.id}/external-ids/ssi`, { data: { externalId: '6066' }, headers });
+  }
   const dive = await (await api.get(`/api/dives/${diveId}`)).json() as Dive;
   await api.patch(`/api/dives/${diveId}`, { data: { version: dive.version, siteId: site.id }, headers });
   const sent = await api.post(`/api/dives/${diveId}/providers/ssi`, { data: {}, headers });
   if (!sent.ok()) throw new Error(`sending to SSI failed: ${sent.status()} ${await sent.text()}`);
+}
+
+/** Nobody else on the Dive (ADR 0028): the Participants the buddy tests set are taken off again. */
+export async function clearParticipants(api: APIRequestContext, diveId: string) {
+  const dive = await (await api.get(`/api/dives/${diveId}`)).json() as Dive;
+  await api.put(`/api/dives/${diveId}/participants`, { data: { version: dive.version, participants: [] }, headers });
+}
+
+/** External Divers with this name, deleted (they must be on no Dive), so a test can add them again. */
+export async function forgetDivers(api: APIRequestContext, name: string) {
+  const { divers } = await (await api.get(`/api/external-divers?q=${encodeURIComponent(name)}`)).json() as { divers: { id: string; name: string }[] };
+  for (const d of divers.filter((x) => x.name === name)) await api.delete(`/api/external-divers/${d.id}`, { headers });
+}
+
+/** An external Diver by this name, created if missing; with an SSI account, if given. */
+export async function externalDiver(api: APIRequestContext, name: string, ssiAccount?: string): Promise<string> {
+  const { divers } = await (await api.get(`/api/external-divers?q=${encodeURIComponent(name)}`)).json() as { divers: { id: string; name: string }[] };
+  const id = divers.find((d) => d.name === name)?.id
+    ?? (await (await api.post('/api/external-divers', { data: { name }, headers })).json() as { id: string }).id;
+  if (ssiAccount) await api.put(`/api/divers/${id}/external-ids/ssi`, { data: { externalId: ssiAccount }, headers });
+  return id;
+}
+
+/** The Dive's Participants, all as buddies. */
+export async function setBuddies(api: APIRequestContext, diveId: string, diverIds: string[]) {
+  const dive = await (await api.get(`/api/dives/${diveId}`)).json() as Dive;
+  await api.put(`/api/dives/${diveId}/participants`, {
+    data: { version: dive.version, participants: diverIds.map((diverId) => ({ diverId, role: 'buddy' })) }, headers,
+  });
+}
+
+/** Adds these entries of Erika's SSI buddy list to Dive Hub, as the account page does (ADR 0029). Needs a Connection. */
+export async function importSsiBuddies(api: APIRequestContext, accounts: string[]) {
+  const connections = await (await api.get('/api/connections')).json() as Connection[];
+  const ssi = connections.find((c) => c.provider === 'ssi');
+  if (!ssi) throw new Error('no SSI connection');
+  await api.post(`/api/connections/${ssi.id}/buddies/import`, { data: { accounts }, headers });
 }

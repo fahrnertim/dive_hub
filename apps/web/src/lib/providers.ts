@@ -2,7 +2,7 @@
 // panels render from the capabilities; texts name the Provider, in its own words where it has them.
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { providersQuery, type ProblemCode, type ProviderView } from '../api.ts';
+import { providersQuery, type ProblemCode, type ProviderView, type RequirementView } from '../api.ts';
 import type en from '../i18n/locales/en.json';
 
 type Paths<T> = { [K in keyof T & string]: T[K] extends string ? K : `${K}.${Paths<T[K]>}` }[keyof T & string];
@@ -34,6 +34,17 @@ export function useProviderText(p: Pick<ProviderView, 'id' | 'name'>) {
     const own = `providers.${p.id}.${key}`;
     return translate(i18n.exists(own) ? own : `provider.${key}`, { name: p.name, ...options });
   };
+}
+
+/**
+ * What a User typed, as a site ID of the requirement's Source: a prefix the Source shows before it is dropped (SSI's
+ * QR code says "site:3314"). Undefined when it isn't one. The forms come from the Provider (GET /api/providers).
+ */
+export function typedSiteId(r: Pick<RequirementView, 'pattern' | 'prefixes'>, text: string): string | undefined {
+  let value = text.trim();
+  const prefix = (r.prefixes ?? []).find((x) => value.toLowerCase().startsWith(x.toLowerCase()));
+  if (prefix) value = value.slice(prefix.length).trim();
+  return r.pattern && new RegExp(r.pattern).test(value) ? value : undefined;
 }
 
 /** "SSI", "SSI and PADI": names joined the way the UI language does. */

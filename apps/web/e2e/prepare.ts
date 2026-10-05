@@ -82,8 +82,9 @@ async function importEgypt(api: APIRequestContext) {
  */
 async function offerSsiData(api: APIRequestContext) {
   const site = await (await api.post('/api/dive-sites', {
-    data: { name: 'Ouchy – Seeufer (club notes)', position: { latitude: 46.5001, longitude: 6.62 }, waterBody: 'Lac Léman', ssiSiteId: '7008' },
+    data: { name: 'Ouchy – Seeufer (club notes)', position: { latitude: 46.5001, longitude: 6.62 }, waterBody: 'Lac Léman' },
   })).json() as { id: string };
+  await api.put(`/api/dive-sites/${site.id}/external-ids/ssi`, { data: { externalId: '7008' } });
   const started = await (await api.post('/api/admin/site-imports', {
     data: { sources: ['ssi'], area: { kind: 'country', country: 'CH' }, language: 'en', confirmSsi: true, createSites: false },
   })).json() as { id: string };

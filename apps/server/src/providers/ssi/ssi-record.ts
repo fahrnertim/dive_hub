@@ -17,6 +17,7 @@ export type DiveForSsi = Omit<OutgoingDive, 'siteIds'> & { siteSsiId: string };
 /** Our own fields of SSI's record, by the name the read-back reports them under. */
 export const COMPARED_FIELDS = [
   'startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM', 'waterTemperatureC', 'maxTemperatureC', 'notes', 'site', 'gas', 'device', 'profile',
+  'buddies',
 ] as const;
 export type ComparedField = (typeof COMPARED_FIELDS)[number];
 
@@ -226,7 +227,7 @@ function emptyRecord(): SsiRecord {
 
 const EMPTY_DIVE: DiveForSsi = {
   startsAt: new Date(0), utcOffsetSeconds: 0, durationSeconds: 0, maxDepthM: null, avgDepthM: null, waterTemperatureC: null,
-  maxTemperatureC: null, waterType: null, notes: null, siteSsiId: '1', entry: null, exit: null, gases: [], gfLow: null, gfHigh: null,
+  maxTemperatureC: null, waterType: null, notes: null, siteSsiId: '1', participants: [], entry: null, exit: null, gases: [], gfLow: null, gfHigh: null,
   cnsStart: null, cnsEnd: null, device: null, samples: {},
 };
 
@@ -267,9 +268,27 @@ export function deleteRecord(remote: SsiRecord): SsiRecord {
   return { ...writableRecord(remote), odin_user_log_deleted: 1 };
 }
 
-/** What was pushed, reduced to what matters for "changed since": a hash of our own fields. */
+/**
+ * The record with these entries of the User's buddy list on the dive (ADR 0029). SSI keeps them as numbers. Every
+ * Participant goes as a buddy: SSI has no other place for a guide or an instructor.
+ */
+export function withBuddies(record: SsiRecord, entryIds: number[]): SsiRecord {
+  return { ...record, odin_user_log_buddy_ids: entryIds };
+}
+
+/** Entry IDs on a record, as numbers (anything else SSI might hold there is left out). */
+export function buddyIdsOf(record: SsiRecord | null | undefined): number[] {
+  const ids = record?.odin_user_log_buddy_ids;
+  return Array.isArray(ids) ? ids.map(Number).filter((n) => Number.isInteger(n) && n > 0) : [];
+}
+
+/**
+ * What was pushed, reduced to what matters for "changed since": a hash of our own fields and the SSI accounts of the
+ * Participants (their entry IDs are only known with the buddy list, which the status doesn't read).
+ */
 export function fingerprint(d: DiveForSsi): string {
-  return createHash('sha256').update(JSON.stringify(ownFields(d))).digest('base64url');
+  const buddies = d.participants.flatMap((p) => (p.ids.ssi ? [p.ids.ssi] : [])).sort();
+  return createHash('sha256').update(JSON.stringify({ ...ownFields(d), buddies })).digest('base64url');
 }
 
 export interface ReadBackDifference {
@@ -327,5 +346,7 @@ export function compareReadBack(sent: SsiRecord, stored: SsiRecord): ReadBackDif
   const samplesA = datasetLength(sent.odin_user_log_depthDataset);
   const samplesB = datasetLength(stored.odin_user_log_depthDataset);
   check('profile', samplesA, samplesB, samplesA === samplesB);
+  const buddies = (r: SsiRecord) => buddyIdsOf(r).sort((a, b) => a - b).join(', ') || null;
+  check('buddies', buddies(sent), buddies(stored), buddies(sent) === buddies(stored));
   return differences;
 }

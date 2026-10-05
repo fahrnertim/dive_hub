@@ -2,6 +2,7 @@
 // its capabilities (how Users sign in, what it imports or exports, with which operations, how fast it may be called)
 // and does only what is its own. Connections, credentials, Pushes, leases, pacing, problem codes and the routes are
 // the generic layer's (connection-service.ts, push-service.ts, leases.ts, routes.ts).
+import type { ParticipantRole } from '../db/schema.js';
 import type { SiteWaterType } from '../vocabulary.js';
 import type { SiteSource } from '../sites/sources.js';
 
@@ -30,11 +31,23 @@ export interface Direction {
   findBy?: FindBy[];
 }
 
+/**
+ * What an export needs (ADR 0029), checked against Dive Hub's own data only (requirements.ts). `blocking`: sending
+ * refuses while it is unmet. `advisory`: sent without it, and the Push says what was left out. `description` is shown
+ * only by a client that doesn't know the type.
+ */
+export type Requirement = { severity: 'blocking' | 'advisory'; description: string } & (
+  /** The Dive's site has an External ID at this site Source (SSI site ID). */
+  | { type: 'site_external_id'; source: SiteSource }
+  /** The Provider can tell who each Participant in these roles is: today, by the Diver's account at `source`. */
+  | { type: 'diver_mapping'; source: DiverSource; roles: ParticipantRole[] }
+);
+
 export interface DiveExport extends Direction {
   /** `confirmed`: an ID comes back. `handed_over`: delivered without one (QR, browser automation), so no update or delete. */
   delivery: 'confirmed' | 'handed_over';
-  /** The Dive site's External ID at this site Source is needed before sending (SSI site ID). */
-  needsSiteIdFrom?: SiteSource;
+  /** What sending needs (ADR 0029). */
+  requirements: Requirement[];
   /** Field names a read-back reports differences under; clients translate them. */
   readBackFields?: string[];
 }
@@ -46,6 +59,8 @@ export interface Capabilities {
   data: {
     dives?: { export?: DiveExport; import?: Direction };
     diveSites?: { import?: Direction };
+    /** `find`: the account's own list of people (SSI's buddy list), through a Connection (ADR 0029). */
+    buddies?: { import?: Direction };
   };
   /** Things a client must say about this Provider, e.g. that it shows dives sent this way as unconfirmed. */
   notices: ('shows_unconfirmed')[];
@@ -76,6 +91,14 @@ export interface SignedIn {
   access: string;
 }
 
+/** A Participant as it leaves Dive Hub: the Diver, its role, and its accounts at services by Source, nothing else. */
+export interface OutgoingParticipant {
+  diverId: string;
+  name: string;
+  role: ParticipantRole;
+  ids: Partial<Record<DiverSource, string>>;
+}
+
 export interface Series {
   offsetsMs: number[];
   values: number[];
@@ -96,6 +119,8 @@ export interface OutgoingDive {
   notes: string | null;
   /** The Dive site's External IDs by Source (e.g. its SSI site ID). */
   siteIds: Partial<Record<SiteSource, string>>;
+  /** Who else was on the Dive (ADR 0028); the adapter takes the reference it needs from `ids`. */
+  participants: OutgoingParticipant[];
   entry: { latitude: number; longitude: number } | null;
   exit: { latitude: number; longitude: number } | null;
   /** The first gas is the one single-gas logbooks describe. */
@@ -133,6 +158,8 @@ export interface Delivered {
   payload: Record<string, unknown> | null;
   /** What the Provider stored differently; null when it couldn't be read back (or doesn't read back). */
   differences: ReadBackDifference[] | null;
+  /** Participants it couldn't put on the remote dive, though it knew who they are (SSI: not in the buddy list). */
+  leftOut?: { diverId: string; reason: 'not_at_provider' }[];
 }
 
 /** Who an action is for: the Connection's ID and account, and what calls carry. */
@@ -147,8 +174,11 @@ export interface DiveExportAction {
   /** A dive we sent before (by our reference), and one at about the same time, if the Provider has them. */
   find?(dive: OutgoingDive, reference: string): Promise<{ ours: RemoteDive | null; sameTime: RemoteDive | null }>;
   create(dive: OutgoingDive, reference: string): Promise<Delivered>;
-  /** Null when the remote dive is gone (deleted at the Provider). */
-  update?(remoteId: string, dive: OutgoingDive): Promise<Delivered | null>;
+  /**
+   * Null when the remote dive is gone (deleted at the Provider). `previous` is the payload the current Push recorded,
+   * so the adapter can tell what it set before from what the User set in the Provider's own app.
+   */
+  update?(remoteId: string, dive: OutgoingDive, previous: Record<string, unknown> | null): Promise<Delivered | null>;
   /** `gone`: it was already deleted at the Provider. */
   remove?(remoteId: string): Promise<'deleted' | 'gone'>;
   /**
@@ -168,6 +198,14 @@ export interface RemoteSite {
   country: string | null;
 }
 
+/** An entry in the account's own list of people at the Provider (SSI's buddy list). */
+export interface RemoteBuddy {
+  remoteId: string;
+  name: string;
+  /** The person's own account at the Provider, as a Diver External ID at `accountSource`; null without one. */
+  account: string | null;
+}
+
 export interface ProviderAdapter {
   id: ProviderId;
   capabilities: Capabilities;
@@ -185,5 +223,9 @@ export interface ProviderAdapter {
   diveSites?: {
     /** The Provider's sites the User can pick from (SSI: the sites in their logbook). */
     find(context: ActionContext): Promise<RemoteSite[]>;
+  };
+  buddies?: {
+    /** The account's own list of people (SSI: the buddy list), read live. */
+    find(context: ActionContext): Promise<RemoteBuddy[]>;
   };
 }

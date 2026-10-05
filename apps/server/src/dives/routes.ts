@@ -8,12 +8,12 @@ import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import type { Db } from '../db/client.js';
 import {
-  OVERRIDABLE_FIELDS, device, dive, diveSite, diverManagement, importJob, recording, revision, sampleSeries, user,
+  OVERRIDABLE_FIELDS, PARTICIPANT_ROLES, device, dive, diveSite, diverManagement, importJob, recording, revision, sampleSeries, user,
   type RecordingSummary,
 } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
 import { DECO_MODELS, DIVE_MODES, GAS_CIRCUITS, SITE_WATER_TYPES, WATER_TYPES } from '../vocabulary.js';
-import { DiveError, type DiveService } from './dive-service.js';
+import { DiveError, participantsOf, type DiveService } from './dive-service.js';
 import { valuesFromRecording, type DiveValues } from './dive-values.js';
 import { REVISION_CAUSES } from './revisions.js';
 import { waterMismatch } from './water.js';
@@ -77,6 +77,13 @@ const SummaryView = Type.Object({
   })),
 });
 
+const Role = Type.Enum([...PARTICIPANT_ROLES], { description: 'buddy: dived together; guide: led the dive; instructor: taught on it' });
+const Participant = Type.Object({
+  diverId: Type.String(),
+  name: Type.String({ description: 'The Diver\'s name, as every User sees it' }),
+  role: Role,
+});
+
 const RecordingView = Type.Object({
   id: Type.String(),
   isPrimary: Type.Boolean(),
@@ -110,6 +117,7 @@ const DiveView = Type.Object({
     description: 'Where the Device of the Primary recording placed the dive: its exit, else its entry. Private like the Dive',
   })),
   recordings: Type.Array(RecordingView),
+  participants: Type.Array(Participant, { description: 'Buddies first, then guides and instructors (ADR 0028)' }),
 });
 
 const EditBody = Type.Object({
@@ -144,7 +152,7 @@ const fromValues = (v: Partial<Static<typeof ValuesSchema>>): Partial<DiveValues
 
 const STATUS: Record<DiveError['code'], number> = {
   dive_not_found: 404, dive_changed: 409, dive_values_inconsistent: 400, recording_not_on_dive: 400,
-  recording_not_found: 404, last_recording: 409, diver_not_found: 404, site_not_found: 404,
+  recording_not_found: 404, last_recording: 409, diver_not_found: 404, site_not_found: 404, participant_invalid: 400,
 };
 
 const DeletedDiveView = Type.Object({
@@ -229,6 +237,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
         durationSeconds: r.durationSeconds, maxDepthM: r.maxDepthM, parser: r.parser,
         summary: r.summary as RecordingSummary, channels,
       })),
+      participants: await participantsOf(db, row.id),
     };
   };
 
@@ -254,6 +263,23 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       version, ...(set && { set: fromValues(set) }), ...(reset && { reset }), ...(notes !== undefined && { notes }),
       ...(siteId !== undefined && { siteId }),
     });
+    return view((await findDive(request, request.params.id))!);
+  });
+
+  app.put('/dives/:id/participants', {
+    schema: {
+      summary: 'Set who else was on the Dive, as one list: any Diver of the instance (GET /divers/search) but the Dive\'s own, one role each',
+      description: 'Send the version you started from (409 dive_changed). 400 participant_invalid for a Diver twice or the Dive\'s own; '
+        + '404 diver_not_found for one that doesn\'t exist. Providers that take buddies see the Dive changed (ADR 0028, 0029).',
+      params: IdParams,
+      body: Type.Object({
+        version: Type.Integer(),
+        participants: Type.Array(Type.Object({ diverId: Type.String({ format: 'uuid' }), role: Role }, { additionalProperties: false }), { maxItems: 50 }),
+      }, { additionalProperties: false }),
+      response: { 200: DiveView, 400: Problem, 404: Problem, 409: Problem },
+    },
+  }, async (request) => {
+    await dives.setParticipants(request.user!.id, request.params.id, request.body.version, request.body.participants);
     return view((await findDive(request, request.params.id))!);
   });
 

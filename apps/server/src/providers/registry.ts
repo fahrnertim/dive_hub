@@ -25,7 +25,12 @@ export function createProviderRegistry(adapters: ProviderAdapter[]): ProviderReg
 
 /** A refusal about a Provider, answered with its problem code and the Provider named. */
 export class ProviderServiceError extends Error {
-  constructor(readonly code: ProblemCode, readonly provider?: { id: string; name: string }) {
+  constructor(
+    readonly code: ProblemCode,
+    readonly provider?: { id: string; name: string },
+    /** More for the client, such as what is unmet (`provider_requirements_unmet`). */
+    readonly extra?: Record<string, unknown>,
+  ) {
     super(code);
   }
 }

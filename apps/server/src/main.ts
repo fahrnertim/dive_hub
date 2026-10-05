@@ -25,10 +25,14 @@ const imports = createImportService({ db, blobs });
 const siteImports = createSiteImportService({
   db, sources: createSiteSources({ contact: config.contact, overpassUrl: config.overpassUrl, wikidataUrl: config.wikidataSparqlUrl, ssiSitesUrl: config.ssiSitesUrl }),
 });
-// The Providers of this instance (ADR 0027): SSI only, for now.
+// The Providers of this instance (ADR 0027): SSI only, for now. Every call to SSI is logged (no token or password), to
+// tell Dive Hub's use of an account from the owner's own (docs/references/ssi-app-api.md); calls only come after `app` exists.
 const providers = createProviderLayer({
   db, secrets: createSecretBox(config.encryptionKey),
-  adapters: [createSsiAdapter({ client: createSsiClient({ url: config.ssiUrl, userAgent: userAgent(config.contact) }) })],
+  adapters: [createSsiAdapter({
+    client: createSsiClient({ url: config.ssiUrl, userAgent: userAgent(config.contact) }),
+    onCall: (call) => app.log.info({ ssi: call }, 'SSI call'),
+  })],
 });
 const auth = createAuth({
   db, baseUrl: config.baseUrl, secret: await loadAuthSecret(config.authSecret, config.dataDir),

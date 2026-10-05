@@ -3,13 +3,13 @@
 import { describe, expect, it } from 'vitest';
 import type { OutgoingDive } from '../src/providers/provider.js';
 import en from '../../web/src/i18n/locales/en.json' with { type: 'json' };
-import { createSsiAdapter, SSI_CAPABILITIES } from '../src/providers/ssi/ssi-adapter.js';
+import { createSsiAdapter, SSI_CAPABILITIES, type SsiCallLog } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { createFakeSsi } from './fake-ssi.js';
 
 const dive = (start: string): OutgoingDive => ({
   startsAt: new Date(start), utcOffsetSeconds: 0, durationSeconds: 1800, maxDepthM: 12, avgDepthM: 8, waterTemperatureC: 20,
-  maxTemperatureC: 22, waterType: 'salt', notes: null, siteIds: { ssi: '3314' }, entry: null, exit: null, gases: [],
+  maxTemperatureC: 22, waterType: 'salt', notes: null, siteIds: { ssi: '3314' }, participants: [], entry: null, exit: null, gases: [],
   gfLow: null, gfHigh: null, cnsStart: null, cnsEnd: null, device: null, samples: {},
 });
 
@@ -53,7 +53,7 @@ describe('the SSI adapter\'s logbook reads', () => {
     const { remoteId } = await adapter.dives!.open(ctx).create(dive('2026-01-15T09:00:00Z'), 'divehub-1');
     fake.dives.get(Number(remoteId))!.odin_user_log_rating = 5;
     const before = reads();
-    const updated = await adapter.dives!.open(ctx).update!(remoteId!, { ...dive('2026-01-15T09:00:00Z'), notes: 'Turtle' });
+    const updated = await adapter.dives!.open(ctx).update!(remoteId!, { ...dive('2026-01-15T09:00:00Z'), notes: 'Turtle' }, null);
     expect(updated?.remoteId).toBe(remoteId);
     expect(fake.dives.get(Number(remoteId))).toMatchObject({ odin_user_log_rating: 5, odin_user_log_comment: 'Turtle' });
     expect(reads()).toBe(before + 2);
@@ -62,6 +62,33 @@ describe('the SSI adapter\'s logbook reads', () => {
     // The deleted dive is gone from what is kept, too.
     expect((await adapter.dives!.open(ctx).find!(dive('2026-01-15T09:00:00Z'), 'divehub-1')).ours).toBeNull();
     expect(reads()).toBe(before + 3);
+  });
+});
+
+describe('the SSI adapter\'s call log', () => {
+  it('reports every call to SSI with its Connection and outcome, never the token or password', async () => {
+    const fake = createFakeSsi();
+    const calls: SsiCallLog[] = [];
+    const adapter = createSsiAdapter({
+      client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fake.fetch, userAgent: 'DiveHub (test)' }),
+      onCall: (c) => calls.push(c),
+    });
+    const { account, access } = await adapter.signIn({ kind: 'password', login: 'erika@example.com', password: 'ssi-password' });
+    const ctx = { connectionId: 'c1', accountId: account.id, access };
+    await adapter.dives!.open(ctx).create(dive('2026-01-15T09:00:00Z'), 'divehub-1');
+    await expect(adapter.signIn({ kind: 'password', login: 'erika@example.com', password: 'wrong' })).rejects.toThrow();
+
+    expect(calls.map(({ call, connectionId, outcome }) => ({ call, connectionId, outcome }))).toEqual([
+      { call: 'authenticate', connectionId: null, outcome: 'ok' },
+      { call: 'get_divelog', connectionId: 'c1', outcome: 'ok' },
+      { call: 'save_divelog', connectionId: 'c1', outcome: 'ok' },
+      { call: 'get_divelog', connectionId: 'c1', outcome: 'ok' },
+      { call: 'authenticate', connectionId: null, outcome: 'wrong_credentials' },
+    ]);
+    for (const c of calls) expect(c.ms).toBeGreaterThanOrEqual(0);
+    const logged = JSON.stringify(calls);
+    expect(logged).not.toContain(access);
+    expect(logged).not.toContain('ssi-password');
   });
 });
 

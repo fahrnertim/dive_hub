@@ -6,7 +6,10 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { dataFile, type PreparedData } from './prepare.ts';
-import { E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, connectSsi, deletableDive, expectGoodPage, leaveSsi, readyForSsi, resetDive, sendToSsi, setPreferences } from './support.ts';
+import {
+  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, clearParticipants, connectSsi, deletableDive, expectGoodPage, externalDiver, forgetDivers, leaveSsi, readyForSsi,
+  resetDive, sendToSsi, setBuddies, setPreferences,
+} from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
 test.describe.configure({ mode: 'parallel' });
@@ -172,8 +175,11 @@ for (const v of variants) {
       await expectGoodPage(page, title('Dive 42'), v);
     });
 
-    test('Divers and Devices', { tag: ['@divers'] }, async ({ page }) => {
+    test('Divers and Devices', { tag: ['@divers'] }, async ({ page, request }) => {
+      // Someone without a logbook here (ADR 0028), listed under "Other divers".
+      await externalDiver(request, 'Ulla Berg');
       await page.goto('/#/divers');
+      await expect(page.getByText('Ulla Berg')).toBeVisible();
       await expect(page.getByRole('table')).toBeVisible();
       await expectGoodPage(page, title('Divers'), v);
     });
@@ -203,6 +209,36 @@ for (const v of variants) {
       await expect(page.getByRole('dialog').getByRole('option').first()).toBeVisible();
       await expectGoodPage(page, title('Dive 42'), v);
       await leaveSsi(request, diveId);
+    });
+
+    test('a dive with buddies: adding someone, and one SSI doesn’t know yet', { tag: ['@dives'] }, async ({ page, request }) => {
+      await connectSsi(request);
+      await readyForSsi(request, diveId);
+      // Mia Stone in the SSI list stays free to pick: buddies.spec.ts may have linked her to a "Mia" on this server.
+      await clearParticipants(request, diveId);
+      await forgetDivers(request, 'Mia');
+      await setBuddies(request, diveId, [await externalDiver(request, 'Kai Lund', '4989164'), await externalDiver(request, 'Ulla Berg')]);
+      await page.goto(`/#/dives/${diveId}`);
+      const find = page.getByRole('button', { name: v.english ? 'Find Ulla Berg in your SSI buddy list' : 'Ulla Berg in deiner SSI-Buddyliste suchen' });
+      await expect(find).toBeVisible();
+      await expectGoodPage(page, title('Dive 42'), v);
+      await page.getByRole('button', { name: v.english ? 'Add someone' : 'Jemanden hinzufügen' }).click();
+      await expect(page.getByRole('dialog').getByRole('radio').first()).toBeVisible();
+      await expectGoodPage(page, title('Dive 42'), v);
+      await page.keyboard.press('Escape');
+      await find.click();
+      await expect(page.getByRole('dialog').getByRole('option').first()).toBeVisible();
+      await expectGoodPage(page, title('Dive 42'), v);
+      await clearParticipants(request, diveId);
+      await leaveSsi(request, diveId);
+    });
+
+    test('my account, the SSI buddy list', { tag: ['@account'] }, async ({ page, request }) => {
+      await connectSsi(request);
+      await page.goto('/#/account');
+      await page.getByRole('button', { name: v.english ? /^Show your SSI buddy list/ : /^Deine SSI-Buddyliste zeigen/ }).click();
+      await expect(page.getByRole('row', { name: /Mia Stone/ })).toBeVisible();
+      await expectGoodPage(page, title('My account'), v);
     });
 
     // Deleting a Dive (ADR 0026): the shared dive 42 only gets the dialog opened; dive 9 is deleted and comes back.

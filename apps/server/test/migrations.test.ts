@@ -115,7 +115,8 @@ describe.skipIf(!(await databaseReachable()))('0013: Providers as adapters (ADR 
     expect(pushes[goneUpdate]).toMatchObject({ provider: 'ssi', error_code: 'provider_dive_gone', remote_gone: true });
     expect(pushes[goneDelete]).toMatchObject({ error_code: null, remote_gone: true });
     expect(pushes[outage]).toMatchObject({ error_code: 'provider_unavailable', remote_gone: false });
-    expect(pushes[noSite]).toMatchObject({ error_code: 'provider_site_id_missing' });
+    // Renamed again by 0015, when Push requirements replaced the site ID code (ADR 0029).
+    expect(pushes[noSite]).toMatchObject({ error_code: 'provider_requirements_unmet' });
     expect((await q(`select 1 from pg_type where typname = 'target'`)).rows).toEqual([]);
   });
 });

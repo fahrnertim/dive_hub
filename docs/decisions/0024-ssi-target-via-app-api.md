@@ -13,6 +13,8 @@ Accepted – 2026-10-04. SSI site import built and amended by [ADR 0025](0025-ss
 Amended by [ADR 0027](0027-providers-as-adapters.md) (2026-10-05): SSI is a Provider adapter behind a generic layer; one
 sealed credentials value per Connection (existing Connections signed in again once); generic routes and `provider_*`
 codes; a 2 s pause between actions per Connection; the logbook read shared with the read-back.
+Amended by [ADR 0029](0029-push-requirements-and-buddies.md) (2026-10-05): buddies are sent as entries of the User's SSI
+buddy list, found by the Diver's SSI account; Connection Diver mappings wait until an entry without an account is seen.
 
 ## Context
 The [spec](../spec/README.md) planned the SSI QR payload as the first Target mode, because it needs no stored credentials.

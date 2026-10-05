@@ -114,6 +114,11 @@
 .diver-name { font-weight: var(--weight-semibold); }
 .diver-row .actions { margin-left: auto; display: flex; gap: var(--space-3); }
 .diver-row .form-inline { flex: 1; }
+/* A Participant: the name first (its own line on a phone), then the role and Remove together. Centred, because the
+   role's field has a hidden label that baseline alignment would count. */
+.participant-row { align-items: center; }
+.participant-row .diver-name { flex: 1 1 12rem; }
+.participant-role .field { gap: 0; }
 .logbook-actions { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); }
 .logbook-filter { min-width: 12rem; }
 .logbook-search { max-width: 24rem; margin-bottom: var(--space-4); }
@@ -191,3 +196,11 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .provider-pushes { margin: 0; padding-left: var(--space-5); }
 .provider-pushes li + li { margin-top: var(--space-1); }
 .provider-sites { display: grid; gap: var(--space-3); }
+/* What a Provider needs first (ADR 0029): each unmet requirement with its fix. */
+.provider-needs { display: grid; gap: var(--space-3); }
+.provider-needs .muted { margin: 0; }
+.provider-people { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+/* The account's list of people at a Provider, under its Connection. */
+.provider-buddies { display: grid; gap: var(--space-3); margin: var(--space-4) 0 var(--space-6); }
+.provider-buddies > h3 { font-size: var(--text-md); margin: 0; }
+.provider-buddies > .muted { margin: 0; }

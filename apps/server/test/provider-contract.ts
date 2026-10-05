@@ -1,10 +1,13 @@
 // The contract every Provider adapter must pass (ADR 0027), run against each adapter with its fake service. It checks
 // what the generic layer relies on: capabilities that match the methods, sign-in, typed errors with a reason (never a
-// secret in the message), delivery with or without an ID, "outdated" by fingerprint, and a case for every operation the
-// adapter declares (an operation without a case fails the suite).
+// secret in the message), delivery with or without an ID, "outdated" by fingerprint, requirements of known types
+// (ADR 0029), Participants taken by the reference they need, and a case for every operation the adapter declares (an
+// operation without a case fails the suite).
 import { describe, expect, it } from 'vitest';
+import { PARTICIPANT_ROLES } from '../src/db/schema.js';
 import {
-  FIND_BY, OPERATIONS, ProviderError, type ActionContext, type OutgoingDive, type ProviderAdapter, type SignInInput,
+  FIND_BY, OPERATIONS, ProviderError, type ActionContext, type OutgoingDive, type OutgoingParticipant, type ProviderAdapter,
+  type SignInInput,
 } from '../src/providers/provider.js';
 import { SITE_SOURCES } from '../src/sites/sources.js';
 
@@ -23,6 +26,8 @@ export interface ContractHarness {
   outage(on: boolean): void;
   /** Deletes a remote dive at the fake, as a User would in the Provider's own app. */
   deleteThere?(remoteId: string): void;
+  /** With a `diver_mapping` requirement: a Participant the fake knows by the reference it needs. */
+  participant?: OutgoingParticipant;
 }
 
 const later = (dive: OutgoingDive, minutes: number): OutgoingDive => ({ ...dive, startsAt: new Date(dive.startsAt.getTime() + minutes * 60_000) });
@@ -36,7 +41,7 @@ function declared(adapter: ProviderAdapter): string[] {
 /** Operations with a case below. */
 const CASES = [
   'dives.export.create', 'dives.export.readBack', 'dives.export.find', 'dives.export.link', 'dives.export.update',
-  'dives.export.delete', 'diveSites.import.find',
+  'dives.export.delete', 'diveSites.import.find', 'buddies.import.find',
 ];
 /** Operations the adapter interface doesn't carry, and where they are tested instead. */
 const ELSEWHERE: Record<string, string> = {
@@ -71,7 +76,15 @@ export function providerContract(name: string, make: () => ContractHarness) {
         for (const op of exports.operations) expect(OPERATIONS).toContain(op);
         for (const by of exports.findBy ?? []) expect(FIND_BY).toContain(by);
         expect(exports.operations).toContain('create');
-        if (exports.needsSiteIdFrom) expect(SITE_SOURCES).toContain(exports.needsSiteIdFrom);
+        for (const r of exports.requirements) {
+          expect(['blocking', 'advisory']).toContain(r.severity);
+          expect(r.description.length).toBeGreaterThan(0);
+          if (r.type === 'site_external_id') expect(SITE_SOURCES).toContain(r.source);
+          else if (r.type === 'diver_mapping') {
+            expect(['ssi', 'padi']).toContain(r.source);
+            for (const role of r.roles) expect(PARTICIPANT_ROLES).toContain(role);
+          } else expect.unreachable(`unknown requirement type ${(r as { type: string }).type}`);
+        }
         expect(exports.operations.includes('readBack')).toBe((exports.readBackFields ?? []).length > 0);
         if (exports.delivery === 'handed_over') {
           // Without an ID back there is nothing to update, delete, link or find again.
@@ -86,6 +99,9 @@ export function providerContract(name: string, make: () => ContractHarness) {
         if (exports.operations.includes('link')) expect(exports.operations).toContain('find');
       }
       expect(!!c.data.diveSites?.import?.operations.includes('find')).toBe(!!adapter.diveSites);
+      expect(!!c.data.buddies?.import?.operations.includes('find')).toBe(!!adapter.buddies);
+      // The list's people are matched to Divers by their account at the Provider.
+      if (adapter.buddies) expect(adapter.accountSource).toBeDefined();
     });
 
     it('has a case for every operation it declares', () => {
@@ -136,17 +152,17 @@ export function providerContract(name: string, make: () => ContractHarness) {
       const { remoteId } = await h.adapter.dives!.open(ctx).create(h.dive, 'divehub-contract-6');
       const { sameTime } = await h.adapter.dives!.open(ctx).find!(later(h.dive, 1), 'divehub-other');
       expect(sameTime?.remoteId).toBe(remoteId);
-      expect((await h.adapter.dives!.open(ctx).update!(sameTime!.remoteId, { ...h.dive, notes: 'Linked' }))?.remoteId).toBe(remoteId);
+      expect((await h.adapter.dives!.open(ctx).update!(sameTime!.remoteId, { ...h.dive, notes: 'Linked' }, null))?.remoteId).toBe(remoteId);
     });
 
     it.runIf(declares('dives.export.update'))('updates the same remote dive, and answers null once it is gone', async () => {
       const h = make();
       const ctx = await connect(h);
       const { remoteId } = await h.adapter.dives!.open(ctx).create(h.dive, 'divehub-contract-3');
-      const updated = await h.adapter.dives!.open(ctx).update!(remoteId!, { ...h.dive, notes: 'Turtle' });
+      const updated = await h.adapter.dives!.open(ctx).update!(remoteId!, { ...h.dive, notes: 'Turtle' }, null);
       expect(updated?.remoteId).toBe(remoteId);
       h.deleteThere!(remoteId!);
-      expect(await h.adapter.dives!.open(ctx).update!(remoteId!, h.dive)).toBeNull();
+      expect(await h.adapter.dives!.open(ctx).update!(remoteId!, h.dive, null)).toBeNull();
     });
 
     it.runIf(declares('dives.export.delete'))('deletes, says when the remote dive was already gone, and tells whether it is there', async () => {
@@ -173,6 +189,31 @@ export function providerContract(name: string, make: () => ContractHarness) {
       h.outage(false);
       h.expire();
       expect(await reasonOf(h, h.adapter.dives!.open(ctx).create(h.dive, 'divehub-contract-5'))).toBe('signed_out');
+    });
+
+    const mapsDivers = !!make().adapter.capabilities.data.dives?.export?.requirements.some((r) => r.type === 'diver_mapping');
+    it.runIf(mapsDivers)('takes a Participant by the reference its requirement names, and counts Participants in its fingerprint', async () => {
+      const h = make();
+      expect(h.participant, 'a harness for an adapter with diver_mapping names a participant').toBeDefined();
+      const withBuddy = { ...h.dive, participants: [h.participant!] };
+      expect(h.adapter.dives!.fingerprint(withBuddy)).not.toBe(h.adapter.dives!.fingerprint(h.dive));
+      const delivered = await h.adapter.dives!.open(await connect(h)).create(withBuddy, 'divehub-contract-8');
+      expect(delivered.leftOut ?? []).toEqual([]);
+      // Someone it doesn't have is left out, not refused.
+      const stranger: OutgoingParticipant = { ...h.participant!, diverId: 'stranger', ids: { ssi: '1', padi: 'x-1' } };
+      const other = await h.adapter.dives!.open(await connect(h)).create({ ...later(h.dive, 240), participants: [stranger] }, 'divehub-contract-9');
+      expect(other.remoteId === null || typeof other.remoteId === 'string').toBe(true);
+    });
+
+    it.runIf(declares('buddies.import.find'))('offers the account\'s own list of people: an ID, a name and their account, nothing else', async () => {
+      const h = make();
+      const buddies = await h.adapter.buddies!.find(await connect(h));
+      expect(buddies.length).toBeGreaterThan(0);
+      for (const b of buddies) {
+        expect(Object.keys(b).sort()).toEqual(['account', 'name', 'remoteId']);
+        expect([typeof b.remoteId, typeof b.name]).toEqual(['string', 'string']);
+        expect(b.account === null || typeof b.account === 'string').toBe(true);
+      }
     });
 
     it.runIf(declares('diveSites.import.find'))('offers its dive sites with their IDs', async () => {

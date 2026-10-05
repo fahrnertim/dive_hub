@@ -11,13 +11,18 @@ import { providerContract } from './provider-contract.js';
 const dive: OutgoingDive = {
   startsAt: new Date('2026-01-15T08:00:00Z'), utcOffsetSeconds: 7200, durationSeconds: 2400, maxDepthM: 18.2, avgDepthM: 11.4,
   waterTemperatureC: 24, maxTemperatureC: 26, waterType: 'salt', notes: null, siteIds: { ssi: '3314' },
-  entry: null, exit: null, gases: [{ o2: 32, he: 0 }], gfLow: 40, gfHigh: 85, cnsStart: 0, cnsEnd: 12,
+  participants: [], entry: null, exit: null, gases: [{ o2: 32, he: 0 }], gfLow: 40, gfHigh: 85, cnsStart: 0, cnsEnd: 12,
   device: { manufacturer: 'garmin', product: 'Descent Mk3', serialNumber: '0111', firmware: '1.0' },
   samples: { depth: { offsetsMs: [0, 60_000, 2_340_000, 2_400_000], values: [0, 18.2, 3, 0] } },
 };
 
 providerContract('SSI', () => {
-  const fake = createFakeSsi();
+  const fake = createFakeSsi({
+    buddies: [{
+      owner: 5_012_047, id: 3_786_888, buddy_master_id: 4_989_164, firstname: 'Kai', lastname: 'Lund',
+      email: 'kai@example.com', dob: '1980-01-02', phone: '+49 170 000000', city: 'Kiel',
+    }],
+  });
   let clock = 0;
   return {
     // The clock moves on with every action, so a kept logbook never hides what the fake changed.
@@ -29,6 +34,7 @@ providerContract('SSI', () => {
     expire: () => fake.expireTokens(),
     outage: (on) => { fake.failWith = on ? 503 : null; },
     deleteThere: (remoteId) => { fake.dives.get(Number(remoteId))!.odin_user_log_deleted = 1; },
+    participant: { diverId: 'kai', name: 'Kai', role: 'buddy', ids: { ssi: '4989164' } },
   };
 });
 
@@ -56,5 +62,6 @@ providerContract('Ledger (test only)', () => {
     expire: () => fake.expireTokens(),
     outage: (on) => { fake.down = on; },
     deleteThere: (remoteId) => { fake.dives.delete(remoteId); },
+    participant: { diverId: 'kai', name: 'Kai', role: 'guide', ids: { padi: '77' } },
   };
 });

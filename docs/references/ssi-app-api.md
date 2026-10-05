@@ -1,6 +1,6 @@
 ---
 title: SSI app API (MySSI)
-summary: SSI's private, undocumented app API as Dive Hub uses it - endpoint, sign-in, reading the logbook, saving (create, update, delete), the dive record and its samples, the site list (checked 2026-10-05), quirks, and what to do when SSI changes it. Each fact is marked with where it comes from.
+summary: SSI's private, undocumented app API as Dive Hub uses it - endpoint, sign-in, reading the logbook, saving (create, update, delete), when Dive Hub calls SSI (only on User actions, each call logged), SSI's app's own sync and its 60-second wait (not caused by Dive Hub), the dive record and its samples, buddies (entry IDs of the account's buddy list, checked 2026-10-05; the buddy QR code), the site list (checked 2026-10-05), quirks, and what to do when SSI changes it. Each fact is marked with where it comes from.
 status: living
 date: 2026-10-05
 url: https://api.divessi.com/app/a21.php
@@ -24,7 +24,7 @@ Markers:
 - **[S]**: reported by a community project (see the research note), not yet confirmed by us.
 - **[?]**: open; the projects disagree or nobody checked.
 
-As of 2026-10-05 the site list, sending, the profile chart, updating and deleting are [R]; the other account checks are pending.
+As of 2026-10-05 the site list, sending, the profile chart, updating, deleting and what a dive's buddy IDs are [R]; the other account checks are pending.
 
 ## What Dive Hub uses
 
@@ -64,6 +64,53 @@ As of 2026-10-05 the site list, sending, the profile chart, updating and deletin
   updates and deletes always read afresh ([ADR 0027](../decisions/0027-providers-as-adapters.md)). Actions on one
   Connection wait 2 s between each other.
 
+### When Dive Hub calls SSI (checked 2026-10-05)
+
+Only when a User does something. There are no background calls: the worker never calls SSI, and a dive's status
+(`GET /api/dives/{id}/providers`) reads only Dive Hub's database.
+
+| User action | Calls |
+|---|---|
+| Connect, or sign in again | `authenticate` |
+| Send a dive (create or update) | `get_divelog` (may come from the kept read-back), `save_divelog`, `get_divelog` (read-back) |
+| Delete a dive that was sent to SSI | `get_divelog` (is it still there?), `save_divelog` (deleted) |
+| Open the SSI site picker on a dive | `get_divelog` (may come from the kept read-back) |
+| Open the buddy list (Connections) or the buddy picker on a dive | `get_divelog` (may come from the kept read-back) |
+| Any of these after SSI's token expired, with the password kept | `authenticate` first |
+
+The browser also reads again when the site or buddy picker is open and its data is older than 5 or 2 minutes. That
+happens, for example, when the phone comes back to the app.
+
+**Server log:** each call is logged at `info` as `SSI call` with `ssi: { call, connectionId, outcome, ms, detail? }`
+(`connectionId` is null while signing in). `detail` is only there when a call failed: SSI's own error text, or, for a
+save without a dive ID and without an error, SSI's `ok` value and the names of the fields it sent back (not their
+values). The token, password and URL are never logged. A Connection's `last_used_at` shows when Dive Hub last used it
+successfully; `next_action_at` shows its last call to SSI, successful or not.
+
+### SSI's app: its sync and the "wait 60 seconds" (checked 2026-10-05, app 5.0.34 on Android)
+
+The owner recorded the phone's connections with PCAPdroid and this PC's connections to `api.divessi.com`, and
+compared them with Dive Hub's server log [R]:
+- **The app uses the same server as Dive Hub** (`api.divessi.com`). It also contacts `cdn.divessi.com` and
+  `my.divessi.com`. Before syncing, it looks up the phone's public IP address (`checkip.amazonaws.com`,
+  `icanhazip.com`); what it does with the address is unknown.
+- **The app syncs when it opens:** about 12 requests to `api.divessi.com` within one second. One answer is about
+  180 KB, probably the logbook.
+- **"Wait until …" comes from SSI's server, and Dive Hub doesn't cause it.** A pull to refresh within about a minute
+  of the last sync is refused. After a refused pull, the app retries 5 times, 8 seconds apart, each refused again.
+  Pulling again during that time moves the "until" time forward, so the wait can seem endless. It happened while
+  Dive Hub's server was stopped, and while it made no calls.
+- **What works:** open the app, leave it alone for 2 minutes, then pull once. Checked twice in a row by the owner.
+- **A dive sent from Dive Hub showed only after a manual pull,** not after the sync on opening. So for checking a
+  dive in the app, open it, wait 2 minutes, and pull once.
+
+**Deleting in the app and sending again (2026-10-05, not fully explained):** dive 29828202 was deleted in the app.
+Dive Hub's delete then found it gone, and two new sends of the same Dive were refused (a save without a dive ID).
+After the app had synced, the logbook listed 29828202 again with Dive Hub's reference, and the next send linked to
+it. A guess is that SSI refuses a new dive whose reference matches a deleted one, and that the app's sync uploaded
+the dive again from its own copy. Neither is checked; the refusals were logged before the `detail` field existed. If
+it happens again, the `SSI call` line's `detail` shows SSI's reason.
+
 ### Saving: `what=save_divelog`
 
 - `POST …&what=save_divelog&token=…`, `Content-Type: application/x-www-form-urlencoded`, body `json_data=<the record as JSON>` [S].
@@ -90,6 +137,7 @@ From `ownFields()` in `apps/server/src/ssi/ssi-record.ts`. On an update, a field
 | `odin_user_log_var_watertype_id` | the Dive site's water type (ADR 0025) | 4 fresh, 5 salt, brackish nothing [S] (one project had them swapped) |
 | `odin_user_log_dive_sites_id` | the Dive site's SSI site ID | required by Dive Hub; the web form refuses a dive without one [S] |
 | `odin_user_log_comment` | notes | |
+| `odin_user_log_buddy_ids` | the Participants (buddies, guides, instructors) | entry IDs of the User's buddy list, as numbers, found by the Diver's SSI account (`buddy_master_id`); one not in the list is left out. On update, IDs set in SSI's app stay ([ADR 0029](../decisions/0029-push-requirements-and-buddies.md)) [R] |
 | `odin_user_log_ean`, `_ean_percent` | first gas | 1 + O₂ % for nitrox; 0 + 0 for air [S] |
 | `odin_user_log_gf_set` (`"40 / 85"`), `_gf_set_1`, `_gf_set_2` | GF low / high | |
 | `odin_user_log_cns_start`, `_cns_end` | the Recording's CNS | |
@@ -100,8 +148,8 @@ From `ownFields()` in `apps/server/src/ssi/ssi-record.ts`. On an update, a field
 | `odin_user_log_user_master_id`, `_nr`, `internalPk` | the account, SSI's dive number | |
 | `odin_user_log_depthDataset`, `_tempDataset`, `_gfSurfDataset`, `_gfnowDataset`, `_diveSamples` | Primary recording's samples | JSON **strings**; see below |
 
-Not sent (null): rating, air temperature, visibility, weight, tank, pressures, conditions other than water type, buddies,
-dive centre, gear, wildlife, surface interval. For the **surface interval**, one project says seconds and another says minutes [?].
+Not sent (null): rating, air temperature, visibility, weight, tank, pressures, conditions other than water type, the
+leader number (`odin_user_log_leader_nr`), dive centre, gear, wildlife, surface interval. For the **surface interval**, one project says seconds and another says minutes [?].
 `odin_user_log_confirmed` / `_verified` can't be set: SSI derives them from a dive centre's confirmation, so dives
 sent this way show as **unconfirmed** [S].
 
@@ -128,13 +176,38 @@ A JSON string holding an array, one object per **5 s** [S]:
 reportedly breaks the dive's view. JavaScript's `JSON.stringify` writes `0.0` as `0`, so Dive Hub writes this string
 itself (`samplesJson()`).
 
+### Buddies (checked 2026-10-05)
+
+Read once from the owner's account through Dive Hub's own Connection (a temporary read-only check that printed IDs and
+initials only; 8 buddy-list entries, 5 dives with buddies) [R]:
+- **A dive's `odin_user_log_buddy_ids` holds entry IDs from the account's buddy list, not SSI accounts** [R]. Example:
+  dive #90 had `[3786888, 2826964]`; those are the `id`s of two entries in `logbook_buddies`, whose SSI accounts
+  (`buddy_master_id`) are 4989164 and 4512484.
+- The IDs are **JSON numbers** [R]. `localBuddyIds` reads as `null` [R] (the app's own field; divesend sends `[]` on create [S]).
+- `logbook_buddies[]` entries have the keys `id`, `master_id`, `buddy_master_id`, `firstname`, `lastname`, `forename`,
+  `nickname`, `dob`, `email`, `phone` (some also `mobile_c`, `phone_c`), `address`, `city`, `country`, `comment`,
+  `image`, `image_timestamp`, `leader_nr`, `leader_active`, `confirmed`, `favorite`, `deleted`, `added` [R].
+- **`master_id` equals `buddy_master_id`** in every entry: both are the buddy's SSI account. Nothing in an entry names
+  the account whose list it is in [R].
+- Every entry in the owner's list had an SSI account; whether the list can hold people without one is [?].
+- `odin_user_log_leader_nr` was `""` on every dive with buddies [R].
+- **Adding an entry** in the app works by scanning the other person's buddy QR code, and the other person is **not
+  notified** (owner, 2026-10-05). The call the app makes for it is unknown [?].
+- **The buddy QR code** is plain text [R] (owner, 2026-10-05, a real code, anonymized here):
+  `buddy;<SSI account ID>;firstName:<first name>;lastName:<last name>;email:<e-mail>`. The number is the person's SSI
+  account, the same as `buddy_master_id` in the list (checked against an entry in the owner's list). Whether SSI's app
+  needs the name and e-mail, or adds the entry from the account ID alone, is [?].
+- Still open: whether another account's list gives the same person **another** entry `id` (a row per pair of accounts)
+  or the same one [?]; how to add an entry (no call is known [S]). Buddy IDs set by Dive Hub are accepted and show on
+  the dive in the app [R] (owner, 2026-10-06).
+
 ## Known but not used
 
 | Call | What | Note |
 |---|---|---|
 | `get_user_data` | profile: name, address, birthday, units | [S] |
 | `get_divelog_vars` | ID → name lists for conditions (weather, entry, water body, current, surface, dive type, special dive, tank) | [S]; fetch at runtime when conditions are sent |
-| `get_buddies` | buddy list (`id` per account, `buddy_master_id` = the buddy's SSI account, `leader_nr`) | [S]; no call to add a buddy is known |
+| `get_buddies` | buddy list, the same entries as `logbook_buddies` in `get_divelog` ([Buddies](#buddies-checked-2026-10-05)) | [S]; no call to add a buddy is known |
 | `get_ccards` | certifications (card ID `ccard_uid`, course, date, instructor and centre numbers) | [S]; for an import from SSI later |
 | `get_gear`, `save_gear`, `delete_gear`, `get_gearsets`, `save_gearset` | equipment | [S] |
 | `APP_CACHE_CENTER.zip` (`/app/…`, no sign-in) | dive centres | [S]; no licence, like the site list |
@@ -182,7 +255,8 @@ SSI is a Provider ([ADR 0027](../decisions/0027-providers-as-adapters.md)): ever
 |---|---|
 | `apps/server/src/providers/ssi/ssi-client.ts` | the calls; errors as reasons (`wrong_credentials`, `signed_out`, `refused`, `unavailable`, `bad_response`), never with a URL |
 | `apps/server/src/providers/ssi/ssi-record.ts` | Dive → record, samples, update and delete records, read-back comparison, fingerprint |
-| `apps/server/src/providers/ssi/ssi-adapter.ts` | SSI's capabilities, sign-in, the logbook read (kept two minutes after a save), the ±2 min match, SSI's dive numbers, the SSI site ID; SSI's record as typed values |
+| `apps/server/src/providers/ssi/ssi-adapter.ts` | SSI's capabilities and requirements, sign-in, the logbook read (kept two minutes after a save), the ±2 min match, SSI's dive numbers, the SSI site ID, buddies as buddy-list entries; SSI's record as typed values |
+| `apps/server/src/providers/buddy-service.ts` | generic: the account's list of people read live and imported as external Divers (name and account only) |
 | `apps/server/src/providers/ssi/ssi-sites.ts` | the site list for the admin's SSI site import |
 | `apps/server/src/providers/connection-service.ts`, `push-service.ts` | generic: Connections, signing in again, create / update / link / delete, Pushes |
 | `apps/server/test/fake-ssi.ts` | an in-memory SSI for tests and the browser tests' server |
@@ -215,6 +289,10 @@ From the research note. Record the result here with date and app version, and tu
 - [ ] Token lifetime: still valid one day after connecting (owner, 2026-10-05). Check again after a week
   (`round-trip.ts token`, or whether the Connection asks to sign in again).
 - [ ] Side effects: after an API sign-in, is the phone still signed in? A "new sign-in" e-mail? 2FA in the account settings?
+- [x] What a dive's buddy IDs are: entry IDs from the account's buddy list, as numbers [R] (owner, 2026-10-05; see
+  [Buddies](#buddies-checked-2026-10-05)).
+- [x] Buddies sent from Dive Hub show on the dive in the app [R] (owner, 2026-10-06, slice 14).
+- [ ] Same person, two accounts: compare the entry `id` of one shared buddy in both lists (per pair, or one ID).
 - [ ] Surface interval: seconds or minutes. Log a dive in the app with a known surface interval (e.g. 1 h 30 min),
   run `round-trip.ts read`, and look at the dive's surface interval key in `samples/private/ssi/` (90 = minutes,
   5400 = seconds).

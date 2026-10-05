@@ -6,9 +6,11 @@ import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import { Problem, problem, PROBLEMS, providerProblem, type ProblemCode } from '../http/problems.js';
-import { SITE_SOURCES } from '../sites/sources.js';
+import { PARTICIPANT_ROLES } from '../db/schema.js';
+import { SITE_SOURCES, SOURCE_INFO } from '../sites/sources.js';
+import type { BuddyService } from './buddy-service.js';
 import type { ConnectionService } from './connection-service.js';
-import { FIND_BY, OPERATIONS, type ProviderAdapter } from './provider.js';
+import { FIND_BY, OPERATIONS, type ProviderAdapter, type Requirement } from './provider.js';
 import type { PushRow, PushService } from './push-service.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
 
@@ -17,6 +19,7 @@ export interface ProviderRouteDeps {
   providers: ProviderRegistry;
   connections: ConnectionService;
   pushes: PushService;
+  buddies: BuddyService;
 }
 
 const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
@@ -33,6 +36,22 @@ const Direction = Type.Object({
   findBy: Type.Array(Type.Enum([...FIND_BY]), { description: 'How find finds a record: by our reference, by a time window, near a position' }),
 });
 
+const RoleList = Type.Array(Type.Enum([...PARTICIPANT_ROLES]));
+
+const RequirementView = Type.Object({
+  type: Type.String({
+    description: 'site_external_id: the Dive site\'s External ID at source. diver_mapping: the Provider can tell who each Participant in '
+      + 'roles is. A client that doesn\'t know the type shows description and that it can\'t be fixed there (docs/spec/clients.md)',
+  }),
+  severity: Type.Enum(['blocking', 'advisory'], { description: 'blocking: sending refuses while unmet. advisory: sent without it; the Push says what was left out' }),
+  description: Type.String({ description: 'English; only for a client that doesn\'t know the type' }),
+  source: Type.String({ description: 'site_external_id: a site Source. diver_mapping: the service whose account a Diver needs' }),
+  typed: Nullable(Type.Boolean({ description: 'site_external_id: Users may type an ID (PUT /api/dive-sites/{id}/external-ids/{source})' })),
+  pattern: Nullable(Type.String({ description: 'site_external_id: what the bare ID looks like (a regular expression)' })),
+  prefixes: Nullable(Type.Array(Type.String(), { description: 'site_external_id: what may come before the ID as the Source shows it, e.g. "site:"' })),
+  roles: Nullable(RoleList),
+}, { description: 'What sending needs (ADR 0029)' });
+
 const ProviderView = Type.Object({
   id: Type.String(),
   name: Type.String({ description: 'Proper name, the same in every UI language' }),
@@ -46,12 +65,15 @@ const ProviderView = Type.Object({
       export: Nullable(Type.Object({
         ...Direction.properties,
         delivery: Type.Enum(['confirmed', 'handed_over'], { description: 'confirmed: an ID comes back. handed_over: no ID, so no update, delete or link' }),
-        needsSiteIdFrom: Nullable(Type.Enum([...SITE_SOURCES], { description: 'Sending needs the Dive site\'s External ID at this Source' })),
+        requirements: Type.Array(RequirementView),
         readBackFields: Type.Array(Type.String(), { description: 'Field names read-back differences are reported under; translate them' }),
       })),
       import: Nullable(Direction),
     })),
     diveSites: Nullable(Type.Object({ import: Nullable(Direction) })),
+    buddies: Nullable(Type.Object({ import: Nullable(Direction) }, {
+      description: 'find: the account\'s own list of people (SSI: the buddy list), GET /api/connections/{id}/buddies',
+    })),
   }),
   notices: Type.Array(Type.Enum(['shows_unconfirmed']), { description: 'Things a client must say: shows_unconfirmed, the Provider shows dives sent this way as unconfirmed' }),
   limits: Type.Object({ pauseMs: Type.Integer({ description: 'Pause between two actions on one Connection; requests wait their turn' }) }),
@@ -70,6 +92,28 @@ const ConnectionView = Type.Object({
   createdAt: DateTime,
 });
 
+const LeftOut = Type.Object({
+  diverId: Type.String(),
+  name: Type.String(),
+  reason: Type.Enum(['no_reference', 'not_at_provider'], {
+    description: 'no_reference: nothing tells the Provider who they are (give the Diver an account there). '
+      + 'not_at_provider: the Provider doesn\'t have them (SSI: add them to your buddy list in SSI\'s app, then update)',
+  }),
+});
+
+const UnmetView = Type.Object({
+  type: Type.String({ description: 'As in the Provider\'s requirements' }),
+  severity: Type.Enum(['blocking', 'advisory']),
+  source: Type.String(),
+  siteId: Type.Optional(Nullable(Type.String({ description: 'site_external_id: the Dive site to give the ID; null: choose a site first' }))),
+  diverId: Type.Optional(Type.String({ description: 'diver_mapping: the Participant' })),
+  diverName: Type.Optional(Type.String()),
+  role: Type.Optional(Type.Enum([...PARTICIPANT_ROLES])),
+  fixes: Type.Optional(Type.Array(Type.String(), {
+    description: 'diver_mapping: ways to fix it. diver_external_id: set the Diver\'s account at source (PUT /api/divers/{id}/external-ids/{source})',
+  })),
+}, { description: 'A requirement this Dive doesn\'t meet, from Dive Hub\'s own data' });
+
 const PushView = Type.Object({
   id: Type.String(),
   action: Type.Enum(['create', 'update', 'link', 'delete'], { description: 'link: tied to a dive already there, nothing sent' }),
@@ -80,6 +124,7 @@ const PushView = Type.Object({
   remoteNumber: Nullable(Type.Integer({ description: 'The Provider\'s own dive number, which differs from the Dive\'s' })),
   remoteGone: Type.Boolean({ description: 'The remote dive was found deleted at the Provider' }),
   failureCode: Nullable(Code),
+  leftOut: Nullable(Type.Array(LeftOut, { description: 'Participants this Push couldn\'t carry; clients say so (ADR 0029)' })),
   differences: Nullable(Type.Array(Type.Object({
     field: Type.String({ description: 'One of the Provider\'s readBackFields' }),
     sent: Nullable(Type.Union([Type.String(), Type.Number()])),
@@ -94,7 +139,7 @@ const StatusView = Type.Object({
     description: 'The Connection of the Dive\'s Diver; null when that Diver is not connected to this Provider',
   })),
   siteId: Nullable(Type.String({ description: 'The Dive site' })),
-  siteExternalId: Nullable(Type.String({ description: 'The Dive site\'s External ID at needsSiteIdFrom; sending needs one' })),
+  unmet: Type.Array(UnmetView, { description: 'What the Provider\'s requirements need and the Dive lacks; never asks the Provider' }),
   current: Nullable(Type.Object({
     remoteId: Type.String(),
     remoteNumber: Nullable(Type.Integer()),
@@ -116,22 +161,38 @@ export const PROVIDER_STATUS: Partial<Record<ProblemCode, number>> = {
   dive_not_found: 404, diver_not_found: 404, connection_not_found: 404,
   invalid_input: 400, encryption_key_missing: 400, provider_wrong_credentials: 400, provider_unsupported: 400,
   provider_already_connected: 409, provider_account_taken: 409, provider_other_account: 409, provider_not_connected: 409,
-  provider_sign_in_needed: 409, provider_site_id_missing: 409, provider_not_sent: 409, provider_dive_gone: 409, provider_busy: 409,
+  provider_sign_in_needed: 409, provider_requirements_unmet: 409, provider_not_sent: 409, provider_dive_gone: 409, provider_busy: 409,
   provider_unavailable: 502, provider_refused: 502,
 };
-const errors = { 400: Problem, 404: Problem, 409: Problem, 502: Problem };
+/** A refusal about a Provider; with provider_requirements_unmet, what is unmet. */
+const ProviderProblem = Type.Object({
+  ...Problem.properties,
+  unmet: Type.Optional(Type.Array(UnmetView, { description: 'With provider_requirements_unmet: every requirement unmet, blocking ones among them' })),
+});
+const errors = { 400: Problem, 404: Problem, 409: ProviderProblem, 502: Problem };
 
 /** Answers a refusal about a Provider: its status, its code and the Provider named, with `extra` (such as the copies). */
 export function replyProviderError(error: ProviderServiceError, reply: FastifyReply, extra: object = {}) {
   const status = PROVIDER_STATUS[error.code] ?? 500;
-  return reply.code(status).send({ ...(error.provider ? providerProblem(error.code, error.provider) : problem(error.code)), ...extra });
+  return reply.code(status).send({ ...(error.provider ? providerProblem(error.code, error.provider) : problem(error.code)), ...error.extra, ...extra });
 }
 
 export const pushView = (p: PushRow): Static<typeof PushView> => ({
   id: p.id, action: p.action, state: p.state, remoteId: p.remoteId, remoteNumber: p.remoteNumber, remoteGone: p.remoteGone,
   failureCode: p.errorCode as ProblemCode | null,
-  differences: p.differences, createdAt: p.createdAt.toISOString(),
+  leftOut: p.leftOut, differences: p.differences, createdAt: p.createdAt.toISOString(),
 });
+
+/** A requirement with what clients need to offer its fix: a typed site ID's forms come from its Source. */
+function requirementView(r: Requirement): Static<typeof RequirementView> {
+  const none = { typed: null, pattern: null, prefixes: null, roles: null };
+  if (r.type === 'diver_mapping') return { type: r.type, severity: r.severity, description: r.description, source: r.source, ...none, roles: r.roles };
+  const info = SOURCE_INFO[r.source];
+  return {
+    type: r.type, severity: r.severity, description: r.description, source: r.source, ...none,
+    typed: !!info.typed, pattern: info.idPattern.source, prefixes: info.typed?.prefixes ?? [],
+  };
+}
 
 export function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Static<typeof ProviderView> {
   const c = a.capabilities;
@@ -148,18 +209,19 @@ export function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Sta
     data: {
       dives: dives ? {
         export: exports ? {
-          ...direction(exports)!, delivery: exports.delivery, needsSiteIdFrom: exports.needsSiteIdFrom ?? null,
+          ...direction(exports)!, delivery: exports.delivery, requirements: exports.requirements.map(requirementView),
           readBackFields: exports.readBackFields ?? [],
         } : null,
         import: direction(dives.import),
       } : null,
       diveSites: c.data.diveSites ? { import: direction(c.data.diveSites.import) } : null,
+      buddies: c.data.buddies ? { import: direction(c.data.buddies.import) } : null,
     },
     notices: c.notices, limits: c.limits,
   };
 }
 
-export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes }) => {
+export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, buddies }) => {
   app.addHook('onRequest', requireUser(auth));
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof ProviderServiceError) return replyProviderError(error, reply);
@@ -225,6 +287,33 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     return oneConnection(request.user!.id, request.params.id);
   });
 
+  const BuddyView = Type.Object({
+    name: Type.String({ description: 'As the Provider has it' }),
+    account: Nullable(Type.String({ description: 'The person\'s own account at the Provider; null: none (can\'t be imported yet)' })),
+    diver: Nullable(Type.Object({ id: Type.String(), name: Type.String() }, { description: 'The Diver here with that account' })),
+  });
+
+  app.get('/connections/:id/buddies', {
+    schema: {
+      summary: 'The account\'s own list of people at the Provider (SSI: the buddy list), read live, each with the Diver here who has their account',
+      description: 'Only names and accounts; nothing else the Provider keeps about them is passed on or stored (ADR 0029).',
+      params: IdParams, response: { 200: Type.Object({ buddies: Type.Array(BuddyView) }), ...errors },
+    },
+  }, async (request) => ({ buddies: await buddies.list(request.user!.id, request.params.id) }));
+
+  app.post('/connections/:id/buddies/import', {
+    schema: {
+      summary: 'Add the chosen people from the account\'s list as external Divers, with their name and account',
+      description: 'Entries whose account a Diver already has, or without an account, are skipped. To link an entry to a Diver here '
+        + 'instead, set that Diver\'s account (PUT /api/divers/{id}/external-ids/{source}).',
+      params: IdParams,
+      body: Type.Object({ accounts: Type.Array(Type.String({ maxLength: 40 }), { maxItems: 500 }) }, { additionalProperties: false }),
+      response: { 200: Type.Object({ created: Type.Integer(), buddies: Type.Array(BuddyView) }), ...errors },
+    },
+  }, async (request) => buddies.import(
+    { userId: request.user!.id, isAdmin: request.user!.role === 'admin' }, request.params.id, request.body.accounts,
+  ));
+
   app.delete('/connections/:id', {
     schema: {
       summary: 'Disconnect: forgets the credentials. Dives already at the Provider stay there; their history stays here',
@@ -237,14 +326,14 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
 
   app.get('/dives/:id/providers', {
     schema: {
-      summary: 'The Dive at every Provider that takes dives: the Connection of its Diver, the site ID needed, the remote dive it has now, every Push',
+      summary: 'The Dive at every Provider that takes dives: the Connection of its Diver, what is unmet, the remote dive it has now, every Push',
       params: IdParams, response: { 200: Type.Array(StatusView), 404: Problem },
     },
   }, async (request) => (await pushes.statusAll(request.user!.id, request.params.id)).map(statusView));
 
   app.get('/dives/:id/providers/:provider', {
     schema: {
-      summary: 'The Dive at one Provider: the Connection of its Diver, the site ID needed, the remote dive it has now, every Push',
+      summary: 'The Dive at one Provider: the Connection of its Diver, what is unmet, the remote dive it has now, every Push',
       params: DiveProviderParams, response: { 200: StatusView, 400: Problem, 404: Problem },
     },
   }, async (request) => statusView(await pushes.status(request.user!.id, request.params.id, request.params.provider)));

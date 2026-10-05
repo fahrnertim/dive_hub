@@ -10,7 +10,8 @@
     "actions": "Actions",
     "forItem": "{{action}}: {{item}}",
     "undo": "Undo",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "saving": "Saving…"
   },
   "nav": {
     "main": "Main",
@@ -329,7 +330,13 @@
     "last_recording": "This is the dive’s only recording, so it can’t be split off.",
     "diver_not_found": "This Diver doesn’t exist or isn’t yours.",
     "own_diver": "Your own Diver can’t be deleted.",
-    "diver_not_empty": "This Diver still has dives or devices.",
+    "diver_not_empty": "This Diver still has dives or devices, or is on a dive.",
+    "diver_in_use": "This diver is on a dive. Take them off it first.",
+    "diver_not_deletable": "Only whoever added this diver, or an admin, can delete them.",
+    "diver_not_editable": "Only the users who keep this diver’s logbook can change it.",
+    "diver_external_id_taken": "Another diver already has this account.",
+    "diver_external_id_connected": "A connection uses this account. Disconnect it first.",
+    "participant_invalid": "Someone is on the list twice, or is the dive’s own diver.",
     "device_not_found": "This device doesn’t exist or isn’t yours.",
     "candidate_not_found": "There’s nothing to decide here (anymore).",
     "candidate_resolved": "This was already decided.",
@@ -339,6 +346,7 @@
     "site_in_use": "Dives are at this dive site, so it can’t be deleted.",
     "site_not_deletable": "Only whoever created this dive site, or an admin, can delete it.",
     "external_id_taken": "Another dive site already has this ID.",
+    "site_source_not_typed": "IDs from this source come only from a site import.",
     "odbl_not_confirmed": "Confirm the conditions of OpenStreetMap’s data first.",
     "ssi_not_confirmed": "Confirm the explanation about SSI’s list of dive sites first.",
     "site_import_running": "An import is already running. Start the next one when it’s done.",
@@ -358,7 +366,7 @@
     "provider_sign_in_needed": "{{name}} wants you to sign in again. Do it in your account.",
     "provider_unavailable": "{{name}} didn’t answer as expected. Try again later; if it keeps happening, {{name}} may have changed its app.",
     "provider_refused": "{{name}} didn’t save the dive. Try again later.",
-    "provider_site_id_missing": "The dive’s site needs {{name}}’s ID for it first.",
+    "provider_requirements_unmet": "{{name}} needs something first; the panel says what.",
     "provider_not_sent": "This dive isn’t in {{name}}.",
     "provider_dive_gone": "The dive was deleted in {{name}}. Send it again to create it there anew.",
     "provider_busy": "This dive is being sent to {{name}} right now. Wait a moment.",
@@ -452,7 +460,10 @@
     "noNetChange": "Changed and changed back",
     "change": "{{field}}: {{from}} → {{to}}",
     "changeMarked": "{{field}}: {{from}} → {{to}} ({{mark}})",
-    "changeTo": "{{field}}: {{value}}"
+    "changeTo": "{{field}}: {{value}}",
+    "participantAdded": "{{name}} added as {{role}}",
+    "participantRemoved": "{{name}} removed",
+    "participantRole": "{{name}}: {{from}} → {{to}}"
   },
   "decisions": {
     "title": "Needs your decision",
@@ -502,7 +513,7 @@
     "rename": "Rename",
     "save": "Save name",
     "delete": "Delete",
-    "notEmpty": "Only Divers without dives or devices can be deleted.",
+    "notEmpty": "Only Divers without dives or devices, who are on no dive, can be deleted.",
     "devices": "Devices",
     "devicesIntro": "Dive computers and transmitters that recorded your dives. Imports from a device go to the Diver it belongs to.",
     "deviceName": "Device",
@@ -517,7 +528,22 @@
     "logbooks": "Logbooks you keep",
     "belongsToDevice": "{{device}} belongs to",
     "added": "{{name}} added.",
-    "sameName": "You already have a Diver called {{name}}. That works, but the two will be hard to tell apart."
+    "sameName": "You already have a Diver called {{name}}. That works, but the two will be hard to tell apart.",
+    "others": "Other divers",
+    "othersIntro": "People you or other users dived with who keep no logbook here. Every user sees their names; whoever added someone, or an admin, can delete them while no dive lists them.",
+    "findOther": "Find by name",
+    "noOthers": "No other divers yet. Add them here, from a dive, or from your SSI buddy list on your account page.",
+    "noOtherMatch": "No other diver called “{{q}}”.",
+    "addOther": "Add someone you dived with",
+    "createOther": "Add diver",
+    "removed": "{{name}} deleted.",
+    "hasAccount": "{{name}} account known",
+    "service": {
+      "ssi": "SSI",
+      "padi": "PADI"
+    },
+    "onDives": "on dives",
+    "onNoDive": "on no dive"
   },
   "geo": {
     "north": "N",
@@ -593,9 +619,6 @@
     "waterType": "Water type",
     "waterTypeHint": "Changing it changes the water type of every dive at this site.",
     "notKnown": "Not known",
-    "ssiSiteId": "SSI site ID",
-    "ssiSiteIdHint": "The number in SSI’s QR code for this site, e.g. 3314 from “site:3314”",
-    "ssiSiteIdInvalid": "An SSI site ID is a number, e.g. 3314.",
     "origin": "Source",
     "from": "From {{source}}",
     "alsoIn": "Also in {{source}}",
@@ -628,7 +651,8 @@
     "mergeOthersDives": "Other Users’ dives there move here.",
     "mergeNoUndo": "This can’t be undone.",
     "mergeConfirm": "Merge",
-    "merged": "{{name}} merged into {{into}}."
+    "merged": "{{name}} merged into {{into}}.",
+    "idAt": "ID at {{name}}"
   },
   "siteHistory": {
     "by": {
@@ -801,6 +825,43 @@
     "needsSite": "To send this dive to {{name}}, choose its dive site first.",
     "needsSiteId": "To send this dive, {{site}} needs {{name}}’s ID for the site.",
     "chooseSite": "Choose the {{name}} site",
+    "cannotFixHere": "Dive Hub can’t fix this here.",
+    "siteIdLabel": "{{name}} site ID",
+    "siteIdHint": "As {{name}} shows it.",
+    "siteIdInvalid": "That isn’t a {{name}} site ID.",
+    "peopleUnknown": "{{name}} gets this dive without {{names}}: Dive Hub doesn’t know their {{name}} account yet.",
+    "peopleUnknownBlocking": "To send this dive, Dive Hub needs the {{name}} account of {{names}}.",
+    "findInList": "Find {{diver}} in your {{name}} list",
+    "findTitle": "Who is {{diver}} at {{name}}?",
+    "findIntro": "Pick {{diver}} from your {{name}} list. Dive Hub keeps only their {{name}} account.",
+    "findInListLabel": "Find by name",
+    "buddyList": "Your {{name}} list of people",
+    "noBuddies": "Your {{name}} list is empty.",
+    "noBuddyMatch": "Nobody in your {{name}} list is called “{{q}}” and still free to pick.",
+    "accountTaken": "That person is already {{diver}} here. Put {{diver}} on the dive instead.",
+    "notInList": "Not in the list? Add them in {{name}} first.",
+    "buddyLinked": "Dive Hub now knows {{diver}}’s {{name}} account.",
+    "leftOut": {
+      "no_reference": "Sent without {{names}}: Dive Hub doesn’t know their {{name}} account.",
+      "not_at_provider": "Sent without {{names}}: {{name}} doesn’t have them for you."
+    },
+    "showBuddies": "Show your {{name}} list of people",
+    "hideBuddies": "Hide the list",
+    "buddiesIntro": "The people in your {{name}} account. Add them to Dive Hub to put them on your dives.",
+    "buddiesKept": "Dive Hub keeps only each person’s name and {{name}} account, nothing else {{name}} knows about them.",
+    "buddyName": "Name at {{name}}",
+    "buddyHere": "In Dive Hub",
+    "notHereYet": "Not yet",
+    "noAccount": "No {{name}} account, can’t be added",
+    "addBuddy": "Add to Dive Hub",
+    "linkBuddy": "Is someone here",
+    "addAllBuddies_one": "Add {{count}} person to Dive Hub",
+    "addAllBuddies_other": "Add all {{count}} to Dive Hub",
+    "buddiesAdded_one": "{{count}} person added to Dive Hub.",
+    "buddiesAdded_other": "{{count}} people added to Dive Hub.",
+    "linkTitle": "Who is {{buddy}} here?",
+    "linkIntro": "Pick the diver who is {{buddy}}. Dive Hub then knows their {{name}} account.",
+    "buddyLinkedTo": "{{name}} is now linked.",
     "lastFailed": "Sending failed: {{error}}",
     "update": "Update in {{name}}",
     "send": "Send to {{name}}",
@@ -848,7 +909,8 @@
       "site": "{{name}} site ID",
       "gas": "Oxygen (%)",
       "device": "Serial number",
-      "profile": "Profile samples"
+      "profile": "Profile samples",
+      "buddies": "Buddies (entries of your {{name}} buddy list)"
     },
     "sentStored": "sent {{sent}}, stored {{stored}}",
     "siteSaved": "{{name}} site ID saved.",
@@ -872,7 +934,48 @@
       "errors": {
         "provider_other_account": "This e-mail and password belong to another SSI account. Disconnect, then connect that account.",
         "provider_wrong_credentials": "SSI didn’t accept this e-mail and password."
+      },
+      "siteIdHint": "The number in SSI’s QR code for the site, e.g. 3314 from “site:3314”.",
+      "siteIdInvalid": "An SSI site ID is a number, e.g. 3314.",
+      "buddyList": "Your SSI buddy list",
+      "showBuddies": "Show your SSI buddy list",
+      "findInList": "Find {{diver}} in your SSI buddy list",
+      "findIntro": "Pick {{diver}} from your SSI buddy list. Dive Hub keeps only their SSI account.",
+      "noBuddies": "Your SSI buddy list is empty.",
+      "noBuddyMatch": "Nobody in your SSI buddy list is called “{{q}}” and still free to pick.",
+      "notInList": "Not in the list? In SSI’s app, scan their buddy QR code, then come back.",
+      "buddiesIntro": "The buddies in your SSI account. Add them to Dive Hub to put them on your dives; SSI then gets them with the dive.",
+      "leftOut": {
+        "not_at_provider": "Sent without {{names}}: they aren’t in your SSI buddy list. Add them in SSI’s app by scanning their buddy QR code, then update the dive."
       }
     }
+  },
+  "participants": {
+    "title": "Buddies and guides",
+    "none": "Nobody else is on this dive yet.",
+    "role": {
+      "buddy": "Buddy",
+      "guide": "Guide",
+      "instructor": "Instructor"
+    },
+    "roleOf": "Role of {{name}}",
+    "add": "Add someone",
+    "addTitle": "Who dived with you?",
+    "as": "As",
+    "who": "Find a diver",
+    "sharedHint": "Every user of this Dive Hub sees the names of all divers, nothing else about them.",
+    "divers": "Divers",
+    "yours": "Your logbook",
+    "external": "No logbook here",
+    "otherUser": "Another user’s logbook",
+    "addNew": "Add “{{name}}” as a new diver",
+    "addNewDetail": "Every user will see this name",
+    "noMatch": "No diver called “{{q}}”.",
+    "typeName": "Type a name.",
+    "added": "{{name}} added as {{role}}.",
+    "remove": "Remove",
+    "removed": "{{name}} removed from this dive.",
+    "roleChanged": "{{name}} is now {{role}}.",
+    "changedMeanwhile": "The dive was changed meanwhile. Reload the page and try again."
   }
 }

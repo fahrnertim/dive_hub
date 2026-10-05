@@ -26,7 +26,7 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
   let siteId: string;
   const ledger = createFakeLedger();
 
-  const call = (method: 'GET' | 'POST' | 'PATCH' | 'DELETE', url: string, cookie = tim, payload?: object) =>
+  const call = (method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', url: string, cookie = tim, payload?: object) =>
     ctx.app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload && { payload }) });
   const json = async <T>(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', url: string, cookie = tim, payload?: object) =>
     (await call(method, url, cookie, payload)).json() as T;
@@ -178,7 +178,8 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
     beforeAll(async () => {
       const divers = await json<{ id: string; isOwn: boolean }[]>('GET', '/api/divers');
       await call('POST', '/api/connections/ssi', tim, { diverId: divers.find((d) => d.isOwn)!.id, ...SSI, keepSignedIn: false });
-      ssiSite = (await json<{ id: string }>('POST', '/api/dive-sites', tim, { name: 'SSI reef', position: { latitude: 27.3, longitude: 33.8 }, ssiSiteId: '3314' })).id;
+      ssiSite = (await json<{ id: string }>('POST', '/api/dive-sites', tim, { name: 'SSI reef', position: { latitude: 27.3, longitude: 33.8 } })).id;
+      await call('PUT', `/api/dive-sites/${ssiSite}/external-ids/ssi`, tim, { externalId: '3314' });
       diveId = await sendToSsi('2026-03-01T09:00:00Z');
     });
 
@@ -245,7 +246,8 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
       // The SSI Connection of the section above was disconnected at its end.
       await call('POST', '/api/connections/ssi', tim, { diverId, login: 'erika@example.com', password: 'ssi-password', keepSignedIn: false });
       ledgerConnection = (await json<{ id: string }>('POST', '/api/connections/ledger', tim, { diverId, token: 'ledger-token-1', keepSignedIn: false })).id;
-      bothSite = (await json<{ id: string }>('POST', '/api/dive-sites', tim, { name: 'Both reef', position: { latitude: 27.4, longitude: 33.9 }, ssiSiteId: '4410' })).id;
+      bothSite = (await json<{ id: string }>('POST', '/api/dive-sites', tim, { name: 'Both reef', position: { latitude: 27.4, longitude: 33.9 } })).id;
+      await call('PUT', `/api/dive-sites/${bothSite}/external-ids/ssi`, tim, { externalId: '4410' });
     });
 
     it('checks every Provider first: when one would refuse, nothing is deleted anywhere', async () => {

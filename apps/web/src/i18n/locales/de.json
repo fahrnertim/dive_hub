@@ -10,7 +10,8 @@
     "actions": "Aktionen",
     "forItem": "{{action}}: {{item}}",
     "undo": "Rückgängig",
-    "dismiss": "Schließen"
+    "dismiss": "Schließen",
+    "saving": "Wird gespeichert…"
   },
   "nav": {
     "main": "Hauptmenü",
@@ -329,7 +330,13 @@
     "last_recording": "Das ist die einzige Aufzeichnung dieses Tauchgangs, sie lässt sich nicht abtrennen.",
     "diver_not_found": "Diesen Taucher gibt es nicht oder er gehört nicht zu dir.",
     "own_diver": "Deinen eigenen Taucher kannst du nicht löschen.",
-    "diver_not_empty": "Dieser Taucher hat noch Tauchgänge oder Geräte.",
+    "diver_not_empty": "Dieser Taucher hat noch Tauchgänge oder Geräte, oder ist bei einem Tauchgang eingetragen.",
+    "diver_in_use": "Dieser Taucher ist bei einem Tauchgang eingetragen. Entferne ihn zuerst dort.",
+    "diver_not_deletable": "Nur wer diesen Taucher hinzugefügt hat, oder ein Admin, kann ihn löschen.",
+    "diver_not_editable": "Nur die Benutzer, die das Logbuch dieses Tauchers führen, können das ändern.",
+    "diver_external_id_taken": "Ein anderer Taucher hat dieses Konto schon.",
+    "diver_external_id_connected": "Eine Verbindung nutzt dieses Konto. Trenne sie zuerst.",
+    "participant_invalid": "Jemand steht doppelt auf der Liste oder ist der Taucher dieses Tauchgangs selbst.",
     "device_not_found": "Dieses Gerät gibt es nicht oder es gehört nicht zu dir.",
     "candidate_not_found": "Hier gibt es (nichts mehr) zu entscheiden.",
     "candidate_resolved": "Das wurde schon entschieden.",
@@ -339,6 +346,7 @@
     "site_in_use": "An diesem Tauchplatz sind Tauchgänge, deshalb lässt er sich nicht löschen.",
     "site_not_deletable": "Nur wer den Tauchplatz angelegt hat, oder ein Admin, kann ihn löschen.",
     "external_id_taken": "Ein anderer Tauchplatz hat diese ID schon.",
+    "site_source_not_typed": "IDs dieser Quelle kommen nur aus einem Tauchplatz-Import.",
     "odbl_not_confirmed": "Bestätige zuerst die Bedingungen der Daten von OpenStreetMap.",
     "ssi_not_confirmed": "Bestätige zuerst die Erklärung zur Liste der Tauchplätze von SSI.",
     "site_import_running": "Ein Import läuft schon. Starte den nächsten, wenn er fertig ist.",
@@ -358,7 +366,7 @@
     "provider_sign_in_needed": "{{name}} möchte, dass du dich neu anmeldest. Das geht in deinem Konto.",
     "provider_unavailable": "{{name}} hat nicht wie erwartet geantwortet. Versuch es später noch einmal; passiert das öfter, hat {{name}} vielleicht seine App geändert.",
     "provider_refused": "{{name}} hat den Tauchgang nicht gespeichert. Versuch es später noch einmal.",
-    "provider_site_id_missing": "Der Tauchplatz dieses Tauchgangs braucht zuerst die {{name}}-Tauchplatz-ID.",
+    "provider_requirements_unmet": "{{name}} braucht zuerst noch etwas; das Feld sagt, was.",
     "provider_not_sent": "Dieser Tauchgang ist nicht in {{name}}.",
     "provider_dive_gone": "Der Tauchgang wurde in {{name}} gelöscht. Sende ihn erneut, um ihn dort neu anzulegen.",
     "provider_busy": "Dieser Tauchgang wird gerade an {{name}} gesendet. Warte einen Moment.",
@@ -452,7 +460,10 @@
     "noNetChange": "Geändert und wieder zurückgesetzt",
     "change": "{{field}}: {{from}} → {{to}}",
     "changeMarked": "{{field}}: {{from}} → {{to}} ({{mark}})",
-    "changeTo": "{{field}}: {{value}}"
+    "changeTo": "{{field}}: {{value}}",
+    "participantAdded": "{{name}} als {{role}} hinzugefügt",
+    "participantRemoved": "{{name}} entfernt",
+    "participantRole": "{{name}}: {{from}} → {{to}}"
   },
   "decisions": {
     "title": "Braucht deine Entscheidung",
@@ -502,7 +513,7 @@
     "rename": "Umbenennen",
     "save": "Name speichern",
     "delete": "Löschen",
-    "notEmpty": "Nur Taucher ohne Tauchgänge und Geräte lassen sich löschen.",
+    "notEmpty": "Nur Taucher ohne Tauchgänge und Geräte, die bei keinem Tauchgang eingetragen sind, können gelöscht werden.",
     "devices": "Geräte",
     "devicesIntro": "Tauchcomputer und Sender, die deine Tauchgänge aufgezeichnet haben. Importe von einem Gerät landen beim Taucher, dem es gehört.",
     "deviceName": "Gerät",
@@ -517,7 +528,22 @@
     "logbooks": "Logbücher, die du führst",
     "belongsToDevice": "{{device}} gehört zu",
     "added": "{{name}} hinzugefügt.",
-    "sameName": "Du hast schon einen Taucher namens {{name}}. Das geht, aber die beiden sind dann schwer auseinanderzuhalten."
+    "sameName": "Du hast schon einen Taucher namens {{name}}. Das geht, aber die beiden sind dann schwer auseinanderzuhalten.",
+    "others": "Andere Taucher",
+    "othersIntro": "Leute, mit denen du oder andere Benutzer getaucht sind und die hier kein Logbuch führen. Alle Benutzer sehen ihre Namen; wer jemanden hinzugefügt hat, oder ein Admin, kann ihn löschen, solange kein Tauchgang ihn nennt.",
+    "findOther": "Nach Namen suchen",
+    "noOthers": "Noch keine anderen Taucher. Füge sie hier hinzu, bei einem Tauchgang oder aus deiner SSI-Buddyliste auf deiner Kontoseite.",
+    "noOtherMatch": "Kein anderer Taucher namens „{{q}}“.",
+    "addOther": "Jemanden hinzufügen, mit dem du getaucht bist",
+    "createOther": "Taucher hinzufügen",
+    "removed": "{{name}} gelöscht.",
+    "hasAccount": "{{name}}-Konto bekannt",
+    "service": {
+      "ssi": "SSI",
+      "padi": "PADI"
+    },
+    "onDives": "bei Tauchgängen eingetragen",
+    "onNoDive": "bei keinem Tauchgang"
   },
   "geo": {
     "north": "N",
@@ -593,9 +619,6 @@
     "waterType": "Wasserart",
     "waterTypeHint": "Eine Änderung ändert die Wasserart aller Tauchgänge an diesem Platz.",
     "notKnown": "Nicht bekannt",
-    "ssiSiteId": "SSI-Tauchplatz-ID",
-    "ssiSiteIdHint": "Die Zahl im QR-Code von SSI für diesen Platz, z. B. 3314 aus „site:3314“",
-    "ssiSiteIdInvalid": "Eine SSI-Tauchplatz-ID ist eine Zahl, z. B. 3314.",
     "origin": "Quelle",
     "from": "Aus {{source}}",
     "alsoIn": "Auch in {{source}}",
@@ -628,7 +651,8 @@
     "mergeOthersDives": "Tauchgänge anderer Benutzer dort kommen hierher.",
     "mergeNoUndo": "Das lässt sich nicht rückgängig machen.",
     "mergeConfirm": "Zusammenführen",
-    "merged": "{{name}} mit {{into}} zusammengeführt."
+    "merged": "{{name}} mit {{into}} zusammengeführt.",
+    "idAt": "ID bei {{name}}"
   },
   "siteHistory": {
     "by": {
@@ -801,6 +825,43 @@
     "needsSite": "Um diesen Tauchgang an {{name}} zu senden, wähle zuerst seinen Tauchplatz.",
     "needsSiteId": "Um diesen Tauchgang zu senden, braucht {{site}} die {{name}}-Tauchplatz-ID.",
     "chooseSite": "{{name}}-Tauchplatz wählen",
+    "cannotFixHere": "Das kann Dive Hub hier nicht beheben.",
+    "siteIdLabel": "{{name}}-Tauchplatz-ID",
+    "siteIdHint": "So, wie {{name}} sie anzeigt.",
+    "siteIdInvalid": "Das ist keine {{name}}-Tauchplatz-ID.",
+    "peopleUnknown": "{{name}} bekommt diesen Tauchgang ohne {{names}}: Dive Hub kennt ihr {{name}}-Konto noch nicht.",
+    "peopleUnknownBlocking": "Um diesen Tauchgang zu senden, braucht Dive Hub das {{name}}-Konto von {{names}}.",
+    "findInList": "{{diver}} in deiner {{name}}-Liste suchen",
+    "findTitle": "Wer ist {{diver}} bei {{name}}?",
+    "findIntro": "Wähle {{diver}} aus deiner {{name}}-Liste. Dive Hub merkt sich nur das {{name}}-Konto.",
+    "findInListLabel": "Nach Namen suchen",
+    "buddyList": "Deine {{name}}-Personenliste",
+    "noBuddies": "Deine {{name}}-Liste ist leer.",
+    "noBuddyMatch": "Niemand in deiner {{name}}-Liste heißt „{{q}}“ und ist noch frei.",
+    "accountTaken": "Diese Person ist hier schon {{diver}}. Trag stattdessen {{diver}} beim Tauchgang ein.",
+    "notInList": "Nicht in der Liste? Füge sie zuerst bei {{name}} hinzu.",
+    "buddyLinked": "Dive Hub kennt jetzt das {{name}}-Konto von {{diver}}.",
+    "leftOut": {
+      "no_reference": "Ohne {{names}} gesendet: Dive Hub kennt ihr {{name}}-Konto nicht.",
+      "not_at_provider": "Ohne {{names}} gesendet: {{name}} kennt sie für dich nicht."
+    },
+    "showBuddies": "Deine {{name}}-Personenliste zeigen",
+    "hideBuddies": "Liste ausblenden",
+    "buddiesIntro": "Die Leute in deinem {{name}}-Konto. Füge sie Dive Hub hinzu, um sie bei deinen Tauchgängen einzutragen.",
+    "buddiesKept": "Dive Hub merkt sich nur Name und {{name}}-Konto jeder Person, sonst nichts, was {{name}} über sie weiß.",
+    "buddyName": "Name bei {{name}}",
+    "buddyHere": "In Dive Hub",
+    "notHereYet": "Noch nicht",
+    "noAccount": "Kein {{name}}-Konto, kann nicht hinzugefügt werden",
+    "addBuddy": "Zu Dive Hub hinzufügen",
+    "linkBuddy": "Ist schon hier",
+    "addAllBuddies_one": "{{count}} Person zu Dive Hub hinzufügen",
+    "addAllBuddies_other": "Alle {{count}} zu Dive Hub hinzufügen",
+    "buddiesAdded_one": "{{count}} Person zu Dive Hub hinzugefügt.",
+    "buddiesAdded_other": "{{count}} Personen zu Dive Hub hinzugefügt.",
+    "linkTitle": "Wer ist {{buddy}} hier?",
+    "linkIntro": "Wähle den Taucher, der {{buddy}} ist. Dann kennt Dive Hub sein {{name}}-Konto.",
+    "buddyLinkedTo": "{{name}} ist jetzt verknüpft.",
     "lastFailed": "Senden fehlgeschlagen: {{error}}",
     "update": "In {{name}} aktualisieren",
     "send": "An {{name}} senden",
@@ -848,7 +909,8 @@
       "site": "{{name}}-Tauchplatz-ID",
       "gas": "Sauerstoff (%)",
       "device": "Seriennummer",
-      "profile": "Profilpunkte"
+      "profile": "Profilpunkte",
+      "buddies": "Buddys (Einträge deiner {{name}}-Buddyliste)"
     },
     "sentStored": "gesendet {{sent}}, gespeichert {{stored}}",
     "siteSaved": "{{name}}-Tauchplatz-ID gespeichert.",
@@ -872,7 +934,48 @@
       "errors": {
         "provider_other_account": "Diese E-Mail und dieses Passwort gehören zu einem anderen SSI-Konto. Trenne zuerst und verbinde dann dieses Konto.",
         "provider_wrong_credentials": "SSI hat diese E-Mail und dieses Passwort nicht angenommen."
+      },
+      "siteIdHint": "Die Zahl aus SSIs QR-Code für den Tauchplatz, z. B. 3314 aus „site:3314“.",
+      "siteIdInvalid": "Eine SSI-Tauchplatz-ID ist eine Zahl, z. B. 3314.",
+      "buddyList": "Deine SSI-Buddyliste",
+      "showBuddies": "Deine SSI-Buddyliste zeigen",
+      "findInList": "{{diver}} in deiner SSI-Buddyliste suchen",
+      "findIntro": "Wähle {{diver}} aus deiner SSI-Buddyliste. Dive Hub merkt sich nur das SSI-Konto.",
+      "noBuddies": "Deine SSI-Buddyliste ist leer.",
+      "noBuddyMatch": "Niemand in deiner SSI-Buddyliste heißt „{{q}}“ und ist noch frei.",
+      "notInList": "Nicht in der Liste? Scanne in SSIs App ihren Buddy-QR-Code und komm dann zurück.",
+      "buddiesIntro": "Die Buddys in deinem SSI-Konto. Füge sie Dive Hub hinzu, um sie bei deinen Tauchgängen einzutragen; SSI bekommt sie dann mit dem Tauchgang.",
+      "leftOut": {
+        "not_at_provider": "Ohne {{names}} gesendet: Sie stehen nicht in deiner SSI-Buddyliste. Füge sie in SSIs App hinzu, indem du ihren Buddy-QR-Code scannst, und aktualisiere dann den Tauchgang."
       }
     }
+  },
+  "participants": {
+    "title": "Buddys und Guides",
+    "none": "Bei diesem Tauchgang ist noch niemand sonst eingetragen.",
+    "role": {
+      "buddy": "Buddy",
+      "guide": "Guide",
+      "instructor": "Tauchlehrer"
+    },
+    "roleOf": "Rolle von {{name}}",
+    "add": "Jemanden hinzufügen",
+    "addTitle": "Wer war mit dir tauchen?",
+    "as": "Als",
+    "who": "Taucher suchen",
+    "sharedHint": "Alle Benutzer dieses Dive Hub sehen die Namen aller Taucher, sonst nichts über sie.",
+    "divers": "Taucher",
+    "yours": "Dein Logbuch",
+    "external": "Kein Logbuch hier",
+    "otherUser": "Logbuch eines anderen Benutzers",
+    "addNew": "„{{name}}“ als neuen Taucher hinzufügen",
+    "addNewDetail": "Alle Benutzer sehen diesen Namen",
+    "noMatch": "Kein Taucher namens „{{q}}“.",
+    "typeName": "Gib einen Namen ein.",
+    "added": "{{name}} als {{role}} hinzugefügt.",
+    "remove": "Entfernen",
+    "removed": "{{name}} aus diesem Tauchgang entfernt.",
+    "roleChanged": "{{name}} ist jetzt {{role}}.",
+    "changedMeanwhile": "Der Tauchgang wurde inzwischen geändert. Lade die Seite neu und versuch es noch einmal."
   }
 }

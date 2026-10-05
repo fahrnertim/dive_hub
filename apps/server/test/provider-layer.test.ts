@@ -55,7 +55,7 @@ describe.skipIf(!(await databaseReachable()))('the provider layer', () => {
       {
         id: 'handover', name: 'Hand-over',
         signIn: { kind: 'token', login: null, canKeepPassword: false },
-        data: { dives: { export: { operations: ['create'], findBy: [], delivery: 'handed_over', needsSiteIdFrom: null, readBackFields: [] }, import: null }, diveSites: null },
+        data: { dives: { export: { operations: ['create'], findBy: [], delivery: 'handed_over', requirements: [], readBackFields: [] }, import: null }, diveSites: null, buddies: null },
         notices: [], limits: { pauseMs: 500 },
       },
     ]);
@@ -74,7 +74,7 @@ describe.skipIf(!(await databaseReachable()))('the provider layer', () => {
 
   it('hands a Dive over without an ID, so sending again hands it over again, and nothing can be updated or deleted', async () => {
     expect((await call('GET', `/api/dives/${diveId}/providers`)).json()).toMatchObject([
-      { provider: 'ssi', connection: null }, { provider: 'handover', connection: { state: 'active' }, siteExternalId: null, current: null },
+      { provider: 'ssi', connection: null }, { provider: 'handover', connection: { state: 'active' }, unmet: [], current: null },
     ]);
     const first = await call('POST', `/api/dives/${diveId}/providers/handover`, {});
     expect(first.json()).toMatchObject({ outcome: 'created', status: { current: null, pushes: [{ action: 'create', state: 'handed_over', remoteId: null }] } });

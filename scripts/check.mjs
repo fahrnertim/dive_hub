@@ -24,11 +24,11 @@ const AREAS = [
   [/^apps\/web\/src\/(SitesPage|SiteForm|SiteHistory)\.tsx$|^apps\/web\/src\/lib\/(site-origin|sites-list|geo)\.ts$/, ['@sites']],
   [/^apps\/web\/src\/SitePicker\.tsx$/, ['@sites', '@dives']],
   [/^apps\/web\/src\/lib\/address-search\.ts$/, ['@sites', '@dives']],
-  [/^apps\/web\/src\/(DiveDetail|DiveEditForm|DiveHistory|DiveList|DepthProfile|Decisions|ImportPanel|DeleteDive|DeletedDives)\.tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|logbook|devices|importable|deletion)\.ts$/, ['@dives']],
+  [/^apps\/web\/src\/(DiveDetail|DiveEditForm|DiveHistory|DiveList|DepthProfile|Decisions|ImportPanel|DeleteDive|DeletedDives|Participants)\.tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|logbook|devices|importable|deletion)\.ts$/, ['@dives']],
   // The Dive the deletion browser tests delete and restore (ADR 0026).
   [/^apps\/web\/e2e\/fixtures\/deletable-computer\.fit$/, ['@dives']],
   [/^apps\/web\/src\/DiversPage\.tsx$/, ['@divers']],
-  [/^apps\/web\/src\/(Account|AccountPage|Connections)\.tsx$/, ['@account']],
+  [/^apps\/web\/src\/(Account|AccountPage|Connections|ProviderBuddies)\.tsx$/, ['@account']],
   [/^apps\/web\/src\/ProviderPanel\.tsx$/, ['@dives']],
   // Providers in the web client (ADR 0027): the account's Connections and each Dive's panels read them.
   [/^apps\/web\/src\/lib\/providers\.ts$/, ['@dives', '@account']],

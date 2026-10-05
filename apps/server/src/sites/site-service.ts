@@ -7,10 +7,12 @@ import { dive, diveSite, diveSiteExternalId, revision, siteImport } from '../db/
 import { writeRevision, type Changes } from '../dives/revisions.js';
 import type { SiteWaterType } from '../vocabulary.js';
 import { IMPORTED_FIELDS, type ImportedValues } from './import/site-source.js';
-import { SOURCE_INFO, type SiteSource } from './sources.js';
+import { revisionKey, SOURCE_INFO, typedId, type SiteSource } from './sources.js';
 
 export class SiteError extends Error {
-  constructor(readonly code: 'site_not_found' | 'site_changed' | 'site_in_use' | 'site_not_deletable' | 'external_id_taken' | 'site_merge_self' | 'site_offer_not_found') {
+  constructor(readonly code:
+    | 'site_not_found' | 'site_changed' | 'site_in_use' | 'site_not_deletable' | 'external_id_taken' | 'site_merge_self'
+    | 'site_offer_not_found' | 'site_source_not_typed' | 'invalid_input') {
     super(code);
   }
 }
@@ -44,8 +46,6 @@ export interface SiteInput {
   maxDepthM: number | null;
   /** Fresh, salt or brackish (ADR 0025): every Dive at the site has this water type. */
   waterType: SiteWaterType | null;
-  /** Entered by hand (ADR 0021); stored as the site's External ID at the Source `ssi`. */
-  ssiSiteId: string | null;
 }
 
 /** An External ID as the site's columns carry it; `SOURCE_INFO` says what it means. */
@@ -95,8 +95,8 @@ const live = isNull(diveSite.deletedAt);
 export const SITE_SORTS = ['name', 'country', 'diveCount'] as const;
 export type SiteSort = (typeof SITE_SORTS)[number];
 
-/** Fields a merge fills on the kept site where it has nothing (ADR 0022). */
-const FILLED = ['position', 'country', 'waterBody', 'description', 'maxDepthM', 'waterType', 'ssiSiteId'] as const;
+/** Fields a merge fills on the kept site where it has nothing (ADR 0022); External IDs move on their own. */
+const FILLED = ['position', 'country', 'waterBody', 'description', 'maxDepthM', 'waterType'] as const;
 
 /** Sites within this distance of a Dive's position are offered on the dive page. */
 export const NEARBY_M = 2000;
@@ -121,7 +121,6 @@ export function createSiteService(db: Db) {
 
   const view = (actor: SiteActor, row: { site: typeof diveSite.$inferSelect; diveCount: number; inUse: boolean; externalIds: ExternalIdRow[]; distanceM?: number }) => ({
     ...row,
-    ssiSiteId: row.externalIds.find((e) => e.source === 'ssi')?.externalId ?? null,
     canDelete: actor.isAdmin || row.site.createdBy === actor.userId,
   });
 
@@ -131,35 +130,32 @@ export function createSiteService(db: Db) {
     return row;
   }
 
-  const ssiOf = async (tx: Tx, siteId: string) => (await tx.select({ id: diveSiteExternalId.externalId }).from(diveSiteExternalId)
-    .where(and(eq(diveSiteExternalId.siteId, siteId), eq(diveSiteExternalId.source, 'ssi'))))[0]?.id ?? null;
-
-  const fields = (site: typeof diveSite.$inferSelect, ssiSiteId: string | null): SiteInput => ({
+  const fields = (site: typeof diveSite.$inferSelect): SiteInput => ({
     name: site.name,
     position: site.latitude === null || site.longitude === null ? null : { latitude: site.latitude, longitude: site.longitude },
     country: site.country, waterBody: site.waterBody, description: site.description, maxDepthM: site.maxDepthM,
-    waterType: site.waterType, ssiSiteId,
+    waterType: site.waterType,
   });
 
   const toColumns = (input: Partial<SiteInput>) => {
-    const { position, ssiSiteId: _ssi, ...rest } = input;
+    const { position, ...rest } = input;
     return {
       ...rest,
       ...(position !== undefined && { latitude: position?.latitude ?? null, longitude: position?.longitude ?? null }),
     };
   };
 
-  /** Sets or clears the site's SSI site ID; another site having it is refused. */
-  async function setSsi(tx: Tx, siteId: string, ssiSiteId: string | null) {
-    if (ssiSiteId !== null) {
+  /** Sets or clears the site's External ID at a Source; another site having it is refused. */
+  async function setExternal(tx: Tx, siteId: string, source: SiteSource, externalId: string | null) {
+    if (externalId !== null) {
       const [taken] = await tx.select({ id: diveSiteExternalId.id }).from(diveSiteExternalId)
-        .where(and(eq(diveSiteExternalId.source, 'ssi'), eq(diveSiteExternalId.externalId, ssiSiteId), ne(diveSiteExternalId.siteId, siteId)));
+        .where(and(eq(diveSiteExternalId.source, source), eq(diveSiteExternalId.externalId, externalId), ne(diveSiteExternalId.siteId, siteId)));
       if (taken) throw new SiteError('external_id_taken');
     }
-    await tx.delete(diveSiteExternalId).where(and(eq(diveSiteExternalId.siteId, siteId), eq(diveSiteExternalId.source, 'ssi')));
-    if (ssiSiteId !== null) {
+    await tx.delete(diveSiteExternalId).where(and(eq(diveSiteExternalId.siteId, siteId), eq(diveSiteExternalId.source, source)));
+    if (externalId !== null) {
       try {
-        await tx.insert(diveSiteExternalId).values({ siteId, source: 'ssi', externalId: ssiSiteId });
+        await tx.insert(diveSiteExternalId).values({ siteId, source, externalId });
       } catch (error) {
         if (isUniqueViolation(error)) throw new SiteError('external_id_taken');
         throw error;
@@ -213,11 +209,10 @@ export function createSiteService(db: Db) {
 
     async create(actor: SiteActor, input: SiteInput) {
       return db.transaction(async (tx) => {
-        const { position, ssiSiteId, ...rest } = input;
+        const { position, ...rest } = input;
         const [created] = await tx.insert(diveSite).values({
           ...rest, latitude: position?.latitude ?? null, longitude: position?.longitude ?? null, createdBy: actor.userId,
         }).returning();
-        if (ssiSiteId !== null) await setSsi(tx, created!.id, ssiSiteId);
         const changes: Changes = Object.fromEntries(Object.entries(input).map(([k, v]) => [k, { from: null, to: v }]));
         await writeRevision(tx, 'dive_site', created!.id, { type: 'user', id: actor.userId }, 'create', changes);
         return created!.id;
@@ -229,13 +224,12 @@ export function createSiteService(db: Db) {
       await db.transaction(async (tx) => {
         const current = await lock(tx, id);
         if (current.version !== version) throw new SiteError('site_changed');
-        const before = fields(current, await ssiOf(tx, id));
+        const before = fields(current);
         const changes: Changes = {};
         for (const [key, to] of Object.entries(input) as [keyof SiteInput, unknown][]) {
           if (to !== undefined && JSON.stringify(before[key]) !== JSON.stringify(to)) changes[key] = { from: before[key], to };
         }
         if (Object.keys(changes).length === 0) return;
-        if ('ssiSiteId' in changes) await setSsi(tx, id, input.ssiSiteId ?? null);
         await tx.update(diveSite)
           .set({ ...toColumns(input), version: sql`${diveSite.version} + 1`, updatedAt: new Date() })
           .where(eq(diveSite.id, id));
@@ -259,8 +253,8 @@ export function createSiteService(db: Db) {
         const kept = a.id === id ? b : a;
         if (merged.version !== version || kept.version !== intoVersion) throw new SiteError('site_changed');
 
-        const mergedFields = fields(merged, await ssiOf(tx, merged.id));
-        const keptFields = fields(kept, await ssiOf(tx, kept.id));
+        const mergedFields = fields(merged);
+        const keptFields = fields(kept);
         const changes: Changes = { mergedSite: { from: null, to: { id: merged.id, name: merged.name } } };
         const fill: Partial<SiteInput> = {};
         for (const key of FILLED) {
@@ -270,14 +264,14 @@ export function createSiteService(db: Db) {
           changes[key] = { from: null, to: value };
         }
 
-        // External IDs: to the kept site where it has none from that Source (an SSI ID only through `fill`).
+        // External IDs: to the kept site where it has none from that Source.
         const ids = await tx.select().from(diveSiteExternalId).where(inArray(diveSiteExternalId.siteId, [merged.id, kept.id]));
         const keptSources = new Set(ids.filter((e) => e.siteId === kept.id).map((e) => e.source));
         const moving = ids.filter((e) => e.siteId === merged.id && !keptSources.has(e.source));
         if (moving.length > 0) {
           await tx.update(diveSiteExternalId).set({ siteId: kept.id, updatedAt: new Date() }).where(inArray(diveSiteExternalId.id, moving.map((e) => e.id)));
         }
-        for (const e of moving) if (e.source !== 'ssi') changes[`${e.source}Id`] = { from: null, to: e.externalId };
+        for (const e of moving) changes[revisionKey(e.source)] = { from: null, to: e.externalId };
 
         // The Dives, every User's, each with its own Revision and version.
         const moved = await tx.update(dive).set({ siteId: kept.id, version: sql`${dive.version} + 1`, updatedAt: new Date() })
@@ -312,7 +306,7 @@ export function createSiteService(db: Db) {
         const [offer] = await tx.select().from(diveSiteExternalId)
           .where(and(eq(diveSiteExternalId.siteId, id), eq(diveSiteExternalId.source, source))).for('update');
         if (!offer || offer.providesData || !offer.imported) throw new SiteError('site_offer_not_found');
-        const before = fields(current, null);
+        const before = fields(current);
         const fill: Partial<SiteInput> = {};
         const changes: Changes = { adopted: { from: null, to: { source, externalId: offer.externalId } } };
         for (const field of IMPORTED_FIELDS) {
@@ -324,6 +318,26 @@ export function createSiteService(db: Db) {
         await tx.update(diveSiteExternalId).set({ providesData: true, updatedAt: new Date() }).where(eq(diveSiteExternalId.id, offer.id));
         await tx.update(diveSite).set({ ...toColumns(fill), version: sql`${diveSite.version} + 1`, updatedAt: new Date() }).where(eq(diveSite.id, id));
         await writeRevision(tx, 'dive_site', id, { type: 'user', id: actor.userId }, 'adopt', changes);
+      });
+    },
+
+    /**
+     * A User sets or clears the site's External ID at a Source Users may type (ADR 0021, 0029), in a form the Source
+     * shows it in. Any User may. It has its own Revision and leaves the site's version alone, so it never conflicts
+     * with an edit of the other fields.
+     */
+    async setExternalId(actor: SiteActor, id: string, source: SiteSource, typed: string | null) {
+      if (!SOURCE_INFO[source].typed) throw new SiteError('site_source_not_typed');
+      const externalId = typed === null ? null : typedId(source, typed);
+      if (externalId === null && typed !== null) throw new SiteError('invalid_input');
+      await db.transaction(async (tx) => {
+        await lock(tx, id);
+        const [before] = await tx.select({ id: diveSiteExternalId.externalId }).from(diveSiteExternalId)
+          .where(and(eq(diveSiteExternalId.siteId, id), eq(diveSiteExternalId.source, source)));
+        const from = before?.id ?? null;
+        if (from === externalId) return;
+        await setExternal(tx, id, source, externalId);
+        await writeRevision(tx, 'dive_site', id, { type: 'user', id: actor.userId }, 'edit', { [revisionKey(source)]: { from, to: externalId } });
       });
     },
 

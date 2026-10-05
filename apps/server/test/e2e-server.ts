@@ -85,6 +85,11 @@ const fakeSsi = createFakeSsi({
     { odin_dive_sites_id: 3314, odin_dive_sites_name: 'Hausreef', odin_dive_sites_lat: 27.29, odin_dive_sites_lon: 33.82, odin_countries_code_iso: 'EG' },
     { odin_dive_sites_id: 5120, odin_dive_sites_name: 'Attersee – Schwarzenbach', odin_dive_sites_lat: 47.8512, odin_dive_sites_lon: 13.5514, odin_countries_code_iso: 'AT' },
   ],
+  // Erika's SSI buddy list (ADR 0029); buddies.spec.ts adds Kai to Dive Hub and finds Mia for a Diver typed by hand.
+  buddies: [
+    { owner: 5_012_047, id: 3_786_888, buddy_master_id: 4_989_164, firstname: 'Kai', lastname: 'Lund', email: 'kai@example.com', dob: '1980-01-02', phone: '+49 170 000001', city: 'Kiel' },
+    { owner: 5_012_047, id: 2_826_964, buddy_master_id: 4_512_484, firstname: 'Mia', lastname: 'Stone', email: 'mia@example.com', dob: '1985-03-04', phone: '+49 170 000002', city: 'Linz' },
+  ],
 });
 const providers = createProviderLayer({
   db, secrets: createSecretBox(Buffer.alloc(32, 9)),

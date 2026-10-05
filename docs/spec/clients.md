@@ -53,6 +53,11 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   doesn't support); and, for password sign-in, the choice between keeping the password (encrypted) and keeping only the
   Provider's sign-in, which can expire at any time. Offer the choice only when the Provider's `signIn.canKeepPassword` is
   true, and default to not keeping it. Offer "Disconnect", and say that dives already there stay there. *Web:* `Connections.tsx`.
+- **Must say that Divers' names are seen by every User** where a Diver is added or picked ([ADR 0028](../decisions/0028-shared-divers-and-participants.md)):
+  every User of the instance sees every Diver's name, and nothing else about Divers they don't keep.
+  *Web:* `Participants.tsx` (`participants.sharedHint`), `DiversPage.tsx` (`divers.othersIntro`).
+- **Must not show or keep more of a Provider's people than name and account** ([ADR 0029](../decisions/0029-push-requirements-and-buddies.md)):
+  the buddy list routes give only those; say so where the list is shown. *Web:* `ProviderBuddies.tsx` (`provider.buddiesKept`).
 - **Must not send positions anywhere by itself.** "Open in maps" is a plain link the User follows. A map with
   tiles needs its own ADR first (tile source, privacy).
 
@@ -220,6 +225,13 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **The depth profile needs a text alternative:** a summary (deepest point and when, duration, temperature range)
   and the samples per minute as a table (WCAG 1.1.1). *Web:* `DepthProfile.tsx`, `lib/profile.ts`.
 - **A Dive's position is private.** Show it only to the Users who manage the Diver, as the API does.
+- **Participants** (ADR 0028, `participants` on the Dive): buddies, guides and instructors (`role`), any Diver of the
+  instance but the Dive's own. Add them from a live search over every Diver by name (`GET /api/divers/search`, saying
+  which are the User's own, another User's or external), or as a new external Diver by the typed name
+  (`POST /api/external-divers`), and save the whole list with the Dive's version (`PUT /api/dives/{id}/participants`;
+  `dive_changed` 409, `participant_invalid` for a Diver twice or the Dive's own). A role can be changed in place (the same
+  route, the whole list). Every remove button and role field names the person. The history shows who was added (with the role) and who was removed (change `participants`).
+  *Web:* `Participants.tsx`, `DiveHistory.tsx`.
 - **Water type** (ADR 0025): the Dive's `waterType` is its site's and can't be edited on the Dive. Without a site,
   suggest choosing one; with a site that has none, say it isn't known for the site. Label the Recording's
   `summary.waterType` as the computer's water setting ("Water setting on the computer"), not as the Dive's water.
@@ -236,10 +248,23 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
   another copy there.
 - **Without a Connection** for the Dive's Diver, say so and lead to the account page. With `needs_sign_in`, or the
   error `provider_sign_in_needed`, lead to signing in again.
-- **The Dive site's ID at the Provider's site Source may be needed** (`needsSiteIdFrom`, value `siteExternalId`). For SSI,
-  offer the sites of the User's SSI logbook, nearest first (`GET /api/dives/{id}/providers/ssi/sites`, which asks SSI, so
-  only on request), and typing the ID; save it on the site (`PATCH /api/dive-sites/{id}`, `ssiSiteId`). Without a site,
-  ask for one first.
+- **Must show what the Provider needs first** ([ADR 0029](../decisions/0029-push-requirements-and-buddies.md)): the status's
+  `unmet` lists each requirement the Dive doesn't meet, from Dive Hub's data alone. While a `blocking` one is unmet, don't
+  offer sending (the server refuses with `provider_requirements_unmet` and `unmet`); an `advisory` one is sent without.
+  Offer the fix per `type`, from the Provider's `requirements` in `GET /api/providers`:
+  - **`site_external_id`:** `siteId: null` means choose a site first. Otherwise, when `typed`, offer the Provider's sites
+    nearest first (`GET /api/dives/{id}/providers/{provider}/sites`, which asks the Provider, so only on request) and
+    typing the ID (accept the `prefixes`, check against `pattern`); save it on the site
+    (`PUT /api/dive-sites/{id}/external-ids/{source}`). When not `typed`, say it can't be fixed here.
+  - **`diver_mapping`:** one item per Participant (`diverName`) the Provider can't identify; say they will be left out
+    (advisory) or that sending waits (blocking). With `fixes` containing `diver_external_id` and a Provider offering
+    `buddies` `find`, offer finding the person in the account's list (`GET /api/connections/{id}/buddies`, only entries
+    with an `account` and no `diver`), and save that account on the Diver (`PUT /api/divers/{id}/external-ids/{source}`;
+    `diver_external_id_taken` names the Diver that has it: say so). Fixes a client doesn't know are ignored.
+  - **An unknown `type`:** show the requirement's `description` and that it can't be fixed here.
+- **Must say who a Push left out** (the latest Push's `leftOut`), by name and `reason`: `no_reference` (the Provider
+  can't tell who they are) or `not_at_provider` (SSI: not in the User's buddy list; say to add them in SSI's app, by
+  scanning their buddy QR code, then update).
 - **`outcome: exists`:** nothing was sent; a dive at the same time is there. Show it (number, time, depth, minutes)
   and ask: link to it (`onExisting: link`) or send a new one (`create`).
 - **Must show the Provider's `notices`:** `shows_unconfirmed` means it shows the dive as unconfirmed (SSI: only a dive
@@ -262,9 +287,17 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
 ### Divers and Devices
 - **Divers:**
   - A User's own Diver is marked and can't be deleted.
-  - Other Divers can be deleted only while they have no Dives and no Devices; offer it only then.
+  - Other Divers can be deleted only while they have no Dives and no Devices and are on no Dive; offer it only then
+    (`diver_not_empty`).
   - Two Divers with the same name are allowed, but warn about it.
   - *Web:* `DiversPage.tsx`.
+- **Other divers** (external, ADR 0028; `GET /api/external-divers`): anyone renames them; offer deleting only with
+  `canDelete` and not `inUse` (`diver_not_deletable`, `diver_in_use`). Say which services an account is known at
+  (`accounts`), never the account itself. *Web:* `DiversPage.tsx` (`OtherDivers`).
+- **A Provider's list of people** (`buddies` `find`; SSI's buddy list) under its Connection, read only on request
+  (`GET /api/connections/{id}/buddies`): who is a Diver here already, adding entries as external Divers one by one or
+  all at once (`POST …/buddies/import` with `accounts`), and linking an entry to a Diver here instead
+  (`PUT /api/divers/{id}/external-ids/{source}`). An entry without `account` can't be added. *Web:* `ProviderBuddies.tsx`.
 - **Devices:** assigning one to another Diver affects only Imports from then on (ADR 0016). Say so where it is
   changed; single Dives move with "Move".
 - **The logbook offers a Diver filter only when the User keeps several Divers,** and then shows the Diver column.
@@ -281,8 +314,11 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
   *Web:* `SitePicker.tsx`, `ui/SearchList.tsx`.
 - **Choosing the SSI site** works the same way over the sites in the User's SSI logbook; an SSI ID typed into the
   field can be used even when the logbook doesn't have it. *Web:* `ProviderPanel.tsx` (`SitePicker`).
-- **SSI site ID:** accept what SSI's QR code says ("site:3314") as well as the number, and send the digits.
-  `external_id_taken` means another site has it.
+- **Typed site IDs** (ADR 0029): the site form offers a field per `site_external_id` requirement whose Source is `typed`
+  (SSI today), worded by the Provider, and saves it with `PUT /api/dive-sites/{id}/external-ids/{source}` after the site
+  itself (it doesn't change the site's version). The server accepts the `prefixes` ("site:3314") and keeps the bare ID;
+  `external_id_taken` means another site has it, `site_source_not_typed` a Source whose IDs only an import brings.
+  When creating, a failed ID must not create the site twice on the next try.
 - **Water type** (fresh, salt, brackish, or not known): **the form must say that changing it changes the water type of
   every Dive at the site** (other Users' too). After saving, refresh the Dives a client holds. *Web:* `SiteForm.tsx`.
 - **Where a site comes from:** "From OpenStreetMap: node/…" with the Attribution, "From SSI: 3314" without a link,
@@ -342,3 +378,6 @@ Rules that only the web client kept. Both moved to the server on 2026-10-04, so 
   [architecture](architecture.md#open-questions)).
 - Offline use, sync and conflict handling ([data, sync, upload](../research/2026-10-02-data-sync-upload-auth.md)).
 - Push notifications for finished Imports.
+- **Changing the API once a mobile client ships:** an installed app stays old for months, so a rule for versions or for
+  keeping a field for a while needs an ADR first. Until then, as with `ssiSiteId` and `needsSiteIdFrom` (ADR 0029),
+  there is one way to do a thing and replaced fields go in one step.

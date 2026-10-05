@@ -17,12 +17,29 @@ export interface FakeSsiSite {
   odin_countries_code_iso: string;
 }
 
+/** An entry in an account's SSI buddy list, with the personal data SSI keeps (which Dive Hub must never store). */
+export interface FakeSsiBuddy {
+  /** The account whose list it is in. */
+  owner: number;
+  id: number;
+  /** The buddy's own SSI account; SSI writes it into master_id too. */
+  buddy_master_id: number;
+  firstname: string;
+  lastname: string;
+  email: string;
+  dob: string;
+  phone: string;
+  city: string;
+}
+
 export interface FakeSsi {
   fetch: Fetch;
   accounts: FakeSsiAccount[];
   /** Stored dives by SSI dive ID, deleted ones included (with odin_user_log_deleted: 1). */
   dives: Map<number, SsiRecord>;
   sites: FakeSsiSite[];
+  /** Every account's buddy list entries. */
+  buddies: FakeSsiBuddy[];
   /** Every call: its action and whether it carried a token (never the password). */
   calls: { what: string; method: string }[];
   /** Makes every token issued so far invalid, as when SSI's tokens expire. */
@@ -33,7 +50,7 @@ export interface FakeSsi {
   addDive(accountId: number, values: SsiRecord): number;
 }
 
-export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: FakeSsiSite[] } = {}): FakeSsi {
+export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: FakeSsiSite[]; buddies?: FakeSsiBuddy[] } = {}): FakeSsi {
   const tokens = new Map<string, number>();
   let nextToken = 1;
   let nextDiveId = 27_000_001;
@@ -42,6 +59,7 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
     sites: options.sites ?? [
       { odin_dive_sites_id: 3314, odin_dive_sites_name: 'Hausreef', odin_dive_sites_lat: 27.29, odin_dive_sites_lon: 33.82, odin_countries_code_iso: 'EG' },
     ],
+    buddies: options.buddies ?? [],
     dives: new Map(),
     calls: [],
     failWith: null,
@@ -72,7 +90,9 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
       if (what === 'get_divelog') {
         const own = [...fake.dives.values()].filter((d) => d.odin_user_log_user_master_id === accountId && d.odin_user_log_deleted !== 1);
         // The real logbook lists the sites of the account's dives; the fake's account has dived at all of them.
-        return answer({ verified_dives: 0, logbook_details: own, logbook_sites: fake.sites, logbook_buddies: [] });
+        const buddies = fake.buddies.filter((b) => b.owner === accountId)
+          .map(({ owner: _owner, ...b }) => ({ ...b, master_id: b.buddy_master_id, forename: b.firstname, confirmed: 1, deleted: 0, favorite: 0 }));
+        return answer({ verified_dives: 0, logbook_details: own, logbook_sites: fake.sites, logbook_buddies: buddies });
       }
       if (what === 'save_divelog' && init.method === 'POST') {
         const record = JSON.parse(new URLSearchParams(init.body ?? '').get('json_data') ?? '{}') as SsiRecord;

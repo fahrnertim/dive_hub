@@ -69,6 +69,21 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
       return [t('history.change', { field: t('history.field.site'), from: name(from), to: name(to) })];
     }
     if (key === 'primaryRecordingId') return [t('history.changeTo', { field: t('history.field.primaryRecordingId'), value: recordingName(to) })];
+    if (key === 'participants') {
+      // Who came onto the Dive, who left it, and whose role changed (ADR 0028); names as they were then.
+      type P = { diverId: string; name: string; role: 'buddy' | 'guide' | 'instructor' };
+      const before = (from ?? []) as P[];
+      const after = (to ?? []) as P[];
+      const role = (p: P) => t(`participants.role.${p.role}`);
+      const was = (p: P) => before.find((b) => b.diverId === p.diverId);
+      return [
+        ...after.filter((p) => !was(p)).map((p) => t('history.participantAdded', { name: p.name, role: role(p) })),
+        ...after.filter((p) => was(p) && was(p)!.role !== p.role)
+          .map((p) => t('history.participantRole', { name: p.name, from: role(was(p)!), to: role(p) })),
+        ...before.filter((b) => !after.some((p) => p.diverId === b.diverId))
+          .map((b) => t('history.participantRemoved', { name: b.name })),
+      ];
+    }
     if (!isValue(key)) return [key];
     const mark = overrides?.to.includes(key) && !overrides.from.includes(key) ? t('history.setByHand')
       : overrides?.from.includes(key) && !overrides.to.includes(key) ? t('history.reset') : undefined;

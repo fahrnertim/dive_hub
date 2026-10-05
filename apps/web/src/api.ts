@@ -19,6 +19,8 @@ export class ApiError extends Error {
     message: string, readonly status: number, readonly code?: ProblemCode,
     /** The Provider a provider_* code is about, named for the translated text (ADR 0027). */
     readonly provider?: { id: string; name: string },
+    /** What else the refusal says: what is unmet (ADR 0029), the Diver that has an account already (ADR 0028). */
+    readonly details: { unmet?: UnmetView[]; diver?: { id: string; name: string } } = {},
   ) {
     super(message);
   }
@@ -58,6 +60,14 @@ export type ConnectionView = Awaited<ReturnType<typeof fetchConnections>>[number
 export type ProviderStatusView = Awaited<ReturnType<typeof fetchProviderStatus>>;
 export type PushView = ProviderStatusView['pushes'][number];
 export type RemoteSiteView = Awaited<ReturnType<typeof fetchProviderSites>>[number];
+export type RequirementView = NonNullable<NonNullable<ProviderView['data']['dives']>['export']>['requirements'][number];
+export type UnmetView = ProviderStatusView['unmet'][number];
+export type LeftOutView = NonNullable<PushView['leftOut']>[number];
+export type ParticipantView = DiveView['participants'][number];
+export type ParticipantRole = ParticipantView['role'];
+export type FoundDiverView = Awaited<ReturnType<typeof fetchDiverSearch>>[number];
+export type ExternalDiverView = Awaited<ReturnType<typeof fetchExternalDivers>>['divers'][number];
+export type BuddyView = Awaited<ReturnType<typeof fetchBuddies>>[number];
 
 /** Query keys in one place (hierarchical, so invalidating ['dives'] covers every dive query). */
 export const keys = {
@@ -86,6 +96,11 @@ export const keys = {
   diveProviders: (diveId: string) => ['dives', diveId, 'providers'] as const,
   providerStatus: (diveId: string, provider: string) => ['dives', diveId, 'providers', provider] as const,
   providerSites: (diveId: string, provider: string) => ['dives', diveId, 'providers', provider, 'sites'] as const,
+  /** Every Diver of the instance by name (ADR 0028); under ['divers'], so changing a Diver refreshes searches. */
+  diverSearch: (q: string) => ['divers', 'search', q] as const,
+  externalDivers: (q: string) => ['divers', 'external', q] as const,
+  /** The account's list of people at a Provider; under ['connections']. */
+  buddies: (connectionId: string) => ['connections', connectionId, 'buddies'] as const,
 };
 
 /**
@@ -95,10 +110,15 @@ export const keys = {
 export function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): T {
   if (!result.response.ok) {
     // Our routes answer { error }; Fastify's validation errors carry the useful text in `message`.
-    const body = result.error as { code?: ProblemCode; error?: string; message?: string; provider?: string; providerName?: string } | undefined;
+    const body = result.error as {
+      code?: ProblemCode; error?: string; message?: string; provider?: string; providerName?: string;
+      unmet?: UnmetView[]; diver?: { id: string; name: string };
+    } | undefined;
     const message = body?.error ?? body?.message ?? `Request failed (${result.response.status})`;
     const provider = body?.provider ? { id: body.provider, name: body.providerName ?? body.provider } : undefined;
-    throw new ApiError(message, result.response.status, body?.code, provider);
+    throw new ApiError(message, result.response.status, body?.code, provider, {
+      ...(body?.unmet && { unmet: body.unmet }), ...(body?.diver && { diver: body.diver }),
+    });
   }
   return result.data as T;
 }
@@ -276,9 +296,30 @@ export const providersQuery = () => queryOptions({ queryKey: keys.providers, que
 export const connectionsQuery = () => queryOptions({ queryKey: keys.connections, queryFn: fetchConnections });
 /** The Dive at every Provider that takes dives (for the delete dialog). */
 export const diveProvidersQuery = (diveId: string) => queryOptions({ queryKey: keys.diveProviders(diveId), queryFn: () => fetchDiveProviders(diveId) });
-/** A Dive at one Provider: its Diver's Connection, the site ID needed, the remote dive it has, its Pushes. */
+/** A Dive at one Provider: its Diver's Connection, what is unmet (ADR 0029), the remote dive it has, its Pushes. */
 export const providerStatusQuery = (diveId: string, provider: string) =>
   queryOptions({ queryKey: keys.providerStatus(diveId, provider), queryFn: () => fetchProviderStatus(diveId, provider) });
+async function fetchDiverSearch(q: string) {
+  return unwrap(await api.GET('/api/divers/search', { params: { query: { q, limit: 20 } } })).divers;
+}
+/** Every Diver of the instance whose name matches, the User's own first (ADR 0028). */
+export const diverSearchQuery = (q: string) =>
+  queryOptions({ queryKey: keys.diverSearch(q), queryFn: () => fetchDiverSearch(q), placeholderData: keepPreviousData });
+
+async function fetchExternalDivers(q: string) {
+  return unwrap(await api.GET('/api/external-divers', { params: { query: { ...(q && { q }), limit: 200 } } }));
+}
+/** People Users dived with who keep no logbook here (ADR 0028). */
+export const externalDiversQuery = (q = '') =>
+  queryOptions({ queryKey: keys.externalDivers(q), queryFn: () => fetchExternalDivers(q), placeholderData: keepPreviousData });
+
+async function fetchBuddies(connectionId: string) {
+  return unwrap(await api.GET('/api/connections/{id}/buddies', { params: { path: { id: connectionId } } })).buddies;
+}
+/** The account's list of people at the Provider (SSI's buddy list); asks the Provider, so only when the User opens it. */
+export const buddiesQuery = (connectionId: string) =>
+  queryOptions({ queryKey: keys.buddies(connectionId), queryFn: () => fetchBuddies(connectionId), staleTime: 2 * 60_000 });
+
 /** The Provider's sites near the Dive, nearest first; asks the Provider, so only when the User wants to pick one. */
 export const providerSitesQuery = (diveId: string, provider: string) =>
   queryOptions({ queryKey: keys.providerSites(diveId, provider), queryFn: () => fetchProviderSites(diveId, provider), staleTime: 5 * 60_000 });

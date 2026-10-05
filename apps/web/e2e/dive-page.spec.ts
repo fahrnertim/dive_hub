@@ -19,7 +19,8 @@ test('shows the dive with the recording\'s values, the device data and how it ca
   // The water type is the dive site's (ADR 0025); the computer's own setting is with its data.
   await expect(facts).toContainText('Choose a dive site, and the dive takes its water type.');
   await expect(page.locator('dl.facts-small')).toContainText('Water setting on the computerSalt water (1,025 kg/m³)');
-  await expect(page.getByText('edited')).toHaveCount(0);
+  // In the facts only: the history may say "Edited" when other specs changed this Dive on this server before.
+  await expect(page.locator('dl.facts').first().getByText('edited')).toHaveCount(0);
   await expect(page.getByText('Bühlmann ZHL-16C, GF 40/85')).toBeVisible();
   // More than three entries hide behind "Show the whole history"; how many there are depends on what
   // other specs did on this server before (ADR 0023).

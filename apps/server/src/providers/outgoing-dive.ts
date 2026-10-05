@@ -2,10 +2,10 @@
 // recording, Device, samples and site. Each adapter turns it into its own record.
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { device, dive, diveSite, diveSiteExternalId, recording, sampleSeries } from '../db/schema.js';
-import { managedDiverIds } from '../dives/dive-service.js';
+import { device, dive, diveSite, diveSiteExternalId, diverExternalId, recording, sampleSeries } from '../db/schema.js';
+import { managedDiverIds, participantsOf } from '../dives/dive-service.js';
 import type { SiteSource } from '../sites/sources.js';
-import type { OutgoingDive, Series } from './provider.js';
+import type { DiverSource, OutgoingDive, OutgoingParticipant, Series } from './provider.js';
 import { ProviderServiceError } from './registry.js';
 
 export type DiveRow = typeof dive.$inferSelect;
@@ -33,6 +33,14 @@ export async function loadOutgoingDive(db: Db, userId: string, diveId: string, o
   const [site] = row.siteId
     ? await db.select({ latitude: diveSite.latitude, longitude: diveSite.longitude, waterType: diveSite.waterType }).from(diveSite).where(eq(diveSite.id, row.siteId))
     : [];
+  // Who else was on it, with their accounts at services: all an adapter may know of them (ADR 0029).
+  const people = await participantsOf(db, row.id);
+  const accounts = people.length === 0 ? [] : await db.select().from(diverExternalId)
+    .where(inArray(diverExternalId.diverId, people.map((p) => p.diverId)));
+  const participants: OutgoingParticipant[] = people.map((p) => ({
+    ...p,
+    ids: Object.fromEntries(accounts.filter((a) => a.diverId === p.diverId).map((a) => [a.source, a.externalId])) as Partial<Record<DiverSource, string>>,
+  }));
   const summary = rec?.summary ?? {};
   const outgoing: OutgoingDive = {
     startsAt: row.startsAt, utcOffsetSeconds: row.utcOffsetSeconds, durationSeconds: row.durationSeconds,
@@ -40,6 +48,7 @@ export async function loadOutgoingDive(db: Db, userId: string, diveId: string, o
     // The Dive's water is its site's (ADR 0025), not the computer's setting.
     maxTemperatureC: summary.maxTemperatureC ?? null, waterType: site?.waterType ?? null, notes: row.notes,
     siteIds,
+    participants,
     entry: rec?.entryLatitude != null && rec.entryLongitude != null ? { latitude: rec.entryLatitude, longitude: rec.entryLongitude } : null,
     exit: rec?.exitLatitude != null && rec.exitLongitude != null ? { latitude: rec.exitLatitude, longitude: rec.exitLongitude } : null,
     gases: (summary.gases ?? []).map(({ o2, he }) => ({ o2, he })),

@@ -14,7 +14,8 @@ const OURS = 'Blue Hole (club notes)';
 test.beforeAll(async ({ request }) => {
   await setPreferences(request, { language: null, units: null });
   // A site made here, with SSI's ID typed into its form: a reference that SSI's data can fill.
-  await request.post('/api/dive-sites', { headers, data: { name: OURS, position: { latitude: 17.316, longitude: -87.5346 }, ssiSiteId: '7006' } });
+  const ours = await (await request.post('/api/dive-sites', { headers, data: { name: OURS, position: { latitude: 17.316, longitude: -87.5346 } } })).json() as { id: string };
+  await request.put(`/api/dive-sites/${ours.id}/external-ids/ssi`, { headers, data: { externalId: '7006' } });
 });
 
 // Other specs expect the seeded Dive without a site; this runs even when a test timed out.

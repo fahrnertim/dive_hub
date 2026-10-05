@@ -18,7 +18,7 @@ type ExternalId = {
 };
 type Site = {
   id: string; name: string; position: Position | null; country: string | null; waterBody: string | null; description: string | null;
-  maxDepthM: number | null; waterType: string | null; ssiSiteId: string | null; externalIds: ExternalId[]; version: number; canDelete: boolean;
+  maxDepthM: number | null; waterType: string | null; externalIds: ExternalId[]; version: number; canDelete: boolean;
 };
 type SiteImport = {
   id: string; status: string; sources: string[]; area: ImportArea; language: string; createSites: boolean;
@@ -66,7 +66,9 @@ describe.skipIf(!(await databaseReachable()))('Site import and external site IDs
   let tim: string;
   let anna: string;
 
-  type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  /** The site's SSI site ID, if it has one. */
+  const ssiOf = (site: Site) => site.externalIds.find((e) => e.source === 'ssi')?.externalId ?? null;
   const call = (method: Method, url: string, cookie: string, payload?: object) =>
     ctx.app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload && { payload }) });
   const json = async <T>(method: Method, url: string, cookie: string, payload?: object) => (await call(method, url, cookie, payload)).json() as T;
@@ -151,7 +153,8 @@ describe.skipIf(!(await databaseReachable()))('Site import and external site IDs
       expect(wikidata.asked.at(-1)).toEqual({ area: EGYPT, language: 'de' });
 
       const canyon = (await siteNamed('Canyon'))!;
-      expect(canyon).toMatchObject({ maxDepthM: 52, description: 'Swim through the canyon', country: 'EG', ssiSiteId: null });
+      expect(canyon).toMatchObject({ maxDepthM: 52, description: 'Swim through the canyon', country: 'EG' });
+      expect(ssiOf(canyon)).toBeNull();
       expect(canyon.externalIds).toEqual([{
         source: 'osm', name: 'OpenStreetMap', externalId: 'node/101', url: 'https://www.openstreetmap.org/node/101', providesData: true,
         attribution: { text: '© OpenStreetMap contributors', url: 'https://www.openstreetmap.org/copyright' }, offered: null,
@@ -287,7 +290,7 @@ describe.skipIf(!(await databaseReachable()))('Site import and external site IDs
       const done = await runImport(SSI);
       expect(done.counts).toMatchObject({ created: 1 });
       const garden = (await siteNamed('Coral Garden'))!;
-      expect(garden).toMatchObject({ waterType: 'salt', ssiSiteId: '9101', country: 'EG' });
+      expect(garden).toMatchObject({ waterType: 'salt', country: 'EG' });
       expect(garden.externalIds).toEqual([{ source: 'ssi', name: 'SSI', externalId: '9101', url: null, providesData: true, attribution: null, offered: null }]);
       const [created] = await json<Revision[]>('GET', `/api/dive-sites/${garden.id}/revisions`, tim);
       expect(created).toMatchObject({ actor: { type: 'site_import', name: 'SSI' }, changes: expect.objectContaining({ waterType: { from: null, to: 'salt' }, ssiSiteId: { from: null, to: '9101' } }) });
@@ -297,7 +300,7 @@ describe.skipIf(!(await databaseReachable()))('Site import and external site IDs
       osm.answers([{ id: 'node/501', v: { name: 'Fanous', position: metresNorth(80_000) } }]);
       await runImport();
       const fanous = (await siteNamed('Fanous'))!;
-      await call('PATCH', `/api/dive-sites/${fanous.id}`, tim, { version: fanous.version, ssiSiteId: '9201' });
+      await call('PUT', `/api/dive-sites/${fanous.id}/external-ids/ssi`, tim, { externalId: '9201' });
       ssi.answers([{ id: '9201', v: { name: 'Fanous', position: metresNorth(80_000), waterType: 'salt' } }]);
       await runImport(SSI);
       const after = (await siteNamed('Fanous'))!;
@@ -306,7 +309,8 @@ describe.skipIf(!(await databaseReachable()))('Site import and external site IDs
     });
 
     it('offers SSI\'s data on a hand-made site with a typed SSI ID, and lists it for the admin', async () => {
-      const ours = await json<Site>('POST', '/api/dive-sites', tim, { name: 'Unser Riff', position: metresNorth(90_000), ssiSiteId: '9301' });
+      const ours = await json<Site>('POST', '/api/dive-sites', tim, { name: 'Unser Riff', position: metresNorth(90_000) });
+      await call('PUT', `/api/dive-sites/${ours.id}/external-ids/ssi`, tim, { externalId: '9301' });
       ssi.answers([{ id: '9301', v: { name: 'Our Reef', position: metresNorth(90_005), waterType: 'salt' } }]);
       const done = await runImport(SSI);
       expect(done.counts).toMatchObject({ offered: 1, created: 0 });
@@ -316,7 +320,8 @@ describe.skipIf(!(await databaseReachable()))('Site import and external site IDs
       expect(after.externalIds).toEqual([expect.objectContaining({ source: 'ssi', providesData: false, offered: expect.objectContaining({ name: 'Our Reef', waterType: 'salt' }) })]);
 
       const taken = await json<Site>('POST', `/api/dive-sites/${ours.id}/adopt`, tim, { source: 'ssi', version: after.version });
-      expect(taken).toMatchObject({ name: 'Unser Riff', waterType: 'salt', ssiSiteId: '9301' });
+      expect(taken).toMatchObject({ name: 'Unser Riff', waterType: 'salt' });
+      expect(ssiOf(taken)).toBe('9301');
       expect(taken.externalIds).toEqual([expect.objectContaining({ source: 'ssi', providesData: true, offered: null })]);
     });
 
@@ -344,7 +349,8 @@ describe.skipIf(!(await databaseReachable()))('Site import and external site IDs
         const started = await real.app.inject({ method: 'POST', url: '/api/admin/site-imports', headers: { cookie: admin, origin: BASE_URL }, payload: { ...SSI, area: { kind: 'country', country: 'PW' } } });
         await real.siteImports.run(started.json().id);
         const corner = (await siteNamed('Blue Corner'))!;
-        expect(corner).toMatchObject({ country: 'PW', waterType: 'salt', ssiSiteId: '7003', description: null });
+        expect(corner).toMatchObject({ country: 'PW', waterType: 'salt', description: null });
+        expect(ssiOf(corner)).toBe('7003');
         const { rows } = await t.pool.query(`select count(*)::int as n from dive_site_external_id e join dive_site s on s.id = e.site_id
           where e.imported::text like '%203.0.113.45%' or s.description like '%203.0.113.45%'`);
         expect(rows[0].n).toBe(0);
@@ -388,35 +394,22 @@ describe.skipIf(!(await databaseReachable()))('Site import and external site IDs
     });
   });
 
-  describe('the SSI site ID and maximum depth, by hand', () => {
-    it('any User sets an SSI site ID in the site form; it shows as an External ID', async () => {
-      const site = await json<Site>('POST', '/api/dive-sites', tim, { name: 'Ras Mohammed', ssiSiteId: '3314', maxDepthM: 40 });
-      expect(site).toMatchObject({ ssiSiteId: '3314', maxDepthM: 40 });
-      expect(site.externalIds).toEqual([{ source: 'ssi', name: 'SSI', externalId: '3314', url: null, providesData: false, attribution: null, offered: null }]);
+  // A typed SSI site ID has its own route: site-external-ids.test.ts.
+  describe('the maximum depth, by hand', () => {
+    it('any User sets it; the history names only the User who reads it', async () => {
+      const site = await json<Site>('POST', '/api/dive-sites', tim, { name: 'Ras Mohammed', maxDepthM: 40 });
+      expect(site).toMatchObject({ maxDepthM: 40, externalIds: [] });
 
-      const changed = await call('PATCH', `/api/dive-sites/${site.id}`, anna, { version: site.version, ssiSiteId: '3315', maxDepthM: null });
-      expect(changed.json()).toMatchObject({ ssiSiteId: '3315', maxDepthM: null, version: site.version + 1 });
+      const changed = await call('PATCH', `/api/dive-sites/${site.id}`, anna, { version: site.version, maxDepthM: null });
+      expect(changed.json()).toMatchObject({ maxDepthM: null, version: site.version + 1 });
 
       const history = await json<Revision[]>('GET', `/api/dive-sites/${site.id}/revisions`, tim);
       // Tim sees his own edit as his, and Anna's without her name (ADR 0020: Users don't see who else edits).
       expect(history.map((r) => [r.cause, r.actor])).toEqual([['edit', { type: 'user', name: null }], ['create', { type: 'you', name: null }]]);
-      expect(history[0]!.changes).toEqual({ ssiSiteId: { from: '3314', to: '3315' }, maxDepthM: { from: 40, to: null } });
-
-      const cleared = await call('PATCH', `/api/dive-sites/${site.id}`, tim, { version: site.version + 1, ssiSiteId: null });
-      expect(cleared.json()).toMatchObject({ ssiSiteId: null, externalIds: [] });
+      expect(history[0]!.changes).toEqual({ maxDepthM: { from: 40, to: null } });
     });
 
-    it('refuses an SSI site ID another site already has', async () => {
-      await json<Site>('POST', '/api/dive-sites', tim, { name: 'Shark Reef', ssiSiteId: '5000' });
-      const other = await json<Site>('POST', '/api/dive-sites', tim, { name: 'Yolanda Reef' });
-      const taken = await call('PATCH', `/api/dive-sites/${other.id}`, tim, { version: other.version, ssiSiteId: '5000' });
-      expect(taken.statusCode).toBe(409);
-      expect(taken.json().code).toBe('external_id_taken');
-      expect((await call('POST', '/api/dive-sites', tim, { name: 'Jackfish Alley', ssiSiteId: '5000' })).statusCode).toBe(409);
-    });
-
-    it('refuses what is no SSI site ID or no depth', async () => {
-      expect((await call('POST', '/api/dive-sites', tim, { name: 'X', ssiSiteId: 'site:12' })).statusCode).toBe(400);
+    it('refuses what is no depth', async () => {
       expect((await call('POST', '/api/dive-sites', tim, { name: 'X', maxDepthM: -5 })).statusCode).toBe(400);
       expect((await call('POST', '/api/dive-sites', tim, { name: 'X', maxDepthM: 401 })).statusCode).toBe(400);
     });

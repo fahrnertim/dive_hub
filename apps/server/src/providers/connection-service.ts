@@ -105,6 +105,9 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
     /** The Connection of a Diver at a Provider, if the User has one. */
     forDiver,
 
+    /** One of the User's Connections, or `connection_not_found`. */
+    own: ownConnection,
+
     /** Signs in once and keeps the Connection; the account becomes the Diver's External ID where the Provider has one. */
     async connect(userId: string, provider: string, diverId: string, fields: SignInFields): Promise<string> {
       const adapter = registry.get(provider);

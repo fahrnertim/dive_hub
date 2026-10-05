@@ -7,7 +7,10 @@
 import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_BASE_URL, connectSsi, deletableDive, disconnectSsi, editElsewhere, leaveSsi, readyForSsi, sendToSsi, setPreferences } from './support.ts';
+import {
+  E2E_BASE_URL, clearParticipants, connectSsi, deletableDive, disconnectSsi, editElsewhere, externalDiver, forgetDivers, leaveSsi, readyForSsi, sendToSsi,
+  setBuddies, setPreferences,
+} from './support.ts';
 
 const out = process.env.REVIEW_OUT ?? 'review-output/';
 mkdirSync(out, { recursive: true });
@@ -161,13 +164,15 @@ test('review material', async ({ page, request, browser }) => {
   await expect.poll(async () => (await (await request.get(`/api/admin/site-imports/${started.id}`)).json()).status, { timeout: 20_000 }).toBe('done');
   const imported = (await (await request.get('/api/dive-sites?q=Ras%20il')).json() as { sites: { id: string; name: string; version: number }[] }).sites
     .find((s) => s.name === 'Ras il-Ħobż')!;
-  await request.patch(`/api/dive-sites/${imported.id}`, { headers, data: { version: imported.version, ssiSiteId: '3314', maxDepthM: 32 } });
+  await request.patch(`/api/dive-sites/${imported.id}`, { headers, data: { version: imported.version, maxDepthM: 32 } });
+  await request.put(`/api/dive-sites/${imported.id}/external-ids/ssi`, { headers, data: { externalId: '3314' } });
 
   // SSI (ADR 0025): a site made here with SSI's ID typed in, filled by an SSI import of Switzerland that creates
   // nothing, so its page offers SSI's data; and Dive 42 at a fresh-water site, for the dive page's hint.
   const ours = await (await request.post('/api/dive-sites', {
-    headers, data: { name: 'Ouchy – Seeufer (club notes)', position: { latitude: 46.5001, longitude: 6.62 }, waterBody: 'Lac Léman', ssiSiteId: '7008' },
+    headers, data: { name: 'Ouchy – Seeufer (club notes)', position: { latitude: 46.5001, longitude: 6.62 }, waterBody: 'Lac Léman' },
   })).json() as { id: string };
+  await request.put(`/api/dive-sites/${ours.id}/external-ids/ssi`, { headers, data: { externalId: '7008' } });
   const ssiRun = await (await request.post('/api/admin/site-imports', {
     headers, data: { sources: ['ssi'], area: { kind: 'country', country: 'CH' }, language: 'en', confirmSsi: true, createSites: false },
   })).json() as { id: string };
@@ -263,6 +268,10 @@ test('review material', async ({ page, request, browser }) => {
     if (want('account')) {
       await page.reload(); await page.getByText('Connected, password kept').waitFor();
       await capture(page, '25-account-ssi-connected', { aria: false });
+      // The SSI buddy list (ADR 0029): who is in Dive Hub already, adding and linking.
+      await page.getByRole('button', { name: /^Show your SSI buddy list/ }).click();
+      await page.getByRole('row', { name: /Mia Stone/ }).waitFor();
+      await capture(page, '25b-account-ssi-buddies');
     }
     if (want('dives')) {
       await readyForSsi(request, dive42);
@@ -278,6 +287,21 @@ test('review material', async ({ page, request, browser }) => {
       await editElsewhere(request, dive42, 'Changed after sending');
       await page.reload(); await page.getByText('Changed since sent').waitFor();
       await capture(page, '29-dive-ssi-changed');
+      // Buddies (ADR 0028, 0029): Kai has an SSI account, Ulla none, so SSI's panel offers to find her.
+      await forgetDivers(request, 'Mia');
+      await setBuddies(request, dive42, [await externalDiver(request, 'Kai Lund', '4989164'), await externalDiver(request, 'Ulla Berg')]);
+      await page.reload(); await page.getByRole('button', { name: 'Find Ulla Berg in your SSI buddy list' }).waitFor();
+      await capture(page, '29b-dive-buddies');
+      await page.getByRole('button', { name: 'Add someone' }).click();
+      await page.getByRole('dialog').getByRole('searchbox').fill('u');
+      await page.getByRole('dialog').getByRole('option').first().waitFor();
+      await capture(page, '29c-dive-add-someone', { full: false });
+      // Escape in a search field with text clears it first; Cancel closes the dialog.
+      await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
+      await page.getByRole('button', { name: 'Find Ulla Berg in your SSI buddy list' }).click();
+      await page.getByRole('dialog').getByRole('option').first().waitFor();
+      await capture(page, '29d-dive-find-in-ssi-list', { full: false });
+      await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
     }
     await setPreferences(request, { language: 'de' });
     await page.emulateMedia({ colorScheme: 'dark' });
@@ -293,6 +317,7 @@ test('review material', async ({ page, request, browser }) => {
     await setPreferences(request, { language: null });
     await page.emulateMedia({ colorScheme: 'light' });
     await request.delete(`/api/dives/${dive42}/providers/ssi`, { headers });
+    await clearParticipants(request, dive42);
     await leaveSsi(request, dive42);
   }
 

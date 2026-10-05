@@ -486,9 +486,10 @@ Implemented:
 What is left of the slice 10–12 simplifications:
 - **Sending and deleting at a Provider run in the request**, not as worker jobs (unchanged; with batch sending or importing).
 - ~~**One process:** pacing and the Dive lock live in memory.~~ Leases in PostgreSQL since slice 13a.
-- **Not sent yet:** conditions other than water type, tanks and pressures, buddies (Connection Diver mappings), gear,
-  photos; QR payload and importing from SSI come later.
-- **A Diver's External ID** is still set only by connecting (`provider_account_taken` instead of proposing to link).
+- **Not sent yet:** conditions other than water type, tanks and pressures, gear, photos; QR payload and importing from
+  SSI come later. Buddies are sent since slice 14.
+- ~~**A Diver's External ID** is still set only by connecting.~~ Also by hand since slice 14 (a clash names the Diver
+  that has it instead of proposing to link).
 - Done: the pause between actions, one logbook read per action, deleting through every Provider, no SSI fields outside
   the adapter, the Connection no longer assumes e-mail and password.
 
@@ -536,3 +537,54 @@ Deliberate simplifications, to revisit:
   batches (ADR 0010), not before.
 - **Leases hold 5 minutes** whatever the Provider; a crashed action keeps its Dive and Connection busy that long.
 
+
+**Slice 14 (2026-10-05): buddies, on Push requirements** ([ADR 0028](../decisions/0028-shared-divers-and-participants.md),
+[ADR 0029](../decisions/0029-push-requirements-and-buddies.md), the [follow-ups](../research/2026-10-05-provider-layer-follow-ups.md)).
+
+Implemented:
+- **Push requirements** (`src/providers/requirements.ts`): an adapter declares `dives.export.requirements` (replacing
+  `needsSiteIdFrom`), `site_external_id` or `diver_mapping`, each `blocking` or `advisory`. The push service evaluates them
+  from Dive Hub's data (`unmet` in every status, no Provider call), refuses a blocking one with
+  `provider_requirements_unmet` and the list (replacing `provider_site_id_missing`), hands the adapter the Dive without the
+  Participants an advisory one leaves out, and records them with those the adapter couldn't place (`push.left_out`).
+  `GET /api/providers` gives each requirement with how a site ID may be typed (from `SOURCE_INFO`: `typed`, `pattern`,
+  `prefixes`).
+- **A site's typed External ID** has its own route, `PUT /api/dive-sites/{id}/external-ids/{source}` (Sources with
+  `typed` in `SOURCE_INFO`, SSI today): takes "site:3314", keeps the bare ID, a Revision under `ssiSiteId` as before, the
+  site's version untouched. `ssiSiteId` left the site API; site merges move every External ID the same way.
+- **Divers seen by name, external Divers, Participants** (ADR 0028): `GET /api/divers/search`, `GET|POST /api/external-divers`,
+  `PATCH|DELETE /api/external-divers/{id}`, `PUT /api/divers/{id}/external-ids/{source}`, `PUT /api/dives/{id}/participants`;
+  the Dive view lists `participants`. Migration 0015 (generated, reviewed, plus one statement renaming stored codes):
+  `participant` (with `participant_role`), `diver.created_by`, `push.left_out`.
+- **Buddies at SSI:** the client reads `logbook_buddies` (entry ID, name, `buddy_master_id`; nothing else is kept); the
+  adapter declares `buddies` `find` and both requirements (site ID blocking, Participants advisory), sends every
+  Participant as a buddy by finding the entry with the Diver's SSI account in the logbook read the action makes anyway,
+  leaves out one not in the list (`not_at_provider`), keeps buddies set in SSI's app on update (SSI's IDs minus those
+  sent before, from the current Push's payload), counts the Participants' SSI accounts in the fingerprint and reads the
+  buddy IDs back. `GET /api/connections/{id}/buddies` and `POST …/buddies/import` read the list live and create external
+  Divers with name and SSI account (`src/providers/buddy-service.ts`).
+- **Web client:** `Participants.tsx` (buddies, guides and instructors on the dive page; a role radio group and a live
+  search over every Diver, or a new one by the typed name, when adding; a role dropdown per row that saves at once); `ProviderPanel.tsx` renders one resolver per requirement type
+  (the site picker takes its ID forms from the capabilities; "Find … in your SSI buddy list" sets the Diver's account), an
+  unknown type with the Provider's description, and who a Push left out; `ProviderBuddies.tsx` (the SSI buddy list under
+  the Connection: add one or all, or link an entry to a Diver here); "Other divers" on the Divers page; the site form's
+  typed site IDs come from the requirements. No `ssiSiteId` or SSI QR format in the web code; SSI's own sentences are
+  `providers.ssi.*` texts.
+- **Tests:** `provider-requirements.test.ts` (both types at both severities, through SSI and the ledger, whose
+  requirements are SSI's with the severities swapped), `participants.test.ts`, `site-external-ids.test.ts`,
+  `ssi-buddies.test.ts` (against the fake SSI with a buddy list: import, sending, left out, update keeping app buddies,
+  nothing personal stored or answered); the contract suite checks requirement types and runs a Participant case and a
+  `buddies.import.find` case; browser tests `buddies.spec.ts` (@account, @divers, @dives) and ui-quality cases for the
+  dive's buddies, both dialogs, the SSI buddy list and other divers. `leases.test.ts` now checks the 30 s bound on the
+  time that passed, not on the sum of the test clock's sleeps (it failed under load since slice 13a).
+
+Deliberate simplifications, to revisit:
+- **No Connection Diver mappings:** a buddy entry without an SSI account can't be sent (none seen in the owner's list).
+  They come with `PUT /api/connections/{id}/divers/{diverId}` and `fixes: ['connection_mapping']`.
+- **No adding to the SSI buddy list:** a buddy not in it is left out with a notice to scan their QR code in SSI's app.
+  Later: show the buddy's SSI QR code, or add the entry once the app's call is known (follow-ups note).
+- **Buddy suggestions, Joint dives, Visibility, merging two Divers** come later (ADR 0028); another User's Diver can be put
+  on a Dive and nothing reaches that User.
+- **Same-name Divers** look the same in the picker; it shows only whether a Diver is yours, another User's or external.
+- **Requirement descriptions are English** (shown only for types a client doesn't know).
+- **The owner's check** passed (2026-10-06): buddies sent from Dive Hub show on the dive in SSI's app.

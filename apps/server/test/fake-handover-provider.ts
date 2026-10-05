@@ -30,7 +30,7 @@ export function createFakeHandover(): FakeHandover {
       capabilities: {
         name: 'Hand-over',
         signIn: { kind: 'token' },
-        data: { dives: { export: { operations: ['create'], delivery: 'handed_over' } } },
+        data: { dives: { export: { operations: ['create'], delivery: 'handed_over', requirements: [] } } },
         notices: [],
         limits: { pauseMs: 500 },
       },

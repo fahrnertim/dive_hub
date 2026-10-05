@@ -11,6 +11,8 @@ date: 2026-10-04
 Accepted – 2026-10-04. Amended by [ADR 0025](0025-ssi-site-import-and-site-water-type.md) (2026-10-05): precedence per
 field (SSI first for name and country, OSM for position); references on hand-made sites keep the Source's values as
 an offer any User can take; a typed SSI ID on an imported site provides data once an SSI import finds it.
+Amended by [ADR 0029](0029-push-requirements-and-buddies.md) (2026-10-05): a typed site ID has its own route
+(`PUT /api/dive-sites/{id}/external-ids/{source}`); the site API's `ssiSiteId` is gone.
 
 ## Context
 ADR 0020 built Dive sites without external IDs. The [dive site sources](../research/2026-10-04-dive-site-sources.md)

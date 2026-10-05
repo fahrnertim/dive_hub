@@ -1,13 +1,14 @@
-// SSI as a Provider (ADR 0024, 0027): what is SSI's own. Signing in, its logbook, its dive record, the ±2 min match,
-// its dive numbers and the SSI site ID. Everything SSI answers is turned into typed values here; no `odin_*` field is
+// SSI as a Provider (ADR 0024, 0027, 0029): what is SSI's own. Signing in, its logbook, its dive record, the ±2 min
+// match, its dive numbers, the SSI site ID, and buddies as entries of the User's own buddy list. Everything SSI answers is turned into typed values here; no `odin_*` field is
 // read outside this folder. Connections, Pushes, pacing and the routes are the generic layer's.
 import {
   ProviderError, type ActionContext, type Capabilities, type Delivered, type DiveExportAction, type OutgoingDive,
   type ProviderAdapter, type RemoteDive,
 } from '../provider.js';
-import { SsiError, type SsiClient, type SsiLogbook, type SsiRecord } from './ssi-client.js';
+import { SsiError, type SsiBuddy, type SsiClient, type SsiLogbook, type SsiRecord } from './ssi-client.js';
 import {
-  COMPARED_FIELDS, compareReadBack, createRecord, deleteRecord, fingerprint, localTime, updateRecord, type DiveForSsi,
+  buddyIdsOf, COMPARED_FIELDS, compareReadBack, createRecord, deleteRecord, fingerprint, localTime, updateRecord, withBuddies,
+  type DiveForSsi,
 } from './ssi-record.js';
 
 /** Two dives this close in time (minutes) count as the same descent. */
@@ -24,12 +25,20 @@ export const SSI_CAPABILITIES: Capabilities = {
         operations: ['create', 'update', 'delete', 'link', 'find', 'readBack'],
         findBy: ['reference', 'time'],
         delivery: 'confirmed',
-        needsSiteIdFrom: 'ssi',
+        requirements: [
+          { type: 'site_external_id', severity: 'blocking', source: 'ssi', description: 'SSI needs the dive site\'s SSI site ID.' },
+          {
+            type: 'diver_mapping', severity: 'advisory', source: 'ssi', roles: ['buddy', 'guide', 'instructor'],
+            description: 'SSI lists buddies from your SSI buddy list, found by their SSI account; one without an account is left out.',
+          },
+        ],
         readBackFields: [...COMPARED_FIELDS],
       },
     },
     // `find`: the sites of the User's logbook; `list`: SSI's whole site list for the admin's Site import (ssi-sites.ts).
     diveSites: { import: { operations: ['find', 'list'], findBy: ['position'] } },
+    // `find`: the account's buddy list (no call to add an entry is known).
+    buddies: { import: { operations: ['find'] } },
   },
   notices: ['shows_unconfirmed'],
   limits: { pauseMs: 2000 },
@@ -60,18 +69,54 @@ const forSsi = (dive: OutgoingDive): DiveForSsi => {
   return { ...rest, siteSsiId: siteIds.ssi ?? '' };
 };
 
-/** SSI's client errors as the generic layer's reasons; anything else passes through. */
-async function asProvider<T>(call: Promise<T>): Promise<T> {
-  try {
-    return await call;
-  } catch (error) {
-    throw error instanceof SsiError ? new ProviderError(error.reason, error.message) : error;
+/**
+ * The entries of the User's buddy list for the dive's Participants, found by their SSI account (ADR 0029); those not in
+ * the list are left out.
+ */
+function buddiesFor(dive: OutgoingDive, list: SsiBuddy[]) {
+  const ids: number[] = [];
+  const leftOut: { diverId: string; reason: 'not_at_provider' }[] = [];
+  for (const p of dive.participants) {
+    const entry = p.ids.ssi ? list.find((b) => b.account === p.ids.ssi) : undefined;
+    if (!entry) leftOut.push({ diverId: p.diverId, reason: 'not_at_provider' });
+    else if (!ids.includes(entry.id)) ids.push(entry.id);
   }
+  return { ids, leftOut };
 }
 
-export function createSsiAdapter(deps: { client: SsiClient; now?: () => number }): ProviderAdapter {
+/**
+ * One call to SSI, for the server log: which call, for which Connection (null while signing in), how it ended and how
+ * long it took. Never the token, password or URL. Shows when Dive Hub used an account at SSI.
+ */
+export interface SsiCallLog {
+  call: 'authenticate' | 'get_divelog' | 'save_divelog';
+  connectionId: string | null;
+  /** `ok`, or the reason SSI's client gave (`unavailable`, `signed_out`, …). */
+  outcome: 'ok' | SsiError['reason'] | 'error';
+  /** For a failed call: what went wrong, with SSI's own error text when it sent one (never a token or URL). */
+  detail?: string;
+  ms: number;
+}
+
+export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; onCall?: (call: SsiCallLog) => void }): ProviderAdapter {
   const { client } = deps;
   const now = deps.now ?? Date.now;
+
+  /** One call to SSI, reported to `onCall`; SSI's client errors become the generic layer's reasons. */
+  async function called<T>(call: SsiCallLog['call'], connectionId: string | null, run: () => Promise<T>): Promise<T> {
+    const started = performance.now();
+    const report = (outcome: SsiCallLog['outcome'], detail?: string) =>
+      deps.onCall?.({ call, connectionId, outcome, ms: Math.round(performance.now() - started), ...(detail && { detail }) });
+    try {
+      const result = await run();
+      report('ok');
+      return result;
+    } catch (error) {
+      if (error instanceof SsiError) report(error.reason, error.message.slice(0, 300));
+      else report('error');
+      throw error instanceof SsiError ? new ProviderError(error.reason, error.message) : error;
+    }
+  }
   /** The last logbook read per Connection, kept briefly so the next action doesn't read it again. */
   const snapshots = new Map<string, { at: number; logbook: SsiLogbook }>();
 
@@ -93,7 +138,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number }
   function logbookOf(ctx: ActionContext) {
     let read: Promise<SsiLogbook> | null = null;
     const current = () => {
-      read ??= asProvider(client.logbook(ctx.access)).then((l) => keep(ctx.connectionId, l));
+      read ??= called('get_divelog', ctx.connectionId, () => client.logbook(ctx.access)).then((l) => keep(ctx.connectionId, l));
       return read;
     };
     const recent = () => {
@@ -108,8 +153,8 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number }
 
   /** Saves, then reads the dive back and lists what SSI stored differently (null: not found again). */
   async function saveAndReadBack(ctx: ActionContext, sent: SsiRecord, number: number | null): Promise<Delivered> {
-    const { id } = await asProvider(client.save(ctx.access, sent));
-    const after = keep(ctx.connectionId, await asProvider(client.logbook(ctx.access)));
+    const { id } = await called('save_divelog', ctx.connectionId, () => client.save(ctx.access, sent));
+    const after = keep(ctx.connectionId, await called('get_divelog', ctx.connectionId, () => client.logbook(ctx.access)));
     const stored = after.dives.find((r) => idOf(r.odin_user_log_id) === id);
     return { remoteId: id, remoteNumber: number, payload: withoutDatasets(sent), differences: stored ? compareReadBack(sent, stored) : null };
   }
@@ -127,20 +172,27 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number }
         return { ours: ours ? remoteDive(ours) : null, sameTime: same ? remoteDive(same) : null };
       },
       async create(dive, reference) {
-        const { dives } = await logbook.recent();
+        const { dives, buddies } = await logbook.recent();
         // SSI's dive number is the client's choice: the highest in the logbook + 1.
         const number = Math.max(0, ...dives.map((r) => numberOf(r.odin_user_log_nr) ?? 0)) + 1;
-        return saveAndReadBack(ctx, createRecord(forSsi(dive), { number, accountId: ctx.accountId, reference }), number);
+        const { ids, leftOut } = buddiesFor(dive, buddies);
+        const record = withBuddies(createRecord(forSsi(dive), { number, accountId: ctx.accountId, reference }), ids);
+        return { ...(await saveAndReadBack(ctx, record, number)), leftOut };
       },
-      async update(remoteId, dive) {
+      async update(remoteId, dive, previous) {
         const remote = await byId(remoteId);
         if (!remote) return null;
-        return saveAndReadBack(ctx, updateRecord(remote, forSsi(dive)), numberOf(remote.odin_user_log_nr));
+        const { ids, leftOut } = buddiesFor(dive, (await logbook.current()).buddies);
+        // Buddies set in SSI's app stay; those Dive Hub sent before are replaced by those it sends now.
+        const sentBefore = buddyIdsOf(previous);
+        const kept = buddyIdsOf(remote).filter((id) => !sentBefore.includes(id) && !ids.includes(id));
+        const record = withBuddies(updateRecord(remote, forSsi(dive)), [...ids, ...kept]);
+        return { ...(await saveAndReadBack(ctx, record, numberOf(remote.odin_user_log_nr))), leftOut };
       },
       async remove(remoteId) {
         const remote = await byId(remoteId);
         if (!remote) return 'gone';
-        await asProvider(client.save(ctx.access, deleteRecord(remote)));
+        await called('save_divelog', ctx.connectionId, () => client.save(ctx.access, deleteRecord(remote)));
         const kept = snapshots.get(ctx.connectionId);
         if (kept) kept.logbook = { ...kept.logbook, dives: kept.logbook.dives.filter((r) => idOf(r.odin_user_log_id) !== remoteId) };
         return 'deleted';
@@ -156,10 +208,13 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number }
     accountSource: 'ssi',
     async signIn(input) {
       if (input.kind !== 'password') throw new ProviderError('wrong_credentials', 'SSI signs in with e-mail and password');
-      const account = await asProvider(client.signIn(input.login, input.password));
+      const account = await called('authenticate', null, () => client.signIn(input.login, input.password));
       return { account: { id: account.accountId, label: account.email }, access: account.token };
     },
     dives: { mode: 'api', fingerprint: (dive) => fingerprint(forSsi(dive)), open },
     diveSites: { find: async (ctx) => (await logbookOf(ctx).recent()).sites },
+    buddies: {
+      find: async (ctx) => (await logbookOf(ctx).recent()).buddies.map((b) => ({ remoteId: String(b.id), name: b.name, account: b.account })),
+    },
   };
 }

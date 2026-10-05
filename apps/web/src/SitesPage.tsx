@@ -11,7 +11,9 @@ import { usePageTitle } from './lib/page.ts';
 import { countryOptions } from './lib/geo.ts';
 import { needsOsmAttribution, siteOrigin } from './lib/site-origin.ts';
 import { SITES_PAGE, sitesHref, type SiteSort, type SitesParams } from './lib/sites-list.ts';
-import { SiteForm } from './SiteForm.tsx';
+import { SiteForm, typedSources } from './SiteForm.tsx';
+import { useProviders, useProviderText } from './lib/providers.ts';
+import type { ProviderView } from './api.ts';
 import { SiteHistory } from './SiteHistory.tsx';
 import { ActionMenu, Button, Checkbox, ConfirmDialog, Icon, Muted, Notice, PageHeader, Panel, Select, Table, TextField } from './ui/index.ts';
 
@@ -169,6 +171,18 @@ export function SitesPage({ params }: { params: SitesParams }) {
   );
 }
 
+/** A site ID Users may type, worded by the Provider that needs it (ADR 0029). */
+function TypedId({ provider, value }: { provider: ProviderView; value: string | undefined }) {
+  const { t } = useTranslation();
+  const pt = useProviderText(provider);
+  return (
+    <div>
+      <dt>{pt('siteIdLabel')}</dt>
+      <dd>{value ?? t('common.none')}</dd>
+    </div>
+  );
+}
+
 /** One Dive site: where it is, the User's dives there; anyone edits, its creator or an admin deletes. */
 export function SitePage({ id }: { id: string }) {
   const { t } = useTranslation();
@@ -177,6 +191,7 @@ export function SitePage({ id }: { id: string }) {
   const place = useSitePlace();
   const queryClient = useQueryClient();
   const site = useQuery(siteQuery(id));
+  const typed = typedSources(useProviders().data);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const editButton = useRef<HTMLButtonElement>(null);
@@ -268,10 +283,9 @@ export function SitePage({ id }: { id: string }) {
                 <dt>{t('sites.maxDepth')}</dt>
                 <dd>{s.maxDepthM === null ? t('sites.notKnown') : display.depth(s.maxDepthM)}</dd>
               </div>
-              <div>
-                <dt>{t('sites.ssiSiteId')}</dt>
-                <dd>{s.ssiSiteId ?? t('common.none')}</dd>
-              </div>
+              {typed.map(({ provider, requirement }) => (
+                <TypedId key={requirement.source} provider={provider} value={s.externalIds.find((e) => e.source === requirement.source)?.externalId} />
+              ))}
               <div>
                 <dt>{t('sites.yourDives')}</dt>
                 <dd>
@@ -429,7 +443,8 @@ function NearbySites({ site }: { site: SiteView }) {
     if (!site.waterBody && other.waterBody) gaps.push(t('sites.waterBody'));
     if (site.maxDepthM === null && other.maxDepthM !== null) gaps.push(t('sites.maxDepth'));
     if (site.waterType === null && other.waterType !== null) gaps.push(t('sites.waterType'));
-    if (!site.ssiSiteId && other.ssiSiteId) gaps.push(t('sites.ssiSiteId'));
+    // External IDs move to the kept site where it has none from that Source (ADR 0022).
+    for (const e of other.externalIds) if (!site.externalIds.some((k) => k.source === e.source)) gaps.push(t('sites.idAt', { name: e.name }));
     if (!site.description && other.description) gaps.push(t('sites.description'));
     return gaps;
   };

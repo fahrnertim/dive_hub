@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { connection, diveLease } from '../src/db/schema.js';
-import { LEASE_MS, MAX_WAIT_MS, skippingClock } from '../src/providers/leases.js';
+import { LEASE_MS, MAX_WAIT_MS, POLL_MS, skippingClock } from '../src/providers/leases.js';
 import { createFakeHandover, type FakeHandover } from './fake-handover-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
@@ -101,11 +101,15 @@ describe.skipIf(!(await databaseReachable()))('leases across app instances', () 
     const [conn] = await t.db.select().from(connection);
     await t.db.update(connection).set({ nextActionAt: new Date(clock.now() + LEASE_MS) }).where(eq(connection.id, conn!.id));
     const from = clock.slept.length;
+    const startedAt = clock.now();
     const refused = await send(one, dives[2]!);
+    const elapsed = clock.now() - startedAt;
     expect(refused.statusCode).toBe(409);
     expect(refused.json()).toMatchObject({ code: 'provider_busy', provider: 'handover' });
     const waited = clock.slept.slice(from).reduce((sum, ms) => sum + ms, 0);
-    expect(waited).toBeGreaterThan(MAX_WAIT_MS - 1000);
+    // The clock moves with real time as well as with each sleep: under load each poll's query takes longer and fewer
+    // sleeps fit, so the bound is checked on the time that passed, not on the sum of the sleeps.
+    expect(elapsed).toBeGreaterThan(MAX_WAIT_MS - POLL_MS);
     expect(waited).toBeLessThanOrEqual(MAX_WAIT_MS);
     // Its turn runs out by itself.
     clock.skip(LEASE_MS);

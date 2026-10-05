@@ -32,10 +32,23 @@ export interface SsiLogbookSite {
   country: string | null;
 }
 
+/**
+ * An entry in the account's own buddy list (checked 2026-10-05, docs/references/ssi-app-api.md): a dive lists these
+ * entry IDs. Only the name and the buddy's SSI account are read; the rest of what SSI keeps (birth date, e-mail, phone,
+ * address, picture) is dropped here.
+ */
+export interface SsiBuddy {
+  id: number;
+  name: string;
+  /** The buddy's SSI account (`buddy_master_id`); null without one. */
+  account: string | null;
+}
+
 export interface SsiLogbook {
   /** Dives that aren't deleted; SSI leaves deleted ones out. */
   dives: SsiRecord[];
   sites: SsiLogbookSite[];
+  buddies: SsiBuddy[];
 }
 
 export class SsiError extends Error {
@@ -130,14 +143,26 @@ export function createSsiClient(options: SsiClientOptions): SsiClient {
           .find((c): c is string => typeof c === 'string' && c.length > 0) ?? null;
         return [{ id, name, latitude: latitude !== null && longitude !== null ? latitude : null, longitude: latitude !== null ? longitude : null, country }];
       });
-      return { dives, sites };
+      const buddies = (Array.isArray(data.logbook_buddies) ? data.logbook_buddies : []).filter(isObject).flatMap((b) => {
+        const id = idText(b.id);
+        if (!id || b.deleted === 1 || b.deleted === '1') return [];
+        const text = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+        const name = [text(b.firstname), text(b.lastname)].filter(Boolean).join(' ') || text(b.nickname);
+        return name ? [{ id: Number(id), name, account: idText(b.buddy_master_id) }] : [];
+      });
+      return { dives, sites, buddies };
     },
 
     async save(token, record) {
       const data = await call('save_divelog', { token }, record);
       if (data.authenticated === false) throw new SsiError('signed_out', 'save_divelog');
       const id = idText(data.odin_user_log_id);
-      if (!id) throw new SsiError('refused', `save_divelog: ${typeof data.error === 'string' && data.error ? data.error : 'no dive id in the answer'}`);
+      if (!id) {
+        // SSI's reason, else which fields it sent instead (names only; values may hold personal data).
+        const reason = typeof data.error === 'string' && data.error ? data.error
+          : `no dive id in the answer (ok: ${JSON.stringify(data.ok ?? null)}, fields: ${Object.keys(data).join(', ')})`;
+        throw new SsiError('refused', `save_divelog: ${reason}`);
+      }
       return { id };
     },
   };

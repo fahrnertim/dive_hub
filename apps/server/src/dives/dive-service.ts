@@ -1,7 +1,10 @@
 // Keeping a Dive: Overrides, resetting them, the Primary recording, and refreshing from it (ADR 0015).
-import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
-import { OVERRIDABLE_FIELDS, dive, diveSite, diverManagement, recording, type OverridableField } from '../db/schema.js';
+import {
+  OVERRIDABLE_FIELDS, PARTICIPANT_ROLES, dive, diveSite, diver, diverManagement, participant, recording,
+  type OverridableField, type ParticipantRole,
+} from '../db/schema.js';
 import {
   columnsOf, plain, sameValue, valuesFromRecording, valuesOfDive, type DiveValues,
 } from './dive-values.js';
@@ -11,7 +14,7 @@ import { liveSite, siteRef } from '../sites/dive-site-link.js';
 export class DiveError extends Error {
   constructor(readonly code:
     | 'dive_not_found' | 'dive_changed' | 'dive_values_inconsistent' | 'recording_not_on_dive'
-    | 'recording_not_found' | 'last_recording' | 'diver_not_found' | 'site_not_found') {
+    | 'recording_not_found' | 'last_recording' | 'diver_not_found' | 'site_not_found' | 'participant_invalid') {
     super(code);
   }
 }
@@ -103,6 +106,14 @@ function merge(current: DiveValues, fromRecording: DiveValues | null, overrides:
   return merged;
 }
 
+/** A Dive's Participants with their names, buddies first, then guides and instructors, each by name (ADR 0028). */
+export async function participantsOf(tx: Tx | Db, diveId: string) {
+  const rows = await tx.select({ diverId: participant.diverId, name: diver.name, role: participant.role }).from(participant)
+    .innerJoin(diver, eq(diver.id, participant.diverId)).where(eq(participant.diveId, diveId));
+  return rows.sort((a, b) => PARTICIPANT_ROLES.indexOf(a.role) - PARTICIPANT_ROLES.indexOf(b.role)
+    || a.name.localeCompare(b.name) || a.diverId.localeCompare(b.diverId));
+}
+
 /** Divers the User manages. */
 export async function managedDiverIds(tx: Tx | Db, userId: string): Promise<Set<string>> {
   const rows = await tx.select({ id: diverManagement.diverId }).from(diverManagement).where(eq(diverManagement.userId, userId));
@@ -151,6 +162,30 @@ export function createDiveService(db: Db) {
           values, overrides, notes: edit.notes === undefined ? current.notes : edit.notes,
           primaryRecordingId: current.primaryRecordingId, ...(edit.siteId !== undefined && { siteId: edit.siteId }),
         }, { type: 'user', id: userId }, 'edit');
+      });
+    },
+
+    /**
+     * Sets the Dive's Participants as one list (ADR 0028): any Diver of the instance but the Dive's own, one role each.
+     * One Revision, and the version goes up, so a Provider that takes them sees the Dive changed.
+     */
+    async setParticipants(userId: string, diveId: string, version: number, list: { diverId: string; role: ParticipantRole }[]) {
+      await db.transaction(async (tx) => {
+        const current = await lockManagedDive(tx, userId, diveId);
+        if (current.version !== version) throw new DiveError('dive_changed');
+        const ids = list.map((p) => p.diverId);
+        if (new Set(ids).size !== ids.length || ids.includes(current.diverId)) throw new DiveError('participant_invalid');
+        const found = ids.length === 0 ? [] : await tx.select({ id: diver.id }).from(diver).where(and(inArray(diver.id, ids), isNull(diver.deletedAt)));
+        if (found.length !== ids.length) throw new DiveError('diver_not_found');
+        const before = await participantsOf(tx, diveId);
+        const same = before.length === list.length && list.every((p) => before.some((b) => b.diverId === p.diverId && b.role === p.role));
+        if (same) return;
+        await tx.delete(participant).where(eq(participant.diveId, diveId));
+        if (list.length > 0) await tx.insert(participant).values(list.map((p) => ({ diveId, ...p })));
+        await tx.update(dive).set({ version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
+        await writeRevision(tx, 'dive', diveId, { type: 'user', id: userId }, 'edit', {
+          participants: { from: before, to: await participantsOf(tx, diveId) },
+        });
       });
     },
 

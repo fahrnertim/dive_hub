@@ -10,6 +10,7 @@ import { LeaseBusy, type Leases } from './leases.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
 import { ProviderError, type Delivered, type ProviderAdapter, type RemoteDive, type RemoteSite } from './provider.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
+import { forProvider, leftOutBy, unmetRequirements } from './requirements.js';
 
 export type PushRow = typeof push.$inferSelect;
 
@@ -167,10 +168,20 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
     }
   }
 
+  /**
+   * The Dive as this Provider gets it, and what of its requirements is unmet (ADR 0029): from Dive Hub's data alone.
+   * Participants an advisory requirement leaves out aren't in it.
+   */
+  function prepared(exports: { requirements: Parameters<typeof unmetRequirements>[0] }, loaded: Awaited<ReturnType<typeof loadOutgoingDive>>) {
+    const unmet = unmetRequirements(exports.requirements, loaded.row.siteId, loaded.outgoing);
+    return { unmet, outgoing: forProvider(loaded.outgoing, unmet) };
+  }
+
   /** A Dive's state at one Provider. */
   async function statusAt(userId: string, provider: string, loaded: Awaited<ReturnType<typeof loadOutgoingDive>>) {
     const { adapter, dives, exports } = exporter(provider);
-    const { row, outgoing } = loaded;
+    const { row } = loaded;
+    const { unmet, outgoing } = prepared(exports, loaded);
     const conn = await connections.forDiver(userId, row.diverId, adapter.id);
     const pushes = await pushesOf(row.id, adapter.id);
     const current = currentRemote(pushes);
@@ -178,7 +189,7 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
       provider: adapter.id,
       connection: conn ? { id: conn.id, state: conn.state, accountLabel: conn.accountLabel } : null,
       siteId: row.siteId,
-      siteExternalId: exports.needsSiteIdFrom ? outgoing.siteIds[exports.needsSiteIdFrom] ?? null : null,
+      unmet,
       current: current ? {
         remoteId: current.remoteId!, remoteNumber: current.remoteNumber, sentAt: current.createdAt,
         upToDate: current.fingerprint !== null && current.fingerprint === dives.fingerprint(outgoing),
@@ -188,7 +199,7 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
   }
 
   return {
-    /** A Dive's state at one Provider: its Diver's Connection, the site ID it needs, its current remote dive, every Push. */
+    /** A Dive's state at one Provider: its Diver's Connection, what is unmet, its current remote dive, every Push. */
     async status(userId: string, diveId: string, provider: string) {
       exporter(provider);
       return statusAt(userId, provider, await loadOutgoingDive(db, userId, diveId, { deleted: true }));
@@ -225,18 +236,28 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
      */
     async send(userId: string, diveId: string, provider: string, onExisting?: 'link' | 'create'): Promise<SendResult> {
       const { adapter, dives, exports } = exporter(provider);
-      const { row, outgoing } = await loadOutgoingDive(db, userId, diveId);
+      const loaded = await loadOutgoingDive(db, userId, diveId);
+      const { row } = loaded;
+      const { unmet, outgoing } = prepared(exports, loaded);
       const conn = await connectionOrThrow(userId, row.diverId, adapter);
-      if (exports.needsSiteIdFrom && !outgoing.siteIds[exports.needsSiteIdFrom]) {
-        throw new ProviderServiceError('provider_site_id_missing', named(adapter));
+      if (unmet.some((u) => u.severity === 'blocking')) {
+        throw new ProviderServiceError('provider_requirements_unmet', named(adapter), { unmet });
       }
+      const advisory = leftOutBy(unmet);
+      /** Who this Push couldn't carry: advisory ones nobody could send, and those the Provider doesn't have. */
+      const leftOut = (d: Delivered) => {
+        const all = [...advisory, ...(d.leftOut ?? []).map((l) => ({
+          diverId: l.diverId, name: outgoing.participants.find((p) => p.diverId === l.diverId)?.name ?? '', reason: l.reason,
+        }))];
+        return all.length > 0 ? all : null;
+      };
       return leased(diveId, [adapter], () => connections.withAccess(conn, async (ctx) => {
         const action = dives.open(ctx);
         const base = { diveId, connectionId: conn.id, userId, diveVersion: row.version, remoteReference: reference(diveId) };
         const delivered = (action_: 'create' | 'update', d: Delivered) => record(adapter, {
           ...base, action: action_, state: exports.delivery === 'confirmed' ? 'confirmed' : 'handed_over',
           remoteId: d.remoteId, remoteNumber: d.remoteNumber, fingerprint: dives.fingerprint(outgoing), payload: d.payload,
-          differences: d.differences,
+          differences: d.differences, leftOut: leftOut(d),
         });
         const failed = async (action_: 'create' | 'update', error: unknown, remoteId: string | null = null): Promise<never> => {
           if (signedOut(error)) throw error;
@@ -250,7 +271,8 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
 
         const current = currentRemote(await pushesOf(diveId, adapter.id));
         if (current && action.update) {
-          const updated = await action.update(current.remoteId!, outgoing).catch((error: unknown) => failed('update', error, current.remoteId));
+          const updated = await action.update(current.remoteId!, outgoing, current.payload)
+            .catch((error: unknown) => failed('update', error, current.remoteId));
           if (!updated) {
             await record(adapter, { ...base, action: 'update', state: 'failed', remoteId: current.remoteId, errorCode: 'provider_dive_gone', remoteGone: true });
             throw new ProviderServiceError('provider_dive_gone', named(adapter));

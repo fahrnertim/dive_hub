@@ -1,7 +1,7 @@
 ---
 title: Provider layer follow-ups
-summary: The provider layer of slice 13 rated (8/10) with its weak points; agreed direction - a small cleanup slice (leases in PostgreSQL, checking every Provider before deleting, typed text overrides, a second test-only adapter), then buddies starting with Push requirements (local checks only, blocking or advisory, two types). Both implementation prompts included. The cleanup slice is done (slice 13a); buddies are open.
-status: open
+summary: The provider layer of slice 13 rated (8/10) with its weak points; agreed direction - a small cleanup slice (leases in PostgreSQL, checking every Provider before deleting, typed text overrides, a second test-only adapter), then buddies starting with Push requirements (local checks only, blocking or advisory, two types). Both implementation prompts included. Both are done (slices 13a and 14); adding to the SSI buddy list is left for later.
+status: done
 date: 2026-10-05
 ---
 
@@ -28,6 +28,11 @@ Weak points:
 ## Agreed direction (owner, 2026-10-05)
 
 ### Push requirements, as the first part of the buddy slice
+**Done (2026-10-05, slice 14):** [ADR 0028](../decisions/0028-shared-divers-and-participants.md),
+[ADR 0029](../decisions/0029-push-requirements-and-buddies.md) and [architecture](../spec/architecture.md). Weak points 1 and 2
+are resolved: buddies are a kind of data with `find`, and the web client has no `ssiSiteId` or SSI QR format. Changed in
+the owner's answers since this note: no Connection Diver mappings yet (SSI finds an entry by the Diver's SSI account;
+`PUT /api/connections/{id}/divers/{diverId}` comes with them); Divers are seen by every User by name.
 A Provider declares what an export needs; the generic layer checks it against Dive Hub's data and tells clients
 what is missing and how to fix it.
 - **Checked against local data only** (the site has an External ID at the source, the buddy has a mapping). Whether
@@ -43,6 +48,16 @@ what is missing and how to fix it.
   `PUT /api/connections/{id}/divers/{diverId}` for Connection Diver mappings.
 - Built together with buddies, not before: the two real cases arrive together, so the vocabulary isn't designed
   from one.
+
+### Later: adding a buddy to the User's SSI buddy list (owner, 2026-10-05)
+SSI puts on a dive only people in the account's own buddy list (entry IDs, [SSI reference](../references/ssi-app-api.md#buddies-checked-2026-10-05)),
+and no API call to add one is known. In SSI's app a buddy is added by scanning their buddy QR code; the other person
+isn't notified. The buddies slice therefore leaves out a buddy who isn't in the User's SSI list, with a notice to add
+them in SSI's app. Later, either:
+- **Dive Hub shows the buddy's SSI QR code** (built from the Diver's SSI account), and the User scans it with SSI's app.
+  No unknown call. The format is in the SSI reference (`buddy;<account>;firstName:…;lastName:…;email:…`); Dive Hub
+  keeps no buddy e-mail, so first check whether SSI's app accepts the code with the e-mail (or the names) left empty.
+- **Or the adapter adds the entry itself** (`buddies` declares `create`), once the app's call is recorded.
 
 ### A small cleanup slice first
 **Done (2026-10-05, slice 13a):** [ADR 0027's amendment](../decisions/0027-providers-as-adapters.md#amendment-2026-10-05-leases-in-postgresql-and-deleting-at-several-providers)

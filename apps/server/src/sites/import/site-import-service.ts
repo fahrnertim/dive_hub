@@ -7,7 +7,7 @@ import { diveSite, diveSiteExternalId, siteImport, type SiteImportFinding, type 
 import { writeRevision, type Actor, type Changes } from '../../dives/revisions.js';
 import type { ProblemCode } from '../../http/problems.js';
 import { isUniqueViolation } from '../site-service.js';
-import { IMPORT_SOURCES, type ImportSource } from '../sources.js';
+import { IMPORT_SOURCES, revisionKey, type ImportSource } from '../sources.js';
 import { planSiteImport, type ExistingSite, type Field, type PlannedCreate, type PlannedUpdate } from './import-plan.js';
 import { IMPORTED_FIELDS, SiteSourceError, type ImportArea, type ImportedValues, type SiteSourceAdapter, type SourceSite } from './site-source.js';
 
@@ -51,8 +51,7 @@ const valuesOf = (s: typeof diveSite.$inferSelect): ImportedValues => ({
 });
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
-/** How an External ID shows in a Revision: `osmId`, `wikidataId`, and `ssiSiteId` as the site form names it. */
-const idKey = (source: ImportSource) => (source === 'ssi' ? 'ssiSiteId' : `${source}Id`);
+const idKey = revisionKey;
 
 export function createSiteImportService(deps: { db: Db; sources: Record<ImportSource, SiteSourceAdapter> }) {
   const { db } = deps;

@@ -11,7 +11,9 @@ date: 2026-10-05
 Accepted – 2026-10-05. Amends [ADR 0024](0024-ssi-target-via-app-api.md) (where the SSI code sits, the Connection's
 credentials, the routes and codes, the pause between actions) and [ADR 0026](0026-deleting-dives.md) (deleting asks
 every Provider the Dive is at, not SSI by name). Amended on 2026-10-05 by the [cleanup slice](#amendment-2026-10-05-leases-in-postgresql-and-deleting-at-several-providers)
-(the [follow-ups](../research/2026-10-05-provider-layer-follow-ups.md)).
+(the [follow-ups](../research/2026-10-05-provider-layer-follow-ups.md)). Amended by [ADR 0029](0029-push-requirements-and-buddies.md)
+(2026-10-05): "what an export needs" became Push requirements (`requirements`, `unmet`, `provider_requirements_unmet`
+replacing `needsSiteIdFrom` and `provider_site_id_missing`); adapters get Participants and may declare `buddies`.
 
 ## Context
 The [SSI integration review](../research/2026-10-05-ssi-integration-review.md) found the SSI code sound but not generic:
