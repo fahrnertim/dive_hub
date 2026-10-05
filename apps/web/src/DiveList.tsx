@@ -5,6 +5,7 @@ import { divesQuery, diversQuery, PAGE_SIZE, siteQuery, type LogbookParams } fro
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { logbookHref } from './lib/logbook.ts';
+import { useAddressSearch } from './lib/address-search.ts';
 import { usePageTitle } from './lib/page.ts';
 import { Button, Icon, Muted, Notice, PageHeader, Panel, Select, Table, TextField } from './ui/index.ts';
 
@@ -58,12 +59,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
   const nameOf = new Map(divers.data?.map((d) => [d.id, d.name]));
 
   // Typing searches after a short pause; the address is replaced, not added to the history.
-  const [text, setText] = useState(params.q ?? '');
-  useEffect(() => {
-    if (text.trim() === (params.q ?? '')) return;
-    const timer = setTimeout(() => location.replace(logbookHref({ ...params, q: text.trim() || undefined, page: undefined })), 300);
-    return () => clearTimeout(timer);
-  }, [text, params]);
+  const [text, setText] = useAddressSearch(params.q, (q) => location.replace(logbookHref({ ...params, q, page: undefined })));
 
   const page = params.page ?? 1;
   const total = dives.data?.total ?? 0;

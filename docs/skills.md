@@ -48,6 +48,7 @@ specialized skills, vet them, propose them to the user, and record the outcome h
 | suggest-lucide-icons | nweii/agent-stuff | picking Lucide icons by real, verified names | 2026-10-03 |
 | better-layout, better-typography, better-colors | jakubkrehel/skills | grouping and alignment, type roles, colour roles and contrast (visual refresh) | 2026-10-04 |
 | mobile-native | emilkowalski/skills | platform fixes so the web app feels native on a phone (input zoom, long-press, `theme-color`, safe areas) | 2026-10-04 |
+| ux-search, ux-selection-controls | uxcel-lab/product-skills | live search results, choosing the right selection control (the site picker) | 2026-10-05 |
 
 Install with telemetry off: `DISABLE_TELEMETRY=1 npx skills add <owner/repo> -s <skill> -a claude-code --copy -y`.
 
@@ -125,3 +126,4 @@ Details and commands: [skills vetting](research/2026-10-02-agent-skills-vetting.
 | 2026-10-04 | `npx skills find` for "reverse engineering", "api research", "openapi from traffic", "mobile app api", "deep research", "terms of service" (SSI API research) | nothing installed | no skill for API reverse engineering or traffic capture; hits were design, Lark/Azure and vendor skills. mattpocock/skills `research` (SKILL.md only, no scripts) read and not needed: it only says "use a background agent, cite primary sources, write a Markdown note", which our research-note convention already covers |
 | 2026-10-04 | `npx skills find` for "encryption secrets", "credential storage", "api client", "third party integration" (SSI slice) | nothing new | only skills we have (`security-and-hardening`, better-auth) or vendor skills (Azure, Lark, Convex) |
 | 2026-10-05 | `npx skills find` for "zip", "data import", "geospatial", "database migration", "etl" (SSI site import, water type of a site, [ADR 0024](decisions/0024-ssi-target-via-app-api.md)) | nothing installed | only unrelated or vendor hits (OKX, Salesforce, Azure, Prisma, marketing SEO, a CTF zip skill); `supabase-postgres-best-practices` was rejected on 2026-10-02. Our `postgres-drizzle`, `tdd` and `security-and-hardening` cover the work |
+| 2026-10-05 | ux-search, ux-selection-controls (uxcel-lab/product-skills, commit 5007cd0) | installed | Our uxcel skills hand off to them (ux-menus names `ux-selection-controls` for menus vs. radios; ux-empty-states names `ux-search`). Same source as our six, MIT, one SKILL.md each, no scripts or remote fetches; read in full. For replacing the dive's site picker (radios) with a live result list. `ux-modals-and-dialogs` from the same repo not needed |

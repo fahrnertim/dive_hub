@@ -72,7 +72,8 @@ export function App() {
         </div>
       </header>
       <main id="main" className="app-main" tabIndex={-1}>
-        <ErrorBoundary key={route} fallback={<Notice tone="danger">{t('errors.unknown')}</Notice>}>
+        {/* Keyed by the page, not its query: a search or filter in the address must not rebuild the page (focus, table). */}
+        <ErrorBoundary key={route.split('?')[0]} fallback={<Notice tone="danger">{t('errors.unknown')}</Notice>}>
           <Suspense fallback={<Muted>{t('common.loading')}</Muted>}>
             <Main route={route} me={me} />
           </Suspense>

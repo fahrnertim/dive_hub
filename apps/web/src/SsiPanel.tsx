@@ -6,7 +6,7 @@ import {
 } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
-import { Badge, Button, ConfirmButton, Dialog, Muted, Notice, Panel, RadioGroup, TextField } from './ui/index.ts';
+import { Badge, Button, ConfirmButton, Dialog, Muted, Notice, Panel, SearchList, type SearchListItem } from './ui/index.ts';
 
 type Existing = { remoteId: string; number: number | null; startsAt: string | null; maxDepthM: number | null; durationMinutes: number | null };
 
@@ -170,7 +170,15 @@ function Differences({ push }: { push: SsiPushView }) {
   );
 }
 
-/** Pick the Dive site's SSI ID from the User's SSI logbook, nearest first, or type it. */
+/** Results shown at most, without scrolling (ux-search). */
+const SSI_SHOWN = 10;
+/** The row that saves an SSI site ID typed into the search field. */
+const TYPED = '__typed__';
+
+/**
+ * Pick the Dive site's SSI ID from the sites in the User's SSI logbook, nearest first, narrowed while typing a name
+ * or an ID; or use an ID typed in ("site:3314" from SSI's QR code works too). Picking saves at once (ux-search).
+ */
 function SsiSitePicker({ diveId, siteId, siteName, onClose }: { diveId: string; siteId: string; siteName: string; onClose: () => void }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
@@ -178,9 +186,7 @@ function SsiSitePicker({ diveId, siteId, siteName, onClose }: { diveId: string; 
   const queryClient = useQueryClient();
   const suggestions = useQuery(ssiSitesQuery(diveId));
   const site = useQuery(siteQuery(siteId));
-  const [chosen, setChosen] = useState('');
-  const [typed, setTyped] = useState('');
-  const [bad, setBad] = useState(false);
+  const [text, setText] = useState('');
   const save = useMutation({
     mutationFn: async (ssiSiteId: string) => unwrap(await api.PATCH('/api/dive-sites/{id}', {
       params: { path: { id: siteId } }, body: { version: site.data!.version, ssiSiteId },
@@ -193,41 +199,37 @@ function SsiSitePicker({ diveId, siteId, siteName, onClose }: { diveId: string; 
       onClose();
     },
   });
-  const submit = () => {
-    const id = typed.trim() ? SSI_ID.exec(typed.trim())?.[1] : chosen || undefined;
-    setBad(!id);
-    if (id) save.mutate(id);
-  };
+
+  const query = text.trim();
+  const typedId = SSI_ID.exec(query)?.[1];
+  const fold = (v: string) => v.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+  const all = suggestions.data ?? [];
+  const matching = query ? all.filter((s) => fold(s.name).includes(fold(query)) || s.id === typedId) : all;
+  const items: SearchListItem[] = matching.slice(0, SSI_SHOWN).map((s) => ({
+    id: s.id, name: s.name,
+    detail: [s.country, s.distanceM !== null ? t('ssi.away', { distance: display.distance(s.distanceM) }) : null, t('ssi.idIs', { id: s.id })]
+      .filter(Boolean).join(' · '),
+  }));
+  // An ID typed in that isn't in the logbook can still be used.
+  if (typedId && !matching.some((s) => s.id === typedId)) items.push({ id: TYPED, name: t('ssi.useTypedId', { id: typedId }) });
+
+  const status = suggestions.isPending ? t('common.loading')
+    : !query ? (all.length === 0 ? t('ssi.noSuggestions') : t('ssi.fromLogbook'))
+    : items.length === 0 ? t('ssi.noLogbookMatch', { q: query })
+    : matching.length > SSI_SHOWN ? t('sites.showingFirst', { shown: SSI_SHOWN }) : null;
+
   return (
     <Dialog title={t('ssi.pickTitle', { site: siteName })} isOpen onOpenChange={(open) => !open && onClose()}>
       <div className="ssi-sites">
         <p>{t('ssi.pickIntro')}</p>
-        {suggestions.isPending && <Muted>{t('common.loading')}</Muted>}
         {suggestions.error && <Notice tone="danger">{errorText(suggestions.error)}</Notice>}
-        {suggestions.data && suggestions.data.length === 0 && <Muted>{t('ssi.noSuggestions')}</Muted>}
-        {suggestions.data && suggestions.data.length > 0 && (
-          <RadioGroup
-            label={t('ssi.fromLogbook')} value={chosen} onChange={(v) => { setChosen(v); setTyped(''); }}
-            options={suggestions.data.map((s) => ({
-              value: s.id,
-              label: (
-                <span className="radio-text">
-                  <span translate="no">{s.name}</span>
-                  <span className="field-description">
-                    {[s.country, s.distanceM !== null ? t('ssi.away', { distance: display.distance(s.distanceM) }) : null, t('ssi.idIs', { id: s.id })]
-                      .filter(Boolean).join(' · ')}
-                  </span>
-                </span>
-              ),
-            }))}
-          />
-        )}
-        <TextField label={t('ssi.typeId')} description={t('sites.ssiSiteIdHint')} value={typed} onChange={(v) => { setTyped(v); setBad(false); }}
-          inputMode="numeric" autoComplete="off" maxLength={20} />
-        {bad && <Notice tone="danger">{t(typed.trim() ? 'sites.ssiSiteIdInvalid' : 'ssi.chooseOrType')}</Notice>}
+        <SearchList
+          label={t('ssi.findOrType')} description={t('sites.ssiSiteIdHint')} query={text} onQueryChange={setText} autoFocus
+          items={items} onPick={(id) => save.mutate(id === TYPED ? typedId! : id)} isPending={save.isPending} pendingStatus={t('sites.choosing')} isDisabled={!site.data}
+          listLabel={t('ssi.fromLogbook')} status={status}
+        />
         {save.error && <Notice tone="danger">{errorText(save.error)}</Notice>}
         <div className="form-actions">
-          <Button variant="primary" icon="save" isPending={save.isPending} isDisabled={!site.data} onPress={submit}>{t('ssi.saveSiteId')}</Button>
           <Button onPress={onClose}>{t('common.cancel')}</Button>
         </div>
       </div>

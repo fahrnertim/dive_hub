@@ -6,6 +6,7 @@ import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { mapsUrl } from './lib/geo.ts';
 import { logbookHref } from './lib/logbook.ts';
+import { useAddressSearch } from './lib/address-search.ts';
 import { usePageTitle } from './lib/page.ts';
 import { countryOptions } from './lib/geo.ts';
 import { needsOsmAttribution, siteOrigin } from './lib/site-origin.ts';
@@ -53,12 +54,7 @@ export function SitesPage({ params }: { params: SitesParams }) {
   const go = (changes: Partial<SitesParams>) => { location.hash = sitesHref({ ...params, ...changes, page: undefined }); };
 
   // Typing searches after a short pause; the address is replaced, not added to the history.
-  const [text, setText] = useState(params.q ?? '');
-  useEffect(() => {
-    if (text.trim() === (params.q ?? '')) return;
-    const timer = setTimeout(() => location.replace(sitesHref({ ...params, q: text.trim() || undefined, page: undefined })), 300);
-    return () => clearTimeout(timer);
-  }, [text, params]);
+  const [text, setText] = useAddressSearch(params.q, (q) => location.replace(sitesHref({ ...params, q, page: undefined })));
 
   const page = params.page ?? 1;
   const total = sites.data?.total ?? 0;

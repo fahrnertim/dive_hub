@@ -23,6 +23,7 @@ const AREAS = [
   [/^apps\/web\/src\/SiteImportPage\.tsx$/, ['@admin', '@sites']],
   [/^apps\/web\/src\/(SitesPage|SiteForm|SiteHistory)\.tsx$|^apps\/web\/src\/lib\/(site-origin|sites-list|geo)\.ts$/, ['@sites']],
   [/^apps\/web\/src\/SitePicker\.tsx$/, ['@sites', '@dives']],
+  [/^apps\/web\/src\/lib\/address-search\.ts$/, ['@sites', '@dives']],
   [/^apps\/web\/src\/(DiveDetail|DiveEditForm|DiveHistory|DiveList|DepthProfile|Decisions|ImportPanel)\.tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|logbook|devices|importable)\.ts$/, ['@dives']],
   [/^apps\/web\/src\/DiversPage\.tsx$/, ['@divers']],
   [/^apps\/web\/src\/(Account|AccountPage|SsiConnections)\.tsx$/, ['@account']],

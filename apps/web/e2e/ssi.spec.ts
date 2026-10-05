@@ -49,9 +49,13 @@ test('picks the SSI site, sends the dive, updates it after a change and deletes 
   await panel.getByRole('button', { name: 'Choose the SSI site' }).click();
   const dialog = page.getByRole('dialog');
   // Nearest first: Schwarzenbach is next to the test reef, Hausreef is in Egypt.
-  await expect(dialog.getByRole('radio').first()).toHaveAccessibleName(/Attersee – Schwarzenbach/);
-  await dialog.getByText('Attersee – Schwarzenbach').click();
-  await dialog.getByRole('button', { name: 'Save SSI site ID' }).click();
+  await expect(dialog.getByRole('option').first()).toHaveAccessibleName(/Attersee – Schwarzenbach/);
+  // Typing narrows the logbook's sites; an ID that isn't there can be used as typed.
+  const search = dialog.getByRole('searchbox', { name: 'Find a site or type its SSI ID' });
+  await search.fill('site:999');
+  await expect(dialog.getByRole('option', { name: 'Use SSI site ID 999' })).toBeVisible();
+  await search.fill('schwarz');
+  await dialog.getByRole('option', { name: /Attersee – Schwarzenbach/ }).click();
   await expect(dialog).toBeHidden();
 
   await panel.getByRole('button', { name: 'Send to SSI' }).click();

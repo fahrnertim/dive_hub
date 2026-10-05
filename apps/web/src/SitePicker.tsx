@@ -5,15 +5,19 @@ import { api, keys, sitesQuery, unwrap, type DiveView, type SiteView } from './a
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { SiteForm } from './SiteForm.tsx';
-import { Button, Dialog, Muted, Notice, RadioGroup, TextField } from './ui/index.ts';
+import { Badge, Button, Dialog, Notice, SearchList, type SearchListItem } from './ui/index.ts';
 
-const NONE = 'none';
-/** Sites listed at most; searching narrows it down. */
-const SHOWN = 12;
+/** Results shown at most, without scrolling (ux-search); typing narrows them down. */
+const SHOWN = 10;
+/** The row that makes a new site from what was typed, where nothing matches (no dead end). */
+const NEW = '__new__';
+/** Sites within this distance of the dive's position are offered first (ADR 0020). */
+const NEARBY_M = 2000;
 
 /**
- * Chooses the Dive's site (ADR 0020): the sites near the dive's position, nearest first, or any site
- * found by name; or a new site, made from the dive's position. Saves with the Dive's version.
+ * Chooses the Dive's site (ADR 0020): a search field with the results under it, updated while typing. Before
+ * typing, the sites near the dive's position, nearest first; then the sites matching the words. Picking one saves
+ * it at once (with the Dive's version); "Remove dive site" clears it; a new site is made from the dive's position.
  */
 export function SitePicker({ dive: d, onClose }: { dive: DiveView; onClose: () => void }) {
   const { t } = useTranslation();
@@ -26,11 +30,12 @@ export function SitePicker({ dive: d, onClose }: { dive: DiveView; onClose: () =
     const timer = setTimeout(() => setQ(text.trim()), 250);
     return () => clearTimeout(timer);
   }, [text]);
-  const [chosen, setChosen] = useState<string>(d.site?.id ?? NONE);
   const [creating, setCreating] = useState(false);
   const nearby = useQuery({ ...sitesQuery({ near: d.position ?? undefined }), enabled: !!d.position && !q });
   const found = useQuery({ ...sitesQuery({ q }), enabled: !!q || !d.position });
-  const list: SiteView[] = (q || !d.position ? found.data?.sites : nearby.data?.sites) ?? [];
+  const results = q || !d.position ? found : nearby;
+  const sites: SiteView[] = results.data?.sites ?? [];
+  const total = results.data?.total ?? 0;
 
   const choose = useMutation({
     mutationFn: async (siteId: string | null) =>
@@ -45,12 +50,36 @@ export function SitePicker({ dive: d, onClose }: { dive: DiveView; onClose: () =
     },
   });
 
-  // The current site stays in the list, so the User sees what is chosen.
-  const shown = list.slice(0, SHOWN);
-  if (d.site && !shown.some((s) => s.id === d.site!.id)) shown.unshift({ id: d.site.id, name: d.site.name } as SiteView);
-  const label = (s: SiteView) => (s.distanceM !== undefined ? t('sites.optionAway', { name: s.name, distance: display.distance(s.distanceM) }) : s.name);
-  const heading = q ? t('sites.matching', { q }) : d.position ? t('sites.nearby') : t('sites.all');
-  const empty = !q && d.position && nearby.data?.total === 0;
+  const detail = (s: SiteView) => [
+    s.distanceM !== undefined ? t('sites.away', { distance: display.distance(s.distanceM) }) : null,
+    s.country ? display.country(s.country) : null,
+    s.waterBody,
+  ].filter(Boolean).join(' · ');
+  const items: SearchListItem[] = sites.slice(0, SHOWN).map((s) => ({
+    id: s.id, name: s.name, detail: detail(s) || undefined,
+    ...(s.id === d.site?.id && { badge: <Badge>{t('sites.current')}</Badge> }),
+  }));
+  // The current site stays in view, so the User sees what is chosen.
+  if (d.site && !q && !items.some((i) => i.id === d.site!.id)) {
+    items.unshift({ id: d.site.id, name: d.site.name, badge: <Badge>{t('sites.current')}</Badge> });
+  }
+  // Nothing matches what was typed: offer to make it, with the name filled in.
+  const searching = results.isFetching && results.isPlaceholderData;
+  if (q && results.data && total === 0 && !searching) items.push({ id: NEW, name: t('sites.createNamed', { name: q }) });
+
+  const status = (q || !d.position) && !results.data ? t('sites.searching')
+    : q ? [
+      total === 0 ? t('sites.noMatch', { q }) : t('sites.matchCount', { count: total, q }),
+      total > SHOWN ? t('sites.showingFirst', { shown: SHOWN }) : null,
+    ].filter(Boolean).join(' ')
+    : d.position ? (total === 0 ? t('sites.noneNearby', { distance: display.distance(NEARBY_M) }) : t('sites.nearbyFirst'))
+    : total > SHOWN ? `${t('sites.allByName')} ${t('sites.showingFirst', { shown: SHOWN })}` : t('sites.allByName');
+
+  const pick = (id: string) => {
+    if (id === NEW) { setCreating(true); return; }
+    if (id === d.site?.id) { onClose(); return; }
+    choose.mutate(id);
+  };
 
   return (
     <Dialog title={t('sites.pickerTitle')} isOpen onOpenChange={(open) => !open && onClose()}>
@@ -63,19 +92,16 @@ export function SitePicker({ dive: d, onClose }: { dive: DiveView; onClose: () =
         />
       ) : (
         <div className="form">
-          <TextField label={t('sites.find')} type="search" value={text} onChange={setText} autoComplete="off" />
-          {empty && <Muted>{t('sites.noneNearby', { distance: display.distance(2000) })}</Muted>}
-          {q && found.data?.total === 0 && <Muted>{t('sites.noMatch', { q })}</Muted>}
-          <RadioGroup
-            label={heading}
-            value={chosen}
-            onChange={setChosen}
-            options={[{ value: NONE, label: t('sites.none') }, ...shown.map((s) => ({ value: s.id, label: label(s) }))]}
+          <SearchList
+            label={t('sites.find')} query={text} onQueryChange={setText} autoFocus
+            items={items} onPick={pick} isPending={choose.isPending} pendingStatus={t('sites.choosing')}
+            listLabel={q ? t('sites.matching', { q }) : d.position ? t('sites.nearby') : t('sites.all')}
+            status={searching ? t('sites.searching') : status}
           />
           {choose.error && <Notice tone="danger">{errorText(choose.error)}</Notice>}
           <div className="form-actions">
-            <Button variant="primary" isPending={choose.isPending} onPress={() => choose.mutate(chosen === NONE ? null : chosen)}>{t('sites.choose')}</Button>
             <Button icon="add" isDisabled={choose.isPending} onPress={() => setCreating(true)}>{t('sites.new')}</Button>
+            {d.site && <Button isPending={choose.isPending && choose.variables === null} isDisabled={choose.isPending} onPress={() => choose.mutate(null)}>{t('sites.removeSite')}</Button>}
             <Button isDisabled={choose.isPending} onPress={onClose}>{t('common.cancel')}</Button>
           </div>
         </div>

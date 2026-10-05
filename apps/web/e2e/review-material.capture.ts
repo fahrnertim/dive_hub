@@ -160,6 +160,9 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('button', { name: de ? 'Tauchplatz ändern' : 'Change dive site' }).click();
     await page.getByRole('dialog').waitFor();
     await capture(page, `${prefix}-site-picker`, { full: false, aria: false });
+    await page.getByRole('dialog').getByRole('searchbox').fill('Ligh');
+    await page.getByRole('dialog').getByRole('status').filter({ hasText: /Ligh/ }).waitFor();
+    await capture(page, `${prefix}-site-picker-search`, { full: false, aria: false });
     await page.getByRole('dialog').getByRole('button', { name: de ? 'Neuer Tauchplatz' : 'New dive site' }).click();
     await capture(page, `${prefix}-site-picker-new`, { full: false, aria: false });
     await page.keyboard.press('Escape');
@@ -219,10 +222,9 @@ test('review material', async ({ page, request, browser }) => {
   await page.goto(`/#/dives/${dive42}`); await page.getByRole('button', { name: 'Choose the SSI site' }).waitFor();
   await capture(page, '26-dive-ssi-ready');
   await page.getByRole('button', { name: 'Choose the SSI site' }).click();
-  await page.getByRole('dialog').getByRole('radio').first().waitFor();
+  await page.getByRole('dialog').getByRole('option').first().waitFor();
   await capture(page, '27-dive-ssi-picker', { full: false });
-  await page.getByRole('dialog').getByText('Attersee – Schwarzenbach').click();
-  await page.getByRole('button', { name: 'Save SSI site ID' }).click();
+  await page.getByRole('dialog').getByRole('option', { name: /Attersee – Schwarzenbach/ }).click();
   await page.getByRole('button', { name: 'Send to SSI' }).click();
   await page.getByText('Up to date').waitFor();
   await capture(page, '28-dive-ssi-sent', { aria: false });

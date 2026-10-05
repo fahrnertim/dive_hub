@@ -10,7 +10,7 @@ date: 2026-10-05
 Keep this list complete: add a line when a doc is created, remove it when deleted.
 
 ## Spec
-- [spec/README.md](spec/README.md) — Product specification: vision, sources → hub → targets, open questions.
+- [spec/README.md](spec/README.md) — Product specification: vision, sources → hub → targets, later features (auto-import of sites near imported Dives), open questions.
 - [spec/data-model.md](spec/data-model.md) — Entities, ownership, relationships; UDDF checklist, gap coverage, scenarios.
 - [spec/architecture.md](spec/architecture.md) — Components, import flow, Docker Compose deployment, auth; implementation status per slice (9: merging sites, paged site list, client contract); operator notes on site data licenses; slice 10: sending Dives to SSI, `DIVEHUB_ENCRYPTION_KEY`; slice 11: SSI site import, offers, water type on the site; operator notes on SSI's missing licence.
 - [spec/clients.md](spec/clients.md) — Client contract: what every API client must do, from a walk through the web client (licenses, privacy, security, confirmations, versions, each area's duties, units, accessibility); SSI import confirmation, offers, the water mismatch hint, the site form's water type note; two server gaps found and fixed.

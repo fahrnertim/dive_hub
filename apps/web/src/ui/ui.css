@@ -154,6 +154,20 @@
 .date-segment[data-placeholder] { color: var(--color-text-muted); }
 .date-segment[data-focused] { background: var(--color-accent); color: var(--color-on-accent); outline: none; }
 .date-segment[data-type='literal'] { color: var(--color-text-muted); }
+/* A search field with its results under it (ui/SearchList.tsx, ux-search): rows are tall enough to tap,
+   the focused one is tinted, the typed part of a name is marked. */
+.search-list { display: grid; gap: var(--space-2); }
+.search-list-status { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }
+.search-list-items { outline: none; display: grid; border-top: 1px solid var(--color-border); }
+.search-list-items:empty { border-top: 0; }
+.search-list-item { display: grid; gap: 2px; min-height: 2.75rem; align-content: center; padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border); cursor: pointer; outline: none; }
+.search-list-item[data-focused] { background: var(--color-accent-soft); }
+.search-list-item[data-focus-visible] { outline: 2px solid var(--color-focus); outline-offset: -2px; }
+.search-list-item[data-disabled] { opacity: 0.55; cursor: progress; }
+.search-list-name { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); font-weight: var(--weight-medium); }
+.search-list-detail { font-size: var(--text-sm); color: var(--color-text-muted); }
+.search-list .match { background: none; color: inherit; font-weight: var(--weight-semibold); text-decoration: underline; text-underline-offset: 2px; }
 /* A select inside a table row (device owner). */
 .select-small .select-button { min-height: 2rem; padding-block: var(--space-1); font-size: var(--text-sm); }
 

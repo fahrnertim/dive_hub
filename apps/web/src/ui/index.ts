@@ -10,3 +10,4 @@ export { Icon, type IconName } from './Icon.tsx';
 export { ErrorBoundary } from './ErrorBoundary.tsx';
 export { DateTimeField, NumberField, Select, TextArea } from './Fields.tsx';
 export { TextField } from './TextField.tsx';
+export { SearchList, type SearchListItem } from './SearchList.tsx';

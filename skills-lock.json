@@ -175,6 +175,18 @@
       "skillPath": "ux/components/notifications-and-toasts/SKILL.md",
       "computedHash": "ccff158e3800c0213507a52b3b169f742df30557c4e3433c7533568b94f6e4f6"
     },
+    "ux-search": {
+      "source": "uxcel-lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/search/SKILL.md",
+      "computedHash": "48c0409f39d8b7b108f646cef7755aaff513c581723733470c8f9c485755fc69"
+    },
+    "ux-selection-controls": {
+      "source": "uxcel-lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/selection-controls/SKILL.md",
+      "computedHash": "e722f66d8dbb625bad7b8b8de903c7496f38e8383aa81febcc4c3bdcaacc1804"
+    },
     "ux-tables": {
       "source": "uxcel-lab/product-skills",
       "sourceType": "github",

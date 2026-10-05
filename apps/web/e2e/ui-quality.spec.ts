@@ -153,6 +153,20 @@ for (const v of variants) {
       await page.getByRole('button', { name: v.english ? 'Choose dive site' : 'Tauchplatz wählen' }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
       await expectGoodPage(page, title('Dive 42'), v);
+      // Results while typing, and the way on when nothing matches.
+      // Checked once the results for what was typed are in (the status names the query).
+      await page.getByRole('dialog').getByRole('searchbox').fill('Ras Mohammed');
+      await expect(page.getByRole('dialog').getByRole('status')).toContainText('Ras Mohammed');
+      await expectGoodPage(page, title('Dive 42'), v);
+      await page.getByRole('dialog').getByRole('searchbox').fill('Nowhere at all');
+      await expect(page.getByRole('dialog').getByRole('option', { name: v.english ? /Create/ : /anlegen/ })).toBeVisible();
+      await expect(page.getByRole('dialog').getByRole('status')).toContainText('Nowhere at all');
+      // React Aria points the field at the new active result one render after the list changes; wait for it.
+      await expect.poll(() => page.getByRole('dialog').getByRole('searchbox').evaluate((el) => {
+        const active = el.getAttribute('aria-activedescendant');
+        return !active || !!document.getElementById(active);
+      })).toBe(true);
+      await expectGoodPage(page, title('Dive 42'), v);
       await page.getByRole('button', { name: v.english ? 'New dive site' : 'Neuer Tauchplatz' }).click();
       await expect(page.getByRole('button', { name: v.english ? 'Create and choose' : 'Anlegen und auswählen' })).toBeVisible();
       await expectGoodPage(page, title('Dive 42'), v);
@@ -186,7 +200,7 @@ for (const v of variants) {
       await expect(choose).toBeVisible();
       await expectGoodPage(page, title('Dive 42'), v);
       await choose.click();
-      await expect(page.getByRole('dialog').getByRole('radio').first()).toBeVisible();
+      await expect(page.getByRole('dialog').getByRole('option').first()).toBeVisible();
       await expectGoodPage(page, title('Dive 42'), v);
       await leaveSsi(request, diveId);
     });
@@ -280,6 +294,34 @@ test.describe('behaviour', () => {
     await expect(page.getByRole('heading', { name: 'Divers', level: 1 })).toBeFocused();
     await expect(page).toHaveTitle('Divers – Dive Hub');
   });
+
+  for (const [where, url] of [['Dive sites', '/#/sites'], ['logbook', '/']] as const) {
+    test(`searching the ${where} keeps the field focused and the page in place while the results update`, { tag: ['@layout', '@sites', '@dives'] }, async ({ page }) => {
+      await page.goto(url);
+      await expect(page.getByRole('table')).toBeVisible();
+      // Marks the page as it is now: a rebuilt page would lose the mark.
+      await page.locator('#main h1').evaluate((h) => { (h as HTMLElement).dataset.before = 'search'; });
+      // Sorting changes the address too: the pressed header keeps the focus, the page stays.
+      const sort = page.getByRole('columnheader').getByRole('button').first();
+      await sort.click();
+      await expect(page).toHaveURL(/sort=|order=/);
+      await expect(sort).toBeFocused();
+      const search = page.getByRole('searchbox', { name: 'Search' });
+      await search.click();
+      await page.keyboard.type('Ras');
+      await expect(page).toHaveURL(/q=Ras/);
+      await page.keyboard.type(' Moh');
+      await expect(page).toHaveURL(/q=Ras(\+|%20)Moh/);
+      await expect(search).toBeFocused();
+      await expect(search).toHaveValue('Ras Moh');
+      await expect(page.locator('#main h1')).toHaveAttribute('data-before', 'search');
+      // A link elsewhere that drops the search empties the field, and the words don't come back.
+      await page.getByRole('navigation').getByRole('link', { name: where === 'logbook' ? 'Logbook' : 'Dive sites' }).click();
+      await expect(search).toHaveValue('');
+      await page.waitForTimeout(500);
+      await expect(page).not.toHaveURL(/q=/);
+    });
+  }
 
   test('an unknown dive says so at once, without retrying first', { tag: ['@dives'] }, async ({ page }) => {
     await page.goto('/');

@@ -237,8 +237,13 @@ From `GET /api/dives/{id}/ssi` (ADR 0024). *Web:* `SsiPanel.tsx`.
   there: use `canDelete` and `inUse`, and say why it can't be deleted.
 - **Creating a site from a Dive's position** pre-fills the position and says it becomes visible to every User.
   *Web:* `SitePicker.tsx`.
-- **Choosing a site for a Dive:** offer the sites within 2 km of the Dive's position (nearest first, with
-  distance), or search by name. "No dive site" is a choice. *Web:* `SitePicker.tsx`.
+- **Choosing a site for a Dive:** a search field with the results under it, updated while typing: before typing
+  the sites within 2 km of the Dive's position (nearest first, with distance), then the matches by name, with how
+  many match. Mark the current site. Picking a result saves it at once (with the Dive's version); removing the site
+  is its own action. When nothing matches, offer to create the site with the typed name: no dead end.
+  *Web:* `SitePicker.tsx`, `ui/SearchList.tsx`.
+- **Choosing the SSI site** works the same way over the sites in the User's SSI logbook; an SSI ID typed into the
+  field can be used even when the logbook doesn't have it. *Web:* `SsiPanel.tsx` (`SsiSitePicker`).
 - **SSI site ID:** accept what SSI's QR code says ("site:3314") as well as the number, and send the digits.
   `external_id_taken` means another site has it.
 - **Water type** (fresh, salt, brackish, or not known): **the form must say that changing it changes the water type of

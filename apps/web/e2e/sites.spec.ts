@@ -69,20 +69,39 @@ test('a dive with a position: a new dive site is made from it and chosen', { tag
   await expect(page).toHaveURL(/#\/$/);
 });
 
-test('a dive without a position picks a site by searching, and can go back to none', { tag: ['@sites', '@dives'] }, async ({ page }) => {
+test('a dive without a position picks a site from the results while typing, and can go back to none', { tag: ['@sites', '@dives'] }, async ({ page }) => {
   await page.goto(`/#/dives/${diveId}`);
   await page.getByRole('button', { name: 'Choose dive site' }).click();
   const dialog = page.getByRole('dialog', { name: 'Dive site' });
-  await dialog.getByRole('searchbox', { name: 'Find a dive site' }).fill('light');
-  await dialog.getByText('Lighthouse', { exact: true }).click(); // the label, as a person would
-  await dialog.getByRole('button', { name: 'Choose' }).click();
+  const search = dialog.getByRole('searchbox', { name: 'Find a dive site' });
+  await expect(search).toBeFocused();
+  await search.fill('lighth');
+  // The results follow the typing, with how many match; the typed part of each name is marked.
+  await expect(dialog.getByRole('status')).toHaveText('1 dive site matches “lighth”.');
+  const option = dialog.getByRole('option', { name: /^Lighthouse/ });
+  await expect(option.locator('mark')).toHaveText('Lighth');
+  await expectGoodPage(page, 'Dive 42');
+  // Arrow keys move through the results while the focus stays in the field; Enter picks and saves.
+  await search.press('ArrowDown');
+  await search.press('Enter');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('dl.facts').first().getByRole('link', { name: 'Lighthouse' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Change dive site' }).click();
-  await expect(dialog.getByRole('radio', { name: /Lighthouse/ })).toBeChecked();
-  await dialog.getByText('No dive site', { exact: true }).click();
-  await dialog.getByRole('button', { name: 'Choose' }).click();
+  await expect(dialog.getByRole('option', { name: /Lighthouse/ })).toContainText('current');
+  await dialog.getByRole('button', { name: 'Remove dive site' }).click();
   await expect(page.getByRole('button', { name: 'Choose dive site' })).toBeVisible();
+});
+
+test('a search without results offers to create the site, with the name filled in', { tag: ['@sites', '@dives'] }, async ({ page }) => {
+  await page.goto(`/#/dives/${diveId}`);
+  await page.getByRole('button', { name: 'Choose dive site' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Dive site' });
+  await dialog.getByRole('searchbox', { name: 'Find a dive site' }).fill('Nowhere Pinnacle');
+  await expect(dialog.getByRole('status')).toHaveText('No dive sites match “Nowhere Pinnacle”.');
+  await dialog.getByRole('option', { name: 'Create “Nowhere Pinnacle” as a new dive site' }).click();
+  await expect(dialog.getByRole('textbox', { name: 'Name' })).toHaveValue('Nowhere Pinnacle');
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
 });
 
 test('the Dive sites page creates, edits and deletes a site', { tag: ['@sites'] }, async ({ page }) => {

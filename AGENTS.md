@@ -83,10 +83,11 @@ rejected, and why — in [docs/skills.md](docs/skills.md).
   React Aria (`data-placement`, `--trigger-anchor-point`) and plain CSS transitions. Findings go in our
   review documents' format.
 - **ux-tables**, **ux-inputs-and-forms**, **ux-empty-states**, **ux-menus**, **ux-loaders-and-progress**,
-  **ux-notifications-and-toasts** (uxcel): the design system and React Aria win on conflict. Row actions
+  **ux-notifications-and-toasts**, **ux-search**, **ux-selection-controls** (uxcel): the design system and React Aria win on conflict. Row actions
   stay visible (never hover-only); no truncate-plus-tooltip on phones; notices and toasts can always be
   dismissed, and errors never time out (WCAG 2.2.1, 4.1.3). Skip their hand-offs to `ux-*-audit` skills
-  and orchestration docs we don't have, and their mobile push and marketing parts.
+  and orchestration docs we don't have, and their mobile push and marketing parts. ux-search's placement rules
+  (a search bar on every page) are for site search, not for pickers and list filters.
 - **suggest-lucide-icons**: a name must also exist in the installed `lucide-react` version (check
   `node_modules/lucide-react`), not only in `@latest`. Run its script as `PYTHONUTF8=1 python …` (Windows' default encoding fails). New icons go into the
   map in `apps/web/src/ui/Icon.tsx` ([ADR 0018](docs/decisions/0018-icons-and-motion.md)). Icons are

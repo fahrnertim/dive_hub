@@ -396,6 +396,15 @@ Found in the browser tests and fixed:
 - After a site's water type changed, the dive page showed the old one from its cache. Saving a site now refreshes Dives.
 - On creation, the site history said "Description changed" for a site without a description.
 
+Afterwards, from the owner's use: the **site pickers** (a Dive's site, the SSI site) became a search field with the
+results under it, updated while typing (`ui/SearchList.tsx` on React Aria's `Autocomplete`, skills `ux-search` and
+`ux-selection-controls`): picking a result saves it, no radio buttons and no "Choose" button.
+
+Found by the owner and fixed: searching the Dive sites list or the logbook rebuilt the whole page each time the
+address took the words (the page's error boundary was keyed by the route including its query), so the field lost
+focus mid-typing. Pages are now keyed by path only; sorting, paging and filters no longer rebuild the page either.
+The search field follows the address through `lib/address-search.ts`.
+
 Deliberate simplifications, to revisit:
 - **No alias names** (no field); they could later help matching.
 - **No depth correction** when the computer was set to other water; only the hint.

@@ -2,7 +2,7 @@
 title: Product specification
 summary: Dive Hub is a self-hosted hub that collects dive data from many sources and can forward it to connected services.
 status: draft
-date: 2026-10-02
+date: 2026-10-05
 ---
 
 # Product specification
@@ -73,8 +73,25 @@ vendor or platform.
 
 | Target | Status |
 |---|---|
-| SSI | next: app API ([ADR 0024](../decisions/0024-ssi-target-via-app-api.md)); QR payload later as fallback |
+| SSI | app API ([ADR 0024](../decisions/0024-ssi-target-via-app-api.md)), built; QR payload later as fallback |
 | Others | open |
+
+## Later features
+
+Noted for later; not designed or decided yet.
+
+- **Auto-import of Dive sites near imported Dives** (owner, 2026-10-05). When an admin has configured it, importing
+  a Dive with a GPS position also imports the Dive sites close to it from the chosen Sources, so the Dive can be
+  linked to a site at once. It would build on the Site import ([ADR 0021](../decisions/0021-site-external-ids-and-import.md),
+  [ADR 0025](../decisions/0025-ssi-site-import-and-site-water-type.md)): a small box around the position, the same
+  matching and history, then the existing link to the only site within 200 m
+  ([ADR 0020](../decisions/0020-dive-sites.md)). To decide then:
+  - where it is configured (admin setting: which Sources, how far around the Dive), and how the ODbL and SSI
+    confirmations are given once for runs nobody starts by hand;
+  - whether it creates sites or only fills ("only fill"), and how often it may ask a Source (Overpass and Wikidata
+    fair use, SSI's one large file: download once and reuse it for a while);
+  - whether the area's sites are imported, or only the nearest few;
+  - what the importing User sees, since the sites are shared by every User.
 
 ## Non-goals (so far)
 

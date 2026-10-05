@@ -2,7 +2,7 @@
 title: Design system
 summary: Visual direction, tokens, components, writing, localization and units of the web client; the brief every screen follows.
 status: living
-date: 2026-10-04
+date: 2026-10-05
 ---
 
 # Design system
@@ -120,7 +120,8 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 | `ActionMenu` | Secondary actions behind one button ("Recording actions", "More", the account menu). The panel shows only its main action. |
 | `CopyField` | A value shown once with a copy button (invitation and reset links). |
 | `NumberField` | Numbers in the UI language's format ("18,5" in German), with a unit after the input. The value commits on blur; `onInput` reacts while typing (the dive form marks a field "edited" then, so nothing moves under a pointer about to press Save). |
-| `Select` | One choice from a short list (e.g. water type). `size="small"` inside a table row. |
+| `Select` | One choice from a short list (e.g. a site's water type). `size="small"` inside a table row. |
+| `SearchList` | Picking one item from many (a Dive's site, the SSI site): a search field with the results right under it, updated while typing (React Aria `Autocomplete`). At most 10 rows, the typed part of each name marked, a status line with how many match, and a way on when nothing does ("Create … as a new dive site"). Picking a row saves; there is no separate confirm button. Radios are for up to about five fixed options (ux-selection-controls, ux-search). |
 | `TextArea` | Multi-line text (notes). |
 | `DateTimeField` | Date and time typed by segment, in the UI language's order. |
 | `Badge` | A short state: `neutral` ("edited", "open", "processing"), `success` ("done", "accepted"), `danger` ("failed"). States never use the accent colour, which means "you can click this". |
