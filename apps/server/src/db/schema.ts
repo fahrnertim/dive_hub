@@ -160,11 +160,23 @@ export const original = pgTable(
 
 export const importStatus = pgEnum('import_status', ['pending', 'processing', 'done', 'failed']);
 
+/**
+ * Where a start time's UTC offset came from (ADR 0030): the device recorded it, the time zone at the dive's position, the
+ * Diver's Dives nearby, or nothing (`unknown`: the wall-clock time is kept as if it were UTC, the offset is null, and
+ * matching compares local times). `device` with a null offset is a true instant whose local offset isn't known.
+ */
+export const UTC_OFFSET_SOURCES = ['device', 'position', 'nearby', 'unknown'] as const;
+export type UtcOffsetSource = (typeof UTC_OFFSET_SOURCES)[number];
+export const utcOffsetSource = pgEnum('utc_offset_source', [...UTC_OFFSET_SOURCES]);
+
 /** Why a file was skipped, failed or needs a decision; clients translate it (ADR 0014). */
 export const OUTCOME_REASONS = [
   'no_fit_file', 'not_a_dive', 'not_your_diver', 'overlaps_several_dives', 'max_depth_differs', 'file_failed',
   // The Recording is on a Dive the User deleted: it isn't created again (ADR 0026).
   'deleted_earlier',
+  // A Provider's dive (ADR 0030): sent by Dive Hub (already ours); a logbook entry matching no Dive while the import only
+  // adds; several Dives and no decision that still fits; left out by the User.
+  'sent_by_dive_hub', 'no_match', 'ambiguous', 'left_out',
 ] as const;
 export type OutcomeReason = (typeof OUTCOME_REASONS)[number];
 
@@ -174,13 +186,41 @@ export type ImportErrorCode = (typeof IMPORT_ERROR_CODES)[number];
 
 export type ImportOutcome = {
   fileName: string;
-  result: 'created' | 'attached' | 'updated' | 'unchanged' | 'duplicate-candidate' | 'skipped' | 'failed';
+  /** `linked`: a Provider's logbook entry tied to a Dive here and filled where it was empty (ADR 0030). */
+  result: 'created' | 'attached' | 'linked' | 'updated' | 'unchanged' | 'duplicate-candidate' | 'skipped' | 'failed';
   diveId?: string;
   recordingId?: string;
   reason?: OutcomeReason;
   /** Technical detail in English (e.g. a parser error), shown next to the translated reason. */
   message?: string;
+  /** A Provider's dive: its ID and number there (ADR 0030). */
+  remoteId?: string;
+  remoteNumber?: number;
 }[];
+
+/** How a Provider's dives from one dive computer are used (ADR 0030). */
+export type ComputerChoice = 'recordings' | 'entries';
+/** What an import from a Provider may do (ADR 0030): nothing, only link and fill Dives here, or also create Dives. */
+export const DIVE_IMPORT_MODES = ['off', 'add', 'create'] as const;
+export type DiveImportMode = (typeof DIVE_IMPORT_MODES)[number];
+/** Matching windows for a Provider's logbook entries, in minutes (ADR 0030). */
+export const MATCHING_WINDOWS = [5, 15, 30, 60] as const;
+
+/**
+ * What an Import from a Provider keeps besides its Originals (ADR 0030): the context of the Provider's records (whose
+ * account each person entry is, each site's name and position; no names of people), the choice per computer and per
+ * ambiguous logbook entry, and the settings it ran with.
+ */
+export interface ProviderImportPlan {
+  context: { people: Record<string, string>; sites: Record<string, { name: string; latitude: number | null; longitude: number | null }> };
+  computers: Record<string, ComputerChoice>;
+  /** Per remote dive ID: a Dive's ID, `new`, or `leave_out`. */
+  decisions: Record<string, string>;
+  mode: DiveImportMode;
+  windowMinutes: number;
+  /** The Connection's Diver: an import still runs after the Connection is gone. */
+  diverId: string;
+}
 
 /** One ingestion of what a User delivered at once. */
 export const importJob = pgTable(
@@ -189,10 +229,15 @@ export const importJob = pgTable(
     id: id(),
     userId: uuid('user_id').notNull().references(() => user.id),
     status: importStatus('status').notNull().default('pending'),
-    /** Uploaded file (single FIT or archive) awaiting processing; removed once processed. */
+    /** Uploaded file (single FIT or archive) awaiting processing; removed once processed. A Provider's import: its name. */
     uploadName: text('upload_name').notNull(),
-    uploadSha256: text('upload_sha256').notNull(),
+    /** Null for an import from a Provider, whose Originals are stored when it starts (ADR 0030). */
+    uploadSha256: text('upload_sha256'),
     uploadStorageKey: text('upload_storage_key'),
+    /** An import of a Provider's dives (ADR 0030): which Provider, through which Connection, and what it was told. */
+    provider: text('provider'),
+    connectionId: uuid('connection_id').references((): AnyPgColumn => connection.id, { onDelete: 'set null' }),
+    plan: jsonb('plan').$type<ProviderImportPlan>(),
     outcome: jsonb('outcome').$type<ImportOutcome>().notNull().default([]),
     error: text('error'),
     createdAt: createdAt(),
@@ -355,6 +400,8 @@ export const dive = pgTable(
     startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
     /** Local UTC offset at the dive, in seconds (gap A8). */
     utcOffsetSeconds: integer('utc_offset_seconds'),
+    /** Where the offset came from (ADR 0030); follows the Primary recording like the start time. */
+    utcOffsetSource: utcOffsetSource('utc_offset_source').notNull().default('device'),
     durationSeconds: real('duration_seconds').notNull(),
     maxDepthM: real('max_depth_m'),
     avgDepthM: real('avg_depth_m'),
@@ -367,6 +414,11 @@ export const dive = pgTable(
     /** Fields whose value the User set by hand; they win over the Primary recording. */
     overrides: text('overrides').array().$type<OverridableField[]>().notNull().default(sql`'{}'`),
     primaryRecordingId: uuid('primary_recording_id'),
+    /**
+     * The Provider whose logbook entry this Dive was made from, without a Recording (ADR 0030): its values are that
+     * entry's until a Recording attaches and becomes primary.
+     */
+    fromProvider: text('from_provider'),
     /** Increases with every change; edits name the version they started from (optimistic locking). */
     version: integer('version').notNull().default(1),
     createdAt: createdAt(),
@@ -432,6 +484,8 @@ export const recording = pgTable(
     parserVersion: text('parser_version').notNull(),
     startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
     utcOffsetSeconds: integer('utc_offset_seconds'),
+    /** Where the offset came from (ADR 0030): a Provider's copy without a time zone gets it from its position or nearby. */
+    utcOffsetSource: utcOffsetSource('utc_offset_source').notNull().default('device'),
     durationSeconds: real('duration_seconds').notNull(),
     maxDepthM: real('max_depth_m'),
     avgDepthM: real('avg_depth_m'),
@@ -525,6 +579,7 @@ export const diverExternalId = pgTable(
 );
 
 export const connectionState = pgEnum('connection_state', ['active', 'needs_sign_in']);
+export const diveImportMode = pgEnum('dive_import_mode', [...DIVE_IMPORT_MODES]);
 
 /**
  * One User's link to a Provider for one of their Divers (ADR 0024, 0027): the account there, and what lets Dive Hub
@@ -552,10 +607,18 @@ export const connection = pgTable(
      */
     nextActionAt: timestamp('next_action_at', { withTimezone: true }),
     lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    /** What an import of the account's dives may do (ADR 0030), and the window for matching logbook entries, in minutes. */
+    importMode: diveImportMode('import_mode').notNull().default('off'),
+    importWindowMinutes: integer('import_window_minutes').notNull().default(15),
+    /** The User's choice per dive computer found at the Provider, by `manufacturer:serial`; kept here, not on the Device. */
+    importComputers: jsonb('import_computers').$type<Record<string, ComputerChoice>>().notNull().default({}),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [uniqueIndex('connection_user_diver_provider_uq').on(t.userId, t.diverId, t.provider)],
+  (t) => [
+    uniqueIndex('connection_user_diver_provider_uq').on(t.userId, t.diverId, t.provider),
+    check('connection_import_window_ck', sql`${t.importWindowMinutes} in (5, 15, 30, 60)`),
+  ],
 );
 
 export const pushMode = pgEnum('push_mode', ['api', 'qr']);

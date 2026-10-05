@@ -8,7 +8,7 @@ import { push } from '../db/schema.js';
 import type { ConnectionService } from './connection-service.js';
 import { LeaseBusy, type Leases } from './leases.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
-import { ProviderError, type Delivered, type ProviderAdapter, type RemoteDive, type RemoteSite } from './provider.js';
+import { ProviderError, referenceOf, type Delivered, type ProviderAdapter, type RemoteDive, type RemoteSite } from './provider.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { forProvider, leftOutBy, unmetRequirements } from './requirements.js';
 
@@ -29,7 +29,7 @@ const SUGGESTIONS = 20;
 /** Left to `withAccess`, which signs in again and retries the action; not a failed Push. */
 const signedOut = (error: unknown) => error instanceof ProviderError && error.reason === 'signed_out';
 /** What we send to find the dive again when an answer is lost. */
-const reference = (diveId: string) => `divehub-${diveId}`;
+const reference = referenceOf;
 
 function distanceM(a: { latitude: number; longitude: number }, b: { latitude: number; longitude: number }) {
   const rad = Math.PI / 180;
@@ -50,6 +50,16 @@ export function currentRemote(pushes: PushRow[]): PushRow | null {
     if (p.remoteId) return p;
   }
   return null;
+}
+
+/**
+ * What the Provider's fingerprint of the Dive is now, as it would get it (without the Participants an advisory
+ * requirement leaves out): a link made from the Provider's own dive records it, so the Dive shows up to date (ADR 0030).
+ */
+export function fingerprintNow(adapter: ProviderAdapter, loaded: Awaited<ReturnType<typeof loadOutgoingDive>>): string | null {
+  const exports = adapter.capabilities.data.dives?.export;
+  if (!adapter.dives || !exports) return null;
+  return adapter.dives.fingerprint(forProvider(loaded.outgoing, unmetRequirements(exports.requirements, loaded.row.siteId, loaded.outgoing)));
 }
 
 export function createPushService(deps: { db: Db; registry: ProviderRegistry; connections: ConnectionService; leases: Leases }) {

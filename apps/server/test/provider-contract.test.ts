@@ -5,7 +5,7 @@ import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import type { OutgoingDive } from '../src/providers/provider.js';
 import { createFakeHandover } from './fake-handover-provider.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
-import { createFakeSsi } from './fake-ssi.js';
+import { computerDive, createFakeSsi, handTypedDive } from './fake-ssi.js';
 import { providerContract } from './provider-contract.js';
 
 const dive: OutgoingDive = {
@@ -35,6 +35,10 @@ providerContract('SSI', () => {
     outage: (on) => { fake.failWith = on ? 503 : null; },
     deleteThere: (remoteId) => { fake.dives.get(Number(remoteId))!.odin_user_log_deleted = 1; },
     participant: { diverId: 'kai', name: 'Kai', role: 'buddy', ids: { ssi: '4989164' } },
+    seedDives: () => {
+      fake.addDive(5_012_047, handTypedDive({ at: '2025-08-10 10:00', depthM: 18, minutes: 45, siteId: 3314, buddies: [3_786_888] }));
+      fake.addDive(5_012_047, computerDive({ at: '2025-08-11 14:00', depthM: 22, minutes: 40, manufacturer: 'Mares', product: 'Puck 4', serial: '4711' }));
+    },
   };
 });
 

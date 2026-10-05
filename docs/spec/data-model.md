@@ -1,8 +1,8 @@
 ---
 title: Data model
-summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios.
+summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios; Dives without a Recording, offsets and their source, a Provider's dives as Originals, Recordings and Imports (ADR 0030).
 status: draft
-date: 2026-10-05
+date: 2026-10-06
 ---
 
 # Data model
@@ -126,6 +126,10 @@ coverage, validity; B5), **Medical exam** (date, result, valid until, examiner),
   are columns holding the value in effect, with `overrides` naming the fields set by
   hand; `version` grows with every change (optimistic locking); notes are the Dive's own.
   The water type was one of them until ADR 0025 moved it to the Dive site.
+  *Implemented ([ADR 0030](../decisions/0030-importing-dives-from-providers.md), slice 15):* `utc_offset_source` says where the offset came from (`device`, `position`, `nearby`,
+  `unknown`; `unknown` keeps the local wall-clock time as if UTC, and matching compares local times); it follows the
+  Primary recording like the start. A Dive can have **no Recording**: one made from a Provider's logbook entry
+  (`from_provider`), with the entry's values (not Overrides) until a Recording attaches and becomes primary.
 - *Place:* Dive site; entry and exit positions (B6); Operator (dive center / boat, B7); Trip.
 - *Conditions (B9):* water type (salt/fresh/brackish), water/air temperature,
   visibility, current, surface conditions, weather.
@@ -172,6 +176,11 @@ and nothing reaches that User.
   own Dive or becomes a Duplicate candidate.
 - *Deleted with its Dive (ADR 0026):* a re-import with its key (the same file, or a re-export) is skipped as
   `deleted_earlier`. The key stays taken for every User, so restoring never clashes with a newer Recording.
+- *A Provider's copy ([ADR 0030](../decisions/0030-importing-dives-from-providers.md), implemented):* a dive the Provider got from a dive computer becomes a Recording with
+  parser `ssi-app-api` and key `ssi:<SSI dive ID>`, its Device found by manufacturer and serial number (created for the
+  Connection's Diver if new), its offset from the position or nearby Dives (`utc_offset_source`). Placed like a file's.
+  A file's Recording attaching to a Dive whose primary is a Provider's copy becomes primary; any Recording attaching to a
+  Dive without one becomes primary.
 
 **Cylinder** — per Dive: Equipment item (optional), volume, working pressure, material,
 gas mix (O2/He), start/end pressure, usage window. **Sensor mapping** links a
@@ -254,16 +263,26 @@ mappings are not built yet (buddies aren't sent).
 enum), one per User, Diver and Provider. It keeps the account (`account_id`, `account_label`) and **one sealed
 `credentials` value** shaped by the Provider's sign-in kind (password: login, the current access, the password when kept;
 token: the token). Migration 0013 dropped the old token and password, so Connections made before sign in again once.
+*Importing dives ([ADR 0030](../decisions/0030-importing-dives-from-providers.md), slice 15):* `import_mode` (`off`, `add`, `create`), `import_window_minutes` (5, 15, 30, 60)
+and `import_computers` (the choice per dive computer found there, `recordings` or `entries`, by `manufacturer:serial`;
+kept on the Connection, not the Device).
 
 **Original** — User, content hash, media type, size, received at, stored bytes. It's immutable.
 The same hash received again **from the same User** is not processed a second time. Originals are
 never shared between Users, so a hash match reveals nothing about other Users' files.
 Archives (zip, nested zips in a Garmin account export) are unpacked; each contained file becomes
 an Original, and the Import records the archive's name and hash.
+*From a Provider ([ADR 0030](../decisions/0030-importing-dives-from-providers.md)):* one Original per dive, that dive's record as JSON (`application/json`), never the whole
+answer (which holds the buddy list's personal data). An unchanged dive has the same hash next time.
 
 **Import** — User, Connection (optional for manual upload), Originals, started/finished, status,
 outcome per dive (`created`, `attached`, `updated`, `unchanged`, `duplicate candidate`, `skipped`, `failed`; skipped
 with `deleted_earlier` for a Recording of a deleted Dive, ADR 0026).
+*From a Provider ([ADR 0030](../decisions/0030-importing-dives-from-providers.md), implemented):* `provider`, `connection_id` and a `plan`: the records' context (entry of the
+buddy list → SSI account, SSI site → name and position; no names of people), the choice per computer, the decisions for
+ambiguous entries, the mode, window and Diver it ran with. Its Originals are stored when it starts; the worker runs it
+like an upload. Outcomes carry `remoteId` and `remoteNumber`; results add `linked`; reasons add `sent_by_dive_hub`,
+`no_match`, `ambiguous`, `left_out`. Matches are linked by `link` Pushes, up to date for Dives made from the Provider.
 An Import can be undone through its Revisions.
 
 **Duplicate candidate** — Recording, candidate Dives, reason (several overlaps, depth mismatch,

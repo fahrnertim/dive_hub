@@ -19,7 +19,7 @@ const app = await buildApp({
   db: {} as Db, imports: {} as ImportService, siteImports: {} as SiteImportService, blobs: {} as BlobStore, auth, setup: {} as Setup, invitations: {} as Invitations,
   baseUrl: 'http://localhost', maxUploadBytes: 1,
   // The production Providers: their ids become the routes' enum.
-  providers: createProviderLayer({ db: {} as Db, secrets: createSecretBox(undefined), adapters: [createSsiAdapter({ client: {} as SsiClient })] }),
+  providers: createProviderLayer({ db: {} as Db, blobs: {} as BlobStore, secrets: createSecretBox(undefined), adapters: [createSsiAdapter({ client: {} as SsiClient })] }),
 });
 const response = await app.inject({ method: 'GET', url: '/api/openapi.json' });
 const out = fileURLToPath(new URL('../../../../packages/api-client/openapi.json', import.meta.url));

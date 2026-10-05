@@ -19,6 +19,8 @@ export const REVISION_CAUSES = [
   'adopt',
   // A User bringing back a Dive they deleted (cause 'delete', ADR 0026).
   'restore',
+  // An import from a Provider filling what a Dive lacked: site, Participants, notes (ADR 0030).
+  'fill',
 ] as const;
 export type RevisionCause = (typeof REVISION_CAUSES)[number];
 

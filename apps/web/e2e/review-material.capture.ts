@@ -8,8 +8,8 @@ import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import {
-  E2E_BASE_URL, clearParticipants, connectSsi, deletableDive, disconnectSsi, editElsewhere, externalDiver, forgetDivers, leaveSsi, readyForSsi, sendToSsi,
-  setBuddies, setPreferences,
+  E2E_BASE_URL, clearParticipants, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, forgetDivers,
+  leaveLena, leaveSsi, lenaReady, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
 const out = process.env.REVIEW_OUT ?? 'review-output/';
@@ -319,6 +319,44 @@ test('review material', async ({ page, request, browser }) => {
     await request.delete(`/api/dives/${dive42}/providers/ssi`, { headers });
     await clearParticipants(request, dive42);
     await leaveSsi(request, dive42);
+  }
+
+  // Importing dives from SSI (ADR 0030), with Lena's logbook: the preview with a computer and decisions, the outcome, a
+  // dive without a recording; the preview in German on a dark phone.
+  if (want('account') || want('dives')) {
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await setPreferences(request, { language: 'en' });
+    await lenaReady(request);
+    if (want('account')) {
+      await page.goto('/#/account'); await page.reload();
+      const section = page.getByRole('region', { name: 'Dives of Lena from SSI' });
+      await section.getByRole('button', { name: 'Show what the import would do' }).click();
+      await section.getByRole('radiogroup', { name: /^SSI dive 15: / }).waitFor();
+      await capture(page, '31b-account-ssi-import-preview');
+      await section.getByRole('button', { name: 'Import from SSI' }).click();
+      await section.getByRole('link', { name: 'Go to the logbook' }).waitFor({ timeout: 30_000 });
+      await capture(page, '31c-account-ssi-import-done');
+    }
+    if (want('dives')) {
+      await page.goto(`/#/dives/${await diveWithoutRecording(request)}`); await page.reload();
+      await page.getByText(/^No recording yet/).waitFor();
+      await capture(page, '31d-dive-from-ssi-without-recording');
+    }
+    if (want('account')) {
+      await setPreferences(request, { language: 'de' });
+      await page.emulateMedia({ colorScheme: 'dark' });
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto('/#/account'); await page.reload();
+      const section = page.getByRole('region', { name: 'Tauchgänge von Lena aus SSI' });
+      await section.getByRole('button', { name: 'Zeigen, was der Import tun würde' }).click();
+      await section.getByRole('radiogroup', { name: /^SSI-Tauchgang 15: / }).waitFor();
+      await capture(page, '31e-account-ssi-import-de-dark-390', { aria: false });
+    }
+    await setPreferences(request, { language: null });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await leaveLena(request);
   }
 
   // Deleting a Dive (ADR 0026), with dive 9: the dialog without and with the SSI question, the logbook with Undo, the

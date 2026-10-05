@@ -94,6 +94,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
       const rows = await db.select({
         id: connection.id, provider: connection.provider, diverId: connection.diverId, diverName: diver.name,
         accountId: connection.accountId, accountLabel: connection.accountLabel, keepSignedIn: connection.keepSignedIn,
+        importMode: connection.importMode, importWindowMinutes: connection.importWindowMinutes,
         state: connection.state, lastUsedAt: connection.lastUsedAt, createdAt: connection.createdAt,
       }).from(connection).innerJoin(diver, eq(diver.id, connection.diverId))
         .where(eq(connection.userId, userId)).orderBy(connection.createdAt);

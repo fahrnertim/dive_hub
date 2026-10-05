@@ -60,7 +60,7 @@ function RecordingLine({ c }: { c: CandidateView }) {
     <div className="decision-recording">
       <p>
         <strong>{t('decisions.recording')}:</strong>{' '}
-        {display.diveTime(r.startsAt, r.utcOffsetSeconds)} · {display.depth(r.maxDepthM)} · {display.duration(r.durationSeconds)} · {device}
+        {display.diveTime(r.startsAt, r.utcOffsetSeconds, r.utcOffsetSource)} · {display.depth(r.maxDepthM)} · {display.duration(r.durationSeconds)} · {device}
       </p>
       {/* Why it wasn't added: a sentence of its own, at body size (visual refresh 4). */}
       <p className="muted">{t('decisions.why', { reason: t(`import.reason.${c.reason}`) })}</p>
@@ -103,7 +103,7 @@ function UndoDiscard({ candidate: c, onDone }: { candidate: CandidateView; onDon
   useEffect(() => button.current?.focus(), []);
   return (
     <Notice tone="success">
-      <p>{t('decisions.discardedNotice', { time: display.diveTime(c.recording.startsAt, c.recording.utcOffsetSeconds) })}</p>
+      <p>{t('decisions.discardedNotice', { time: display.diveTime(c.recording.startsAt, c.recording.utcOffsetSeconds, c.recording.utcOffsetSource) })}</p>
       <Button ref={button} icon="undo" isPending={reopen.isPending} onPress={() => reopen.mutate({ kind: 'reopen' }, { onSuccess: onDone })}>
         {t('common.undo')}
       </Button>
@@ -122,7 +122,7 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
     else refocusAfterRemoval(list.current, index, count);
   });
   // Several Recordings may wait at once; their buttons say which one they decide about.
-  const recordingName = display.diveTime(c.recording.startsAt, c.recording.utcOffsetSeconds);
+  const recordingName = display.diveTime(c.recording.startsAt, c.recording.utcOffsetSeconds, c.recording.utcOffsetSource);
   return (
     <li className="decision">
       <RecordingLine c={c} />
@@ -138,11 +138,11 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
                   <a href={`#/dives/${d.id}`}>
                     {d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}
                   </a>
-                  {' · '}{display.diveTime(d.startsAt, d.utcOffsetSeconds)} · {display.depth(d.maxDepthM)} · {display.duration(d.durationSeconds)}
+                  {' · '}{display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource)} · {display.depth(d.maxDepthM)} · {display.duration(d.durationSeconds)}
                 </span>
                 <Button
                   size="small"
-                  aria-label={t('common.forItem', { action: t('decisions.addTo'), item: d.number !== null ? t('dive.title', { number: d.number }) : display.diveTime(d.startsAt, d.utcOffsetSeconds) })}
+                  aria-label={t('common.forItem', { action: t('decisions.addTo'), item: d.number !== null ? t('dive.title', { number: d.number }) : display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource) })}
                   isPending={decide.isPending && decide.variables.kind === 'attach' && decide.variables.diveId === d.id}
                   isDisabled={decide.isPending}
                   onPress={() => decide.mutate({ kind: 'attach', diveId: d.id })}
@@ -203,7 +203,7 @@ function DiscardedItem({ candidate: c, onReopened }: { candidate: CandidateView;
       <RecordingLine c={c} />
       <Button
         variant="quiet"
-        aria-label={t('common.forItem', { action: t('decisions.reopen'), item: display.diveTime(c.recording.startsAt, c.recording.utcOffsetSeconds) })}
+        aria-label={t('common.forItem', { action: t('decisions.reopen'), item: display.diveTime(c.recording.startsAt, c.recording.utcOffsetSeconds, c.recording.utcOffsetSource) })}
         isPending={decide.isPending}
         onPress={() => decide.mutate({ kind: 'reopen' })}
       >

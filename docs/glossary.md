@@ -2,7 +2,7 @@
 title: Glossary
 summary: Canonical domain language of Dive Hub. One term per concept; avoided synonyms listed.
 status: living
-date: 2026-10-05
+date: 2026-10-06
 ---
 
 # Dive Hub
@@ -66,7 +66,8 @@ _German_: Buddy
 
 **Dive**:
 One Diver's logbook entry for one descent: what happened, with whom, where, with which gear, and their notes.
-Each participant of the same descent has their own Dive.
+Each participant of the same descent has their own Dive. A Dive made from a Provider's Logbook entry has no Recording
+until the dive computer's file comes in ([ADR 0030](decisions/0030-importing-dives-from-providers.md)).
 _Avoid_: Log entry, activity, event
 _German_: Tauchgang
 
@@ -227,7 +228,12 @@ _Avoid_: Raw file, upload, dump
 _German_: Originaldatei
 
 **Import**:
-One ingestion of what a User delivered at once (one or more Originals, possibly unpacked from an archive), producing or updating Recordings and Dives.
+One ingestion of what a User delivered at once (one or more Originals, possibly unpacked from an archive), producing or updating Recordings and Dives. An import from a Provider reads the account's dives and keeps one Original per dive ([ADR 0030](decisions/0030-importing-dives-from-providers.md)).
+
+**Logbook entry (at a Provider)**:
+A dive at a Provider that was typed in by hand: rough values, no profile, no dive computer. An import matches it to a Dive here by its local start time within the matching window and fills what that Dive lacks (site, Participants, notes), or makes a Dive without a Recording from it. A dive the Provider got from a dive computer becomes a Recording instead, unless the User chose otherwise for that computer ([ADR 0030](decisions/0030-importing-dives-from-providers.md)).
+_Avoid_: Manual dive, log entry (alone)
+_German_: Logbucheintrag
 _Avoid_: Sync, upload
 _German_: Import
 

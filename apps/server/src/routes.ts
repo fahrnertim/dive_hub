@@ -6,7 +6,8 @@ import type { Auth } from './auth/auth.js';
 import { requireUser } from './auth/fastify.js';
 import type { Db } from './db/client.js';
 import {
-  IMPORT_ERROR_CODES, OUTCOME_REASONS, dive, diveSite, diverManagement, duplicateCandidate, importJob, recording, sampleSeries,
+  IMPORT_ERROR_CODES, OUTCOME_REASONS, UTC_OFFSET_SOURCES, dive, diveSite, diverManagement, duplicateCandidate, importJob, recording,
+  sampleSeries,
 } from './db/schema.js';
 import { downsampleMinMax } from './dives/downsample.js';
 import { Problem, problem } from './http/problems.js';
@@ -24,18 +25,23 @@ const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
 const DateTime = Type.String({ format: 'date-time' });
 const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([t, Type.Null()]);
 
-const ImportView = Type.Object({
+export const ImportView = Type.Object({
   id: Type.String(),
   status: Type.Union([Type.Literal('pending'), Type.Literal('processing'), Type.Literal('done'), Type.Literal('failed')]),
-  uploadName: Type.String(),
+  uploadName: Type.String({ description: 'The uploaded file\'s name; for an import from a Provider, the Provider\'s name' }),
+  provider: Nullable(Type.String({ description: 'An import of this Provider\'s dives (ADR 0030); null for an upload' })),
   createdAt: DateTime,
   finishedAt: Nullable(DateTime),
   errorCode: Nullable(Type.Enum([...IMPORT_ERROR_CODES], { description: 'Why the Import failed; clients translate it. The detail stays in the server log' })),
   outcome: Type.Array(Type.Object({
     fileName: Type.String(),
-    result: Type.Enum(['created', 'attached', 'updated', 'unchanged', 'duplicate-candidate', 'skipped', 'failed']),
+    result: Type.Enum(['created', 'attached', 'linked', 'updated', 'unchanged', 'duplicate-candidate', 'skipped', 'failed'], {
+      description: 'linked: a Provider\'s logbook entry tied to a Dive here and filled where it was empty (ADR 0030)',
+    }),
     diveId: Type.Optional(Type.String()),
     recordingId: Type.Optional(Type.String()),
+    remoteId: Type.Optional(Type.String({ description: 'A Provider\'s dive: its ID there' })),
+    remoteNumber: Type.Optional(Type.Integer({ description: 'A Provider\'s dive: its own number there' })),
     reason: Type.Optional(Type.Enum([...OUTCOME_REASONS], { description: 'Why; clients translate it. A failure’s detail stays in the server log' })),
     decision: Type.Optional(Type.Enum(['open', 'attached', 'new_dive', 'discarded'], {
       description: 'For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to',
@@ -61,6 +67,9 @@ const DiveSummaryView = Type.Object({
   number: Nullable(Type.Integer()),
   startsAt: DateTime,
   utcOffsetSeconds: Nullable(Type.Integer()),
+  utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES], {
+    description: 'unknown: startsAt is the local wall-clock time kept as if UTC; show it in UTC without an offset (ADR 0030)',
+  }),
   durationSeconds: Type.Number(),
   maxDepthM: Nullable(Type.Number()),
   avgDepthM: Nullable(Type.Number()),
@@ -83,8 +92,8 @@ const SamplesView = Type.Object({
 });
 
 const iso = (d: Date | null) => (d ? d.toISOString() : null);
-const toImportView = (j: typeof importJob.$inferSelect): Static<typeof ImportView> => ({
-  id: j.id, status: j.status, uploadName: j.uploadName, createdAt: j.createdAt.toISOString(),
+export const toImportView = (j: typeof importJob.$inferSelect): Static<typeof ImportView> => ({
+  id: j.id, status: j.status, uploadName: j.uploadName, provider: j.provider, createdAt: j.createdAt.toISOString(),
   // A parser's own words (English, internals) stay in the database and the server log (client contract §6).
   finishedAt: iso(j.finishedAt), outcome: j.outcome.map(({ message: _detail, ...o }) => o),
   errorCode: j.error === null ? null : j.error === 'unsupported_file' ? 'unsupported_file' : 'processing_failed',
@@ -120,7 +129,7 @@ async function withDecisions(db: Db, rows: (typeof importJob.$inferSelect)[]) {
 const toDiveSummary = (d: typeof dive.$inferSelect, siteName: string | null): Static<typeof DiveSummaryView> => ({
   site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null,
   id: d.id, diverId: d.diverId, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
-  durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, avgDepthM: d.avgDepthM,
+  utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, avgDepthM: d.avgDepthM,
 });
 
 export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps) => {

@@ -11,7 +11,8 @@
     "forItem": "{{action}}: {{item}}",
     "undo": "Undo",
     "dismiss": "Dismiss",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "close": "Close"
   },
   "nav": {
     "main": "Main",
@@ -164,7 +165,8 @@
       "unchanged": "already imported",
       "duplicate-candidate": "needs your decision",
       "skipped": "skipped",
-      "failed": "failed"
+      "failed": "failed",
+      "linked": "linked to a dive here"
     },
     "reason": {
       "no_fit_file": "no FIT file found",
@@ -173,7 +175,11 @@
       "overlaps_several_dives": "overlaps several dives",
       "max_depth_differs": "the max depth differs too much",
       "file_failed": "the file couldn’t be read",
-      "deleted_earlier": "on a dive you deleted; restore it under “Deleted dives” on the logbook"
+      "deleted_earlier": "on a dive you deleted; restore it under “Deleted dives” on the logbook",
+      "sent_by_dive_hub": "sent from Dive Hub",
+      "no_match": "no dive here at that time",
+      "ambiguous": "several dives here at that time; choose one in the preview",
+      "left_out": "left out by you"
     },
     "errorCode": {
       "unsupported_file": "This is neither a FIT file nor a zip archive.",
@@ -196,7 +202,9 @@
     "showFewer": "Show fewer",
     "findTitle": "Where to find your dives",
     "findConnect": "Garmin Connect website: open a dive, choose “Export Original” in the gear menu, and import the zip as it is.",
-    "findWatch": "Watch: connect it by USB and copy the files from the folder GARMIN/Activity."
+    "findWatch": "Watch: connect it by USB and copy the files from the folder GARMIN/Activity.",
+    "grouped": "{{what}}: {{count}}",
+    "fromProvider": "Dives from {{name}}"
   },
   "logbook": {
     "title": "Logbook",
@@ -298,7 +306,15 @@
     "deleteConfirm": "Delete dive",
     "deleteBoth": "Delete here and in {{name}}",
     "deleteHereOnly": "Delete only here",
-    "deleteNothingDeleted": "Nothing was deleted."
+    "deleteNothingDeleted": "Nothing was deleted.",
+    "timeZone": {
+      "position": "Time zone from where the dive was",
+      "nearby": "Time zone from your dives in the days around it",
+      "unknown": "Time zone unknown: the time is shown as it was logged"
+    },
+    "noRecording": "This dive has no recording.",
+    "noRecordingFrom": "No recording yet: this dive comes from your {{name}} logbook, typed in by hand.",
+    "noRecordingNext": "When you import the dive computer’s file, its recording is added, and its values replace these."
   },
   "errors": {
     "unknown": "Something went wrong. Try again.",
@@ -370,7 +386,8 @@
     "provider_not_sent": "This dive isn’t in {{name}}.",
     "provider_dive_gone": "The dive was deleted in {{name}}. Send it again to create it there anew.",
     "provider_busy": "This dive is being sent to {{name}} right now. Wait a moment.",
-    "provider_unsupported": "{{name}} doesn’t offer that."
+    "provider_unsupported": "{{name}} doesn’t offer that.",
+    "provider_import_off": "Importing dives from {{name}} is off. Choose what the import may do first."
   },
   "vocabulary": {
     "waterType": {
@@ -430,7 +447,8 @@
       "site-merge": "Dive site merged into another",
       "merge": "Dive sites merged",
       "adopt": "Data taken from its source",
-      "restore": "Restored"
+      "restore": "Restored",
+      "fill": "Filled in from a dive at a service"
     },
     "field": {
       "number": "Dive number",
@@ -445,7 +463,8 @@
       "recordings": "Recording",
       "originalId": "File",
       "diverId": "Diver",
-      "site": "Dive site"
+      "site": "Dive site",
+      "utcOffsetSource": "Time zone"
     },
     "notesChanged": "Notes changed",
     "setByHand": "set by hand",
@@ -463,7 +482,14 @@
     "changeTo": "{{field}}: {{value}}",
     "participantAdded": "{{name}} added as {{role}}",
     "participantRemoved": "{{name}} removed",
-    "participantRole": "{{name}}: {{from}} → {{to}}"
+    "participantRole": "{{name}}: {{from}} → {{to}}",
+    "fromProvider": "Made from a dive in your {{name}} logbook",
+    "offsetSource": {
+      "device": "from the dive computer",
+      "position": "from where the dive was",
+      "nearby": "from dives around it",
+      "unknown": "unknown"
+    }
   },
   "decisions": {
     "title": "Needs your decision",
@@ -922,7 +948,66 @@
     "useTypedId": "Use {{name}} site ID {{id}}",
     "noLogbookMatch": "No site in your {{name}} logbook matches “{{q}}”. Type the site’s {{name}} ID instead.",
     "away": "{{distance}} away",
-    "idIs": "ID {{id}}"
+    "idIs": "ID {{id}}",
+    "importSaved": "Saved.",
+    "importTitle": "Dives from {{name}}",
+    "importTitleDiver": "Dives of {{diver}} from {{name}}",
+    "importIntro": "Bring the dives of your {{name}} logbook into Dive Hub. Dives here are never overwritten: {{name}} only fills what they lack.",
+    "importMode": "What may the import do?",
+    "importOff": "Nothing",
+    "importOffHint": "Dive Hub doesn’t import your dives from {{name}}.",
+    "importAdd": "Only add to dives here",
+    "importAddHint": "A dive in {{name}} at the time of a dive here is linked to it and fills its site, buddies and notes. No new dives.",
+    "importCreate": "Also create dives",
+    "importCreateHint": "Like “Only add”, and a dive Dive Hub doesn’t have becomes a dive here, without a recording until you import its file.",
+    "importWindow": "Same dive if the start is within",
+    "importWindowHint": "Times typed in by hand are often rounded. Compared in local time, on the same day.",
+    "importMinutes_one": "{{count}} minute",
+    "importMinutes_other": "{{count}} minutes",
+    "importPreview": "Show what the import would do",
+    "importReading": "Reading your {{name}} logbook…",
+    "importPreviewTitle_one": "{{count}} dive in {{name}}",
+    "importPreviewTitle_other": "{{count}} dives in {{name}}",
+    "importEmpty": "Your {{name}} logbook has no dives.",
+    "importCount": {
+      "recordings_one": "{{n}} from a dive computer: becomes a recording, like a file",
+      "recordings_other": "{{n}} from a dive computer: become recordings, like files",
+      "link_one": "{{n}} matches a dive here: linked, and fills what it lacks",
+      "link_other": "{{n}} match a dive here: linked, and fill what they lack",
+      "create_one": "{{n}} isn’t here yet: becomes a dive without a recording",
+      "create_other": "{{n}} aren’t here yet: become dives without a recording",
+      "decide_one": "{{n}} matches several dives here: you decide below",
+      "decide_other": "{{n}} match several dives here: you decide below",
+      "linked_one": "{{n}} is linked already: only fills what is still empty",
+      "linked_other": "{{n}} are linked already: only fill what is still empty",
+      "ours_one": "{{n}} was sent from Dive Hub: stays as it is",
+      "ours_other": "{{n}} were sent from Dive Hub: stay as they are",
+      "deleted_one": "{{n}} is a dive you deleted here: stays deleted",
+      "deleted_other": "{{n}} are dives you deleted here: stay deleted",
+      "noMatch_one": "{{n}} matches no dive here: left out (the import only adds)",
+      "noMatch_other": "{{n}} match no dive here: left out (the import only adds)",
+      "unreadable_one": "{{n}} can’t be read: left out",
+      "unreadable_other": "{{n}} can’t be read: left out"
+    },
+    "importComputers": "Dive computers",
+    "importComputersIntro": "These dive computers sent dives to {{name}}. Choose once for each how Dive Hub uses them.",
+    "importComputer_one": "{{computer}}, {{count}} dive",
+    "importComputer_other": "{{computer}}, {{count}} dives",
+    "importAsRecordings": "As recordings",
+    "importAsRecordingsHint": "With their profile, like the computer’s own files.",
+    "importAsEntries": "Only as logbook entries",
+    "importAsEntriesHint": "They only fill dives here, like dives typed in by hand.",
+    "importFromFiles": "Suggested: Dive Hub has this computer’s files, which are more exact.",
+    "importOtherDiver": "This computer belongs to another User’s diver: its dives come in as logbook entries.",
+    "importDecide": "Which dive is it?",
+    "importDecideIntro": "These dives in {{name}} start close to several dives here. Choose one, or leave it out.",
+    "importEntry": "{{name}} dive {{number}}: {{time}}, {{depth}}, {{duration}}",
+    "importNewDive": "A new dive",
+    "importLeaveOut": "Leave it out",
+    "importStart": "Import from {{name}}",
+    "importStarted": "Importing from {{name}}.",
+    "importRunning": "Import from {{name}}",
+    "importToLogbook": "Go to the logbook"
   },
   "providers": {
     "ssi": {

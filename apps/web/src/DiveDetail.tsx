@@ -14,6 +14,7 @@ import { useFormatValue } from './lib/dive-values.ts';
 import { focusHeading } from './lib/focus.ts';
 import { mapsUrl } from './lib/geo.ts';
 import { usePageTitle } from './lib/page.ts';
+import { useProviders } from './lib/providers.ts';
 import { SitePicker } from './SitePicker.tsx';
 import { Participants } from './Participants.tsx';
 import { ProviderPanels } from './ProviderPanel.tsx';
@@ -78,8 +79,9 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
           meta={(
             <>
               <p className="title-meta">
-                {display.diveTime(d.values.startsAt.at, d.values.startsAt.utcOffsetSeconds)}<EditedMark dive={d} field="startsAt" />
+                {display.diveTime(d.values.startsAt.at, d.values.startsAt.utcOffsetSeconds, d.utcOffsetSource)}<EditedMark dive={d} field="startsAt" />
               </p>
+              <TimeZoneNote dive={d} />
               {/* The Diver right under the date, before the actions wrap in on a phone (UI review C4). */}
               {several && diverName && <p className="title-meta">{t('dive.diver')}: {diverName}</p>}
             </>
@@ -108,9 +110,19 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
       <ProviderPanels dive={d} diverName={diverName} />
       <DiveHistory dive={d} />
       {moving && <MoveDialog dive={d} onClose={() => setMoving(false)} />}
-      {deleting && <DeleteDiveDialog dive={d} name={d.values.number !== null ? t('dive.title', { number: d.values.number }) : display.diveTime(d.values.startsAt.at, d.values.startsAt.utcOffsetSeconds)} onClose={() => setDeleting(false)} />}
+      {deleting && <DeleteDiveDialog dive={d} name={d.values.number !== null ? t('dive.title', { number: d.values.number }) : display.diveTime(d.values.startsAt.at, d.values.startsAt.utcOffsetSeconds, d.utcOffsetSource)} onClose={() => setDeleting(false)} />}
     </>
   );
+}
+
+/**
+ * Where the start's time zone came from, when not from the dive computer (ADR 0030): the dive's position, the Diver's
+ * dives around it, or nothing (the time as it was logged). Not shown once the User set the start by hand.
+ */
+function TimeZoneNote({ dive: d }: { dive: DiveView }) {
+  const { t } = useTranslation();
+  if (d.utcOffsetSource === 'device' || d.overrides.includes('startsAt')) return null;
+  return <p className="title-meta">{t(`dive.timeZone.${d.utcOffsetSource}`)}</p>;
 }
 
 /** Space for the dive while it loads, so the page doesn't jump when it arrives (UI review C10). */
@@ -284,7 +296,7 @@ function Recordings({ dive: d, initial }: { dive: DiveView; initial: string | un
       announce(t('dive.primaryChanged'));
     },
   });
-  if (!recording) return null;
+  if (!recording) return <NoRecording dive={d} />;
   const name = (r: DiveView['recordings'][number]) => (r.device
     ? `${deviceName(r.device.manufacturer, r.device.product)} (${r.device.serialNumber})`
     : t('dive.recordingN', { n: d.recordings.indexOf(r) + 1 }));
@@ -327,6 +339,24 @@ function Recordings({ dive: d, initial }: { dive: DiveView; initial: string | un
         onConfirm={() => splitOff.mutateAsync(recording.id)}
         onDone={() => requestAnimationFrame(() => focusHeading(content.current))}
       />
+    </Panel>
+  );
+}
+
+/**
+ * A Dive without a Recording (ADR 0030): made from a Provider's logbook entry, typed by hand there. Its values are that
+ * entry's until a dive computer's file comes in; then its Recording becomes primary and its values take over.
+ */
+function NoRecording({ dive: d }: { dive: DiveView }) {
+  const { t } = useTranslation();
+  const providers = useProviders();
+  const name = providers.data?.find((x) => x.id === d.fromProvider)?.name ?? d.fromProvider;
+  return (
+    <Panel title={t('dive.recording')}>
+      <div className="empty-state">
+        <p>{name ? t('dive.noRecordingFrom', { name }) : t('dive.noRecording')}</p>
+        <Muted>{t('dive.noRecordingNext')}</Muted>
+      </div>
     </Panel>
   );
 }

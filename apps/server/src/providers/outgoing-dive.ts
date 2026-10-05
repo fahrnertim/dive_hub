@@ -1,7 +1,7 @@
 // A Dive as it leaves Dive Hub (ADR 0027): the same values for every Provider, read once from the Dive, its Primary
 // recording, Device, samples and site. Each adapter turns it into its own record.
 import { and, eq, inArray, isNull } from 'drizzle-orm';
-import type { Db } from '../db/client.js';
+import type { Db, Tx } from '../db/client.js';
 import { device, dive, diveSite, diveSiteExternalId, diverExternalId, recording, sampleSeries } from '../db/schema.js';
 import { managedDiverIds, participantsOf } from '../dives/dive-service.js';
 import type { SiteSource } from '../sites/sources.js';
@@ -14,7 +14,7 @@ export type DiveRow = typeof dive.$inferSelect;
  * The Dive and what leaves Dive Hub of it, if the User manages its Diver (else `dive_not_found`). A deleted Dive only
  * with `deleted`: its state and deleting it at a Provider still work (the reminder, ADR 0026), sending doesn't.
  */
-export async function loadOutgoingDive(db: Db, userId: string, diveId: string, options: { deleted?: boolean } = {}) {
+export async function loadOutgoingDive(db: Db | Tx, userId: string, diveId: string, options: { deleted?: boolean } = {}) {
   const [row] = await db.select().from(dive).where(and(eq(dive.id, diveId), options.deleted ? undefined : isNull(dive.deletedAt)));
   if (!row || !(await managedDiverIds(db, userId)).has(row.diverId)) throw new ProviderServiceError('dive_not_found');
   const [rec] = row.primaryRecordingId ? await db.select().from(recording).where(eq(recording.id, row.primaryRecordingId)) : [];

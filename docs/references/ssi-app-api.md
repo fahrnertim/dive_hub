@@ -1,8 +1,8 @@
 ---
 title: SSI app API (MySSI)
-summary: SSI's private, undocumented app API as Dive Hub uses it - endpoint, sign-in, reading the logbook, saving (create, update, delete), when Dive Hub calls SSI (only on User actions, each call logged), SSI's app's own sync and its 60-second wait (not caused by Dive Hub), the dive record and its samples, buddies (entry IDs of the account's buddy list, checked 2026-10-05; the buddy QR code), the site list (checked 2026-10-05), quirks, and what to do when SSI changes it. Each fact is marked with where it comes from.
+summary: SSI's private, undocumented app API as Dive Hub uses it - endpoint, sign-in, reading the logbook, saving (create, update, delete), when Dive Hub calls SSI (only on User actions, each call logged), SSI's app's own sync and its 60-second wait (not caused by Dive Hub), the dive record and its samples, buddies (entry IDs of the account's buddy list, checked 2026-10-05; the buddy QR code), the site list (checked 2026-10-05), a dive as SSI returns it and how the import reads it (2026-10-06), quirks, and what to do when SSI changes it. Each fact is marked with where it comes from.
 status: living
-date: 2026-10-05
+date: 2026-10-06
 url: https://api.divessi.com/app/a21.php
 ---
 
@@ -76,6 +76,8 @@ Only when a User does something. There are no background calls: the worker never
 | Delete a dive that was sent to SSI | `get_divelog` (is it still there?), `save_divelog` (deleted) |
 | Open the SSI site picker on a dive | `get_divelog` (may come from the kept read-back) |
 | Open the buddy list (Connections) or the buddy picker on a dive | `get_divelog` (may come from the kept read-back) |
+| Show what importing the dives would do (the preview, [ADR 0030](../decisions/0030-importing-dives-from-providers.md)) | `get_divelog` (always read afresh) |
+| Start the import | `get_divelog` (may come from the kept read; the worker never calls SSI) |
 | Any of these after SSI's token expired, with the password kept | `authenticate` first |
 
 The browser also reads again when the site or buddy picker is open and its data is older than 5 or 2 minutes. That
@@ -201,6 +203,41 @@ initials only; 8 buddy-list entries, 5 dives with buddies) [R]:
   or the same one [?]; how to add an entry (no call is known [S]). Buddy IDs set by Dive Hub are accepted and show on
   the dive in the app [R] (owner, 2026-10-06).
 
+### A dive as SSI returns it (checked 2026-10-06)
+
+Dive Hub's upload #91 (Garmin Descent Mk3, 74 min) read back through the owner's Connection, field types and computer
+fields only [R]:
+- **SSI adds its own:** a device record (`log_user_divecomputer_id`, `odin_user_log_divecomputer_id`,
+  `log_divecomputer_archive_id`, `log_divecomputer_updated`), sync bookkeeping (`updates`, `odin_user_log_last_sync`,
+  `odin_user_log_transferDate`, `app_version` = the client label sent), and IDs of its own side tables
+  (`log_dataset_*`, `log_extended_data_*` with a 32-character hash, `log_linked_*`, `odin_user_log_data_deco_*`,
+  `odin_user_log_apple_watch_*`).
+- **`odin_user_log_divecomputer_imported` reads `1`** for Dive Hub's upload too: it means "from a computer file", not
+  "synced by SSI's app".
+- **The profile:** `odin_user_log_diveSamples` as sent (887 samples, every 5 s); `odin_user_log_depthDataset`,
+  `_tempDataset`, `_gfnowDataset`, `_gfSurfDataset` as JSON arrays of numbers, one per sample. `_tankPressureDataset`,
+  `_alarmDataset`, `_deepestDecoDataset` are empty strings; `_pressureDataset`, `_heartRateDataset`,
+  `_batteryLevelDataset`, `_accelerationDataset`, `_gyroDataset` null.
+- **No field for the computer's water setting** (salinity or density); the only water field is
+  `odin_user_log_var_watertype_id`.
+- Still to see: a dive synced by SSI's app from a dive computer (the owner provides one from a Mares Puck 4, 2026-10-07).
+
+**How the import reads a dive** ([ADR 0030](../decisions/0030-importing-dives-from-providers.md), `ssi-import.ts`), until
+a synced dive has been seen:
+- *Sent by Dive Hub:* `odin_user_log_divecomputer_dive_ref` starts with `divehub-`, or Dive Hub sent values to that SSI
+  dive ID (a confirmed create or update Push).
+- *From a dive computer:* a profile (`odin_user_log_diveSamples`, else `_depthDataset` and `_tempDataset`, 5 s apart) and
+  a serial number with a manufacturer (`odin_user_log_divecomputer_serial_nr`, `_manufacturer`; the product from `_ref`,
+  `_name` or `_productname`; the manufacturer in lower case, as FIT files name it). `_imported` alone counts for nothing.
+- *Typed by hand:* everything else.
+- Read: `odin_user_log_datetime` (local, no time zone), `_divetime` (minutes; a computer's dive takes its profile's
+  length), `_depth_m`, `_avg_depth_m`, `_watertemp_c`, `_watertemp_max_c` (0 counts as none), `_pos_start_*`,
+  `_pos_end_*`, `_dive_sites_id` (with the site's position from `logbook_sites`), `_buddy_ids` (entry IDs → SSI
+  accounts through `logbook_buddies`), `_comment`, `_ean` / `_ean_percent`, `_gf_set_1` / `_2`, `_cns_start` / `_end`.
+  The samples' `ndl` is minutes; 99 means none.
+- Kept: each dive's record as received, as one JSON Original; the buddy list itself never (only entry → account, on the
+  Import).
+
 ## Known but not used
 
 | Call | What | Note |
@@ -256,6 +293,8 @@ SSI is a Provider ([ADR 0027](../decisions/0027-providers-as-adapters.md)): ever
 | `apps/server/src/providers/ssi/ssi-client.ts` | the calls; errors as reasons (`wrong_credentials`, `signed_out`, `refused`, `unavailable`, `bad_response`), never with a URL |
 | `apps/server/src/providers/ssi/ssi-record.ts` | Dive → record, samples, update and delete records, read-back comparison, fingerprint |
 | `apps/server/src/providers/ssi/ssi-adapter.ts` | SSI's capabilities and requirements, sign-in, the logbook read (kept two minutes after a save), the ±2 min match, SSI's dive numbers, the SSI site ID, buddies as buddy-list entries; SSI's record as typed values |
+| `apps/server/src/providers/ssi/ssi-import.ts` | SSI's dives for an import (ADR 0030): evidence, local start, values, profile, computer, site, buddies as SSI accounts; the logbook's context |
+| `apps/server/src/providers/dive-import.ts` | generic: importing a Provider's dives (settings, preview, start, the worker's run) |
 | `apps/server/src/providers/buddy-service.ts` | generic: the account's list of people read live and imported as external Divers (name and account only) |
 | `apps/server/src/providers/ssi/ssi-sites.ts` | the site list for the admin's SSI site import |
 | `apps/server/src/providers/connection-service.ts`, `push-service.ts` | generic: Connections, signing in again, create / update / link / delete, Pushes |

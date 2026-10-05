@@ -204,3 +204,14 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .provider-buddies { display: grid; gap: var(--space-3); margin: var(--space-4) 0 var(--space-6); }
 .provider-buddies > h3 { font-size: var(--text-md); margin: 0; }
 .provider-buddies > .muted { margin: 0; }
+/* Importing the account's dives (ADR 0030), under its Connection: settings, the preview, the outcome. */
+.provider-import { display: grid; gap: var(--space-4); margin: var(--space-4) 0 var(--space-6); }
+.provider-import h3 { font-size: var(--text-md); margin: 0; }
+.provider-import h4 { font-size: var(--text-sm); font-weight: var(--weight-semibold); margin: 0; }
+.provider-import .muted, .provider-import p { margin: 0; }
+.provider-import-part { display: grid; gap: var(--space-3); }
+.import-counts { margin: 0; padding-left: var(--space-5); }
+.import-counts li + li { margin-top: var(--space-1); }
+.import-summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); }
+.imports .import-groups, .import-groups { display: block; margin: 0; padding-left: var(--space-5); flex-basis: 100%; }
+.imports .import-groups li { display: list-item; padding: 0; border: none; }

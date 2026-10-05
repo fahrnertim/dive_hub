@@ -116,6 +116,56 @@ export async function connectSsi(api: APIRequestContext) {
   if (!response.ok()) throw new Error(`connecting to SSI failed: ${response.status()} ${await response.text()}`);
 }
 
+/** Lena's own SSI account (ADR 0030): the e2e server's fake SSI has her logbook to import. Lena is a Diver Erika keeps. */
+export const LENA_SSI = { login: 'lena@example.com', password: 'ssi-password-lena' };
+
+/**
+ * Lena connected to her SSI account, the import set to also create dives, matching within 30 minutes. Tests that call it
+ * disconnect her at the end (leaveLena), so other specs see only Erika's Connection.
+ */
+export async function lenaReady(api: APIRequestContext): Promise<{ diverId: string; connectionId: string }> {
+  const divers = await (await api.get('/api/divers')).json() as { id: string; name: string }[];
+  const lena = divers.find((d) => d.name === 'Lena')!;
+  const connections = await (await api.get('/api/connections')).json() as Connection[];
+  let connectionId = connections.find((c) => c.provider === 'ssi' && c.diverId === lena.id)?.id;
+  if (!connectionId) {
+    const created = await api.post('/api/connections/ssi', { data: { diverId: lena.id, ...LENA_SSI, keepSignedIn: false }, headers });
+    if (!created.ok()) throw new Error(`connecting Lena to SSI failed: ${created.status()} ${await created.text()}`);
+    connectionId = (await created.json() as { id: string }).id;
+  }
+  await api.patch(`/api/connections/${connectionId}`, { data: { diveImport: { mode: 'create', windowMinutes: 30 } }, headers });
+  return { diverId: lena.id, connectionId };
+}
+
+/** Lena's SSI dives imported (nothing new when they are already), the entries with several dives here left out. */
+export async function importLena(api: APIRequestContext) {
+  const ready = await lenaReady(api);
+  const started = await api.post(`/api/connections/${ready.connectionId}/dive-import`, { data: { computers: [], decisions: [] }, headers });
+  if (!started.ok()) throw new Error(`importing Lena's dives failed: ${started.status()} ${await started.text()}`);
+  const { id } = await started.json() as { id: string };
+  await expect.poll(async () => (await (await api.get(`/api/imports/${id}`)).json() as { status: string }).status, { timeout: 30_000 }).toBe('done');
+  return ready;
+}
+
+/** A Dive of Lena's made from her SSI logbook, which has no recording (ADR 0030). */
+export async function diveWithoutRecording(api: APIRequestContext): Promise<string> {
+  const { diverId } = await importLena(api);
+  const { dives } = await (await api.get(`/api/dives?diverId=${diverId}&limit=200&sort=startsAt&order=asc`)).json() as { dives: { id: string }[] };
+  for (const d of dives) {
+    const view = await (await api.get(`/api/dives/${d.id}`)).json() as { recordings: unknown[]; fromProvider: string | null };
+    if (view.recordings.length === 0 && view.fromProvider) return d.id;
+  }
+  throw new Error('Lena has no dive without a recording');
+}
+
+/** Lena's SSI Connection gone again; her dives stay. */
+export async function leaveLena(api: APIRequestContext) {
+  const divers = await (await api.get('/api/divers')).json() as { id: string; name: string }[];
+  const lena = divers.find((d) => d.name === 'Lena');
+  const connections = await (await api.get('/api/connections')).json() as Connection[];
+  for (const c of connections.filter((x) => x.provider === 'ssi' && x.diverId === lena?.id)) await api.delete(`/api/connections/${c.id}`, { headers });
+}
+
 /** No SSI Connections at all. */
 export async function disconnectSsi(api: APIRequestContext) {
   const connections = await (await api.get('/api/connections')).json() as Connection[];

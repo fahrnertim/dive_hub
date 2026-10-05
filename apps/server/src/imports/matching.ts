@@ -56,3 +56,34 @@ export function decideMatch(
   }
   return { kind: 'attach', diveId: dive.id };
 }
+
+/** A Dive's start as its local wall-clock time, in ms as if UTC (ADR 0030). Without an offset, its stored time. */
+export const localStartMs = (d: { startsAt: Date; utcOffsetSeconds: number | null }) =>
+  d.startsAt.getTime() + (d.utcOffsetSeconds ?? 0) * 1000;
+
+/**
+ * The Dives a Provider's logbook entry may be (ADR 0030): on the same local day, starting within the window, compared in
+ * local time. Closest first.
+ */
+export function entryMatches<D extends { id: string; startsAt: Date; utcOffsetSeconds: number | null }>(
+  entryLocalMs: number, dives: D[], windowMinutes: number,
+): D[] {
+  const day = (ms: number) => Math.floor(ms / 86_400_000);
+  return dives
+    .map((d) => ({ d, apart: Math.abs(localStartMs(d) - entryLocalMs) }))
+    .filter(({ d, apart }) => day(localStartMs(d)) === day(entryLocalMs) && apart <= windowMinutes * 60_000)
+    .sort((a, b) => a.apart - b.apart)
+    .map(({ d }) => d);
+}
+
+/**
+ * Candidates as a Recording compares with them: where either side's offset is unknown (its wall-clock time kept as if
+ * UTC, ADR 0030), the Dive's local time is moved into the Recording's offset, so the two compare in local time.
+ */
+export function alignedForMatching<D extends { startsAt: Date; utcOffsetSeconds: number | null; utcOffsetSource: string }>(
+  rec: { utcOffsetSeconds: number | null; utcOffsetSource: string }, dives: D[],
+): D[] {
+  return dives.map((d) => (rec.utcOffsetSource === 'unknown' || d.utcOffsetSource === 'unknown'
+    ? { ...d, startsAt: new Date(localStartMs(d) - (rec.utcOffsetSeconds ?? 0) * 1000) }
+    : d));
+}

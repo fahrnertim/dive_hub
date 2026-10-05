@@ -29,6 +29,8 @@ const AREAS = [
   [/^apps\/web\/e2e\/fixtures\/deletable-computer\.fit$/, ['@dives']],
   [/^apps\/web\/src\/DiversPage\.tsx$/, ['@divers']],
   [/^apps\/web\/src\/(Account|AccountPage|Connections|ProviderBuddies)\.tsx$/, ['@account']],
+  // Importing a Provider's dives (ADR 0030): on the Connection, and the dives it makes.
+  [/^apps\/web\/src\/ProviderDiveImport\.tsx$/, ['@account', '@dives']],
   [/^apps\/web\/src\/ProviderPanel\.tsx$/, ['@dives']],
   // Providers in the web client (ADR 0027): the account's Connections and each Dive's panels read them.
   [/^apps\/web\/src\/lib\/providers\.ts$/, ['@dives', '@account']],

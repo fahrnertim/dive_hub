@@ -65,9 +65,11 @@ export function formatDuration(seconds: number, locale: string): string {
  * Dive time as the diver experienced it: local time at the dive site (UTC + the dive's offset),
  * or the browser's time zone when the offset is unknown.
  */
-export function formatDiveTime(isoUtc: string, offsetSeconds: number | null, locale: string): string {
+export function formatDiveTime(isoUtc: string, offsetSeconds: number | null, locale: string, wallClock = false): string {
   const utc = new Date(isoUtc);
   const style = { dateStyle: 'medium', timeStyle: 'short' } as const;
+  // A time logged without a time zone (ADR 0030) is kept as if it were UTC: shown as it was logged, without an offset.
+  if (offsetSeconds === null && wallClock) return utc.toLocaleString(locale, { ...style, timeZone: 'UTC' });
   if (offsetSeconds === null) return utc.toLocaleString(locale, style);
   const local = new Date(utc.getTime() + offsetSeconds * 1000);
   const text = local.toLocaleString(locale, { ...style, timeZone: 'UTC' });

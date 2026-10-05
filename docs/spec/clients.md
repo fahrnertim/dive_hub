@@ -1,8 +1,8 @@
 ---
 title: Client contract
-summary: What every client of the Dive Hub API must do (web client, native mobile app, scripts) - obligations first, then each area's duties and conventions; with reasons, ADRs and where the web client does it; plus server gaps found while writing it.
+summary: What every client of the Dive Hub API must do (web client, native mobile app, scripts) - obligations first, then each area's duties and conventions; with reasons, ADRs and where the web client does it; importing dives from a Provider (settings, preview, decisions, outcome), times without a time zone, Dives without a Recording; plus server gaps found while writing it.
 status: living
-date: 2026-10-05
+date: 2026-10-06
 ---
 
 # Client contract
@@ -186,6 +186,12 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   content before), Duplicate candidate, skipped (for example a Device of another User's Diver, or `deleted_earlier`: the
   dive was deleted, say where to restore it), failed. Link to the Dive where there is one, and say what became of a
   Duplicate candidate since. *Web:* `ImportPanel.tsx` (`ImportRow`).
+- **An import from a Provider** (`provider` set, [ADR 0030](../decisions/0030-importing-dives-from-providers.md)) is named
+  by the Provider ("Dives from SSI"; `uploadName` is its name) and has one outcome per dive there (`remoteId`,
+  `remoteNumber`), often dozens: sum them up by result and reason rather than listing each. Its own results and reasons:
+  `linked` (a logbook entry tied to a Dive here and filled where it was empty), `sent_by_dive_hub`, `no_match` (the import
+  only adds), `ambiguous` (several Dives here and no decision that still fits; say to choose one in the preview),
+  `left_out` (the User's decision). *Web:* `ImportPanel.tsx` (`ProviderImportSummary`).
 
 ### Dives
 - **Overrides:**
@@ -196,11 +202,20 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **Time:** a Dive's start is UTC plus the UTC offset at the dive. Show and edit it as the local time at the dive.
   The offset is edited in quarter hours. Without a known offset, the device's time zone stands in.
   *Web:* `DiveEditForm.tsx`, `lib/units.ts`.
+  - **`utcOffsetSource: unknown`** ([ADR 0030](../decisions/0030-importing-dives-from-providers.md)): the start is a local
+    time logged without a time zone and kept as if it were UTC. Show it in UTC without an offset (as it was logged), never
+    in the browser's time zone. The Dive, the dive list and the deleted Dives carry `utcOffsetSource`.
+  - **Must say where the time zone came from** when it isn't the device (`position`: where the dive was; `nearby`: the
+    Diver's dives in the days around it; `unknown`: the time is shown as logged), unless the User set the start by hand
+    (`startsAt` in `overrides`). *Web:* `DiveDetail.tsx` (`TimeZoneNote`).
 - **Notes** are the Dive's own; an empty text clears them (`null`).
 - **Recordings:**
   - Name them by their Device ("Garmin Descent Mk3 (777)"), not "Recording 2" (ADR 0016).
   - Show which one is primary. Changing it makes values without Override follow the new one.
   - The Dive's last Recording can't be split off; the server refuses (`last_recording`).
+  - **A Dive without a Recording** (`recordings` empty, ADR 0030) was made from a Provider's logbook entry
+    (`fromProvider`): say so, naming the Provider, and that the dive computer's file adds its Recording, which then becomes
+    primary and its values replace these. There is no profile. *Web:* `DiveDetail.tsx` (`NoRecording`).
 - **Moving a Dive** to another Diver the User manages names that Diver; the Dive's site and values stay.
 - **Deleting a Dive** ([ADR 0026](../decisions/0026-deleting-dives.md), `DELETE /api/dives/{id}` with `version`):
   - **Must say what happens** before: it leaves the logbook, its counts and search; it can be restored; importing its
@@ -220,6 +235,9 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
     The reminder may be dismissed for a visit; it comes back while the dive is there. *Web:* `DeletedDives.tsx`.
 - **History:** a restored Dive's history shows "Deleted" and "Restored" (causes `delete`, `restore`; their change
   `deletedAt` needs no line of its own). *Web:* `DiveHistory.tsx`.
+- **History:** an import from a Provider writes `fill` (what a Dive lacked, from the Provider's dive: `site`,
+  `participants`, `notes`); a Dive made from a logbook entry starts with `import-create` and the change `fromProvider`;
+  the change `utcOffsetSource` names where the time zone came from before and after. *Web:* `DiveHistory.tsx`.
 - **History:** Revisions newest first, translated by `cause`. The web client groups one person's edits within ten
   minutes into one entry, and shows three entries before "Show the whole history". *Web:* `DiveHistory.tsx`, `lib/history.ts`.
 - **The depth profile needs a text alternative:** a summary (deepest point and when, duration, temperature range)
@@ -276,6 +294,32 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
   Pushes is optional; `remoteGone` on a confirmed delete means it was already deleted there.
 - **Translate provider_* codes with the Provider named** (`providerName` in the answer). *Web:* `lib/display.ts` (`useProblemText`).
 
+### Importing dives from a Provider (SSI)
+From the Connection (`diveImport` on `GET /api/connections`, null when the Provider imports no dives) and the
+Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/0030-importing-dives-from-providers.md).
+*Web:* `ProviderDiveImport.tsx`, under the Connection.
+- **What the import may do**, saved on the Connection (`PATCH /api/connections/{id}` with `diveImport`): `mode` off (the
+  default), `add` (only link and fill Dives here, never create) or `create` (also create Dives Dive Hub doesn't have),
+  and the matching window, 5, 15, 30 or 60 minutes. Explain each choice: Dives here are never overwritten; the Provider
+  only fills what they lack. Name the Diver when the User keeps several.
+- **Preview first** (`GET /api/connections/{id}/dive-import`, only on request: it reads the Provider, one paced action;
+  `provider_import_off` while the mode is off). Show:
+  - the counts that aren't zero, each with what happens: `recordings` (from a dive computer, like a file), `link`,
+    `create`, `decide`, `linked` (filled where still empty), `ours` (sent from Dive Hub, stay), `deleted` (stay deleted),
+    `noMatch` (left out because the import only adds), `unreadable`;
+  - **every computer** (`computers`) with its `choice`, recordings or only logbook entries, saved at once on the
+    Connection (`PATCH` with `diveImport.computers`), which refreshes the preview. Say why the suggestion is entries when
+    `fromFiles` (Dive Hub has the computer's files, which are more exact), and that `otherDiver` computers come in as
+    entries whatever the choice;
+  - **every entry to decide** (`decisions`): the Provider's dive (its number, its local time as logged, depth, duration)
+    and the Dives here (`candidates`, closest first, each named by its number, time, depth, duration, site), "A new dive"
+    only with mode `create`, and "Leave it out", preselected.
+- **Start** (`POST /api/connections/{id}/dive-import` with `computers` and `decisions`; 202 with the Import): poll the
+  Import until it is done and sum up its outcome; refresh the logbook then. It can be run again: unchanged dives stay
+  as they are, linked ones are only filled where still empty.
+- **Must not suggest it overwrites anything**, and must not show the Provider's people by more than their name (the
+  server keeps only accounts; nothing else of them reaches the client).
+
 ### Duplicate candidates
 - **Show them where the User decides,** first on the logbook ("Needs your decision"), with the Recording (time,
   depth, duration, Device), why it waits (`reason`) and the Dives it might belong to (ADR 0016).
@@ -298,6 +342,8 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
   (`GET /api/connections/{id}/buddies`): who is a Diver here already, adding entries as external Divers one by one or
   all at once (`POST …/buddies/import` with `accounts`), and linking an entry to a Diver here instead
   (`PUT /api/divers/{id}/external-ids/{source}`). An entry without `account` can't be added. *Web:* `ProviderBuddies.tsx`.
+- **Devices from a Provider:** importing a Provider's dives from a computer creates its Device for the Connection's
+  Diver, the same Device the computer's own files find later (ADR 0030); list it like any other.
 - **Devices:** assigning one to another Diver affects only Imports from then on (ADR 0016). Say so where it is
   changed; single Dives move with "Move".
 - **The logbook offers a Diver filter only when the User keeps several Divers,** and then shows the Diver column.

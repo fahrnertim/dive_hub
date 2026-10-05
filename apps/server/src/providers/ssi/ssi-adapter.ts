@@ -1,5 +1,5 @@
-// SSI as a Provider (ADR 0024, 0027, 0029): what is SSI's own. Signing in, its logbook, its dive record, the ±2 min
-// match, its dive numbers, the SSI site ID, and buddies as entries of the User's own buddy list. Everything SSI answers is turned into typed values here; no `odin_*` field is
+// SSI as a Provider (ADR 0024, 0027, 0029, 0030): what is SSI's own. Signing in, its logbook, its dive record, the ±2 min
+// match, its dive numbers, the SSI site ID, buddies as entries of the User's own buddy list, and its dives to import. Everything SSI answers is turned into typed values here; no `odin_*` field is
 // read outside this folder. Connections, Pushes, pacing and the routes are the generic layer's.
 import {
   ProviderError, type ActionContext, type Capabilities, type Delivered, type DiveExportAction, type OutgoingDive,
@@ -10,6 +10,7 @@ import {
   buddyIdsOf, COMPARED_FIELDS, compareReadBack, createRecord, deleteRecord, fingerprint, localTime, updateRecord, withBuddies,
   type DiveForSsi,
 } from './ssi-record.js';
+import { contextOf, parseSsiDive, SSI_PARSER } from './ssi-import.js';
 
 /** Two dives this close in time (minutes) count as the same descent. */
 const SAME_DIVE_MINUTES = 2;
@@ -34,6 +35,8 @@ export const SSI_CAPABILITIES: Capabilities = {
         ],
         readBackFields: [...COMPARED_FIELDS],
       },
+      // `list`: the whole logbook, profiles included, in one read (ADR 0030).
+      import: { operations: ['list'] },
     },
     // `find`: the sites of the User's logbook; `list`: SSI's whole site list for the admin's Site import (ssi-sites.ts).
     diveSites: { import: { operations: ['find', 'list'], findBy: ['position'] } },
@@ -211,7 +214,19 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
       const account = await called('authenticate', null, () => client.signIn(input.login, input.password));
       return { account: { id: account.accountId, label: account.email }, access: account.token };
     },
-    dives: { mode: 'api', fingerprint: (dive) => fingerprint(forSsi(dive)), open },
+    dives: {
+      mode: 'api', fingerprint: (dive) => fingerprint(forSsi(dive)), open,
+      async list(ctx, options) {
+        const read = logbookOf(ctx);
+        const logbook = await (options?.recent ? read.recent() : read.current());
+        return {
+          records: logbook.dives.flatMap((r) => { const id = idOf(r.odin_user_log_id); return id ? [{ remoteId: id, record: r }] : []; }),
+          context: contextOf(logbook),
+        };
+      },
+      parse: parseSsiDive,
+      parser: SSI_PARSER,
+    },
     diveSites: { find: async (ctx) => (await logbookOf(ctx).recent()).sites },
     buddies: {
       find: async (ctx) => (await logbookOf(ctx).recent()).buddies.map((b) => ({ remoteId: String(b.id), name: b.name, account: b.account })),

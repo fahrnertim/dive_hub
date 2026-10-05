@@ -7,8 +7,8 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { dataFile, type PreparedData } from './prepare.ts';
 import {
-  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, clearParticipants, connectSsi, deletableDive, expectGoodPage, externalDiver, forgetDivers, leaveSsi, readyForSsi,
-  resetDive, sendToSsi, setBuddies, setPreferences,
+  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, clearParticipants, connectSsi, deletableDive, diveWithoutRecording, expectGoodPage, externalDiver,
+  forgetDivers, leaveLena, leaveSsi, lenaReady, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
@@ -239,6 +239,34 @@ for (const v of variants) {
       await page.getByRole('button', { name: v.english ? /^Show your SSI buddy list/ : /^Deine SSI-Buddyliste zeigen/ }).click();
       await expect(page.getByRole('row', { name: /Mia Stone/ })).toBeVisible();
       await expectGoodPage(page, title('My account'), v);
+    });
+
+    // Importing dives from SSI (ADR 0030), with Lena's logbook: the setting, the preview with a computer and a decision
+    // (the entry on 13 August always has two dives to choose from), the outcome, and a dive without a recording.
+    test('my account, importing dives from SSI: the preview, then the outcome', { tag: ['@account'] }, async ({ page, request }) => {
+      await lenaReady(request);
+      try {
+        await page.goto('/#/account');
+        const section = page.getByRole('region', { name: v.english ? 'Dives of Lena from SSI' : 'Tauchgänge von Lena aus SSI' });
+        await section.getByRole('button', { name: v.english ? 'Show what the import would do' : 'Zeigen, was der Import tun würde' }).click();
+        await expect(section.getByRole('radiogroup', { name: v.english ? /^SSI dive 15: / : /^SSI-Tauchgang 15: / })).toBeVisible();
+        await expectGoodPage(page, title('My account'), v);
+        await section.getByRole('button', { name: v.english ? 'Import from SSI' : 'Aus SSI importieren' }).click();
+        await expect(section.getByRole('link', { name: v.english ? 'Go to the logbook' : 'Zum Logbuch' })).toBeVisible({ timeout: 30_000 });
+        await expectGoodPage(page, title('My account'), v);
+      } finally {
+        await leaveLena(request);
+      }
+    });
+
+    test('a dive from SSI without a recording, and where its time zone came from', { tag: ['@dives'] }, async ({ page, request }) => {
+      try {
+        await page.goto(`/#/dives/${await diveWithoutRecording(request)}`);
+        await expect(page.getByText(v.english ? /^No recording yet/ : /^Noch keine Aufzeichnung/)).toBeVisible();
+        await expectGoodPage(page, title('Dive'), v);
+      } finally {
+        await leaveLena(request);
+      }
     });
 
     // Deleting a Dive (ADR 0026): the shared dive 42 only gets the dialog opened; dive 9 is deleted and comes back.

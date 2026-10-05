@@ -2,7 +2,7 @@
 // its capabilities (how Users sign in, what it imports or exports, with which operations, how fast it may be called)
 // and does only what is its own. Connections, credentials, Pushes, leases, pacing, problem codes and the routes are
 // the generic layer's (connection-service.ts, push-service.ts, leases.ts, routes.ts).
-import type { ParticipantRole } from '../db/schema.js';
+import type { ParticipantRole, ProviderImportPlan } from '../db/schema.js';
 import type { SiteWaterType } from '../vocabulary.js';
 import type { SiteSource } from '../sites/sources.js';
 
@@ -206,6 +206,57 @@ export interface RemoteBuddy {
   account: string | null;
 }
 
+/** What Dive Hub sends to find a dive again when an answer is lost: `divehub-<Dive id>`. */
+export const REFERENCE_PREFIX = 'divehub-';
+export const referenceOf = (diveId: string) => `${REFERENCE_PREFIX}${diveId}`;
+
+/**
+ * What a Provider's records need besides themselves (ADR 0030), kept on the Import: the account at the Provider of each
+ * entry in the User's list of people, and each site's name and position. Never the people's names or anything else.
+ */
+export type ImportContext = ProviderImportPlan['context'];
+
+/** The account's dives at the Provider, each as the record it keeps, and their context. */
+export interface DiveListing {
+  records: { remoteId: string; record: Record<string, unknown> }[];
+  context: ImportContext;
+}
+
+/**
+ * A dive as a Provider keeps it, in typed values (ADR 0030). `evidence` says how it got there: `ours` carries Dive Hub's
+ * reference, `computer` was synced from a dive computer (a profile and a serial number), `logbook` was typed by hand.
+ */
+export interface ImportedDive {
+  remoteId: string;
+  remoteNumber: number | null;
+  evidence: 'ours' | 'computer' | 'logbook';
+  /** Dive Hub's reference (`divehub-<Dive id>`) when it carries one. */
+  reference: string | null;
+  /** The local wall-clock start, "YYYY-MM-DD HH:MM[:SS]", without a time zone. */
+  localStart: string;
+  durationSeconds: number;
+  maxDepthM: number | null;
+  avgDepthM: number | null;
+  /** Lowest and highest water temperature. */
+  waterTemperatureC: number | null;
+  maxTemperatureC: number | null;
+  entry: { latitude: number; longitude: number } | null;
+  exit: { latitude: number; longitude: number } | null;
+  /** The dive's site at the Provider: its IDs by site Source, and its position from the context. */
+  siteIds: Partial<Record<SiteSource, string>>;
+  sitePosition: { latitude: number; longitude: number } | null;
+  device: { manufacturer: string; product: string | null; serialNumber: string; firmware: string | null } | null;
+  samples: { depth?: Series | undefined; temperature?: Series | undefined; ndl?: Series | undefined };
+  gases: { o2: number; he: number }[];
+  gfLow: number | null;
+  gfHigh: number | null;
+  cnsStart: number | null;
+  cnsEnd: number | null;
+  /** The people on the dive, as their accounts at the Provider (Diver External IDs at `accountSource`). */
+  people: string[];
+  notes: string | null;
+}
+
 export interface ProviderAdapter {
   id: ProviderId;
   capabilities: Capabilities;
@@ -219,6 +270,15 @@ export interface ProviderAdapter {
     /** What decides "outdated": a hash of what this Provider receives of the Dive. */
     fingerprint(dive: OutgoingDive): string;
     open(context: ActionContext): DiveExportAction;
+    /**
+     * With `dives.import` `list` (ADR 0030): the account's dives as the Provider keeps them, read in one action. `recent`:
+     * a read the adapter kept from moments ago may answer (the start right after a preview); otherwise it reads afresh.
+     */
+    list?(context: ActionContext, options?: { recent?: boolean }): Promise<DiveListing>;
+    /** One of those records in typed values; null when it is no dive Dive Hub can read. Pure: no calls. */
+    parse?(record: Record<string, unknown>, context: ImportContext): ImportedDive | null;
+    /** The parser name and version a Recording made from a Provider's dive carries, e.g. `ssi-app-api`. */
+    parser?: { name: string; version: string };
   };
   diveSites?: {
     /** The Provider's sites the User can pick from (SSI: the sites in their logbook). */

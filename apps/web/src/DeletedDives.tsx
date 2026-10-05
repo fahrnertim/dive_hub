@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+﻿import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, deletedDivesQuery, diversQuery, keys, unwrap, type DeletedDiveView, type ProviderView } from './api.ts';
@@ -13,8 +13,8 @@ import { Button, ConfirmButton, Muted, Notice, Panel } from './ui/index.ts';
 function useDiveName() {
   const { t } = useTranslation();
   const display = useDisplay();
-  return (d: Pick<DeletedDiveView, 'number' | 'startsAt' | 'utcOffsetSeconds'>) =>
-    d.number !== null ? t('dive.title', { number: d.number }) : display.diveTime(d.startsAt, d.utcOffsetSeconds);
+  return (d: Pick<DeletedDiveView, 'number' | 'startsAt' | 'utcOffsetSeconds' | 'utcOffsetSource'>) =>
+    d.number !== null ? t('dive.title', { number: d.number }) : display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource);
 }
 
 /** Restoring changes every list and count, like deleting did. */
@@ -90,7 +90,7 @@ function JustDeletedNotice({ just, dive: d }: { just: JustDeleted; dive: Deleted
 
 /**
  * At the bottom of the logbook: "Show deleted dives", and the list to restore them from, marking those still at a
- * Provider with "Delete in …" (ADR 0026, 0027). Opening moves focus to the list's heading, closing back to the button.
+ * Provider with "Delete in â€¦" (ADR 0026, 0027). Opening moves focus to the list's heading, closing back to the button.
  */
 export function DeletedDives() {
   const { t } = useTranslation();
@@ -141,13 +141,13 @@ function DeletedRow({ dive: d, list, index, count }: {
   const restore = useRestore(d, () => refocusAfterRemoval(list.current, index, count));
   const diverName = (divers.data?.length ?? 0) > 1 ? divers.data?.find((v) => v.id === d.diverId)?.name : undefined;
   const facts = [
-    ...(d.number !== null ? [display.diveTime(d.startsAt, d.utcOffsetSeconds)] : []),
+    ...(d.number !== null ? [display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource)] : []),
     d.site?.name, display.depth(d.maxDepthM), display.duration(d.durationSeconds), diverName,
   ].filter(Boolean);
   return (
     <li className="decision">
       <div className="decision-recording">
-        <p><strong>{name}</strong>{facts.length > 0 && ` · ${facts.join(' · ')}`}</p>
+        <p><strong>{name}</strong>{facts.length > 0 && ` Â· ${facts.join(' Â· ')}`}</p>
         <p className="muted">{t('deleted.deletedOn', { date: display.dateTime(d.deletedAt) })}</p>
         {d.stillAt.map((c) => <p key={c.provider}>{t('deleted.stillAt', { name: providerOf(c.provider).name, number: c.remoteNumber ?? '' })}</p>)}
       </div>

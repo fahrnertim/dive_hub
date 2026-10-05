@@ -1,7 +1,7 @@
 // FIT parsing behind our own interface (ADR 0006): the published image uses fit-file-parser (MIT);
 // Garmin's official SDK is only used in tests to cross-check results.
 import FitParser from 'fit-file-parser';
-import type { RecordingSummary } from '../db/schema.js';
+import type { RecordingSummary, UtcOffsetSource } from '../db/schema.js';
 import { circuitFromFit, decoModelFromFit, diveModeFromFit, waterTypeFromFit } from './fit-vocabulary.js';
 
 export interface ParsedDevice {
@@ -36,6 +36,8 @@ export interface ParsedRecording {
   recordingKey: string;
   startsAt: Date;
   utcOffsetSeconds: number | undefined;
+  /** Where the offset came from (ADR 0030); a file's comes from its device, so FIT leaves it out. */
+  utcOffsetSource?: UtcOffsetSource;
   durationSeconds: number;
   maxDepthM: number | undefined;
   avgDepthM: number | undefined;

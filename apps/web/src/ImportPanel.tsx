@@ -197,17 +197,54 @@ function ImportList({ imports }: { imports: ImportView[] }) {
   );
 }
 
+/** An Import's outcome counted by what happened and why: "new dive: 3" (an import from a Provider has many dives). */
+function useGroupedOutcome() {
+  const { t, i18n } = useTranslation();
+  return useCallback((i: ImportView) => {
+    const groups = new Map<string, number>();
+    for (const o of i.outcome) {
+      const what = t(`import.result.${o.result}`) + (o.reason ? ` (${t(`import.reason.${o.reason}`)})` : '');
+      groups.set(what, (groups.get(what) ?? 0) + 1);
+    }
+    const number = new Intl.NumberFormat(i18n.language);
+    return [...groups].map(([what, count]) => t('import.grouped', { what, count: number.format(count) }));
+  }, [t, i18n.language]);
+}
+
 /** One line for an Import's result, as announced when it finishes. */
 function useDescribeOutcome() {
   const { t } = useTranslation();
+  const grouped = useGroupedOutcome();
   return useCallback((i: ImportView) => {
     if (i.errorCode) return t(`import.errorCode.${i.errorCode}`);
+    if (i.provider) return grouped(i).join(', ') || t(`import.status.${i.status}`);
     return i.outcome.map((o) => t(`import.result.${o.result}`)).join(', ') || t(`import.status.${i.status}`);
-  }, [t]);
+  }, [t, grouped]);
+}
+
+/** An import of a Provider's dives (ADR 0030), summed up: its state and what happened, counted. */
+export function ProviderImportSummary({ item }: { item: ImportView }) {
+  const { t } = useTranslation();
+  const grouped = useGroupedOutcome();
+  return (
+    <div className="import-summary">
+      <Badge tone={statusTone(item)}>{t(`import.status.${item.status}`)}</Badge>
+      {item.errorCode && <span className="import-error">{t(`import.errorCode.${item.errorCode}`)}</span>}
+      {item.outcome.length > 0 && <ul className="import-groups">{grouped(item).map((line) => <li key={line}>{line}</li>)}</ul>}
+    </div>
+  );
 }
 
 function ImportRow({ item }: { item: ImportView }) {
   const { t } = useTranslation();
+  if (item.provider) {
+    return (
+      <li>
+        <span className="import-name">{t('import.fromProvider', { name: item.uploadName })}</span>
+        <ProviderImportSummary item={item} />
+      </li>
+    );
+  }
   return (
     <li>
       <span className="import-name">{item.uploadName}</span>

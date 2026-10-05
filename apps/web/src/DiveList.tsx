@@ -130,7 +130,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
                 }}
               >
                 <td className="num cell-lead">{d.number ?? t('common.none')}</td>
-                <td className="cell-main"><a href={`#/dives/${d.id}`}>{display.diveTime(d.startsAt, d.utcOffsetSeconds)}</a></td>
+                <td className="cell-main"><a href={`#/dives/${d.id}`}>{display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource)}</a></td>
                 {several && <td className="cell-sub">{nameOf.get(d.diverId) ?? t('common.none')}</td>}
                 <td className="cell-sub">{d.site?.name ?? t('common.none')}</td>
                 <td className="num cell-sub">{display.depth(d.maxDepthM)}</td>

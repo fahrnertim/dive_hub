@@ -8,7 +8,7 @@ import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import type { Db } from '../db/client.js';
 import {
-  OVERRIDABLE_FIELDS, PARTICIPANT_ROLES, device, dive, diveSite, diverManagement, importJob, recording, revision, sampleSeries, user,
+  OVERRIDABLE_FIELDS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, device, dive, diveSite, diverManagement, importJob, recording, revision, sampleSeries, user,
   type RecordingSummary,
 } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
@@ -102,6 +102,14 @@ const DiveView = Type.Object({
   version: Type.Integer({ description: 'Send it back with an edit; it changes with every change' }),
   values: ValuesSchema,
   overrides: Type.Array(Field, { description: 'Values the User set by hand' }),
+  utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES], {
+    description: 'Where the start\'s UTC offset came from (ADR 0030): device, position (the time zone where the dive was), nearby (the '
+      + 'Diver\'s Dives within 7 days) or unknown (startsAt is the local wall-clock time kept as if UTC: show it in UTC without an '
+      + 'offset). Clients say where it came from when it isn\'t the device (docs/spec/clients.md)',
+  }),
+  fromProvider: Nullable(Type.String({
+    description: 'The Provider whose logbook entry this Dive was made from (ADR 0030); with no recordings, its values are that entry\'s',
+  })),
   fromRecording: Nullable(ValuesSchema, ),
   notes: Nullable(Type.String()),
   site: Nullable(Type.Object({ id: Type.String(), name: Type.String() }, { description: 'The Dive site (ADR 0020)' })),
@@ -162,6 +170,7 @@ const DeletedDiveView = Type.Object({
   number: Nullable(Type.Integer()),
   startsAt: DateTime,
   utcOffsetSeconds: Nullable(Type.Integer()),
+  utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES]),
   durationSeconds: Type.Number(),
   maxDepthM: Nullable(Type.Number()),
   site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
@@ -225,6 +234,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
         waterTemperatureC: row.waterTemperatureC,
       }),
       overrides: row.overrides,
+      utcOffsetSource: row.utcOffsetSource,
+      fromProvider: row.fromProvider,
       fromRecording: primary ? toValues(valuesFromRecording(primary)) : null,
       notes: row.notes,
       site: site ? { id: site.id, name: site.name } : null,
@@ -361,7 +372,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     return {
       dives: rows.map(({ d, siteName }) => ({
         id: d.id, diverId: d.diverId, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(),
-        utcOffsetSeconds: d.utcOffsetSeconds, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
+        utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
         site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null,
         deletedAt: d.deletedAt!.toISOString(),
         stillAt: [...(remote.get(d.id)?.entries() ?? [])].map(([provider, p]) => ({ provider, remoteNumber: p.remoteNumber })),

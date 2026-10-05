@@ -18,7 +18,8 @@ export function useDisplay() {
     depth: (metres: number | null) => formatDepth(metres, units, locale),
     temperature: (celsius: number | null) => formatTemperature(celsius, units, locale),
     duration: (seconds: number) => formatDuration(seconds, locale),
-    diveTime: (iso: string, offsetSeconds: number | null) => formatDiveTime(iso, offsetSeconds, locale),
+    /** `source` unknown: the time as it was logged, without a time zone (ADR 0030). */
+    diveTime: (iso: string, offsetSeconds: number | null, source?: string) => formatDiveTime(iso, offsetSeconds, locale, source === 'unknown'),
     dateTime: (iso: string) => formatDateTime(iso, locale),
     /** "28.4950° N, 34.5160° E" (ADR 0020). */
     position: (p: Position) => formatPosition(p, locale, {

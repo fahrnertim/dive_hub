@@ -28,6 +28,8 @@ export interface ContractHarness {
   deleteThere?(remoteId: string): void;
   /** With a `diver_mapping` requirement: a Participant the fake knows by the reference it needs. */
   participant?: OutgoingParticipant;
+  /** With `dives.import.list`: puts a dive typed by hand and one from a dive computer into the account at the fake. */
+  seedDives?(): void;
 }
 
 const later = (dive: OutgoingDive, minutes: number): OutgoingDive => ({ ...dive, startsAt: new Date(dive.startsAt.getTime() + minutes * 60_000) });
@@ -41,7 +43,7 @@ function declared(adapter: ProviderAdapter): string[] {
 /** Operations with a case below. */
 const CASES = [
   'dives.export.create', 'dives.export.readBack', 'dives.export.find', 'dives.export.link', 'dives.export.update',
-  'dives.export.delete', 'diveSites.import.find', 'buddies.import.find',
+  'dives.export.delete', 'diveSites.import.find', 'buddies.import.find', 'dives.import.list',
 ];
 /** Operations the adapter interface doesn't carry, and where they are tested instead. */
 const ELSEWHERE: Record<string, string> = {
@@ -203,6 +205,32 @@ export function providerContract(name: string, make: () => ContractHarness) {
       const stranger: OutgoingParticipant = { ...h.participant!, diverId: 'stranger', ids: { ssi: '1', padi: 'x-1' } };
       const other = await h.adapter.dives!.open(await connect(h)).create({ ...later(h.dive, 240), participants: [stranger] }, 'divehub-contract-9');
       expect(other.remoteId === null || typeof other.remoteId === 'string').toBe(true);
+    });
+
+    it.runIf(declares('dives.import.list'))('lists the account\'s dives with their context, and parses each without calls', async () => {
+      const h = make();
+      expect(h.seedDives, 'a harness for an adapter with dives.import.list seeds dives').toBeDefined();
+      expect(h.adapter.dives?.list && h.adapter.dives.parse && h.adapter.dives.parser).toBeTruthy();
+      h.seedDives!();
+      const ctx = await connect(h);
+      // One sent by Dive Hub carries our reference, and is told apart from the others.
+      await h.adapter.dives!.open(ctx).create(h.dive, 'divehub-0190a3f2-0000-7000-8000-000000000001');
+      const { records, context } = await h.adapter.dives!.list!(ctx);
+      expect(records.length).toBeGreaterThanOrEqual(3);
+      // The context: accounts and sites only, nothing else the Provider knows about people.
+      for (const account of Object.values(context.people)) expect(typeof account).toBe('string');
+      for (const site of Object.values(context.sites)) expect(Object.keys(site).sort()).toEqual(['latitude', 'longitude', 'name']);
+      const parsed = records.map((r) => h.adapter.dives!.parse!(r.record, context));
+      for (const [i, d] of parsed.entries()) {
+        expect(d?.remoteId).toBe(records[i]!.remoteId);
+        expect(d!.localStart).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
+        expect(d!.durationSeconds).toBeGreaterThan(0);
+      }
+      expect(new Set(parsed.map((d) => d!.evidence))).toEqual(new Set(['ours', 'computer', 'logbook']));
+      const fromComputer = parsed.find((d) => d!.evidence === 'computer')!;
+      expect(fromComputer.device?.serialNumber).toEqual(expect.any(String));
+      expect(fromComputer.samples.depth?.values.length).toBeGreaterThan(1);
+      expect(parsed.find((d) => d!.evidence === 'ours')!.reference).toBe('divehub-0190a3f2-0000-7000-8000-000000000001');
     });
 
     it.runIf(declares('buddies.import.find'))('offers the account\'s own list of people: an ID, a name and their account, nothing else', async () => {

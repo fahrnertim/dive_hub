@@ -2,8 +2,8 @@
 import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import {
-  OVERRIDABLE_FIELDS, PARTICIPANT_ROLES, dive, diveSite, diver, diverManagement, participant, recording,
-  type OverridableField, type ParticipantRole,
+  OVERRIDABLE_FIELDS, PARTICIPANT_ROLES, dive, diveSite, diver, diverManagement, importJob, participant, recording,
+  type OverridableField, type ParticipantRole, type UtcOffsetSource,
 } from '../db/schema.js';
 import {
   columnsOf, plain, sameValue, valuesFromRecording, valuesOfDive, type DiveValues,
@@ -47,10 +47,18 @@ async function lockManagedDive(tx: Tx, userId: string, diveId: string): Promise<
   return row.d;
 }
 
-async function primaryValues(tx: Tx, recordingId: string | null): Promise<DiveValues | null> {
+/** The Recording's values and where its offset came from (ADR 0030). */
+async function primaryOf(tx: Tx, recordingId: string | null): Promise<{ values: DiveValues; offsetSource: UtcOffsetSource } | null> {
   if (!recordingId) return null;
   const [rec] = await tx.select().from(recording).where(and(eq(recording.id, recordingId), isNull(recording.deletedAt)));
-  return rec ? valuesFromRecording(rec) : null;
+  return rec ? { values: valuesFromRecording(rec), offsetSource: rec.utcOffsetSource } : null;
+}
+
+/** Whether a Recording is a Provider's copy of a dive (made by an import from a Provider, ADR 0030), not a file's. */
+async function isProviderCopy(tx: Tx, recordingId: string): Promise<boolean> {
+  const [row] = await tx.select({ provider: importJob.provider }).from(recording)
+    .innerJoin(importJob, eq(importJob.id, recording.importId)).where(eq(recording.id, recordingId));
+  return !!row?.provider;
 }
 
 /**
@@ -59,7 +67,11 @@ async function primaryValues(tx: Tx, recordingId: string | null): Promise<DiveVa
  */
 async function apply(
   tx: Tx, current: DiveRow,
-  next: { values: DiveValues; overrides: OverridableField[]; notes: string | null; primaryRecordingId: string | null; siteId?: string | null },
+  next: {
+    values: DiveValues; overrides: OverridableField[]; notes: string | null; primaryRecordingId: string | null; siteId?: string | null;
+    /** Where the start's offset came from, when the Primary recording gives it (ADR 0030). */
+    offsetSource?: UtcOffsetSource;
+  },
   actor: Actor, cause: RevisionCause, extra: Changes = {},
 ): Promise<Changes> {
   const before = valuesOfDive(current);
@@ -89,6 +101,11 @@ async function apply(
   if (current.primaryRecordingId !== next.primaryRecordingId) {
     changes.primaryRecordingId = { from: current.primaryRecordingId, to: next.primaryRecordingId };
     columns.primaryRecordingId = next.primaryRecordingId;
+  }
+  // The offset's source follows the start time: from the Primary recording unless the User set the start by hand.
+  if (next.offsetSource && !next.overrides.includes('startsAt') && current.utcOffsetSource !== next.offsetSource) {
+    changes.utcOffsetSource = { from: current.utcOffsetSource, to: next.offsetSource };
+    columns.utcOffsetSource = next.offsetSource;
   }
   if (Object.keys(changes).length === 0) return changes;
   await tx.update(dive).set({ ...columns, version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, current.id));
@@ -126,7 +143,7 @@ export async function createDiveFromRecording(
 ): Promise<string> {
   const v = valuesFromRecording(rec);
   const [created] = await tx.insert(dive).values({
-    diverId, number: v.number, startsAt: v.startsAt.at, utcOffsetSeconds: v.startsAt.utcOffsetSeconds,
+    diverId, number: v.number, startsAt: v.startsAt.at, utcOffsetSeconds: v.startsAt.utcOffsetSeconds, utcOffsetSource: rec.utcOffsetSource,
     durationSeconds: v.durationSeconds, maxDepthM: v.maxDepthM, avgDepthM: v.avgDepthM,
     waterTemperatureC: v.waterTemperatureC, primaryRecordingId: rec.id,
   }).returning({ id: dive.id });
@@ -135,9 +152,24 @@ export async function createDiveFromRecording(
   return created!.id;
 }
 
-/** Adds a Recording to a Dive; the Dive's values stay with its Primary recording. */
+/**
+ * Adds a Recording to a Dive. The Dive's values stay with its Primary recording, except (ADR 0030): on a Dive without
+ * one, the Recording becomes primary; and a file's Recording becomes primary over a Provider's copy of the dive. Values
+ * without Override then follow it.
+ */
 export async function attachRecording(tx: Tx, diveId: string, recordingId: string, actor: Actor, cause: RevisionCause) {
   await tx.update(recording).set({ diveId, updatedAt: new Date() }).where(eq(recording.id, recordingId));
+  const [current] = await tx.select().from(dive).where(eq(dive.id, diveId)).for('update');
+  const takesOver = !!current && (!current.primaryRecordingId
+    || ((await isProviderCopy(tx, current.primaryRecordingId)) && !(await isProviderCopy(tx, recordingId))));
+  if (current && takesOver) {
+    const primary = (await primaryOf(tx, recordingId))!;
+    await apply(tx, current, {
+      values: merge(valuesOfDive(current), primary.values, current.overrides), overrides: current.overrides, notes: current.notes,
+      primaryRecordingId: recordingId, offsetSource: primary.offsetSource,
+    }, actor, cause, { recordings: { from: null, to: recordingId } });
+    return;
+  }
   await tx.update(dive).set({ version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
   await writeRevision(tx, 'dive', diveId, actor, cause, { recordings: { from: null, to: recordingId } });
 }
@@ -152,8 +184,8 @@ export function createDiveService(db: Db) {
         const reset = new Set(edit.reset ?? []);
         const set = Object.fromEntries(Object.entries(edit.set ?? {}).filter(([f]) => !reset.has(f as OverridableField))) as Partial<DiveValues>;
         const overrides = [...new Set([...current.overrides.filter((f) => !reset.has(f)), ...(Object.keys(set) as OverridableField[])])];
-        const fromRecording = await primaryValues(tx, current.primaryRecordingId);
-        const values = merge({ ...valuesOfDive(current), ...set }, fromRecording, overrides);
+        const primary = await primaryOf(tx, current.primaryRecordingId);
+        const values = merge({ ...valuesOfDive(current), ...set }, primary?.values ?? null, overrides);
         if (values.maxDepthM !== null && values.avgDepthM !== null && values.avgDepthM > values.maxDepthM) {
           throw new DiveError('dive_values_inconsistent');
         }
@@ -161,6 +193,7 @@ export function createDiveService(db: Db) {
         await apply(tx, current, {
           values, overrides, notes: edit.notes === undefined ? current.notes : edit.notes,
           primaryRecordingId: current.primaryRecordingId, ...(edit.siteId !== undefined && { siteId: edit.siteId }),
+          ...(primary && { offsetSource: primary.offsetSource }),
         }, { type: 'user', id: userId }, 'edit');
       });
     },
@@ -197,9 +230,11 @@ export function createDiveService(db: Db) {
         const [rec] = await tx.select({ id: recording.id }).from(recording)
           .where(and(eq(recording.id, recordingId), eq(recording.diveId, diveId), isNull(recording.deletedAt)));
         if (!rec) throw new DiveError('recording_not_on_dive');
-        const values = merge(valuesOfDive(current), await primaryValues(tx, recordingId), current.overrides);
+        const primary = await primaryOf(tx, recordingId);
+        const values = merge(valuesOfDive(current), primary?.values ?? null, current.overrides);
         await apply(tx, current, {
           values, overrides: current.overrides, notes: current.notes, primaryRecordingId: recordingId,
+          ...(primary && { offsetSource: primary.offsetSource }),
         }, { type: 'user', id: userId }, 'primary-change');
       });
     },
@@ -222,9 +257,11 @@ export function createDiveService(db: Db) {
         const actor: Actor = { type: 'user', id: userId };
         await tx.update(recording).set({ diveId: null }).where(eq(recording.id, rec.id));
         const primary = current.primaryRecordingId === rec.id ? remaining[0]!.id : current.primaryRecordingId;
-        const values = merge(valuesOfDive(current), await primaryValues(tx, primary), current.overrides);
+        const taken = await primaryOf(tx, primary);
+        const values = merge(valuesOfDive(current), taken?.values ?? null, current.overrides);
         await apply(tx, current, {
           values, overrides: current.overrides, notes: current.notes, primaryRecordingId: primary,
+          ...(taken && { offsetSource: taken.offsetSource }),
         }, actor, 'detach', { recordings: { from: rec.id, to: null } });
         return createDiveFromRecording(tx, rec, current.diverId, actor, 'detach');
       });
@@ -295,9 +332,11 @@ export function createDiveService(db: Db) {
 export async function refreshFromPrimary(tx: Tx, diveId: string, actor: Actor, cause: RevisionCause): Promise<void> {
   const [current] = await tx.select().from(dive).where(eq(dive.id, diveId)).for('update');
   if (!current) return;
-  const values = merge(valuesOfDive(current), await primaryValues(tx, current.primaryRecordingId), current.overrides);
+  const primary = await primaryOf(tx, current.primaryRecordingId);
+  const values = merge(valuesOfDive(current), primary?.values ?? null, current.overrides);
   await apply(tx, current, {
     values, overrides: current.overrides, notes: current.notes, primaryRecordingId: current.primaryRecordingId,
+    ...(primary && { offsetSource: primary.offsetSource }),
   }, actor, cause);
 }
 

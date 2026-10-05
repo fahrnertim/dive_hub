@@ -6,6 +6,7 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { deviceName } from './lib/devices.ts';
 import { useFormatValue, type HistoryField } from './lib/dive-values.ts';
 import { mergeEdits } from './lib/history.ts';
+import { useProviders } from './lib/providers.ts';
 import { Button, Muted, Notice, Panel } from './ui/index.ts';
 
 /** Values a Revision can change, with the water type that old Revisions mention (a Dive value before ADR 0025). */
@@ -46,6 +47,8 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
   const display = useDisplay();
   const format = useFormatValue();
   const divers = useQuery(diversQuery());
+  const providers = useProviders();
+  const providerName = (id: unknown) => providers.data?.find((x) => x.id === id)?.name ?? String(id);
   const diverName = (id: unknown) => divers.data?.find((v) => v.id === id)?.name ?? t('common.none');
   const who = r.actor.type === 'system' ? t('history.by.system')
     : r.actor.name ? t(`history.by.${r.actor.type}`, { name: r.actor.name }) : t('history.by.unknown');
@@ -64,6 +67,12 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
     if (key === 'recordings') return [to ? t('history.recordingAdded') : t('history.recordingRemoved')];
     if (key === 'diverId') return [t('history.change', { field: t('history.field.diverId'), from: diverName(from), to: diverName(to) })];
     if (key === 'originalId') return [t('history.fileReplaced')];
+    // A Dive made from a Provider's logbook entry, and where its time zone came from (ADR 0030).
+    if (key === 'fromProvider') return to ? [t('history.fromProvider', { name: providerName(to) })] : [];
+    if (key === 'utcOffsetSource') {
+      const source = (v: unknown) => t(`history.offsetSource.${v as 'device' | 'position' | 'nearby' | 'unknown'}`);
+      return [t('history.change', { field: t('history.field.utcOffsetSource'), from: source(from), to: source(to) })];
+    }
     if (key === 'site') {
       const name = (v: unknown) => (v as { name?: string } | null)?.name ?? t('common.none');
       return [t('history.change', { field: t('history.field.site'), from: name(from), to: name(to) })];

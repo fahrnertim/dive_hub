@@ -22,7 +22,12 @@ import { skippingClock } from '../src/providers/leases.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
-import { createFakeSsi } from './fake-ssi.js';
+import { computerDive, createFakeSsi, handTypedDive } from './fake-ssi.js';
+import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
+import { createDiveService } from '../src/dives/dive-service.js';
+import { createDiverService } from '../src/divers/diver-service.js';
+import { dive } from '../src/db/schema.js';
+import { eq } from 'drizzle-orm';
 import { createInvitations } from '../src/users/invitations.js';
 import { createSetup } from '../src/users/setup.js';
 import { startWorker } from '../src/worker.js';
@@ -47,7 +52,7 @@ url.pathname = `/${dbName}`;
 const { db, pool } = createDb(url.toString());
 await migrateDatabase(db, pool, here('../drizzle'));
 const blobs = createLocalBlobStore(await mkdtemp(join(tmpdir(), 'divehub-e2e-')));
-const imports = createImportService({ db, blobs });
+const imports = createImportService({ db, blobs, providerImports: () => providers.diveImports });
 
 /**
  * Overpass and Wikidata as recorded, SSI's site list hand-made in its format (test/fixtures/site-sources): the
@@ -79,7 +84,11 @@ const siteImports = createSiteImportService({
 // SSI as the fake answers it (ADR 0024): the browser tests never reach SSI. Its account is Erika's,
 // with the password below; the e2e server keeps passwords (it has an encryption key).
 const fakeSsi = createFakeSsi({
-  accounts: [{ email: 'erika@example.com', password: 'ssi-password', accountId: 5_012_047 }],
+  accounts: [
+    { email: 'erika@example.com', password: 'ssi-password', accountId: 5_012_047 },
+    // Lena's own SSI account, whose logbook dive-import.spec.ts imports (ADR 0030).
+    { email: 'lena@example.com', password: 'ssi-password-lena', accountId: 6_100_200 },
+  ],
   // Hausreef's 3314 is the ID site-import.spec.ts types by hand; ssi.spec.ts picks Schwarzenbach.
   sites: [
     { odin_dive_sites_id: 3314, odin_dive_sites_name: 'Hausreef', odin_dive_sites_lat: 27.29, odin_dive_sites_lon: 33.82, odin_countries_code_iso: 'EG' },
@@ -92,7 +101,7 @@ const fakeSsi = createFakeSsi({
   ],
 });
 const providers = createProviderLayer({
-  db, secrets: createSecretBox(Buffer.alloc(32, 9)),
+  db, blobs, secrets: createSecretBox(Buffer.alloc(32, 9)),
   adapters: [createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch, userAgent: 'DiveHub (e2e)' }) })],
   // The fake needs no pause between actions; the browser tests would only wait, so the pauses are skipped.
   clock: skippingClock(),
@@ -110,6 +119,26 @@ for (const file of ['main-computer.fit', 'backup-computer.fit']) {
   const created = await imports.createImport(user.id, file, Readable.from([data]), 1 << 26);
   await imports.processImport(created.id);
 }
+
+// Lena, a Diver Erika keeps, with four dives from a computer's files (UTC+2): two on 12 and two on 13 August 2025, at 10:00
+// and 10:40 local time each day. Her SSI logbook (ADR 0030): two dives typed by hand at Hausreef, one from a Mares, and
+// one typed by hand at 10:20 on each of those days, between two of her dives (dive-import.spec.ts decides the first; the
+// second stays to decide).
+const lena = await createDiverService(db).create(user.id, 'Lena');
+const dives = createDiveService(db);
+for (const [n, start] of [[501, '2025-08-12T08:00:00Z'], [502, '2025-08-12T08:40:00Z'], [503, '2025-08-13T08:00:00Z'], [504, '2025-08-13T08:40:00Z']] as const) {
+  const created = await imports.createImport(user.id, `lena-${n}.fit`, Readable.from([Buffer.from(makeSyntheticDive({ serialNumber: 7070, start: new Date(start), diveNumber: n }))]), 1 << 26);
+  const outcome = await imports.processImport(created.id);
+  const [moved] = await db.select({ id: dive.id, version: dive.version }).from(dive).where(eq(dive.id, outcome[0]!.diveId!));
+  await dives.move(user.id, moved!.id, lena.id, moved!.version);
+}
+for (const record of [
+  handTypedDive({ at: '2025-08-10 10:00', depthM: 20, minutes: 45, siteId: 3314, comment: 'Napoleon at the drop-off', nr: 11 }),
+  handTypedDive({ at: '2025-08-10 14:30', depthM: 16, minutes: 50, siteId: 3314, nr: 12 }),
+  computerDive({ at: '2025-08-11 09:30', depthM: 22, minutes: 40, manufacturer: 'Mares', product: 'Puck 4', serial: '4711', siteId: 3314, nr: 13 }),
+  handTypedDive({ at: '2025-08-12 10:20', depthM: 18, minutes: 40, nr: 14 }),
+  handTypedDive({ at: '2025-08-13 10:20', depthM: 18, minutes: 40, nr: 15 }),
+]) fakeSsi.addDive(6_100_200, record);
 
 // Uploads made by the tests are processed in the background, as in the real app.
 const worker = await startWorker(pool, imports, siteImports, app.log);

@@ -2,7 +2,7 @@
 title: System architecture
 summary: Components of Dive Hub, how they talk to each other and how they are deployed.
 status: draft
-date: 2026-10-05
+date: 2026-10-06
 ---
 
 # System architecture
@@ -50,6 +50,10 @@ Decided in [ADR 0004](../decisions/0004-system-architecture.md). Terms follow th
    **Recording**, then creates a **Dive** or auto-attaches to one, and writes **Revisions**.
 4. The client polls or is notified of the Import's outcome.
 
+An import from a Provider (slice 15, [ADR 0030](../decisions/0030-importing-dives-from-providers.md)) runs the same
+way: the API reads the account's dives once when the User starts it, stores one JSON Original per dive, creates the
+Import and queues the same job; the worker never calls the Provider.
+
 ## Deployment
 
 Docker Compose, two services by default (amd64 + arm64 images, pinned versions, healthchecks):
@@ -92,7 +96,9 @@ mobile will use the bearer plugin or the Expo integration. OIDC (Authentik, Auth
 Admins can import Dive sites from Wikidata, OpenStreetMap ([ADR 0021](../decisions/0021-site-external-ids-and-import.md))
 and SSI ([ADR 0025](../decisions/0025-ssi-site-import-and-site-water-type.md)).
 The image contains no site data. Each operator imports for their own instance, so the license obligations
-are the operator's:
+are the operator's. (The image does contain **time-zone boundaries**, geo-tz's data built from OpenStreetMap and so
+under the ODbL, unchanged, with the attribution in `NOTICE`; Dive Hub only looks up offsets in it and publishes nothing
+derived from it, [ADR 0030](../decisions/0030-importing-dives-from-providers.md).)
 
 - **Wikidata** is CC0: no conditions.
 - **OpenStreetMap** is under the [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/).
@@ -588,3 +594,54 @@ Deliberate simplifications, to revisit:
 - **Same-name Divers** look the same in the picker; it shows only whether a Diver is yours, another User's or external.
 - **Requirement descriptions are English** (shown only for types a client doesn't know).
 - **The owner's check** passed (2026-10-06): buddies sent from Dive Hub show on the dive in SSI's app.
+
+**Slice 15 (2026-10-06): importing dives from a Provider, SSI first** ([ADR 0030](../decisions/0030-importing-dives-from-providers.md),
+the [design note](../research/2026-10-06-ssi-import.md)).
+
+Implemented:
+- **Time zones** (`src/dives/time-zone.ts`, geo-tz 8.1.9): a wall-clock time becomes an instant from the time zone at the
+  dive's position, else its site's at the Provider (summer time through `Intl`), else the offset of the Diver's closest
+  Dive within 7 days, else `unknown` (kept as if UTC). `dive.utc_offset_source` and `recording.utc_offset_source`
+  (`device`, `position`, `nearby`, `unknown`); the Dive's follows its Primary recording. Placement and logbook matching
+  compare local times where an offset is unknown (`alignedForMatching`, `entryMatches` in `src/imports/matching.ts`).
+- **The adapter** declares `dives.import` `list` and offers `dives.list(context, { recent })`, `dives.parse(record,
+  context)` and `dives.parser`; SSI's are in `src/providers/ssi/ssi-import.ts` (evidence, local start, values, profile,
+  Device, site ID and position, buddies as SSI accounts, notes). `ImportedDive`, `ImportContext` and `REFERENCE_PREFIX`
+  are in `provider.ts`.
+- **The import** (`src/providers/dive-import.ts`, part of the provider layer): the Connection's settings (`import_mode`
+  off / add / create, `import_window_minutes` 5–60, `import_computers`), `PATCH /api/connections/{id}`, the preview
+  (`GET /api/connections/{id}/dive-import`: computers with choice and suggestion, counts, the entries to decide) and the
+  start (`POST`: one JSON Original per dive, an Import with `provider`, `connection_id` and its `plan`: the context,
+  choices, decisions, settings and Diver). The worker's `process_import` hands such an Import to it: per dive, in local
+  time order and its own transaction, sent by Dive Hub → skipped; a Recording made before → placed again; linked →
+  filled where empty; a computer's dive → a Recording (`ssi-app-api`, key `ssi:<id>`, Device by manufacturer and
+  serial) through the same placement as files (`src/imports/placement.ts`, split out of the import service); a logbook
+  entry → linked and filled, decided, a Dive without a Recording (`dive.from_provider`), or left out. Links are `link`
+  Pushes, up to date (with the fingerprint) for Dives made from the Provider's dive.
+- **Primary recordings** (`attachRecording`): a Recording attaching to a Dive without one becomes primary; a file's over a
+  Provider's copy (a Recording whose Import has a Provider). Values without Override follow, with the offset's source.
+- **API:** the Dive and the dive list carry `utcOffsetSource`, the Dive `fromProvider`; an Import `provider`, results
+  `linked`, reasons `sent_by_dive_hub`, `no_match`, `ambiguous`, `left_out`, outcomes `remoteId`/`remoteNumber`; problem
+  `provider_import_off`; Revision cause `fill`. Migration 0016 (generated, reviewed: additions only; existing rows are
+  `device`).
+- **Web client:** `ProviderDiveImport.tsx` under each Connection (what the import may do and the window, saved at once;
+  the preview with the computers' choices and the entries to decide; the start and the outcome, polled); an import from
+  a Provider is summed up by result in the Imports list; the dive page says where a time zone came from and shows a Dive
+  without a Recording; an `unknown` time shows as logged, without an offset.
+- **Tests:** `time-zone.test.ts` (coast, border, open sea, summer time and its change, nearby, unknown),
+  `ssi-import.test.ts` (parsing), `matching.test.ts` (local time, the window, midnight, unknown offsets),
+  `ssi-dive-import.test.ts` (against a fake SSI logbook with hand-typed dives, a computer's, one Dive Hub sent and
+  ambiguous ones: preview, run, run again, sending a linked Dive, files becoming primary, deleted Dives, the modes,
+  nothing personal stored); the contract suite's `dives.import.list` case; `dive-import.spec.ts` (@account, @dives) and
+  ui-quality cases for the preview, the outcome and a Dive without a Recording, with Lena's SSI logbook in the e2e
+  server.
+
+Deliberate simplifications, to revisit:
+- **SSI's dive from a computer is read against dive #91's shape** (Dive Hub's own upload); what SSI's app writes for a
+  synced Mares is still to check before merging (design note), and the import reads those fields defensively.
+- **No water setting from SSI** (it has no field); the water stays the site's (ADR 0025).
+- **Re-runs are by the User**, never scheduled; nothing reads the Provider in the background.
+- **Two entries matching one Dive:** the earlier links, the next is matched without that Dive; the preview judges each
+  entry alone, so it may say "link" for both.
+- **SSI's dive number, rating, conditions, gear and tanks** stay in the Originals (not taken yet).
+- **Holders of a Device over time** (a lent computer) are their own topic (design note).

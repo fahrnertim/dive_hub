@@ -38,7 +38,8 @@ vendor or platform.
 - **Own data model, UDDF as adapter:** [ADR 0003](../decisions/0003-own-data-model-uddf-as-adapter.md);
   entities and scenarios in the [data model](data-model.md), vocabulary in the [glossary](../glossary.md).
 - **Users and Divers:** a User manages one or more Divers (own, child, dive-center guest);
-  external buddies are Divers managed only by the User who created them.
+  external buddies are Divers no User manages, shared like Dive sites; every User sees every Diver by name
+  ([ADR 0028](../decisions/0028-shared-divers-and-participants.md)).
 - **Buddies and sharing:** each Diver has their own Dive; Dives of the same descent are
   linked as a Joint dive after the buddy accepts a Buddy suggestion. Visibility per Dive:
   private, Joint dive, or instance. Dive sites and Operators are shared instance-wide.

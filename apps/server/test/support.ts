@@ -98,13 +98,13 @@ export async function createTestApp(t: TestDatabase, options: {
   const auth = createTestAuth(t.db, authOptions);
   const setup: Setup = createSetup(t.db);
   const blobs = createLocalBlobStore(t.dataDir);
-  const imports: ImportService = createImportService({ db: t.db, blobs });
+  const imports: ImportService = createImportService({ db: t.db, blobs, providerImports: () => providers.diveImports });
   const siteImports = createSiteImportService({ db: t.db, sources: siteSources ?? { osm: unreachable('osm'), wikidata: unreachable('wikidata'), ssi: unreachable('ssi') } });
   // SSI keeps its last logbook read for two minutes (ADR 0027); a test that changes the fake SSI behind Dive Hub's back
   // moves this clock on, as if the change happened a while later. Pauses between actions are skipped and recorded.
   const ssiClock = { now: 0, advance(ms: number) { this.now += ms; } };
   const providers = createProviderLayer({
-    db: t.db, secrets: createSecretBox(encryptionKey ?? undefined),
+    db: t.db, blobs, secrets: createSecretBox(encryptionKey ?? undefined),
     adapters: [
       createSsiAdapter({
         client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch, userAgent: 'DiveHub (test)' }),

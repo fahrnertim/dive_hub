@@ -3,6 +3,7 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
+import { UTC_OFFSET_SOURCES } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
 import { CandidateError, type Candidates } from './candidates.js';
 
@@ -12,14 +13,19 @@ export interface CandidateRouteDeps {
 }
 
 const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
+
 const DateTime = Type.String({ format: 'date-time' });
 const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
+
+/** unknown: a local time logged without a time zone, kept as if UTC; shown as logged (ADR 0030). */
+const OffsetSource = Type.Enum([...UTC_OFFSET_SOURCES]);
 
 const DiveBrief = Type.Object({
   id: Type.String(),
   number: Nullable(Type.Integer()),
   startsAt: DateTime,
   utcOffsetSeconds: Nullable(Type.Integer()),
+  utcOffsetSource: OffsetSource,
   durationSeconds: Type.Number(),
   maxDepthM: Nullable(Type.Number()),
 });
@@ -33,6 +39,7 @@ const CandidateView = Type.Object({
     id: Type.String(),
     startsAt: DateTime,
     utcOffsetSeconds: Nullable(Type.Integer()),
+    utcOffsetSource: OffsetSource,
     durationSeconds: Type.Number(),
     maxDepthM: Nullable(Type.Number()),
     device: Nullable(Type.Object({ manufacturer: Type.String(), product: Nullable(Type.String()), serialNumber: Type.String() })),
@@ -67,12 +74,12 @@ export const candidateRoutes: FastifyPluginAsyncTypebox<CandidateRouteDeps> = as
       status,
       createdAt: c.createdAt.toISOString(),
       recording: {
-        id: r.id, startsAt: r.startsAt.toISOString(), utcOffsetSeconds: r.utcOffsetSeconds,
+        id: r.id, startsAt: r.startsAt.toISOString(), utcOffsetSeconds: r.utcOffsetSeconds, utcOffsetSource: r.utcOffsetSource,
         durationSeconds: r.durationSeconds, maxDepthM: r.maxDepthM,
         device: d ? { manufacturer: d.manufacturer, product: d.product, serialNumber: d.serialNumber } : null,
       },
       dives: dives.map((v) => ({
-        id: v.id, number: v.number, startsAt: v.startsAt.toISOString(), utcOffsetSeconds: v.utcOffsetSeconds,
+        id: v.id, number: v.number, startsAt: v.startsAt.toISOString(), utcOffsetSeconds: v.utcOffsetSeconds, utcOffsetSource: v.utcOffsetSource,
         durationSeconds: v.durationSeconds, maxDepthM: v.maxDepthM,
       })),
     }));

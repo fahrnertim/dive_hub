@@ -312,7 +312,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -414,7 +415,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -566,7 +568,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -761,7 +764,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -863,7 +867,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -1421,7 +1426,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -1544,7 +1550,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -1691,7 +1698,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -1880,7 +1888,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2089,7 +2098,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2356,7 +2366,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2458,7 +2469,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2560,7 +2572,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2701,7 +2714,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2803,7 +2817,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -2905,7 +2920,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -3078,7 +3094,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -3180,7 +3197,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -3282,7 +3300,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -3455,7 +3474,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -3557,7 +3577,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -3659,7 +3680,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -3782,7 +3804,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -3884,7 +3907,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -3986,7 +4010,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -4130,7 +4155,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -4232,7 +4258,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -4334,7 +4361,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -4372,6 +4400,7 @@
                     "id",
                     "status",
                     "uploadName",
+                    "provider",
                     "createdAt",
                     "finishedAt",
                     "errorCode",
@@ -4410,7 +4439,19 @@
                       ]
                     },
                     "uploadName": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The uploaded file's name; for an import from a Provider, the Provider's name"
+                    },
+                    "provider": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "description": "An import of this Provider's dives (ADR 0030); null for an upload"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     },
                     "createdAt": {
                       "type": "string",
@@ -4457,18 +4498,28 @@
                             "enum": [
                               "created",
                               "attached",
+                              "linked",
                               "updated",
                               "unchanged",
                               "duplicate-candidate",
                               "skipped",
                               "failed"
-                            ]
+                            ],
+                            "description": "linked: a Provider's logbook entry tied to a Dive here and filled where it was empty (ADR 0030)"
                           },
                           "diveId": {
                             "type": "string"
                           },
                           "recordingId": {
                             "type": "string"
+                          },
+                          "remoteId": {
+                            "type": "string",
+                            "description": "A Provider's dive: its ID there"
+                          },
+                          "remoteNumber": {
+                            "type": "integer",
+                            "description": "A Provider's dive: its own number there"
                           },
                           "reason": {
                             "enum": [
@@ -4478,7 +4529,11 @@
                               "overlaps_several_dives",
                               "max_depth_differs",
                               "file_failed",
-                              "deleted_earlier"
+                              "deleted_earlier",
+                              "sent_by_dive_hub",
+                              "no_match",
+                              "ambiguous",
+                              "left_out"
                             ],
                             "description": "Why; clients translate it. A failure’s detail stays in the server log"
                           },
@@ -4580,7 +4635,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -4682,7 +4738,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -4720,6 +4777,7 @@
                       "id",
                       "status",
                       "uploadName",
+                      "provider",
                       "createdAt",
                       "finishedAt",
                       "errorCode",
@@ -4758,7 +4816,19 @@
                         ]
                       },
                       "uploadName": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "The uploaded file's name; for an import from a Provider, the Provider's name"
+                      },
+                      "provider": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "description": "An import of this Provider's dives (ADR 0030); null for an upload"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
                       },
                       "createdAt": {
                         "type": "string",
@@ -4805,18 +4875,28 @@
                               "enum": [
                                 "created",
                                 "attached",
+                                "linked",
                                 "updated",
                                 "unchanged",
                                 "duplicate-candidate",
                                 "skipped",
                                 "failed"
-                              ]
+                              ],
+                              "description": "linked: a Provider's logbook entry tied to a Dive here and filled where it was empty (ADR 0030)"
                             },
                             "diveId": {
                               "type": "string"
                             },
                             "recordingId": {
                               "type": "string"
+                            },
+                            "remoteId": {
+                              "type": "string",
+                              "description": "A Provider's dive: its ID there"
+                            },
+                            "remoteNumber": {
+                              "type": "integer",
+                              "description": "A Provider's dive: its own number there"
                             },
                             "reason": {
                               "enum": [
@@ -4826,7 +4906,11 @@
                                 "overlaps_several_dives",
                                 "max_depth_differs",
                                 "file_failed",
-                                "deleted_earlier"
+                                "deleted_earlier",
+                                "sent_by_dive_hub",
+                                "no_match",
+                                "ambiguous",
+                                "left_out"
                               ],
                               "description": "Why; clients translate it. A failure’s detail stays in the server log"
                             },
@@ -4876,6 +4960,7 @@
                     "id",
                     "status",
                     "uploadName",
+                    "provider",
                     "createdAt",
                     "finishedAt",
                     "errorCode",
@@ -4914,7 +4999,19 @@
                       ]
                     },
                     "uploadName": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "The uploaded file's name; for an import from a Provider, the Provider's name"
+                    },
+                    "provider": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "description": "An import of this Provider's dives (ADR 0030); null for an upload"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     },
                     "createdAt": {
                       "type": "string",
@@ -4961,18 +5058,28 @@
                             "enum": [
                               "created",
                               "attached",
+                              "linked",
                               "updated",
                               "unchanged",
                               "duplicate-candidate",
                               "skipped",
                               "failed"
-                            ]
+                            ],
+                            "description": "linked: a Provider's logbook entry tied to a Dive here and filled where it was empty (ADR 0030)"
                           },
                           "diveId": {
                             "type": "string"
                           },
                           "recordingId": {
                             "type": "string"
+                          },
+                          "remoteId": {
+                            "type": "string",
+                            "description": "A Provider's dive: its ID there"
+                          },
+                          "remoteNumber": {
+                            "type": "integer",
+                            "description": "A Provider's dive: its own number there"
                           },
                           "reason": {
                             "enum": [
@@ -4982,7 +5089,11 @@
                               "overlaps_several_dives",
                               "max_depth_differs",
                               "file_failed",
-                              "deleted_earlier"
+                              "deleted_earlier",
+                              "sent_by_dive_hub",
+                              "no_match",
+                              "ambiguous",
+                              "left_out"
                             ],
                             "description": "Why; clients translate it. A failure’s detail stays in the server log"
                           },
@@ -5084,7 +5195,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -5212,6 +5324,7 @@
                           "number",
                           "startsAt",
                           "utcOffsetSeconds",
+                          "utcOffsetSource",
                           "durationSeconds",
                           "maxDepthM",
                           "avgDepthM",
@@ -5247,6 +5360,15 @@
                                 "type": "null"
                               }
                             ]
+                          },
+                          "utcOffsetSource": {
+                            "enum": [
+                              "device",
+                              "position",
+                              "nearby",
+                              "unknown"
+                            ],
+                            "description": "unknown: startsAt is the local wall-clock time kept as if UTC; show it in UTC without an offset (ADR 0030)"
                           },
                           "durationSeconds": {
                             "type": "number"
@@ -5470,7 +5592,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -5521,6 +5644,8 @@
                     "version",
                     "values",
                     "overrides",
+                    "utcOffsetSource",
+                    "fromProvider",
                     "fromRecording",
                     "notes",
                     "site",
@@ -5648,6 +5773,26 @@
                         "description": "A Dive value that can be overridden"
                       },
                       "description": "Values the User set by hand"
+                    },
+                    "utcOffsetSource": {
+                      "enum": [
+                        "device",
+                        "position",
+                        "nearby",
+                        "unknown"
+                      ],
+                      "description": "Where the start's UTC offset came from (ADR 0030): device, position (the time zone where the dive was), nearby (the Diver's Dives within 7 days) or unknown (startsAt is the local wall-clock time kept as if UTC: show it in UTC without an offset). Clients say where it came from when it isn't the device (docs/spec/clients.md)"
+                    },
+                    "fromProvider": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "description": "The Provider whose logbook entry this Dive was made from (ADR 0030); with no recordings, its values are that entry's"
+                        }
+                      ]
                     },
                     "fromRecording": {
                       "anyOf": [
@@ -6159,7 +6304,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -6348,6 +6494,8 @@
                     "version",
                     "values",
                     "overrides",
+                    "utcOffsetSource",
+                    "fromProvider",
                     "fromRecording",
                     "notes",
                     "site",
@@ -6475,6 +6623,26 @@
                         "description": "A Dive value that can be overridden"
                       },
                       "description": "Values the User set by hand"
+                    },
+                    "utcOffsetSource": {
+                      "enum": [
+                        "device",
+                        "position",
+                        "nearby",
+                        "unknown"
+                      ],
+                      "description": "Where the start's UTC offset came from (ADR 0030): device, position (the time zone where the dive was), nearby (the Diver's Dives within 7 days) or unknown (startsAt is the local wall-clock time kept as if UTC: show it in UTC without an offset). Clients say where it came from when it isn't the device (docs/spec/clients.md)"
+                    },
+                    "fromProvider": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "description": "The Provider whose logbook entry this Dive was made from (ADR 0030); with no recordings, its values are that entry's"
+                        }
+                      ]
                     },
                     "fromRecording": {
                       "anyOf": [
@@ -6986,7 +7154,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -7088,7 +7257,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -7190,7 +7360,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -7372,7 +7543,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -7497,7 +7669,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -7599,7 +7772,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -7724,7 +7898,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -7845,6 +8020,8 @@
                     "version",
                     "values",
                     "overrides",
+                    "utcOffsetSource",
+                    "fromProvider",
                     "fromRecording",
                     "notes",
                     "site",
@@ -7972,6 +8149,26 @@
                         "description": "A Dive value that can be overridden"
                       },
                       "description": "Values the User set by hand"
+                    },
+                    "utcOffsetSource": {
+                      "enum": [
+                        "device",
+                        "position",
+                        "nearby",
+                        "unknown"
+                      ],
+                      "description": "Where the start's UTC offset came from (ADR 0030): device, position (the time zone where the dive was), nearby (the Diver's Dives within 7 days) or unknown (startsAt is the local wall-clock time kept as if UTC: show it in UTC without an offset). Clients say where it came from when it isn't the device (docs/spec/clients.md)"
+                    },
+                    "fromProvider": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "description": "The Provider whose logbook entry this Dive was made from (ADR 0030); with no recordings, its values are that entry's"
+                        }
+                      ]
                     },
                     "fromRecording": {
                       "anyOf": [
@@ -8483,7 +8680,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -8585,7 +8783,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -8687,7 +8886,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -8761,6 +8961,8 @@
                     "version",
                     "values",
                     "overrides",
+                    "utcOffsetSource",
+                    "fromProvider",
                     "fromRecording",
                     "notes",
                     "site",
@@ -8888,6 +9090,26 @@
                         "description": "A Dive value that can be overridden"
                       },
                       "description": "Values the User set by hand"
+                    },
+                    "utcOffsetSource": {
+                      "enum": [
+                        "device",
+                        "position",
+                        "nearby",
+                        "unknown"
+                      ],
+                      "description": "Where the start's UTC offset came from (ADR 0030): device, position (the time zone where the dive was), nearby (the Diver's Dives within 7 days) or unknown (startsAt is the local wall-clock time kept as if UTC: show it in UTC without an offset). Clients say where it came from when it isn't the device (docs/spec/clients.md)"
+                    },
+                    "fromProvider": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "description": "The Provider whose logbook entry this Dive was made from (ADR 0030); with no recordings, its values are that entry's"
+                        }
+                      ]
                     },
                     "fromRecording": {
                       "anyOf": [
@@ -9399,7 +9621,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -9501,7 +9724,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -9603,7 +9827,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -9677,6 +9902,8 @@
                     "version",
                     "values",
                     "overrides",
+                    "utcOffsetSource",
+                    "fromProvider",
                     "fromRecording",
                     "notes",
                     "site",
@@ -9804,6 +10031,26 @@
                         "description": "A Dive value that can be overridden"
                       },
                       "description": "Values the User set by hand"
+                    },
+                    "utcOffsetSource": {
+                      "enum": [
+                        "device",
+                        "position",
+                        "nearby",
+                        "unknown"
+                      ],
+                      "description": "Where the start's UTC offset came from (ADR 0030): device, position (the time zone where the dive was), nearby (the Diver's Dives within 7 days) or unknown (startsAt is the local wall-clock time kept as if UTC: show it in UTC without an offset). Clients say where it came from when it isn't the device (docs/spec/clients.md)"
+                    },
+                    "fromProvider": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "description": "The Provider whose logbook entry this Dive was made from (ADR 0030); with no recordings, its values are that entry's"
+                        }
+                      ]
                     },
                     "fromRecording": {
                       "anyOf": [
@@ -10315,7 +10562,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -10417,7 +10665,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -10575,7 +10824,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -10677,7 +10927,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -10726,6 +10977,7 @@
                           "number",
                           "startsAt",
                           "utcOffsetSeconds",
+                          "utcOffsetSource",
                           "durationSeconds",
                           "maxDepthM",
                           "site",
@@ -10765,6 +11017,14 @@
                               {
                                 "type": "integer"
                               }
+                            ]
+                          },
+                          "utcOffsetSource": {
+                            "enum": [
+                              "device",
+                              "position",
+                              "nearby",
+                              "unknown"
                             ]
                           },
                           "durationSeconds": {
@@ -10890,6 +11150,8 @@
                     "version",
                     "values",
                     "overrides",
+                    "utcOffsetSource",
+                    "fromProvider",
                     "fromRecording",
                     "notes",
                     "site",
@@ -11017,6 +11279,26 @@
                         "description": "A Dive value that can be overridden"
                       },
                       "description": "Values the User set by hand"
+                    },
+                    "utcOffsetSource": {
+                      "enum": [
+                        "device",
+                        "position",
+                        "nearby",
+                        "unknown"
+                      ],
+                      "description": "Where the start's UTC offset came from (ADR 0030): device, position (the time zone where the dive was), nearby (the Diver's Dives within 7 days) or unknown (startsAt is the local wall-clock time kept as if UTC: show it in UTC without an offset). Clients say where it came from when it isn't the device (docs/spec/clients.md)"
+                    },
+                    "fromProvider": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "description": "The Provider whose logbook entry this Dive was made from (ADR 0030); with no recordings, its values are that entry's"
+                        }
+                      ]
                     },
                     "fromRecording": {
                       "anyOf": [
@@ -11528,7 +11810,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -11630,7 +11913,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -11744,7 +12028,8 @@
                           "merge",
                           "site-merge",
                           "adopt",
-                          "restore"
+                          "restore",
+                          "fill"
                         ]
                       },
                       "changes": {
@@ -11848,7 +12133,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -11932,6 +12218,7 @@
                           "id",
                           "startsAt",
                           "utcOffsetSeconds",
+                          "utcOffsetSource",
                           "durationSeconds",
                           "maxDepthM",
                           "device"
@@ -11952,6 +12239,14 @@
                               {
                                 "type": "integer"
                               }
+                            ]
+                          },
+                          "utcOffsetSource": {
+                            "enum": [
+                              "device",
+                              "position",
+                              "nearby",
+                              "unknown"
                             ]
                           },
                           "durationSeconds": {
@@ -12011,6 +12306,7 @@
                             "number",
                             "startsAt",
                             "utcOffsetSeconds",
+                            "utcOffsetSource",
                             "durationSeconds",
                             "maxDepthM"
                           ],
@@ -12040,6 +12336,14 @@
                                 {
                                   "type": "integer"
                                 }
+                              ]
+                            },
+                            "utcOffsetSource": {
+                              "enum": [
+                                "device",
+                                "position",
+                                "nearby",
+                                "unknown"
                               ]
                             },
                             "durationSeconds": {
@@ -12209,7 +12513,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -12311,7 +12616,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -12413,7 +12719,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -12559,7 +12866,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -12661,7 +12969,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -12763,7 +13072,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -12909,7 +13219,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -13011,7 +13322,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -13113,7 +13425,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -13259,7 +13572,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -13361,7 +13675,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -13463,7 +13778,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -13671,7 +13987,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -13773,7 +14090,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -13875,7 +14193,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -13977,7 +14296,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -14228,7 +14548,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -14330,7 +14651,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -14432,7 +14754,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -14534,7 +14857,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -14655,7 +14979,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -14757,7 +15082,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -14859,7 +15185,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -14961,7 +15288,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -15125,7 +15453,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -15243,7 +15572,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -15361,7 +15691,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -15479,7 +15810,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -15766,7 +16098,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -15868,7 +16201,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -15970,7 +16304,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -16072,7 +16407,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -16258,7 +16594,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -16360,7 +16697,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -16462,7 +16800,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -16564,7 +16903,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -16685,7 +17025,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -16787,7 +17128,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -16889,7 +17231,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -16991,7 +17334,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -17211,7 +17555,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -17313,7 +17658,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -17415,7 +17761,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -17517,7 +17864,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -18087,7 +18435,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -18641,7 +18990,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -18743,7 +19093,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -18845,7 +19196,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -18947,7 +19299,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -19401,7 +19754,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -19971,7 +20325,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -20073,7 +20428,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -20175,7 +20531,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -20277,7 +20634,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -20398,7 +20756,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -20500,7 +20859,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -20602,7 +20962,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -20704,7 +21065,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -21200,7 +21562,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -21302,7 +21665,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -21404,7 +21768,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -21506,7 +21871,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -21992,7 +22358,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -22094,7 +22461,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -22196,7 +22564,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -22298,7 +22667,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -22782,7 +23152,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -22884,7 +23255,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -22986,7 +23358,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -23088,7 +23461,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -23199,7 +23573,8 @@
                           "merge",
                           "site-merge",
                           "adopt",
-                          "restore"
+                          "restore",
+                          "fill"
                         ]
                       },
                       "changes": {
@@ -23303,7 +23678,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -23869,7 +24245,8 @@
                             "provider_not_sent",
                             "provider_dive_gone",
                             "provider_busy",
-                            "provider_unsupported"
+                            "provider_unsupported",
+                            "provider_import_off"
                           ]
                         }
                       ],
@@ -23976,7 +24353,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -24078,7 +24456,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -24180,7 +24559,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -24621,7 +25001,8 @@
                                   "provider_not_sent",
                                   "provider_dive_gone",
                                   "provider_busy",
-                                  "provider_unsupported"
+                                  "provider_unsupported",
+                                  "provider_import_off"
                                 ]
                               }
                             ],
@@ -24731,7 +25112,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -25177,7 +25559,8 @@
                             "provider_not_sent",
                             "provider_dive_gone",
                             "provider_busy",
-                            "provider_unsupported"
+                            "provider_unsupported",
+                            "provider_import_off"
                           ]
                         }
                       ],
@@ -25284,7 +25667,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -25386,7 +25770,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -25855,7 +26240,8 @@
                       "keepSignedIn",
                       "state",
                       "lastUsedAt",
-                      "createdAt"
+                      "createdAt",
+                      "diveImport"
                     ],
                     "properties": {
                       "id": {
@@ -25904,6 +26290,35 @@
                       "createdAt": {
                         "type": "string",
                         "format": "date-time"
+                      },
+                      "diveImport": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "mode",
+                              "windowMinutes"
+                            ],
+                            "properties": {
+                              "mode": {
+                                "enum": [
+                                  "off",
+                                  "add",
+                                  "create"
+                                ],
+                                "description": "off; add: only link and fill Dives here, never create; create: also create Dives Dive Hub doesn't have"
+                              },
+                              "windowMinutes": {
+                                "type": "integer",
+                                "description": "How far apart in local time a logbook entry and a Dive here may start, on the same day"
+                              }
+                            },
+                            "description": "What importing this account's dives may do (ADR 0030); null when the Provider imports no dives"
+                          }
+                        ]
                       }
                     }
                   }
@@ -25988,7 +26403,8 @@
                     "keepSignedIn",
                     "state",
                     "lastUsedAt",
-                    "createdAt"
+                    "createdAt",
+                    "diveImport"
                   ],
                   "properties": {
                     "id": {
@@ -26037,6 +26453,35 @@
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
+                    },
+                    "diveImport": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "mode",
+                            "windowMinutes"
+                          ],
+                          "properties": {
+                            "mode": {
+                              "enum": [
+                                "off",
+                                "add",
+                                "create"
+                              ],
+                              "description": "off; add: only link and fill Dives here, never create; create: also create Dives Dive Hub doesn't have"
+                            },
+                            "windowMinutes": {
+                              "type": "integer",
+                              "description": "How far apart in local time a logbook entry and a Dive here may start, on the same day"
+                            }
+                          },
+                          "description": "What importing this account's dives may do (ADR 0030); null when the Provider imports no dives"
+                        }
+                      ]
                     }
                   }
                 }
@@ -26124,7 +26569,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -26226,7 +26672,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -26328,7 +26775,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -26490,7 +26938,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -26575,7 +27024,8 @@
                     "keepSignedIn",
                     "state",
                     "lastUsedAt",
-                    "createdAt"
+                    "createdAt",
+                    "diveImport"
                   ],
                   "properties": {
                     "id": {
@@ -26624,6 +27074,35 @@
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
+                    },
+                    "diveImport": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "mode",
+                            "windowMinutes"
+                          ],
+                          "properties": {
+                            "mode": {
+                              "enum": [
+                                "off",
+                                "add",
+                                "create"
+                              ],
+                              "description": "off; add: only link and fill Dives here, never create; create: also create Dives Dive Hub doesn't have"
+                            },
+                            "windowMinutes": {
+                              "type": "integer",
+                              "description": "How far apart in local time a logbook entry and a Dive here may start, on the same day"
+                            }
+                          },
+                          "description": "What importing this account's dives may do (ADR 0030); null when the Provider imports no dives"
+                        }
+                      ]
                     }
                   }
                 }
@@ -26711,7 +27190,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -26813,7 +27293,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -26915,7 +27396,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -27077,7 +27559,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -27264,7 +27747,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -27366,7 +27850,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -27468,7 +27953,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -27630,7 +28116,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -27845,7 +28332,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -27947,7 +28435,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -28049,7 +28538,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -28211,7 +28701,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -28236,6 +28727,679 @@
       }
     },
     "/api/connections/{id}": {
+      "patch": {
+        "summary": "Change what importing the account's dives may do, the matching window, and the choice per dive computer (ADR 0030)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "diveImport"
+                ],
+                "properties": {
+                  "diveImport": {
+                    "type": "object",
+                    "properties": {
+                      "mode": {
+                        "enum": [
+                          "off",
+                          "add",
+                          "create"
+                        ]
+                      },
+                      "windowMinutes": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "enum": [
+                              5
+                            ]
+                          },
+                          {
+                            "type": "number",
+                            "enum": [
+                              15
+                            ]
+                          },
+                          {
+                            "type": "number",
+                            "enum": [
+                              30
+                            ]
+                          },
+                          {
+                            "type": "number",
+                            "enum": [
+                              60
+                            ]
+                          }
+                        ],
+                        "description": "5, 15, 30 or 60"
+                      },
+                      "computers": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "key",
+                            "choice"
+                          ],
+                          "properties": {
+                            "key": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "choice": {
+                              "enum": [
+                                "recordings",
+                                "entries"
+                              ],
+                              "description": "recordings: its dives become Recordings, like a file's; entries: only logbook entries that fill Dives here"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "maxItems": 100,
+                        "description": "Per dive computer found at the Provider (its key from the preview): how its dives are used"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "provider",
+                    "diverId",
+                    "diverName",
+                    "accountId",
+                    "accountLabel",
+                    "keepSignedIn",
+                    "state",
+                    "lastUsedAt",
+                    "createdAt",
+                    "diveImport"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "provider": {
+                      "type": "string"
+                    },
+                    "diverId": {
+                      "type": "string",
+                      "description": "The Diver whose account at the Provider this is"
+                    },
+                    "diverName": {
+                      "type": "string"
+                    },
+                    "accountId": {
+                      "type": "string",
+                      "description": "The account at the Provider (SSI: user master ID)"
+                    },
+                    "accountLabel": {
+                      "type": "string",
+                      "description": "What the User recognises the account by (SSI: the e-mail)"
+                    },
+                    "keepSignedIn": {
+                      "type": "boolean",
+                      "description": "The password is kept (sealed); otherwise only the Provider's access, which can expire"
+                    },
+                    "state": {
+                      "enum": [
+                        "active",
+                        "needs_sign_in"
+                      ],
+                      "description": "needs_sign_in: the Provider no longer accepts the sign-in; sign in again"
+                    },
+                    "lastUsedAt": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "diveImport": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "mode",
+                            "windowMinutes"
+                          ],
+                          "properties": {
+                            "mode": {
+                              "enum": [
+                                "off",
+                                "add",
+                                "create"
+                              ],
+                              "description": "off; add: only link and fill Dives here, never create; create: also create Dives Dive Hub doesn't have"
+                            },
+                            "windowMinutes": {
+                              "type": "integer",
+                              "description": "How far apart in local time a logbook entry and a Dive here may start, on the same day"
+                            }
+                          },
+                          "description": "What importing this account's dives may do (ADR 0030); null when the Provider imports no dives"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_import_off"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_import_off"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_import_off"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    },
+                    "unmet": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "type",
+                          "severity",
+                          "source"
+                        ],
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "description": "As in the Provider's requirements"
+                          },
+                          "severity": {
+                            "enum": [
+                              "blocking",
+                              "advisory"
+                            ]
+                          },
+                          "source": {
+                            "type": "string"
+                          },
+                          "siteId": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "site_external_id: the Dive site to give the ID; null: choose a site first"
+                              }
+                            ]
+                          },
+                          "diverId": {
+                            "type": "string",
+                            "description": "diver_mapping: the Participant"
+                          },
+                          "diverName": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "enum": [
+                              "buddy",
+                              "guide",
+                              "instructor"
+                            ]
+                          },
+                          "fixes": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source})"
+                          }
+                        },
+                        "description": "A requirement this Dive doesn't meet, from Dive Hub's own data"
+                      },
+                      "description": "With provider_requirements_unmet: every requirement unmet, blocking ones among them"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_import_off"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       "delete": {
         "summary": "Disconnect: forgets the credentials. Dives already at the Provider stay there; their history stays here",
         "parameters": [
@@ -28334,7 +29498,1504 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/connections/{id}/dive-import": {
+      "get": {
+        "summary": "Preview importing the account's dives (ADR 0030): reads them from the Provider and says what would happen; stores nothing",
+        "description": "provider_import_off while the Connection's import mode is off. One paced action at the Provider.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "mode",
+                    "windowMinutes",
+                    "computers",
+                    "counts",
+                    "decisions"
+                  ],
+                  "properties": {
+                    "mode": {
+                      "enum": [
+                        "off",
+                        "add",
+                        "create"
+                      ]
+                    },
+                    "windowMinutes": {
+                      "type": "integer"
+                    },
+                    "computers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "key",
+                          "manufacturer",
+                          "product",
+                          "serialNumber",
+                          "dives",
+                          "choice",
+                          "suggested",
+                          "fromFiles",
+                          "otherDiver"
+                        ],
+                        "properties": {
+                          "key": {
+                            "type": "string",
+                            "description": "Send it back with the choice"
+                          },
+                          "manufacturer": {
+                            "type": "string"
+                          },
+                          "product": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "serialNumber": {
+                            "type": "string"
+                          },
+                          "dives": {
+                            "type": "integer"
+                          },
+                          "choice": {
+                            "enum": [
+                              "recordings",
+                              "entries"
+                            ],
+                            "description": "recordings: its dives become Recordings, like a file's; entries: only logbook entries that fill Dives here"
+                          },
+                          "suggested": {
+                            "enum": [
+                              "recordings",
+                              "entries"
+                            ],
+                            "description": "recordings: its dives become Recordings, like a file's; entries: only logbook entries that fill Dives here"
+                          },
+                          "fromFiles": {
+                            "type": "boolean",
+                            "description": "Dive Hub has recordings of this computer from files: they are better (so the suggestion is entries)"
+                          },
+                          "otherDiver": {
+                            "type": "boolean",
+                            "description": "The computer is another User's Diver's: its dives come in as logbook entries whatever the choice"
+                          }
+                        }
+                      },
+                      "description": "The dive computers found, most dives first; the User chooses once per computer (kept on the Connection)"
+                    },
+                    "counts": {
+                      "type": "object",
+                      "required": [
+                        "total",
+                        "unreadable",
+                        "ours",
+                        "linked",
+                        "deleted",
+                        "recordings",
+                        "link",
+                        "decide",
+                        "create",
+                        "noMatch"
+                      ],
+                      "properties": {
+                        "total": {
+                          "type": "integer"
+                        },
+                        "unreadable": {
+                          "type": "integer",
+                          "description": "Records that are no dive Dive Hub can read"
+                        },
+                        "ours": {
+                          "type": "integer",
+                          "description": "Sent by Dive Hub: never imported back"
+                        },
+                        "linked": {
+                          "type": "integer",
+                          "description": "Linked to a Dive here already: only filled where still empty"
+                        },
+                        "deleted": {
+                          "type": "integer",
+                          "description": "On a Dive deleted here: stays deleted"
+                        },
+                        "recordings": {
+                          "type": "integer",
+                          "description": "From a computer: become Recordings"
+                        },
+                        "link": {
+                          "type": "integer",
+                          "description": "One Dive here in the window: linked and filled"
+                        },
+                        "decide": {
+                          "type": "integer",
+                          "description": "Several Dives here in the window: in decisions"
+                        },
+                        "create": {
+                          "type": "integer",
+                          "description": "No Dive here: a Dive without a Recording (mode create)"
+                        },
+                        "noMatch": {
+                          "type": "integer",
+                          "description": "No Dive here, and the mode only adds: left out"
+                        }
+                      }
+                    },
+                    "decisions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "remoteId",
+                          "remoteNumber",
+                          "localStart",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "candidates"
+                        ],
+                        "properties": {
+                          "remoteId": {
+                            "type": "string"
+                          },
+                          "remoteNumber": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer"
+                              }
+                            ]
+                          },
+                          "localStart": {
+                            "type": "string",
+                            "description": "Local wall-clock time as the Provider keeps it, without a time zone"
+                          },
+                          "durationSeconds": {
+                            "type": "number"
+                          },
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "candidates": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "diveId",
+                                "number",
+                                "startsAt",
+                                "utcOffsetSeconds",
+                                "utcOffsetSource",
+                                "durationSeconds",
+                                "maxDepthM",
+                                "site"
+                              ],
+                              "properties": {
+                                "diveId": {
+                                  "type": "string"
+                                },
+                                "number": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "integer"
+                                    }
+                                  ]
+                                },
+                                "startsAt": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "utcOffsetSeconds": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "integer"
+                                    }
+                                  ]
+                                },
+                                "utcOffsetSource": {
+                                  "enum": [
+                                    "device",
+                                    "position",
+                                    "nearby",
+                                    "unknown"
+                                  ]
+                                },
+                                "durationSeconds": {
+                                  "type": "number"
+                                },
+                                "maxDepthM": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "number"
+                                    }
+                                  ]
+                                },
+                                "site": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "id",
+                                        "name"
+                                      ],
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            "description": "The Dives here it may be, closest first"
+                          }
+                        }
+                      },
+                      "description": "Logbook entries with several Dives here in the window: one of them, a new Dive (mode create), or leave it out"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_import_off"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_import_off"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_import_off"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    },
+                    "unmet": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "type",
+                          "severity",
+                          "source"
+                        ],
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "description": "As in the Provider's requirements"
+                          },
+                          "severity": {
+                            "enum": [
+                              "blocking",
+                              "advisory"
+                            ]
+                          },
+                          "source": {
+                            "type": "string"
+                          },
+                          "siteId": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "site_external_id: the Dive site to give the ID; null: choose a site first"
+                              }
+                            ]
+                          },
+                          "diverId": {
+                            "type": "string",
+                            "description": "diver_mapping: the Participant"
+                          },
+                          "diverName": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "enum": [
+                              "buddy",
+                              "guide",
+                              "instructor"
+                            ]
+                          },
+                          "fixes": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source})"
+                          }
+                        },
+                        "description": "A requirement this Dive doesn't meet, from Dive Hub's own data"
+                      },
+                      "description": "With provider_requirements_unmet: every requirement unmet, blocking ones among them"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_import_off"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Import the account's dives (ADR 0030): reads them again, stores one Original per dive, and starts an Import",
+        "description": "Send the choice per computer and the decisions from the preview. The Import runs in the background like an upload (GET /api/imports/{id}); an entry that turned ambiguous since the preview is left out (reason ambiguous). It can be run again.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "computers",
+                  "decisions"
+                ],
+                "properties": {
+                  "computers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "key",
+                        "choice"
+                      ],
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "choice": {
+                          "enum": [
+                            "recordings",
+                            "entries"
+                          ],
+                          "description": "recordings: its dives become Recordings, like a file's; entries: only logbook entries that fill Dives here"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "maxItems": 100,
+                    "description": "Per dive computer found at the Provider (its key from the preview): how its dives are used"
+                  },
+                  "decisions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "remoteId",
+                        "choice"
+                      ],
+                      "properties": {
+                        "remoteId": {
+                          "type": "string",
+                          "maxLength": 40
+                        },
+                        "choice": {
+                          "type": "string",
+                          "pattern": "^(new|leave_out|[0-9a-f-]{36})$",
+                          "description": "A candidate's diveId, new, or leave_out"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "maxItems": 2000
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "status",
+                    "uploadName",
+                    "provider",
+                    "createdAt",
+                    "finishedAt",
+                    "errorCode",
+                    "outcome"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "pending"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "processing"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "done"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "failed"
+                          ]
+                        }
+                      ]
+                    },
+                    "uploadName": {
+                      "type": "string",
+                      "description": "The uploaded file's name; for an import from a Provider, the Provider's name"
+                    },
+                    "provider": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "description": "An import of this Provider's dives (ADR 0030); null for an upload"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "finishedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "errorCode": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "unsupported_file",
+                            "processing_failed"
+                          ],
+                          "description": "Why the Import failed; clients translate it. The detail stays in the server log"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "outcome": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "fileName",
+                          "result"
+                        ],
+                        "properties": {
+                          "fileName": {
+                            "type": "string"
+                          },
+                          "result": {
+                            "enum": [
+                              "created",
+                              "attached",
+                              "linked",
+                              "updated",
+                              "unchanged",
+                              "duplicate-candidate",
+                              "skipped",
+                              "failed"
+                            ],
+                            "description": "linked: a Provider's logbook entry tied to a Dive here and filled where it was empty (ADR 0030)"
+                          },
+                          "diveId": {
+                            "type": "string"
+                          },
+                          "recordingId": {
+                            "type": "string"
+                          },
+                          "remoteId": {
+                            "type": "string",
+                            "description": "A Provider's dive: its ID there"
+                          },
+                          "remoteNumber": {
+                            "type": "integer",
+                            "description": "A Provider's dive: its own number there"
+                          },
+                          "reason": {
+                            "enum": [
+                              "no_fit_file",
+                              "not_a_dive",
+                              "not_your_diver",
+                              "overlaps_several_dives",
+                              "max_depth_differs",
+                              "file_failed",
+                              "deleted_earlier",
+                              "sent_by_dive_hub",
+                              "no_match",
+                              "ambiguous",
+                              "left_out"
+                            ],
+                            "description": "Why; clients translate it. A failure’s detail stays in the server log"
+                          },
+                          "decision": {
+                            "enum": [
+                              "open",
+                              "attached",
+                              "new_dive",
+                              "discarded"
+                            ],
+                            "description": "For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_import_off"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_import_off"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_import_off"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    },
+                    "unmet": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "type",
+                          "severity",
+                          "source"
+                        ],
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "description": "As in the Provider's requirements"
+                          },
+                          "severity": {
+                            "enum": [
+                              "blocking",
+                              "advisory"
+                            ]
+                          },
+                          "source": {
+                            "type": "string"
+                          },
+                          "siteId": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "site_external_id: the Dive site to give the ID; null: choose a site first"
+                              }
+                            ]
+                          },
+                          "diverId": {
+                            "type": "string",
+                            "description": "diver_mapping: the Participant"
+                          },
+                          "diverName": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "enum": [
+                              "buddy",
+                              "guide",
+                              "instructor"
+                            ]
+                          },
+                          "fixes": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source})"
+                          }
+                        },
+                        "description": "A requirement this Dive doesn't meet, from Dive Hub's own data"
+                      },
+                      "description": "With provider_requirements_unmet: every requirement unmet, blocking ones among them"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -28673,7 +31334,8 @@
                                     "provider_not_sent",
                                     "provider_dive_gone",
                                     "provider_busy",
-                                    "provider_unsupported"
+                                    "provider_unsupported",
+                                    "provider_import_off"
                                   ]
                                 }
                               ]
@@ -28866,7 +31528,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -29213,7 +31876,8 @@
                                   "provider_not_sent",
                                   "provider_dive_gone",
                                   "provider_busy",
-                                  "provider_unsupported"
+                                  "provider_unsupported",
+                                  "provider_import_off"
                                 ]
                               }
                             ]
@@ -29405,7 +32069,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -29507,7 +32172,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -29953,7 +32619,8 @@
                                       "provider_not_sent",
                                       "provider_dive_gone",
                                       "provider_busy",
-                                      "provider_unsupported"
+                                      "provider_unsupported",
+                                      "provider_import_off"
                                     ]
                                   }
                                 ]
@@ -30147,7 +32814,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -30249,7 +32917,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -30351,7 +33020,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -30513,7 +33183,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -30858,7 +33529,8 @@
                                   "provider_not_sent",
                                   "provider_dive_gone",
                                   "provider_busy",
-                                  "provider_unsupported"
+                                  "provider_unsupported",
+                                  "provider_import_off"
                                 ]
                               }
                             ]
@@ -31050,7 +33722,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -31152,7 +33825,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -31254,7 +33928,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -31416,7 +34091,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -31618,7 +34294,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -31720,7 +34397,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -31822,7 +34500,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },
@@ -31984,7 +34663,8 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
-                        "provider_unsupported"
+                        "provider_unsupported",
+                        "provider_import_off"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
                     },

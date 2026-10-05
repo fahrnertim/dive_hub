@@ -73,6 +73,7 @@ export const PROBLEMS = {
   provider_dive_gone: 'The dive is no longer at the service; it was deleted there',
   provider_busy: 'This dive is being sent to this service right now',
   provider_unsupported: 'This service does not offer that',
+  provider_import_off: 'Importing dives from this account is off; choose what the import may do first',
 } as const;
 
 export type ProblemCode = keyof typeof PROBLEMS;

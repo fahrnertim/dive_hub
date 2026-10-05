@@ -6,10 +6,12 @@ import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import { Problem, problem, PROBLEMS, providerProblem, type ProblemCode } from '../http/problems.js';
-import { PARTICIPANT_ROLES } from '../db/schema.js';
+import { DIVE_IMPORT_MODES, MATCHING_WINDOWS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES } from '../db/schema.js';
+import { ImportView, toImportView } from '../routes.js';
 import { SITE_SOURCES, SOURCE_INFO } from '../sites/sources.js';
 import type { BuddyService } from './buddy-service.js';
 import type { ConnectionService } from './connection-service.js';
+import type { DiveImportService } from './dive-import.js';
 import { FIND_BY, OPERATIONS, type ProviderAdapter, type Requirement } from './provider.js';
 import type { PushRow, PushService } from './push-service.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
@@ -20,6 +22,7 @@ export interface ProviderRouteDeps {
   connections: ConnectionService;
   pushes: PushService;
   buddies: BuddyService;
+  diveImports: DiveImportService;
 }
 
 const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
@@ -90,6 +93,12 @@ const ConnectionView = Type.Object({
   state: Type.Enum(['active', 'needs_sign_in'], { description: 'needs_sign_in: the Provider no longer accepts the sign-in; sign in again' }),
   lastUsedAt: Nullable(DateTime),
   createdAt: DateTime,
+  diveImport: Nullable(Type.Object({
+    mode: Type.Enum([...DIVE_IMPORT_MODES], {
+      description: 'off; add: only link and fill Dives here, never create; create: also create Dives Dive Hub doesn\'t have',
+    }),
+    windowMinutes: Type.Integer({ description: 'How far apart in local time a logbook entry and a Dive here may start, on the same day' }),
+  }, { description: 'What importing this account\'s dives may do (ADR 0030); null when the Provider imports no dives' })),
 });
 
 const LeftOut = Type.Object({
@@ -162,7 +171,7 @@ export const PROVIDER_STATUS: Partial<Record<ProblemCode, number>> = {
   invalid_input: 400, encryption_key_missing: 400, provider_wrong_credentials: 400, provider_unsupported: 400,
   provider_already_connected: 409, provider_account_taken: 409, provider_other_account: 409, provider_not_connected: 409,
   provider_sign_in_needed: 409, provider_requirements_unmet: 409, provider_not_sent: 409, provider_dive_gone: 409, provider_busy: 409,
-  provider_unavailable: 502, provider_refused: 502,
+  provider_unavailable: 502, provider_refused: 502, provider_import_off: 409,
 };
 /** A refusal about a Provider; with provider_requirements_unmet, what is unmet. */
 const ProviderProblem = Type.Object({
@@ -221,7 +230,7 @@ export function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Sta
   };
 }
 
-export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, buddies }) => {
+export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, buddies, diveImports }) => {
   app.addHook('onRequest', requireUser(auth));
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof ProviderServiceError) return replyProviderError(error, reply);
@@ -232,8 +241,14 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
   const ProviderParam = Type.String({ pattern: '^[a-z][a-z0-9_]*$', description: 'A Provider\'s id (GET /api/providers); others answer provider_unsupported' });
   const DiveProviderParams = Type.Object({ id: Type.String({ format: 'uuid' }), provider: ProviderParam });
 
-  const connectionView = (c: Awaited<ReturnType<ConnectionService['list']>>[number]): Static<typeof ConnectionView> =>
-    ({ ...c, lastUsedAt: c.lastUsedAt?.toISOString() ?? null, createdAt: c.createdAt.toISOString() });
+  const importsDives = (provider: string) => !!providers.list().find((a) => a.id === provider)?.capabilities.data.dives?.import?.operations.includes('list');
+  const connectionView = (c: Awaited<ReturnType<ConnectionService['list']>>[number]): Static<typeof ConnectionView> => {
+    const { importMode, importWindowMinutes, ...rest } = c;
+    return {
+      ...rest, lastUsedAt: c.lastUsedAt?.toISOString() ?? null, createdAt: c.createdAt.toISOString(),
+      diveImport: importsDives(c.provider) ? { mode: importMode, windowMinutes: importWindowMinutes } : null,
+    };
+  };
   const oneConnection = async (userId: string, id: string) => connectionView((await connections.list(userId)).find((c) => c.id === id)!);
   type Status = Awaited<ReturnType<PushService['status']>>;
   const statusView = (s: Status): Static<typeof StatusView> =>
@@ -313,6 +328,115 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
   }, async (request) => buddies.import(
     { userId: request.user!.id, isAdmin: request.user!.role === 'admin' }, request.params.id, request.body.accounts,
   ));
+
+  const Choice = Type.Enum(['recordings', 'entries'], {
+    description: 'recordings: its dives become Recordings, like a file\'s; entries: only logbook entries that fill Dives here',
+  });
+  const ComputerChoices = Type.Array(Type.Object({ key: Type.String({ maxLength: 200 }), choice: Choice }, { additionalProperties: false }), {
+    maxItems: 100, description: 'Per dive computer found at the Provider (its key from the preview): how its dives are used',
+  });
+
+  app.patch('/connections/:id', {
+    schema: {
+      summary: 'Change what importing the account\'s dives may do, the matching window, and the choice per dive computer (ADR 0030)',
+      params: IdParams,
+      body: Type.Object({
+        diveImport: Type.Object({
+          mode: Type.Optional(Type.Enum([...DIVE_IMPORT_MODES])),
+          windowMinutes: Type.Optional(Type.Union(MATCHING_WINDOWS.map((m) => Type.Literal(m)), { description: '5, 15, 30 or 60' })),
+          computers: Type.Optional(ComputerChoices),
+        }, { additionalProperties: false }),
+      }, { additionalProperties: false }),
+      response: { 200: ConnectionView, ...errors },
+    },
+  }, async (request) => {
+    const { computers, ...set } = request.body.diveImport;
+    await diveImports.settings(request.user!.id, request.params.id, {
+      ...set, ...(computers && { computers: Object.fromEntries(computers.map((c) => [c.key, c.choice])) }),
+    });
+    return oneConnection(request.user!.id, request.params.id);
+  });
+
+  const Candidate = Type.Object({
+    diveId: Type.String(),
+    number: Nullable(Type.Integer()),
+    startsAt: DateTime,
+    utcOffsetSeconds: Nullable(Type.Integer()),
+    utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES]),
+    durationSeconds: Type.Number(),
+    maxDepthM: Nullable(Type.Number()),
+    site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
+  });
+  const Preview = Type.Object({
+    mode: Type.Enum([...DIVE_IMPORT_MODES]),
+    windowMinutes: Type.Integer(),
+    computers: Type.Array(Type.Object({
+      key: Type.String({ description: 'Send it back with the choice' }),
+      manufacturer: Type.String(), product: Nullable(Type.String()), serialNumber: Type.String(),
+      dives: Type.Integer(),
+      choice: Choice,
+      suggested: Choice,
+      fromFiles: Type.Boolean({ description: 'Dive Hub has recordings of this computer from files: they are better (so the suggestion is entries)' }),
+      otherDiver: Type.Boolean({ description: 'The computer is another User\'s Diver\'s: its dives come in as logbook entries whatever the choice' }),
+    }), { description: 'The dive computers found, most dives first; the User chooses once per computer (kept on the Connection)' }),
+    counts: Type.Object({
+      total: Type.Integer(),
+      unreadable: Type.Integer({ description: 'Records that are no dive Dive Hub can read' }),
+      ours: Type.Integer({ description: 'Sent by Dive Hub: never imported back' }),
+      linked: Type.Integer({ description: 'Linked to a Dive here already: only filled where still empty' }),
+      deleted: Type.Integer({ description: 'On a Dive deleted here: stays deleted' }),
+      recordings: Type.Integer({ description: 'From a computer: become Recordings' }),
+      link: Type.Integer({ description: 'One Dive here in the window: linked and filled' }),
+      decide: Type.Integer({ description: 'Several Dives here in the window: in decisions' }),
+      create: Type.Integer({ description: 'No Dive here: a Dive without a Recording (mode create)' }),
+      noMatch: Type.Integer({ description: 'No Dive here, and the mode only adds: left out' }),
+    }),
+    decisions: Type.Array(Type.Object({
+      remoteId: Type.String(),
+      remoteNumber: Nullable(Type.Integer()),
+      localStart: Type.String({ description: 'Local wall-clock time as the Provider keeps it, without a time zone' }),
+      durationSeconds: Type.Number(),
+      maxDepthM: Nullable(Type.Number()),
+      candidates: Type.Array(Candidate, { description: 'The Dives here it may be, closest first' }),
+    }), { description: 'Logbook entries with several Dives here in the window: one of them, a new Dive (mode create), or leave it out' }),
+  });
+
+  app.get('/connections/:id/dive-import', {
+    schema: {
+      summary: 'Preview importing the account\'s dives (ADR 0030): reads them from the Provider and says what would happen; stores nothing',
+      description: 'provider_import_off while the Connection\'s import mode is off. One paced action at the Provider.',
+      params: IdParams, response: { 200: Preview, ...errors },
+    },
+  }, async (request) => {
+    const p = await diveImports.preview(request.user!.id, request.params.id);
+    return {
+      ...p,
+      decisions: p.decisions.map((d) => ({ ...d, candidates: d.candidates.map((c) => ({ ...c, startsAt: c.startsAt.toISOString() })) })),
+    };
+  });
+
+  app.post('/connections/:id/dive-import', {
+    schema: {
+      summary: 'Import the account\'s dives (ADR 0030): reads them again, stores one Original per dive, and starts an Import',
+      description: 'Send the choice per computer and the decisions from the preview. The Import runs in the background like an upload '
+        + '(GET /api/imports/{id}); an entry that turned ambiguous since the preview is left out (reason ambiguous). It can be run again.',
+      params: IdParams,
+      body: Type.Object({
+        computers: ComputerChoices,
+        decisions: Type.Array(Type.Object({
+          remoteId: Type.String({ maxLength: 40 }),
+          choice: Type.String({ pattern: '^(new|leave_out|[0-9a-f-]{36})$', description: 'A candidate\'s diveId, new, or leave_out' }),
+        }, { additionalProperties: false }), { maxItems: 2000 }),
+      }, { additionalProperties: false }),
+      response: { 202: ImportView, ...errors },
+    },
+  }, async (request, reply) => {
+    const created = await diveImports.start(request.user!.id, request.params.id, {
+      computers: Object.fromEntries(request.body.computers.map((c) => [c.key, c.choice])),
+      decisions: Object.fromEntries(request.body.decisions.map((d) => [d.remoteId, d.choice])),
+    });
+    return reply.code(202).send(toImportView(created));
+  });
 
   app.delete('/connections/:id', {
     schema: {

@@ -11,7 +11,8 @@
     "forItem": "{{action}}: {{item}}",
     "undo": "Rückgängig",
     "dismiss": "Schließen",
-    "saving": "Wird gespeichert…"
+    "saving": "Wird gespeichert…",
+    "close": "Schließen"
   },
   "nav": {
     "main": "Hauptmenü",
@@ -164,7 +165,8 @@
       "unchanged": "bereits importiert",
       "duplicate-candidate": "braucht deine Entscheidung",
       "skipped": "übersprungen",
-      "failed": "fehlgeschlagen"
+      "failed": "fehlgeschlagen",
+      "linked": "mit einem Tauchgang hier verknüpft"
     },
     "reason": {
       "no_fit_file": "keine FIT-Datei gefunden",
@@ -173,7 +175,11 @@
       "overlaps_several_dives": "überschneidet sich mit mehreren Tauchgängen",
       "max_depth_differs": "die Maximaltiefe weicht zu stark ab",
       "file_failed": "die Datei konnte nicht gelesen werden",
-      "deleted_earlier": "gehört zu einem Tauchgang, den du gelöscht hast; unter „Gelöschte Tauchgänge“ im Logbuch kannst du ihn wiederherstellen"
+      "deleted_earlier": "gehört zu einem Tauchgang, den du gelöscht hast; unter „Gelöschte Tauchgänge“ im Logbuch kannst du ihn wiederherstellen",
+      "sent_by_dive_hub": "von Dive Hub gesendet",
+      "no_match": "kein Tauchgang hier zu dieser Zeit",
+      "ambiguous": "mehrere Tauchgänge hier zu dieser Zeit; wähle in der Vorschau einen aus",
+      "left_out": "von dir ausgelassen"
     },
     "errorCode": {
       "unsupported_file": "Das ist weder eine FIT-Datei noch ein ZIP-Archiv.",
@@ -196,7 +202,9 @@
     "showFewer": "Weniger zeigen",
     "findTitle": "Wo du deine Tauchgänge findest",
     "findConnect": "Garmin-Connect-Website: Tauchgang öffnen, im Zahnrad-Menü „Export Original“ wählen und das ZIP so importieren, wie es ist.",
-    "findWatch": "Uhr: per USB anschließen und die Dateien aus dem Ordner GARMIN/Activity kopieren."
+    "findWatch": "Uhr: per USB anschließen und die Dateien aus dem Ordner GARMIN/Activity kopieren.",
+    "grouped": "{{what}}: {{count}}",
+    "fromProvider": "Tauchgänge aus {{name}}"
   },
   "logbook": {
     "title": "Logbuch",
@@ -298,7 +306,15 @@
     "deleteConfirm": "Tauchgang löschen",
     "deleteBoth": "Hier und in {{name}} löschen",
     "deleteHereOnly": "Nur hier löschen",
-    "deleteNothingDeleted": "Es wurde nichts gelöscht."
+    "deleteNothingDeleted": "Es wurde nichts gelöscht.",
+    "timeZone": {
+      "position": "Zeitzone vom Ort des Tauchgangs",
+      "nearby": "Zeitzone von deinen Tauchgängen in den Tagen davor und danach",
+      "unknown": "Zeitzone unbekannt: die Zeit steht so da, wie sie eingetragen wurde"
+    },
+    "noRecording": "Dieser Tauchgang hat keine Aufzeichnung.",
+    "noRecordingFrom": "Noch keine Aufzeichnung: dieser Tauchgang kommt aus deinem {{name}}-Logbuch, von Hand eingetragen.",
+    "noRecordingNext": "Wenn du die Datei des Tauchcomputers importierst, kommt ihre Aufzeichnung dazu, und ihre Werte ersetzen diese."
   },
   "errors": {
     "unknown": "Etwas ist schiefgegangen. Versuch es noch einmal.",
@@ -370,7 +386,8 @@
     "provider_not_sent": "Dieser Tauchgang ist nicht in {{name}}.",
     "provider_dive_gone": "Der Tauchgang wurde in {{name}} gelöscht. Sende ihn erneut, um ihn dort neu anzulegen.",
     "provider_busy": "Dieser Tauchgang wird gerade an {{name}} gesendet. Warte einen Moment.",
-    "provider_unsupported": "{{name}} bietet das nicht an."
+    "provider_unsupported": "{{name}} bietet das nicht an.",
+    "provider_import_off": "Der Import von Tauchgängen aus {{name}} ist aus. Wähle zuerst, was der Import darf."
   },
   "vocabulary": {
     "waterType": {
@@ -430,7 +447,8 @@
       "site-merge": "Tauchplatz mit einem anderen zusammengeführt",
       "merge": "Tauchplätze zusammengeführt",
       "adopt": "Daten aus der Quelle übernommen",
-      "restore": "Wiederhergestellt"
+      "restore": "Wiederhergestellt",
+      "fill": "Aus einem Tauchgang bei einem Dienst ergänzt"
     },
     "field": {
       "number": "Tauchgangsnummer",
@@ -445,7 +463,8 @@
       "recordings": "Aufzeichnung",
       "originalId": "Datei",
       "diverId": "Taucher",
-      "site": "Tauchplatz"
+      "site": "Tauchplatz",
+      "utcOffsetSource": "Zeitzone"
     },
     "notesChanged": "Notizen geändert",
     "setByHand": "von Hand gesetzt",
@@ -463,7 +482,14 @@
     "changeTo": "{{field}}: {{value}}",
     "participantAdded": "{{name}} als {{role}} hinzugefügt",
     "participantRemoved": "{{name}} entfernt",
-    "participantRole": "{{name}}: {{from}} → {{to}}"
+    "participantRole": "{{name}}: {{from}} → {{to}}",
+    "fromProvider": "Aus einem Tauchgang in deinem {{name}}-Logbuch angelegt",
+    "offsetSource": {
+      "device": "vom Tauchcomputer",
+      "position": "vom Ort des Tauchgangs",
+      "nearby": "von Tauchgängen davor und danach",
+      "unknown": "unbekannt"
+    }
   },
   "decisions": {
     "title": "Braucht deine Entscheidung",
@@ -922,7 +948,66 @@
     "useTypedId": "{{name}}-Tauchplatz-ID {{id}} verwenden",
     "noLogbookMatch": "Kein Platz in deinem {{name}}-Logbuch passt zu „{{q}}“. Gib stattdessen die {{name}}-ID des Platzes ein.",
     "away": "{{distance}} entfernt",
-    "idIs": "ID {{id}}"
+    "idIs": "ID {{id}}",
+    "importSaved": "Gespeichert.",
+    "importTitle": "Tauchgänge aus {{name}}",
+    "importTitleDiver": "Tauchgänge von {{diver}} aus {{name}}",
+    "importIntro": "Hol die Tauchgänge deines {{name}}-Logbuchs in Dive Hub. Tauchgänge hier werden nie überschrieben: {{name}} ergänzt nur, was ihnen fehlt.",
+    "importMode": "Was darf der Import?",
+    "importOff": "Nichts",
+    "importOffHint": "Dive Hub importiert deine Tauchgänge aus {{name}} nicht.",
+    "importAdd": "Nur Tauchgänge hier ergänzen",
+    "importAddHint": "Ein Tauchgang in {{name}} zur Zeit eines Tauchgangs hier wird mit ihm verknüpft und ergänzt Tauchplatz, Buddys und Notizen. Keine neuen Tauchgänge.",
+    "importCreate": "Auch Tauchgänge anlegen",
+    "importCreateHint": "Wie „Nur ergänzen“, und ein Tauchgang, den Dive Hub nicht hat, wird hier angelegt, ohne Aufzeichnung, bis du seine Datei importierst.",
+    "importWindow": "Derselbe Tauchgang, wenn der Beginn höchstens so weit abweicht",
+    "importWindowHint": "Von Hand eingetragene Zeiten sind oft gerundet. Verglichen in Ortszeit, am selben Tag.",
+    "importMinutes_one": "{{count}} Minute",
+    "importMinutes_other": "{{count}} Minuten",
+    "importPreview": "Zeigen, was der Import tun würde",
+    "importReading": "Dein {{name}}-Logbuch wird gelesen …",
+    "importPreviewTitle_one": "{{count}} Tauchgang in {{name}}",
+    "importPreviewTitle_other": "{{count}} Tauchgänge in {{name}}",
+    "importEmpty": "Dein {{name}}-Logbuch hat keine Tauchgänge.",
+    "importCount": {
+      "recordings_one": "{{n}} von einem Tauchcomputer: wird eine Aufzeichnung, wie eine Datei",
+      "recordings_other": "{{n}} von einem Tauchcomputer: werden Aufzeichnungen, wie Dateien",
+      "link_one": "{{n}} passt zu einem Tauchgang hier: wird verknüpft und ergänzt, was ihm fehlt",
+      "link_other": "{{n}} passen zu einem Tauchgang hier: werden verknüpft und ergänzen, was fehlt",
+      "create_one": "{{n}} ist noch nicht hier: wird ein Tauchgang ohne Aufzeichnung",
+      "create_other": "{{n}} sind noch nicht hier: werden Tauchgänge ohne Aufzeichnung",
+      "decide_one": "{{n}} passt zu mehreren Tauchgängen hier: du entscheidest unten",
+      "decide_other": "{{n}} passen zu mehreren Tauchgängen hier: du entscheidest unten",
+      "linked_one": "{{n}} ist schon verknüpft: ergänzt nur, was noch leer ist",
+      "linked_other": "{{n}} sind schon verknüpft: ergänzen nur, was noch leer ist",
+      "ours_one": "{{n}} wurde von Dive Hub gesendet: bleibt, wie er ist",
+      "ours_other": "{{n}} wurden von Dive Hub gesendet: bleiben, wie sie sind",
+      "deleted_one": "{{n}} ist ein Tauchgang, den du hier gelöscht hast: bleibt gelöscht",
+      "deleted_other": "{{n}} sind Tauchgänge, die du hier gelöscht hast: bleiben gelöscht",
+      "noMatch_one": "{{n}} passt zu keinem Tauchgang hier: wird ausgelassen (der Import ergänzt nur)",
+      "noMatch_other": "{{n}} passen zu keinem Tauchgang hier: werden ausgelassen (der Import ergänzt nur)",
+      "unreadable_one": "{{n}} kann nicht gelesen werden: wird ausgelassen",
+      "unreadable_other": "{{n}} können nicht gelesen werden: werden ausgelassen"
+    },
+    "importComputers": "Tauchcomputer",
+    "importComputersIntro": "Diese Tauchcomputer haben Tauchgänge an {{name}} geschickt. Wähle für jeden einmal, wie Dive Hub sie nutzt.",
+    "importComputer_one": "{{computer}}, {{count}} Tauchgang",
+    "importComputer_other": "{{computer}}, {{count}} Tauchgänge",
+    "importAsRecordings": "Als Aufzeichnungen",
+    "importAsRecordingsHint": "Mit ihrem Profil, wie die eigenen Dateien des Computers.",
+    "importAsEntries": "Nur als Logbucheinträge",
+    "importAsEntriesHint": "Sie ergänzen nur Tauchgänge hier, wie von Hand eingetragene.",
+    "importFromFiles": "Vorgeschlagen: Dive Hub hat die Dateien dieses Computers, und die sind genauer.",
+    "importOtherDiver": "Dieser Computer gehört zum Taucher eines anderen Users: seine Tauchgänge kommen als Logbucheinträge.",
+    "importDecide": "Welcher Tauchgang ist es?",
+    "importDecideIntro": "Diese Tauchgänge in {{name}} beginnen nah an mehreren Tauchgängen hier. Wähle einen aus, oder lass ihn aus.",
+    "importEntry": "{{name}}-Tauchgang {{number}}: {{time}}, {{depth}}, {{duration}}",
+    "importNewDive": "Ein neuer Tauchgang",
+    "importLeaveOut": "Auslassen",
+    "importStart": "Aus {{name}} importieren",
+    "importStarted": "Import aus {{name}} läuft.",
+    "importRunning": "Import aus {{name}}",
+    "importToLogbook": "Zum Logbuch"
   },
   "providers": {
     "ssi": {

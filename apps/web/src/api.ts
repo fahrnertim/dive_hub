@@ -68,6 +68,9 @@ export type ParticipantRole = ParticipantView['role'];
 export type FoundDiverView = Awaited<ReturnType<typeof fetchDiverSearch>>[number];
 export type ExternalDiverView = Awaited<ReturnType<typeof fetchExternalDivers>>['divers'][number];
 export type BuddyView = Awaited<ReturnType<typeof fetchBuddies>>[number];
+export type DiveImportPreview = Awaited<ReturnType<typeof fetchDiveImportPreview>>;
+export type DiveImportMode = NonNullable<ConnectionView['diveImport']>['mode'];
+export type UtcOffsetSource = DiveView['utcOffsetSource'];
 
 /** Query keys in one place (hierarchical, so invalidating ['dives'] covers every dive query). */
 export const keys = {
@@ -101,6 +104,9 @@ export const keys = {
   externalDivers: (q: string) => ['divers', 'external', q] as const,
   /** The account's list of people at a Provider; under ['connections']. */
   buddies: (connectionId: string) => ['connections', connectionId, 'buddies'] as const,
+  /** What importing the account's dives would do (ADR 0030); under ['connections']. */
+  diveImport: (connectionId: string) => ['connections', connectionId, 'dive-import'] as const,
+  importOf: (id: string) => ['imports', id] as const,
 };
 
 /**
@@ -319,6 +325,20 @@ async function fetchBuddies(connectionId: string) {
 /** The account's list of people at the Provider (SSI's buddy list); asks the Provider, so only when the User opens it. */
 export const buddiesQuery = (connectionId: string) =>
   queryOptions({ queryKey: keys.buddies(connectionId), queryFn: () => fetchBuddies(connectionId), staleTime: 2 * 60_000 });
+
+async function fetchDiveImportPreview(connectionId: string) {
+  return unwrap(await api.GET('/api/connections/{id}/dive-import', { params: { path: { id: connectionId } } }));
+}
+/** What importing the account's dives would do now (ADR 0030); reads the Provider, so only when the User asks. */
+export const diveImportPreviewQuery = (connectionId: string) =>
+  queryOptions({ queryKey: keys.diveImport(connectionId), queryFn: () => fetchDiveImportPreview(connectionId), staleTime: Infinity, retry: false });
+
+/** One Import, asked again every second while it runs (an import from a Provider, ADR 0030). */
+export const importQuery = (id: string) => queryOptions({
+  queryKey: keys.importOf(id),
+  queryFn: async () => unwrap(await api.GET('/api/imports/{id}', { params: { path: { id } } })),
+  refetchInterval: (q) => (q.state.data && (q.state.data.status === 'pending' || q.state.data.status === 'processing') ? 1000 : false),
+});
 
 /** The Provider's sites near the Dive, nearest first; asks the Provider, so only when the User wants to pick one. */
 export const providerSitesQuery = (diveId: string, provider: string) =>

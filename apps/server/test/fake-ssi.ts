@@ -50,6 +50,40 @@ export interface FakeSsi {
   addDive(accountId: number, values: SsiRecord): number;
 }
 
+/** A dive typed by hand in SSI's app: rounded values, no profile, no computer (ADR 0030). */
+export function handTypedDive(v: {
+  at: string; depthM: number; minutes: number; siteId?: number; buddies?: number[]; comment?: string; nr?: number; tempC?: number;
+}): SsiRecord {
+  return {
+    odin_user_log_nr: v.nr ?? null, odin_user_log_datetime: v.at, odin_user_log_date: v.at.slice(0, 10), odin_user_log_entry_time: v.at.slice(11, 16),
+    odin_user_log_divetime: v.minutes, odin_user_log_depth_m: v.depthM, odin_user_log_avg_depth_m: 0,
+    odin_user_log_watertemp_c: v.tempC ?? 0, odin_user_log_dive_sites_id: v.siteId ?? 0, odin_user_log_buddy_ids: v.buddies ?? [],
+    odin_user_log_comment: v.comment ?? '', odin_user_log_divecomputer_serial_nr: null, odin_user_log_divecomputer_imported: 0,
+    odin_user_log_diveSamples: '', odin_user_log_depthDataset: '', odin_user_log_divecomputer_dive_ref: null,
+  };
+}
+
+/**
+ * A dive synced to SSI from a dive computer by SSI's app: a profile every 5 s and the computer's serial number. A square
+ * profile: down in a minute, `depthM` until a minute before the end. Field shapes as in dive #91 (SSI reference).
+ */
+export function computerDive(v: {
+  at: string; depthM: number; minutes: number; manufacturer: string; product: string; serial: string; siteId?: number; nr?: number;
+}): SsiRecord {
+  const end = v.minutes * 60_000;
+  const samples = [];
+  for (let t = 0, n = 1; t <= end; t += 5000, n++) {
+    const d = Math.min(v.depthM, (t / 60_000) * v.depthM, ((end - t) / 60_000) * v.depthM);
+    samples.push(`{"n":${n},"t":${t},"d":${d.toFixed(1)},"s":0.0,"te":24.0,"ndl":${t < end / 2 ? 40 : 99},"gs":0.0,"gn":0.0,"a":0,"mf":134217728,"o":false,"dr":false,"rv":3.0}`);
+  }
+  return {
+    ...handTypedDive({ at: v.at, depthM: v.depthM, minutes: v.minutes, ...(v.siteId && { siteId: v.siteId }), ...(v.nr && { nr: v.nr }) }),
+    odin_user_log_divecomputer_serial_nr: v.serial, odin_user_log_divecomputer_manufacturer: v.manufacturer,
+    odin_user_log_divecomputer_name: v.product, odin_user_log_divecomputer_imported: 1, odin_user_log_watertemp_c: 24,
+    odin_user_log_diveSamples: `[${samples.join(',')}]`, odin_user_log_ean: 1, odin_user_log_ean_percent: 32,
+  };
+}
+
 export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: FakeSsiSite[]; buddies?: FakeSsiBuddy[] } = {}): FakeSsi {
   const tokens = new Map<string, number>();
   let nextToken = 1;
