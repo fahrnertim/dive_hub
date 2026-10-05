@@ -1,15 +1,24 @@
 // Pushes to Providers (ADR 0024, 0027): what every Provider needs when a Dive goes out. It records each action, knows
-// the remote record a Dive has now, works out "outdated" from the adapter's fingerprint, runs one action per Dive at a
-// time, and turns adapter errors into problem codes. What a Provider does with the Dive is the adapter's.
+// the remote record a Dive has now, works out "outdated" from the adapter's fingerprint, runs one action per Dive and
+// Provider at a time (a lease, leases.ts), deletes at several Providers only once each would, and turns adapter errors
+// into problem codes. What a Provider does with the Dive is the adapter's.
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { push } from '../db/schema.js';
 import type { ConnectionService } from './connection-service.js';
+import { LeaseBusy, type Leases } from './leases.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
 import { ProviderError, type Delivered, type ProviderAdapter, type RemoteDive, type RemoteSite } from './provider.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 
 export type PushRow = typeof push.$inferSelect;
+
+/** What deleting a Dive at Providers did: each copy deleted or kept, and why it stopped, if it did. */
+export interface Removal {
+  copies: { provider: string; copy: 'deleted' | 'kept' }[];
+  /** The refusal that stopped it; the copies after it were kept. Null when every copy asked for is gone. */
+  failure: ProviderServiceError | null;
+}
 
 export type SendResult =
   | { result: 'created' | 'updated' | 'linked'; push: PushRow }
@@ -42,10 +51,8 @@ export function currentRemote(pushes: PushRow[]): PushRow | null {
   return null;
 }
 
-export function createPushService(deps: { db: Db; registry: ProviderRegistry; connections: ConnectionService }) {
-  const { db, registry, connections } = deps;
-  /** Dives with an action running right now in this process: a second request is refused, not queued. */
-  const busy = new Set<string>();
+export function createPushService(deps: { db: Db; registry: ProviderRegistry; connections: ConnectionService; leases: Leases }) {
+  const { db, registry, connections, leases } = deps;
 
   /** The Provider's dive export, or `provider_unsupported`. */
   function exporter(provider: string) {
@@ -70,14 +77,93 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
     return conn;
   }
 
-  /** Runs one action on a Dive at a time. */
-  async function exclusive<T>(diveId: string, adapter: ProviderAdapter, fn: () => Promise<T>): Promise<T> {
-    if (busy.has(diveId)) throw new ProviderServiceError('provider_busy', named(adapter));
-    busy.add(diveId);
+  /**
+   * Runs `fn` holding the Dive's lease at each of these Providers: one action per Dive and Provider at a time, in every
+   * app process. A second request is refused (`provider_busy`, naming the Provider), not queued.
+   */
+  async function leased<T>(diveId: string, adapters: ProviderAdapter[], fn: () => Promise<T>): Promise<T> {
     try {
-      return await fn();
-    } finally {
-      busy.delete(diveId);
+      return await leases.dive(diveId, adapters.map((a) => a.id), fn);
+    } catch (error) {
+      throw error instanceof LeaseBusy ? new ProviderServiceError('provider_busy', named(registry.get(error.provider))) : error;
+    }
+  }
+
+  /** The Provider's dive export, if it deletes. */
+  function deleter(provider: string) {
+    const found = exporter(provider);
+    if (!found.exports.operations.includes('delete')) throw new ProviderServiceError('provider_unsupported', named(found.adapter));
+    return found;
+  }
+
+  /** What deleting at one Provider needs: its Connection and the remote dive the Dive has there. */
+  async function deletion(userId: string, row: { id: string; diverId: string }, provider: string) {
+    const { adapter, dives } = deleter(provider);
+    const conn = await connectionOrThrow(userId, row.diverId, adapter);
+    const current = currentRemote(await pushesOf(row.id, adapter.id));
+    if (!current) throw new ProviderServiceError('provider_not_sent', named(adapter));
+    return { adapter, dives, conn, remoteId: current.remoteId!, remoteNumber: current.remoteNumber };
+  }
+
+  /**
+   * Deletes the Dive's remote copy at one Provider and records the Push; `knownGone` when the check just found it gone.
+   * Runs under the Dive's lease there.
+   */
+  async function deleteThere(userId: string, row: { id: string; diverId: string; version: number }, provider: string, knownGone: boolean) {
+    const { adapter, dives, conn, remoteId, remoteNumber } = await deletion(userId, row, provider);
+    const base = { diveId: row.id, connectionId: conn.id, userId, diveVersion: row.version, remoteId, remoteNumber };
+    // Already deleted at the Provider: nothing was left to delete.
+    if (knownGone) return record(adapter, { ...base, action: 'delete', state: 'confirmed', remoteGone: true });
+    return connections.withAccess(conn, async (ctx) => {
+      let outcome: 'deleted' | 'gone';
+      try {
+        outcome = await dives.open(ctx).remove!(remoteId);
+      } catch (error) {
+        if (signedOut(error)) throw error;
+        const problem = asProblem(error, adapter);
+        await record(adapter, { ...base, action: 'delete', state: 'failed', errorCode: problem instanceof ProviderServiceError ? problem.code : 'internal_error' });
+        throw problem;
+      }
+      return record(adapter, { ...base, action: 'delete', state: 'confirmed', remoteGone: outcome === 'gone' });
+    });
+  }
+
+  /**
+   * Before deleting at several Providers: each has a Connection that is signed in, and says whether the remote dive is
+   * still there (the adapter knows how). Refuses as the delete would; answers the Providers where it is gone already.
+   */
+  async function checkAll(userId: string, row: { id: string; diverId: string }, providers: string[]): Promise<Set<string>> {
+    const gone = new Set<string>();
+    for (const provider of providers) {
+      const { dives, conn, remoteId } = await deletion(userId, row, provider);
+      if (!(await connections.withAccess(conn, (ctx) => dives.open(ctx).exists!(remoteId)))) gone.add(provider);
+    }
+    return gone;
+  }
+
+  /**
+   * Deletes the Dive's copies at these Providers. With several, every one is checked first, so none is deleted while
+   * another would refuse; one that still fails stops it, and the answer says which copies are gone (their Pushes record
+   * it). With one, it is simply deleted there.
+   */
+  async function removeAt(userId: string, diveId: string, providers: string[]): Promise<Removal> {
+    const copies = new Map<string, 'deleted' | 'kept'>(providers.map((p) => [p, 'kept']));
+    const answer = (failure: ProviderServiceError | null): Removal =>
+      ({ copies: providers.map((provider) => ({ provider, copy: copies.get(provider)! })), failure });
+    try {
+      const adapters = providers.map((p) => deleter(p).adapter);
+      const { row } = await loadOutgoingDive(db, userId, diveId, { deleted: true });
+      return await leased(diveId, adapters, async () => {
+        const gone = providers.length > 1 ? await checkAll(userId, row, providers) : new Set<string>();
+        for (const provider of providers) {
+          await deleteThere(userId, row, provider, gone.has(provider));
+          copies.set(provider, 'deleted');
+        }
+        return answer(null);
+      });
+    } catch (error) {
+      if (error instanceof ProviderServiceError) return answer(error);
+      throw error;
     }
   }
 
@@ -144,7 +230,7 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
       if (exports.needsSiteIdFrom && !outgoing.siteIds[exports.needsSiteIdFrom]) {
         throw new ProviderServiceError('provider_site_id_missing', named(adapter));
       }
-      return exclusive(diveId, adapter, () => connections.withAccess(conn, async (ctx) => {
+      return leased(diveId, [adapter], () => connections.withAccess(conn, async (ctx) => {
         const action = dives.open(ctx);
         const base = { diveId, connectionId: conn.id, userId, diveVersion: row.version, remoteReference: reference(diveId) };
         const delivered = (action_: 'create' | 'update', d: Delivered) => record(adapter, {
@@ -212,28 +298,13 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
      * Deletes the Dive's remote copy at the Provider. The Dive stays in the hub; a Dive deleted in the hub can still be
      * deleted there (the reminder, ADR 0026).
      */
-    async remove(userId: string, diveId: string, provider: string): Promise<PushRow> {
-      const { adapter, dives, exports } = exporter(provider);
-      if (!exports.operations.includes('delete')) throw new ProviderServiceError('provider_unsupported', named(adapter));
-      const { row } = await loadOutgoingDive(db, userId, diveId, { deleted: true });
-      const conn = await connectionOrThrow(userId, row.diverId, adapter);
-      const current = currentRemote(await pushesOf(diveId, adapter.id));
-      if (!current) throw new ProviderServiceError('provider_not_sent', named(adapter));
-      return exclusive(diveId, adapter, () => connections.withAccess(conn, async (ctx) => {
-        const base = { diveId, connectionId: conn.id, userId, diveVersion: row.version, remoteId: current.remoteId, remoteNumber: current.remoteNumber };
-        let outcome: 'deleted' | 'gone';
-        try {
-          outcome = await dives.open(ctx).remove!(current.remoteId!);
-        } catch (error) {
-          if (signedOut(error)) throw error;
-          const problem = asProblem(error, adapter);
-          await record(adapter, { ...base, action: 'delete', state: 'failed', errorCode: problem instanceof ProviderServiceError ? problem.code : 'internal_error' });
-          throw problem;
-        }
-        // Already deleted at the Provider: nothing was left to delete.
-        return record(adapter, { ...base, action: 'delete', state: 'confirmed', remoteGone: outcome === 'gone' });
-      }));
+    async remove(userId: string, diveId: string, provider: string): Promise<void> {
+      const { failure } = await removeAt(userId, diveId, [provider]);
+      if (failure) throw failure;
     },
+
+    /** Deletes the Dive's copies at these Providers, before the Dive itself is deleted (ADR 0026, 0027). */
+    removeAt,
   };
 }
 

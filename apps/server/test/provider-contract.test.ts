@@ -1,9 +1,10 @@
-// Every Provider adapter passes the same contract (ADR 0027): SSI against the fake SSI, and the test-only hand-over
-// adapter. A new Provider adds its harness here.
+// Every Provider adapter passes the same contract (ADR 0027): SSI against the fake SSI, and the two test-only adapters
+// (hand-over: no ID back; ledger: an ID back, update and delete, no find). A new Provider adds its harness here.
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import type { OutgoingDive } from '../src/providers/provider.js';
 import { createFakeHandover } from './fake-handover-provider.js';
+import { createFakeLedger } from './fake-ledger-provider.js';
 import { createFakeSsi } from './fake-ssi.js';
 import { providerContract } from './provider-contract.js';
 
@@ -41,5 +42,19 @@ providerContract('Hand-over (test only)', () => {
     dive,
     expire: () => fake.expireTokens(),
     outage: (on) => { fake.down = on; },
+  };
+});
+
+providerContract('Ledger (test only)', () => {
+  const fake = createFakeLedger();
+  return {
+    adapter: fake.adapter,
+    signIn: { kind: 'token', token: 'ledger-token-1' },
+    wrongSignIn: { kind: 'token', token: 'nope' },
+    secrets: ['ledger-token-1'],
+    dive,
+    expire: () => fake.expireTokens(),
+    outage: (on) => { fake.down = on; },
+    deleteThere: (remoteId) => { fake.dives.delete(remoteId); },
   };
 });

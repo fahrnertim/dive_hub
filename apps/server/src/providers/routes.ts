@@ -121,10 +121,10 @@ export const PROVIDER_STATUS: Partial<Record<ProblemCode, number>> = {
 };
 const errors = { 400: Problem, 404: Problem, 409: Problem, 502: Problem };
 
-/** Answers a refusal about a Provider: its status, its code and the Provider named. */
-export function replyProviderError(error: ProviderServiceError, reply: FastifyReply) {
+/** Answers a refusal about a Provider: its status, its code and the Provider named, with `extra` (such as the copies). */
+export function replyProviderError(error: ProviderServiceError, reply: FastifyReply, extra: object = {}) {
   const status = PROVIDER_STATUS[error.code] ?? 500;
-  return reply.code(status).send(error.provider ? providerProblem(error.code, error.provider) : problem(error.code));
+  return reply.code(status).send({ ...(error.provider ? providerProblem(error.code, error.provider) : problem(error.code)), ...extra });
 }
 
 export const pushView = (p: PushRow): Static<typeof PushView> => ({

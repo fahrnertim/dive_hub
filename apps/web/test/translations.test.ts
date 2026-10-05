@@ -5,6 +5,10 @@ import { describe, expect, it } from 'vitest';
 import openapi from '../../../packages/api-client/openapi.json' with { type: 'json' };
 import de from '../src/i18n/locales/de.json' with { type: 'json' };
 import en from '../src/i18n/locales/en.json' with { type: 'json' };
+import type { StrayOverride } from '../src/lib/providers.ts';
+
+// The type check fails here when a key under `providers.<id>` in en.json overrides nothing (it names that key).
+const noStrayOverride: [StrayOverride] extends [never] ? true : StrayOverride = true;
 
 type Tree = { [key: string]: string | Tree };
 
@@ -54,6 +58,21 @@ describe.each([['de', de]])('%s translation', (_name, locale) => {
   it('translates something', () => {
     const differing = [...english].filter(([key, text]) => translated.get(key) !== text);
     expect(differing.length).toBeGreaterThan(english.size / 2);
+  });
+});
+
+describe('texts a Provider words itself', () => {
+  it.each([['en', en], ['de', de]])('override a text that exists, in %s', (_name, locale) => {
+    expect(noStrayOverride).toBe(true);
+    const texts = flatten(locale as Tree);
+    const overrides = [...texts.keys()].filter((key) => key.startsWith('providers.'));
+    expect(overrides.length).toBeGreaterThan(0);
+    for (const key of overrides) {
+      // providers.<id>.<text>: a problem's text lives under errors.*, every other text under provider.*.
+      const text = key.split('.').slice(2).join('.');
+      const generic = text.startsWith('errors.') ? text : `provider.${text}`;
+      expect(texts.has(generic), `${key} overrides ${generic}, which doesn't exist`).toBe(true);
+    }
   });
 });
 

@@ -1,6 +1,7 @@
 // The contract every Provider adapter must pass (ADR 0027), run against each adapter with its fake service. It checks
 // what the generic layer relies on: capabilities that match the methods, sign-in, typed errors with a reason (never a
-// secret in the message), delivery with or without an ID, "outdated" by fingerprint, and each declared operation.
+// secret in the message), delivery with or without an ID, "outdated" by fingerprint, and a case for every operation the
+// adapter declares (an operation without a case fails the suite).
 import { describe, expect, it } from 'vitest';
 import {
   FIND_BY, OPERATIONS, ProviderError, type ActionContext, type OutgoingDive, type ProviderAdapter, type SignInInput,
@@ -26,8 +27,26 @@ export interface ContractHarness {
 
 const later = (dive: OutgoingDive, minutes: number): OutgoingDive => ({ ...dive, startsAt: new Date(dive.startsAt.getTime() + minutes * 60_000) });
 
+/** Every operation an adapter declares, as `kind.direction.operation`. */
+function declared(adapter: ProviderAdapter): string[] {
+  return Object.entries(adapter.capabilities.data).flatMap(([kind, directions]) =>
+    Object.entries(directions ?? {}).flatMap(([direction, d]) => (d as { operations: string[] }).operations.map((op) => `${kind}.${direction}.${op}`)));
+}
+
+/** Operations with a case below. */
+const CASES = [
+  'dives.export.create', 'dives.export.readBack', 'dives.export.find', 'dives.export.link', 'dives.export.update',
+  'dives.export.delete', 'diveSites.import.find',
+];
+/** Operations the adapter interface doesn't carry, and where they are tested instead. */
+const ELSEWHERE: Record<string, string> = {
+  'diveSites.import.list': "a SiteSourceAdapter for the admin's Site import (site-source-adapters.test.ts)",
+};
+
 export function providerContract(name: string, make: () => ContractHarness) {
   describe(`${name}: the Provider contract`, () => {
+    const ops = declared(make().adapter);
+    const declares = (op: string) => ops.includes(op);
     const connect = async (h: ContractHarness, id = 'connection-1'): Promise<ActionContext> => {
       const signedIn = await h.adapter.signIn(h.signIn);
       return { connectionId: id, accountId: signedIn.account.id, access: signedIn.access };
@@ -61,10 +80,16 @@ export function providerContract(name: string, make: () => ContractHarness) {
         const action = adapter.dives!.open({ connectionId: 'x', accountId: 'x', access: 'x' });
         expect(!!action.update).toBe(exports.operations.includes('update'));
         expect(!!action.remove).toBe(exports.operations.includes('delete'));
+        // Deleting at several Providers asks each first whether the dive is still there.
+        expect(!!action.exists).toBe(exports.operations.includes('delete'));
         expect(!!action.find).toBe(exports.operations.includes('find'));
         if (exports.operations.includes('link')) expect(exports.operations).toContain('find');
       }
       expect(!!c.data.diveSites?.import?.operations.includes('find')).toBe(!!adapter.diveSites);
+    });
+
+    it('has a case for every operation it declares', () => {
+      for (const op of ops) expect(CASES.includes(op) || op in ELSEWHERE, `no contract case for ${op}`).toBe(true);
     });
 
     it('signs in, and refuses a wrong sign-in with a reason', async () => {
@@ -76,27 +101,28 @@ export function providerContract(name: string, make: () => ContractHarness) {
       expect(await reasonOf(h, h.adapter.signIn(h.wrongSignIn))).toBe('wrong_credentials');
     });
 
-    it('fingerprints what it receives: the same Dive the same, a changed Dive differently', () => {
+    it.runIf(!!make().adapter.dives)('fingerprints what it receives: the same Dive the same, a changed Dive differently', () => {
       const { adapter, dive } = make();
-      if (!adapter.dives) return;
-      expect(adapter.dives.fingerprint(dive)).toBe(adapter.dives.fingerprint({ ...dive }));
-      expect(adapter.dives.fingerprint({ ...dive, notes: `${dive.notes ?? ''} changed` })).not.toBe(adapter.dives.fingerprint(dive));
+      expect(adapter.dives!.fingerprint(dive)).toBe(adapter.dives!.fingerprint({ ...dive }));
+      expect(adapter.dives!.fingerprint({ ...dive, notes: `${dive.notes ?? ''} changed` })).not.toBe(adapter.dives!.fingerprint(dive));
     });
 
-    it('creates: with an ID back when delivery is confirmed, without one when handed over', async () => {
+    it.runIf(declares('dives.export.create'))('creates: with an ID back when delivery is confirmed, without one when handed over', async () => {
       const h = make();
-      if (!h.adapter.dives) return;
-      const delivered = await h.adapter.dives.open(await connect(h)).create(h.dive, 'divehub-contract-1');
+      const delivered = await h.adapter.dives!.open(await connect(h)).create(h.dive, 'divehub-contract-1');
       if (h.adapter.capabilities.data.dives!.export!.delivery === 'confirmed') expect(delivered.remoteId).toEqual(expect.any(String));
       else expect(delivered.remoteId).toBeNull();
-      if (h.adapter.capabilities.data.dives!.export!.operations.includes('readBack')) expect(delivered.differences).toEqual([]);
     });
 
-    it('finds a dive it got before by our reference, and one at about the same time', async () => {
+    it.runIf(declares('dives.export.readBack'))('reads back what it stored: no differences in what it takes as sent', async () => {
       const h = make();
-      const action = h.adapter.dives?.open(await connect(h));
-      if (!action?.find) return;
-      expect(await action.find(h.dive, 'divehub-contract-2')).toEqual({ ours: null, sameTime: null });
+      expect((await h.adapter.dives!.open(await connect(h)).create(h.dive, 'divehub-contract-1')).differences).toEqual([]);
+    });
+
+    it.runIf(declares('dives.export.find'))('finds a dive it got before by our reference, and one at about the same time', async () => {
+      const h = make();
+      const action = h.adapter.dives!.open(await connect(h));
+      expect(await action.find!(h.dive, 'divehub-contract-2')).toEqual({ ours: null, sameTime: null });
       const { remoteId } = await action.create(h.dive, 'divehub-contract-2');
       const found = await h.adapter.dives!.open(await connect(h)).find!(later(h.dive, 1), 'divehub-contract-2');
       expect(found.ours?.remoteId).toBe(remoteId);
@@ -104,42 +130,54 @@ export function providerContract(name: string, make: () => ContractHarness) {
       expect((await h.adapter.dives!.open(await connect(h)).find!(later(h.dive, 60), 'divehub-other')).sameTime).toBeNull();
     });
 
-    it('updates the same remote dive, and answers null once it is gone', async () => {
+    it.runIf(declares('dives.export.link'))('links: the dive found at the same time can be updated as ours', async () => {
       const h = make();
       const ctx = await connect(h);
-      if (!h.adapter.dives?.open(ctx).update) return;
-      const { remoteId } = await h.adapter.dives.open(ctx).create(h.dive, 'divehub-contract-3');
-      const updated = await h.adapter.dives.open(ctx).update!(remoteId!, { ...h.dive, notes: 'Turtle' });
+      const { remoteId } = await h.adapter.dives!.open(ctx).create(h.dive, 'divehub-contract-6');
+      const { sameTime } = await h.adapter.dives!.open(ctx).find!(later(h.dive, 1), 'divehub-other');
+      expect(sameTime?.remoteId).toBe(remoteId);
+      expect((await h.adapter.dives!.open(ctx).update!(sameTime!.remoteId, { ...h.dive, notes: 'Linked' }))?.remoteId).toBe(remoteId);
+    });
+
+    it.runIf(declares('dives.export.update'))('updates the same remote dive, and answers null once it is gone', async () => {
+      const h = make();
+      const ctx = await connect(h);
+      const { remoteId } = await h.adapter.dives!.open(ctx).create(h.dive, 'divehub-contract-3');
+      const updated = await h.adapter.dives!.open(ctx).update!(remoteId!, { ...h.dive, notes: 'Turtle' });
       expect(updated?.remoteId).toBe(remoteId);
       h.deleteThere!(remoteId!);
-      expect(await h.adapter.dives.open(ctx).update!(remoteId!, h.dive)).toBeNull();
+      expect(await h.adapter.dives!.open(ctx).update!(remoteId!, h.dive)).toBeNull();
     });
 
-    it('deletes, and says when the remote dive was already gone', async () => {
+    it.runIf(declares('dives.export.delete'))('deletes, says when the remote dive was already gone, and tells whether it is there', async () => {
       const h = make();
       const ctx = await connect(h);
-      if (!h.adapter.dives?.open(ctx).remove) return;
-      const { remoteId } = await h.adapter.dives.open(ctx).create(h.dive, 'divehub-contract-4');
-      expect(await h.adapter.dives.open(ctx).remove!(remoteId!)).toBe('deleted');
-      expect(await h.adapter.dives.open(ctx).remove!(remoteId!)).toBe('gone');
+      const action = () => h.adapter.dives!.open(ctx);
+      const { remoteId } = await action().create(h.dive, 'divehub-contract-4');
+      expect(await action().exists!(remoteId!)).toBe(true);
+      expect(await action().remove!(remoteId!)).toBe('deleted');
+      expect(await action().exists!(remoteId!)).toBe(false);
+      expect(await action().remove!(remoteId!)).toBe('gone');
+      // Gone because the User deleted it in the Provider's own app.
+      const other = await action().create(later(h.dive, 120), 'divehub-contract-7');
+      h.deleteThere!(other.remoteId!);
+      expect(await action().exists!(other.remoteId!)).toBe(false);
     });
 
-    it('says unavailable when the service is down, and signed_out when the access expired', async () => {
+    it.runIf(!!make().adapter.dives)('says unavailable when the service is down, and signed_out when the access expired', async () => {
       const h = make();
-      if (!h.adapter.dives) return;
       const ctx = await connect(h);
       h.outage(true);
-      expect(await reasonOf(h, h.adapter.dives.open(ctx).create(h.dive, 'divehub-contract-5'))).toBe('unavailable');
+      expect(await reasonOf(h, h.adapter.dives!.open(ctx).create(h.dive, 'divehub-contract-5'))).toBe('unavailable');
       expect(await reasonOf(h, h.adapter.signIn(h.signIn))).toBe('unavailable');
       h.outage(false);
       h.expire();
-      expect(await reasonOf(h, h.adapter.dives.open(ctx).create(h.dive, 'divehub-contract-5'))).toBe('signed_out');
+      expect(await reasonOf(h, h.adapter.dives!.open(ctx).create(h.dive, 'divehub-contract-5'))).toBe('signed_out');
     });
 
-    it('offers its dive sites with their IDs, if it has any', async () => {
+    it.runIf(declares('diveSites.import.find'))('offers its dive sites with their IDs', async () => {
       const h = make();
-      if (!h.adapter.diveSites) return;
-      const sites = await h.adapter.diveSites.find(await connect(h));
+      const sites = await h.adapter.diveSites!.find(await connect(h));
       const numberOrNull = (v: unknown) => v === null || typeof v === 'number';
       for (const s of sites) {
         expect(Object.keys(s).sort()).toEqual(['country', 'id', 'latitude', 'longitude', 'name']);

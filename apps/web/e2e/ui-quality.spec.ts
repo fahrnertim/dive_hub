@@ -359,10 +359,12 @@ test.describe('behaviour', () => {
   test('an unknown dive says so at once, without retrying first', { tag: ['@dives'] }, async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('table')).toBeVisible();
-    const started = Date.now();
+    // Counted, not timed: a retry would ask a second time before saying so (a time limit failed on a busy machine).
+    const asked: string[] = [];
+    page.on('request', (r) => { if (/\/api\/dives\/00000000-0000-7000-8000-000000000000$/.test(r.url())) asked.push(r.url()); });
     await page.evaluate(() => { location.hash = '/dives/00000000-0000-7000-8000-000000000000'; });
     await expect(page.getByRole('heading', { name: 'Dive not found' })).toBeVisible();
-    expect(Date.now() - started).toBeLessThan(900); // a retry would wait a second first
+    expect(asked).toHaveLength(1);
     await expect(page.getByRole('link', { name: 'Logbook' }).last()).toBeVisible();
   });
 

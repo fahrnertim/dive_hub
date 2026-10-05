@@ -2020,7 +2020,7 @@ export interface paths {
         post?: never;
         /**
          * Delete a Dive: it leaves the logbook, its counts and search; re-imports skip it; it can be restored
-         * @description Send the version you started from (409 dive_changed). When the Dive is at Providers, `alsoAt` names those to delete it at first (SSI's app can't bring it back); if one fails (provider_* codes), nothing is deleted here. The others keep it, and the deleted Dive keeps reminding (`stillAt` in GET /dives/deleted). ADR 0026, 0027.
+         * @description Send the version you started from (409 dive_changed). When the Dive is at Providers, `alsoAt` names those to delete it at first (SSI's app can't bring it back). With several, each is checked first; if one refuses (provider_* codes), the Dive stays here and `providers` says which copies are gone already. The others keep it, and the deleted Dive keeps reminding (`stillAt` in GET /dives/deleted). ADR 0026, 0027.
          */
         delete: {
             parameters: {
@@ -2078,6 +2078,15 @@ export interface paths {
                             provider?: string;
                             /** @description Its name, to put into the translated text */
                             providerName?: string;
+                            /** @description With a provider_* code: each Provider the Dive is at, and whether its copy there was deleted before the refusal (the Dive stays here) */
+                            providers?: {
+                                provider: string;
+                                /**
+                                 * @description What happened to the copy there
+                                 * @enum {unknown}
+                                 */
+                                copy: "deleted" | "kept";
+                            }[];
                         };
                     };
                 };
@@ -2120,6 +2129,15 @@ export interface paths {
                             provider?: string;
                             /** @description Its name, to put into the translated text */
                             providerName?: string;
+                            /** @description With a provider_* code: each Provider the Dive is at, and whether its copy there was deleted before the refusal (the Dive stays here) */
+                            providers?: {
+                                provider: string;
+                                /**
+                                 * @description What happened to the copy there
+                                 * @enum {unknown}
+                                 */
+                                copy: "deleted" | "kept";
+                            }[];
                         };
                     };
                 };
@@ -2141,6 +2159,15 @@ export interface paths {
                             provider?: string;
                             /** @description Its name, to put into the translated text */
                             providerName?: string;
+                            /** @description With a provider_* code: each Provider the Dive is at, and whether its copy there was deleted before the refusal (the Dive stays here) */
+                            providers?: {
+                                provider: string;
+                                /**
+                                 * @description What happened to the copy there
+                                 * @enum {unknown}
+                                 */
+                                copy: "deleted" | "kept";
+                            }[];
                         };
                     };
                 };

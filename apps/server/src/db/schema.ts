@@ -525,6 +525,11 @@ export const connection = pgTable(
     keepSignedIn: boolean('keep_signed_in').notNull(),
     credentials: text('credentials'),
     state: connectionState('state').notNull().default('active'),
+    /**
+     * Pacing (src/providers/leases.ts): the next action may start from then on. An action holds its turn by setting
+     * it a lease ahead, and sets it the Provider's pause after its end when done.
+     */
+    nextActionAt: timestamp('next_action_at', { withTimezone: true }),
     lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -577,6 +582,21 @@ export const push = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index('push_dive_idx').on(t.diveId, t.createdAt)],
+);
+
+/**
+ * One action per Dive and Provider at a time (src/providers/leases.ts), across every app process: held until
+ * `locked_until` by `holder`, removed when the action ends. A row left by a process that crashed runs out by itself.
+ */
+export const diveLease = pgTable(
+  'dive_lease',
+  {
+    diveId: uuid('dive_id').notNull().references(() => dive.id, { onDelete: 'cascade' }),
+    provider: text('provider').notNull(),
+    holder: uuid('holder').notNull(),
+    lockedUntil: timestamp('locked_until', { withTimezone: true }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.diveId, t.provider] })],
 );
 
 export const actorType = pgEnum('actor_type', ['user', 'import', 'system', 'site_import']);

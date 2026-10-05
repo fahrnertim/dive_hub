@@ -18,6 +18,7 @@ import { createSiteImportService } from '../src/sites/import/site-import-service
 import { ssiSitesZip } from './zip.js';
 import { createSecretBox } from '../src/secrets/secret-box.js';
 import { createProviderLayer } from '../src/providers/layer.js';
+import { skippingClock } from '../src/providers/leases.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
@@ -88,8 +89,8 @@ const fakeSsi = createFakeSsi({
 const providers = createProviderLayer({
   db, secrets: createSecretBox(Buffer.alloc(32, 9)),
   adapters: [createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch, userAgent: 'DiveHub (e2e)' }) })],
-  // The fake needs no pause between actions; the browser tests would only wait.
-  sleep: async () => undefined,
+  // The fake needs no pause between actions; the browser tests would only wait, so the pauses are skipped.
+  clock: skippingClock(),
 });
 const auth = createAuth({ db, baseUrl: `http://localhost:${port}`, secret: 'e2e-secret-with-enough-entropy-0123456789abcdef' });
 const app = await buildApp({

@@ -16,6 +16,7 @@ import type { SiteSourceAdapter } from '../src/sites/import/site-source.js';
 import type { ImportSource } from '../src/sites/sources.js';
 import { createSecretBox } from '../src/secrets/secret-box.js';
 import { createProviderLayer } from '../src/providers/layer.js';
+import { skippingClock } from '../src/providers/leases.js';
 import type { ProviderAdapter } from '../src/providers/provider.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
@@ -87,17 +88,21 @@ export async function createTestApp(t: TestDatabase, options: {
   fakeSsi?: FakeSsi; encryptionKey?: Buffer | null;
   /** Providers besides SSI, such as the test-only hand-over adapter (never in production). */
   extraProviders?: ProviderAdapter[];
+  /** The leases' clock; two app instances on one database share one (default: a fresh skipping clock). */
+  clock?: ReturnType<typeof skippingClock>;
 } = {}) {
-  const { webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, extraProviders = [], ...authOptions } = options;
+  const {
+    webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, extraProviders = [], clock = skippingClock(),
+    ...authOptions
+  } = options;
   const auth = createTestAuth(t.db, authOptions);
   const setup: Setup = createSetup(t.db);
   const blobs = createLocalBlobStore(t.dataDir);
   const imports: ImportService = createImportService({ db: t.db, blobs });
   const siteImports = createSiteImportService({ db: t.db, sources: siteSources ?? { osm: unreachable('osm'), wikidata: unreachable('wikidata'), ssi: unreachable('ssi') } });
   // SSI keeps its last logbook read for two minutes (ADR 0027); a test that changes the fake SSI behind Dive Hub's back
-  // moves this clock on, as if the change happened a while later. Pauses between actions are recorded, not waited.
+  // moves this clock on, as if the change happened a while later. Pauses between actions are skipped and recorded.
   const ssiClock = { now: 0, advance(ms: number) { this.now += ms; } };
-  const pauses: number[] = [];
   const providers = createProviderLayer({
     db: t.db, secrets: createSecretBox(encryptionKey ?? undefined),
     adapters: [
@@ -107,12 +112,12 @@ export async function createTestApp(t: TestDatabase, options: {
       }),
       ...extraProviders,
     ],
-    sleep: async (ms) => { pauses.push(ms); },
+    clock,
   });
   const app = await buildApp({
     db: t.db, imports, siteImports, providers, blobs, auth, setup, invitations: createInvitations(t.db), baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir,
   });
-  return { app, auth, setup, imports, siteImports, providers, fakeSsi, ssiClock, pauses, blobs };
+  return { app, auth, setup, imports, siteImports, providers, fakeSsi, ssiClock, clock, pauses: clock.slept, blobs };
 }
 
 /** Creates a User the way an admin would (Better Auth's admin API, server-side). */

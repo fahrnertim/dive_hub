@@ -145,6 +145,8 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number }
         if (kept) kept.logbook = { ...kept.logbook, dives: kept.logbook.dives.filter((r) => idOf(r.odin_user_log_id) !== remoteId) };
         return 'deleted';
       },
+      // Read afresh, like a delete: a kept logbook could still list a dive just deleted in SSI's app.
+      exists: async (remoteId) => !!(await byId(remoteId)),
     };
   }
 

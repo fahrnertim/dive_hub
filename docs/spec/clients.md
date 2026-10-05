@@ -203,7 +203,10 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - **Must ask about every Provider the Dive is at in the same dialog** (`GET /api/dives/{id}/providers`, each `current`):
     "Delete here and in SSI" (`alsoAt: ['ssi']`) or "Delete only here", saying SSI's app can't bring it back. Without a
     Connection for its Diver at a Provider, say it stays there and don't offer deleting it there. Don't preselect either.
-  - **On a provider_* error nothing was deleted:** say so with the reason, and offer both again.
+  - **On a provider_* error the Dive stays here:** say so with the reason, and offer both again. With several Providers
+    each is checked before any is deleted, so usually nothing was deleted; but when one fails after another's copy was
+    deleted, the refusal's `providers` says so (`copy: deleted`): say which copy is gone. *Web:* says "Nothing was
+    deleted", which holds while SSI is the only Provider that deletes.
   - Afterwards leave the dive page (it answers 404 now) and say what happened (`providers`: each with `copy` `deleted` or
     `kept`), with **Undo** (restore), which doesn't time out. Undo brings it back here only. *Web:* `DeletedDives.tsx`.
 - **Deleted dives** (`GET /api/dives/deleted`): offer to restore them (`POST /api/dives/{id}/restore` with `version`).

@@ -1,7 +1,7 @@
 // The seam between Dive Hub and an outside service it talks to (ADR 0027): a Provider is one adapter that declares
 // its capabilities (how Users sign in, what it imports or exports, with which operations, how fast it may be called)
-// and does only what is its own. Connections, credentials, Pushes, locking, pacing, problem codes and the routes are
-// the generic layer's (connection-service.ts, push-service.ts, routes.ts).
+// and does only what is its own. Connections, credentials, Pushes, leases, pacing, problem codes and the routes are
+// the generic layer's (connection-service.ts, push-service.ts, leases.ts, routes.ts).
 import type { SiteWaterType } from '../vocabulary.js';
 import type { SiteSource } from '../sites/sources.js';
 
@@ -151,6 +151,11 @@ export interface DiveExportAction {
   update?(remoteId: string, dive: OutgoingDive): Promise<Delivered | null>;
   /** `gone`: it was already deleted at the Provider. */
   remove?(remoteId: string): Promise<'deleted' | 'gone'>;
+  /**
+   * Whether the remote dive is still there, asked before deleting at several Providers so that none is deleted while
+   * another would refuse. With `delete`, in whatever way the Provider can tell.
+   */
+  exists?(remoteId: string): Promise<boolean>;
 }
 
 /** A dive site at the Provider, to take its site ID from. */

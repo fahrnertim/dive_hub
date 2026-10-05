@@ -164,6 +164,19 @@ const DeletedDiveView = Type.Object({
   }), { description: 'Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md)' }),
 });
 
+const Copies = Type.Array(Type.Object({
+  provider: Type.String(),
+  copy: Type.Enum(['deleted', 'kept'], { description: 'What happened to the copy there' }),
+}), { description: 'Each Provider the Dive was at' });
+
+/** A refusal while deleting; after a provider_* code, which copies at Providers are gone already. */
+const DeleteProblem = Type.Object({
+  ...Problem.properties,
+  providers: Type.Optional(Type.Array(Copies.items, {
+    description: 'With a provider_* code: each Provider the Dive is at, and whether its copy there was deleted before the refusal (the Dive stays here)',
+  })),
+});
+
 /** Deleted Dives listed at most (newest deletion first). */
 const DELETED_SHOWN = 100;
 
@@ -279,21 +292,17 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     schema: {
       summary: 'Delete a Dive: it leaves the logbook, its counts and search; re-imports skip it; it can be restored',
       description: 'Send the version you started from (409 dive_changed). When the Dive is at Providers, `alsoAt` names those '
-        + 'to delete it at first (SSI\'s app can\'t bring it back); if one fails (provider_* codes), nothing is deleted here. The '
-        + 'others keep it, and the deleted Dive keeps reminding (`stillAt` in GET /dives/deleted). ADR 0026, 0027.',
+        + 'to delete it at first (SSI\'s app can\'t bring it back). With several, each is checked first; if one refuses (provider_* '
+        + 'codes), the Dive stays here and `providers` says which copies are gone already. The others keep it, and the deleted '
+        + 'Dive keeps reminding (`stillAt` in GET /dives/deleted). ADR 0026, 0027.',
       params: IdParams,
       body: Type.Object({
         version: Type.Integer(),
         alsoAt: Type.Optional(Type.Array(Type.String(), { description: 'Providers to delete the Dive\'s copy at too; ask the User first (docs/spec/clients.md)' })),
       }),
       response: {
-        200: Type.Object({
-          providers: Type.Array(Type.Object({
-            provider: Type.String(),
-            copy: Type.Enum(['deleted', 'kept'], { description: 'What happened to the copy there' }),
-          }), { description: 'Each Provider the Dive was at' }),
-        }),
-        400: Problem, 404: Problem, 409: Problem, 502: Problem,
+        200: Type.Object({ providers: Copies }),
+        400: DeleteProblem, 404: Problem, 409: DeleteProblem, 502: DeleteProblem,
       },
     },
   }, async (request, reply) => {
@@ -303,11 +312,12 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     // Checked before any Provider is asked, so a changed Dive isn't deleted there and then kept here.
     if (row.version !== version) return reply.code(409).send(problem('dive_changed'));
     const at = [...((await pushes.currentOf([row.id])).get(row.id)?.keys() ?? [])];
-    for (const provider of at) {
-      if (alsoAt.includes(provider)) await pushes.remove(request.user!.id, row.id, provider);
-    }
+    const asked = at.filter((provider) => alsoAt.includes(provider));
+    const { copies, failure } = asked.length > 0 ? await pushes.removeAt(request.user!.id, row.id, asked) : { copies: [], failure: null };
+    const providers = at.map((provider) => ({ provider, copy: copies.find((c) => c.provider === provider)?.copy ?? 'kept' as const }));
+    if (failure) return replyProviderError(failure, reply, { providers });
     await dives.remove(request.user!.id, row.id, version);
-    return { providers: at.map((provider) => ({ provider, copy: alsoAt.includes(provider) ? 'deleted' as const : 'kept' as const })) };
+    return { providers };
   });
 
   app.get('/dives/deleted', {

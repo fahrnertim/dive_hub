@@ -1,6 +1,7 @@
 // The provider layer is generic (ADR 0027): a second, test-only Provider with token sign-in and hand-over delivery runs
 // through the same routes as SSI. Capabilities reach clients, Connections and Pushes work without an ID back, what the
-// Provider doesn't offer is refused, deleting a Dive leaves it alone, and actions on one Connection are paced.
+// Provider doesn't offer is refused, deleting a Dive leaves it alone, and actions on one Connection are paced (across
+// app instances: leases.test.ts).
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { connection, push } from '../src/db/schema.js';
@@ -92,10 +93,7 @@ describe.skipIf(!(await databaseReachable()))('the provider layer', () => {
     // Each action waits what is left of the 500 ms after the one before it.
     expect(ctx.pauses.slice(before).every((ms) => ms > 0 && ms <= 500)).toBe(true);
     expect(ctx.pauses.length - before).toBeGreaterThanOrEqual(2);
-    // The same Dive twice at once: the second is refused, not queued.
-    const twice = await Promise.all([1, 2].map(() => call('POST', `/api/dives/${diveId}/providers/handover`, {})));
-    expect(twice.map((r) => r.statusCode).sort()).toEqual([200, 409]);
-    expect(twice.find((r) => r.statusCode === 409)!.json()).toMatchObject({ code: 'provider_busy' });
+    // The same Dive twice at once, and two app instances: leases.test.ts.
   });
 
   it('needs a new token once the old one expired, since nothing renews a token', async () => {

@@ -63,7 +63,10 @@ Docker Compose, two services by default (amd64 + arm64 images, pinned versions, 
 Migrations run automatically on start (one process at a time). Liveness and readiness endpoints.
 
 Volumes: database data, file storage. TLS and the reverse proxy are the operator's
-responsibility (Caddy, Traefik, NAS proxy). We document a sample setup.
+responsibility (Caddy, Traefik, NAS proxy). We document a sample setup. The proxy's timeout should be at least
+2 minutes: sending a Dive to a Provider may wait up to 30 s for its turn and then call the Provider several times.
+Several app processes on one database need clocks that agree (NTP), because the Provider leases use the app's time
+([ADR 0027](../decisions/0027-providers-as-adapters.md#downsides-accepted-owner-2026-10-05)).
 Backup = `pg_dump` + the file volume.
 
 ## Authentication
@@ -482,7 +485,7 @@ Implemented:
 
 What is left of the slice 10–12 simplifications:
 - **Sending and deleting at a Provider run in the request**, not as worker jobs (unchanged; with batch sending or importing).
-- **One process:** pacing and the Dive lock live in memory.
+- ~~**One process:** pacing and the Dive lock live in memory.~~ Leases in PostgreSQL since slice 13a.
 - **Not sent yet:** conditions other than water type, tanks and pressures, buddies (Connection Diver mappings), gear,
   photos; QR payload and importing from SSI come later.
 - **A Diver's External ID** is still set only by connecting (`provider_account_taken` instead of proposing to link).
@@ -492,8 +495,44 @@ What is left of the slice 10–12 simplifications:
 Deliberate simplifications, to revisit:
 - **OAuth sign-in** is designed (ADR 0027) but not built.
 - **Dive site import** keeps its own `SiteSourceAdapter`; only SSI's moved into its Provider folder.
-- **With several Providers**, deleting a Dive deletes at them one after another; if a later one fails, the earlier copies
-  are already gone while the Dive stays here.
+- ~~**With several Providers**, deleting a Dive deletes at them one after another; if a later one fails, the earlier copies
+  are already gone while the Dive stays here.~~ Each is checked first since slice 13a; one that still fails is answered per
+  Provider.
 - **A two-minute-old logbook** may miss a dive logged in SSI's app just before the next create.
 - **No browser test for "sign in again"** after an expired SSI sign-in: the browser tests can't expire the fake SSI's
   tokens; the server tests cover it.
+
+**Slice 13a (2026-10-05): provider layer cleanup** ([ADR 0027, amended](../decisions/0027-providers-as-adapters.md#amendment-2026-10-05-leases-in-postgresql-and-deleting-at-several-providers),
+the [follow-ups](../research/2026-10-05-provider-layer-follow-ups.md)). Users see no change in behaviour or texts.
+
+Implemented:
+- **Leases in PostgreSQL** (`src/providers/leases.ts`, replacing the in-memory `pacing.ts` and Dive lock): `dive_lease`
+  (one action per Dive and Provider, one conditional upsert) and `connection.next_action_at` (pacing per Connection; a
+  request waits what is left of the pause, or looks again every 250 ms, for at most 30 s, then `provider_busy`). Leases
+  hold at most 5 minutes, so a crashed process frees them by itself. No advisory locks, no transaction around a Provider
+  call. Times come from the app's clock (`Clock`; `skippingClock` in tests and the browser tests' server). The SSI logbook
+  snapshot stays per process. Migration 0014 (generated, reviewed: one table, one nullable column).
+- **Deleting at several Providers** (`pushes.removeAt`): each checked first (Connection, signed in, `exists` at the
+  adapter), then deleted under the Dive's leases at all; one that still fails stops it, keeps the Dive, and the refusal
+  carries `providers` with each `copy`. At one Provider as before, without a check.
+- **Typed text overrides:** `ProviderOverrideKey` and `StrayOverride` in `apps/web/src/lib/providers.ts`; the type check
+  and `test/translations.test.ts` refuse a `providers.<id>.*` key that overrides nothing.
+- **A second test-only adapter**, the ledger (`test/fake-ledger-provider.ts`: token sign-in, an ID back, update and delete,
+  no find or link). The contract suite runs a case per declared operation and fails on one without a case.
+- **Tests:** `leases.test.ts` (two app instances on one database: a second request refused, actions paced across
+  instances, a turn waited for and refused after the bound, crashed leases running out, no transaction open during a
+  Provider call); `dive-deletion.test.ts` (SSI and the ledger: a refusal in the check deletes nothing, a failed delete
+  keeps the Dive and says which copy is gone, a copy deleted in the Provider's app counts as gone); the contract suite
+  for three adapters. The browser test "an unknown dive says so at once" counts its requests instead of timing them
+  (it failed at about 1 s on a busy machine, before this slice too).
+
+Deliberate simplifications, to revisit:
+- **The web client** still says "Nothing was deleted" on any refusal while deleting. It can't be otherwise in production
+  (SSI is the only Provider that deletes); a client showing two such Providers must read `providers` (clients.md).
+- **A failed delete stops** the deleting at the remaining Providers instead of going on.
+- **The wait for a turn polls** (every 250 ms) instead of being woken; fine for a handful of requests per Connection.
+  Waking would be PostgreSQL `LISTEN`/`NOTIFY` (one listening connection per process, polling kept as a fallback for
+  missed notifications), or only in-process waking with polling across processes. Worth it when the worker sends
+  batches (ADR 0010), not before.
+- **Leases hold 5 minutes** whatever the Provider; a crashed action keeps its Dive and Connection busy that long.
+

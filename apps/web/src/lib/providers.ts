@@ -2,12 +2,20 @@
 // panels render from the capabilities; texts name the Provider, in its own words where it has them.
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { providersQuery, type ProviderView } from '../api.ts';
+import { providersQuery, type ProblemCode, type ProviderView } from '../api.ts';
 import type en from '../i18n/locales/en.json';
 
 type Paths<T> = { [K in keyof T & string]: T[K] extends string ? K : `${K}.${Paths<T[K]>}` }[keyof T & string];
 /** A text under `provider` in en.json; a Provider may word it itself under `providers.<id>`. */
 export type ProviderTextKey = Paths<(typeof en)['provider']>;
+/**
+ * What a Provider may word itself under `providers.<id>`: a text of `provider.*` (useProviderText), or a problem's
+ * text `errors.<code>` (useProblemText in display.ts). Anything else there would never be shown.
+ */
+export type ProviderOverrideKey = ProviderTextKey | `errors.${ProblemCode}`;
+type Overrides = (typeof en)['providers'];
+/** The keys under `providers.<id>` in en.json that override nothing: `never` while every one does (test/translations.test.ts). */
+export type StrayOverride = { [Id in keyof Overrides]: Exclude<Paths<Overrides[Id]>, ProviderOverrideKey> }[keyof Overrides];
 
 /** The Providers that take dives, in the server's order. */
 export const exporting = (providers: ProviderView[] | undefined) => (providers ?? []).filter((p) => p.data.dives?.export);

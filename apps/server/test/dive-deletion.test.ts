@@ -1,9 +1,12 @@
 // Deleting a Dive through the HTTP API (ADR 0026, data model A5 and scenario 4): a soft delete with a Revision,
 // gone from lists, counts and search; re-imports skip it ("deleted earlier"); restoring brings it back; and the
-// SSI copy is deleted there too on request (through the provider layer, ADR 0027), or stays with a reminder.
+// SSI copy is deleted there too on request (through the provider layer, ADR 0027), or stays with a reminder. At several
+// Providers (SSI and the test-only ledger), each is checked first; one that still fails keeps the Dive and says which
+// copies are gone.
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { dive, recording } from '../src/db/schema.js';
+import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
   BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase,
@@ -21,6 +24,7 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
   let tim: string;
   let other: string;
   let siteId: string;
+  const ledger = createFakeLedger();
 
   const call = (method: 'GET' | 'POST' | 'PATCH' | 'DELETE', url: string, cookie = tim, payload?: object) =>
     ctx.app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload && { payload }) });
@@ -39,7 +43,7 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
 
   beforeAll(async () => {
     t = await createTestDatabase();
-    ctx = await createTestApp(t);
+    ctx = await createTestApp(t, { extraProviders: [ledger.adapter] });
     await createUser(ctx.auth, 'tim@example.com');
     await createUser(ctx.auth, 'other@example.com');
     tim = await signIn(ctx.app, 'tim@example.com');
@@ -217,6 +221,75 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
       expect((await remove(id, { alsoAt: ['ssi'] })).json()).toMatchObject({ code: 'provider_not_connected' });
       expect((await call('GET', `/api/dives/${id}`)).statusCode).toBe(200);
       expect((await remove(id)).json()).toEqual({ providers: [{ provider: 'ssi', copy: 'kept' }] });
+    });
+  });
+
+  describe('a Dive at two Providers', () => {
+    const both = { alsoAt: ['ssi', 'ledger'] };
+    type Status = { provider: string; current: { remoteId: string } | null; pushes: { action: string; state: string; failureCode: string | null; remoteGone: boolean }[] };
+    const statuses = async (id: string) => json<Status[]>('GET', `/api/dives/${id}/providers`);
+    const at = async (id: string, provider: string) => (await statuses(id)).find((s) => s.provider === provider)!;
+    let ledgerConnection: string;
+    let bothSite: string;
+
+    /** A Dive sent to SSI and to the ledger. */
+    const sentToBoth = async (start: string) => {
+      const id = (await upload(`${start}.fit`, makeSyntheticDive({ serialNumber: 444, start: new Date(start) }))).diveId!;
+      await call('PATCH', `/api/dives/${id}`, tim, { version: await version(id), siteId: bothSite });
+      for (const provider of ['ssi', 'ledger']) expect(await json('POST', `/api/dives/${id}/providers/${provider}`, tim, {})).toMatchObject({ outcome: 'created' });
+      return id;
+    };
+
+    beforeAll(async () => {
+      const diverId = (await json<{ id: string; isOwn: boolean }[]>('GET', '/api/divers')).find((d) => d.isOwn)!.id;
+      // The SSI Connection of the section above was disconnected at its end.
+      await call('POST', '/api/connections/ssi', tim, { diverId, login: 'erika@example.com', password: 'ssi-password', keepSignedIn: false });
+      ledgerConnection = (await json<{ id: string }>('POST', '/api/connections/ledger', tim, { diverId, token: 'ledger-token-1', keepSignedIn: false })).id;
+      bothSite = (await json<{ id: string }>('POST', '/api/dive-sites', tim, { name: 'Both reef', position: { latitude: 27.4, longitude: 33.9 }, ssiSiteId: '4410' })).id;
+    });
+
+    it('checks every Provider first: when one would refuse, nothing is deleted anywhere', async () => {
+      const id = await sentToBoth('2026-04-01T09:00:00Z');
+      const ssiRemote = (await at(id, 'ssi')).current!.remoteId;
+      ledger.expireTokens();
+      const response = await remove(id, both);
+      expect(response.statusCode).toBe(409);
+      expect(response.json()).toMatchObject({
+        code: 'provider_sign_in_needed', provider: 'ledger', providerName: 'Ledger',
+        providers: [{ provider: 'ssi', copy: 'kept' }, { provider: 'ledger', copy: 'kept' }],
+      });
+      expect(ctx.fakeSsi.dives.get(Number(ssiRemote))!.odin_user_log_deleted).not.toBe(1);
+      expect((await call('GET', `/api/dives/${id}`)).statusCode).toBe(200);
+      expect((await at(id, 'ssi')).pushes[0]).toMatchObject({ action: 'create' });
+
+      ledger.tokens.set('ledger-token-2', { accountId: 'l-5', label: 'Ledger of Erika' });
+      await call('POST', `/api/connections/${ledgerConnection}/sign-in`, tim, { token: 'ledger-token-2', keepSignedIn: false });
+      expect((await remove(id, both)).json()).toEqual({ providers: [{ provider: 'ssi', copy: 'deleted' }, { provider: 'ledger', copy: 'deleted' }] });
+      expect(ctx.fakeSsi.dives.get(Number(ssiRemote))!.odin_user_log_deleted).toBe(1);
+    });
+
+    it('keeps the Dive when one still fails, says which copies are gone, and records it', async () => {
+      const id = await sentToBoth('2026-04-02T09:00:00Z');
+      ledger.refuseDelete = true;
+      const response = await remove(id, both);
+      ledger.refuseDelete = false;
+      expect(response.statusCode).toBe(502);
+      expect(response.json()).toMatchObject({
+        code: 'provider_refused', provider: 'ledger', providers: [{ provider: 'ssi', copy: 'deleted' }, { provider: 'ledger', copy: 'kept' }],
+      });
+      expect((await call('GET', `/api/dives/${id}`)).statusCode).toBe(200);
+      const [ssiNow, ledgerNow] = [await at(id, 'ssi'), await at(id, 'ledger')];
+      expect([ssiNow.current, ssiNow.pushes[0]]).toMatchObject([null, { action: 'delete', state: 'confirmed' }]);
+      expect([ledgerNow.current, ledgerNow.pushes[0]]).toMatchObject([{ remoteId: expect.any(String) }, { action: 'delete', state: 'failed', failureCode: 'provider_refused' }]);
+      // Asked again, only the ledger's copy is left to delete.
+      expect((await remove(id, both)).json()).toEqual({ providers: [{ provider: 'ledger', copy: 'deleted' }] });
+    });
+
+    it("counts a copy already deleted in the Provider's own app as gone", async () => {
+      const id = await sentToBoth('2026-04-03T09:00:00Z');
+      ledger.dives.delete((await at(id, 'ledger')).current!.remoteId);
+      expect((await remove(id, both)).json()).toEqual({ providers: [{ provider: 'ssi', copy: 'deleted' }, { provider: 'ledger', copy: 'deleted' }] });
+      expect((await at(id, 'ledger')).pushes[0]).toMatchObject({ action: 'delete', state: 'confirmed', remoteGone: true });
     });
   });
 });

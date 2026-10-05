@@ -1,14 +1,14 @@
 // Connections to Providers (ADR 0024, 0027): one per User, Diver and Provider. Connecting signs in once; the
 // credentials are sealed in one field shaped by the Provider's sign-in kind, the password only when the User chose to
 // keep it. When the Provider no longer accepts the access, a kept password signs in again silently; otherwise the
-// Connection needs the User to sign in again. Every action on a Connection is paced (pacing.ts).
+// Connection needs the User to sign in again. Every action on a Connection waits its turn (leases.ts).
 import { randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { connection, diver, diverExternalId } from '../db/schema.js';
 import { managedDiverIds } from '../dives/dive-service.js';
 import type { SecretBox } from '../secrets/secret-box.js';
-import type { Pacer } from './pacing.js';
+import { TurnTimeout, type Leases } from './leases.js';
 import { ProviderError, type ActionContext, type ProviderAdapter, type SignInInput } from './provider.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 
@@ -31,8 +31,17 @@ type Credentials =
 
 const purpose = (id: string) => `connection:${id}`;
 
-export function createConnectionService(deps: { db: Db; registry: ProviderRegistry; secrets: SecretBox; pace: Pacer }) {
-  const { db, registry, secrets, pace } = deps;
+export function createConnectionService(deps: { db: Db; registry: ProviderRegistry; secrets: SecretBox; leases: Leases }) {
+  const { db, registry, secrets, leases } = deps;
+
+  /** Runs `fn` on the Connection's turn; a turn that doesn't come in time is `provider_busy`. */
+  async function onTurn<T>(adapter: ProviderAdapter, connectionId: string, fn: (row: ConnectionRow | null) => Promise<T>): Promise<T> {
+    try {
+      return await leases.turn(connectionId, adapter.capabilities.limits.pauseMs, fn);
+    } catch (error) {
+      throw error instanceof TurnTimeout ? new ProviderServiceError('provider_busy', named(adapter)) : error;
+    }
+  }
 
   const seal = (id: string, c: Credentials) => secrets.seal(JSON.stringify(c), purpose(id));
   /** The Connection's credentials; a row from before ADR 0027 has none, and signs in with its account label. */
@@ -131,7 +140,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
       const adapter = registry.get(row.provider);
       const kept = credentialsOf(row);
       const input = signInInput(adapter, fields, kept?.kind === 'password' ? kept.login : row.accountLabel);
-      const signedIn = await pace(row.id, adapter.capabilities.limits.pauseMs, () => signInAt(adapter, input));
+      const signedIn = await onTurn(adapter, row.id, () => signInAt(adapter, input));
       if (signedIn.account.id !== row.accountId) throw new ProviderServiceError('provider_other_account', named(adapter));
       await db.update(connection).set({
         credentials: seal(row.id, credentialsFrom(input, signedIn.access, fields.keepSignedIn)),
@@ -152,9 +161,8 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
      */
     async withAccess<T>(given: ConnectionRow, fn: (context: ActionContext) => Promise<T>): Promise<T> {
       const adapter = registry.get(given.provider);
-      return pace(given.id, adapter.capabilities.limits.pauseMs, async () => {
-        // Read again once it's this action's turn: the one before may have signed in anew, or disconnected.
-        const [row] = await db.select().from(connection).where(eq(connection.id, given.id));
+      // The Connection as it is once it's this action's turn: the one before may have signed in anew, or disconnected.
+      return onTurn(adapter, given.id, async (row) => {
         if (!row) throw new ProviderServiceError('provider_not_connected', named(adapter));
         let credentials = credentialsOf(row);
         const password = credentials?.kind === 'password' ? credentials.password : null;

@@ -14,6 +14,8 @@ export interface FakeHandover {
   down: boolean;
   /** Makes every token invalid, as when they expire. */
   expireTokens(): void;
+  /** Runs while a dive is handed over, before it counts as received: to look at the database, or hold the action open. */
+  during: (() => Promise<void>) | null;
 }
 
 export function createFakeHandover(): FakeHandover {
@@ -22,6 +24,7 @@ export function createFakeHandover(): FakeHandover {
     received: [],
     down: false,
     expireTokens: () => fake.tokens.clear(),
+    during: null,
     adapter: {
       id: 'handover',
       capabilities: {
@@ -46,6 +49,7 @@ export function createFakeHandover(): FakeHandover {
               if (fake.down) throw new ProviderError('unavailable', 'down');
               const account = fake.tokens.get(ctx.access);
               if (!account) throw new ProviderError('signed_out', 'token no longer valid');
+              await fake.during?.();
               fake.received.push({ accountId: account.accountId, startsAt: dive.startsAt.toISOString() });
               return { remoteId: null, remoteNumber: null, payload: { startsAt: dive.startsAt.toISOString() }, differences: null };
             },

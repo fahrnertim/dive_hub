@@ -1,6 +1,6 @@
 ---
 title: "ADR 0027: Providers as adapters that declare their capabilities"
-summary: Outside services with Connections (SSI now, PADI later) are Providers - one adapter each, declaring how Users sign in, what it imports or exports per kind of data, with which operations, how delivery is confirmed and how fast it may be called; a generic layer owns Connections, sealed credentials, Pushes, "outdated", locking, pacing, problem codes, the routes and asking every Provider when a Dive is deleted. Routes and problem codes become generic; GET /api/providers hands the capabilities to clients; existing Connections sign in again once. Amends 0024 and 0026.
+summary: Outside services with Connections (SSI now, PADI later) are Providers - one adapter each, declaring how Users sign in, what it imports or exports per kind of data, with which operations, how delivery is confirmed and how fast it may be called; a generic layer owns Connections, sealed credentials, Pushes, "outdated", locking, pacing, problem codes, the routes and asking every Provider when a Dive is deleted. Routes and problem codes become generic; GET /api/providers hands the capabilities to clients; existing Connections sign in again once. Amends 0024 and 0026. Amended the same day: leases in PostgreSQL instead of in-process locks, and every Provider checked before a Dive is deleted at several.
 status: accepted
 date: 2026-10-05
 ---
@@ -10,7 +10,8 @@ date: 2026-10-05
 ## Status
 Accepted – 2026-10-05. Amends [ADR 0024](0024-ssi-target-via-app-api.md) (where the SSI code sits, the Connection's
 credentials, the routes and codes, the pause between actions) and [ADR 0026](0026-deleting-dives.md) (deleting asks
-every Provider the Dive is at, not SSI by name).
+every Provider the Dive is at, not SSI by name). Amended on 2026-10-05 by the [cleanup slice](#amendment-2026-10-05-leases-in-postgresql-and-deleting-at-several-providers)
+(the [follow-ups](../research/2026-10-05-provider-layer-follow-ups.md)).
 
 ## Context
 The [SSI integration review](../research/2026-10-05-ssi-integration-review.md) found the SSI code sound but not generic:
@@ -60,12 +61,13 @@ durationMinutes }`. No `odin_*` field is read outside the SSI adapter.
 - **Connections** (one per User, Diver and Provider), their **sealed credentials** and their state. Signing in again
   after `signed_out` with a kept password is silent; otherwise the Connection is `needs_sign_in`.
 - **Pushes:** recording each action, the current remote record of a Dive, "outdated" by the adapter's fingerprint, one
-  action per Dive at a time (`provider_busy`).
+  action per Dive and Provider at a time (`provider_busy`), held by a lease in PostgreSQL (amendment below).
 - **Pacing:** actions on one Connection run one after another, with the adapter's pause between them; a second request
-  waits its turn instead of failing. In one process, like the Dive lock.
+  waits its turn instead of failing, for a while (`connection.next_action_at`, amendment below).
 - **Problem codes:** adapter reasons become `provider_*` codes, with the Provider named in the answer.
 - **Routes** and the **capabilities endpoint**.
-- **Deleting a Dive:** asks every Provider the Dive is at (ADR 0026, now not SSI by name).
+- **Deleting a Dive:** asks every Provider the Dive is at (ADR 0026, now not SSI by name); with several, checks each
+  first (amendment below).
 
 The registry (`providers/registry.ts`) is built once in `main.ts` with the production adapters. Tests build it with
 the fake SSI and a test-only adapter.
@@ -156,6 +158,71 @@ importing). Behaviour and texts for SSI are unchanged.
   from `GET /api/providers`.
 - A test-only adapter (token sign-in, handed-over delivery) proves the layer generic; it is never registered in
   production.
-- Pacing and the Dive lock live in one process; several app processes would need a database lock.
+- ~~Pacing and the Dive lock live in one process~~: leases in PostgreSQL since the amendment, so several app processes
+  may share one database.
 - A logbook snapshot can be up to two minutes old: a dive logged in SSI's app within that time isn't offered as
   "already in SSI" on the next create.
+
+## Amendment (2026-10-05): leases in PostgreSQL, and deleting at several Providers
+Decided by the project owner after the [provider layer follow-ups](../research/2026-10-05-provider-layer-follow-ups.md).
+Users see no change.
+
+### Leases instead of in-process locks
+`src/providers/leases.ts`. A lease is a time it holds until; nothing holds a transaction or a pool connection while a
+Provider is called.
+- **One action per Dive and Provider:** a row in `dive_lease` (`dive_id`, `provider`, `holder`, `locked_until`), taken
+  with one conditional statement: `INSERT … ON CONFLICT (dive_id, provider) DO UPDATE … WHERE locked_until < $now
+  RETURNING` (an `UPDATE … WHERE locked_until < now` that also creates the row the first time). No row back: another
+  action holds it, `provider_busy`. The action deletes its row when done (only its own, by `holder`).
+- **Pacing per Connection:** `connection.next_action_at`. Taking the turn is `UPDATE connection SET next_action_at =
+  $now + lease WHERE id = … AND (next_action_at IS NULL OR next_action_at <= $now) RETURNING *`; when done the action
+  sets it to its end plus the Provider's pause (only while the turn is still its own). A request that doesn't get the
+  turn waits what is left of a pause, or looks again every 250 ms while another action runs, for at most 30 s; then
+  `provider_busy`.
+- **A crash frees itself:** a lease holds at most 5 minutes, longer than the slowest action (a few Provider calls of up
+  to a minute each). A row a crashed process left runs out and is taken over.
+- **The time comes from the app processes' clock,** passed into the statements, not PostgreSQL's `now()`: tests skip
+  pauses and leases without waiting (`skippingClock`), and the browser tests' server too. Processes on one database
+  must agree on the time; NTP is enough, a skew of a second only shifts a pause by that much.
+- **Not advisory locks:** a transaction lock would hold a pool connection for the seconds a Provider call takes, a
+  session lock can leak through the pool.
+- **The SSI logbook snapshot stays per process:** losing it, or another process not having it, costs one logbook read.
+
+### Deleting a Dive at several Providers
+- **Every Provider is checked first:** its Connection is there and signed in (renewing with a kept password as an
+  action would), and the adapter says whether the remote dive is still there (`exists(remoteId)` beside `remove`; SSI
+  reads its logbook afresh). A refusal there deletes nothing anywhere. A copy found gone counts as deleted (a confirmed
+  delete Push with `remoteGone`).
+- **Then each is deleted,** under the Dive's leases at all of them. One that still fails stops it: the Dive stays here,
+  the copies after it are kept, and the answer is that Provider's problem with `providers: [{ provider, copy }]`, saying
+  which copies are gone. Their Pushes record it, so the Dive's panels show it and asking again deletes only what is left.
+- **At one Provider** nothing changes: no check first (it would only fail the same way, two seconds later).
+- The client contract gains the `providers` field on that refusal ([clients.md](../spec/clients.md#dives)).
+
+### Proving the seam
+- A **second test-only adapter**, the ledger (`test/fake-ledger-provider.ts`): token sign-in, confirmed delivery (an
+  ID back), update and delete, no find or link. Never registered in production, like the hand-over adapter.
+- The **contract suite runs a case for every operation an adapter declares**, and fails on a declared operation it
+  has no case for (`diveSites` `list` is a Site import Source and tested there).
+- **Text overrides are typed:** `providers.<id>.*` in the web client's texts may only word a `provider.*` text or a
+  problem's `errors.<code>` (`ProviderOverrideKey`); the type check and a web test refuse any other key.
+
+### Downsides, accepted (owner, 2026-10-05)
+- **The app processes' clock:** a skew of seconds only shortens or lengthens a pause by that much. A clock off by
+  minutes (NTP broken) could let a process take a lease still in use, so two actions could run on one Dive at once and,
+  for SSI, create a duplicate dive. With one app process, as deployed today, there is no skew.
+- **5-minute leases:** after a crash, that Dive at that Provider, and its Connection, answer `provider_busy` for up to
+  5 minutes. Shorter would risk a second action starting while a slow one still runs (SSI allows 60 s per call, an
+  action makes up to four).
+- **Waiting up to 30 s:** a request stays open up to 30 s plus its action. A reverse proxy with a shorter timeout answers
+  with a gateway error instead of `provider_busy`. More than about six SSI sends queued at once hit the limit; the web
+  client sends one at a time, and batch sending will go through the worker (ADR 0010).
+
+### Considered
+- **Advisory locks:** see above.
+- **Deleting the Dive here first and the copies after** (or in a worker): the Dive would be gone while a copy stays
+  without the User having chosen it; the reminder only covers copies the User kept.
+- **Going on after a failed delete** at the remaining Providers: more irreversible deletes while the outcome is already
+  mixed; stopping lets the User decide again with the dialog.
+- **PostgreSQL's `now()`:** one clock for every process, but the tests would have to wait out real pauses (2 s per SSI
+  action).
