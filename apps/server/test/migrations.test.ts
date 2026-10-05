@@ -80,3 +80,42 @@ describe.skipIf(!(await databaseReachable()))('0011 and 0012: the water type mov
     await expect(q(`update dive_site set water_type = 'en13319' where id = $1`, [site])).rejects.toThrow(/water_type_ck/);
   });
 });
+
+describe.skipIf(!(await databaseReachable()))('0013: Providers as adapters (ADR 0027)', () => {
+  let t: TestDatabase;
+  let before: string;
+  beforeAll(async () => {
+    before = await migrationsBefore('0013_provider_layer');
+    t = await createTestDatabase({ migrationsFolder: before });
+  });
+  afterAll(async () => {
+    await t?.drop();
+    if (before) await rm(before, { recursive: true, force: true });
+  });
+
+  it('drops the old token and password so the Connection signs in again, and renames what Pushes stored', async () => {
+    const q = (sql: string, params: unknown[] = []) => t.pool.query(sql, params);
+    const user = (await q(`insert into "user" (name, email, email_verified) values ('Erika', 'erika@example.com', true) returning id`)).rows[0].id as string;
+    const diver = (await q(`insert into diver (name) values ('Erika') returning id`)).rows[0].id as string;
+    const dive = (await q(`insert into dive (diver_id, starts_at, duration_seconds) values ($1, now(), 1800) returning id`, [diver])).rows[0].id as string;
+    const conn = (await q(`insert into connection (user_id, diver_id, target, account_id, account_email, keep_signed_in, token, password)
+      values ($1, $2, 'ssi', '5012047', 'erika@example.com', true, 'v1.a.b', 'v1.c.d') returning id`, [user, diver])).rows[0].id as string;
+    const pushOf = async (state: string, action: string, code: string | null) => (await q(`insert into push (dive_id, connection_id, target, mode, action, state, dive_version, error_code)
+      values ($1, $2, 'ssi', 'api', $3, $4, 1, $5) returning id`, [dive, conn, action, state, code])).rows[0].id as string;
+    const goneUpdate = await pushOf('failed', 'update', 'ssi_dive_gone');
+    const goneDelete = await pushOf('confirmed', 'delete', 'ssi_dive_gone');
+    const outage = await pushOf('failed', 'create', 'ssi_unavailable');
+    const noSite = await pushOf('failed', 'create', 'ssi_site_missing');
+
+    await migrateDatabase(t.db, t.pool, migrations);
+
+    const { rows: [after] } = await q('select provider, account_label, credentials, state, keep_signed_in from connection where id = $1', [conn]);
+    expect(after).toEqual({ provider: 'ssi', account_label: 'erika@example.com', credentials: null, state: 'needs_sign_in', keep_signed_in: false });
+    const pushes = Object.fromEntries((await q('select id, provider, error_code, remote_gone from push')).rows.map((r) => [r.id, r]));
+    expect(pushes[goneUpdate]).toMatchObject({ provider: 'ssi', error_code: 'provider_dive_gone', remote_gone: true });
+    expect(pushes[goneDelete]).toMatchObject({ error_code: null, remote_gone: true });
+    expect(pushes[outage]).toMatchObject({ error_code: 'provider_unavailable', remote_gone: false });
+    expect(pushes[noSite]).toMatchObject({ error_code: 'provider_site_id_missing' });
+    expect((await q(`select 1 from pg_type where typname = 'target'`)).rows).toEqual([]);
+  });
+});

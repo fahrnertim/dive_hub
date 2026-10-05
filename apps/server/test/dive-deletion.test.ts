@@ -1,6 +1,6 @@
 // Deleting a Dive through the HTTP API (ADR 0026, data model A5 and scenario 4): a soft delete with a Revision,
 // gone from lists, counts and search; re-imports skip it ("deleted earlier"); restoring brings it back; and the
-// SSI copy is deleted there too on request, or stays with a reminder.
+// SSI copy is deleted there too on request (through the provider layer, ADR 0027), or stays with a reminder.
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { dive, recording } from '../src/db/schema.js';
@@ -12,7 +12,7 @@ import {
 type Outcome = { result: string; diveId?: string; recordingId?: string; reason?: string };
 type DeletedDive = {
   id: string; version: number; number: number | null; site: { id: string; name: string } | null; deletedAt: string;
-  ssi: { remoteNumber: number | null } | null;
+  stillAt: { provider: string; remoteNumber: number | null }[];
 };
 
 describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
@@ -75,7 +75,7 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
     it('takes the Dive out of the logbook, its counts, search, the site\'s counts, and the Diver\'s count', async () => {
       const response = await remove(gone);
       expect(response.statusCode).toBe(200);
-      expect(response.json()).toEqual({ ssi: null });
+      expect(response.json()).toEqual({ providers: [] });
 
       expect((await call('GET', `/api/dives/${gone}`)).statusCode).toBe(404);
       expect((await call('GET', `/api/dives/${gone}/revisions`)).statusCode).toBe(404);
@@ -97,7 +97,7 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
     });
 
     it('lists deleted Dives to their Users only', async () => {
-      expect((await deleted()).dives).toEqual([expect.objectContaining({ id: gone, site: { id: siteId, name: 'Hausreef' }, ssi: null })]);
+      expect((await deleted()).dives).toEqual([expect.objectContaining({ id: gone, site: { id: siteId, name: 'Hausreef' }, stillAt: [] })]);
       expect((await json<{ dives: unknown[] }>('GET', '/api/dives/deleted', other)).dives).toEqual([]);
     });
 
@@ -160,15 +160,15 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
 
   describe('a Dive in SSI', () => {
     let diveId: string;
-    const SSI = { email: 'erika@example.com', password: 'ssi-password' };
+    const SSI = { login: 'erika@example.com', password: 'ssi-password' };
     const ssiDive = (id: string) => ctx.fakeSsi.dives.get(Number(id))!;
     const sendToSsi = async (start: string) => {
       const id = (await upload(`${start}.fit`, makeSyntheticDive({ serialNumber: 333, start: new Date(start) }))).diveId!;
       await call('PATCH', `/api/dives/${id}`, tim, { version: await version(id), siteId: ssiSite });
-      expect((await json('POST', `/api/dives/${id}/ssi`, tim, {}))).toMatchObject({ outcome: 'created' });
+      expect((await json('POST', `/api/dives/${id}/providers/ssi`, tim, {}))).toMatchObject({ outcome: 'created' });
       return id;
     };
-    const remoteOf = async (id: string) => (await json<{ current: { remoteId: string } }>('GET', `/api/dives/${id}/ssi`)).current.remoteId;
+    const remoteOf = async (id: string) => (await json<{ current: { remoteId: string } }>('GET', `/api/dives/${id}/providers/ssi`)).current.remoteId;
     let ssiSite: string;
 
     beforeAll(async () => {
@@ -180,43 +180,43 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
 
     it('deletes nothing when SSI fails, and says why', async () => {
       ctx.fakeSsi.failWith = 503;
-      const response = await remove(diveId, { inSsi: true });
+      const response = await remove(diveId, { alsoAt: ['ssi'] });
       ctx.fakeSsi.failWith = null;
       expect(response.statusCode).toBe(502);
-      expect(response.json()).toMatchObject({ code: 'ssi_unavailable' });
+      expect(response.json()).toMatchObject({ code: 'provider_unavailable', provider: 'ssi' });
       expect((await call('GET', `/api/dives/${diveId}`)).statusCode).toBe(200);
     });
 
     it('deletes it in SSI too when asked', async () => {
       const remoteId = await remoteOf(diveId);
-      const response = await remove(diveId, { inSsi: true });
-      expect(response.json()).toEqual({ ssi: 'deleted' });
+      const response = await remove(diveId, { alsoAt: ['ssi'] });
+      expect(response.json()).toEqual({ providers: [{ provider: 'ssi', copy: 'deleted' }] });
       expect(ssiDive(remoteId).odin_user_log_deleted).toBe(1);
-      expect((await deleted()).dives.find((d) => d.id === diveId)).toMatchObject({ ssi: null });
+      expect((await deleted()).dives.find((d) => d.id === diveId)).toMatchObject({ stillAt: [] });
     });
 
     it('keeps the SSI dive when the User declines, reminds, and deletes it there later', async () => {
       const id = await sendToSsi('2026-03-02T09:00:00Z');
       const remoteId = await remoteOf(id);
-      expect((await remove(id, { inSsi: false })).json()).toEqual({ ssi: 'kept' });
+      expect((await remove(id, { alsoAt: [] })).json()).toEqual({ providers: [{ provider: 'ssi', copy: 'kept' }] });
       expect(ssiDive(remoteId).odin_user_log_deleted).not.toBe(1);
       const entry = (await deleted()).dives.find((d) => d.id === id)!;
-      expect(entry.ssi).toMatchObject({ remoteNumber: expect.any(Number) });
+      expect(entry.stillAt).toEqual([{ provider: 'ssi', remoteNumber: expect.any(Number) }]);
       // Still not sendable while deleted, but deletable there.
-      expect((await call('POST', `/api/dives/${id}/ssi`, tim, {})).statusCode).toBe(404);
-      expect((await call('DELETE', `/api/dives/${id}/ssi`, other)).statusCode).toBe(404);
-      expect((await call('DELETE', `/api/dives/${id}/ssi`)).statusCode).toBe(200);
+      expect((await call('POST', `/api/dives/${id}/providers/ssi`, tim, {})).statusCode).toBe(404);
+      expect((await call('DELETE', `/api/dives/${id}/providers/ssi`, other)).statusCode).toBe(404);
+      expect((await call('DELETE', `/api/dives/${id}/providers/ssi`)).statusCode).toBe(200);
       expect(ssiDive(remoteId).odin_user_log_deleted).toBe(1);
-      expect((await deleted()).dives.find((d) => d.id === id)!.ssi).toBeNull();
+      expect((await deleted()).dives.find((d) => d.id === id)!.stillAt).toEqual([]);
     });
 
     it('refuses to delete in SSI without a Connection, and deletes nothing', async () => {
       const id = await sendToSsi('2026-03-03T09:00:00Z');
-      const conn = (await json<{ connection: { id: string } }>('GET', `/api/dives/${id}/ssi`)).connection;
-      await call('DELETE', `/api/connections/ssi/${conn.id}`);
-      expect((await remove(id, { inSsi: true })).json()).toMatchObject({ code: 'ssi_not_connected' });
+      const conn = (await json<{ connection: { id: string } }>('GET', `/api/dives/${id}/providers/ssi`)).connection;
+      await call('DELETE', `/api/connections/${conn.id}`);
+      expect((await remove(id, { alsoAt: ['ssi'] })).json()).toMatchObject({ code: 'provider_not_connected' });
       expect((await call('GET', `/api/dives/${id}`)).statusCode).toBe(200);
-      expect((await remove(id)).json()).toEqual({ ssi: 'kept' });
+      expect((await remove(id)).json()).toEqual({ providers: [{ provider: 'ssi', copy: 'kept' }] });
     });
   });
 });

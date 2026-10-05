@@ -1,22 +1,26 @@
-// SSI as a Target through the HTTP API (ADR 0024, data model scenario 4), against the fake SSI:
+// SSI as a Provider through the HTTP API (ADR 0024, 0027, data model scenario 4), against the fake SSI:
 // connecting, sending a Dive, updating it in place, linking, deleting, an expired token, an outage.
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { connection, diverExternalId, push } from '../src/db/schema.js';
+import { createSecretBox } from '../src/secrets/secret-box.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
-  BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase,
+  BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, TEST_ENCRYPTION_KEY, type TestDatabase,
 } from './support.js';
 
-const SSI = { email: 'erika@example.com', password: 'ssi-password' };
+const SSI = { login: 'erika@example.com', password: 'ssi-password' };
+/** What a Connection keeps, opened with the tests' key. */
+const credentials = (row: typeof connection.$inferSelect) =>
+  JSON.parse(createSecretBox(TEST_ENCRYPTION_KEY).open(row.credentials!, `connection:${row.id}`)) as { access: string | null; password: string | null };
 
 type Status = {
-  connection: { id: string; state: string } | null; siteSsiId: string | null;
+  connection: { id: string; state: string } | null; siteExternalId: string | null;
   current: { remoteId: string; remoteNumber: number | null; upToDate: boolean } | null;
   pushes: { action: string; state: string; remoteId: string | null; failureCode: string | null; differences: unknown[] | null }[];
 };
 
-describe.skipIf(!(await databaseReachable()))('SSI as a Target', () => {
+describe.skipIf(!(await databaseReachable()))('SSI as a Provider', () => {
   let t: TestDatabase;
   let ctx: Awaited<ReturnType<typeof createTestApp>>;
   let tim: string;
@@ -33,8 +37,8 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Target', () => {
     bodies.push(response.body);
     return response;
   };
-  const status = async (id = diveId) => (await call('GET', `/api/dives/${id}/ssi`, tim)).json() as Status;
-  const send = (body: object = {}, id = diveId) => call('POST', `/api/dives/${id}/ssi`, tim, body);
+  const status = async (id = diveId) => (await call('GET', `/api/dives/${id}/providers/ssi`, tim)).json() as Status;
+  const send = (body: object = {}, id = diveId) => call('POST', `/api/dives/${id}/providers/ssi`, tim, body);
   const ssiDive = (id: string) => ctx.fakeSsi.dives.get(Number(id))!;
 
   async function upload(cookie: string, fileName: string, data: Uint8Array): Promise<string> {
@@ -62,11 +66,12 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Target', () => {
   describe('connecting', () => {
     it('refuses a wrong password, another User\'s Diver, and keeping a password the server can\'t encrypt', async () => {
       expect((await call('POST', '/api/connections/ssi', tim, { diverId: timDiver, ...SSI, password: 'wrong', keepSignedIn: false })).json())
-        .toMatchObject({ code: 'ssi_wrong_credentials' });
+        .toMatchObject({ code: 'provider_wrong_credentials', provider: 'ssi', providerName: 'SSI' });
       expect((await call('POST', '/api/connections/ssi', tim, { diverId: otherDiver, ...SSI, keepSignedIn: false })).statusCode).toBe(404);
       const noKey = await createTestApp(t, { encryptionKey: null });
-      const list = await noKey.app.inject({ method: 'GET', url: '/api/connections/ssi', headers: { cookie: tim } });
-      expect(list.json()).toEqual({ canKeepPasswords: false, connections: [] });
+      const providers = await noKey.app.inject({ method: 'GET', url: '/api/providers', headers: { cookie: tim } });
+      expect(providers.json()).toMatchObject([{ id: 'ssi', signIn: { kind: 'password', login: 'email', canKeepPassword: false } }]);
+      expect((await noKey.app.inject({ method: 'GET', url: '/api/connections', headers: { cookie: tim } })).json()).toEqual([]);
       const keep = await noKey.app.inject({
         method: 'POST', url: '/api/connections/ssi', headers: { cookie: tim, origin: BASE_URL }, payload: { diverId: timDiver, ...SSI, keepSignedIn: true },
       });
@@ -77,27 +82,27 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Target', () => {
     it('signs in once, keeps only the token (encrypted), and records the SSI account on the Diver', async () => {
       const response = await call('POST', '/api/connections/ssi', tim, { diverId: timDiver, ...SSI, keepSignedIn: false });
       expect(response.statusCode).toBe(201);
-      expect(response.json()).toMatchObject({ diverId: timDiver, accountId: '5012047', accountEmail: SSI.email, keepSignedIn: false, state: 'active' });
+      expect(response.json()).toMatchObject({ provider: 'ssi', diverId: timDiver, accountId: '5012047', accountLabel: SSI.login, keepSignedIn: false, state: 'active' });
       const [row] = await t.db.select().from(connection);
-      expect(row!.password).toBeNull();
-      expect(row!.token).toMatch(/^v1\./);
+      expect(row!.credentials).toMatch(/^v1\./);
+      expect(credentials(row!)).toMatchObject({ access: expect.stringMatching(/^token-/), password: null });
       expect(await t.db.select({ id: diverExternalId.externalId }).from(diverExternalId).where(eq(diverExternalId.diverId, timDiver)))
         .toEqual([{ id: '5012047' }]);
     });
 
     it('refuses a second Connection for the Diver, and the same SSI account for another Diver', async () => {
       expect((await call('POST', '/api/connections/ssi', tim, { diverId: timDiver, ...SSI, keepSignedIn: false })).json())
-        .toMatchObject({ code: 'ssi_already_connected' });
+        .toMatchObject({ code: 'provider_already_connected' });
       expect((await call('POST', '/api/connections/ssi', other, { diverId: otherDiver, ...SSI, keepSignedIn: false })).json())
-        .toMatchObject({ code: 'ssi_account_taken' });
+        .toMatchObject({ code: 'provider_account_taken' });
     });
   });
 
   describe('sending a Dive', () => {
     it('needs the Dive site\'s SSI site ID, and suggests sites from the User\'s SSI logbook', async () => {
-      expect(await status()).toMatchObject({ connection: { state: 'active' }, siteSsiId: null, current: null, pushes: [] });
-      expect((await send()).json()).toMatchObject({ code: 'ssi_site_missing' });
-      expect((await call('GET', `/api/dives/${diveId}/ssi/sites`, tim)).json()).toEqual([
+      expect(await status()).toMatchObject({ connection: { state: 'active' }, siteExternalId: null, current: null, pushes: [] });
+      expect((await send()).json()).toMatchObject({ code: 'provider_site_id_missing' });
+      expect((await call('GET', `/api/dives/${diveId}/providers/ssi/sites`, tim)).json()).toEqual([
         { id: '3314', name: 'Hausreef', latitude: 27.29, longitude: 33.82, country: 'EG', distanceM: null },
       ]);
       const site = (await call('POST', '/api/dive-sites', tim, { name: 'Hausreef', position: { latitude: 27.29, longitude: 33.82 }, ssiSiteId: '3314', waterType: 'salt' })).json();
@@ -105,7 +110,7 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Target', () => {
         const { version } = (await call('GET', `/api/dives/${id}`, tim)).json();
         expect((await call('PATCH', `/api/dives/${id}`, tim, { version, siteId: site.id })).statusCode).toBe(200);
       }
-      expect((await call('GET', `/api/dives/${diveId}/ssi/sites`, tim)).json()[0]).toMatchObject({ id: '3314', distanceM: 0 });
+      expect((await call('GET', `/api/dives/${diveId}/providers/ssi/sites`, tim)).json()[0]).toMatchObject({ id: '3314', distanceM: 0 });
     });
 
     it('creates the SSI dive with the profile, reads it back, and keeps SSI\'s ID and number', async () => {
@@ -138,6 +143,8 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Target', () => {
       const { startsAt } = (await call('GET', `/api/dives/${secondDiveId}`, tim)).json().values;
       const local = new Date(Date.parse(startsAt.at) + ((startsAt.utcOffsetSeconds ?? 0) + 60) * 1000).toISOString().slice(0, 16).replace('T', ' ');
       const existing = ctx.fakeSsi.addDive(5_012_047, { odin_user_log_nr: 7, odin_user_log_datetime: local, odin_user_log_depth_m: 18, odin_user_log_divetime: 31 });
+      // Logged a while after the last send, so Dive Hub's kept logbook read is old enough to read again (ADR 0027).
+      ctx.ssiClock.advance(3 * 60_000);
       expect((await send({}, secondDiveId)).json()).toMatchObject({
         outcome: 'exists', existing: { remoteId: String(existing), number: 7, startsAt: local, maxDepthM: 18, durationMinutes: 31 },
       });
@@ -150,15 +157,15 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Target', () => {
 
     it('asks the User to sign in again when the token expired and no password is kept; then keeps signing in by itself', async () => {
       ctx.fakeSsi.expireTokens();
-      expect((await send()).json()).toMatchObject({ code: 'ssi_sign_in_needed' });
+      expect((await send()).json()).toMatchObject({ code: 'provider_sign_in_needed' });
       const conn = (await status()).connection!;
       expect(conn.state).toBe('needs_sign_in');
-      expect((await call('POST', `/api/connections/ssi/${conn.id}/sign-in`, tim, { password: 'wrong', keepSignedIn: true })).json())
-        .toMatchObject({ code: 'ssi_wrong_credentials' });
-      expect((await call('POST', `/api/connections/ssi/${conn.id}/sign-in`, tim, { password: SSI.password, keepSignedIn: true })).json())
+      expect((await call('POST', `/api/connections/${conn.id}/sign-in`, tim, { password: 'wrong', keepSignedIn: true })).json())
+        .toMatchObject({ code: 'provider_wrong_credentials', provider: 'ssi', providerName: 'SSI' });
+      expect((await call('POST', `/api/connections/${conn.id}/sign-in`, tim, { password: SSI.password, keepSignedIn: true })).json())
         .toMatchObject({ state: 'active', keepSignedIn: true });
       const [row] = await t.db.select().from(connection);
-      expect(row!.password).toMatch(/^v1\./);
+      expect(credentials(row!).password).toBe(SSI.password);
       ctx.fakeSsi.expireTokens();
       const signIns = ctx.fakeSsi.calls.filter((c) => c.what === 'authenticate').length;
       expect((await send()).json()).toMatchObject({ outcome: 'updated' });
@@ -170,32 +177,32 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Target', () => {
       const response = await send();
       ctx.fakeSsi.failWith = null;
       expect(response.statusCode).toBe(502);
-      expect(response.json()).toMatchObject({ code: 'ssi_unavailable' });
+      expect(response.json()).toMatchObject({ code: 'provider_unavailable' });
       expect((await status()).current).not.toBeNull();
     });
 
     it('deletes the SSI dive there, and creates a new one when sent again', async () => {
       const remoteId = (await status()).current!.remoteId;
-      const after = (await call('DELETE', `/api/dives/${diveId}/ssi`, tim)).json() as Status;
+      const after = (await call('DELETE', `/api/dives/${diveId}/providers/ssi`, tim)).json() as Status;
       expect(after.current).toBeNull();
       expect(after.pushes[0]).toMatchObject({ action: 'delete', state: 'confirmed' });
       expect(ssiDive(remoteId).odin_user_log_deleted).toBe(1);
-      expect((await call('DELETE', `/api/dives/${diveId}/ssi`, tim)).json()).toMatchObject({ code: 'ssi_not_sent' });
+      expect((await call('DELETE', `/api/dives/${diveId}/providers/ssi`, tim)).json()).toMatchObject({ code: 'provider_not_sent' });
       expect((await send()).json()).toMatchObject({ outcome: 'created', status: { current: { remoteNumber: 8 } } });
     });
 
     it('notices a dive deleted in the SSI app', async () => {
       const remoteId = (await status()).current!.remoteId;
       ssiDive(remoteId).odin_user_log_deleted = 1;
-      expect((await send()).json()).toMatchObject({ code: 'ssi_dive_gone' });
+      expect((await send()).json()).toMatchObject({ code: 'provider_dive_gone' });
       expect((await status()).current).toBeNull();
     });
 
     it('keeps other Users out', async () => {
-      expect((await call('GET', `/api/dives/${diveId}/ssi`, other)).statusCode).toBe(404);
-      expect((await call('POST', `/api/dives/${diveId}/ssi`, other, {})).statusCode).toBe(404);
+      expect((await call('GET', `/api/dives/${diveId}/providers/ssi`, other)).statusCode).toBe(404);
+      expect((await call('POST', `/api/dives/${diveId}/providers/ssi`, other, {})).statusCode).toBe(404);
       const conn = (await status()).connection!;
-      expect((await call('DELETE', `/api/connections/ssi/${conn.id}`, other)).statusCode).toBe(404);
+      expect((await call('DELETE', `/api/connections/${conn.id}`, other)).statusCode).toBe(404);
     });
   });
 
@@ -208,12 +215,12 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Target', () => {
 
   it('disconnecting forgets the secrets; the history stays', async () => {
     const conn = (await status()).connection!;
-    expect((await call('DELETE', `/api/connections/ssi/${conn.id}`, tim)).statusCode).toBe(204);
+    expect((await call('DELETE', `/api/connections/${conn.id}`, tim)).statusCode).toBe(204);
     expect(await t.db.select().from(connection)).toEqual([]);
     const s = await status();
     expect(s.connection).toBeNull();
     expect(s.pushes.length).toBeGreaterThan(3);
-    expect((await send()).json()).toMatchObject({ code: 'ssi_not_connected' });
+    expect((await send()).json()).toMatchObject({ code: 'provider_not_connected' });
   });
 
   it('deleting a User takes their Connections and the Pushes of their Dives along', async () => {

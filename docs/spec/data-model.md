@@ -238,6 +238,10 @@ state `active`, `needs sign-in` or `failed`. Disconnecting deletes the password 
 entry in the User's SSI buddy list. They're set by the User, or matched through the Diver's SSI External ID.
 *Implemented (slice 10):* `connection` for SSI, one per User and Diver, with `state` and `keep_signed_in`; Diver
 mappings are not built yet (buddies aren't sent).
+*Providers (ADR 0027, slice 13):* a Connection belongs to a **Provider** (`provider`, checked against the registry, not an
+enum), one per User, Diver and Provider. It keeps the account (`account_id`, `account_label`) and **one sealed
+`credentials` value** shaped by the Provider's sign-in kind (password: login, the current access, the password when kept;
+token: the token). Migration 0013 dropped the old token and password, so Connections made before sign in again once.
 
 **Original** — User, content hash, media type, size, received at, stored bytes. It's immutable.
 The same hash received again **from the same User** is not processed a second time. Originals are
@@ -268,6 +272,9 @@ confirmation. Re-pushing an `outdated` Push updates the same remote dive: a new 
 *Implemented (slice 10):* `push` with `action` (`create`, `update`, `link`, `delete`), `state`, remote ID, number and
 reference, the record sent (without samples) and a `fingerprint` of it; `outdated` is the fingerprint differing from
 the Dive's current one, worked out when asked, not stored.
+*Providers (ADR 0027, slice 13):* `push.provider` instead of `target`; the fingerprint is the adapter's; `remote_gone` marks a
+Push that found the remote dive deleted there (it was a failure code before). A Provider without an ID back records
+`handed_over`, which has no current remote dive, so sending again hands it over again.
 
 ## UDDF checklist
 
@@ -398,7 +405,8 @@ With an SSI Connection, Dives go through SSI's app API ([ADR 0024](../decisions/
    Tim set in the app survives) and updates the same SSI dive. P1 stays in the history.
 4. Tim deletes D1. It's a soft delete (D1 and R1 get a tombstone and a Revision; O1 stays). The same dialog asks
    whether to delete the dive in SSI too ([ADR 0026](../decisions/0026-deleting-dives.md)):
-   - *Yes:* the hub deletes it in SSI first (P3, action `delete`), then here. If SSI fails, nothing is deleted.
+   - *Yes:* the hub deletes it in SSI first (P3, action `delete`), then here. If SSI fails, nothing is deleted. With
+     several Providers, the dialog asks about each one the Dive is at (ADR 0027).
    - *No:* P2 stays. D1 is listed under "Deleted dives" as still in SSI, with "Delete in SSI", and the logbook reminds
      Tim until it's gone from SSI.
    Re-importing O1 (or a re-export of the dive) is skipped as "deleted earlier". Restoring D1 brings it back here, not

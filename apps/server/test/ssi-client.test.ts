@@ -1,7 +1,7 @@
 // SSI's app API client (ADR 0024) against the fake: what it sends, what it understands, and that no error
 // ever carries the password, the token or a URL (SSI takes both in the query string).
 import { describe, expect, it } from 'vitest';
-import { createSsiClient, SsiError, type Fetch } from '../src/ssi/ssi-client.js';
+import { createSsiClient, SsiError, type Fetch } from '../src/providers/ssi/ssi-client.js';
 import { createFakeSsi } from './fake-ssi.js';
 
 const URL_ = 'https://ssi.invalid/app/a21.php';

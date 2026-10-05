@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { createOverpassSource } from '../src/sites/import/overpass.js';
 import { createPoliteHttp, type Fetch } from '../src/sites/import/polite-http.js';
 import { IMPORTED_FIELDS, SiteSourceError } from '../src/sites/import/site-source.js';
-import { createSsiSiteSource } from '../src/sites/import/ssi-sites.js';
+import { createSsiSiteSource } from '../src/providers/ssi/ssi-sites.js';
 import { createWikidataSource } from '../src/sites/import/wikidata.js';
 import { ssiSitesZip, zipOf } from './zip.js';
 

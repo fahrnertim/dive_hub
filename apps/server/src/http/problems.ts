@@ -53,18 +53,19 @@ export const PROBLEMS = {
   site_import_interrupted: 'The server stopped while the import was running',
   connection_not_found: 'No such connection',
   encryption_key_missing: 'Keeping the password needs DIVEHUB_ENCRYPTION_KEY on the server; choose not to store it instead',
-  ssi_already_connected: 'This Diver is already connected to SSI; disconnect first to connect another account',
-  ssi_account_taken: 'This SSI account is already connected to another Diver',
-  ssi_other_account: 'This e-mail and password belong to another SSI account; disconnect and connect that one instead',
-  ssi_wrong_credentials: 'SSI did not accept this e-mail and password',
-  ssi_not_connected: "This dive's Diver is not connected to SSI",
-  ssi_sign_in_needed: 'SSI wants you to sign in again',
-  ssi_unavailable: 'SSI did not answer, or answered with something unexpected; try again later',
-  ssi_refused: 'SSI did not save the dive',
-  ssi_site_missing: "The dive's site has no SSI site ID",
-  ssi_not_sent: 'This dive is not in SSI',
-  ssi_dive_gone: 'The dive is no longer in SSI; it was deleted there',
-  ssi_busy: 'This dive is being sent to SSI right now',
+  provider_already_connected: 'This Diver is already connected to this service; disconnect first to connect another account',
+  provider_account_taken: 'This account at the service is already connected to another Diver',
+  provider_other_account: 'This sign-in belongs to another account at the service; disconnect and connect that one instead',
+  provider_wrong_credentials: 'The service did not accept this sign-in',
+  provider_not_connected: "This dive's Diver is not connected to this service",
+  provider_sign_in_needed: 'The service wants you to sign in again',
+  provider_unavailable: 'The service did not answer, or answered with something unexpected; try again later',
+  provider_refused: 'The service did not save the dive',
+  provider_site_id_missing: "The dive's site has no site ID at this service",
+  provider_not_sent: 'This dive is not at this service',
+  provider_dive_gone: 'The dive is no longer at the service; it was deleted there',
+  provider_busy: 'This dive is being sent to this service right now',
+  provider_unsupported: 'This service does not offer that',
 } as const;
 
 export type ProblemCode = keyof typeof PROBLEMS;
@@ -74,10 +75,16 @@ export const Problem = Type.Object({
     description: 'Stable, machine-readable reason; clients translate it',
   }),
   error: Type.String({ description: 'English description, for logs and scripts' }),
+  provider: Type.Optional(Type.String({ description: 'The Provider a provider_* code is about (ADR 0027)' })),
+  providerName: Type.Optional(Type.String({ description: 'Its name, to put into the translated text' })),
 });
 
 /** A response body for `code`; `detail` replaces the default English text where it says more. */
 export const problem = (code: ProblemCode, detail?: string) => ({ code, error: detail ?? PROBLEMS[code] });
+
+/** A problem about a Provider: names it, so clients can say "SSI didn't answer" (ADR 0027). */
+export const providerProblem = (code: ProblemCode, provider: { id: string; name: string }) =>
+  ({ ...problem(code), provider: provider.id, providerName: provider.name });
 
 /**
  * Turns Fastify's own errors into problems: validation failures keep their (English) explanation,

@@ -10,8 +10,9 @@ import { createSiteSources } from './sites/import/create-site-sources.js';
 import { createSiteImportService } from './sites/import/site-import-service.js';
 import { userAgent } from './sites/import/polite-http.js';
 import { createSecretBox } from './secrets/secret-box.js';
-import { createSsiClient } from './ssi/ssi-client.js';
-import { createSsiService } from './ssi/ssi-service.js';
+import { createProviderLayer } from './providers/layer.js';
+import { createSsiAdapter } from './providers/ssi/ssi-adapter.js';
+import { createSsiClient } from './providers/ssi/ssi-client.js';
 import { createLocalBlobStore } from './storage/blob-store.js';
 import { createInvitations } from './users/invitations.js';
 import { createSetup } from './users/setup.js';
@@ -24,9 +25,10 @@ const imports = createImportService({ db, blobs });
 const siteImports = createSiteImportService({
   db, sources: createSiteSources({ contact: config.contact, overpassUrl: config.overpassUrl, wikidataUrl: config.wikidataSparqlUrl, ssiSitesUrl: config.ssiSitesUrl }),
 });
-const ssi = createSsiService({
+// The Providers of this instance (ADR 0027): SSI only, for now.
+const providers = createProviderLayer({
   db, secrets: createSecretBox(config.encryptionKey),
-  client: createSsiClient({ url: config.ssiUrl, userAgent: userAgent(config.contact) }),
+  adapters: [createSsiAdapter({ client: createSsiClient({ url: config.ssiUrl, userAgent: userAgent(config.contact) }) })],
 });
 const auth = createAuth({
   db, baseUrl: config.baseUrl, secret: await loadAuthSecret(config.authSecret, config.dataDir),
@@ -37,7 +39,7 @@ const setup = createSetup(db);
 
 const app = await buildApp(
   {
-    db, imports, siteImports, ssi, blobs, auth, setup, invitations: createInvitations(db), baseUrl: config.baseUrl,
+    db, imports, siteImports, providers, blobs, auth, setup, invitations: createInvitations(db), baseUrl: config.baseUrl,
     maxUploadBytes: config.maxUploadBytes, trustedProxies: config.trustedProxies, webDir: config.webDir,
   },
   { logger: { level: config.logLevel } },

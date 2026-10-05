@@ -33,7 +33,7 @@ As of 2026-10-05 the site list, sending, the profile chart, updating and deletin
 - One endpoint: `https://api.divessi.com/app/a21.php`, with the action in `what=` [S].
 - Every call also sends four fixed query parameters that the Android app sends [S]: a client label (`ssiapp`), the app version
   (`version`, e.g. `ADR_4.1.272-ssi`), `lang=en`, `context=s`. They are defined once in
-  `apps/server/src/ssi/ssi-client.ts` (`APP_PARAMS`).
+  `apps/server/src/providers/ssi/ssi-client.ts` (`APP_PARAMS`).
   - No key, signature or secret is involved [S].
   - SSI's own app is at 5.0.43 (2026-10-01), and the API still answered the 4.1.x version string on 2026-10-01 [S].
 - Dive Hub adds an honest `User-Agent: DiveHub (+<project URL>; <DIVEHUB_CONTACT>)`.
@@ -58,8 +58,11 @@ As of 2026-10-05 the site list, sending, the profile chart, updating and deletin
   - `logbook_sites[]`: the sites of the account's dives, as `odin_dive_sites_id`, `_name`, `_lat`, `_lon`, and a country (`odin_countries_code_iso`, `_country_iso3` or `_meta_country`).
   - `logbook_buddies[]`: the account's buddy list.
   - Statistics.
-- Dive Hub reads it once per action: to find the dive it updates, to check for a dive at the same time, to pick the
-  next SSI dive number, and once more after saving (read-back).
+- Dive Hub reads it at most once per action before saving: to find the dive it updates, to check for a dive at the same
+  time, to pick the next SSI dive number; and once more after saving (read-back). The read-back is kept for two minutes
+  per Connection and answers the next action's duplicate check and number, so dives sent in a row read n + 1 times;
+  updates and deletes always read afresh ([ADR 0027](../decisions/0027-providers-as-adapters.md)). Actions on one
+  Connection wait 2 s between each other.
 
 ### Saving: `what=save_divelog`
 
@@ -172,19 +175,24 @@ operator's risk: **SSI gives no licence for it**, and the EU database right prot
 
 ## In Dive Hub
 
+SSI is a Provider ([ADR 0027](../decisions/0027-providers-as-adapters.md)): everything SSI-specific is in
+`apps/server/src/providers/ssi/`; Connections, Pushes, pacing and the routes are the generic layer's (`src/providers/`).
+
 | File | Part |
 |---|---|
-| `apps/server/src/ssi/ssi-client.ts` | the calls; errors as reasons (`wrong_credentials`, `signed_out`, `refused`, `unavailable`, `bad_response`), never with a URL |
-| `apps/server/src/ssi/ssi-record.ts` | Dive → record, samples, update and delete records, read-back comparison, fingerprint |
-| `apps/server/src/sites/import/ssi-sites.ts` | the site list for the admin's SSI site import |
-| `apps/server/src/ssi/ssi-service.ts` | Connections, signing in again, create / update / link / delete, Pushes |
+| `apps/server/src/providers/ssi/ssi-client.ts` | the calls; errors as reasons (`wrong_credentials`, `signed_out`, `refused`, `unavailable`, `bad_response`), never with a URL |
+| `apps/server/src/providers/ssi/ssi-record.ts` | Dive → record, samples, update and delete records, read-back comparison, fingerprint |
+| `apps/server/src/providers/ssi/ssi-adapter.ts` | SSI's capabilities, sign-in, the logbook read (kept two minutes after a save), the ±2 min match, SSI's dive numbers, the SSI site ID; SSI's record as typed values |
+| `apps/server/src/providers/ssi/ssi-sites.ts` | the site list for the admin's SSI site import |
+| `apps/server/src/providers/connection-service.ts`, `push-service.ts` | generic: Connections, signing in again, create / update / link / delete, Pushes |
 | `apps/server/test/fake-ssi.ts` | an in-memory SSI for tests and the browser tests' server |
+| `apps/server/test/provider-contract.test.ts` | the Provider contract, run against the fake SSI |
 | `apps/server/test/fixtures/ssi/round-trip.ts` | the owner's checks against the real SSI |
 
 ## When SSI changes something
 
 1. **Symptoms:**
-   - Pushes fail with `ssi_unavailable` (an HTTP error, HTML, or JSON without the expected keys), or with `ssi_refused` (no dive ID in the answer).
+   - Pushes fail with `provider_unavailable` (an HTTP error, HTML, or JSON without the expected keys), or with `provider_refused` (no dive ID in the answer).
    - Read-back differences appear that weren't there before.
    - Connections fall to "Sign in again" for everyone (sign-in changed).
 2. **Check with a real account:**

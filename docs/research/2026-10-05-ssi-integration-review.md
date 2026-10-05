@@ -1,7 +1,7 @@
 ---
 title: SSI integration review
 summary: The SSI code checked for soundness and for a generic layer other providers (PADI, QR, imports) could use; sound and well tested, but not generic. Findings and the agreed direction - providers as adapters that declare their capabilities, refactored before the remaining SSI work.
-status: open
+status: resolved
 date: 2026-10-05
 ---
 
@@ -53,3 +53,18 @@ Only four points aren't settled by SSI alone, and the capabilities cover them: s
 2FA), delivery without an ID back (QR, browser automation; PADI has no logbook API per the
 [dive data sources](2026-10-02-dive-data-sources.md) note), how a dive is found again, and the merge base for imports.
 A second, test-only adapter checks that the layer is generic.
+
+## Resolved (2026-10-05)
+
+Done in slice 13 ([ADR 0027](../decisions/0027-providers-as-adapters.md),
+[architecture](../spec/architecture.md#implementation-status)):
+1. A Provider interface with declared capabilities (`src/providers/provider.ts`); the generic layer owns Connections,
+   credentials, Pushes, "outdated", locking, pacing and problem codes; SSI is an adapter (`src/providers/ssi/`).
+2. No `odin_*` field is read outside the SSI adapter; it returns typed remote dives.
+3. Generic routes (`/api/providers`, `/api/connections`, `/api/dives/{id}/providers/{provider}`), `provider_*` codes
+   naming the Provider, and web panels rendered from the capabilities.
+4. One sealed credentials value per Connection, shaped by sign-in kind (password or token; OAuth designed).
+5. Deleting a Dive asks every Provider it is at.
+
+Gaps against ADR 0024: the pause between actions (2 s per Connection) and the shared logbook read are built; sending
+still runs in the request. A contract suite runs against the fake SSI and a test-only hand-over adapter.

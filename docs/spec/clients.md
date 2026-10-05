@@ -48,11 +48,11 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   Every User sees a site's position, while a Dive's own position stays private (ADR 0020).
   *Web:* `SiteForm.tsx` (`sites.sharedHint`).
 - **Must warn before merging sites that other Users' Dives move too,** without counting them (ADR 0022).
-- **Must say what Dive Hub keeps for SSI** before connecting ([ADR 0024](../decisions/0024-ssi-target-via-app-api.md)):
-  that it signs in to SSI for the User, through an interface SSI doesn't support; and the choice between keeping the
-  password (encrypted) and keeping only SSI's sign-in, which can expire at any time. Offer the choice only when
-  `canKeepPasswords` is true, and default to not keeping it. Offer "Disconnect", and say that dives already in SSI stay
-  there. *Web:* `SsiConnections.tsx`.
+- **Must say what Dive Hub keeps for a Provider** before connecting ([ADR 0024](../decisions/0024-ssi-target-via-app-api.md),
+  [ADR 0027](../decisions/0027-providers-as-adapters.md)): that it signs in for the User (for SSI: through an interface SSI
+  doesn't support); and, for password sign-in, the choice between keeping the password (encrypted) and keeping only the
+  Provider's sign-in, which can expire at any time. Offer the choice only when the Provider's `signIn.canKeepPassword` is
+  true, and default to not keeping it. Offer "Disconnect", and say that dives already there stay there. *Web:* `Connections.tsx`.
 - **Must not send positions anywhere by itself.** "Open in maps" is a plain link the User follows. A map with
   tiles needs its own ADR first (tile source, privacy).
 
@@ -71,9 +71,10 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **Changing the password ends the User's other sessions.** The server enforces it, whatever
   `revokeOtherSessions` says. Tell the User afterwards that their other sessions were signed out. *Web:* `AccountPage.tsx` (`ChangePassword`).
 - **Must ask for the current password** to change it, and the server checks it (`INVALID_PASSWORD`).
-- **Must treat the SSI password as SSI's** (ADR 0024): send it only to `POST /api/connections/ssi` and
-  `…/sign-in`, never keep it on the device, and keep password managers from saving it as the Dive Hub password
-  (`autocomplete="off"`). The API never sends it, or SSI's token, back. *Web:* `SsiConnections.tsx`.
+- **Must treat a Provider's password or token as the Provider's** (ADR 0024, 0027): send it only to
+  `POST /api/connections/{provider}` and `POST /api/connections/{id}/sign-in`, never keep it on the device, and keep
+  password managers from saving it as the Dive Hub password (`autocomplete="off"`). The API never sends it, or the
+  Provider's access, back. *Web:* `Connections.tsx`.
 - **Should let password managers work:** mark fields `username`, `current-password` and `new-password`, and on
   the invitation and reset forms include the (read-only) e-mail so the manager saves the pair.
 
@@ -95,7 +96,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   | Merging sites (no undo) | dialog with what moves and fills | `SitesPage.tsx` (`NearbySites`) |
   | Splitting a Recording off | dialog | `DiveDetail.tsx` |
   | Deleting a Dive | dialog: it leaves the logbook, can be restored, isn't imported again; asks about SSI too (see [Dives](#dives)) | `DeleteDive.tsx` |
-  | Deleting a deleted Dive's copy in SSI | dialog: SSI's app can't bring it back | `DeletedDives.tsx` |
+  | Deleting a deleted Dive's copy at a Provider | dialog: SSI's app can't bring it back | `DeletedDives.tsx` |
 
   Discarding a Duplicate candidate is not confirmed. It offers **Undo** at once (reopen) and keeps a list of
   discarded ones ([ADR 0016](../decisions/0016-recording-decisions-and-divers.md)). *Web:* `Decisions.tsx`.
@@ -130,6 +131,12 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   `/api/dive-sites` ADR 0022). Keep search, filters, sort and page in the client's navigation state (the web
   client uses the address), so back and reload keep them. *Web:* `lib/logbook.ts`, `lib/sites-list.ts`.
 - **Follow merged sites:** a site with `mergedInto` is gone. Open the kept site instead (ADR 0022).
+- **Render Providers from `GET /api/providers`** ([ADR 0027](../decisions/0027-providers-as-adapters.md)): its list is
+  the instance's, and it changes only with the server (cache it for the session). Offer a Connection panel per Provider
+  whose `signIn.kind` isn't `none`, with the fields that kind asks for (`password`: login as `signIn.login` says, and
+  password; `token`: the token), and a panel on the dive page per Provider whose `data.dives.export` is set. Offer only the
+  operations it lists (no "Update" or "Delete in …" without `update`/`delete`), show its `notices`, and name it by `name`.
+  *Web:* `lib/providers.ts`, `Connections.tsx`, `ProviderPanel.tsx`.
 - **Use the server's flags for what is allowed** (`canDelete`, `inUse`, `isOwn`, `diveCount`/`deviceCount`, the
   User's `role`). Don't offer what the server would refuse, but never rely on hiding it.
 
@@ -145,9 +152,10 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **There is no self sign-up.** Say that access comes from an admin's Invitation.
 
 ### The User's account
-- **SSI connections** (ADR 0024): one per Diver. Show the account, whether the password is kept, and the state.
-  `needs_sign_in` means SSI no longer accepts the sign-in: offer "Sign in again" (password, and the choice again).
-  *Web:* `SsiConnections.tsx`.
+- **Connections** (ADR 0024, 0027, `GET /api/connections`): one per Diver and Provider. Show the account
+  (`accountLabel`), whether the password is kept, and the state. `needs_sign_in` means the Provider no longer accepts the
+  sign-in: offer "Sign in again" (password and the choice again, or a new token). Connections made before slice 13 start
+  in this state once. *Web:* `Connections.tsx`.
 - **Display settings:** language and units, each "same as the device" (null) or a choice, saved at once
   (`PATCH /api/me/preferences`). The UI follows them immediately, including number and date input.
   *Web:* `AccountPage.tsx`, `main.tsx` (`I18nProvider`), `App.tsx` (`useLanguage`).
@@ -192,16 +200,16 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **Deleting a Dive** ([ADR 0026](../decisions/0026-deleting-dives.md), `DELETE /api/dives/{id}` with `version`):
   - **Must say what happens** before: it leaves the logbook, its counts and search; it can be restored; importing its
     file again doesn't bring it back. *Web:* `DeleteDive.tsx`.
-  - **Must ask about SSI in the same dialog** when the Dive is in SSI (`GET /api/dives/{id}/ssi`, `current`): "Delete
-    here and in SSI" (`inSsi: true`) or "Delete only here", saying SSI's app can't bring it back. Without a Connection
-    for its Diver, offer only "Delete only here" and say it stays in SSI. Don't preselect either.
-  - **On an ssi_* error nothing was deleted:** say so with the reason, and offer both again.
-  - Afterwards leave the dive page (it answers 404 now) and say what happened (`ssi`: `deleted`, `kept` or null),
-    with **Undo** (restore), which doesn't time out. Undo brings it back here only. *Web:* `DeletedDives.tsx`.
+  - **Must ask about every Provider the Dive is at in the same dialog** (`GET /api/dives/{id}/providers`, each `current`):
+    "Delete here and in SSI" (`alsoAt: ['ssi']`) or "Delete only here", saying SSI's app can't bring it back. Without a
+    Connection for its Diver at a Provider, say it stays there and don't offer deleting it there. Don't preselect either.
+  - **On a provider_* error nothing was deleted:** say so with the reason, and offer both again.
+  - Afterwards leave the dive page (it answers 404 now) and say what happened (`providers`: each with `copy` `deleted` or
+    `kept`), with **Undo** (restore), which doesn't time out. Undo brings it back here only. *Web:* `DeletedDives.tsx`.
 - **Deleted dives** (`GET /api/dives/deleted`): offer to restore them (`POST /api/dives/{id}/restore` with `version`).
-  - **Must remind while a deleted Dive is still in SSI** (`ssi` set): say so on the Dive with "Delete in SSI"
-    (`DELETE /api/dives/{id}/ssi`, confirmed), and where the User lands (the logbook). The reminder may be dismissed
-    for a visit; it comes back while the dive is in SSI. *Web:* `DeletedDives.tsx`.
+  - **Must remind while a deleted Dive is still at a Provider** (`stillAt` not empty): say so on the Dive with "Delete
+    in SSI" per Provider (`DELETE /api/dives/{id}/providers/{provider}`, confirmed), and where the User lands (the logbook).
+    The reminder may be dismissed for a visit; it comes back while the dive is there. *Web:* `DeletedDives.tsx`.
 - **History:** a restored Dive's history shows "Deleted" and "Restored" (causes `delete`, `restore`; their change
   `deletedAt` needs no line of its own). *Web:* `DiveHistory.tsx`.
 - **History:** Revisions newest first, translated by `cause`. The web client groups one person's edits within ten
@@ -217,22 +225,28 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   water; this site is fresh water.") and how the depths read: `depthPercent` negative reads shallow, positive deep,
   rounded ("about 2 % shallow"); `null` means they may read a little off. Depths are not corrected. *Web:* `DiveDetail.tsx`.
 
-### Sending a Dive to SSI
-From `GET /api/dives/{id}/ssi` (ADR 0024). *Web:* `SsiPanel.tsx`.
-- **Show where the Dive is at SSI:** not there yet, or SSI's dive number and when it was sent, with "changed since
-  sent" when `current.upToDate` is false. Offer "Send to SSI" or "Update in SSI" accordingly.
+### Sending a Dive to a Provider (SSI)
+From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities (ADR 0024, 0027). *Web:* `ProviderPanel.tsx`.
+- **Show where the Dive is there:** not there yet, or its dive number there and when it was sent, with "changed since
+  sent" when `current.upToDate` is false. Offer "Send to SSI", or "Update in SSI" when the Provider offers `update`.
+  A Provider with `delivery: handed_over` gives no ID back: say when it was handed over, and that sending again adds
+  another copy there.
 - **Without a Connection** for the Dive's Diver, say so and lead to the account page. With `needs_sign_in`, or the
-  error `ssi_sign_in_needed`, lead to signing in again.
-- **The Dive site's SSI site ID is needed** (`siteSsiId`). Offer the sites of the User's SSI logbook, nearest first
-  (`GET /api/dives/{id}/ssi/sites`, which asks SSI, so only on request), and typing the ID; save it on the site
-  (`PATCH /api/dive-sites/{id}`, `ssiSiteId`). Without a site, ask for one first.
-- **`outcome: exists`:** nothing was sent; a dive at the same time is in SSI. Show it (number, time, depth, minutes)
+  error `provider_sign_in_needed`, lead to signing in again.
+- **The Dive site's ID at the Provider's site Source may be needed** (`needsSiteIdFrom`, value `siteExternalId`). For SSI,
+  offer the sites of the User's SSI logbook, nearest first (`GET /api/dives/{id}/providers/ssi/sites`, which asks SSI, so
+  only on request), and typing the ID; save it on the site (`PATCH /api/dive-sites/{id}`, `ssiSiteId`). Without a site,
+  ask for one first.
+- **`outcome: exists`:** nothing was sent; a dive at the same time is there. Show it (number, time, depth, minutes)
   and ask: link to it (`onExisting: link`) or send a new one (`create`).
-- **Must say that SSI shows the dive as unconfirmed:** only a dive center can confirm it there.
+- **Must show the Provider's `notices`:** `shows_unconfirmed` means it shows the dive as unconfirmed (SSI: only a dive
+  center can confirm it there).
 - **Must ask before "Delete in SSI"**, saying SSI's app can't bring it back and the Dive stays here. Deleting the Dive
-  itself asks about SSI in its own dialog ([Dives](#dives)).
-- **Show what went wrong:** the latest Push's `failureCode`, and its read-back `differences` (fields SSI stored
-  differently). A history of Pushes is optional.
+  itself asks about every Provider in its own dialog ([Dives](#dives)).
+- **Show what went wrong:** the latest Push's `failureCode` (with the Provider's name), and its read-back `differences`
+  (fields stored differently, named by the Provider's `readBackFields`; show an unknown one by its name). A history of
+  Pushes is optional; `remoteGone` on a confirmed delete means it was already deleted there.
+- **Translate provider_* codes with the Provider named** (`providerName` in the answer). *Web:* `lib/display.ts` (`useProblemText`).
 
 ### Duplicate candidates
 - **Show them where the User decides,** first on the logbook ("Needs your decision"), with the Recording (time,
@@ -263,7 +277,7 @@ From `GET /api/dives/{id}/ssi` (ADR 0024). *Web:* `SsiPanel.tsx`.
   is its own action. When nothing matches, offer to create the site with the typed name: no dead end.
   *Web:* `SitePicker.tsx`, `ui/SearchList.tsx`.
 - **Choosing the SSI site** works the same way over the sites in the User's SSI logbook; an SSI ID typed into the
-  field can be used even when the logbook doesn't have it. *Web:* `SsiPanel.tsx` (`SsiSitePicker`).
+  field can be used even when the logbook doesn't have it. *Web:* `ProviderPanel.tsx` (`SitePicker`).
 - **SSI site ID:** accept what SSI's QR code says ("site:3314") as well as the number, and send the digits.
   `external_id_taken` means another site has it.
 - **Water type** (fresh, salt, brackish, or not known): **the form must say that changing it changes the water type of

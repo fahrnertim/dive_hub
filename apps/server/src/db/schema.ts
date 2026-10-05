@@ -503,13 +503,12 @@ export const diverExternalId = pgTable(
   ],
 );
 
-export const target = pgEnum('target', ['ssi']);
 export const connectionState = pgEnum('connection_state', ['active', 'needs_sign_in']);
 
 /**
- * One User's link to a Target for one of their Divers (ADR 0024): the account there, and what lets Dive Hub
- * act for it. `token` and `password` are sealed (src/secrets/secret-box.ts); the password is kept only when
- * the User chose "Keep me signed in".
+ * One User's link to a Provider for one of their Divers (ADR 0024, 0027): the account there, and what lets Dive Hub
+ * act for it. `credentials` is sealed (src/secrets/secret-box.ts) and shaped by the Provider's sign-in kind; a
+ * password is in it only when the User chose "Keep me signed in".
  */
 export const connection = pgTable(
   'connection',
@@ -517,29 +516,27 @@ export const connection = pgTable(
     id: id(),
     userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
     diverId: uuid('diver_id').notNull().references(() => diver.id),
-    target: target('target').notNull(),
-    /** The account at the Target (SSI: user master ID) and the e-mail it signs in with. */
+    /** The Provider's id (src/providers/registry.ts knows which exist). */
+    provider: text('provider').notNull(),
+    /** The account at the Provider (SSI: user master ID) and what the User recognises it by (SSI: the e-mail). */
     accountId: text('account_id').notNull(),
-    accountEmail: text('account_email').notNull(),
+    accountLabel: text('account_label').notNull(),
+    /** Dive Hub may sign in again by itself (the password is kept). */
     keepSignedIn: boolean('keep_signed_in').notNull(),
-    token: text('token'),
-    password: text('password'),
+    credentials: text('credentials'),
     state: connectionState('state').notNull().default('active'),
     lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [
-    uniqueIndex('connection_user_diver_target_uq').on(t.userId, t.diverId, t.target),
-    check('connection_password_ck', sql`${t.password} is null or ${t.keepSignedIn}`),
-  ],
+  (t) => [uniqueIndex('connection_user_diver_provider_uq').on(t.userId, t.diverId, t.provider)],
 );
 
 export const pushMode = pgEnum('push_mode', ['api', 'qr']);
 export const pushAction = pgEnum('push_action', ['create', 'update', 'link', 'delete']);
 export const pushState = pgEnum('push_state', ['pending', 'handed_over', 'confirmed', 'failed']);
 
-/** A field SSI stored differently from what was sent (read back after saving). */
+/** A field the Provider stored differently from what was sent (read back after saving). */
 export interface PushDifference {
   field: string;
   sent: string | number | null;
@@ -547,8 +544,8 @@ export interface PushDifference {
 }
 
 /**
- * One Dive sent to one Target (ADR 0024): what was done (create, update, link to a dive already there,
- * delete), the Target's own ID and number for it, what was sent and what it stored. Whether a Push is
+ * One Dive sent to one Provider (ADR 0024, 0027): what was done (create, update, link to a dive already there,
+ * delete), the Provider's own ID and number for it, what was sent and what it stored. Whether a Push is
  * outdated is worked out from `fingerprint`, not stored.
  */
 export const push = pgTable(
@@ -558,11 +555,11 @@ export const push = pgTable(
     diveId: uuid('dive_id').notNull().references(() => dive.id),
     connectionId: uuid('connection_id').references(() => connection.id, { onDelete: 'set null' }),
     userId: uuid('user_id').references(() => user.id, { onDelete: 'set null' }),
-    target: target('target').notNull(),
+    provider: text('provider').notNull(),
     mode: pushMode('mode').notNull(),
     action: pushAction('action').notNull(),
     state: pushState('state').notNull(),
-    /** The Target's ID and number of the dive (SSI dive ID, SSI dive number). */
+    /** The Provider's ID and number of the dive (SSI dive ID, SSI dive number). */
     remoteId: text('remote_id'),
     remoteNumber: integer('remote_number'),
     /** What we sent to find the dive again (SSI: the dive computer's dive reference). */
@@ -575,6 +572,8 @@ export const push = pgTable(
     differences: jsonb('differences').$type<PushDifference[]>(),
     /** Why it failed, as a problem code. */
     errorCode: text('error_code'),
+    /** The remote dive was found gone (deleted at the Provider): the Dive has none there from here on. */
+    remoteGone: boolean('remote_gone').notNull().default(false),
     createdAt: createdAt(),
   },
   (t) => [index('push_dive_idx').on(t.diveId, t.createdAt)],

@@ -28,15 +28,17 @@ const AREAS = [
   // The Dive the deletion browser tests delete and restore (ADR 0026).
   [/^apps\/web\/e2e\/fixtures\/deletable-computer\.fit$/, ['@dives']],
   [/^apps\/web\/src\/DiversPage\.tsx$/, ['@divers']],
-  [/^apps\/web\/src\/(Account|AccountPage|SsiConnections)\.tsx$/, ['@account']],
-  [/^apps\/web\/src\/SsiPanel\.tsx$/, ['@dives']],
+  [/^apps\/web\/src\/(Account|AccountPage|Connections)\.tsx$/, ['@account']],
+  [/^apps\/web\/src\/ProviderPanel\.tsx$/, ['@dives']],
+  // Providers in the web client (ADR 0027): the account's Connections and each Dive's panels read them.
+  [/^apps\/web\/src\/lib\/providers\.ts$/, ['@dives', '@account']],
   [/^apps\/web\/src\/Admin\.tsx$/, ['@admin']],
-  [/^apps\/server\/src\/sites\/import\//, ['@admin', '@sites']],
+  [/^apps\/server\/src\/sites\/import\/|^apps\/server\/src\/providers\/ssi\/ssi-sites\.ts$/, ['@admin', '@sites']],
   [/^apps\/server\/src\/sites\//, ['@sites', '@dives']],
   [/^apps\/server\/src\/(dives|imports|fit)\/|^apps\/server\/src\/(routes|vocabulary)\.ts$/, ['@dives']],
   [/^apps\/server\/src\/divers\//, ['@divers']],
   [/^apps\/server\/src\/(users|auth)\//, ['@account', '@admin']],
-  [/^apps\/server\/src\/(ssi|secrets)\//, ['@dives', '@account']],
+  [/^apps\/server\/src\/(providers|secrets)\//, ['@dives', '@account']],
   [/^apps\/server\/test\/fixtures\/site-sources\//, ['@admin', '@sites']],
   // Zips SSI's site list for the tests and the browser tests' server (ADR 0025).
   [/^apps\/server\/test\/zip\.ts$/, ['@admin', '@sites']],

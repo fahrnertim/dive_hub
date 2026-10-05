@@ -292,7 +292,7 @@ test('review material', async ({ page, request, browser }) => {
     }
     await setPreferences(request, { language: null });
     await page.emulateMedia({ colorScheme: 'light' });
-    await request.delete(`/api/dives/${dive42}/ssi`, { headers });
+    await request.delete(`/api/dives/${dive42}/providers/ssi`, { headers });
     await leaveSsi(request, dive42);
   }
 

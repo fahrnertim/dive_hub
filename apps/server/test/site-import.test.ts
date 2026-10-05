@@ -6,7 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { ImportArea, ImportedValues, SiteSourceAdapter, SourceSite } from '../src/sites/import/site-source.js';
 import { SiteSourceError } from '../src/sites/import/site-source.js';
 import { createPoliteHttp } from '../src/sites/import/polite-http.js';
-import { createSsiSiteSource } from '../src/sites/import/ssi-sites.js';
+import { createSsiSiteSource } from '../src/providers/ssi/ssi-sites.js';
 import type { ImportSource } from '../src/sites/sources.js';
 import { ssiSitesZip } from './zip.js';
 import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, signIn, type TestDatabase } from './support.js';

@@ -3,7 +3,7 @@ import type { ImportSource } from '../sources.js';
 import { DEFAULT_OVERPASS_URL, createOverpassSource } from './overpass.js';
 import { createPoliteHttp, type Fetch } from './polite-http.js';
 import type { SiteSourceAdapter } from './site-source.js';
-import { DEFAULT_SSI_SITES_URL, createSsiSiteSource } from './ssi-sites.js';
+import { DEFAULT_SSI_SITES_URL, createSsiSiteSource } from '../../providers/ssi/ssi-sites.js';
 import { DEFAULT_WIKIDATA_SPARQL_URL, createWikidataSource } from './wikidata.js';
 
 export function createSiteSources(options: {

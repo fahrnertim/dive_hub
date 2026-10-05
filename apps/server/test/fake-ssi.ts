@@ -1,7 +1,7 @@
 // An in-memory SSI app API for tests (ADR 0024): tests and the browser tests' server never reach SSI.
 // It answers like the real one as far as the community projects describe it (docs/research/2026-10-04-ssi-api.md),
 // including what SSI does to stored values: minutes only, serial numbers without leading zeros.
-import type { Fetch, SsiRecord } from '../src/ssi/ssi-client.js';
+import type { Fetch, SsiRecord } from '../src/providers/ssi/ssi-client.js';
 
 export interface FakeSsiAccount {
   email: string;

@@ -441,3 +441,59 @@ Deliberate simplifications, to revisit:
   logbook's notice lasts for the visit.
 - **The deleted list isn't paged** (the newest 100).
 - **An Import's outcome** still links to a Dive deleted since; the dive page then says it wasn't found.
+
+**Slice 13 (2026-10-05): Providers as adapters** ([ADR 0027](../decisions/0027-providers-as-adapters.md), the
+[SSI integration review](../research/2026-10-05-ssi-integration-review.md)). A refactor: Users see no change, except that
+Connections made before sign in to SSI once more.
+
+Implemented:
+- **The seam** (`src/providers/provider.ts`): a Provider adapter declares its capabilities (sign-in kind; per kind of data
+  import/export with operations and how `find` works; delivery `confirmed` or `handed_over`; the site ID it needs; read-back
+  fields; notices; the pause between actions) and implements `signIn`, `dives.fingerprint`, `dives.open(context)` (find,
+  create, update, remove for one action) and `diveSites.find`. Errors are `ProviderError` with a reason.
+- **The generic layer:** `registry.ts` (Providers of the instance, problem codes from reasons), `connection-service.ts`
+  (Connections, one sealed `credentials` value, renewal with a kept password, "sign in again"), `push-service.ts` (Pushes,
+  the current remote dive, outdated by fingerprint, one action per Dive), `pacing.ts` (one action at a time per Connection
+  with the Provider's pause; a second request waits), `outgoing-dive.ts` (the Dive as it leaves Dive Hub), `routes.ts`, and
+  `layer.ts` that builds them. `main.ts` registers the SSI adapter only.
+- **SSI as an adapter** (`src/providers/ssi/`): `ssi-adapter.ts` (capabilities, sign-in, the logbook read, the ±2 min match,
+  SSI's numbers, the site ID), with `ssi-client.ts`, `ssi-record.ts` and `ssi-sites.ts` moved in. No `odin_*` field is read
+  outside it. Its fingerprint is unchanged, so earlier Pushes stay up to date.
+- **One logbook read per action, shared with the read-back:** the read after a save is kept for two minutes per
+  Connection and answers the next find or create; updates and deletes read afresh. Sending two new dives in a row reads
+  three times instead of four. **The pause between actions** ADR 0024 promised: 2 s per Connection.
+- **API** (replacing the SSI routes): `GET /api/providers`, `GET /api/connections`, `POST /api/connections/{provider}`,
+  `POST /api/connections/{id}/sign-in`, `DELETE /api/connections/{id}`, `GET /api/dives/{id}/providers`,
+  `GET|POST|DELETE /api/dives/{id}/providers/{provider}`, `…/sites`. `DELETE /api/dives/{id}` takes `alsoAt` and answers
+  per Provider (`copy`); `GET /api/dives/deleted` gives `stillAt`. Problem codes `provider_*` name the Provider
+  (`provider`, `providerName`).
+- **Data:** migration 0013 (hand-written; drizzle-kit asks about renames interactively, so its snapshot was edited and
+  `drizzle-kit generate` then reports no changes): `target` → `provider` (text), `account_email` → `account_label`, sealed
+  `credentials` instead of `token`/`password` (old ones dropped, Connections `needs_sign_in`), `push.remote_gone`, stored
+  `ssi_*` codes renamed.
+- **Web client:** `Connections.tsx` (a panel per Provider with sign-in) and `ProviderPanel.tsx` (a panel per Provider that
+  takes dives) render from `GET /api/providers`; the delete dialog and the deleted dives ask every Provider a Dive is at.
+  Texts: `provider.*` with the Provider's name, and `providers.ssi.*` where SSI is worded itself; every SSI text reads as
+  before in both languages (checked by comparing the old and new translations).
+- **Tests:** `test/provider-contract.ts` (the contract every adapter passes), run in `provider-contract.test.ts` against the
+  fake SSI and the test-only hand-over adapter (`test/fake-handover-provider.ts`: token sign-in, no ID back, never
+  registered in production); `provider-layer.test.ts` (the routes with that adapter, pacing, `provider_busy`,
+  `provider_unsupported`); `ssi-adapter.test.ts` (logbook reads); `pacing.test.ts`; migration 0013 in `migrations.test.ts`.
+
+What is left of the slice 10–12 simplifications:
+- **Sending and deleting at a Provider run in the request**, not as worker jobs (unchanged; with batch sending or importing).
+- **One process:** pacing and the Dive lock live in memory.
+- **Not sent yet:** conditions other than water type, tanks and pressures, buddies (Connection Diver mappings), gear,
+  photos; QR payload and importing from SSI come later.
+- **A Diver's External ID** is still set only by connecting (`provider_account_taken` instead of proposing to link).
+- Done: the pause between actions, one logbook read per action, deleting through every Provider, no SSI fields outside
+  the adapter, the Connection no longer assumes e-mail and password.
+
+Deliberate simplifications, to revisit:
+- **OAuth sign-in** is designed (ADR 0027) but not built.
+- **Dive site import** keeps its own `SiteSourceAdapter`; only SSI's moved into its Provider folder.
+- **With several Providers**, deleting a Dive deletes at them one after another; if a later one fails, the earlier copies
+  are already gone while the Dive stays here.
+- **A two-minute-old logbook** may miss a dive logged in SSI's app just before the next create.
+- **No browser test for "sign in again"** after an expired SSI sign-in: the browser tests can't expire the fake SSI's
+  tokens; the server tests cover it.

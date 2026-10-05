@@ -17,8 +17,9 @@ import type { Fetch } from '../src/sites/import/polite-http.js';
 import { createSiteImportService } from '../src/sites/import/site-import-service.js';
 import { ssiSitesZip } from './zip.js';
 import { createSecretBox } from '../src/secrets/secret-box.js';
-import { createSsiClient } from '../src/ssi/ssi-client.js';
-import { createSsiService } from '../src/ssi/ssi-service.js';
+import { createProviderLayer } from '../src/providers/layer.js';
+import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
+import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { createFakeSsi } from './fake-ssi.js';
 import { createInvitations } from '../src/users/invitations.js';
@@ -84,13 +85,15 @@ const fakeSsi = createFakeSsi({
     { odin_dive_sites_id: 5120, odin_dive_sites_name: 'Attersee – Schwarzenbach', odin_dive_sites_lat: 47.8512, odin_dive_sites_lon: 13.5514, odin_countries_code_iso: 'AT' },
   ],
 });
-const ssi = createSsiService({
+const providers = createProviderLayer({
   db, secrets: createSecretBox(Buffer.alloc(32, 9)),
-  client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch, userAgent: 'DiveHub (e2e)' }),
+  adapters: [createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch, userAgent: 'DiveHub (e2e)' }) })],
+  // The fake needs no pause between actions; the browser tests would only wait.
+  sleep: async () => undefined,
 });
 const auth = createAuth({ db, baseUrl: `http://localhost:${port}`, secret: 'e2e-secret-with-enough-entropy-0123456789abcdef' });
 const app = await buildApp({
-  db, imports, siteImports, ssi, blobs, auth, setup: createSetup(db), invitations: createInvitations(db),
+  db, imports, siteImports, providers, blobs, auth, setup: createSetup(db), invitations: createInvitations(db),
   baseUrl: `http://localhost:${port}`, maxUploadBytes: 1 << 26, webDir: here('../../web/dist'),
 });
 

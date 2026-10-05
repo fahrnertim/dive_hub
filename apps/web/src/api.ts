@@ -15,7 +15,11 @@ export type ProblemCode = paths['/api/dives/{id}']['get']['responses'][404]['con
  * server's error code, which the UI translates (ADR 0014).
  */
 export class ApiError extends Error {
-  constructor(message: string, readonly status: number, readonly code?: ProblemCode) {
+  constructor(
+    message: string, readonly status: number, readonly code?: ProblemCode,
+    /** The Provider a provider_* code is about, named for the translated text (ADR 0027). */
+    readonly provider?: { id: string; name: string },
+  ) {
     super(message);
   }
 }
@@ -49,10 +53,11 @@ export type ExternalIdView = SiteView['externalIds'][number];
 export type SiteRevisionView = Awaited<ReturnType<typeof fetchSiteRevisions>>[number];
 export type SiteImportView = Awaited<ReturnType<typeof fetchSiteImport>>;
 export type SiteImportArea = SiteImportView['area'];
-export type SsiConnectionView = Awaited<ReturnType<typeof fetchSsiConnections>>['connections'][number];
-export type SsiStatusView = Awaited<ReturnType<typeof fetchSsiStatus>>;
-export type SsiPushView = SsiStatusView['pushes'][number];
-export type SsiSiteSuggestion = Awaited<ReturnType<typeof fetchSsiSites>>[number];
+export type ProviderView = Awaited<ReturnType<typeof fetchProviders>>[number];
+export type ConnectionView = Awaited<ReturnType<typeof fetchConnections>>[number];
+export type ProviderStatusView = Awaited<ReturnType<typeof fetchProviderStatus>>;
+export type PushView = ProviderStatusView['pushes'][number];
+export type RemoteSiteView = Awaited<ReturnType<typeof fetchProviderSites>>[number];
 
 /** Query keys in one place (hierarchical, so invalidating ['dives'] covers every dive query). */
 export const keys = {
@@ -75,9 +80,12 @@ export const keys = {
   site: (id: string) => ['sites', id] as const,
   siteRevisions: (id: string) => ['sites', id, 'revisions'] as const,
   siteImports: ['site-imports'] as const,
-  ssiConnections: ['connections', 'ssi'] as const,
-  ssi: (diveId: string) => ['dives', diveId, 'ssi'] as const,
-  ssiSites: (diveId: string) => ['dives', diveId, 'ssi', 'sites'] as const,
+  providers: ['providers'] as const,
+  connections: ['connections'] as const,
+  /** The Dive at every Provider; one Provider's state sits under it, so refreshing this refreshes both. */
+  diveProviders: (diveId: string) => ['dives', diveId, 'providers'] as const,
+  providerStatus: (diveId: string, provider: string) => ['dives', diveId, 'providers', provider] as const,
+  providerSites: (diveId: string, provider: string) => ['dives', diveId, 'providers', provider, 'sites'] as const,
 };
 
 /**
@@ -87,9 +95,10 @@ export const keys = {
 export function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): T {
   if (!result.response.ok) {
     // Our routes answer { error }; Fastify's validation errors carry the useful text in `message`.
-    const body = result.error as { code?: ProblemCode; error?: string; message?: string } | undefined;
+    const body = result.error as { code?: ProblemCode; error?: string; message?: string; provider?: string; providerName?: string } | undefined;
     const message = body?.error ?? body?.message ?? `Request failed (${result.response.status})`;
-    throw new ApiError(message, result.response.status, body?.code);
+    const provider = body?.provider ? { id: body.provider, name: body.providerName ?? body.provider } : undefined;
+    throw new ApiError(message, result.response.status, body?.code, provider);
   }
   return result.data as T;
 }
@@ -182,7 +191,7 @@ export const candidatesQuery = (status: 'open' | 'discarded') =>
 async function fetchDeletedDives() {
   return unwrap(await api.GET('/api/dives/deleted'));
 }
-/** The User's deleted Dives, to restore them, and which are still in SSI (ADR 0026). */
+/** The User's deleted Dives, to restore them, and which Providers they are still at (ADR 0026, 0027). */
 export const deletedDivesQuery = () => queryOptions({ queryKey: keys.deletedDives, queryFn: fetchDeletedDives });
 
 export const diveQuery = (id: string) => queryOptions({ queryKey: keys.dive(id), queryFn: () => fetchDive(id) });
@@ -246,18 +255,30 @@ export async function uploadFile(file: File) {
   }
 }
 
-async function fetchSsiConnections() {
-  return unwrap(await api.GET('/api/connections/ssi'));
+async function fetchProviders() {
+  return unwrap(await api.GET('/api/providers'));
 }
-async function fetchSsiStatus(diveId: string) {
-  return unwrap(await api.GET('/api/dives/{id}/ssi', { params: { path: { id: diveId } } }));
+async function fetchConnections() {
+  return unwrap(await api.GET('/api/connections'));
 }
-async function fetchSsiSites(diveId: string) {
-  return unwrap(await api.GET('/api/dives/{id}/ssi/sites', { params: { path: { id: diveId } } }));
+async function fetchDiveProviders(diveId: string) {
+  return unwrap(await api.GET('/api/dives/{id}/providers', { params: { path: { id: diveId } } }));
 }
-/** The User's SSI Connections (ADR 0024), and whether the server can keep passwords. */
-export const ssiConnectionsQuery = () => queryOptions({ queryKey: keys.ssiConnections, queryFn: fetchSsiConnections });
-/** A Dive at SSI: its Diver's Connection, the SSI site ID, the SSI dive it has, its Pushes. */
-export const ssiStatusQuery = (diveId: string) => queryOptions({ queryKey: keys.ssi(diveId), queryFn: () => fetchSsiStatus(diveId) });
-/** Sites from the User's SSI logbook, nearest first; asks SSI, so only when the User wants to pick one. */
-export const ssiSitesQuery = (diveId: string) => queryOptions({ queryKey: keys.ssiSites(diveId), queryFn: () => fetchSsiSites(diveId), staleTime: 5 * 60_000 });
+async function fetchProviderStatus(diveId: string, provider: string) {
+  return unwrap(await api.GET('/api/dives/{id}/providers/{provider}', { params: { path: { id: diveId, provider } } }));
+}
+async function fetchProviderSites(diveId: string, provider: string) {
+  return unwrap(await api.GET('/api/dives/{id}/providers/{provider}/sites', { params: { path: { id: diveId, provider } } }));
+}
+/** The Providers of this server and what each offers (ADR 0027); they change only with the server. */
+export const providersQuery = () => queryOptions({ queryKey: keys.providers, queryFn: fetchProviders, staleTime: Infinity });
+/** The User's Connections to Providers (ADR 0024). */
+export const connectionsQuery = () => queryOptions({ queryKey: keys.connections, queryFn: fetchConnections });
+/** The Dive at every Provider that takes dives (for the delete dialog). */
+export const diveProvidersQuery = (diveId: string) => queryOptions({ queryKey: keys.diveProviders(diveId), queryFn: () => fetchDiveProviders(diveId) });
+/** A Dive at one Provider: its Diver's Connection, the site ID needed, the remote dive it has, its Pushes. */
+export const providerStatusQuery = (diveId: string, provider: string) =>
+  queryOptions({ queryKey: keys.providerStatus(diveId, provider), queryFn: () => fetchProviderStatus(diveId, provider) });
+/** The Provider's sites near the Dive, nearest first; asks the Provider, so only when the User wants to pick one. */
+export const providerSitesQuery = (diveId: string, provider: string) =>
+  queryOptions({ queryKey: keys.providerSites(diveId, provider), queryFn: () => fetchProviderSites(diveId, provider), staleTime: 5 * 60_000 });

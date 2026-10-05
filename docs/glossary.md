@@ -165,8 +165,8 @@ _German_: Anbieter
 ## Data in and out
 
 **Source**:
-A system or format that data comes from: dive data from Garmin, Suunto or a UDDF file, or Dive site data from OpenStreetMap, Wikidata or SSI. SSI is also a Source of site IDs typed in by Users, and of account IDs on Divers. A Source's license, Attribution and link pattern are defined once in code.
-_Avoid_: Provider, integration, inbound, origin
+A system or format that data comes from: dive data from Garmin, Suunto or a UDDF file, or Dive site data from OpenStreetMap, Wikidata or SSI. SSI is also a Source of site IDs typed in by Users, and of account IDs on Divers. A Source's license, Attribution and link pattern are defined once in code. A Provider is a Source for the kinds of data it imports.
+_Avoid_: integration, inbound, origin
 _German_: Quelle
 
 **External ID**:
@@ -189,13 +189,18 @@ An admin's run that fetches Dive sites from OpenStreetMap, Wikidata or SSI for a
 _Avoid_: Sync, seed, site Import
 _German_: Tauchplatz-Import
 
+**Provider**:
+An outside service Dive Hub talks to on a User's behalf, such as SSI and later PADI. It says what it offers: how Users sign in, which kinds of data (dives, Dive sites, buddies) it imports or exports, what it can do with them (create, update, delete, link, find), and whether it gives an ID back. It is a Source for what it imports and a Target for what it exports. Files and open datasets (a FIT file, OpenStreetMap) are Sources, not Providers.
+_Avoid_: Integration, connector, plugin, service (in the code)
+_German_: Dienst
+
 **Target**:
-An outside service that Dive Hub sends dives to, such as SSI or PADI.
+A Provider in its role of receiving data from Dive Hub, such as SSI taking dives.
 _Avoid_: Destination, integration, outbound
 _German_: Ziel
 
 **Connection**:
-One User's configured link to a Source or a Target. For SSI it holds the SSI account, a token that may expire, and the password only if the User chose "Keep me signed in" (encrypted).
+One User's link to a Provider for one of their Divers: the account there and what lets Dive Hub sign in for them, sealed. For SSI that is the e-mail, a sign-in that may expire, and the password only if the User chose "Keep me signed in". When the Provider no longer accepts it, the Connection asks the User to sign in again.
 _Avoid_: Account link, integration
 _German_: Verbindung
 
@@ -216,7 +221,7 @@ _Avoid_: Merge error, Duplicate candidate
 _German_: Konflikt
 
 **Push**:
-One Dive sent to one Target, with what was sent, when, and what the Target answered (such as SSI's dive ID). A Push is *confirmed* when the Target accepted it and gave an ID back; that is not SSI's "confirmed" (a dive center's verification), which Dive Hub can't set.
+One action on one Dive at one Provider (sent, updated, linked to a dive already there, deleted there), with what was sent, when, and what the Provider answered (such as SSI's dive ID). A Push is *confirmed* when the Provider accepted it and gave an ID back; that is not SSI's "confirmed" (a dive center's verification), which Dive Hub can't set. It is *handed over* when it was delivered without an ID back (a QR code), so it can't be updated or deleted there.
 _Avoid_: Export, sync, share, broadcast
 _German_: Übertragung
 

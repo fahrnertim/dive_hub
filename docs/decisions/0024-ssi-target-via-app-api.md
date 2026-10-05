@@ -10,6 +10,9 @@ date: 2026-10-04
 ## Status
 Accepted – 2026-10-04. SSI site import built and amended by [ADR 0025](0025-ssi-site-import-and-site-water-type.md)
 (2026-10-05): no alias names, private sites left out, "only fill" runs; sending uses the Dive site's water type.
+Amended by [ADR 0027](0027-providers-as-adapters.md) (2026-10-05): SSI is a Provider adapter behind a generic layer; one
+sealed credentials value per Connection (existing Connections signed in again once); generic routes and `provider_*`
+codes; a 2 s pause between actions per Connection; the logbook read shared with the read-back.
 
 ## Context
 The [spec](../spec/README.md) planned the SSI QR payload as the first Target mode, because it needs no stored credentials.

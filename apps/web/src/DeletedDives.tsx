@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, deletedDivesQuery, diversQuery, keys, unwrap, type DeletedDiveView } from './api.ts';
+import { api, deletedDivesQuery, diversQuery, keys, unwrap, type DeletedDiveView, type ProviderView } from './api.ts';
 import { announce } from './lib/announce.ts';
-import { deletedNoticeKey, updateDeletion, useDeletion, type JustDeleted } from './lib/deletion.ts';
+import { deletedNotice, updateDeletion, useDeletion, type JustDeleted } from './lib/deletion.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { focusHeading, refocusAfterRemoval } from './lib/focus.ts';
+import { exporting, useNames, useProviders, useProviderText } from './lib/providers.ts';
 import { Button, ConfirmButton, Muted, Notice, Panel } from './ui/index.ts';
 
 /** "Dive 9", or the Dive's time when it has no number. */
@@ -33,23 +34,32 @@ function useRestore(d: DeletedDiveView, onRestored: () => void) {
   });
 }
 
+/** A Provider by its id, from what the server says it has; a name it no longer lists stays the id. */
+function useProviderOf() {
+  const providers = useProviders();
+  return (id: string) => providers.data?.find((p) => p.id === id) ?? { id, name: id } as ProviderView;
+}
+
 /**
  * At the top of the logbook (ADR 0026): the Dive just deleted, with "Undo"; otherwise a reminder while deleted dives are
- * still in SSI. Both can be dismissed; the reminder comes back on the next visit, as long as the dive is in SSI.
+ * still at a Provider. Both can be dismissed; the reminder comes back on the next visit, as long as the dive is there.
  */
 export function DeletedNotices() {
   const { t } = useTranslation();
   const { justDeleted, reminderDismissed, listOpen } = useDeletion();
   const deleted = useQuery(deletedDivesQuery());
+  const names = useNames();
+  const providerOf = useProviderOf();
   // Offered only while that Dive is still deleted (it may have been restored from the list).
   const entry = justDeleted && deleted.data?.dives.find((d) => d.id === justDeleted.id);
   if (justDeleted && entry) return <JustDeletedNotice key={entry.id} just={justDeleted} dive={entry} />;
-  const inSsi = deleted.data?.dives.filter((d) => d.ssi).length ?? 0;
+  const still = deleted.data?.dives.filter((d) => d.stillAt.length > 0) ?? [];
   // The open list says it on each dive.
-  if (inSsi === 0 || reminderDismissed || listOpen) return null;
+  if (still.length === 0 || reminderDismissed || listOpen) return null;
+  const where = [...new Set(still.flatMap((d) => d.stillAt.map((s) => providerOf(s.provider).name)))];
   return (
     <Notice tone="info">
-      <p>{t('deleted.ssiReminder', { count: inSsi })}</p>
+      <p>{t('deleted.reminder', { count: still.length, name: names(where) })}</p>
       <div className="form-actions">
         <Button onPress={() => updateDeletion({ listOpen: true })}>{t('deleted.showList')}</Button>
         <Button variant="quiet" onPress={() => { updateDeletion({ reminderDismissed: true }); focusHeading(); }}>{t('common.dismiss')}</Button>
@@ -61,10 +71,12 @@ export function DeletedNotices() {
 function JustDeletedNotice({ just, dive: d }: { just: JustDeleted; dive: DeletedDiveView }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
+  const names = useNames();
   const restore = useRestore(d, () => focusHeading());
+  const notice = deletedNotice(just.copies);
   return (
     <Notice tone="success">
-      <p>{t(deletedNoticeKey(just.ssi), { name: just.name, number: just.remoteNumber ?? '' })}</p>
+      <p>{t(notice.key, { name: just.name, provider: names(notice.copies.map((c) => c.name)), number: notice.copies[0]?.remoteNumber ?? '' })}</p>
       {restore.error && <p>{errorText(restore.error)}</p>}
       <div className="form-actions">
         <Button icon="undo" isPending={restore.isPending} onPress={() => restore.mutate()}>{t('common.undo')}</Button>
@@ -77,12 +89,14 @@ function JustDeletedNotice({ just, dive: d }: { just: JustDeleted; dive: Deleted
 }
 
 /**
- * At the bottom of the logbook: "Show deleted dives", and the list to restore them from, marking those still in SSI with
- * "Delete in SSI" (ADR 0026). Opening moves focus to the list's heading, closing back to the button.
+ * At the bottom of the logbook: "Show deleted dives", and the list to restore them from, marking those still at a
+ * Provider with "Delete in …" (ADR 0026, 0027). Opening moves focus to the list's heading, closing back to the button.
  */
 export function DeletedDives() {
   const { t } = useTranslation();
   const deleted = useQuery(deletedDivesQuery());
+  const providers = useProviders();
+  const names = useNames();
   const { listOpen } = useDeletion();
   const list = useRef<HTMLUListElement>(null);
   const show = useRef<HTMLButtonElement>(null);
@@ -105,7 +119,7 @@ export function DeletedDives() {
   }
   return (
     <Panel title={t('deleted.title')}>
-      <Muted>{t('deleted.intro')}</Muted>
+      <Muted>{t('deleted.intro', { name: names(exporting(providers.data).map((p) => p.name)) })}</Muted>
       <ul className="decisions" ref={list}>
         {dives.map((d, index) => <DeletedRow key={d.id} dive={d} list={list} index={index} count={count} />)}
       </ul>
@@ -120,18 +134,11 @@ function DeletedRow({ dive: d, list, index, count }: {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const display = useDisplay();
-  const queryClient = useQueryClient();
   const divers = useQuery(diversQuery());
+  const providerOf = useProviderOf();
   const name = useDiveName()(d);
   const restoreButton = useRef<HTMLButtonElement>(null);
   const restore = useRestore(d, () => refocusAfterRemoval(list.current, index, count));
-  const removeInSsi = useMutation({
-    mutationFn: async () => unwrap(await api.DELETE('/api/dives/{id}/ssi', { params: { path: { id: d.id } } })),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: keys.deletedDives });
-      announce(t('ssi.deleted'));
-    },
-  });
   const diverName = (divers.data?.length ?? 0) > 1 ? divers.data?.find((v) => v.id === d.diverId)?.name : undefined;
   const facts = [
     ...(d.number !== null ? [display.diveTime(d.startsAt, d.utcOffsetSeconds)] : []),
@@ -142,7 +149,7 @@ function DeletedRow({ dive: d, list, index, count }: {
       <div className="decision-recording">
         <p><strong>{name}</strong>{facts.length > 0 && ` · ${facts.join(' · ')}`}</p>
         <p className="muted">{t('deleted.deletedOn', { date: display.dateTime(d.deletedAt) })}</p>
-        {d.ssi && <p>{t('deleted.stillInSsi', { number: d.ssi.remoteNumber ?? '' })}</p>}
+        {d.stillAt.map((c) => <p key={c.provider}>{t('deleted.stillAt', { name: providerOf(c.provider).name, number: c.remoteNumber ?? '' })}</p>)}
       </div>
       <div className="form-actions">
         <Button
@@ -151,18 +158,37 @@ function DeletedRow({ dive: d, list, index, count }: {
         >
           {t('deleted.restore')}
         </Button>
-        {d.ssi && (
-          <ConfirmButton
-            icon="delete" aria-label={t('common.forItem', { action: t('ssi.delete'), item: name })}
-            title={t('ssi.deleteTitle')} body={t('deleted.ssiDeleteBody', { number: d.ssi.remoteNumber ?? '' })}
-            confirmLabel={t('ssi.delete')} onConfirm={() => removeInSsi.mutateAsync()}
-            onDone={() => requestAnimationFrame(() => restoreButton.current?.focus())}
-          >
-            {t('ssi.delete')}
-          </ConfirmButton>
-        )}
+        {d.stillAt.map((c) => (
+          <DeleteThere key={c.provider} provider={providerOf(c.provider)} diveId={d.id} name={name} remoteNumber={c.remoteNumber}
+            onDone={() => requestAnimationFrame(() => restoreButton.current?.focus())} />
+        ))}
       </div>
       {restore.error && <Notice tone="danger">{errorText(restore.error)}</Notice>}
     </li>
+  );
+}
+
+/** "Delete in SSI" for a deleted Dive still there: asks first, since the Provider may not bring it back. */
+function DeleteThere({ provider: p, diveId, name, remoteNumber, onDone }: {
+  provider: ProviderView; diveId: string; name: string; remoteNumber: number | null; onDone: () => void;
+}) {
+  const { t } = useTranslation();
+  const pt = useProviderText(p);
+  const queryClient = useQueryClient();
+  const remove = useMutation({
+    mutationFn: async () => unwrap(await api.DELETE('/api/dives/{id}/providers/{provider}', { params: { path: { id: diveId, provider: p.id } } })),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: keys.deletedDives });
+      announce(pt('deleted'));
+    },
+  });
+  return (
+    <ConfirmButton
+      icon="delete" aria-label={t('common.forItem', { action: pt('delete'), item: name })}
+      title={pt('deleteTitle')} body={pt('deleteBodyDeleted', { number: remoteNumber ?? '' })}
+      confirmLabel={pt('delete')} onConfirm={() => remove.mutateAsync()} onDone={onDone}
+    >
+      {pt('delete')}
+    </ConfirmButton>
   );
 }

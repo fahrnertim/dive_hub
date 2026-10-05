@@ -1,35 +1,41 @@
-// What the delete dialog offers about SSI, and the notice after deleting (ADR 0026).
+// What the delete dialog offers about the Dive's copies at Providers, and the notice after deleting (ADR 0026, 0027).
 import { describe, expect, it } from 'vitest';
-import { deletedNoticeKey, ssiChoice } from '../src/lib/deletion.ts';
+import { deleteChoice, deletedNotice } from '../src/lib/deletion.ts';
 
-const connection = { id: 'c1', state: 'active' as const, accountEmail: 'erika@example.com' };
+const connection = { id: 'c1', state: 'active' as const, accountLabel: 'erika@example.com' };
 const current = { remoteId: '9', remoteNumber: 8, sentAt: '2026-10-05T10:00:00Z', upToDate: true };
 
-describe('ssiChoice', () => {
-  it('waits while the Dive\'s SSI state loads', () => {
-    expect(ssiChoice(undefined)).toBeUndefined();
+describe('deleteChoice', () => {
+  it('waits while the Dive\'s state at the Providers loads', () => {
+    expect(deleteChoice(undefined)).toBeUndefined();
   });
 
-  it('asks nothing about SSI for a Dive that isn\'t there', () => {
-    expect(ssiChoice({ connection, current: null })).toEqual({ kind: 'none' });
-    expect(ssiChoice({ connection: null, current: null })).toEqual({ kind: 'none' });
+  it('asks nothing about a Provider the Dive isn\'t at', () => {
+    expect(deleteChoice([{ provider: 'ssi', connection, current: null }])).toEqual({ ask: [], cannot: [] });
+    expect(deleteChoice([])).toEqual({ ask: [], cannot: [] });
   });
 
-  it('asks whether to delete it in SSI too while its Diver is connected', () => {
-    expect(ssiChoice({ connection, current })).toEqual({ kind: 'ask', remoteNumber: 8 });
+  it('asks whether to delete it there too while its Diver is connected', () => {
+    expect(deleteChoice([{ provider: 'ssi', connection, current }])).toEqual({ ask: [{ provider: 'ssi', remoteNumber: 8 }], cannot: [] });
     // Signing in again may still work (a kept password); the server says if not.
-    expect(ssiChoice({ connection: { ...connection, state: 'needs_sign_in' }, current })).toEqual({ kind: 'ask', remoteNumber: 8 });
+    expect(deleteChoice([{ provider: 'ssi', connection: { ...connection, state: 'needs_sign_in' }, current }])?.ask).toHaveLength(1);
   });
 
-  it('says it stays in SSI when its Diver is no longer connected', () => {
-    expect(ssiChoice({ connection: null, current: { ...current, remoteNumber: null } })).toEqual({ kind: 'cannot', remoteNumber: null });
+  it('says it stays there when its Diver is no longer connected, per Provider', () => {
+    expect(deleteChoice([
+      { provider: 'ssi', connection: null, current: { ...current, remoteNumber: null } },
+      { provider: 'padi', connection, current },
+    ])).toEqual({ ask: [{ provider: 'padi', remoteNumber: 8 }], cannot: [{ provider: 'ssi', remoteNumber: null }] });
   });
 });
 
-describe('deletedNoticeKey', () => {
-  it('says what happened to the SSI copy', () => {
-    expect(deletedNoticeKey(null)).toBe('deleted.notice');
-    expect(deletedNoticeKey('kept')).toBe('deleted.noticeKept');
-    expect(deletedNoticeKey('deleted')).toBe('deleted.noticeBoth');
+describe('deletedNotice', () => {
+  const copy = (copy: 'deleted' | 'kept', provider = 'ssi') => ({ provider, name: provider.toUpperCase(), copy, remoteNumber: 8 });
+
+  it('says what happened to the copies, deleted ones first', () => {
+    expect(deletedNotice([])).toEqual({ key: 'deleted.notice', copies: [] });
+    expect(deletedNotice([copy('kept')])).toEqual({ key: 'deleted.noticeKept', copies: [copy('kept')] });
+    expect(deletedNotice([copy('deleted')])).toEqual({ key: 'deleted.noticeBoth', copies: [copy('deleted')] });
+    expect(deletedNotice([copy('kept', 'padi'), copy('deleted')]).copies).toEqual([copy('deleted')]);
   });
 });

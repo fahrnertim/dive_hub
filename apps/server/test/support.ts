@@ -15,8 +15,10 @@ import { createSiteImportService } from '../src/sites/import/site-import-service
 import type { SiteSourceAdapter } from '../src/sites/import/site-source.js';
 import type { ImportSource } from '../src/sites/sources.js';
 import { createSecretBox } from '../src/secrets/secret-box.js';
-import { createSsiClient } from '../src/ssi/ssi-client.js';
-import { createSsiService } from '../src/ssi/ssi-service.js';
+import { createProviderLayer } from '../src/providers/layer.js';
+import type { ProviderAdapter } from '../src/providers/provider.js';
+import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
+import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { createFakeSsi, type FakeSsi } from './fake-ssi.js';
 import { createInvitations } from '../src/users/invitations.js';
@@ -83,21 +85,34 @@ export async function createTestApp(t: TestDatabase, options: {
   rateLimit?: boolean; webDir?: string; siteSources?: Record<ImportSource, SiteSourceAdapter>;
   /** SSI as tests see it (default: a fresh fake); `encryptionKey: null` runs without DIVEHUB_ENCRYPTION_KEY. */
   fakeSsi?: FakeSsi; encryptionKey?: Buffer | null;
+  /** Providers besides SSI, such as the test-only hand-over adapter (never in production). */
+  extraProviders?: ProviderAdapter[];
 } = {}) {
-  const { webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, ...authOptions } = options;
+  const { webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, extraProviders = [], ...authOptions } = options;
   const auth = createTestAuth(t.db, authOptions);
   const setup: Setup = createSetup(t.db);
   const blobs = createLocalBlobStore(t.dataDir);
   const imports: ImportService = createImportService({ db: t.db, blobs });
   const siteImports = createSiteImportService({ db: t.db, sources: siteSources ?? { osm: unreachable('osm'), wikidata: unreachable('wikidata'), ssi: unreachable('ssi') } });
-  const ssi = createSsiService({
+  // SSI keeps its last logbook read for two minutes (ADR 0027); a test that changes the fake SSI behind Dive Hub's back
+  // moves this clock on, as if the change happened a while later. Pauses between actions are recorded, not waited.
+  const ssiClock = { now: 0, advance(ms: number) { this.now += ms; } };
+  const pauses: number[] = [];
+  const providers = createProviderLayer({
     db: t.db, secrets: createSecretBox(encryptionKey ?? undefined),
-    client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch, userAgent: 'DiveHub (test)' }),
+    adapters: [
+      createSsiAdapter({
+        client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch, userAgent: 'DiveHub (test)' }),
+        now: () => ssiClock.now,
+      }),
+      ...extraProviders,
+    ],
+    sleep: async (ms) => { pauses.push(ms); },
   });
   const app = await buildApp({
-    db: t.db, imports, siteImports, ssi, blobs, auth, setup, invitations: createInvitations(t.db), baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir,
+    db: t.db, imports, siteImports, providers, blobs, auth, setup, invitations: createInvitations(t.db), baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir,
   });
-  return { app, auth, setup, imports, siteImports, ssi, fakeSsi, blobs };
+  return { app, auth, setup, imports, siteImports, providers, fakeSsi, ssiClock, pauses, blobs };
 }
 
 /** Creates a User the way an admin would (Better Auth's admin API, server-side). */

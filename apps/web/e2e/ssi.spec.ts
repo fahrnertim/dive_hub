@@ -9,7 +9,7 @@ test('connects a Diver to SSI, signs in again with another choice, and disconnec
   await page.goto('/#/account');
   const panel = page.locator('section', { has: page.getByRole('heading', { name: 'SSI', exact: true }) });
   await expect(panel.getByText('SSI has no official interface for this')).toBeVisible();
-  await panel.getByRole('textbox', { name: 'SSI e-mail' }).fill(SSI_ACCOUNT.email);
+  await panel.getByRole('textbox', { name: 'SSI e-mail' }).fill(SSI_ACCOUNT.login);
   await panel.getByRole('textbox', { name: 'SSI password' }).fill('wrong');
   await panel.getByRole('button', { name: 'Connect to SSI' }).click();
   await expect(panel.getByText('SSI didn’t accept this e-mail and password.')).toBeVisible();
@@ -20,10 +20,10 @@ test('connects a Diver to SSI, signs in again with another choice, and disconnec
   await panel.getByText('Keep me signed in').click();
   await panel.getByRole('button', { name: 'Connect to SSI' }).click();
   await expect(panel.getByText('Connected, password kept')).toBeVisible();
-  await expect(panel.getByRole('cell', { name: SSI_ACCOUNT.email, exact: true })).toBeVisible();
+  await expect(panel.getByRole('cell', { name: SSI_ACCOUNT.login, exact: true })).toBeVisible();
 
   // The e2e instance keeps several Divers, so each row names its Diver too.
-  await panel.getByRole('button', { name: `Sign in again: Erika, ${SSI_ACCOUNT.email}` }).click();
+  await panel.getByRole('button', { name: `Sign in again: Erika, ${SSI_ACCOUNT.login}` }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('textbox', { name: 'SSI password' }).fill(SSI_ACCOUNT.password);
   await dialog.getByText('Don’t store my password').click();
@@ -31,7 +31,7 @@ test('connects a Diver to SSI, signs in again with another choice, and disconnec
   await expect(dialog).toBeHidden();
   await expect(panel.getByText('Connected', { exact: true })).toBeVisible();
 
-  await panel.getByRole('button', { name: `Disconnect: Erika, ${SSI_ACCOUNT.email}` }).click();
+  await panel.getByRole('button', { name: `Disconnect: Erika, ${SSI_ACCOUNT.login}` }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Disconnect' }).click();
   await expect(panel.getByRole('button', { name: 'Connect to SSI' })).toBeVisible();
   await expect(panel.getByRole('table')).toHaveCount(0);

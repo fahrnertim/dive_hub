@@ -19,15 +19,16 @@ import { REVISION_CAUSES } from './revisions.js';
 import { waterMismatch } from './water.js';
 import { recordingPosition } from '../sites/dive-site-link.js';
 import { PositionSchema } from '../sites/routes.js';
-import { SSI_STATUS } from '../ssi/routes.js';
-import { SsiServiceError, type SsiService } from '../ssi/ssi-service.js';
+import type { PushService } from '../providers/push-service.js';
+import { ProviderServiceError } from '../providers/registry.js';
+import { replyProviderError } from '../providers/routes.js';
 
 export interface DiveRouteDeps {
   db: Db;
   auth: Auth;
   dives: DiveService;
-  /** Deleting a Dive can delete its SSI copy too (ADR 0026). */
-  ssi: SsiService;
+  /** Deleting a Dive asks every Provider it is at (ADR 0026, 0027). */
+  pushes: PushService;
 }
 
 const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
@@ -157,19 +158,20 @@ const DeletedDiveView = Type.Object({
   maxDepthM: Nullable(Type.Number()),
   site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
   deletedAt: DateTime,
-  ssi: Nullable(Type.Object({ remoteNumber: Nullable(Type.Integer({ description: 'SSI\'s own dive number' })) }, {
-    description: 'Set while the dive is still in SSI: clients remind the User and offer "Delete in SSI" (docs/spec/clients.md)',
-  })),
+  stillAt: Type.Array(Type.Object({
+    provider: Type.String(),
+    remoteNumber: Nullable(Type.Integer({ description: 'The Provider\'s own dive number' })),
+  }), { description: 'Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md)' }),
 });
 
 /** Deleted Dives listed at most (newest deletion first). */
 const DELETED_SHOWN = 100;
 
-export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { db, auth, dives, ssi }) => {
+export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { db, auth, dives, pushes }) => {
   app.addHook('onRequest', requireUser(auth));
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof DiveError) return reply.code(STATUS[error.code]).send(problem(error.code));
-    if (error instanceof SsiServiceError) return reply.code(SSI_STATUS[error.code] ?? 500).send(problem(error.code));
+    if (error instanceof ProviderServiceError) return replyProviderError(error, reply);
     throw error;
   });
 
@@ -276,36 +278,41 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   app.delete('/dives/:id', {
     schema: {
       summary: 'Delete a Dive: it leaves the logbook, its counts and search; re-imports skip it; it can be restored',
-      description: 'Send the version you started from (409 dive_changed). When the Dive is in SSI, `inSsi: true` deletes it '
-        + 'there first (SSI\'s app can\'t bring it back); if that fails (ssi_* codes), nothing is deleted. Without it, the '
-        + 'SSI dive stays and the deleted Dive keeps reminding (`ssi` in GET /dives/deleted). ADR 0026.',
+      description: 'Send the version you started from (409 dive_changed). When the Dive is at Providers, `alsoAt` names those '
+        + 'to delete it at first (SSI\'s app can\'t bring it back); if one fails (provider_* codes), nothing is deleted here. The '
+        + 'others keep it, and the deleted Dive keeps reminding (`stillAt` in GET /dives/deleted). ADR 0026, 0027.',
       params: IdParams,
       body: Type.Object({
         version: Type.Integer(),
-        inSsi: Type.Optional(Type.Boolean({ description: 'Also delete the Dive\'s copy in SSI; ask the User first (docs/spec/clients.md)' })),
+        alsoAt: Type.Optional(Type.Array(Type.String(), { description: 'Providers to delete the Dive\'s copy at too; ask the User first (docs/spec/clients.md)' })),
       }),
       response: {
         200: Type.Object({
-          ssi: Nullable(Type.Enum(['deleted', 'kept'], { description: 'What happened to the SSI copy; null when the Dive wasn\'t in SSI' })),
+          providers: Type.Array(Type.Object({
+            provider: Type.String(),
+            copy: Type.Enum(['deleted', 'kept'], { description: 'What happened to the copy there' }),
+          }), { description: 'Each Provider the Dive was at' }),
         }),
-        404: Problem, 409: Problem, 502: Problem,
+        400: Problem, 404: Problem, 409: Problem, 502: Problem,
       },
     },
   }, async (request, reply) => {
-    const { version, inSsi = false } = request.body;
+    const { version, alsoAt = [] } = request.body;
     const row = await findDive(request, request.params.id);
     if (!row) return reply.code(404).send(problem('dive_not_found'));
-    // Checked before SSI is asked, so a changed Dive isn't deleted there and then kept here.
+    // Checked before any Provider is asked, so a changed Dive isn't deleted there and then kept here.
     if (row.version !== version) return reply.code(409).send(problem('dive_changed'));
-    const inSsiNow = (await ssi.currentOf([row.id])).has(row.id);
-    if (inSsiNow && inSsi) await ssi.remove(request.user!.id, row.id);
+    const at = [...((await pushes.currentOf([row.id])).get(row.id)?.keys() ?? [])];
+    for (const provider of at) {
+      if (alsoAt.includes(provider)) await pushes.remove(request.user!.id, row.id, provider);
+    }
     await dives.remove(request.user!.id, row.id, version);
-    return { ssi: inSsiNow ? (inSsi ? 'deleted' as const : 'kept' as const) : null };
+    return { providers: at.map((provider) => ({ provider, copy: alsoAt.includes(provider) ? 'deleted' as const : 'kept' as const })) };
   });
 
   app.get('/dives/deleted', {
     schema: {
-      summary: 'The User\'s deleted Dives, most recently deleted first (at most 100), to restore them; which are still in SSI',
+      summary: 'The User\'s deleted Dives, most recently deleted first (at most 100), to restore them; which Providers they are still at',
       response: { 200: Type.Object({ dives: Type.Array(DeletedDiveView) }) },
     },
   }, async (request) => {
@@ -314,21 +321,21 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       .leftJoin(diveSite, eq(diveSite.id, dive.siteId))
       .where(isNotNull(dive.deletedAt))
       .orderBy(desc(dive.deletedAt), desc(dive.id)).limit(DELETED_SHOWN);
-    const remote = await ssi.currentOf(rows.map((r) => r.d.id));
+    const remote = await pushes.currentOf(rows.map((r) => r.d.id));
     return {
       dives: rows.map(({ d, siteName }) => ({
         id: d.id, diverId: d.diverId, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(),
         utcOffsetSeconds: d.utcOffsetSeconds, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
         site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null,
         deletedAt: d.deletedAt!.toISOString(),
-        ssi: remote.has(d.id) ? { remoteNumber: remote.get(d.id)!.remoteNumber } : null,
+        stillAt: [...(remote.get(d.id)?.entries() ?? [])].map(([provider, p]) => ({ provider, remoteNumber: p.remoteNumber })),
       })),
     };
   });
 
   app.post('/dives/:id/restore', {
     schema: {
-      summary: 'Bring a deleted Dive back with its Recordings (not in SSI: send it again from there)',
+      summary: 'Bring a deleted Dive back with its Recordings (not to Providers: send it again from there)',
       description: 'Send the version from GET /dives/deleted (409 dive_changed). A site deleted meanwhile becomes the one it was merged into, or none.',
       params: IdParams, body: Type.Object({ version: Type.Integer() }),
       response: { 200: DiveView, 404: Problem, 409: Problem },

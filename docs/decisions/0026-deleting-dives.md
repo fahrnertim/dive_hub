@@ -8,7 +8,8 @@ date: 2026-10-05
 # ADR 0026: Deleting a Dive: soft, restorable, not imported again; SSI asked in the same dialog
 
 ## Status
-Accepted – 2026-10-05
+Accepted – 2026-10-05. Amended by [ADR 0027](0027-providers-as-adapters.md) (2026-10-05): deleting asks every Provider
+the Dive is at (`alsoAt`, `stillAt`, `provider_*` codes) instead of SSI by name.
 
 ## Context
 The [data model](../spec/data-model.md) says deletes are soft (A5), and ADR 0024 says deleting a Dive offers to delete

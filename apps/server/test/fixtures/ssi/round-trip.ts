@@ -13,8 +13,8 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import { userAgent } from '../../../src/sites/import/polite-http.js';
-import { createSsiClient, type SsiRecord } from '../../../src/ssi/ssi-client.js';
-import { compareReadBack, createRecord, deleteRecord, updateRecord, type DiveForSsi } from '../../../src/ssi/ssi-record.js';
+import { createSsiClient, type SsiRecord } from '../../../src/providers/ssi/ssi-client.js';
+import { compareReadBack, createRecord, deleteRecord, updateRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
 
 const out = fileURLToPath(new URL('../../../../../samples/private/ssi/', import.meta.url));
 const tokenFile = `${out}token.json`;

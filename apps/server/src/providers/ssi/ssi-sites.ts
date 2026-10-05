@@ -5,10 +5,10 @@
 import yauzl from 'yauzl';
 import { looksLikeZip } from '../../imports/archive.js';
 import type { SiteWaterType } from '../../vocabulary.js';
-import { alpha2Of } from '../countries.js';
-import { SOURCE_INFO } from '../sources.js';
-import type { PoliteHttp } from './polite-http.js';
-import { inBox, SiteSourceError, type ImportArea, type SiteSourceAdapter, type SourceSite } from './site-source.js';
+import { alpha2Of } from '../../sites/countries.js';
+import { SOURCE_INFO } from '../../sites/sources.js';
+import type { PoliteHttp } from '../../sites/import/polite-http.js';
+import { inBox, SiteSourceError, type ImportArea, type SiteSourceAdapter, type SourceSite } from '../../sites/import/site-source.js';
 
 export const DEFAULT_SSI_SITES_URL = 'https://api.divessi.com/app/APP_CACHE_SITES.zip';
 

@@ -22,8 +22,8 @@ import { createSiteService } from './sites/site-service.js';
 import { siteRoutes } from './sites/routes.js';
 import type { SiteImportService } from './sites/import/site-import-service.js';
 import { siteImportRoutes } from './sites/import/site-import-routes.js';
-import type { SsiService } from './ssi/ssi-service.js';
-import { ssiRoutes } from './ssi/routes.js';
+import type { ProviderLayer } from './providers/layer.js';
+import { providerRoutes } from './providers/routes.js';
 import type { BlobStore } from './storage/blob-store.js';
 import { accountRoutes } from './users/account-routes.js';
 import { adminRoutes } from './users/admin-routes.js';
@@ -37,8 +37,8 @@ export interface AppDeps {
   db: Db;
   imports: ImportService;
   siteImports: SiteImportService;
-  /** SSI as a Target (ADR 0024). */
-  ssi: SsiService;
+  /** Providers such as SSI, their Connections and Pushes (ADR 0024, 0027). */
+  providers: ProviderLayer;
   blobs: BlobStore;
   auth: Auth;
   setup: Setup;
@@ -84,12 +84,12 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
   await app.register(accountRoutes, { prefix: '/api', ...deps, passwordResets });
   await app.register(adminRoutes, { prefix: '/api', ...deps, passwordResets, userAdmin: createUserAdmin(deps.db, deps.blobs) });
   await app.register(apiRoutes, { prefix: '/api', ...deps });
-  await app.register(diveRoutes, { prefix: '/api', ...deps, dives: createDiveService(deps.db) });
+  await app.register(diveRoutes, { prefix: '/api', ...deps, dives: createDiveService(deps.db), pushes: deps.providers.pushes });
   await app.register(candidateRoutes, { prefix: '/api', ...deps, candidates: createCandidates(deps.db) });
   await app.register(diverRoutes, { prefix: '/api', ...deps, divers: createDiverService(deps.db) });
   await app.register(siteRoutes, { prefix: '/api', ...deps, sites: createSiteService(deps.db) });
   await app.register(siteImportRoutes, { prefix: '/api', ...deps });
-  await app.register(ssiRoutes, { prefix: '/api', ...deps });
+  await app.register(providerRoutes, { prefix: '/api', auth: deps.auth, ...deps.providers });
 
   const serveWeb = !!deps.webDir && existsSync(deps.webDir);
   if (serveWeb) await app.register(fastifyStatic, { root: deps.webDir!, wildcard: false });

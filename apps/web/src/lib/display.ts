@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { ApiError, meQuery } from '../api.ts';
+import { ApiError, meQuery, type ProblemCode } from '../api.ts';
 import { countryName, formatDistance, formatPosition, type Position } from './geo.ts';
 import {
   formatDateTime, formatDepth, formatDiveTime, formatDuration, formatTemperature, pickUnits, unitLabel,
@@ -30,11 +30,25 @@ export function useDisplay() {
   };
 }
 
+/**
+ * The text of a problem code. A provider_* code names its Provider (ADR 0027): the Provider's own wording where it has
+ * one (SSI: "e-mail and password"), else the generic text with its name.
+ */
+export function useProblemText() {
+  const { t, i18n } = useTranslation();
+  return (code: ProblemCode, provider?: { id: string; name: string }, fallback?: string): string => {
+    const own = provider && `providers.${provider.id}.errors.${code}`;
+    const key = own && i18n.exists(own) ? own : `errors.${code}`;
+    return t(key as `errors.${ProblemCode}`, { name: provider?.name ?? t('provider.someService'), ...(fallback && { defaultValue: fallback }) });
+  };
+}
+
 /** A message for the person in front of the screen, translated from the server's error code. */
 export function useErrorText() {
   const { t } = useTranslation();
+  const problemText = useProblemText();
   return (error: unknown): string => {
-    if (error instanceof ApiError && error.code) return t(`errors.${error.code}`, { defaultValue: error.message });
+    if (error instanceof ApiError && error.code) return problemText(error.code, error.provider, error.message);
     return t('errors.unknown');
   };
 }

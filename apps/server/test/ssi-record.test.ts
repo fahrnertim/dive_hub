@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { createSecretBox, parseEncryptionKey } from '../src/secrets/secret-box.js';
 import {
   compareReadBack, createRecord, deleteRecord, fingerprint, localTime, resample, samplesJson, updateRecord, type DiveForSsi,
-} from '../src/ssi/ssi-record.js';
+} from '../src/providers/ssi/ssi-record.js';
 
 const dive = (over: Partial<DiveForSsi> = {}): DiveForSsi => ({
   startsAt: new Date('2026-01-15T09:00:00Z'), utcOffsetSeconds: 7200, durationSeconds: 30 * 60 + 20,
