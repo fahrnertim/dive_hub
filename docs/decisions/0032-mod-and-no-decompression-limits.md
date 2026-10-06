@@ -1,6 +1,6 @@
 ---
 title: "ADR 0032: MOD and bottom time on the Tools page - Bühlmann ZHL-16C with gradient factors, capped by oxygen and gas"
-summary: The Tools page gains MOD and gas numbers (best mix, EAD, END) for any mix, and a bottom time for a planned depth, gas and Cylinder - the shortest of the no-decompression limit (own clean-room ZHL-16C with GF, actual NDL with the descent, floored, never longer than the references), the NOAA oxygen limit and the gas above the reserve, saying which binds. Air and nitrox only for the NDL, no-stop only, at most 40 m, clean tissues with a warning after a recent dive; GF from the Diver's own computer, else 85; water and altitude as inputs; 1.4/1.6 with O₂ narcotic; FIT's SAC kept on Recordings; validated against MIT implementations, the US Navy table and the owner's logged NDL samples. Slice 20, after the weight calculator.
+summary: The Tools page gains MOD and gas numbers (best mix, EAD, END) for any mix, and a bottom time for a planned depth, gas and Cylinder - the shortest of the no-decompression limit (own clean-room ZHL-16C with GF, actual NDL with the descent, floored, never longer than the references), the NOAA oxygen limit and the gas above the reserve, saying which binds. Air and nitrox only for the NDL, no-stop only, at most 40 m, clean tissues with a warning after a recent dive; GF from the Diver's own computer, else 85; water and altitude as inputs; 1.4/1.6 with O₂ narcotic; FIT's SAC kept on Recordings; validated against MIT implementations, the US Navy table and the owner's logged NDL samples. Slice 21, after the weight calculator.
 status: accepted
 date: 2026-10-06
 ---
@@ -8,7 +8,7 @@ date: 2026-10-06
 # ADR 0032: MOD and bottom time on the Tools page - Bühlmann ZHL-16C with gradient factors, capped by oxygen and gas
 
 ## Status
-Accepted – 2026-10-06. Not built yet. Amended by [ADR 0033](0033-gas-plans-rules-and-groups.md) (slice 21): the bottom
+Accepted – 2026-10-06. Not built yet. Amended by [ADR 0033](0033-gas-plans-rules-and-groups.md) (slice 22): the bottom
 time's gas limit becomes the chosen gas rule's ascent pressure, and its default SAC the Diver's planning SAC from the
 logbook (FIT carries SAC only with a tank pod; the owner's Garmin files have none). Designed in [MOD and no-decompression limits](../research/2026-10-06-gas-and-ndl-tools.md);
 builds on the Tools page and Cylinders of [ADR 0031](0031-lead-suit-cylinders-and-lead-estimate.md).
@@ -74,10 +74,10 @@ The owner chose on 2026-10-06 the recommendation for each of the note's decision
   no countdown.
 
 ### Order
-Slice 20, after the weight calculator's slices 18 (Cylinders) and 19 (the Tools page).
+Slice 21, after the weight calculator's slices 19 (Cylinders) and 20 (the Tools page).
 
 ## Considered options
-- **NDL only, or NDL and oxygen:** the gas often binds first; Cylinders exist by slice 20.
+- **NDL only, or NDL and oxygen:** the gas often binds first; Cylinders exist by slice 21.
 - **Trimix in the NDL:** technical diving, harder to validate; MOD and END cover planning a mix.
 - **Tissues from the logbook now** (Subsurface): too optimistic when a dive is missing or logged by another computer.
 - **A fixed default GF (85 or 100):** ignores what the Diver's own computer does.

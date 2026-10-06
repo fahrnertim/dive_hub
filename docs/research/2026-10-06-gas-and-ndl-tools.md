@@ -1,6 +1,6 @@
 ---
 title: MOD and no-decompression limits (second planning tool)
-summary: Tools for a planned dive's gas and time - MOD (with best mix, EAD, END) for any mix, and a bottom time (the no-decompression limit by Bühlmann ZHL-16C with gradient factors, capped by oxygen exposure and the gas in the cylinder). Formulas and limits, what dive computers use and their defaults, how planners present it (Subsurface, Shearwater, Garmin, Suunto, GasPlanner, Submersion), open implementations and their licences, test values, pitfalls, liability; what Dive Hub already holds (the computer's GF and NDL samples); decided (ADR 0032), with the prompt for slice 20.
+summary: Tools for a planned dive's gas and time - MOD (with best mix, EAD, END) for any mix, and a bottom time (the no-decompression limit by Bühlmann ZHL-16C with gradient factors, capped by oxygen exposure and the gas in the cylinder). Formulas and limits, what dive computers use and their defaults, how planners present it (Subsurface, Shearwater, Garmin, Suunto, GasPlanner, Submersion), open implementations and their licences, test values, pitfalls, liability; what Dive Hub already holds (the computer's GF and NDL samples); decided (ADR 0032), with the prompt for slice 21.
 status: decided
 date: 2026-10-06
 ---
@@ -195,7 +195,7 @@ All made by the owner on 2026-10-06, each as recommended; written down as [ADR 0
 | G9 | Limits and wording | No-stop only, at most 40 m; the estimate's assumptions and a disclaimer always visible; DAN's flying text, no countdown |
 | G10 | Validation | Tests against the owner's logged Garmin dives' NDL samples now; the comparison on the dive page later |
 | G11 | SAC | FIT's SAC/RMV and OTU kept on Recordings (backfill); default the median of recent dives, else 20 L/min; editable |
-| G12 | Order | One slice 20, after the weight calculator's 17 and 18 |
+| G12 | Order | One slice 21, after the weight calculator's 17 and 18 |
 
 ### Still to check
 - **Why the clean-room sketch ran 0–2 min longer than GasPlanner** (descent rate, N₂ fraction, compartment 1, the
@@ -208,7 +208,7 @@ All made by the owner on 2026-10-06, each as recommended; written down as [ADR 0
 
 ## Slices
 
-1. **Slice 20: MOD and bottom time** (after slices 18 and 19 of the [weight calculator](2026-10-06-weight-calculator.md)):
+1. **Slice 21: MOD and bottom time** (after slices 19 and 20 of the [weight calculator](2026-10-06-weight-calculator.md)):
    the module, the backfill of FIT's SAC/RMV/OTU, the two tools on the Tools page. Smallest thing to learn from: how far
    our NDL and the owner's Garmin agree on logged dives.
 2. **Later:** the model beside the computer's NDL on the dive page; tissues rebuilt from the log (repetitive dives) once
@@ -252,7 +252,7 @@ All made by the owner on 2026-10-06, each as recommended; written down as [ADR 0
 - [dan-validation] DAN, Validation of dive computers: https://dan.org/alert-diver/article/validation-of-dive-computers/
 - [dan-flying] DAN, flying after diving: https://dan.org/?p=1838
 
-## Prompt: MOD and bottom time (slice 20)
+## Prompt: MOD and bottom time (slice 21)
 
 ```text
 We're continuing Dive Hub. Everything you need is in this repository; read it first and don't rely on any
@@ -260,7 +260,7 @@ local memory (AGENTS.md Rule #1).
 
 Task: the second planning tool - MOD and gas numbers for any mix, and a bottom time for a planned dive (the shortest
 of the no-decompression limit, the oxygen limit and the gas), on the Tools page. As decided in ADR 0032 and
-docs/research/2026-10-06-gas-and-ndl-tools.md. Slices 18 (Cylinders and their catalogue) and 19 (the Tools page) are
+docs/research/2026-10-06-gas-and-ndl-tools.md. Slices 19 (Cylinders and their catalogue) and 20 (the Tools page) are
 built. Everything is decided; don't re-litigate it. Ask me before building only if something in the code makes it
 harder than it looks - and stop and ask if the NDL comes out longer than a reference value and you can't find why.
 
@@ -298,6 +298,8 @@ Build:
   kept in the address. Units through lib/units.ts; translations (en, de).
 - MCP (ADR 0035): `planning_gas_numbers` and `planning_bottom_time` tools whose every result carries the limits, the
   assumptions and the disclaimer (never a bare number; "outside recreational limits" as such).
+- Dive assessment (ADR 0036): the surfacing GF rule (ZHL-16C at 100/100 along the profile: > 80 % note, > 90 % caution,
+  "decompression stress", thresholds of our own, said so), with a new engine version.
 - Tests: test-first for the module: formulas against hand-computed values (MOD of EAN32 in salt, fresh, EN 13319, at
   altitude); NDL against GasPlanner's published values (fresh, salt, GF 40/85) and dive-deco's, equal or shorter and
   within the stated tolerance; the US Navy Rev 7 air table as a band; CNS binding (EAN40 at 30 m); gas binding
@@ -305,7 +307,7 @@ Build:
   compare with the computer's ndl samples (measure Garmin's difference, set the tolerance from it, write it down).
   API tests; browser tests (@tools); ui-quality cases (each limit binding, outside recreational limits, recent dive).
 - Docs: ADR 0032 (amend with what changed while building, e.g. the tolerance found), data model, glossary (no longer
-  planned), architecture (slice 20), clients.md (the tools' duties: assumptions and disclaimer always visible, which
+  planned), architecture (slice 21), clients.md (the tools' duties: assumptions and disclaimer always visible, which
   limit binds, never a number beyond 40 m or the MOD), samples/README.md (the NDL cross-check), index.md; mark this
   prompt done.
 

@@ -1,6 +1,6 @@
 ---
 title: "ADR 0034: Equipment items with service schedules the User sets up"
-summary: A Diver's Equipment items (category, maker, model, serial, purchase, status) with several service schedules each (months, dives and/or hours, whichever first, counted from the last service of that schedule) and service records (date, schedules reset, by whom, notes, cost) - no built-in intervals. Usage comes from items "on every Dive while in use" with exceptions, items put on single Dives, Devices (linked to an item, counted through Recordings) and a Dive's Cylinder naming the Diver's cylinder. Due and due soon computed, shown in the app only. One item per regulator set; parts, lending, SSI's gear later. Slice 22. Amends 0016.
+summary: A Diver's Equipment items (category, maker, model, serial, purchase, status) with several service schedules each (months, dives and/or hours, whichever first, counted from the last service of that schedule) and service records (date, schedules reset, by whom, notes, cost) - no built-in intervals. Usage comes from items "on every Dive while in use" with exceptions, items put on single Dives, Devices (linked to an item, counted through Recordings) and a Dive's Cylinder naming the Diver's cylinder. Due and due soon computed, shown in the app only. One item per regulator set; parts, lending, SSI's gear later. Slice 23. Amends 0016.
 status: accepted
 date: 2026-10-06
 ---
@@ -65,7 +65,7 @@ that an item can have several schedules; and chose the recommendation for each o
   the exposure suit (ADR 0031) naming a suit item; gear buoyancy for the lead estimate (ADR 0031).
 
 ### Order
-Slice 22, after the planning tools (slices 18–21); the cylinder link builds on slice 18's Cylinders.
+Slice 23, after the planning tools (slices 19–22); the cylinder link builds on slice 19's Cylinders.
 
 ## Considered options
 - **Built-in templates per category** (Submersion seeds intervals): rejected by the owner; manufacturers and countries

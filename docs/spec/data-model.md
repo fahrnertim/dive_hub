@@ -1,6 +1,6 @@
 ---
 title: Data model
-summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios; Dives without a Recording, offsets and their source, a Provider's dives as Originals, Recordings and Imports (ADR 0030); planned: lead, weighting feedback, exposure suit, Cylinders and body weight (ADR 0031); SAC and OTU on Recordings for the bottom-time tool (ADR 0032); SAC per Dive and gas plans for groups (ADR 0033); Equipment items with service schedules (ADR 0034); AI accesses and their log for the MCP endpoint (ADR 0035).
+summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios; Dives without a Recording, offsets and their source, a Provider's dives as Originals, Recordings and Imports (ADR 0030); planned: lead, weighting feedback, exposure suit, Cylinders and body weight (ADR 0031); SAC and OTU on Recordings for the bottom-time tool (ADR 0032); SAC per Dive and gas plans for groups (ADR 0033); Equipment items with service schedules (ADR 0034); AI accesses and their log for the MCP endpoint (ADR 0035); findings of the dive assessment (ADR 0036).
 status: draft
 date: 2026-10-06
 ---
@@ -144,7 +144,7 @@ coverage, validity; B5), **Medical exam** (date, result, valid until, examiner),
   none. When the Primary recording's computer was set to other water, the Dive says so (`waterMismatch`, with how
   far its depths read off).
 - *Gas and gear:* Cylinders, Lead, Equipment uses (B10, B11).
-  *Planned ([ADR 0031](../decisions/0031-lead-suit-cylinders-and-lead-estimate.md), slice 18):* **Lead** entries and
+  *Planned ([ADR 0031](../decisions/0031-lead-suit-cylinders-and-lead-estimate.md), slice 19):* **Lead** entries and
   **weighting feedback** (`right`, `too_heavy`, `too_light`, optional amount in kg), the **exposure suit** (type `none`,
   `skin`, `wetsuit`, `semidry`, `drysuit`; thickness in mm; hood; drysuit undergarment `light`, `medium`, `heavy`) and
   **Cylinders**, all the Dive's own values (not Overrides): part of its version, each change a Revision. "Same as last
@@ -182,7 +182,7 @@ and nothing reaches that User.
   per sensor), CNS, NDL, deco stop/ceiling, TTS, heading, heart rate, GPS (B6), events
   (gas switch, alarms, bookmarks, setpoint changes). Unknown source fields are kept in a
   per-source extension area (A7) rather than dropped.
-- *Planned ([ADR 0032](../decisions/0032-mod-and-no-decompression-limits.md), slice 20):* the summary also keeps FIT's
+- *Planned ([ADR 0032](../decisions/0032-mod-and-no-decompression-limits.md), slice 21):* the summary also keeps FIT's
   `avg_volume_sac`, `avg_rmv` (L/min at the surface) and `o2_toxicity` (OTU); older Recordings read their Originals again
   once. The bottom-time tool takes its default SAC from them and its default GF from `gfHigh`; tests compare its NDL with
   the computer's `ndl` samples.
@@ -200,32 +200,40 @@ and nothing reaches that User.
   A file's Recording attaching to a Dive whose primary is a Provider's copy becomes primary; any Recording attaching to a
   Dive without one becomes primary.
 
+**Finding** (planned, [ADR 0036](../decisions/0036-dive-assessment.md), slice 18) — what the dive assessment found on a
+Dive: Dive, Recording (the Primary recording's samples), rule, severity (`info`, `note`, `caution`), the stretch of the
+profile, the measured value(s), the engine version. Computed by fixed rules (each with a threshold, a source and an
+evidence label) when the Primary recording or the Cylinders change, and again after an engine version change; text is
+rendered from the facts. A User **dismisses** a finding on a Dive or **mutes** a rule for a Diver (`finding_dismissal`,
+muted rules). No score. The computer's own events (Garmin's `dive_alert`) are shown beside findings, never merged.
+Open-circuit scuba only for now; a Dive without a Recording gets only the checks across dives.
+
 **Cylinder** — per Dive: Equipment item (optional), volume, working pressure, material,
 gas mix (O2/He), start/end pressure, usage window.
-*Planned (ADR 0031, slice 18):* one or more per Dive (position); it may name the Diver's own cylinder item (ADR 0034,
-slice 22), which fills its values and counts the Dive for that item's schedules, material `aluminium`, `steel` or `carbon`; a **cylinder
+*Planned (ADR 0031, slice 19):* one or more per Dive (position); it may name the Diver's own cylinder item (ADR 0034,
+slice 23), which fills its values and counts the Dive for that item's schedules, material `aluminium`, `steel` or `carbon`; a **cylinder
 catalogue in code** (like the vocabularies: AL80, S80, steel 10/12/15 L, twins, …, each with its empty buoyancy in
 seawater and its source) fills the values when picked; any value can be typed. SSI gives one cylinder's volume, pressures
 and a type ID (material once the IDs are looked up); FIT gives pressures (volume from message 147, later). UDDF:
 `tankmaterial`, `tankvolume`, `tankdata`. **Sensor mapping** links a
 Recording's pressure sensor (e.g. transmitter serial) to a Cylinder (Subsurface idea, B11).
 
-**Lead** (was *Weight*; planned, ADR 0031, slice 18) — per Dive: one or more entries `(amount kg, placement)`, placement
+**Lead** (was *Weight*; planned, ADR 0031, slice 19) — per Dive: one or more entries `(amount kg, placement)`, placement
 `belt`, `integrated`, `trim`, `ankle`, `backplate`, `other` or none given. The total is their sum; **no entries = unknown,
 one entry of 0 = no lead.** Exports and Providers get the total (UDDF `leadquantity`, SSI `weight_kg`); placement and the
 weighting feedback stay here (no exchange format has them).
 
-**Lead estimate** (planned, ADR 0031, slice 19) — not stored: computed on request for a Diver and planned conditions
+**Lead estimate** (planned, ADR 0031, slice 20) — not stored: computed on request for a Diver and planned conditions
 (water, suit, Cylinders) from the Diver's Dives with the same suit and a known water type, adjusted by physics for the
 cylinder at reserve and the water; a rule of thumb without history. See the [weight calculator note](../research/2026-10-06-weight-calculator.md).
 
-**Gas numbers and bottom time** (planned, [ADR 0032](../decisions/0032-mod-and-no-decompression-limits.md), slice 20) — not
+**Gas numbers and bottom time** (planned, [ADR 0032](../decisions/0032-mod-and-no-decompression-limits.md), slice 21) — not
 stored: computed on request. MOD, best mix, EAD and END for any gas mix; for a planned depth, air or nitrox, Cylinder and
 SAC, the shortest of the no-decompression limit (ZHL-16C with the Diver's GF, clean tissues), the oxygen limit and the
 gas, and which binds. Reads the Diver's Recordings (GF, SAC) and recent Dives (the 48-hour warning), the Cylinder
 catalogue (ADR 0031) and the planned site's water type. See the [gas and NDL note](../research/2026-10-06-gas-and-ndl-tools.md).
 
-**Gas plan** (planned, [ADR 0033](../decisions/0033-gas-plans-rules-and-groups.md), slice 21) — not stored: computed on
+**Gas plan** (planned, [ADR 0033](../decisions/0033-gas-plans-rules-and-groups.md), slice 22) — not stored: computed on
 request for levels and a group of Divers, each with a Cylinder and a SAC; the gas rule's turn and ascent pressures per
 Diver (rock bottom at every level by default, never below 50 bar), the controlling Diver, real gas above 200 bar. Only
 Divers the User manages bring their logbook SAC; others a typed one (ADR 0028). Amends ADR 0032's gas limit and SAC.
@@ -290,11 +298,11 @@ category-specific properties (e.g. tank volume, working pressure, material),
 **Device** — an Equipment item that records data (dive computer, transmitter):
 serial number, firmware history. Assigning a Device to a Diver is how Imports attribute Recordings.
 *Implemented (ADR 0016):* reassigning affects only Imports from then on; single Dives can be moved.
-*Planned ([ADR 0034](../decisions/0034-equipment-items-and-service-schedules.md), slice 22):* each Device is linked to an
+*Planned ([ADR 0034](../decisions/0034-equipment-items-and-service-schedules.md), slice 23):* each Device is linked to an
 Equipment item (`device.equipment_item_id`, created with it; a migration for existing Devices); its Dives are those of
 its Recordings.
 
-**Equipment item, usage, schedules and records** (planned, ADR 0034, slice 22):
+**Equipment item, usage, schedules and records** (planned, ADR 0034, slice 23):
 - *Item:* a Diver's (Users who manage it see and change it); category (vocabulary in code), name, maker, model, serial,
   purchase date, notes, status (`in use`, `retired`, `lost`, `sold`), **on every Dive while in use** with its in-use date;
   version, Revisions; retired, never deleted once used. One item per regulator set; parts later.
@@ -627,6 +635,26 @@ Edge cases:
 - *A 900-Dive logbook:* answers are paged; a Dive's samples only on request and downsampled.
 - *The admin switches MCP off:* every access fails at once; switching on again restores those not revoked.
 - *Tim grants positions later:* a new access with `logbook:positions` (scopes are chosen when it is made).
+
+### 10. Findings on a Red Sea dive (planned, ADR 0036)
+
+Tim's Garmin dive: 28 m, 52 min, EAN32, a 2-minute stop at 5 m, then 5 m to the surface in 20 s; between minutes 30 and 40
+he went from 14 m up to 4 m and down to 16 m twice; end pressure 40 bar.
+
+1. Findings: safety stop 2 of 3 minutes (note); the last 6 m in 20 s (note, BSAC's minute); 11 m/min for 25 s from 14 to
+   4 m (note); gas left 40 bar (caution, once slice 19 logs the Cylinder). No sawtooth (two excursions of 10 m; the rule
+   needs four of 6 m).
+2. Beside them: the Garmin noted "safety stop broken" at minute 49.
+3. The dive list marks the Dive; the profile is coloured by ascent rate.
+4. Tim dismisses the "last metres" note on this Dive; it stays dismissed here; muting the rule would hide it everywhere.
+5. A later engine version (a threshold tuned on real dives) recomputes the findings; a dismissal of a finding that no
+   longer exists disappears with it.
+
+Edge cases:
+- *SSI's 5 s samples:* the same rules; the finding says short bursts may be missed.
+- *A spike in the depth sensor:* interpolated before rates are computed; no phantom ascent.
+- *A Dive without a Recording:* only the checks across dives (surface interval, dives per day).
+- *A deleted Dive:* its findings stay with it and count nowhere.
 
 ## Open questions
 

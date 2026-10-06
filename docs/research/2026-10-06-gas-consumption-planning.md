@@ -1,6 +1,6 @@
 ---
 title: Gas consumption and gas rules for a dive or a group (third planning tool)
-summary: How much gas a planned dive uses and when to turn or ascend, for one Diver or a group - gas rules (fixed reserve, fixed ascent pressure, halves, thirds, sixths, matched thirds for mismatched cylinders, rock bottom / minimum gas) with their origins and agencies, SAC and how to take it from logged dives (and why the owner's Garmin files don't carry it), consumption over a profile, how planners and computers present it (Subsurface, GasPlanner, UTD, Shearwater GTR, Garmin ATR, Suunto gas time), team planning by the worst consumer and the smallest cylinder (no planner does groups); privacy of another User's SAC; the model; decided (ADR 0033) with the prompt for slice 21.
+summary: How much gas a planned dive uses and when to turn or ascend, for one Diver or a group - gas rules (fixed reserve, fixed ascent pressure, halves, thirds, sixths, matched thirds for mismatched cylinders, rock bottom / minimum gas) with their origins and agencies, SAC and how to take it from logged dives (and why the owner's Garmin files don't carry it), consumption over a profile, how planners and computers present it (Subsurface, GasPlanner, UTD, Shearwater GTR, Garmin ATR, Suunto gas time), team planning by the worst consumer and the smallest cylinder (no planner does groups); privacy of another User's SAC; the model; decided (ADR 0033) with the prompt for slice 22.
 status: decided
 date: 2026-10-06
 ---
@@ -158,7 +158,7 @@ All made by the owner on 2026-10-06, each as recommended; written down as [ADR 0
 | H5 | SAC from the logbook | Per Dive from its Cylinder (or a tank pod), shown on the dive page; planning SAC = 85th percentile of the last 20 such Dives (at least 5, else 20 L/min) |
 | H6 | Rock bottom defaults | Stress ×2 per Diver, 1 minute of problem solving, direct ascent at 9 m/min, + 10 bar; editable |
 | H7 | Real gas | Compressibility above 200 bar for air and nitrox |
-| H8 | Order and ADR 0032 | Slice 21 after 19; amends 0032 (gas limit = the rule's ascent pressure; SAC from the logbook) |
+| H8 | Order and ADR 0032 | Slice 22 after 19; amends 0032 (gas limit = the rule's ascent pressure; SAC from the logbook) |
 
 ### Still to check
 - **The compressibility source** for air and nitrox (a cited table or a virial formula) and its accuracy at 300 bar.
@@ -169,7 +169,7 @@ All made by the owner on 2026-10-06, each as recommended; written down as [ADR 0
 
 ## Slices
 
-1. **Slice 21: gas plans** (after slices 18–20): the engine, rules and groups on the Tools page, SAC per Dive on the dive
+1. **Slice 22: gas plans** (after slices 19–21): the engine, rules and groups on the Tools page, SAC per Dive on the dive
    page, the planning SAC, and ADR 0032's gas limit switched to it. Smallest thing to learn from: how many of the owner's
    Dives give a usable SAC once Cylinders are logged.
 2. **Later:** sharing a planning SAC with buddies (with Visibility); a planned dive keeping its group and plan; gas
@@ -203,7 +203,7 @@ All made by the owner on 2026-10-06, each as recommended; written down as [ADR 0
 - [dge-z] Dive Gear Express, Z-factors for scuba: https://divegearexpress.com/library/articles/zfactors-for-scuba
 - [cju] cju Dive Tools, gas matching: https://divetools.cju.com/matching/
 
-## Prompt: gas plans (slice 21)
+## Prompt: gas plans (slice 22)
 
 ```text
 We're continuing Dive Hub. Everything you need is in this repository; read it first and don't rely on any
@@ -211,7 +211,7 @@ local memory (AGENTS.md Rule #1).
 
 Task: the third planning tool - a gas plan for one Diver or a group (levels, gas rules, rock bottom, each Diver's
 pressures), SAC per Dive from the logbook, and ADR 0032's bottom time switched to this gas engine. As decided in ADR
-0033 and docs/research/2026-10-06-gas-consumption-planning.md. Slices 18 (Cylinders), 19 (Tools page) and 20 (MOD,
+0033 and docs/research/2026-10-06-gas-consumption-planning.md. Slices 19 (Cylinders), 20 (Tools page) and 21 (MOD,
 NDL, oxygen) are built. Everything is decided; don't re-litigate it. Ask me before building only if something in the
 code makes it harder than it looks.
 
@@ -250,7 +250,7 @@ Build:
   nothing read); API tests; browser tests (@tools, @dives); ui-quality cases (a group, a level that doesn't fit, a
   default SAC, thirds chosen).
 - Docs: ADR 0033 and 0032 (amend with what changed while building), data model, glossary (no longer planned),
-  architecture (slice 21), clients.md (the gas plan's duties), index.md; mark this prompt done.
+  architecture (slice 22), clients.md (the gas plan's duties), index.md; mark this prompt done.
 
 Rules:
 - Skills first (AGENTS.md); the searches on 2026-10-06 ("gas planning", "consumption", "team planning",

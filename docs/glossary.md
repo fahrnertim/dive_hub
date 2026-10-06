@@ -266,6 +266,16 @@ What was done to an Equipment item, when and by whom (optionally at what cost), 
 _Avoid_: Service log, maintenance entry, inspection (that is one kind)
 _German_: Wartungseintrag
 
+**Dive assessment** (planned):
+Dive Hub's look at a logged Dive: findings computed from its profile and the Diver's other dives by fixed rules, each with its source and how strong the evidence is. Not a score, not medical advice ([ADR 0036](decisions/0036-dive-assessment.md)).
+_Avoid_: Dive score, rating (that is the Diver's), analysis (alone), review
+_German_: Tauchgangsauswertung
+
+**Finding** (planned):
+One thing the dive assessment noticed on a Dive, such as a short safety stop or a fast ascent: the measured value, the threshold and its source, a recommendation, the stretch of the profile. The User can dismiss it or mute its rule.
+_Avoid_: Error, violation, warning (that is the computer's), issue
+_German_: Hinweis
+
 ## Places
 
 **Dive site**:

@@ -1,6 +1,6 @@
 ---
 title: "ADR 0033: Gas plans for a Diver or a group - levels, gas rules, rock bottom, SAC from the logbook"
-summary: The Tools page gains a gas plan - one or more levels with descent, ascent and safety stop; per Diver a Cylinder and a SAC; every gas rule (fixed reserve, fixed ascent pressure, halves, thirds, sixths matched by litres, rock bottom per level) explained, default "ascend at rock bottom, never below 50 bar"; any number of Divers, the controlling Diver marked and each Diver's own pressures. A Diver's SAC is computed per Dive from its Cylinder (or a tank pod) and shown on the dive page; the planning SAC is the 85th percentile of recent Dives. Only Divers the User manages use their logbook; others get a typed SAC. Stress ×2, 1 minute, direct ascent; real gas above 200 bar. Slice 21; amends 0032 (its gas limit and SAC default).
+summary: The Tools page gains a gas plan - one or more levels with descent, ascent and safety stop; per Diver a Cylinder and a SAC; every gas rule (fixed reserve, fixed ascent pressure, halves, thirds, sixths matched by litres, rock bottom per level) explained, default "ascend at rock bottom, never below 50 bar"; any number of Divers, the controlling Diver marked and each Diver's own pressures. A Diver's SAC is computed per Dive from its Cylinder (or a tank pod) and shown on the dive page; the planning SAC is the 85th percentile of recent Dives. Only Divers the User manages use their logbook; others get a typed SAC. Stress ×2, 1 minute, direct ascent; real gas above 200 bar. Slice 22; amends 0032 (its gas limit and SAC default).
 status: accepted
 date: 2026-10-06
 ---
@@ -68,7 +68,7 @@ The owner chose on 2026-10-06 the recommendation for each of the note's decision
 Nothing for a plan; its inputs live in the address (Diver ids and typed values, never another Diver's logbook values).
 
 ### Order
-Slice 21, after slice 20 (which builds MOD, NDL and oxygen with ADR 0032's simple gas limit).
+Slice 22, after slice 21 (which builds MOD, NDL and oxygen with ADR 0032's simple gas limit).
 
 ## Considered options
 - **One depth only:** simpler, but rock bottom at a shallower level can bind and multi-level dives are common.
@@ -80,7 +80,7 @@ Slice 21, after slice 20 (which builds MOD, NDL and oxygen with ADR 0032's simpl
 - **4 minutes of problem solving (Subsurface), or ×1.5 (GasPlanner):** about 40 bar more, or less, at 30 m; the middle
   matches UTD's worksheet.
 - **Ideal gas:** overstates gas in 232 and 300 bar cylinders by up to ~10 %.
-- **Folding it into slice 20, or before it:** slice 20 stays small and safety-focused.
+- **Folding it into slice 21, or before it:** slice 21 stays small and safety-focused.
 
 ## Consequences
 - Dive Hub plans for people who aren't its Users (typed values), and says so.

@@ -180,7 +180,7 @@ All made by the owner on 2026-10-06; written down as [ADR 0035](../decisions/003
 | M5 | Tools | About eight curated read tools plus the planning tools, whose results carry their assumptions and disclaimer |
 | M6 | Schemas | TypeBox if the SDK accepts JSON Schema for tools, else Zod only inside `src/mcp/` |
 | M7 | Skill | `mcp-builder` (anthropics/skills) installed with overrides in AGENTS.md |
-| M8 | Order | Next, slice 17; the planned slices move to 18–22 |
+| M8 | Order | Next, slice 17; the planned slices move to 18–22 (then 19–23, after the dive assessment became slice 18, ADR 0036) |
 
 ### Still to check
 - **Whether the SDK v2 accepts plain JSON Schema** for tool inputs and outputs (decides M6).
@@ -193,7 +193,7 @@ All made by the owner on 2026-10-06; written down as [ADR 0035](../decisions/003
 1. **Slice 17: the MCP endpoint, read-only, with personal tokens** (next): the endpoint, AI accesses, the log, the admin
    switch, the tools over what exists now (Dives, profiles, sites, buddies, Divers, statistics). Smallest thing to learn
    from: which questions the owner actually asks it, and what the log shows the LLM fetching.
-2. **Slices 18–22** (the planned features) each add their tools.
+2. **Slices 19–23** (the planned features) each add their tools.
 3. **Later:** OAuth for cloud clients; writes with confirmation; the client contract's MCP chapter growing with them.
 
 ## Sources

@@ -1,6 +1,6 @@
 ---
 title: "ADR 0035: An MCP endpoint in the app - read-only, personal tokens first, OAuth later"
-summary: Dive Hub serves MCP at /mcp in the API server (SDK v2, stateless, Streamable HTTP), read-only. A User's LLM client gets a named AI access with a personal token (Better Auth api-key) shown once, scopes logbook:read and an opt-in logbook:positions; OAuth (Better Auth mcp + cimd) for claude.ai and ChatGPT later, once its refresh-token bug is fixed and for public instances. Off until an admin switches it on; every call logged for the User; revocable. ~8 curated tools (Dives with profiles, statistics, sites, buddies, Divers incl. body weight, equipment and planning tools as their slices land; planning answers carry their assumptions and disclaimer); shared site texts marked as written by other Users. Slice 17; the planned slices move to 18-22. Amends 0011 and, if needed, 0009.
+summary: Dive Hub serves MCP at /mcp in the API server (SDK v2, stateless, Streamable HTTP), read-only. A User's LLM client gets a named AI access with a personal token (Better Auth api-key) shown once, scopes logbook:read and an opt-in logbook:positions; OAuth (Better Auth mcp + cimd) for claude.ai and ChatGPT later, once its refresh-token bug is fixed and for public instances. Off until an admin switches it on; every call logged for the User; revocable. ~8 curated tools (Dives with profiles, statistics, sites, buddies, Divers incl. body weight, equipment and planning tools as their slices land; planning answers carry their assumptions and disclaimer); shared site texts marked as written by other Users. Slice 17; the planned slices move to 18-22 (then to 19-23 when ADR 0036's dive assessment became 18). Amends 0011 and, if needed, 0009.
 status: accepted
 date: 2026-10-06
 ---
@@ -64,8 +64,8 @@ M7 install `mcp-builder`; M8 next, as slice 17.
 - **About eight curated, read-only tools**, namespaced and described statically in the code (never from data), with
   `readOnlyHint`, output schemas, cursors and caps (well under 25,000 tokens), a concise and a detailed form, names
   next to ids, errors that say what to do next: search Dives, get a Dive (with profile on request), logbook statistics,
-  search and get Dive sites, buddies with counts, the User's Divers; later equipment and service due (slice 22), the
-  lead estimate (19), gas numbers and bottom time (20), gas plans (21), each added by its slice.
+  search and get Dive sites, buddies with counts, the User's Divers; later the dive assessment (18, ADR 0036), equipment and
+  service due (23), the lead estimate (20), gas numbers and bottom time (21), gas plans (22), each added by its slice.
 - **Planning tools** answer with their assumptions, limits and the disclaimer inside every result (ADR 0032's wording),
   so an LLM gets them with the number.
 - Text other Users wrote (site names and descriptions, external Divers' names) is returned in fields marked as such.
@@ -81,8 +81,8 @@ M7 install `mcp-builder`; M8 next, as slice 17.
 - The `mcp-builder` skill (anthropics/skills, Apache-2.0) is installed with overrides in AGENTS.md.
 
 ### Order
-**Slice 17**, next; the planned slices move: 18 logging lead, suit and cylinders; 19 lead estimate; 20 MOD and bottom
-time; 21 gas plans; 22 equipment and service.
+**Slice 17**, next; the planned slices moved to 18–22, and again when the dive assessment (ADR 0036) became slice 18:
+19 logging lead, suit and cylinders; 20 lead estimate; 21 MOD and bottom time; 22 gas plans; 23 equipment and service.
 
 ## Considered options
 - **OAuth now:** works with every client from the start, but a large auth surface on a young plugin with an open
