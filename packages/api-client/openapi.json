@@ -313,6 +313,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -417,6 +419,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -571,6 +575,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -768,6 +774,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -872,6 +880,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -1432,6 +1442,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -1557,6 +1569,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -1706,6 +1720,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -1897,6 +1913,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -2108,6 +2126,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -2377,6 +2397,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -2481,6 +2503,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -2585,6 +2609,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -2728,6 +2754,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -2832,6 +2860,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -2936,6 +2966,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -3111,6 +3143,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -3215,6 +3249,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -3319,6 +3355,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -3494,6 +3532,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -3598,6 +3638,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -3702,6 +3744,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -3827,6 +3871,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -3931,6 +3977,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -4035,6 +4083,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -4181,6 +4231,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -4285,6 +4337,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -4389,6 +4443,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -4664,6 +4720,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -4768,6 +4826,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -5226,6 +5286,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -5624,6 +5686,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -6337,6 +6401,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -7188,6 +7254,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -7292,6 +7360,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -7396,6 +7466,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -7580,6 +7652,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -7707,6 +7781,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -7811,6 +7887,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -7938,6 +8016,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -8721,6 +8801,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -8825,6 +8907,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -8929,6 +9013,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -9665,6 +9751,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -9769,6 +9857,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -9873,6 +9963,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -10609,6 +10701,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -10713,6 +10807,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -10873,6 +10969,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -10977,6 +11075,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -11861,6 +11961,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -11965,6 +12067,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -12186,6 +12290,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -12567,6 +12673,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -12671,6 +12779,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -12775,6 +12885,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -12923,6 +13035,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -13027,6 +13141,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -13131,6 +13247,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -13279,6 +13397,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -13383,6 +13503,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -13487,6 +13609,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -13635,6 +13759,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -13739,6 +13865,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -13843,6 +13971,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -14053,6 +14183,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -14157,6 +14289,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -14261,6 +14395,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -14365,6 +14501,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -14618,6 +14756,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -14722,6 +14862,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -14826,6 +14968,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -14930,6 +15074,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -15053,6 +15199,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -15157,6 +15305,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -15261,6 +15411,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -15365,6 +15517,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -15531,6 +15685,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -15651,6 +15807,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -15771,6 +15929,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -15891,6 +16051,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -16180,6 +16342,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -16284,6 +16448,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -16388,6 +16554,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -16492,6 +16660,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -16680,6 +16850,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -16784,6 +16956,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -16888,6 +17062,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -16992,6 +17168,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -17115,6 +17293,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -17219,6 +17399,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -17323,6 +17505,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -17427,6 +17611,490 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/divers/{id}/merge": {
+      "post": {
+        "summary": "Admins: merge an external Diver into another Diver, the same person (ADR 0028): its places on Dives and its accounts move",
+        "description": "Only an external Diver (no User keeps it) is merged away (diver_not_external); into any Diver. When both have an account at the same service and they differ: diver_external_id_taken. The external Diver is deleted, kept with merged_into.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "into"
+                ],
+                "properties": {
+                  "into": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "dives"
+                  ],
+                  "properties": {
+                    "dives": {
+                      "type": "integer",
+                      "description": "The Dives it was a Participant on"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -17649,6 +18317,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -17753,6 +18423,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -17857,6 +18529,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -17961,6 +18635,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -18533,6 +19209,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -19089,6 +19767,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -19193,6 +19873,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -19297,6 +19979,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -19401,6 +20085,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -19857,6 +20543,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -20429,6 +21117,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -20533,6 +21223,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -20637,6 +21329,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -20741,6 +21435,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -20864,6 +21560,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -20968,6 +21666,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -21072,6 +21772,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -21176,6 +21878,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -21674,6 +22378,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -21778,6 +22484,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -21882,6 +22590,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -21986,6 +22696,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -22474,6 +23186,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -22578,6 +23292,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -22682,6 +23398,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -22786,6 +23504,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -23272,6 +23992,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -23376,6 +24098,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -23480,6 +24204,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -23584,6 +24310,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -23802,6 +24530,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -24370,6 +25100,8 @@
                             "provider_dive_gone",
                             "provider_busy",
                             "provider_unsupported",
+                            "provider_account_held",
+                            "diver_not_external",
                             "provider_import_off",
                             "provider_site_data_not_confirmed"
                           ]
@@ -24479,6 +25211,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -24583,6 +25317,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -24687,6 +25423,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -25130,6 +25868,8 @@
                                   "provider_dive_gone",
                                   "provider_busy",
                                   "provider_unsupported",
+                                  "provider_account_held",
+                                  "diver_not_external",
                                   "provider_import_off",
                                   "provider_site_data_not_confirmed"
                                 ]
@@ -25242,6 +25982,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -25690,6 +26432,8 @@
                             "provider_dive_gone",
                             "provider_busy",
                             "provider_unsupported",
+                            "provider_account_held",
+                            "diver_not_external",
                             "provider_import_off",
                             "provider_site_data_not_confirmed"
                           ]
@@ -25799,6 +26543,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -25903,6 +26649,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -26500,6 +27248,10 @@
                   "keepSignedIn": {
                     "type": "boolean",
                     "description": "Keep the password, sealed, so Dive Hub signs in again by itself when the Provider asks. Only for password sign-in, and only when canKeepPassword"
+                  },
+                  "claim": {
+                    "type": "boolean",
+                    "description": "An external Diver here with this account is this person: merge it into the Diver (ADR 0028). Ask the User first: provider_account_held names it"
                   }
                 },
                 "additionalProperties": false
@@ -26703,6 +27455,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -26807,6 +27561,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -26911,6 +27667,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -26927,6 +27685,27 @@
                     "providerName": {
                       "type": "string",
                       "description": "Its name, to put into the translated text"
+                    },
+                    "diver": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "dives"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "dives": {
+                          "type": "integer",
+                          "description": "The Dives it is a Participant on"
+                        }
+                      },
+                      "description": "With provider_account_held: the external Diver here with this account; connect again with claim to make it yours"
                     },
                     "unmet": {
                       "type": "array",
@@ -27075,6 +27854,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -27328,6 +28109,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -27432,6 +28215,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -27536,6 +28321,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -27552,6 +28339,27 @@
                     "providerName": {
                       "type": "string",
                       "description": "Its name, to put into the translated text"
+                    },
+                    "diver": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "dives"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "dives": {
+                          "type": "integer",
+                          "description": "The Dives it is a Participant on"
+                        }
+                      },
+                      "description": "With provider_account_held: the external Diver here with this account; connect again with claim to make it yours"
                     },
                     "unmet": {
                       "type": "array",
@@ -27700,6 +28508,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -27889,6 +28699,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -27993,6 +28805,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -28097,6 +28911,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -28113,6 +28929,27 @@
                     "providerName": {
                       "type": "string",
                       "description": "Its name, to put into the translated text"
+                    },
+                    "diver": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "dives"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "dives": {
+                          "type": "integer",
+                          "description": "The Dives it is a Participant on"
+                        }
+                      },
+                      "description": "With provider_account_held: the external Diver here with this account; connect again with claim to make it yours"
                     },
                     "unmet": {
                       "type": "array",
@@ -28261,6 +29098,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -28478,6 +29317,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -28582,6 +29423,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -28686,6 +29529,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -28702,6 +29547,27 @@
                     "providerName": {
                       "type": "string",
                       "description": "Its name, to put into the translated text"
+                    },
+                    "diver": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "dives"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "dives": {
+                          "type": "integer",
+                          "description": "The Dives it is a Participant on"
+                        }
+                      },
+                      "description": "With provider_account_held: the external Diver here with this account; connect again with claim to make it yours"
                     },
                     "unmet": {
                       "type": "array",
@@ -28850,6 +29716,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -29157,6 +30025,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -29261,6 +30131,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -29365,6 +30237,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -29381,6 +30255,27 @@
                     "providerName": {
                       "type": "string",
                       "description": "Its name, to put into the translated text"
+                    },
+                    "diver": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "dives"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "dives": {
+                          "type": "integer",
+                          "description": "The Dives it is a Participant on"
+                        }
+                      },
+                      "description": "With provider_account_held: the external Diver here with this account; connect again with claim to make it yours"
                     },
                     "unmet": {
                       "type": "array",
@@ -29529,6 +30424,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -29652,6 +30549,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -30231,6 +31130,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -30335,6 +31236,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -30439,6 +31342,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -30455,6 +31360,27 @@
                     "providerName": {
                       "type": "string",
                       "description": "Its name, to put into the translated text"
+                    },
+                    "diver": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "dives"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "dives": {
+                          "type": "integer",
+                          "description": "The Dives it is a Participant on"
+                        }
+                      },
+                      "description": "With provider_account_held: the external Diver here with this account; connect again with claim to make it yours"
                     },
                     "unmet": {
                       "type": "array",
@@ -30603,6 +31529,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -30992,6 +31920,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -31096,6 +32026,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -31200,6 +32132,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -31216,6 +32150,27 @@
                     "providerName": {
                       "type": "string",
                       "description": "Its name, to put into the translated text"
+                    },
+                    "diver": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "dives"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "dives": {
+                          "type": "integer",
+                          "description": "The Dives it is a Participant on"
+                        }
+                      },
+                      "description": "With provider_account_held: the external Diver here with this account; connect again with claim to make it yours"
                     },
                     "unmet": {
                       "type": "array",
@@ -31364,6 +32319,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -31532,6 +32489,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -31735,6 +32694,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -31839,6 +32800,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -32180,6 +33143,8 @@
                                     "provider_dive_gone",
                                     "provider_busy",
                                     "provider_unsupported",
+                                    "provider_account_held",
+                                    "diver_not_external",
                                     "provider_import_off",
                                     "provider_site_data_not_confirmed"
                                   ]
@@ -32375,6 +33340,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -32724,6 +33691,8 @@
                                   "provider_dive_gone",
                                   "provider_busy",
                                   "provider_unsupported",
+                                  "provider_account_held",
+                                  "diver_not_external",
                                   "provider_import_off",
                                   "provider_site_data_not_confirmed"
                                 ]
@@ -32918,6 +33887,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -33022,6 +33993,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -33470,6 +34443,8 @@
                                       "provider_dive_gone",
                                       "provider_busy",
                                       "provider_unsupported",
+                                      "provider_account_held",
+                                      "diver_not_external",
                                       "provider_import_off",
                                       "provider_site_data_not_confirmed"
                                     ]
@@ -33666,6 +34641,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -33770,6 +34747,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -33874,6 +34853,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -33890,6 +34871,27 @@
                     "providerName": {
                       "type": "string",
                       "description": "Its name, to put into the translated text"
+                    },
+                    "diver": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "dives"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "dives": {
+                          "type": "integer",
+                          "description": "The Dives it is a Participant on"
+                        }
+                      },
+                      "description": "With provider_account_held: the external Diver here with this account; connect again with claim to make it yours"
                     },
                     "unmet": {
                       "type": "array",
@@ -34038,6 +35040,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -34385,6 +35389,8 @@
                                   "provider_dive_gone",
                                   "provider_busy",
                                   "provider_unsupported",
+                                  "provider_account_held",
+                                  "diver_not_external",
                                   "provider_import_off",
                                   "provider_site_data_not_confirmed"
                                 ]
@@ -34579,6 +35585,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -34683,6 +35691,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -34787,6 +35797,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -34803,6 +35815,27 @@
                     "providerName": {
                       "type": "string",
                       "description": "Its name, to put into the translated text"
+                    },
+                    "diver": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "dives"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "dives": {
+                          "type": "integer",
+                          "description": "The Dives it is a Participant on"
+                        }
+                      },
+                      "description": "With provider_account_held: the external Diver here with this account; connect again with claim to make it yours"
                     },
                     "unmet": {
                       "type": "array",
@@ -34951,6 +35984,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -35155,6 +36190,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -35259,6 +36296,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -35363,6 +36402,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],
@@ -35379,6 +36420,27 @@
                     "providerName": {
                       "type": "string",
                       "description": "Its name, to put into the translated text"
+                    },
+                    "diver": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "dives"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "dives": {
+                          "type": "integer",
+                          "description": "The Dives it is a Participant on"
+                        }
+                      },
+                      "description": "With provider_account_held: the external Diver here with this account; connect again with claim to make it yours"
                     },
                     "unmet": {
                       "type": "array",
@@ -35527,6 +36589,8 @@
                         "provider_dive_gone",
                         "provider_busy",
                         "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
                         "provider_import_off",
                         "provider_site_data_not_confirmed"
                       ],

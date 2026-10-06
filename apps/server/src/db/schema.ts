@@ -41,6 +41,11 @@ export const diver = pgTable('diver', {
   id: id(),
   name: text('name').notNull(),
   createdBy: uuid('created_by').references(() => user.id, { onDelete: 'set null' }),
+  /**
+   * Set when this external Diver was merged into another (ADR 0028, amended): claimed by its person's User through their
+   * account at a Provider, or merged by an admin. It is deleted then, and kept for the history.
+   */
+  mergedInto: uuid('merged_into').references((): AnyPgColumn => diver.id),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
   deletedAt: deletedAt(),

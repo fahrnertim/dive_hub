@@ -4,7 +4,7 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { FastifyRequest } from 'fastify';
 import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
-import { requireUser } from '../auth/fastify.js';
+import { requireAdmin, requireUser } from '../auth/fastify.js';
 import { Problem, problem } from '../http/problems.js';
 import { DiverError, type DiverActor, type DiverService } from './diver-service.js';
 
@@ -53,7 +53,7 @@ const DiverProblem = Type.Object({
 
 const STATUS: Record<DiverError['code'], number> = {
   diver_not_found: 404, own_diver: 409, diver_not_empty: 409, device_not_found: 404, diver_in_use: 409,
-  diver_not_deletable: 403, diver_not_editable: 403, diver_external_id_taken: 409, diver_external_id_connected: 409,
+  diver_not_deletable: 403, diver_not_editable: 403, diver_external_id_taken: 409, diver_external_id_connected: 409, diver_not_external: 409,
   invalid_input: 400,
 };
 const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
@@ -164,6 +164,18 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
     await divers.removeExternal(actorOf(request), request.params.id);
     return reply.code(204).send(null);
   });
+
+  app.post('/admin/divers/:id/merge', {
+    onRequest: requireAdmin,
+    schema: {
+      summary: 'Admins: merge an external Diver into another Diver, the same person (ADR 0028): its places on Dives and its accounts move',
+      description: 'Only an external Diver (no User keeps it) is merged away (diver_not_external); into any Diver. When both have an '
+        + 'account at the same service and they differ: diver_external_id_taken. The external Diver is deleted, kept with merged_into.',
+      params: IdParams,
+      body: Type.Object({ into: Type.String({ format: 'uuid' }) }, { additionalProperties: false }),
+      response: { 200: Type.Object({ dives: Type.Integer({ description: 'The Dives it was a Participant on' }) }), ...errors },
+    },
+  }, async (request) => divers.mergeExternal(actorOf(request), request.params.id, request.body.into));
 
   app.get('/devices', {
     schema: { summary: 'Devices of the User\'s Divers', response: { 200: Type.Array(DeviceView) } },

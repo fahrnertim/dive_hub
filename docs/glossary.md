@@ -48,7 +48,7 @@ _Avoid_: Person, profile, owner (in the UDDF sense)
 _German_: Taucher
 
 **External diver**:
-A Diver no User manages: someone Users dived with, such as a buddy taken from an SSI buddy list. Shared like a Dive site: any User adds and renames one; whoever added it, or an admin, deletes it while no Dive lists it.
+A Diver no User manages: someone Users dived with, such as a buddy taken from an SSI buddy list. Shared like a Dive site: any User adds and renames one; whoever added it, or an admin, deletes it while no Dive lists it. When its person becomes a User, they claim it by connecting the account it holds (or an admin merges it): it merges into their own Diver ([ADR 0028](decisions/0028-shared-divers-and-participants.md)).
 _Avoid_: Contact, guest, buddy (that is a role)
 _German_: anderer Taucher
 

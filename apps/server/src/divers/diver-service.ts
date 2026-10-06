@@ -7,13 +7,14 @@ import {
 } from '../db/schema.js';
 import { managedDiverIds } from '../dives/dive-service.js';
 import { writeRevision } from '../dives/revisions.js';
+import { mergeExternalDiver } from './merge.js';
 import type { DiverSource } from '../providers/provider.js';
 
 export class DiverError extends Error {
   constructor(
     readonly code:
       | 'diver_not_found' | 'own_diver' | 'diver_not_empty' | 'device_not_found' | 'diver_in_use' | 'diver_not_deletable'
-      | 'diver_not_editable' | 'diver_external_id_taken' | 'diver_external_id_connected' | 'invalid_input',
+      | 'diver_not_editable' | 'diver_external_id_taken' | 'diver_external_id_connected' | 'invalid_input' | 'diver_not_external',
     /** The Diver that already has an account (`diver_external_id_taken`), so a client can offer to use it instead. */
     readonly diver?: { id: string; name: string },
   ) {
@@ -95,6 +96,15 @@ export function createDiverService(db: Db) {
         .where(and(live, text ? ilike(diver.name, like(text)) : undefined))
         .orderBy(sql`${managed} desc`, sql`lower(${diver.name})`, diver.id)
         .limit(limit);
+    },
+
+    /**
+     * Admins: merges an external Diver into another Diver, the same person (ADR 0028, amended), e.g. a buddy without an
+     * account at a Provider who became a User. Its places on Dives and its accounts move; it is deleted.
+     */
+    async mergeExternal(actor: DiverActor, fromId: string, intoId: string) {
+      if (!actor.isAdmin) throw new DiverError('diver_not_editable');
+      return db.transaction((tx) => mergeExternalDiver(tx, fromId, intoId, { type: 'user', id: actor.userId }));
     },
 
     /** A Diver whose logbook the User keeps (e.g. their child). */

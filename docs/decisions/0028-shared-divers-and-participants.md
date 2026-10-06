@@ -1,6 +1,6 @@
 ---
 title: "ADR 0028: Divers seen by every User by name; Participants on Dives"
-summary: Every User sees every Diver of the instance by name (nothing else) and can put any of them on a Dive as buddy, guide or instructor; external Divers (no managing User) are shared like Dive sites - anyone adds and renames them, their creator or an admin deletes unused ones; Participants are set as one list per Dive, with the Dive's version and a Revision. Buddy suggestions and Joint dives stay later. Amends 0016.
+summary: Every User sees every Diver of the instance by name (nothing else) and can put any of them on a Dive as buddy, guide or instructor; external Divers (no managing User) are shared like Dive sites - anyone adds and renames them, their creator or an admin deletes unused ones; Participants are set as one list per Dive, with the Dive's version and a Revision. Buddy suggestions and Joint dives stay later. Amends 0016. Amended: a buddy who becomes a User claims their external Diver by connecting their account at a Provider; admins merge external Divers by hand.
 status: accepted
 date: 2026-10-05
 ---
@@ -57,6 +57,27 @@ Roles buddy, guide and instructor now. Buddy suggestions and Joint dives later.
   yet; Anna sees nothing of Tim's Dive. They come with Visibility.
 - **Merging two Divers** (the same person twice, or "Bob" signing up): later, like merging sites.
 - **Admins managing Divers** beyond deleting unused external ones.
+
+## Amended: a buddy who becomes a User claims their external Diver (owner, 2026-10-06, slice 16)
+Found when Samuel, imported as an external Diver from the owner's SSI buddy list and a buddy on 21 of the owner's Dives,
+signed up and connected his own SSI account: it was refused (`provider_account_taken`), the account being the external
+Diver's. Two Divers stood for one person, and "merging two Divers" was left for later.
+- **Claim through the account:** connecting an account that an *external* Diver holds is no longer refused. Signing in
+  proved the account is the User's; Dive Hub asks first (`provider_account_held`, naming the external Diver and how many
+  Dives it is on), and connecting again with `claim` merges it into the Diver being connected. An account held by a
+  Diver another User keeps stays refused (`provider_account_taken`). Whoever added the external Diver isn't asked: the
+  account decides.
+- **Admins merge by hand** (`POST /api/admin/divers/{id}/merge` with `into`): an external Diver into any Diver, for
+  buddies without an account at a Provider.
+- **Merging** (`src/divers/merge.ts`): the external Diver's places as a Participant move to the other Diver (not onto a
+  Dive of that Diver, nor twice on one Dive: the role already there stays), its accounts move (refused when the other has
+  another account at the same service), and it is deleted with `merged_into` set. A Revision `merge` on both. The Dives
+  it was on keep their versions: what Providers get of them (the accounts) doesn't change.
+- Nothing of the Dives a claimed Diver is on becomes visible to the claiming User; Buddy suggestions, Joint dives and
+  Visibility stay for later.
+- *Considered:* only an admin merging (the person would wait for an admin though their account already proves it),
+  asking the User who added the buddy (the account decides; they see the change on their Dives), and keeping the
+  external Diver and linking the two (two Divers for one person stay in every list).
 
 ## Considered options
 - **Private Divers (ADR 0016 as it was):** each User their own "Bob"; duplicates per User, and the unique External ID

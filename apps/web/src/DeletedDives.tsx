@@ -138,6 +138,15 @@ function DeletedRow({ dive: d, list, index, count }: {
   const providerOf = useProviderOf();
   const name = useDiveName()(d);
   const restoreButton = useRef<HTMLButtonElement>(null);
+  // After "Delete in …" the focus goes to Restore once the row shows the dive gone there: the dialog closing and the row
+  // losing that button both move focus, later than a frame when the machine is busy.
+  const focusRestore = useRef(false);
+  useEffect(() => {
+    if (focusRestore.current && d.stillAt.length === 0) {
+      focusRestore.current = false;
+      restoreButton.current?.focus();
+    }
+  }, [d.stillAt.length]);
   const restore = useRestore(d, () => refocusAfterRemoval(list.current, index, count));
   const diverName = (divers.data?.length ?? 0) > 1 ? divers.data?.find((v) => v.id === d.diverId)?.name : undefined;
   const facts = [
@@ -160,7 +169,7 @@ function DeletedRow({ dive: d, list, index, count }: {
         </Button>
         {d.stillAt.map((c) => (
           <DeleteThere key={c.provider} provider={providerOf(c.provider)} diveId={d.id} name={name} remoteNumber={c.remoteNumber}
-            onDone={() => requestAnimationFrame(() => restoreButton.current?.focus())} />
+            onDone={() => { focusRestore.current = true; requestAnimationFrame(() => restoreButton.current?.focus()); }} />
         ))}
       </div>
       {restore.error && <Notice tone="danger">{errorText(restore.error)}</Notice>}

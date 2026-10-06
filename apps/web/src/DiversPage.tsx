@@ -1,13 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type FormEvent, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, devicesQuery, diversQuery, externalDiversQuery, keys, unwrap, type DeviceView, type DiverView, type ExternalDiverView } from './api.ts';
+import {
+  api, devicesQuery, diverSearchQuery, diversQuery, externalDiversQuery, keys, meQuery, unwrap, type DeviceView, type DiverView, type ExternalDiverView,
+} from './api.ts';
 import { deviceName } from './lib/devices.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, Form, Muted, Notice, PageHeader, Panel, Select, Table, TextField } from './ui/index.ts';
+import { Button, Dialog, Form, Muted, Notice, PageHeader, Panel, SearchList, Select, Table, TextField, type SearchListItem } from './ui/index.ts';
 
 /** The Divers whose logbooks the User keeps, their Devices (ADR 0016), and the other divers Users dived with (ADR 0028). */
 export function DiversPage() {
@@ -136,6 +138,42 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
   );
 }
 
+/** Admins: merges an external Diver into another Diver, the same person (ADR 0028), picked by name. */
+function MergeDialog({ diver: d, onClose }: { diver: ExternalDiverView; onClose: () => void }) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const queryClient = useQueryClient();
+  const [text, setText] = useState('');
+  const found = useQuery(diverSearchQuery(text.trim()));
+  const merge = useMutation({
+    mutationFn: async (into: string) => unwrap(await api.POST('/api/admin/divers/{id}/merge', { params: { path: { id: d.id } }, body: { into } })),
+    onSuccess: async (_answer, into) => {
+      await queryClient.invalidateQueries({ queryKey: keys.divers });
+      await queryClient.invalidateQueries({ queryKey: keys.dives });
+      announce(t('divers.merged', { name: d.name, into: found.data?.find((x) => x.id === into)?.name ?? '' }));
+      onClose();
+    },
+  });
+  const items: SearchListItem[] = (found.data ?? []).filter((x) => x.id !== d.id).map((x) => ({
+    id: x.id, name: x.name, detail: x.managed ? t('participants.yours') : x.external ? t('participants.external') : t('participants.otherUser'),
+  }));
+  return (
+    <Dialog title={t('divers.mergeTitle', { name: d.name })} isOpen onOpenChange={(open) => !open && onClose()}>
+      <div className="provider-sites">
+        <p>{t('divers.mergeIntro', { name: d.name })}</p>
+        <SearchList
+          label={t('participants.who')} query={text} onQueryChange={setText} autoFocus items={items} onPick={(id) => merge.mutate(id)}
+          isPending={merge.isPending} pendingStatus={t('common.saving')} listLabel={t('participants.divers')}
+          status={found.isPending ? t('common.loading') : null}
+          empty={text.trim() ? t('participants.noMatch', { q: text.trim() }) : t('participants.typeName')}
+        />
+        {merge.error && <Notice tone="danger">{errorText(merge.error)}</Notice>}
+        <div className="form-actions"><Button onPress={onClose}>{t('common.cancel')}</Button></div>
+      </div>
+    </Dialog>
+  );
+}
+
 /**
  * People Users dived with who keep no logbook here (ADR 0028): every User sees and renames them; whoever added one, or
  * an admin, deletes one while no dive lists it. Narrowed by name while typing.
@@ -184,6 +222,8 @@ function OtherDiverRow({ diver: d, list, index, count }: { diver: ExternalDiverV
   const errorText = useErrorText();
   const queryClient = useQueryClient();
   const [renaming, setRenaming] = useState(false);
+  const [merging, setMerging] = useState(false);
+  const admin = useQuery(meQuery()).data?.user.role === 'admin';
   const [newName, setNewName] = useState(d.name);
   const renameButton = useRef<HTMLButtonElement>(null);
   const wasRenaming = useRef(false);
@@ -224,6 +264,11 @@ function OtherDiverRow({ diver: d, list, index, count }: { diver: ExternalDiverV
             <Button ref={renameButton} variant="quiet" aria-label={t('common.forItem', { action: t('divers.rename'), item: d.name })} onPress={() => { setNewName(d.name); setRenaming(true); }}>
               {t('divers.rename')}
             </Button>
+            {admin && (
+              <Button variant="quiet" aria-label={t('common.forItem', { action: t('divers.merge'), item: d.name })} onPress={() => setMerging(true)}>
+                {t('divers.merge')}
+              </Button>
+            )}
             {d.canDelete && !d.inUse && (
               <Button variant="quiet" aria-label={t('common.forItem', { action: t('divers.delete'), item: d.name })} isPending={remove.isPending} onPress={() => remove.mutate()}>
                 {t('divers.delete')}
@@ -233,6 +278,7 @@ function OtherDiverRow({ diver: d, list, index, count }: { diver: ExternalDiverV
         </>
       )}
       {(rename.error ?? remove.error) && <Notice tone="danger">{errorText(rename.error ?? remove.error)}</Notice>}
+      {merging && <MergeDialog diver={d} onClose={() => setMerging(false)} />}
     </li>
   );
 }

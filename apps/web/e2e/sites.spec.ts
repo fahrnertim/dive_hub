@@ -4,7 +4,7 @@
 // Fixture: e2e/fixtures/sited-computer.fit (apps/server/test/fixtures/write-sited-fixture.ts).
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
-import { E2E_BASE_URL, expectGoodPage, resetDive, seededDiveId, setPreferences } from './support.ts';
+import { E2E_BASE_URL, activeResultShown, expectGoodPage, resetDive, seededDiveId, setPreferences } from './support.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -80,6 +80,7 @@ test('a dive without a position picks a site from the results while typing, and 
   await expect(dialog.getByRole('status')).toHaveText('1 dive site matches “lighth”.');
   const option = dialog.getByRole('option', { name: /^Lighthouse/ });
   await expect(option.locator('mark')).toHaveText('Lighth');
+  await activeResultShown(search);
   await expectGoodPage(page, 'Dive 42');
   // Arrow keys move through the results while the focus stays in the field; Enter picks and saves.
   await search.press('ArrowDown');

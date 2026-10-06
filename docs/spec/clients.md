@@ -161,6 +161,11 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   (`accountLabel`), whether the password is kept, and the state. `needs_sign_in` means the Provider no longer accepts the
   sign-in: offer "Sign in again" (password and the choice again, or a new token). Connections made before slice 13 start
   in this state once. *Web:* `Connections.tsx`.
+- **Must ask before claiming an external Diver** (ADR 0028, amended): connecting answers `provider_account_held` when an
+  external Diver here holds the account (`diver`: its name and on how many Dives it is). Say so and ask whether that is
+  the User; on yes, connect again with the same sign-in and `claim: true` (the external Diver merges into the Diver being
+  connected, and its Dives then list that Diver). Say that nothing of those Dives becomes the User's. `provider_account_taken`
+  (another User's Diver has the account) can't be claimed. *Web:* `Connections.tsx` (`ConnectForm`).
 - **Display settings:** language and units, each "same as the device" (null) or a choice, saved at once
   (`PATCH /api/me/preferences`). The UI follows them immediately, including number and date input.
   *Web:* `AccountPage.tsx`, `main.tsx` (`I18nProvider`), `App.tsx` (`useLanguage`).
@@ -352,6 +357,10 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
 - **Other divers** (external, ADR 0028; `GET /api/external-divers`): anyone renames them; offer deleting only with
   `canDelete` and not `inUse` (`diver_not_deletable`, `diver_in_use`). Say which services an account is known at
   (`accounts`), never the account itself. *Web:* `DiversPage.tsx` (`OtherDivers`).
+- **Admins merge an external Diver into another** (`POST /api/admin/divers/{id}/merge` with `into`), the same person, e.g.
+  a buddy without an account who became a User: pick the other Diver by name, say it can't be undone. `diver_not_external`
+  for a Diver a User keeps; `diver_external_id_taken` when both have different accounts at one service. *Web:*
+  `DiversPage.tsx` (`MergeDialog`).
 - **A Provider's list of people** (`buddies` `find`; SSI's buddy list) under its Connection, read only on request
   (`GET /api/connections/{id}/buddies`): who is a Diver here already, adding entries as external Divers one by one or
   all at once (`POST …/buddies/import` with `accounts`), and linking an entry to a Diver here instead

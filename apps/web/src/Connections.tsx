@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formValues } from './Account.tsx';
-import { api, connectionsQuery, diversQuery, keys, unwrap, type ConnectionView, type ProviderView } from './api.ts';
+import { api, ApiError, connectionsQuery, diversQuery, keys, unwrap, type ConnectionView, type ProviderView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { connectable, useProviders, useProviderText } from './lib/providers.ts';
@@ -130,22 +130,31 @@ function ProviderConnections({ provider: p }: { provider: ProviderView }) {
   );
 }
 
+type ConnectBody = { diverId: string; login?: string; password?: string; token?: string; keepSignedIn: boolean; claim?: boolean };
+
 function ConnectForm({ provider: p, divers, several }: { provider: ProviderView; divers: { id: string; name: string }[]; several: boolean }) {
+  const { t } = useTranslation();
   const pt = useProviderText(p);
   const errorText = useErrorText();
   const queryClient = useQueryClient();
   const [diverId, setDiverId] = useState<string | null>(divers[0]?.id ?? null);
   const [keep, setKeep] = useState('token');
+  // What was sent, kept for a claim (ADR 0028): an external Diver here has this account, and the User is asked first.
+  const [sent, setSent] = useState<ConnectBody | null>(null);
   const connect = useMutation({
-    mutationFn: async (body: { diverId: string; login?: string; password?: string; token?: string; keepSignedIn: boolean }) =>
-      unwrap(await api.POST('/api/connections/{provider}', { params: { path: { provider: p.id } }, body })),
+    mutationFn: async (body: ConnectBody) => {
+      setSent(body);
+      return unwrap(await api.POST('/api/connections/{provider}', { params: { path: { provider: p.id } }, body }));
+    },
     onSuccess: async () => {
+      setSent(null);
       await queryClient.invalidateQueries({ queryKey: keys.connections });
       await queryClient.invalidateQueries({ queryKey: keys.dives });
       announce(pt('connected'));
     },
   });
   const target = divers.find((d) => d.id === diverId) ?? divers[0];
+  const held = connect.error instanceof ApiError && connect.error.code === 'provider_account_held' ? connect.error.details.diver : undefined;
   return (
     <Form
       className="form narrow-form"
@@ -165,7 +174,18 @@ function ConnectForm({ provider: p, divers, several }: { provider: ProviderView;
       )}
       <SignInFields provider={p} withLogin />
       <KeepSignedIn provider={p} value={keep} onChange={setKeep} />
-      {connect.error && <Notice tone="danger">{errorText(connect.error)}</Notice>}
+      {held && sent ? (
+        <Notice tone="info">
+          <p>{pt('claimQuestion' as 'claimQuestion_one', { diver: held.name, count: held.dives ?? 0 })}</p>
+          <p>{pt('claimExplain', { diver: held.name, mine: target?.name ?? '' })}</p>
+          <div className="form-actions">
+            <Button variant="primary" icon="link" isPending={connect.isPending} onPress={() => connect.mutate({ ...sent, claim: true })}>
+              {pt('claimConfirm', { diver: held.name })}
+            </Button>
+            <Button onPress={() => { connect.reset(); setSent(null); }}>{t('common.cancel')}</Button>
+          </div>
+        </Notice>
+      ) : connect.error && <Notice tone="danger">{errorText(connect.error)}</Notice>}
       <div className="form-actions"><Button type="submit" variant="primary" icon="link" isPending={connect.isPending}>{pt('connectSubmit')}</Button></div>
     </Form>
   );

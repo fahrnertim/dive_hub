@@ -172,11 +172,14 @@ export const PROVIDER_STATUS: Partial<Record<ProblemCode, number>> = {
   invalid_input: 400, encryption_key_missing: 400, provider_wrong_credentials: 400, provider_unsupported: 400,
   provider_already_connected: 409, provider_account_taken: 409, provider_other_account: 409, provider_not_connected: 409,
   provider_sign_in_needed: 409, provider_requirements_unmet: 409, provider_not_sent: 409, provider_dive_gone: 409, provider_busy: 409,
-  provider_unavailable: 502, provider_refused: 502, provider_import_off: 409,
+  provider_unavailable: 502, provider_refused: 502, provider_import_off: 409, provider_account_held: 409,
 };
 /** A refusal about a Provider; with provider_requirements_unmet, what is unmet. */
 const ProviderProblem = Type.Object({
   ...Problem.properties,
+  diver: Type.Optional(Type.Object({
+    id: Type.String(), name: Type.String(), dives: Type.Integer({ description: 'The Dives it is a Participant on' }),
+  }, { description: 'With provider_account_held: the external Diver here with this account; connect again with claim to make it yours' })),
   unmet: Type.Optional(Type.Array(UnmetView, { description: 'With provider_requirements_unmet: every requirement unmet, blocking ones among them' })),
 });
 const errors = { 400: Problem, 404: Problem, 409: ProviderProblem, 502: Problem };
@@ -282,6 +285,9 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
         password: Type.Optional(Secret),
         token: Type.Optional(Secret),
         keepSignedIn: KeepSignedIn,
+        claim: Type.Optional(Type.Boolean({
+          description: 'An external Diver here with this account is this person: merge it into the Diver (ADR 0028). Ask the User first: provider_account_held names it',
+        })),
       }, { additionalProperties: false }),
       response: { 201: ConnectionView, ...errors },
     },

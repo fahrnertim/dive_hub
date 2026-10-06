@@ -2,7 +2,7 @@
 // typed by hand, one from a Mares, and entries between two of her dives here. What the import may do, the window, the
 // preview with the computer and a decision, the outcome, and the dives it made or linked.
 import { expect, test } from '@playwright/test';
-import { E2E_BASE_URL, conflictForLena, leaveLena, lenaReady } from './support.ts';
+import { E2E_BASE_URL, LENA_SSI, conflictForLena, externalDiver, leaveLena, lenaClaimable, lenaReady, uniqueWord } from './support.ts';
 
 const headers = { origin: E2E_BASE_URL };
 
@@ -74,7 +74,7 @@ test('an admin allows making dive sites from SSI logbooks, after confirming, and
 
 test('takes back a change made in SSI\'s app when asked, where the dive was changed here too', { tag: ['@account', '@dives'] }, async ({ page, request }) => {
   try {
-    const stamp = String(Date.now());
+    const stamp = uniqueWord();
     const diveId = await conflictForLena(request, stamp);
     await page.goto('/#/account');
     const section = page.getByRole('region', { name: 'Dives of Lena from SSI' });
@@ -91,4 +91,37 @@ test('takes back a change made in SSI\'s app when asked, where the dive was chan
   } finally {
     await leaveLena(request);
   }
+});
+
+test('a buddy imported earlier is claimed by connecting their own SSI account, after a question', { tag: ['@account'] }, async ({ page, request }) => {
+  await lenaClaimable(request);
+  try {
+    await page.goto('/#/account');
+    const panel = page.locator('section', { has: page.getByRole('heading', { name: 'SSI', exact: true }) });
+    await panel.getByRole('button', { name: /Diver$/ }).click();
+    await page.getByRole('option', { name: 'Lena', exact: true }).click();
+    await panel.getByRole('textbox', { name: 'SSI e-mail' }).fill(LENA_SSI.login);
+    await panel.getByRole('textbox', { name: 'SSI password' }).fill(LENA_SSI.password);
+    await panel.getByRole('button', { name: 'Connect to SSI' }).click();
+    await expect(panel.getByText(/^This SSI account is Lena Berger \d+ here, a buddy on 0 dives\. Is that you\?$/)).toBeVisible();
+    await panel.getByRole('button', { name: /^Yes, I am Lena Berger/ }).click();
+    await expect(panel.getByRole('cell', { name: LENA_SSI.login, exact: true })).toBeVisible();
+    await page.goto('/#/divers');
+    await expect(page.getByText(/^Lena Berger/)).toHaveCount(0);
+  } finally {
+    await leaveLena(request);
+  }
+});
+
+test('an admin merges an external diver into another one', { tag: ['@divers'] }, async ({ page, request }) => {
+  const name = `Merge me ${Date.now()}`;
+  await externalDiver(request, name);
+  await page.goto('/#/divers');
+  await page.getByRole('button', { name: `Merge into…: ${name}` }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('searchbox').fill('Lena');
+  await dialog.getByRole('option', { name: /^Lena/ }).first().click();
+  await expect(dialog).toBeHidden();
+  // Gone from Other divers (the announcement still names it).
+  await expect(page.getByRole('button', { name: `Merge into…: ${name}` })).toHaveCount(0);
 });

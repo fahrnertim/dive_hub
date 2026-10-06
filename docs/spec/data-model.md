@@ -102,6 +102,9 @@ keeps who added it; any User renames it, its creator or an admin deletes it (sof
 External IDs can be set by hand (`PUT /api/divers/{id}/external-ids/{source}`: an external Diver's by anyone, a managed
 one's by its Users), refused while a Connection uses the account or when another Diver has it (naming that Diver).
 Changes to external Divers and External IDs set by hand are Revisions on the Diver (`entity_type = 'diver'`).
+*Merging (ADR 0028 amended, slice 16):* an external Diver is merged into another Diver when its person's User claims it
+by connecting the account it holds, or by an admin: its Participants and accounts move, it is deleted with
+`merged_into` set (migration 0018), and both get a Revision `merge`.
 
 **Diver management** — `(User, Diver, role)`. A User's *own* Diver is flagged. Several
 Users can manage one Diver (two parents; a dive center handing a guest's log over to

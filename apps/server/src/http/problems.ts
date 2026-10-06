@@ -73,6 +73,8 @@ export const PROBLEMS = {
   provider_dive_gone: 'The dive is no longer at the service; it was deleted there',
   provider_busy: 'This dive is being sent to this service right now',
   provider_unsupported: 'This service does not offer that',
+  provider_account_held: 'An external diver here has this account; send claim to make them your diver (they merge into it)',
+  diver_not_external: 'Only an external diver (one no User keeps) can be merged into another',
   provider_import_off: 'Importing dives from this account is off; choose what the import may do first',
   provider_site_data_not_confirmed: 'Allowing dive sites from this service needs the explanation about its missing licence confirmed (confirm)',
 } as const;

@@ -1,0 +1,2 @@
+ALTER TABLE "diver" ADD COLUMN "merged_into" uuid;--> statement-breakpoint
+ALTER TABLE "diver" ADD CONSTRAINT "diver_merged_into_diver_id_fk" FOREIGN KEY ("merged_into") REFERENCES "public"."diver"("id") ON DELETE no action ON UPDATE no action;

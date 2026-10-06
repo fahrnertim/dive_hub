@@ -388,7 +388,9 @@
     "provider_busy": "Dieser Tauchgang wird gerade an {{name}} gesendet. Warte einen Moment.",
     "provider_unsupported": "{{name}} bietet das nicht an.",
     "provider_import_off": "Der Import von Tauchgängen aus {{name}} ist aus. Wähle zuerst, was der Import darf.",
-    "provider_site_data_not_confirmed": "Bestätige zuerst die Erklärung zur fehlenden Lizenz von {{name}}."
+    "provider_site_data_not_confirmed": "Bestätige zuerst die Erklärung zur fehlenden Lizenz von {{name}}.",
+    "provider_account_held": "Ein Taucher hier hat dieses {{name}}-Konto schon.",
+    "diver_not_external": "Nur ein Taucher, den kein User führt, kann in einen anderen zusammengeführt werden."
   },
   "vocabulary": {
     "waterType": {
@@ -570,7 +572,11 @@
       "padi": "PADI"
     },
     "onDives": "bei Tauchgängen eingetragen",
-    "onNoDive": "bei keinem Tauchgang"
+    "onNoDive": "bei keinem Tauchgang",
+    "merge": "Zusammenführen mit …",
+    "mergeTitle": "{{name}} mit einem anderen Taucher zusammenführen",
+    "mergeIntro": "Wähle den Taucher, der {{name}} ist. Die Tauchgänge, die {{name}} nennen, nennen dann diesen Taucher, und die Konten von {{name}} gehen auf ihn über. Das lässt sich nicht rückgängig machen.",
+    "merged": "{{name}} mit {{into}} zusammengeführt."
   },
   "geo": {
     "north": "N",
@@ -1049,7 +1055,11 @@
       "waterTemperatureC": "Wassertemperatur"
     },
     "importKeepHub": "Aus Dive Hub behalten: {{value}}",
-    "importTakeProvider": "Von {{name}} übernehmen: {{value}}"
+    "importTakeProvider": "Von {{name}} übernehmen: {{value}}",
+    "claimQuestion_one": "Dieses {{name}}-Konto ist hier {{diver}}, Buddy bei {{count}} Tauchgang. Bist du das?",
+    "claimQuestion_other": "Dieses {{name}}-Konto ist hier {{diver}}, Buddy bei {{count}} Tauchgängen. Bist du das?",
+    "claimExplain": "Beim Verbinden wird {{diver}} zu {{mine}}: die Tauchgänge, die {{diver}} nennen, nennen dann {{mine}}. Nichts von diesen Tauchgängen wird deins.",
+    "claimConfirm": "Ja, ich bin {{diver}}: verbinden"
   },
   "providers": {
     "ssi": {

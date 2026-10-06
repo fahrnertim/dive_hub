@@ -7,6 +7,8 @@ import { and, eq } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { connection, diver, diverExternalId } from '../db/schema.js';
 import { managedDiverIds } from '../dives/dive-service.js';
+import { DiverError } from '../divers/diver-service.js';
+import { externalDiver, mergeExternalDiver, participations } from '../divers/merge.js';
 import type { SecretBox } from '../secrets/secret-box.js';
 import { TurnTimeout, type Leases } from './leases.js';
 import { ProviderError, type ActionContext, type ProviderAdapter, type SignInInput } from './provider.js';
@@ -21,6 +23,11 @@ export interface SignInFields {
   token?: string | undefined;
   /** Keep the password (sealed) so Dive Hub signs in again by itself. Only for password sign-in, only with a key. */
   keepSignedIn: boolean;
+  /**
+   * Connecting only: an external Diver here holding this account is the same person (ADR 0028, amended): merge it into
+   * the Diver being connected. Without it, such an account answers `provider_account_held`.
+   */
+  claim?: boolean | undefined;
 }
 
 /** Sealed as one JSON value per Connection. `access` is what calls carry; null once the Provider refused it. */
@@ -122,8 +129,19 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
         if (source) {
           const [taken] = await tx.select().from(diverExternalId)
             .where(and(eq(diverExternalId.source, source), eq(diverExternalId.externalId, signedIn.account.id)));
-          if (taken && taken.diverId !== diverId) throw new ProviderServiceError('provider_account_taken', named(adapter));
-          if (!taken) {
+          if (taken && taken.diverId !== diverId) {
+            // An external Diver with this account (a buddy imported earlier) is this person: signing in proved it's theirs.
+            const held = await externalDiver(tx, taken.diverId);
+            if (!held) throw new ProviderServiceError('provider_account_taken', named(adapter));
+            if (!fields.claim) {
+              throw new ProviderServiceError('provider_account_held', named(adapter), { diver: { ...held, dives: await participations(tx, held.id) } });
+            }
+            await tx.delete(diverExternalId).where(and(eq(diverExternalId.diverId, diverId), eq(diverExternalId.source, source)));
+            await mergeExternalDiver(tx, held.id, diverId, { type: 'user', id: userId }).catch((error: unknown) => {
+              // The two can't be merged (another account at a service each): the account stays the external Diver's.
+              throw error instanceof DiverError ? new ProviderServiceError('provider_account_taken', named(adapter)) : error;
+            });
+          } else if (!taken) {
             // A Diver has one account per Source: connecting another replaces the one it had.
             await tx.delete(diverExternalId).where(and(eq(diverExternalId.diverId, diverId), eq(diverExternalId.source, source)));
             await tx.insert(diverExternalId).values({ diverId, source, externalId: signedIn.account.id });

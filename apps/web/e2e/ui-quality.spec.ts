@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { dataFile, type PreparedData } from './prepare.ts';
 import {
-  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, clearParticipants, conflictForLena, connectSsi, deletableDive, diveWithoutRecording, expectGoodPage, externalDiver,
+  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveWithoutRecording, expectGoodPage, externalDiver,
   forgetDivers, leaveLena, leaveSsi, lenaReady, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
@@ -164,11 +164,7 @@ for (const v of variants) {
       await page.getByRole('dialog').getByRole('searchbox').fill('Nowhere at all');
       await expect(page.getByRole('dialog').getByRole('option', { name: v.english ? /Create/ : /anlegen/ })).toBeVisible();
       await expect(page.getByRole('dialog').getByRole('status')).toContainText('Nowhere at all');
-      // React Aria points the field at the new active result one render after the list changes; wait for it.
-      await expect.poll(() => page.getByRole('dialog').getByRole('searchbox').evaluate((el) => {
-        const active = el.getAttribute('aria-activedescendant');
-        return !active || !!document.getElementById(active);
-      })).toBe(true);
+      await activeResultShown(page.getByRole('dialog').getByRole('searchbox'));
       await expectGoodPage(page, title('Dive 42'), v);
       await page.getByRole('button', { name: v.english ? 'New dive site' : 'Neuer Tauchplatz' }).click();
       await expect(page.getByRole('button', { name: v.english ? 'Create and choose' : 'Anlegen und auswählen' })).toBeVisible();
@@ -261,7 +257,7 @@ for (const v of variants) {
 
     test('my account, importing from SSI: a dive changed both here and in SSI', { tag: ['@account'] }, async ({ page, request }) => {
       try {
-        await conflictForLena(request, `${v.locale}-${Date.now()}`);
+        await conflictForLena(request, `${v.locale}-${uniqueWord()}`);
         await page.goto('/#/account');
         const section = page.getByRole('region', { name: v.english ? 'Dives of Lena from SSI' : 'Tauchgänge von Lena aus SSI' });
         await section.getByRole('button', { name: v.english ? 'Show what the import would do' : 'Zeigen, was der Import tun würde' }).click();
@@ -269,6 +265,41 @@ for (const v of variants) {
         await expectGoodPage(page, title('My account'), v);
       } finally {
         await leaveLena(request);
+      }
+    });
+
+    test('my account, connecting an SSI account a buddy here already has', { tag: ['@account'] }, async ({ page, request }) => {
+      await lenaClaimable(request);
+      try {
+        await page.goto('/#/account');
+        const panel = page.locator('section', { has: page.getByRole('heading', { name: 'SSI', exact: true }) });
+        await panel.getByRole('button', { name: v.english ? /Diver$/ : /Taucher$/ }).click();
+        await page.getByRole('option', { name: 'Lena', exact: true }).click();
+        await panel.getByRole('textbox', { name: v.english ? 'SSI e-mail' : 'SSI-E-Mail' }).fill(LENA_SSI.login);
+        await panel.getByRole('textbox', { name: v.english ? 'SSI password' : 'SSI-Passwort' }).fill(LENA_SSI.password);
+        await panel.getByRole('button', { name: v.english ? 'Connect to SSI' : 'Mit SSI verbinden' }).click();
+        await expect(panel.getByRole('button', { name: v.english ? /^Yes, I am Lena Berger/ : /^Ja, ich bin Lena Berger/ })).toBeVisible();
+        await expectGoodPage(page, title('My account'), v);
+      } finally {
+        await leaveLena(request);
+        // The question was left open: Lena's account stays with the external Diver; give it back to her.
+        const divers = await (await request.get('/api/divers')).json() as { id: string; name: string }[];
+        const others = await (await request.get('/api/external-divers?q=Lena%20Berger')).json() as { divers: { id: string }[] };
+        for (const o of others.divers) await request.delete(`/api/external-divers/${o.id}`, { headers });
+        await request.put(`/api/divers/${divers.find((d) => d.name === 'Lena')!.id}/external-ids/ssi`, { data: { externalId: '6100200' }, headers });
+      }
+    });
+
+    test('Divers, an admin merging an external diver', { tag: ['@divers'] }, async ({ page, request }) => {
+      const name = `Merge me ${v.locale} ${Date.now()}`;
+      const id = await externalDiver(request, name);
+      try {
+        await page.goto('/#/divers');
+        await page.getByRole('button', { name: v.english ? `Merge into…: ${name}` : `Zusammenführen mit\u00a0…: ${name}` }).click();
+        await expect(page.getByRole('dialog').getByRole('searchbox')).toBeFocused();
+        await expectGoodPage(page, title('Divers'), v);
+      } finally {
+        await request.delete(`/api/external-divers/${id}`, { headers });
       }
     });
 

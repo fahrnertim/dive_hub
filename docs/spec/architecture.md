@@ -697,3 +697,17 @@ Deliberate simplifications:
   added; they need importing from the buddy list first.
 - **A Dive changed by taking SSI's values** shows "changed since sent" when it wasn't up to date before (sending then
   writes Dive Hub's full values to SSI).
+
+**Slice 16 (2026-10-06): claiming an external Diver** ([ADR 0028](../decisions/0028-shared-divers-and-participants.md),
+amended by the owner).
+
+Implemented:
+- `src/divers/merge.ts`: merging an external Diver into another (Participants without duplicates or the Diver's own
+  Dives, accounts, `diver.merged_into`, Revisions `merge`). Migration 0018.
+- Connecting an account an external Diver holds answers `provider_account_held` with that Diver and its Dive count;
+  `claim: true` merges it in the Connection's transaction. Another User's Diver stays `provider_account_taken`.
+- `POST /api/admin/divers/{id}/merge` (admins): `diver_not_external`, `diver_external_id_taken`.
+- Web: the question in the connect form (yes connects again with `claim`), and "Merge into…" for admins under Other divers.
+- Tests: `diver-claim.test.ts` (asked first, merged on claim, Tim's buddy list then finds Samuel's own Diver, another User's
+  Diver never taken, admins only); `dive-import.spec.ts` (@account, @divers) and ui-quality cases for the question and the
+  merge dialog, with Lena's SSI account held by an external Diver.

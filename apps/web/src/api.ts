@@ -20,7 +20,7 @@ export class ApiError extends Error {
     /** The Provider a provider_* code is about, named for the translated text (ADR 0027). */
     readonly provider?: { id: string; name: string },
     /** What else the refusal says: what is unmet (ADR 0029), the Diver that has an account already (ADR 0028). */
-    readonly details: { unmet?: UnmetView[]; diver?: { id: string; name: string } } = {},
+    readonly details: { unmet?: UnmetView[]; diver?: { id: string; name: string; dives?: number } } = {},
   ) {
     super(message);
   }
@@ -120,7 +120,7 @@ export function unwrap<T>(result: { data?: T; error?: unknown; response: Respons
     // Our routes answer { error }; Fastify's validation errors carry the useful text in `message`.
     const body = result.error as {
       code?: ProblemCode; error?: string; message?: string; provider?: string; providerName?: string;
-      unmet?: UnmetView[]; diver?: { id: string; name: string };
+      unmet?: UnmetView[]; diver?: { id: string; name: string; dives?: number };
     } | undefined;
     const message = body?.error ?? body?.message ?? `Request failed (${result.response.status})`;
     const provider = body?.provider ? { id: body.provider, name: body.providerName ?? body.provider } : undefined;

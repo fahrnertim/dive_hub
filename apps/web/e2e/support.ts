@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
-import { expect, type APIRequestContext, type Page } from '@playwright/test';
+import { expect, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 
 /**
  * Browser tests run in parallel (ADR 0023): one e2e server with its own database per worker, on ports
@@ -176,12 +176,39 @@ export async function diveWithoutRecording(api: APIRequestContext): Promise<stri
   throw new Error('Lena has no dive without a recording');
 }
 
+/**
+ * Lena's SSI account held by an external Diver, as when she was imported from someone's buddy list before (ADR 0028):
+ * Lena not connected, her own account cleared, an external "Lena Berger" with it. Connecting Lena then asks to claim it.
+ */
+export async function lenaClaimable(api: APIRequestContext) {
+  await leaveLena(api);
+  const divers = await (await api.get('/api/divers')).json() as { id: string; name: string }[];
+  const lena = divers.find((d) => d.name === 'Lena')!;
+  await api.put(`/api/divers/${lena.id}/external-ids/ssi`, { data: { externalId: null }, headers });
+  const id = await externalDiver(api, `Lena Berger ${Date.now()}`, '6100200');
+  return { lenaId: lena.id, externalId: id };
+}
+
 /** Lena's SSI Connection gone again; her dives stay. */
 export async function leaveLena(api: APIRequestContext) {
   const divers = await (await api.get('/api/divers')).json() as { id: string; name: string }[];
   const lena = divers.find((d) => d.name === 'Lena');
   const connections = await (await api.get('/api/connections')).json() as Connection[];
   for (const c of connections.filter((x) => x.provider === 'ssi' && x.diverId === lena?.id)) await api.delete(`/api/connections/${c.id}`, { headers });
+}
+
+/** A marker unique to one test run, in letters only: digits would turn up in the logbook's searches by dive number. */
+export const uniqueWord = () => [...String(Date.now())].map((d) => 'abcdefghij'[Number(d)]).join('');
+
+/**
+ * Waits until a search field's active result is on the page: React Aria points the field at the new active result
+ * (aria-activedescendant) one render after the list changes, which axe would flag in between.
+ */
+export async function activeResultShown(field: Locator) {
+  await expect.poll(() => field.evaluate((el) => {
+    const active = el.getAttribute('aria-activedescendant');
+    return !active || !!document.getElementById(active);
+  })).toBe(true);
 }
 
 /** No SSI Connections at all. */

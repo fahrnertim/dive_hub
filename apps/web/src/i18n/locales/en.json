@@ -388,7 +388,9 @@
     "provider_busy": "This dive is being sent to {{name}} right now. Wait a moment.",
     "provider_unsupported": "{{name}} doesn’t offer that.",
     "provider_import_off": "Importing dives from {{name}} is off. Choose what the import may do first.",
-    "provider_site_data_not_confirmed": "Confirm the explanation about {{name}}’s missing licence first."
+    "provider_site_data_not_confirmed": "Confirm the explanation about {{name}}’s missing licence first.",
+    "provider_account_held": "A diver here already has this {{name}} account.",
+    "diver_not_external": "Only a diver no User keeps can be merged into another."
   },
   "vocabulary": {
     "waterType": {
@@ -570,7 +572,11 @@
       "padi": "PADI"
     },
     "onDives": "on dives",
-    "onNoDive": "on no dive"
+    "onNoDive": "on no dive",
+    "merge": "Merge into…",
+    "mergeTitle": "Merge {{name}} into another diver",
+    "mergeIntro": "Pick the diver who is {{name}}. The dives that list {{name}} then list that diver, and {{name}}’s accounts move to them. This can’t be undone.",
+    "merged": "{{name}} merged into {{into}}."
   },
   "geo": {
     "north": "N",
@@ -1049,7 +1055,11 @@
       "waterTemperatureC": "water temperature"
     },
     "importKeepHub": "Keep Dive Hub’s: {{value}}",
-    "importTakeProvider": "Take {{name}}’s: {{value}}"
+    "importTakeProvider": "Take {{name}}’s: {{value}}",
+    "claimQuestion_one": "This {{name}} account is {{diver}} here, a buddy on {{count}} dive. Is that you?",
+    "claimQuestion_other": "This {{name}} account is {{diver}} here, a buddy on {{count}} dives. Is that you?",
+    "claimExplain": "Connecting makes {{diver}} {{mine}}: the dives that list {{diver}} then list {{mine}}. Nothing of those dives becomes yours.",
+    "claimConfirm": "Yes, I am {{diver}}: connect"
   },
   "providers": {
     "ssi": {
