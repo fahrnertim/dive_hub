@@ -14,7 +14,7 @@ import { liveSite, siteRef } from '../sites/dive-site-link.js';
 export class DiveError extends Error {
   constructor(readonly code:
     | 'dive_not_found' | 'dive_changed' | 'dive_values_inconsistent' | 'recording_not_on_dive'
-    | 'recording_not_found' | 'last_recording' | 'diver_not_found' | 'site_not_found' | 'participant_invalid') {
+    | 'recording_not_found' | 'last_recording' | 'diver_not_found' | 'site_not_found' | 'participant_invalid' | 'merge_not_possible') {
     super(code);
   }
 }
@@ -38,7 +38,7 @@ type DiveRow = typeof dive.$inferSelect;
  * Locks the Dive for this transaction if the User manages its Diver. Not managed and not found look
  * the same to the caller, so Dive ids of other Users can't be probed.
  */
-async function lockManagedDive(tx: Tx, userId: string, diveId: string): Promise<DiveRow> {
+export async function lockManagedDive(tx: Tx, userId: string, diveId: string): Promise<DiveRow> {
   const [row] = await tx.select({ d: dive }).from(dive)
     .innerJoin(diverManagement, and(eq(diverManagement.diverId, dive.diverId), eq(diverManagement.userId, userId)))
     .where(and(eq(dive.id, diveId), isNull(dive.deletedAt)))
@@ -65,7 +65,7 @@ async function isProviderCopy(tx: Tx, recordingId: string): Promise<boolean> {
  * Applies `next` to the Dive row: writes changed columns, bumps the version and records one Revision.
  * Returns the changes (empty when nothing differed, in which case nothing is written).
  */
-async function apply(
+export async function applyToDive(
   tx: Tx, current: DiveRow,
   next: {
     values: DiveValues; overrides: OverridableField[]; notes: string | null; primaryRecordingId: string | null; siteId?: string | null;
@@ -164,7 +164,7 @@ export async function attachRecording(tx: Tx, diveId: string, recordingId: strin
     || ((await isProviderCopy(tx, current.primaryRecordingId)) && !(await isProviderCopy(tx, recordingId))));
   if (current && takesOver) {
     const primary = (await primaryOf(tx, recordingId))!;
-    await apply(tx, current, {
+    await applyToDive(tx, current, {
       values: merge(valuesOfDive(current), primary.values, current.overrides), overrides: current.overrides, notes: current.notes,
       primaryRecordingId: recordingId, offsetSource: primary.offsetSource,
     }, actor, cause, { recordings: { from: null, to: recordingId } });
@@ -190,7 +190,7 @@ export function createDiveService(db: Db) {
           throw new DiveError('dive_values_inconsistent');
         }
         if (edit.siteId && edit.siteId !== current.siteId && !(await liveSite(tx, edit.siteId))) throw new DiveError('site_not_found');
-        await apply(tx, current, {
+        await applyToDive(tx, current, {
           values, overrides, notes: edit.notes === undefined ? current.notes : edit.notes,
           primaryRecordingId: current.primaryRecordingId, ...(edit.siteId !== undefined && { siteId: edit.siteId }),
           ...(primary && { offsetSource: primary.offsetSource }),
@@ -232,7 +232,7 @@ export function createDiveService(db: Db) {
         if (!rec) throw new DiveError('recording_not_on_dive');
         const primary = await primaryOf(tx, recordingId);
         const values = merge(valuesOfDive(current), primary?.values ?? null, current.overrides);
-        await apply(tx, current, {
+        await applyToDive(tx, current, {
           values, overrides: current.overrides, notes: current.notes, primaryRecordingId: recordingId,
           ...(primary && { offsetSource: primary.offsetSource }),
         }, { type: 'user', id: userId }, 'primary-change');
@@ -259,7 +259,7 @@ export function createDiveService(db: Db) {
         const primary = current.primaryRecordingId === rec.id ? remaining[0]!.id : current.primaryRecordingId;
         const taken = await primaryOf(tx, primary);
         const values = merge(valuesOfDive(current), taken?.values ?? null, current.overrides);
-        await apply(tx, current, {
+        await applyToDive(tx, current, {
           values, overrides: current.overrides, notes: current.notes, primaryRecordingId: primary,
           ...(taken && { offsetSource: taken.offsetSource }),
         }, actor, 'detach', { recordings: { from: rec.id, to: null } });
@@ -310,18 +310,6 @@ export function createDiveService(db: Db) {
         await writeRevision(tx, 'dive', diveId, { type: 'user', id: userId }, 'restore', changes);
       });
     },
-
-    /** Files a Dive under another Diver the User manages (e.g. dived with a lent computer). */
-    async move(userId: string, diveId: string, diverId: string, version: number): Promise<void> {
-      await db.transaction(async (tx) => {
-        const current = await lockManagedDive(tx, userId, diveId);
-        if (current.version !== version) throw new DiveError('dive_changed');
-        if (!(await managedDiverIds(tx, userId)).has(diverId)) throw new DiveError('diver_not_found');
-        if (diverId === current.diverId) return;
-        await tx.update(dive).set({ diverId, version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
-        await writeRevision(tx, 'dive', diveId, { type: 'user', id: userId }, 'move', { diverId: { from: current.diverId, to: diverId } });
-      });
-    },
   };
 }
 
@@ -334,7 +322,7 @@ export async function refreshFromPrimary(tx: Tx, diveId: string, actor: Actor, c
   if (!current) return;
   const primary = await primaryOf(tx, current.primaryRecordingId);
   const values = merge(valuesOfDive(current), primary?.values ?? null, current.overrides);
-  await apply(tx, current, {
+  await applyToDive(tx, current, {
     values, overrides: current.overrides, notes: current.notes, primaryRecordingId: current.primaryRecordingId,
     ...(primary && { offsetSource: primary.offsetSource }),
   }, actor, cause);

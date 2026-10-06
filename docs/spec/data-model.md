@@ -154,6 +154,13 @@ coverage, validity; B5), **Medical exam** (date, result, valid until, examiner),
 - *Experience:* dive type/purpose, rating, notes, tags, problems.
 - *Social:* Participants, Joint dive, Visibility, Signatures.
 - *Hub state:* Pushes, Conflicts, Revisions.
+- *Merging (ADR 0038, implemented):* two Dives of one Diver that are the same descent become one. The Dive with a
+  Recording is kept (of two alike, the one chosen): it gets the other's Recordings, fills what it lacks (site,
+  Participants, values; notes appended) and takes the other's link at each Provider where it has none (the Pushes move).
+  The other is deleted like any Dive, its last Revision (`merge`) naming the kept one. Where both are at a Provider, the
+  other's link stays on the deleted Dive, so that Provider's import skips its entry.
+- *Moving while linked (ADR 0038, implemented):* a Dive linked to a Provider moves to another Diver as a copy with the
+  Recordings; the old Dive is deleted and keeps its links, so the old Diver's imports don't make it again.
 - *Deleting (ADR 0026, implemented):* soft, with a Revision (`delete`). The Dive and its Recordings get the same
   tombstone; Originals and samples stay. A deleted Dive counts nowhere (lists, search, site and Diver counts, Duplicate
   candidates, overlap matching) and can be **restored** with the Recordings deleted with it (`restore`; a site deleted

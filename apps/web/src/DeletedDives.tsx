@@ -1,4 +1,4 @@
-﻿import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, deletedDivesQuery, diversQuery, keys, unwrap, type DeletedDiveView, type ProviderView } from './api.ts';
@@ -90,7 +90,7 @@ function JustDeletedNotice({ just, dive: d }: { just: JustDeleted; dive: Deleted
 
 /**
  * At the bottom of the logbook: "Show deleted dives", and the list to restore them from, marking those still at a
- * Provider with "Delete in â€¦" (ADR 0026, 0027). Opening moves focus to the list's heading, closing back to the button.
+ * Provider with "Delete in …" (ADR 0026, 0027). Opening moves focus to the list's heading, closing back to the button.
  */
 export function DeletedDives() {
   const { t } = useTranslation();
@@ -156,8 +156,11 @@ function DeletedRow({ dive: d, list, index, count }: {
   return (
     <li className="decision">
       <div className="decision-recording">
-        <p><strong>{name}</strong>{facts.length > 0 && ` Â· ${facts.join(' Â· ')}`}</p>
+        <p><strong>{name}</strong>{facts.length > 0 && ` · ${facts.join(' · ')}`}</p>
         <p className="muted">{t('deleted.deletedOn', { date: display.dateTime(d.deletedAt) })}</p>
+        {/* Not deleted by hand (ADR 0038): where it went, so the row explains itself. */}
+        {d.mergedInto && <p>{t('deleted.mergedInto')} <a href={`#/dives/${d.mergedInto}`}>{t('deleted.openKept')}</a></p>}
+        {d.movedTo && <p>{t('deleted.movedTo')} <a href={`#/dives/${d.movedTo}`}>{t('deleted.openMoved')}</a></p>}
         {d.stillAt.map((c) => <p key={c.provider}>{t('deleted.stillAt', { name: providerOf(c.provider).name, number: c.remoteNumber ?? '' })}</p>)}
       </div>
       <div className="form-actions">

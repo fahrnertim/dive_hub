@@ -8,7 +8,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import {
-  E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, forgetDivers,
+  E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, forgetDivers, mergeablePair,
   leaveLena, leaveSsi, lenaReady, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
@@ -425,6 +425,39 @@ test('review material', async ({ page, request, browser }) => {
     await capture(page, '37-dive-delete-ssi-de-dark-390', { full: false, aria: false });
     await page.keyboard.press('Escape');
     await deletableDive(request);
+    await setPreferences(request, { language: null });
+    await page.emulateMedia({ colorScheme: 'light' });
+  }
+
+  // Merging two Dives (ADR 0038), with dive 31 from two computers split into two Dives: the hint on the dive page and the
+  // dialog, the kept Dive afterwards, the deleted dives saying where the other went; the hint in German on a dark phone.
+  if (want('dives')) {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await setPreferences(request, { language: 'en' });
+    let pair = await mergeablePair(request);
+    await page.goto(`/#/dives/${pair.kept}`); await page.reload();
+    await page.getByRole('button', { name: 'Merge the two…' }).waitFor();
+    await capture(page, '70-dive-merge-hint');
+    await page.getByRole('button', { name: 'Merge the two…' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Merge', exact: true }).waitFor();
+    await capture(page, '71-dive-merge-dialog', { full: false });
+    await page.getByRole('dialog').getByRole('button', { name: 'Merge', exact: true }).click();
+    await page.getByText('Another dive of the same time was merged into this one').waitFor();
+    await capture(page, '72-dive-merged');
+    await page.goto('/'); await page.getByRole('button', { name: /^Show deleted dives/ }).click();
+    await page.getByText('Merged into another dive.').first().waitFor();
+    await capture(page, '73-logbook-deleted-merged');
+    pair = await mergeablePair(request);
+    await setPreferences(request, { language: 'de' });
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/#/dives/${pair.kept}`); await page.reload();
+    await page.getByRole('button', { name: /^Beide zusammenführen/ }).waitFor();
+    await capture(page, '74-dive-merge-hint-de-dark-390', { aria: false });
+    await page.getByRole('button', { name: /^Beide zusammenführen/ }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Zusammenführen', exact: true }).waitFor();
+    await capture(page, '75-dive-merge-dialog-de-dark-390', { full: false, aria: false });
+    await page.keyboard.press('Escape');
     await setPreferences(request, { language: null });
     await page.emulateMedia({ colorScheme: 'light' });
   }

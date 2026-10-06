@@ -278,6 +278,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -387,6 +388,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -546,6 +548,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -748,6 +751,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -857,6 +861,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -1422,6 +1427,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -1552,6 +1558,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -1706,6 +1713,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -1902,6 +1910,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -2118,6 +2127,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -2392,6 +2402,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -2501,6 +2512,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -2610,6 +2622,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -2758,6 +2771,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -2867,6 +2881,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -2976,6 +2991,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -3156,6 +3172,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -3265,6 +3282,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -3374,6 +3392,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -3554,6 +3573,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -3663,6 +3683,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -3772,6 +3793,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -3902,6 +3924,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -4011,6 +4034,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -4120,6 +4144,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -4271,6 +4296,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -4380,6 +4406,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -4489,6 +4516,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -4771,6 +4799,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -4880,6 +4909,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -5347,6 +5377,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -5755,6 +5786,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -6503,6 +6535,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -7389,6 +7422,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -7498,6 +7532,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -7607,6 +7642,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -7796,6 +7832,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -7928,6 +7965,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -8037,6 +8075,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -8169,6 +8208,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -8987,6 +9027,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -9096,6 +9137,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -9205,6 +9247,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -9976,6 +10019,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -10085,6 +10129,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -10194,6 +10239,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -10262,6 +10308,7 @@
     "/api/dives/{id}/move": {
       "post": {
         "summary": "File the Dive under another Diver the User manages",
+        "description": "A Dive linked to a Provider moves as a copy with a new `id` (ADR 0038): the old Dive is deleted and keeps its links, so the old Diver's imports don't make it again; it is listed in GET /dives/deleted with `movedTo`. Follow the `id` of the answer.",
         "requestBody": {
           "required": true,
           "content": {
@@ -10965,6 +11012,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -11074,6 +11122,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -11130,6 +11179,1475 @@
                     "providerName": {
                       "type": "string",
                       "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dives/{id}/merge-candidates": {
+      "get": {
+        "summary": "The Dives of the same Diver this one overlaps in time and may be merged with",
+        "description": "Overlap as an import matches a Recording to a Dive (5 minutes of tolerance; local times where a time zone is unknown).",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "version",
+                      "number",
+                      "startsAt",
+                      "utcOffsetSeconds",
+                      "utcOffsetSource",
+                      "durationSeconds",
+                      "maxDepthM",
+                      "site",
+                      "fromProvider",
+                      "recordings",
+                      "at",
+                      "keeps",
+                      "bothAt"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "description": "Send it as `otherVersion` when merging"
+                      },
+                      "number": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "integer"
+                          }
+                        ]
+                      },
+                      "startsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "utcOffsetSeconds": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "integer"
+                          }
+                        ]
+                      },
+                      "utcOffsetSource": {
+                        "enum": [
+                          "device",
+                          "position",
+                          "nearby",
+                          "unknown"
+                        ]
+                      },
+                      "durationSeconds": {
+                        "type": "number"
+                      },
+                      "maxDepthM": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ]
+                      },
+                      "site": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "name"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      "fromProvider": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "recordings": {
+                        "type": "integer",
+                        "description": "How many Recordings it has"
+                      },
+                      "at": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "provider",
+                            "remoteNumber"
+                          ],
+                          "properties": {
+                            "provider": {
+                              "type": "string"
+                            },
+                            "remoteNumber": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "integer",
+                                  "description": "The Provider's own dive number"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "keeps": {
+                        "type": "string",
+                        "description": "Which of the two Dives a merge keeps: the one with a Recording when only one has, else the Dive asked about"
+                      },
+                      "bothAt": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Providers both Dives are at: the dive of the one not kept stays there unless `alsoAt` names the Provider (docs/spec/clients.md)"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dives/{id}/merge": {
+      "post": {
+        "summary": "Merge this Dive and another of the same Diver into one (the same descent logged twice)",
+        "description": "Send both versions (409 dive_changed). The Dive with a Recording is kept when only one has, else this one; the answer is the kept Dive: follow its `id`. It gets the other's Recordings, fills what it lacks from it (site, Participants, values; the other's notes are appended), and takes its link at each Provider where it has none. The other is deleted like any Dive (GET /dives/deleted, `mergedInto`) and can be restored, without what it gave away. Where both are at a Provider, the other's dive there stays unless `alsoAt` names the Provider: it is deleted there first, and a refusal (provider_* codes) merges nothing. 400 merge_not_possible for the same Dive or Dives of two Divers. ADR 0038.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version",
+                  "otherId",
+                  "otherVersion"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer"
+                  },
+                  "otherId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "otherVersion": {
+                    "type": "integer"
+                  },
+                  "alsoAt": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Providers to delete the other Dive's copy at, where both have one; ask the User first"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "diverId",
+                    "version",
+                    "values",
+                    "overrides",
+                    "utcOffsetSource",
+                    "fromProvider",
+                    "fromRecording",
+                    "notes",
+                    "site",
+                    "waterType",
+                    "waterMismatch",
+                    "position",
+                    "recordings",
+                    "participants"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "diverId": {
+                      "type": "string",
+                      "description": "The Diver whose logbook this Dive is in"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "description": "Send it back with an edit; it changes with every change"
+                    },
+                    "values": {
+                      "type": "object",
+                      "required": [
+                        "number",
+                        "startsAt",
+                        "durationSeconds",
+                        "maxDepthM",
+                        "avgDepthM",
+                        "waterTemperatureC"
+                      ],
+                      "properties": {
+                        "number": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 100000
+                            }
+                          ]
+                        },
+                        "startsAt": {
+                          "type": "object",
+                          "required": [
+                            "at",
+                            "utcOffsetSeconds"
+                          ],
+                          "properties": {
+                            "at": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "utcOffsetSeconds": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "integer",
+                                  "minimum": -43200,
+                                  "maximum": 50400,
+                                  "multipleOf": 900
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "durationSeconds": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 172800
+                        },
+                        "maxDepthM": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 400
+                            }
+                          ]
+                        },
+                        "avgDepthM": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 400
+                            }
+                          ]
+                        },
+                        "waterTemperatureC": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -5,
+                              "maximum": 50
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "overrides": {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "number",
+                          "startsAt",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "avgDepthM",
+                          "waterTemperatureC"
+                        ],
+                        "description": "A Dive value that can be overridden"
+                      },
+                      "description": "Values the User set by hand"
+                    },
+                    "utcOffsetSource": {
+                      "enum": [
+                        "device",
+                        "position",
+                        "nearby",
+                        "unknown"
+                      ],
+                      "description": "Where the start's UTC offset came from (ADR 0030): device, position (the time zone where the dive was), nearby (the Diver's Dives within 7 days) or unknown (startsAt is the local wall-clock time kept as if UTC: show it in UTC without an offset). Clients say where it came from when it isn't the device (docs/spec/clients.md)"
+                    },
+                    "fromProvider": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "description": "The Provider whose logbook entry this Dive was made from (ADR 0030); with no recordings, its values are that entry's"
+                        }
+                      ]
+                    },
+                    "fromRecording": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "number",
+                            "startsAt",
+                            "durationSeconds",
+                            "maxDepthM",
+                            "avgDepthM",
+                            "waterTemperatureC"
+                          ],
+                          "properties": {
+                            "number": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 100000
+                                }
+                              ]
+                            },
+                            "startsAt": {
+                              "type": "object",
+                              "required": [
+                                "at",
+                                "utcOffsetSeconds"
+                              ],
+                              "properties": {
+                                "at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "utcOffsetSeconds": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "integer",
+                                      "minimum": -43200,
+                                      "maximum": 50400,
+                                      "multipleOf": 900
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            "durationSeconds": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 172800
+                            },
+                            "maxDepthM": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": 0,
+                                  "maximum": 400
+                                }
+                              ]
+                            },
+                            "avgDepthM": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": 0,
+                                  "maximum": 400
+                                }
+                              ]
+                            },
+                            "waterTemperatureC": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": -5,
+                                  "maximum": 50
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "notes": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "site": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "name"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          },
+                          "description": "The Dive site (ADR 0020)"
+                        }
+                      ]
+                    },
+                    "waterType": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "fresh",
+                            "salt",
+                            "brackish"
+                          ],
+                          "description": "The Dive site's water type (ADR 0025); null without a site, or when the site has none. Not editable on the Dive"
+                        }
+                      ]
+                    },
+                    "waterMismatch": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "computer",
+                            "site",
+                            "depthPercent"
+                          ],
+                          "properties": {
+                            "computer": {
+                              "enum": [
+                                "fresh",
+                                "salt",
+                                "brackish",
+                                "en13319",
+                                "custom"
+                              ],
+                              "description": "What the Primary recording's computer was set to"
+                            },
+                            "site": {
+                              "enum": [
+                                "fresh",
+                                "salt",
+                                "brackish"
+                              ]
+                            },
+                            "depthPercent": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "description": "Recorded vs true depth in percent: negative reads shallow, positive deep; null where a density is unknown"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "Set when the computer was set to other water than the site's: clients say so (docs/spec/clients.md)"
+                        }
+                      ]
+                    },
+                    "position": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "latitude",
+                            "longitude"
+                          ],
+                          "properties": {
+                            "latitude": {
+                              "type": "number",
+                              "minimum": -90,
+                              "maximum": 90
+                            },
+                            "longitude": {
+                              "type": "number",
+                              "minimum": -180,
+                              "maximum": 180
+                            }
+                          },
+                          "description": "Where the Device of the Primary recording placed the dive: its exit, else its entry. Private like the Dive"
+                        }
+                      ]
+                    },
+                    "recordings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "isPrimary",
+                          "device",
+                          "startsAt",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "parser",
+                          "summary",
+                          "channels"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "isPrimary": {
+                            "type": "boolean"
+                          },
+                          "device": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "manufacturer",
+                                  "product",
+                                  "serialNumber"
+                                ],
+                                "properties": {
+                                  "manufacturer": {
+                                    "type": "string"
+                                  },
+                                  "product": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "serialNumber": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "startsAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "durationSeconds": {
+                            "type": "number"
+                          },
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "parser": {
+                            "type": "string"
+                          },
+                          "summary": {
+                            "type": "object",
+                            "properties": {
+                              "diveNumber": {
+                                "type": "integer"
+                              },
+                              "diveMode": {
+                                "enum": [
+                                  "open_circuit",
+                                  "ccr",
+                                  "scr",
+                                  "gauge",
+                                  "apnea"
+                                ]
+                              },
+                              "decoModel": {
+                                "enum": [
+                                  "buhlmann_zhl16c",
+                                  "suunto_fused_rgbm",
+                                  "suunto_fused2_rgbm"
+                                ]
+                              },
+                              "gfLow": {
+                                "type": "number"
+                              },
+                              "gfHigh": {
+                                "type": "number"
+                              },
+                              "waterType": {
+                                "enum": [
+                                  "fresh",
+                                  "salt",
+                                  "brackish",
+                                  "en13319",
+                                  "custom"
+                                ],
+                                "description": "The computer's salinity setting, not the water of the Dive (that is the site's)"
+                              },
+                              "waterDensity": {
+                                "type": "number",
+                                "description": "Density the computer computed depths with, kg/m³"
+                              },
+                              "gases": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "o2",
+                                    "he"
+                                  ],
+                                  "properties": {
+                                    "o2": {
+                                      "type": "number"
+                                    },
+                                    "he": {
+                                      "type": "number"
+                                    },
+                                    "circuit": {
+                                      "enum": [
+                                        "open_circuit",
+                                        "diluent"
+                                      ]
+                                    },
+                                    "tankVolumeL": {
+                                      "type": "number",
+                                      "description": "With a tank pod: the size of the tank, litres"
+                                    },
+                                    "startPressureBar": {
+                                      "type": "number"
+                                    },
+                                    "endPressureBar": {
+                                      "type": "number"
+                                    }
+                                  }
+                                }
+                              },
+                              "minTemperatureC": {
+                                "type": "number"
+                              },
+                              "maxTemperatureC": {
+                                "type": "number"
+                              },
+                              "avgHeartRate": {
+                                "type": "number"
+                              },
+                              "surfaceIntervalSeconds": {
+                                "type": "number"
+                              },
+                              "cnsStart": {
+                                "type": "number"
+                              },
+                              "cnsEnd": {
+                                "type": "number"
+                              },
+                              "otuStart": {
+                                "type": "number",
+                                "description": "Oxygen dose, OTU"
+                              },
+                              "otuEnd": {
+                                "type": "number"
+                              },
+                              "sacLpm": {
+                                "type": "number",
+                                "description": "Gas consumption at the surface as a tank pod measured it, L/min"
+                              },
+                              "conservatism": {
+                                "type": "number",
+                                "description": "The personal setting of the computer where its model has one (Suunto: -2 to +2)"
+                              },
+                              "surfacePressureBar": {
+                                "type": "number"
+                              },
+                              "extras": {
+                                "type": "object",
+                                "description": "Source values without a word in our vocabulary, by source field name",
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          },
+                          "channels": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "participants": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "diverId",
+                          "name",
+                          "role"
+                        ],
+                        "properties": {
+                          "diverId": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "The Diver's name, as every User sees it"
+                          },
+                          "role": {
+                            "enum": [
+                              "buddy",
+                              "guide",
+                              "instructor"
+                            ],
+                            "description": "buddy: dived together; guide: led the dive; instructor: taught on it"
+                          }
+                        }
+                      },
+                      "description": "Buddies first, then guides and instructors (ADR 0028)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    },
+                    "providers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "provider",
+                          "copy"
+                        ],
+                        "properties": {
+                          "provider": {
+                            "type": "string"
+                          },
+                          "copy": {
+                            "enum": [
+                              "deleted",
+                              "kept"
+                            ],
+                            "description": "What happened to the copy there"
+                          }
+                        }
+                      },
+                      "description": "With a provider_* code: each Provider the Dive is at, and whether its copy there was deleted before the refusal (the Dive stays here)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    },
+                    "providers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "provider",
+                          "copy"
+                        ],
+                        "properties": {
+                          "provider": {
+                            "type": "string"
+                          },
+                          "copy": {
+                            "enum": [
+                              "deleted",
+                              "kept"
+                            ],
+                            "description": "What happened to the copy there"
+                          }
+                        }
+                      },
+                      "description": "With a provider_* code: each Provider the Dive is at, and whether its copy there was deleted before the refusal (the Dive stays here)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    },
+                    "providers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "provider",
+                          "copy"
+                        ],
+                        "properties": {
+                          "provider": {
+                            "type": "string"
+                          },
+                          "copy": {
+                            "enum": [
+                              "deleted",
+                              "kept"
+                            ],
+                            "description": "What happened to the copy there"
+                          }
+                        }
+                      },
+                      "description": "With a provider_* code: each Provider the Dive is at, and whether its copy there was deleted before the refusal (the Dive stays here)"
                     }
                   }
                 }
@@ -11239,6 +12757,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -11348,6 +12867,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -11443,6 +12963,8 @@
                           "maxDepthM",
                           "site",
                           "deletedAt",
+                          "mergedInto",
+                          "movedTo",
                           "stillAt"
                         ],
                         "properties": {
@@ -11526,6 +13048,28 @@
                           "deletedAt": {
                             "type": "string",
                             "format": "date-time"
+                          },
+                          "mergedInto": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "The Dive it was merged into (ADR 0038): clients say so and link there"
+                              }
+                            ]
+                          },
+                          "movedTo": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "The Dive it became in another Diver's logbook when it was moved while linked to a Provider (ADR 0038)"
+                              }
+                            ]
                           },
                           "stillAt": {
                             "type": "array",
@@ -12267,6 +13811,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -12376,6 +13921,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -12602,6 +14148,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -12988,6 +14535,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -13097,6 +14645,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -13206,6 +14755,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -13359,6 +14909,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -13468,6 +15019,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -13577,6 +15129,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -13730,6 +15283,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -13839,6 +15393,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -13948,6 +15503,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -14101,6 +15657,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -14210,6 +15767,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -14319,6 +15877,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -14746,6 +16305,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -15215,6 +16775,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -15388,6 +16949,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -15619,6 +17181,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -15728,6 +17291,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -15837,6 +17401,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -15946,6 +17511,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -16212,6 +17778,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -16321,6 +17888,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -16430,6 +17998,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -16539,6 +18108,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -16667,6 +18237,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -16776,6 +18347,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -16885,6 +18457,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -16994,6 +18567,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -17165,6 +18739,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -17290,6 +18865,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -17415,6 +18991,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -17540,6 +19117,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -17834,6 +19412,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -17943,6 +19522,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -18052,6 +19632,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -18161,6 +19742,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -18354,6 +19936,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -18463,6 +20046,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -18572,6 +20156,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -18681,6 +20266,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -18809,6 +20395,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -18918,6 +20505,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -19027,6 +20615,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -19136,6 +20725,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -19303,6 +20893,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -19412,6 +21003,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -19521,6 +21113,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -19630,6 +21223,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -19857,6 +21451,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -19966,6 +21561,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -20075,6 +21671,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -20184,6 +21781,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -20761,6 +22359,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -21322,6 +22921,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -21431,6 +23031,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -21540,6 +23141,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -21649,6 +23251,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -22110,6 +23713,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -22687,6 +24291,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -22796,6 +24401,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -22905,6 +24511,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -23014,6 +24621,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -23142,6 +24750,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -23251,6 +24860,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -23360,6 +24970,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -23469,6 +25080,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -23972,6 +25584,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -24081,6 +25694,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -24190,6 +25804,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -24299,6 +25914,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -24792,6 +26408,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -24901,6 +26518,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -25010,6 +26628,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -25119,6 +26738,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -25610,6 +27230,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -25719,6 +27340,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -25828,6 +27450,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -25937,6 +27560,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -26160,6 +27784,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -26733,6 +28358,7 @@
                             "diver_external_id_taken",
                             "diver_external_id_connected",
                             "participant_invalid",
+                            "merge_not_possible",
                             "device_not_found",
                             "candidate_not_found",
                             "candidate_resolved",
@@ -26847,6 +28473,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -26956,6 +28583,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -27065,6 +28693,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -27513,6 +29142,7 @@
                                   "diver_external_id_taken",
                                   "diver_external_id_connected",
                                   "participant_invalid",
+                                  "merge_not_possible",
                                   "device_not_found",
                                   "candidate_not_found",
                                   "candidate_resolved",
@@ -27630,6 +29260,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -28083,6 +29714,7 @@
                             "diver_external_id_taken",
                             "diver_external_id_connected",
                             "participant_invalid",
+                            "merge_not_possible",
                             "device_not_found",
                             "candidate_not_found",
                             "candidate_resolved",
@@ -28197,6 +29829,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -28306,6 +29939,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -29115,6 +30749,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -29224,6 +30859,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -29333,6 +30969,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -29523,6 +31160,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -29781,6 +31419,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -29890,6 +31529,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -29999,6 +31639,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -30189,6 +31830,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -30383,6 +32025,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -30492,6 +32135,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -30601,6 +32245,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -30791,6 +32436,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -31013,6 +32659,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -31122,6 +32769,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -31231,6 +32879,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -31421,6 +33070,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -31733,6 +33383,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -31842,6 +33493,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -31951,6 +33603,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -32141,6 +33794,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -32269,6 +33923,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -32853,6 +34508,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -32962,6 +34618,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -33071,6 +34728,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -33261,6 +34919,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -33657,6 +35316,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -33766,6 +35426,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -33875,6 +35536,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -34065,6 +35727,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -34238,6 +35901,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -34446,6 +36110,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -34555,6 +36220,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -34901,6 +36567,7 @@
                                     "diver_external_id_taken",
                                     "diver_external_id_connected",
                                     "participant_invalid",
+                                    "merge_not_possible",
                                     "device_not_found",
                                     "candidate_not_found",
                                     "candidate_resolved",
@@ -35101,6 +36768,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -35455,6 +37123,7 @@
                                   "diver_external_id_taken",
                                   "diver_external_id_connected",
                                   "participant_invalid",
+                                  "merge_not_possible",
                                   "device_not_found",
                                   "candidate_not_found",
                                   "candidate_resolved",
@@ -35654,6 +37323,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -35763,6 +37433,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -36216,6 +37887,7 @@
                                       "diver_external_id_taken",
                                       "diver_external_id_connected",
                                       "participant_invalid",
+                                      "merge_not_possible",
                                       "device_not_found",
                                       "candidate_not_found",
                                       "candidate_resolved",
@@ -36417,6 +38089,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -36526,6 +38199,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -36635,6 +38309,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -36825,6 +38500,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -37177,6 +38853,7 @@
                                   "diver_external_id_taken",
                                   "diver_external_id_connected",
                                   "participant_invalid",
+                                  "merge_not_possible",
                                   "device_not_found",
                                   "candidate_not_found",
                                   "candidate_resolved",
@@ -37376,6 +39053,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -37485,6 +39163,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -37594,6 +39273,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -37784,6 +39464,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -37993,6 +39674,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -38102,6 +39784,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -38211,6 +39894,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -38401,6 +40085,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -38697,6 +40382,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -38806,6 +40492,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -38936,6 +40623,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -39226,6 +40914,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -39407,6 +41096,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -39541,6 +41231,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "merge_not_possible",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",

@@ -48,6 +48,7 @@ export type RecordingSummary = DiveView['recordings'][number]['summary'];
 export type DiverView = Awaited<ReturnType<typeof fetchDivers>>[number];
 export type DeviceView = Awaited<ReturnType<typeof fetchDevices>>[number];
 export type CandidateView = Awaited<ReturnType<typeof fetchCandidates>>[number];
+export type MergeCandidateView = Awaited<ReturnType<typeof fetchMergeCandidates>>[number];
 export type DeletedDiveView = Awaited<ReturnType<typeof fetchDeletedDives>>['dives'][number];
 export type SiteView = Awaited<ReturnType<typeof fetchSite>>;
 export type Position = NonNullable<SiteView['position']>;
@@ -85,6 +86,8 @@ export const keys = {
   /** Under ['dives'], so whatever changes the logbook refreshes it too (ADR 0026). */
   deletedDives: ['dives', 'deleted'] as const,
   revisions: (id: string) => ['dives', id, 'revisions'] as const,
+  /** Dives this one may be merged with (ADR 0038); under the Dive, so whatever changes it asks again. */
+  mergeCandidates: (id: string) => ['dives', id, 'merge-candidates'] as const,
   /** The Dive's assessment (ADR 0036); under the Dive, so whatever changes it reads the findings again. */
   assessment: (id: string) => ['dives', id, 'assessment'] as const,
   divers: ['divers'] as const,
@@ -228,6 +231,12 @@ async function fetchDeletedDives() {
 }
 /** The User's deleted Dives, to restore them, and which Providers they are still at (ADR 0026, 0027). */
 export const deletedDivesQuery = () => queryOptions({ queryKey: keys.deletedDives, queryFn: fetchDeletedDives });
+
+async function fetchMergeCandidates(id: string) {
+  return unwrap(await api.GET('/api/dives/{id}/merge-candidates', { params: { path: { id } } }));
+}
+/** The Dives of the same Diver at the same time as this one, which it may be merged with (ADR 0038). */
+export const mergeCandidatesQuery = (id: string) => queryOptions({ queryKey: keys.mergeCandidates(id), queryFn: () => fetchMergeCandidates(id) });
 
 export const diveQuery = (id: string) => queryOptions({ queryKey: keys.dive(id), queryFn: () => fetchDive(id) });
 async function fetchAssessment(id: string) {

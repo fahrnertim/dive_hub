@@ -271,6 +271,38 @@ export async function deletableDive(api: APIRequestContext): Promise<string> {
   return id;
 }
 
+/**
+ * Two Dives at the same time (ADR 0038): dive 31 from two computers (e2e/fixtures/mergeable-*.fit), the backup split off
+ * into a Dive of its own. Imported the first time; split again when an earlier test merged them. `kept` is the main
+ * computer's Dive.
+ */
+export async function mergeablePair(api: APIRequestContext): Promise<{ kept: string; other: string }> {
+  type Shown = { id: string; version: number; recordings: { id: string; isPrimary: boolean; device: { serialNumber: string } | null }[] };
+  const find = async () => (await (await api.get('/api/dives?q=31')).json() as { dives: { id: string; number: number | null }[] })
+    .dives.filter((d) => d.number === 31).map((d) => d.id);
+  const shown = async (id: string) => await (await api.get(`/api/dives/${id}`)).json() as Shown;
+  let ids = await find();
+  if (ids.length === 0) {
+    for (const name of ['mergeable-main.fit', 'mergeable-backup.fit']) {
+      const upload = await api.post('/api/imports', {
+        headers, multipart: { file: { name, mimeType: 'application/octet-stream', buffer: readFileSync(`e2e/fixtures/${name}`) } },
+      });
+      const url = `/api/imports/${(await upload.json() as { id: string }).id}`;
+      await expect.poll(async () => (await (await api.get(url)).json()).status).toBe('done');
+    }
+    ids = await find();
+  }
+  if (ids.length === 1) {
+    const one = await shown(ids[0]!);
+    const backup = one.recordings.find((r) => r.device?.serialNumber === '882')!;
+    await api.post(`/api/recordings/${backup.id}/detach`, { data: { version: one.version }, headers });
+    ids = await find();
+  }
+  const dives = await Promise.all(ids.map(shown));
+  const kept = dives.find((d) => d.recordings.some((r) => r.device?.serialNumber === '881'))!.id;
+  return { kept, other: dives.find((d) => d.id !== kept)!.id };
+}
+
 /** Sends the Dive to the fake SSI, at a site of its own whose SSI ID no other spec uses. */
 export async function sendToSsi(api: APIRequestContext, diveId: string) {
   await connectSsi(api);

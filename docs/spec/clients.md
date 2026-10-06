@@ -253,6 +253,33 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
     (`fromProvider`): say so, naming the Provider, and that the dive computer's file adds its Recording, which then becomes
     primary and its values replace these. There is no profile. *Web:* `DiveDetail.tsx` (`NoRecording`).
 - **Moving a Dive** to another Diver the User manages names that Diver; the Dive's site and values stay.
+  - **A Dive linked to a Provider moves as a copy** ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md)):
+    the answer of `POST /api/dives/{id}/move` then has another `id`. **Must say so before** (the Dive is at a Provider
+    when `GET /api/dives/{id}/providers` has a `current`): it moves as a copy, the dive here goes to the deleted dives,
+    so that Provider's next import doesn't bring it back. Afterwards show the Dive of the answer; the old one answers 404
+    and is listed in `GET /api/dives/deleted` with `movedTo`. *Web:* `DiveDetail.tsx` (`MoveDialog`).
+- **Merging two Dives** ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md)): the same descent logged twice
+  (a logbook entry and its computer's file whose times didn't match at first, or two entries).
+  - **Must say on a Dive that another Dive of its Diver was at the same time** (`GET /api/dives/{id}/merge-candidates`
+    not empty): show that Dive (time, duration, depth, site, with or without a recording), link to it, and offer to merge
+    the two. Never merge unasked: two overlapping Dives can be two dives with wrongly typed times.
+  - **Must say before merging** which Dive is kept (`keeps`: the one with a Recording when only one has, else the Dive
+    asked about), that it takes over what it lacks from the other (recordings, site, buddies, values; the other's notes
+    are appended), that a link to a Provider goes to the kept Dive (`at`, where it has none itself), and that the other
+    goes to the deleted dives and can be restored.
+  - **Must ask about each Provider both Dives are at** (`bothAt`), in the same dialog, as when deleting: the dive of the
+    one not kept stays there unless the User chooses to delete it there too (`alsoAt`). Without a Connection it stays.
+    On a provider_* error nothing is merged: say so with the reason.
+  - `POST /api/dives/{id}/merge` with `version`, `otherId`, `otherVersion` (`dive_changed` 409, `merge_not_possible` 400
+    for the same Dive or Dives of two Divers). **The answer is the kept Dive, which may be the other one: follow its
+    `id`.** *Web:* `MergeDive.tsx`.
+- **Deleted dives that went somewhere** (`mergedInto`, `movedTo` in `GET /api/dives/deleted`): say that the Dive was
+  merged into another or moved to another Diver, with a link to that Dive. Restoring one brings it back without the
+  Recordings and links it gave away. *Web:* `DeletedDives.tsx`.
+- **History:** a merge is the cause `merge` on the kept Dive (changes `mergedFrom`, the values, site, notes and
+  `participants` it took, `providers` for each link taken over), after an `attach` per Recording that came across; the
+  other Dive's last entry is `merge` with `mergedInto`. A Dive moved as a copy starts with `move` and `movedFrom`; the old
+  one ends with `move` and `movedTo`. These changes name deleted Dives: tell them, don't link them. *Web:* `DiveHistory.tsx`.
 - **Deleting a Dive** ([ADR 0026](../decisions/0026-deleting-dives.md), `DELETE /api/dives/{id}` with `version`):
   - **Must say what happens** before: it leaves the logbook, its counts and search; it can be restored; importing its
     file again doesn't bring it back. *Web:* `DeleteDive.tsx`.

@@ -797,3 +797,29 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   tank pressure is stored, not shown.
 - Not yet: Cylinders and SAC from the pod (slices 19, 22), the pod as a Device (23), SML and DM5 XML, merging two files
   of one dive.
+
+**Slice 18b (2026-10-07): merging two Dives; a linked Dive moves as a copy** ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md),
+[Logbook housekeeping](../research/2026-10-07-logbook-housekeeping.md)).
+- `apps/server/src/dives/merging.ts` (`createMerging`): `candidates` (the Dives of the same Diver that overlap one, by
+  the import's `overlaps` and tolerance, local times where an offset is unknown; with their Recordings, the Providers
+  they are at, which a merge keeps), `merge` (both Dives locked in id order; the other's Recordings attached, Participants
+  added, links moved, gaps filled, notes appended, then the other deleted) and `move` (as before for an unlinked Dive; a
+  linked one is copied, its Recordings moved, the old one deleted with its links). `dive-service.ts` exports
+  `lockManagedDive` and `applyToDive` for it and no longer moves Dives.
+- **Links are the Pushes** (`currentRemote` per Provider): moving a link moves the Dive's Pushes at that Provider to the
+  kept Dive, so what Dive Hub sent and saw (the base of the three-way comparison) stays with it; a `link` Push is added
+  when older Pushes of the kept Dive there would hide it. No Provider is named.
+- Routes: `GET /api/dives/{id}/merge-candidates`, `POST /api/dives/{id}/merge` (`alsoAt` deletes the left-over dive at a
+  Provider first, through the Push service, as deleting does), `POST /api/dives/{id}/move` answers the Dive where it is
+  now; `GET /api/dives/deleted` gains `mergedInto` and `movedTo`, read from the deleting Revision. Problem
+  `merge_not_possible`. No migration.
+- Web: `MergeDive.tsx` (the hint on the dive page and the dialog), the move dialog says when a Dive moves as a copy, the
+  deleted dives say where a Dive went, the history tells merges and copies (en, de); icon `merge`.
+- Tests: `dive-merging.test.ts` (PostgreSQL, SSI's fake and the ledger: the two observations of the research note, a
+  merge from either side, filling and appended notes, links moved or left behind, deleting at the Provider when asked,
+  restoring, a Dive at two Providers merged and moved, an unlinked move); browser `dive-merge.spec.ts` (@dives) and a
+  ui-quality case; fixtures `mergeable-main.fit`, `mergeable-backup.fit` (`test/fixtures/write-merge-fixture.ts`).
+- Deliberate simplifications: a merged or moved Dive's findings put aside don't follow it (the assessment is computed
+  again); a moved Dive's Device stays with the old Diver (ADR 0016); a dive Dive Hub sent whose Dive was merged away is
+  still skipped by the import as "sent by Dive Hub", not compared with the kept Dive; no undo beyond restoring.
+- Not yet: finding such pairs unasked, in "Needs your decision" (slice 18c).

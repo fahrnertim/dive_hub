@@ -27,7 +27,8 @@ export function overlapWindow(span: TimeSpan, tolerance = OVERLAP_TOLERANCE_SECO
   };
 }
 
-function overlaps(a: TimeSpan, b: TimeSpan, tolerance: number): boolean {
+/** Whether two spans meet, the first widened by the tolerance on both ends. */
+export function overlaps(a: TimeSpan, b: TimeSpan, tolerance: number): boolean {
   const aStart = a.startsAt.getTime() - tolerance * 1000;
   const aEnd = a.startsAt.getTime() + (a.durationSeconds + tolerance) * 1000;
   const bStart = b.startsAt.getTime();

@@ -106,6 +106,16 @@ A Recording that might belong to more than one Dive, or doesn't clearly match on
 _Avoid_: Conflict, possible duplicate
 _German_: Duplikat-Kandidat
 
+**Logbook check** (planned):
+Something in a logbook that can't be right as it stands, found by fixed rules: a Dive without a Recording overlapping a Dive with one, or two Dives of one Diver overlapping in time. It waits in "Needs your decision" with ways to resolve it (merge, two dives, correct a time, move to another Diver, delete); nothing is merged unasked ([ADR 0038](decisions/0038-logbook-checks-and-merging-dives.md)).
+_Avoid_: Duplicate candidate (a Recording waiting for its Dive), Finding, Conflict, housekeeping (in the UI)
+_German_: Logbuch-Prüfung (on screen: "Etwas aufzuräumen")
+
+**Merge (of Dives)**:
+Folding one Dive into another that is the same descent: the kept Dive (the one with the Recording) fills its gaps from the other and takes its link to a Provider; the other is deleted like any Dive and names the kept one ([ADR 0038](decisions/0038-logbook-checks-and-merging-dives.md)).
+_Avoid_: Combine, deduplicate, attach (that is a Recording's)
+_German_: zusammenführen (Tauchgänge)
+
 **Primary recording**:
 The one Recording of a Dive whose summary values the Dive shows, unless the Diver overrode a value by hand.
 _Avoid_: Master, main log

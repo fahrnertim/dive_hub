@@ -14,6 +14,7 @@ import {
 import { Problem, problem } from '../http/problems.js';
 import { DECO_MODELS, DIVE_MODES, GAS_CIRCUITS, SITE_WATER_TYPES, WATER_TYPES } from '../vocabulary.js';
 import { DiveError, participantsOf, type DiveService } from './dive-service.js';
+import type { Merging } from './merging.js';
 import { valuesFromRecording, type DiveValues } from './dive-values.js';
 import { REVISION_CAUSES } from './revisions.js';
 import { waterMismatch } from './water.js';
@@ -28,6 +29,8 @@ export interface DiveRouteDeps {
   db: Db;
   auth: Auth;
   dives: DiveService;
+  /** Merging two Dives and moving one to another Diver (ADR 0038). */
+  merging: Merging;
   /** Deleting a Dive asks every Provider it is at (ADR 0026, 0027). */
   pushes: PushService;
   assessments: AssessmentService;
@@ -171,6 +174,7 @@ const fromValues = (v: Partial<Static<typeof ValuesSchema>>): Partial<DiveValues
 const STATUS: Record<DiveError['code'], number> = {
   dive_not_found: 404, dive_changed: 409, dive_values_inconsistent: 400, recording_not_on_dive: 400,
   recording_not_found: 404, last_recording: 409, diver_not_found: 404, site_not_found: 404, participant_invalid: 400,
+  merge_not_possible: 400,
 };
 
 const DeletedDiveView = Type.Object({
@@ -185,10 +189,36 @@ const DeletedDiveView = Type.Object({
   maxDepthM: Nullable(Type.Number()),
   site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
   deletedAt: DateTime,
+  mergedInto: Nullable(Type.String({ description: 'The Dive it was merged into (ADR 0038): clients say so and link there' })),
+  movedTo: Nullable(Type.String({ description: 'The Dive it became in another Diver\'s logbook when it was moved while linked to a Provider (ADR 0038)' })),
   stillAt: Type.Array(Type.Object({
     provider: Type.String(),
     remoteNumber: Nullable(Type.Integer({ description: 'The Provider\'s own dive number' })),
   }), { description: 'Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md)' }),
+});
+
+const At = Type.Array(Type.Object({
+  provider: Type.String(),
+  remoteNumber: Nullable(Type.Integer({ description: 'The Provider\'s own dive number' })),
+}));
+
+const MergeCandidate = Type.Object({
+  id: Type.String(),
+  version: Type.Integer({ description: 'Send it as `otherVersion` when merging' }),
+  number: Nullable(Type.Integer()),
+  startsAt: DateTime,
+  utcOffsetSeconds: Nullable(Type.Integer()),
+  utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES]),
+  durationSeconds: Type.Number(),
+  maxDepthM: Nullable(Type.Number()),
+  site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
+  fromProvider: Nullable(Type.String()),
+  recordings: Type.Integer({ description: 'How many Recordings it has' }),
+  at: At,
+  keeps: Type.String({ description: 'Which of the two Dives a merge keeps: the one with a Recording when only one has, else the Dive asked about' }),
+  bothAt: Type.Array(Type.String(), {
+    description: 'Providers both Dives are at: the dive of the one not kept stays there unless `alsoAt` names the Provider (docs/spec/clients.md)',
+  }),
 });
 
 const Copies = Type.Array(Type.Object({
@@ -207,7 +237,7 @@ const DeleteProblem = Type.Object({
 /** Deleted Dives listed at most (newest deletion first). */
 const DELETED_SHOWN = 100;
 
-export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { db, auth, dives, pushes, assessments }) => {
+export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { db, auth, dives, merging, pushes, assessments }) => {
   app.addHook('onRequest', requireUser(auth));
   // Whatever changed a Dive may change its findings and those of the dives around it (ADR 0036): brought up to date
   // before the answer goes out, so the client's next read sees them. A failure here never fails the change itself.
@@ -325,12 +355,64 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   app.post('/dives/:id/move', {
     schema: {
       summary: 'File the Dive under another Diver the User manages',
+      description: 'A Dive linked to a Provider moves as a copy with a new `id` (ADR 0038): the old Dive is deleted and keeps its '
+        + 'links, so the old Diver\'s imports don\'t make it again; it is listed in GET /dives/deleted with `movedTo`. Follow the `id` '
+        + 'of the answer.',
       params: IdParams, body: Type.Object({ diverId: Type.String({ format: 'uuid' }), version: Type.Integer() }),
       response: { 200: DiveView, 404: Problem, 409: Problem },
     },
   }, async (request) => {
-    await dives.move(request.user!.id, request.params.id, request.body.diverId, request.body.version);
-    return view((await findDive(request, request.params.id))!);
+    const id = await merging.move(request.user!.id, request.params.id, request.body.diverId, request.body.version);
+    return view((await findDive(request, id))!);
+  });
+
+  app.get('/dives/:id/merge-candidates', {
+    schema: {
+      summary: 'The Dives of the same Diver this one overlaps in time and may be merged with',
+      description: 'Overlap as an import matches a Recording to a Dive (5 minutes of tolerance; local times where a time zone is unknown).',
+      params: IdParams, response: { 200: Type.Array(MergeCandidate), 404: Problem },
+    },
+  }, async (request) => (await merging.candidates(request.user!.id, request.params.id)).map(({ dive: d, siteName, recordings, at, keeps, bothAt }) => ({
+    id: d.id, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
+    utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
+    site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null, fromProvider: d.fromProvider, recordings, at, keeps, bothAt,
+  })));
+
+  app.post('/dives/:id/merge', {
+    schema: {
+      summary: 'Merge this Dive and another of the same Diver into one (the same descent logged twice)',
+      description: 'Send both versions (409 dive_changed). The Dive with a Recording is kept when only one has, else this one; the '
+        + 'answer is the kept Dive: follow its `id`. It gets the other\'s Recordings, fills what it lacks from it (site, Participants, '
+        + 'values; the other\'s notes are appended), and takes its link at each Provider where it has none. The other is deleted '
+        + 'like any Dive (GET /dives/deleted, `mergedInto`) and can be restored, without what it gave away. Where both are at a '
+        + 'Provider, the other\'s dive there stays unless `alsoAt` names the Provider: it is deleted there first, and a refusal '
+        + '(provider_* codes) merges nothing. 400 merge_not_possible for the same Dive or Dives of two Divers. ADR 0038.',
+      params: IdParams,
+      body: Type.Object({
+        version: Type.Integer(),
+        otherId: Type.String({ format: 'uuid' }),
+        otherVersion: Type.Integer(),
+        alsoAt: Type.Optional(Type.Array(Type.String(), { description: 'Providers to delete the other Dive\'s copy at, where both have one; ask the User first' })),
+      }, { additionalProperties: false }),
+      response: { 200: DiveView, 400: DeleteProblem, 404: Problem, 409: DeleteProblem, 502: DeleteProblem },
+    },
+  }, async (request, reply) => {
+    const { version, otherId, otherVersion, alsoAt = [] } = request.body;
+    const userId = request.user!.id;
+    const candidate = (await merging.candidates(userId, request.params.id).catch(() => [])).find((c) => c.dive.id === otherId);
+    // Deleted at the Provider before anything changes here, as when deleting a Dive: only the copy of the Dive not kept,
+    // and only where the kept one has its own.
+    const asked = candidate ? candidate.bothAt.filter((provider) => alsoAt.includes(provider)) : [];
+    if (asked.length > 0) {
+      const leaving = candidate!.keeps === otherId ? request.params.id : otherId;
+      const [row] = await db.select({ version: dive.version }).from(dive).where(eq(dive.id, leaving));
+      if (row?.version !== (leaving === otherId ? otherVersion : version)) return reply.code(409).send(problem('dive_changed'));
+      const { copies, failure } = await pushes.removeAt(userId, leaving, asked);
+      if (failure) return replyProviderError(failure, reply, { providers: asked.map((provider) => ({ provider, copy: copies.find((c) => c.provider === provider)?.copy ?? 'kept' as const })) });
+    }
+    // Deleting there recorded a Push, not a change of the Dive: its version is the one sent.
+    const { kept } = await merging.merge(userId, { id: request.params.id, version }, { id: otherId, version: otherVersion });
+    return view((await findDive(request, kept))!);
   });
 
   app.post('/recordings/:id/detach', {
@@ -386,12 +468,20 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       .where(isNotNull(dive.deletedAt))
       .orderBy(desc(dive.deletedAt), desc(dive.id)).limit(DELETED_SHOWN);
     const remote = await pushes.currentOf(rows.map((r) => r.d.id));
+    // Why it is gone, when it wasn't deleted by hand: the Revision that deleted it names the Dive it went into.
+    const last = rows.length === 0 ? [] : await db.selectDistinctOn([revision.entityId], { id: revision.entityId, changes: revision.changes })
+      .from(revision).where(and(eq(revision.entityType, 'dive'), inArray(revision.entityId, rows.map((r) => r.d.id))))
+      .orderBy(revision.entityId, desc(revision.at), desc(revision.id));
+    const went = (id: string, key: 'mergedInto' | 'movedTo') => {
+      const to = last.find((r) => r.id === id)?.changes[key]?.to;
+      return typeof to === 'string' ? to : null;
+    };
     return {
       dives: rows.map(({ d, siteName }) => ({
         id: d.id, diverId: d.diverId, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(),
         utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
         site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null,
-        deletedAt: d.deletedAt!.toISOString(),
+        deletedAt: d.deletedAt!.toISOString(), mergedInto: went(d.id, 'mergedInto'), movedTo: went(d.id, 'movedTo'),
         stillAt: [...(remote.get(d.id)?.entries() ?? [])].map(([provider, p]) => ({ provider, remoteNumber: p.remoteNumber })),
       })),
     };

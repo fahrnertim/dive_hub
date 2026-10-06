@@ -3,7 +3,7 @@
 // Names were checked with the suggest-lucide-icons skill against the installed version.
 import {
   ArrowDown, ArrowRightLeft, ArrowUp, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert,
-  CircleCheck, CircleUser, CloudDownload, CloudUpload, Copy, Ellipsis, ExternalLink, Info, KeyRound, Link, LogIn, LogOut, MapPin, Pencil, Plus, Scissors, Shield, ShieldOff,
+  CircleCheck, CircleUser, CloudDownload, CloudUpload, Copy, Ellipsis, ExternalLink, Info, KeyRound, Link, LogIn, LogOut, MapPin, Merge, Pencil, Plus, Scissors, Shield, ShieldOff,
   Star, Trash, Undo2, Unlink, Upload, User, UserCheck, Users, UserX, type LucideIcon,
 } from 'lucide-react';
 
@@ -35,6 +35,8 @@ const ICONS = {
   undo: Undo2,
   move: ArrowRightLeft,
   splitOff: Scissors,
+  /** Two Dives of one descent into one (ADR 0038). */
+  merge: Merge,
   primary: Star,
   delete: Trash,
   resetLink: KeyRound,

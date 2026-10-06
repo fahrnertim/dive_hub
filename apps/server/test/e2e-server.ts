@@ -24,7 +24,7 @@ import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { computerDive, createFakeSsi, handTypedDive } from './fake-ssi.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
-import { createDiveService } from '../src/dives/dive-service.js';
+import { createMerging } from '../src/dives/merging.js';
 import { createDiverService } from '../src/divers/diver-service.js';
 import { dive } from '../src/db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -129,7 +129,7 @@ for (const file of ['main-computer.fit', 'backup-computer.fit']) {
 // one typed by hand at 10:20 on each of those days, between two of her dives (dive-import.spec.ts decides the first; the
 // second stays to decide).
 const lena = await createDiverService(db).create(user.id, 'Lena');
-const dives = createDiveService(db);
+const dives = createMerging(db);
 for (const [n, start] of [[501, '2025-08-12T08:00:00Z'], [502, '2025-08-12T08:40:00Z'], [503, '2025-08-13T08:00:00Z'], [504, '2025-08-13T08:40:00Z']] as const) {
   const created = await imports.createImport(user.id, `lena-${n}.fit`, Readable.from([Buffer.from(makeSyntheticDive({ serialNumber: 7070, start: new Date(start), diveNumber: n }))]), 1 << 26);
   const outcome = await imports.processImport(created.id);

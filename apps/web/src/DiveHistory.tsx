@@ -67,6 +67,9 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
     if (key === 'recordings') return [to ? t('history.recordingAdded') : t('history.recordingRemoved')];
     if (key === 'diverId') return [t('history.change', { field: t('history.field.diverId'), from: diverName(from), to: diverName(to) })];
     if (key === 'originalId') return [t('history.fileReplaced')];
+    // Merging two Dives and moving a linked one (ADR 0038): the other Dive is deleted, so it is told, not linked.
+    if (key === 'mergedFrom' || key === 'mergedInto' || key === 'movedFrom' || key === 'movedTo') return [t(`history.${key}`)];
+    if (key === 'providers') return ((to ?? []) as { provider: string }[]).map((p) => t('history.linkMoved', { name: providerName(p.provider) }));
     // A Dive made from a Provider's logbook entry, and where its time zone came from (ADR 0030).
     if (key === 'fromProvider') return to ? [t('history.fromProvider', { name: providerName(to) })] : [];
     if (key === 'utcOffsetSource') {

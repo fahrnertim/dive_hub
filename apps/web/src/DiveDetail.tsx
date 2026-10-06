@@ -2,12 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
-import { api, ApiError, diveQuery, diversQuery, keys, unwrap, type DiveView, type OverridableField, type RecordingSummary } from './api.ts';
+import { api, ApiError, diveProvidersQuery, diveQuery, diversQuery, keys, unwrap, type DiveView, type OverridableField, type RecordingSummary } from './api.ts';
 import { AssessmentPanel, AssessmentProvider } from './Assessment.tsx';
 import { DeleteDiveDialog } from './DeleteDive.tsx';
 import { DepthProfile } from './DepthProfile.tsx';
 import { DiveEditForm } from './DiveEditForm.tsx';
 import { DiveHistory } from './DiveHistory.tsx';
+import { MergeHint } from './MergeDive.tsx';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { deviceName } from './lib/devices.ts';
@@ -15,7 +16,7 @@ import { useFormatValue } from './lib/dive-values.ts';
 import { focusHeading } from './lib/focus.ts';
 import { mapsUrl } from './lib/geo.ts';
 import { usePageTitle } from './lib/page.ts';
-import { useProviders } from './lib/providers.ts';
+import { useNames, useProviders } from './lib/providers.ts';
 import { SitePicker } from './SitePicker.tsx';
 import { Participants } from './Participants.tsx';
 import { ProviderPanels } from './ProviderPanel.tsx';
@@ -101,6 +102,7 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
           )}
         />
       </div>
+      {!editing && <MergeHint dive={d} />}
       <Panel>
         {editing
           ? <DiveEditForm key={d.version} dive={d} onDone={() => setEditing(false)} />
@@ -150,11 +152,24 @@ function MoveDialog({ dive: d, onClose }: { dive: DiveView; onClose: () => void 
   const divers = useQuery(diversQuery());
   const others = (divers.data ?? []).filter((v) => v.id !== d.diverId);
   const [target, setTarget] = useState<string | null>(others[0]?.id ?? null);
+  // A Dive linked to a Provider moves as a copy (ADR 0038): the dialog says so before it happens.
+  const names = useNames();
+  const providers = useProviders();
+  const statuses = useQuery(diveProvidersQuery(d.id));
+  const linkedAt = (statuses.data ?? []).filter((s) => s.current).map((s) => providers.data?.find((p) => p.id === s.provider)?.name ?? s.provider);
   const move = useMutation({
     mutationFn: async (diverId: string) =>
       unwrap(await api.POST('/api/dives/{id}/move', { params: { path: { id: d.id } }, body: { diverId, version: d.version } })),
     onSuccess: async (updated) => {
-      queryClient.setQueryData(keys.dive(d.id), updated);
+      queryClient.setQueryData(keys.dive(updated.id), updated);
+      if (updated.id !== d.id) {
+        // Moved as a copy: the Dive is another one now, and the old one only answers "not found".
+        location.hash = `#/dives/${updated.id}`;
+        queryClient.removeQueries({ queryKey: keys.dive(d.id) });
+        await queryClient.invalidateQueries({ predicate: (q) => !(q.queryKey[0] === 'dives' && q.queryKey[1] === d.id) });
+        onClose();
+        return;
+      }
       await queryClient.invalidateQueries({ queryKey: keys.dives });
       await queryClient.invalidateQueries({ queryKey: keys.divers });
       await queryClient.invalidateQueries({ queryKey: keys.revisions(d.id) });
@@ -164,6 +179,7 @@ function MoveDialog({ dive: d, onClose }: { dive: DiveView; onClose: () => void 
   return (
     <Dialog title={t('dive.moveTitle')} isOpen onOpenChange={(open) => !open && onClose()}>
       <p>{t('dive.moveIntro')}</p>
+      {linkedAt.length > 0 && <p>{t('dive.moveLinked', { name: names(linkedAt) })}</p>}
       <div className="form">
         <Select label={t('dive.diver')} value={target} onChange={setTarget} options={others.map((v) => ({ id: v.id, label: v.name }))} />
         {move.error && <Notice tone="danger">{errorText(move.error)}</Notice>}
