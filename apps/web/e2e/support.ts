@@ -73,6 +73,10 @@ export async function expectGoodPage(page: Page, title?: string, options: { axe?
 
   // axe is the slowest check; ui-quality runs it in two of its four variants (ADR 0023).
   if (options.axe !== false) {
+    // React Aria points a search field at its new active result one render after a list changes: wait until every such
+    // reference is on the page. One that stays broken still fails.
+    await expect.poll(() => page.evaluate(() => [...document.querySelectorAll('[aria-activedescendant]')]
+      .every((el) => !!document.getElementById(el.getAttribute('aria-activedescendant')!)))).toBe(true);
     const axe = await new AxeBuilder({ page })
       // React Aria's live announcer briefly keeps a role=img pointing at a pending button that may be gone.
       .exclude('[data-live-announcer]')

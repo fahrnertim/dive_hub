@@ -337,6 +337,23 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
       expect((await diveOf(of('nowhere').diveId!)).values.maxDepthM).toBe(14);
     });
 
+    it('brings the profile of a dive linked as a logbook entry once its computer is recognised: a Recording, primary', async () => {
+      // Imported as typed by hand (the computer wasn't recognised), then seen with its profile and the older reference.
+      remote.older = String(ctx.fakeSsi.addDive(ERIKA, handTypedDive({ at: '2025-12-01 10:00', depthM: 10, minutes: 45, siteId: 3314 })));
+      outcome = await runImport();
+      const id = of('older').diveId!;
+      expect(await diveOf(id)).toMatchObject({ recordings: [] });
+      Object.assign(ctx.fakeSsi.dives.get(Number(remote.older))!, {
+        odin_user_log_divecomputer_ref: 'Mares Puck4_77', odin_user_log_depthDataset: '[0.0,5.0,10.0,5.0,0.0]', odin_user_log_tempDataset: '[24.0,23.0,22.0,23.0,24.0]',
+      });
+      expect((await preview()).computers).toEqual(expect.arrayContaining([expect.objectContaining({ key: 'mares:77', dives: 1 })]));
+      outcome = await runImport({ computers: [{ key: 'mares:77', choice: 'recordings' }] });
+      expect(of('older')).toMatchObject({ result: 'attached', diveId: id });
+      expect((await diveOf(id)).recordings).toEqual([expect.objectContaining({ isPrimary: true, parser: 'ssi-app-api', device: expect.objectContaining({ serialNumber: '77' }) })]);
+      // Once it has the computer's Recording, it is no computer found at SSI any more.
+      expect((await preview()).computers.map((c) => c.key)).not.toContain('mares:77');
+    }, 30_000);
+
     it('only adds to Dives here when told so', async () => {
       await call('PATCH', `/api/connections/${connectionId}`, { diveImport: { mode: 'add' } });
       remote.late = String(ctx.fakeSsi.addDive(ERIKA, handTypedDive({ at: '2025-10-01 10:00', depthM: 12, minutes: 40 })));

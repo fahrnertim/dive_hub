@@ -80,13 +80,24 @@ function samplesOf(r: SsiRecord): ImportedDive['samples'] {
 function deviceOf(r: SsiRecord): ImportedDive['device'] {
   const serialNumber = text(r.odin_user_log_divecomputer_serial_nr);
   const manufacturer = text(r.odin_user_log_divecomputer_manufacturer);
-  if (!serialNumber || !manufacturer) return null;
+  if (!serialNumber || !manufacturer) return deviceOfRef(r);
   const product = text(r.odin_user_log_divecomputer_ref) ?? text(r.odin_user_log_divecomputer_name) ?? text(r.odin_user_log_divecomputer_productname);
   return {
     // Our Devices name manufacturers as FIT files do (lower case), so a computer seen at SSI is the one its files find.
     manufacturer: manufacturer.toLowerCase(), serialNumber, firmware: text(r.odin_user_log_divecomputer_firmware),
     product: product && product.toLowerCase() !== manufacturer.toLowerCase() ? product : null,
   };
+}
+
+/**
+ * An older shape (SSI's iOS app 4.1.203, early 2025, seen 2026-10-06): serial number, manufacturer and name empty, the
+ * computer only in `divecomputer_ref` as "Manufacturer Model_Serial" ("Mares Puck4_2418005226"). The same Device as the
+ * newer shape names.
+ */
+function deviceOfRef(r: SsiRecord): ImportedDive['device'] {
+  const m = /^(\S+)(?:\s+(.+?))?_([A-Za-z0-9-]+)$/.exec(text(r.odin_user_log_divecomputer_ref) ?? '');
+  if (!m) return null;
+  return { manufacturer: m[1]!.toLowerCase(), product: m[2] ?? null, serialNumber: m[3]!, firmware: text(r.odin_user_log_divecomputer_firmware) };
 }
 
 /** SSI's dive record in typed values; null when it has no start time. */

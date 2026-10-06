@@ -130,8 +130,11 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   async function computersOf(q: Db | Tx, run: Run, dives: ImportedDive[], saved: Record<string, ComputerChoice>) {
     const found = new Map<string, ComputerView>();
     for (const d of dives) {
-      // A dive Dive Hub sent, or one linked to a Dive here, carries what Dive Hub has or sent: not a computer found there.
-      if (d.evidence !== 'computer' || !d.device || (await sentTo(q, run, d.remoteId)) || (await linkedTo(q, run, d.remoteId))) continue;
+      // A dive Dive Hub sent, or one linked to a Dive that has this computer's Recording, carries what Dive Hub has or
+      // sent: not a computer found there.
+      if (d.evidence !== 'computer' || !d.device || (await sentTo(q, run, d.remoteId))) continue;
+      const linked = await linkedTo(q, run, d.remoteId);
+      if (linked && (await hasRecordingOf(q, linked.diveId, d.device))) continue;
       const key = keyOf(d.device);
       const known = found.get(key);
       if (known) { known.dives += 1; continue; }
@@ -148,6 +151,14 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       });
     }
     return [...found.values()].sort((a, b) => b.dives - a.dives || a.key.localeCompare(b.key));
+  }
+
+  /** Whether the Dive has a live Recording from this computer (a file's or a Provider's copy). */
+  async function hasRecordingOf(q: Db | Tx, diveId: string, d: { manufacturer: string; serialNumber: string }) {
+    const [row] = await q.select({ id: recording.id }).from(recording).innerJoin(device, eq(device.id, recording.deviceId))
+      .where(and(eq(recording.diveId, diveId), isNull(recording.deletedAt), eq(device.manufacturer, d.manufacturer), eq(device.serialNumber, d.serialNumber)))
+      .limit(1);
+    return !!row;
   }
 
   /** The Dive this remote dive is linked to now (by a Push), among the User's, or null. */
@@ -195,11 +206,15 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       .where(and(eq(recording.recordingKey, `${run.adapter.id}:${d.remoteId}`), isNull(recording.deletedAt)));
     if (asRecording) return { kind: 'recording' };
     const linked = await linkedTo(q, run, d.remoteId);
-    if (linked) return linked.deleted ? { kind: 'deleted' } : { kind: 'linked', diveId: linked.diveId };
+    if (linked?.deleted) return { kind: 'deleted' };
     if (d.evidence === 'computer' && d.device && run.choices[keyOf(d.device)] !== 'entries') {
       const owner = await deviceDiver(q, d.device);
-      if (owner === null || run.managed.has(owner)) return { kind: 'recording' };
+      // Linked already (made from it as a logbook entry, before its computer was recognised): its profile still comes in,
+      // unless the Dive has that computer's Recording (its own file) already.
+      const usable = owner === null || run.managed.has(owner);
+      if (usable && (!linked || !(await hasRecordingOf(q, linked.diveId, d.device)))) return { kind: 'recording' };
     }
+    if (linked) return { kind: 'linked', diveId: linked.diveId };
     const local = wallClockMs(d.localStart)!;
     const rows = await q.select({
       id: dive.id, number: dive.number, startsAt: dive.startsAt, utcOffsetSeconds: dive.utcOffsetSeconds,

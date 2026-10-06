@@ -93,6 +93,10 @@ The owner decided on 2026-10-06 (the design note's points 1–8 and the question
   only one with our reference. A `link` Push alone doesn't count: such a dive is linked and only filled.
 - **A computer's dive imported before is placed again** (by its key `ssi:<id>`), so one changed at the Provider updates
   its Recording in place; unchanged (the same Original as an earlier Import) it is `unchanged`.
+- **A computer dive linked as a logbook entry** (its computer wasn't recognised when it came in) becomes a Recording
+  once it is, attached to its Dive (primary there when the Dive has none), unless that Dive has the computer's Recording
+  already (its own file); only then is it left out of the computers listed. Found with SSI's older records
+  (2026-10-06, SSI reference).
 - **The preview reads afresh; the start may use the Provider's kept read** (`dives.list(context, { recent })`).
 - **The choice per computer is a Connection setting** like the mode and the window (`PATCH /api/connections/{id}`), so
   the preview follows it; the start keeps the choices it is sent, and the Import keeps the ones it ran with.

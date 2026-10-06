@@ -68,6 +68,9 @@ export function SearchList({ label, description, query, onQueryChange, items, on
         </SearchField>
         {(busy ? pendingStatus : status) && <p className="search-list-status" role="status">{busy ? pendingStatus : status}</p>}
         <ListBox
+          // A new list for a new set of results: React Aria otherwise keeps the field pointing (aria-activedescendant) at a
+          // result that left the list, until an arrow key moves it; screen readers then name nothing.
+          key={items.map((i) => i.id).join(' ')}
           aria-label={listLabel} className="search-list-items" items={items} aria-busy={busy || undefined}
           onAction={(key) => { if (!disabled) onPick(String(key)); }}
           // React Aria wraps the empty state in an option; with nothing to show, none (an option without a name, axe).

@@ -237,6 +237,12 @@ a synced dive has been seen:
 - *From a dive computer:* a profile (`odin_user_log_diveSamples`, else `_depthDataset` and `_tempDataset`, 5 s apart) and
   a serial number with a manufacturer (`odin_user_log_divecomputer_serial_nr`, `_manufacturer`; the product from `_ref`,
   `_name` or `_productname`; the manufacturer in lower case, as FIT files name it). `_imported` alone counts for nothing.
+- *Older records* (SSI's iOS app 4.1.203, early 2025; seen on a Mares Puck 4's dives, 2026-10-06) [R]: serial number,
+  manufacturer and name empty; the computer only in `odin_user_log_divecomputer_ref` as "Manufacturer Model_Serial"
+  ("Mares Puck4_2418005226"), read as the same Device the newer shape names. Newer records (app 4.1.231) fill all of them,
+  with `divecomputer_ref` the model alone ("Puck4"). Both keep the profile in `depthDataset` and `tempDataset`, not in
+  `diveSamples` (empty); `divecomputer_dive_ref` is the app's own ("2025-07-07T10:55:00.000_0"), `gf_set` "85 / 85" with
+  `gf_set_1` / `_2` empty, an `alarmDataset`, and no water setting.
 - *Typed by hand:* everything else.
 - Read: `odin_user_log_datetime` (local, no time zone), `_divetime` (minutes; a computer's dive takes its profile's
   length), `_depth_m`, `_avg_depth_m`, `_watertemp_c`, `_watertemp_max_c` (0 counts as none), `_pos_start_*`,

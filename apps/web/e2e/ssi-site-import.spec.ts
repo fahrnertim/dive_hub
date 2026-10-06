@@ -84,6 +84,9 @@ test('a dive takes its site\'s water type, and says when the computer was set to
   await expect(page.getByText('Water setting on the computer')).toBeVisible();
 
   const { sites } = await (await request.get('/api/dive-sites?q=club%20notes')).json() as { sites: { id: string; version: number }[] };
+  // The site has SSI's salt water from the import above; set here too, so this test stands alone when run by area.
+  const site = await (await request.get(`/api/dive-sites/${sites[0]!.id}`)).json() as { version: number; waterType: string | null };
+  if (site.waterType !== 'salt') await request.patch(`/api/dive-sites/${sites[0]!.id}`, { headers, data: { version: site.version, waterType: 'salt' } });
   const dive = await (await request.get(`/api/dives/${diveId}`)).json() as { version: number };
   await request.patch(`/api/dives/${diveId}`, { headers, data: { version: dive.version, siteId: sites[0]!.id } });
   await page.reload();

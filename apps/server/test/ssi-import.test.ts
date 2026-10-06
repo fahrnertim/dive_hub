@@ -60,6 +60,20 @@ describe('SSI dives for an import', () => {
     expect(parseSsiDive(withId(noSerial), context)).toMatchObject({ evidence: 'logbook', device: null, samples: {} });
   });
 
+  it('reads the computer from an older record that names it only in its reference ("Mares Puck4_2418005226")', () => {
+    // SSI's iOS app 4.1.203 (early 2025): serial number, manufacturer and name empty.
+    const record = {
+      ...handTypedDive({ at: '2025-02-12 19:26', depthM: 9.9, minutes: 67 }), odin_user_log_divecomputer_serial_nr: '',
+      odin_user_log_divecomputer_manufacturer: '', odin_user_log_divecomputer_name: '', odin_user_log_divecomputer_ref: 'Mares Puck4_2418005226',
+      odin_user_log_depthDataset: '[0.0,5.0,9.9,0.0]', odin_user_log_tempDataset: '[24.0,23.0,22.5,23.0]',
+    };
+    expect(parseSsiDive(withId(record), context)).toMatchObject({
+      evidence: 'computer', device: { manufacturer: 'mares', product: 'Puck4', serialNumber: '2418005226' },
+    });
+    // Without a profile it stays a logbook entry, whatever the reference says.
+    expect(parseSsiDive(withId({ ...record, odin_user_log_depthDataset: '' }), context)!.evidence).toBe('logbook');
+  });
+
   it('reads the depth and temperature datasets when there are no samples', () => {
     const record = {
       ...handTypedDive({ at: '2025-08-11 14:00', depthM: 3, minutes: 1 }), odin_user_log_divecomputer_serial_nr: '42',

@@ -692,6 +692,13 @@ an empty state even with nothing to show, which leaves an option without a name 
 site picker's browser tests); it passes one only when there is text. The server tests' default timeout is 15 s
 (`vitest.config.ts`): tests of 1-2 s passed 5 s when the machine was busy.
 
+With Samuel's account (2026-10-06): SSI's older records name the computer only in `divecomputer_ref`
+("Mares Puck4_2418005226"); `ssi-import.ts` reads it. A computer dive already linked as a logbook entry is placed as a
+Recording on the next import (attaching to its Dive) unless the Dive has that computer's Recording. Also fixed:
+`SearchList` (the site picker) could leave its field pointing (`aria-activedescendant`) at a result that had left the list
+while typing, until an arrow key; the list now starts fresh for each set of results. Page checks wait for such
+references before axe.
+
 Deliberate simplifications:
 - **People Dive Hub doesn't know** (an SSI account without a Diver here) aren't shown in a buddies conflict and can't be
   added; they need importing from the buddy list first.
