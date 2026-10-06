@@ -12,7 +12,7 @@ import { managedDiverIds, participantsOf } from '../dives/dive-service.js';
 import { columnsOf } from '../dives/dive-values.js';
 import { writeRevision, type Actor, type Changes } from '../dives/revisions.js';
 import { placeLocalTime, wallClockMs, type PlacedTime } from '../dives/time-zone.js';
-import type { ParsedRecording } from '../fit/fit-adapter.js';
+import type { ParsedRecording } from '../imports/parsed-recording.js';
 import { PROCESS_IMPORT_TASK } from '../imports/import-service.js';
 import { deviceDiver, placeRecording } from '../imports/placement.js';
 import { entryMatches } from '../imports/matching.js';

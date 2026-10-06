@@ -4,24 +4,26 @@ import type { Db } from '../db/client.js';
 import { importJob, importOriginal, original, recording, type ImportOutcome } from '../db/schema.js';
 import type { Actor } from '../dives/revisions.js';
 import { positionColumns } from '../sites/dive-site-link.js';
-import { createFitAdapter, looksLikeFit, type FitAdapter, type ParsedRecording } from '../fit/fit-adapter.js';
 import type { BlobStore } from '../storage/blob-store.js';
-import { extractFitFiles, looksLikeZip, type ExtractedFile } from './archive.js';
+import { extractFiles, looksLikeZip, type ExtractedFile } from './archive.js';
+import { createFileFormats, formatOf, type FileFormat } from './formats.js';
+import type { ParsedRecording } from './parsed-recording.js';
 import { placeRecording } from './placement.js';
 
 export const PROCESS_IMPORT_TASK = 'process_import';
 /** Reads positions for Recordings imported before they were kept (ADR 0020); queued at worker start. */
 export const BACKFILL_POSITIONS_TASK = 'backfill_positions';
 
-/** The upload is neither a FIT file nor a zip archive. Stored as the Import's error code. */
+/** The upload is neither a dive file in a format we read nor a zip archive. Stored as the Import's error code. */
 export class UnsupportedFileError extends Error {
-  constructor() { super('Unsupported file: expected a FIT file or a zip archive'); }
+  constructor() { super('Unsupported file: expected a dive file (FIT, Suunto JSON) or a zip archive'); }
 }
 
 export interface ImportServiceDeps {
   db: Db;
   blobs: BlobStore;
-  fit?: FitAdapter;
+  /** The file formats read (ADR 0037); all of them unless a test narrows it. */
+  formats?: FileFormat[];
   /**
    * Runs an Import of a Provider's dives (ADR 0030; src/providers/dive-import.ts), whose Originals were stored when it
    * started. Without it, such an Import fails.
@@ -31,7 +33,7 @@ export interface ImportServiceDeps {
   afterImport?: (userId: string) => Promise<void>;
 }
 
-export function createImportService({ db, blobs, fit = createFitAdapter(), providerImports, afterImport }: ImportServiceDeps) {
+export function createImportService({ db, blobs, formats = createFileFormats(), providerImports, afterImport }: ImportServiceDeps) {
   /** Stores the upload and creates the Import; its job is enqueued in the same transaction (ADR 0010). */
   async function createImport(userId: string, fileName: string, stream: Readable, maxBytes: number) {
     const upload = await blobs.putIncoming(stream, maxBytes);
@@ -87,7 +89,7 @@ export function createImportService({ db, blobs, fit = createFitAdapter(), provi
         }
       }
       if (files.length === 0) {
-        outcome.push({ fileName: job.uploadName, result: 'skipped', reason: 'no_fit_file' });
+        outcome.push({ fileName: job.uploadName, result: 'skipped', reason: 'no_dive_file' });
       }
       await db
         .update(importJob)
@@ -107,12 +109,14 @@ export function createImportService({ db, blobs, fit = createFitAdapter(), provi
 
   async function unpack(key: string, name: string): Promise<ExtractedFile[]> {
     const data = await blobs.read(key);
-    if (looksLikeFit(data)) return [{ name, data }];
-    if (looksLikeZip(data)) return extractFitFiles(blobs.pathOf(key));
+    if (formatOf(formats, data)) return [{ name, data }];
+    if (looksLikeZip(data)) return extractFiles(blobs.pathOf(key), (entry) => formatOf(formats, entry) !== undefined);
     throw new UnsupportedFileError();
   }
 
   async function processFile(userId: string, importId: string, file: ExtractedFile, actor: Actor): Promise<ImportOutcome> {
+    const format = formatOf(formats, file.data);
+    if (!format) throw new UnsupportedFileError();
     const stored = await blobs.putOriginal(file.data);
     return db.transaction(async (tx) => {
       const [existing] = await tx
@@ -124,7 +128,7 @@ export function createImportService({ db, blobs, fit = createFitAdapter(), provi
         (await tx
           .insert(original)
           .values({
-            userId, sha256: stored.sha256, mediaType: 'application/vnd.ant.fit',
+            userId, sha256: stored.sha256, mediaType: format.mediaType,
             sizeBytes: stored.sizeBytes, fileName: file.name, storageKey: stored.key,
           })
           .returning())[0]!;
@@ -141,10 +145,10 @@ export function createImportService({ db, blobs, fit = createFitAdapter(), provi
         }
       }
 
-      const parsed = await fit.parse(file.data);
+      const parsed = await format.parse(file.data);
       if (parsed.length === 0) return [{ fileName: file.name, result: 'skipped' as const, reason: 'not_a_dive' as const }];
       const results: ImportOutcome = [];
-      const parser = { name: fit.parser, version: fit.parserVersion };
+      const parser = { name: format.parser, version: format.parserVersion };
       for (const rec of parsed) {
         results.push(await placeRecording(tx, { userId, importId, originalId: orig.id, fileName: file.name, actor, parser }, rec));
       }
@@ -168,7 +172,8 @@ export function createImportService({ db, blobs, fit = createFitAdapter(), provi
       for (const r of batch) {
         let parsed: ParsedRecording | undefined;
         try {
-          parsed = (await fit.parse(await blobs.read(r.storageKey))).find((p) => p.recordingKey === r.recordingKey);
+          const data = await blobs.read(r.storageKey);
+          parsed = (await formatOf(formats, data)?.parse(data))?.find((p) => p.recordingKey === r.recordingKey);
         } catch {
           parsed = undefined; // a missing or unreadable Original: nothing to learn, don't try again
         }

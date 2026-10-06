@@ -19,8 +19,8 @@ in `record`/`session` and `dive_alert` events. Source: SDK profile 21.217.0.
 - Field list for samples and summaries (SAC/RMV, CNS/N2/OTU, TTS, ascent rate, tank pods).
 
 ## Notes
-- Suunto writes FIT differently: developer fields, no `dive_summary` or `tank_*`.
-  See [dive data sources](../research/2026-10-02-dive-data-sources.md).
+- Suunto writes FIT differently: developer fields, no `dive_summary` or `tank_*`, no serial number; the summary is in
+  `session`. Read as a dialect of the same adapter: see [Suunto formats](suunto-formats.md).
 - Official SDKs: C, C++, C#, Java, JavaScript, Objective-C, Python, Swift; v21.217.0
   (2026-09-22) on npm/PyPI/NuGet/Maven. Proprietary FIT Protocol License (no
   copyleft combination, no redistribution beyond its terms). JS/Python decoders

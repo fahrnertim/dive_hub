@@ -176,9 +176,12 @@ export const utcOffsetSource = pgEnum('utc_offset_source', [...UTC_OFFSET_SOURCE
 
 /** Why a file was skipped, failed or needs a decision; clients translate it (ADR 0014). */
 export const OUTCOME_REASONS = [
-  'no_fit_file', 'not_a_dive', 'not_your_diver', 'overlaps_several_dives', 'max_depth_differs', 'file_failed',
+  // `no_fit_file` is what `no_dive_file` was called before other formats were read (ADR 0037); old Imports keep it.
+  'no_dive_file', 'no_fit_file', 'not_a_dive', 'not_your_diver', 'overlaps_several_dives', 'max_depth_differs', 'file_failed',
   // The Recording is on a Dive the User deleted: it isn't created again (ADR 0026).
   'deleted_earlier',
+  // The same dive is here from a file that holds more (Suunto's JSON beside its FIT, ADR 0037).
+  'fuller_copy_here',
   // A Provider's dive (ADR 0030): sent by Dive Hub (already ours); a logbook entry matching no Dive while the import only
   // adds; several Dives and no decision that still fits; left out by the User.
   'sent_by_dive_hub', 'no_match', 'ambiguous', 'left_out',
@@ -470,13 +473,23 @@ export type RecordingSummary = {
   waterType?: WaterType;
   /** Density the computer computed depths with, kg/m³. */
   waterDensity?: number;
-  gases?: { o2: number; he: number; circuit?: GasCircuit }[];
+  /** The mixes the computer knew; with a tank pod also the tank's size and its pressures at the start and the end. */
+  gases?: { o2: number; he: number; circuit?: GasCircuit; tankVolumeL?: number; startPressureBar?: number; endPressureBar?: number }[];
   minTemperatureC?: number;
   maxTemperatureC?: number;
   avgHeartRate?: number;
   surfaceIntervalSeconds?: number;
   cnsStart?: number;
   cnsEnd?: number;
+  /** The oxygen dose in OTU. */
+  otuStart?: number;
+  otuEnd?: number;
+  /** Gas consumption at the surface as a tank pod measured it, L/min. */
+  sacLpm?: number;
+  /** The computer's personal setting where its model has one (Suunto: −2 to +2). */
+  conservatism?: number;
+  /** Air pressure at the surface as the computer measured it, bar. */
+  surfacePressureBar?: number;
   n2Start?: number;
   n2End?: number;
   avgAscentRateMps?: number;

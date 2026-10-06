@@ -173,7 +173,8 @@ and nothing reaches that User.
 **Recording** — data from one Device for one Dive.
 - Device, Import, Original(s) plus position within the Original (one file can hold many dives).
 - *Recording key* for re-imports: `(Device serial, device-native dive number or start time)`;
-  without a Device, `(Source, external id)`.
+  without a Device, `(Source, external id)`. Suunto (ADR 0037): `suunto:<serial>:<start second>` from the JSON,
+  `suunto:fit:<start second>:<duration>:<max depth cm>` from the FIT without a serial.
 - Device summary: the union of libdivecomputer's parser fields and FIT `dive_summary`/`dive_settings`
   (dive mode OC/CCR/SCR/gauge/apnea, deco model and GF, salinity (the computer's water setting and density,
   kept here: ADR 0025), atmospheric pressure,
@@ -188,6 +189,9 @@ and nothing reaches that User.
   the computer's `ndl` samples.
 - *Source logbook fields*: notes, buddy names, site name and similar values the Source
   delivered (UDDF, Subsurface). They're kept as the baseline for 3-way merges on re-import.
+- *From Suunto (ADR 0037, implemented):* the summary also keeps `otuStart`/`otuEnd`, `sacLpm` (a tank pod's average),
+  `conservatism`, `surfacePressureBar` and per gas `tankVolumeL`, `startPressureBar`, `endPressureBar`; channels
+  `ceiling` and `tankPressure` (bar). Nothing is computed from the pressures yet (slices 19, 22).
 - *Positions (B6, implemented in ADR 0020):* entry and exit position from the Device, both optional.
   The Dive shows its Primary recording's (exit, else entry); they stay as private as the Dive.
 - Detaching a Recording from its Dive is always possible. The Recording then gets its
@@ -465,22 +469,25 @@ Tim dives with a Garmin Descent (primary) and a Suunto EON as backup.
 1. The watched-folder Connection picks up the Garmin FIT. This creates Original O1 and
    Import I1. The Device (Garmin serial) is assigned to Tim's Diver. No Dive of Tim's
    overlaps in time, so a new Dive D1 is created with Recording R1, which becomes the Primary recording.
-2. Tim uploads the Suunto export: **FIT + JSON** for the same dive (two Originals, one
-   Import I2). The parser combines them into one Recording R2 (JSON lacks the gas mix,
-   FIT supplies it), which links to both Originals.
+2. Tim uploads the Suunto app's **JSON** export of the same dive (Original O2, Import I2): Recording R2 with the
+   Suunto's Device. *Implemented ([ADR 0037](../decisions/0037-suunto-file-import-and-file-formats.md), slice 18a):* the
+   app's FIT export holds a subset of the JSON, so the two are not combined. Either becomes a Recording by itself; the
+   JSON replaces the FIT's Recording of the same dive in place (both Originals kept), and a FIT arriving after the JSON
+   is skipped as `fuller_copy_here`.
 3. R2 overlaps exactly one Dive (D1), so it is **auto-attached** as a second Recording.
    D1's summary still comes from R1, and Tim is notified.
 4. Tim thinks the Suunto depth is right and sets max depth as an Override (Revision, actor Tim).
    Alternatively he makes R2 the Primary recording.
 
 Edge cases:
-- *Clock drift:* the Suunto clock is 3 min off. Overlap matching uses a tolerance window,
-  and the Recording keeps its own start time.
+- *Clock drift:* the Suunto clock is 3 min off. Overlap matching uses a tolerance window (5 minutes; kept in ADR 0037,
+  not yet judged on a real dive of both computers), and the Recording keeps its own start time.
 - *Split dive:* Garmin split a dive at a 2-min surface break, producing D1 and D2.
   Suunto's single R2 overlaps both, so it becomes a **Duplicate candidate**, not auto-attached.
 - *Re-import of the account export zip:* Originals with identical hashes are skipped. A different
   Original with a known Recording key updates R1 in place (Revision, actor Import).
-- *Unknown Device:* the first Suunto Import asks once which Diver owns it and remembers the answer.
+- *Unknown Device:* a Device seen for the first time goes to the importing User's own Diver and can be reassigned
+  (ADR 0016). A Suunto FIT has no serial number: its Recording has no Device.
 
 ### 2. Buddy who is a User, buddy who isn't
 

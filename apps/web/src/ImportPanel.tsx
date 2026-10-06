@@ -152,6 +152,7 @@ export function ImportPanel() {
       <ul className="find-list">
         <li>{t('import.findConnect')}</li>
         <li>{t('import.findWatch')}</li>
+        <li>{t('import.findSuunto')}</li>
       </ul>
       <ImportNotices />
       <ImportList imports={imports.data ?? []} />

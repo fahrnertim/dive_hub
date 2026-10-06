@@ -149,9 +149,9 @@
   },
   "import": {
     "title": "Import",
-    "drop": "Drop Garmin FIT files or zips here",
+    "drop": "Drop Garmin or Suunto dive files or zips here",
     "choose": "Choose files",
-    "hint": "“Export Original” zips from Garmin Connect and files copied from the watch both work.",
+    "hint": "Garmin: “Export Original” zips from Garmin Connect, or FIT files copied from the watch. Suunto: a dive’s JSON export from the Suunto app; its FIT export works too but holds much less.",
     "status": {
       "pending": "waiting",
       "processing": "processing",
@@ -169,23 +169,25 @@
       "linked": "linked to a dive here"
     },
     "reason": {
-      "no_fit_file": "no FIT file found",
+      "no_dive_file": "no dive file found",
+      "no_fit_file": "no dive file found",
       "not_a_dive": "not a dive",
       "not_your_diver": "recorded for a Diver you don’t manage",
       "overlaps_several_dives": "overlaps several dives",
       "max_depth_differs": "the max depth differs too much",
       "file_failed": "the file couldn’t be read",
       "deleted_earlier": "on a dive you deleted; restore it under “Deleted dives” on the logbook",
+      "fuller_copy_here": "this dive is already here from a file that holds more",
       "sent_by_dive_hub": "sent from Dive Hub",
       "no_match": "no dive here at that time",
       "ambiguous": "several dives here at that time; choose one in the preview",
       "left_out": "left out by you"
     },
     "errorCode": {
-      "unsupported_file": "This is neither a FIT file nor a zip archive.",
+      "unsupported_file": "This is neither a dive file (FIT, Suunto JSON) nor a zip archive.",
       "processing_failed": "Processing failed."
     },
-    "skipped": "Skipped {{names}}: only FIT files and zip archives can be imported.",
+    "skipped": "Skipped {{names}}: only FIT files, Suunto JSON files and zip archives can be imported.",
     "decision": {
       "attached": "added to a dive",
       "new_dive": "made a new dive",
@@ -195,14 +197,15 @@
     "uploading_other": "Uploading {{count}} files…",
     "finished": "{{name}}: {{result}}",
     "importFiles": "Import files",
-    "dropAnywhere": "You can also drop FIT files and zips anywhere on this page.",
+    "dropAnywhere": "You can also drop dive files and zips anywhere on this page.",
     "dropNow": "Drop to import",
     "recent": "Imports",
     "showAll": "Show all imports",
     "showFewer": "Show fewer",
     "findTitle": "Where to find your dives",
     "findConnect": "Garmin Connect website: open a dive, choose “Export Original” in the gear menu, and import the zip as it is.",
-    "findWatch": "Watch: connect it by USB and copy the files from the folder GARMIN/Activity.",
+    "findWatch": "Garmin watch: connect it by USB and copy the files from the folder GARMIN/Activity.",
+    "findSuunto": "Suunto app: open a dive, tap the three dots at the top right and choose “Download JSON file”.",
     "grouped": "{{what}}: {{count}}",
     "fromProvider": "Dives from {{name}}"
   },
@@ -420,7 +423,9 @@
       "apnea": "Apnea"
     },
     "decoModel": {
-      "buhlmann_zhl16c": "Bühlmann ZHL-16C"
+      "buhlmann_zhl16c": "Bühlmann ZHL-16C",
+      "suunto_fused_rgbm": "Suunto Fused RGBM",
+      "suunto_fused2_rgbm": "Suunto Fused RGBM 2"
     },
     "circuit": {
       "open_circuit": "open circuit",
@@ -1337,7 +1342,11 @@
       "cns_warning": "oxygen clock (CNS) warning",
       "cns_critical": "oxygen clock (CNS) at its limit",
       "otu_warning": "oxygen dose (OTU) warning",
-      "otu_critical": "oxygen dose (OTU) at its limit"
+      "otu_critical": "oxygen dose (OTU) at its limit",
+      "safety_stop_mandatory": "safety stop made mandatory",
+      "deep_stop_started": "deep stop started",
+      "deep_stop_broken": "deep stop left early",
+      "tank_pressure_low": "tank pressure low"
     },
     "noFly": {
       "title": "Flying after this dive",

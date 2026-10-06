@@ -57,10 +57,10 @@ const SEARCH_LIMIT = { concise: 50, detailed: 20 } as const;
 const NOTES_IN_LIST = 300;
 const NOTES_IN_DIVE = { concise: 500, detailed: 4000 } as const;
 
-/** Sample channels a Recording may hold, with their units (src/fit/fit-adapter.ts). */
+/** Sample channels a Recording may hold, with their units (src/fit/fit-adapter.ts, src/suunto/suunto-json.ts). */
 const CHANNEL_UNITS = {
   depth: 'm', temperature: '°C', heartRate: 'bpm', po2: 'bar', ndl: 's', cns: '%', n2: '%', tts: 's', nextStopDepth: 'm',
-  nextStopTime: 's', ascentRate: 'm/s',
+  nextStopTime: 's', ascentRate: 'm/s', ceiling: 'm', tankPressure: 'bar',
 } as const;
 type Channel = keyof typeof CHANNEL_UNITS;
 const CHANNELS = Object.keys(CHANNEL_UNITS) as Channel[];

@@ -2,7 +2,8 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { Decoder, Stream } from '@garmin/fitsdk';
 import { describe, expect, it } from 'vitest';
-import { createFitAdapter, looksLikeFit, type ParsedRecording } from '../src/fit/fit-adapter.js';
+import { createFitAdapter, looksLikeFit } from '../src/fit/fit-adapter.js';
+import type { ParsedRecording } from '../src/imports/parsed-recording.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 
 const fixture = (name: string) => readFileSync(fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url)));

@@ -1,53 +1,13 @@
 // FIT parsing behind our own interface (ADR 0006): the published image uses fit-file-parser (MIT);
 // Garmin's official SDK is only used in tests to cross-check results.
+// One format, two dialects (ADR 0037): Garmin's own files, and the Suunto app's export, which has no dive_summary,
+// dive_settings or serial number and keeps its summary in `session` and developer fields.
 import FitParser from 'fit-file-parser';
-import type { RecordingSummary, UtcOffsetSource } from '../db/schema.js';
+import type { RecordingSummary } from '../db/schema.js';
+import { stripUndefined, type ParsedDevice, type ParsedEvent, type ParsedRecording, type ParsedSeries, type Position } from '../imports/parsed-recording.js';
+import { suuntoFitKey } from '../suunto/suunto-json.js';
+import { diveModeFromSuuntoFit } from '../suunto/suunto-vocabulary.js';
 import { circuitFromFit, decoModelFromFit, diveModeFromFit, waterTypeFromFit } from './fit-vocabulary.js';
-
-export interface ParsedDevice {
-  manufacturer: string;
-  product?: string;
-  serialNumber: string;
-  firmware?: string;
-}
-
-export interface ParsedSeries {
-  channel: string;
-  /** Offsets from the Recording start, in milliseconds. */
-  offsetsMs: number[];
-  values: number[];
-}
-
-export interface ParsedEvent {
-  offsetMs: number;
-  type: string;
-  data: Record<string, unknown>;
-}
-
-/** WGS84 degrees. */
-export interface Position {
-  latitude: number;
-  longitude: number;
-}
-
-export interface ParsedRecording {
-  device: ParsedDevice | undefined;
-  /** Identity for re-imports, stable across copies of the same file. */
-  recordingKey: string;
-  startsAt: Date;
-  utcOffsetSeconds: number | undefined;
-  /** Where the offset came from (ADR 0030); a file's comes from its device, so FIT leaves it out. */
-  utcOffsetSource?: UtcOffsetSource;
-  durationSeconds: number;
-  maxDepthM: number | undefined;
-  avgDepthM: number | undefined;
-  /** Where the Device placed the start and the end of the dive (both optional, B6). */
-  entryPosition: Position | undefined;
-  exitPosition: Position | undefined;
-  summary: RecordingSummary;
-  series: ParsedSeries[];
-  events: ParsedEvent[];
-}
 
 export interface FitAdapter {
   readonly parser: string;
@@ -143,17 +103,18 @@ function toRecording(m: FitMessages): ParsedRecording | undefined {
   const manufacturer = str(fileId.manufacturer) ?? str(creator.manufacturer) ?? 'unknown';
   const productId = num(fileId.product) ?? num(creator.product);
   const firmware = num(creator.software_version);
+  const product = (manufacturer === 'garmin' && productId !== undefined && GARMIN_PRODUCTS[productId])
+    || str(fileId.product_name) || (productId !== undefined ? String(productId) : undefined);
   const device: ParsedDevice | undefined =
     serial === undefined
       ? undefined
       : {
           manufacturer,
           serialNumber: String(serial),
-          ...(productId !== undefined && {
-            product: (manufacturer === 'garmin' && GARMIN_PRODUCTS[productId]) || String(productId),
-          }),
+          ...(product !== undefined && { product }),
           ...(firmware !== undefined && { firmware: String(firmware) }),
         };
+  const suunto = manufacturer === 'suunto';
 
   // Local offset = activity.local_timestamp − activity.timestamp (the parser returns both as Dates).
   const activity = m.activity?.[0];
@@ -206,9 +167,20 @@ function toRecording(m: FitMessages): ParsedRecording | undefined {
     return value;
   };
 
+  // Suunto's developer field `dive_mode` stands where Garmin writes a sub-sport.
+  const suuntoMode = suunto ? num(session.dive_mode) : undefined;
+  const diveMode = suuntoMode === undefined
+    ? mapped('sub_sport', str(session.sub_sport), diveModeFromFit)
+    : mapped('dive_mode', String(suuntoMode), () => diveModeFromSuuntoFit(suuntoMode));
+  // Suunto counts dives within a series, starting at 1 again: not a logbook number (ADR 0037).
+  const inSeries = suunto ? num(session.dive_number) ?? num(session.dive_number_in_series) : undefined;
+  if (inSeries !== undefined) extras['session.dive_number'] = String(inSeries);
+  // Without a dive_summary (Suunto), the session carries the dive's own summary values.
+  const summarised = (field: string) => num(diveSummary[field]) ?? num(session[field]);
+
   const summary: RecordingSummary = stripUndefined({
-    diveNumber: num(diveSummary.dive_number),
-    diveMode: mapped('sub_sport', str(session.sub_sport), diveModeFromFit),
+    diveNumber: suunto ? undefined : num(diveSummary.dive_number),
+    diveMode,
     decoModel: mapped('dive_settings.model', str(settings.model), decoModelFromFit),
     gfLow: num(settings.gf_low),
     gfHigh: num(settings.gf_high),
@@ -223,38 +195,41 @@ function toRecording(m: FitMessages): ParsedRecording | undefined {
     minTemperatureC: num(session.min_temperature) ?? (temps.length ? Math.min(...temps) : undefined),
     maxTemperatureC: num(session.max_temperature) ?? (temps.length ? Math.max(...temps) : undefined),
     avgHeartRate: num(session.avg_heart_rate),
-    surfaceIntervalSeconds: num(diveSummary.surface_interval),
-    cnsStart: num(diveSummary.start_cns),
-    cnsEnd: num(diveSummary.end_cns),
-    n2Start: num(diveSummary.start_n2),
-    n2End: num(diveSummary.end_n2),
+    surfaceIntervalSeconds: summarised('surface_interval'),
+    cnsStart: summarised('start_cns'),
+    cnsEnd: summarised('end_cns'),
+    n2Start: summarised('start_n2'),
+    n2End: summarised('end_n2'),
+    // FIT's `o2_toxicity` is the oxygen dose in OTU.
+    otuEnd: summarised('o2_toxicity'),
     avgAscentRateMps: num(diveSummary.avg_ascent_rate),
   });
   if (Object.keys(extras).length > 0) summary.extras = extras;
 
+  const durationSeconds = num(session.total_elapsed_time) ?? (records.length ? (series[0]?.offsetsMs.at(-1) ?? 0) / 1000 : 0);
+  // The computer's own maximum can lie between two samples. Suunto repeats it as a float developer field that the parser
+  // lets win over the native one: back to the centimetres it was written with.
+  const sessionMax = num(session.max_depth);
+  const maxDepthM = num(diveSummary.max_depth) ?? (sessionMax !== undefined ? Math.round(sessionMax * 1000) / 1000 : undefined)
+    ?? (depths.length ? Math.max(...depths) : undefined);
+  // A Suunto FIT without a serial number: the app's JSON export of the same dive has one, and the same start second,
+  // duration and maximum depth (ADR 0037).
+  const suuntoWithoutDevice = suunto && !device;
   return {
     device,
     recordingKey: device
       ? `${device.manufacturer}:${device.serialNumber}:${start / 1000}`
-      : `fit:${manufacturer}:${start / 1000}`,
+      : suuntoWithoutDevice ? suuntoFitKey(start / 1000, durationSeconds, maxDepthM) : `fit:${manufacturer}:${start / 1000}`,
+    ...(suuntoWithoutDevice && { fullerCopyLike: `suunto:%:${start / 1000}` }),
     startsAt,
     utcOffsetSeconds,
-    durationSeconds: num(session.total_elapsed_time) ?? (records.length ? (series[0]?.offsetsMs.at(-1) ?? 0) / 1000 : 0),
-    maxDepthM: num(diveSummary.max_depth) ?? (depths.length ? Math.max(...depths) : undefined),
-    avgDepthM: num(diveSummary.avg_depth),
+    durationSeconds,
+    maxDepthM,
+    avgDepthM: summarised('avg_depth'),
     entryPosition: position(session.start_position_lat, session.start_position_long),
     exitPosition: position(session.end_position_lat, session.end_position_long),
     summary,
     series,
     events,
   };
-}
-
-/** Optional properties whose value may be undefined become truly optional (exactOptionalPropertyTypes). */
-type WithoutUndefined<T> = { [K in keyof T as undefined extends T[K] ? never : K]: T[K] } & {
-  [K in keyof T as undefined extends T[K] ? K : never]?: Exclude<T[K], undefined>;
-};
-
-function stripUndefined<T extends Record<string, unknown>>(o: T): WithoutUndefined<T> {
-  return Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as WithoutUndefined<T>;
 }

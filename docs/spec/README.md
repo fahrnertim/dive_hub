@@ -52,7 +52,8 @@ vendor or platform.
   ([ADR 0024](../decisions/0024-ssi-target-via-app-api.md), [SSI API research](../research/2026-10-04-ssi-api.md)).
 - **Phase 1 ingestion:** file import only, and only Garmin FIT files. No cloud APIs
   (Garmin's and Suunto's are business-only, see [dive data sources](../research/2026-10-02-dive-data-sources.md)).
-  Suunto (FIT + JSON) follows in a later phase; the data model already covers it.
+  Suunto files (the app's JSON and FIT exports) are read since slice 18a
+  ([ADR 0037](../decisions/0037-suunto-file-import-and-file-formats.md)).
 - **Architecture and deployment:** API-first; one app image (API + web client + worker)
   plus PostgreSQL, deployed with Docker Compose; built-in accounts, OIDC later
   ([ADR 0004](../decisions/0004-system-architecture.md), [architecture](architecture.md)).
@@ -65,7 +66,7 @@ vendor or platform.
 | Source | Status |
 |---|---|
 | Garmin (FIT file import) | phase 1 |
-| Suunto (FIT + JSON file import) | later phase |
+| Suunto (the app's JSON and FIT exports, file import) | built (slice 18a, [ADR 0037](../decisions/0037-suunto-file-import-and-file-formats.md)); legacy DM5 formats later |
 | Other logbooks (UDDF, Subsurface) | later phase |
 | Cloud APIs (Garmin, Suunto) | not planned (business-only access) |
 | Own app connecting directly to dive computers | later |

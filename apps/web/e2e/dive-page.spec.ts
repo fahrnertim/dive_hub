@@ -24,6 +24,8 @@ test('shows the dive with the recording\'s values, the device data and how it ca
   await expect(page.getByText('Bühlmann ZHL-16C, GF 40/85')).toBeVisible();
   // More than three entries hide behind "Show the whole history"; how many there are depends on what
   // other specs did on this server before (ADR 0023).
+  // The button comes with the history: wait for the history before asking whether it is there.
+  await expect(page.locator('.history > li').first()).toBeVisible();
   const showAll = page.getByRole('button', { name: 'Show the whole history' });
   if (await showAll.isVisible()) await showAll.click();
   await expect(page.getByText('Created from an import')).toBeVisible();

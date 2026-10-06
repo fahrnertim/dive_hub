@@ -29,6 +29,8 @@ const AREAS = [
   [/^apps\/web\/e2e\/fixtures\/deletable-computer\.fit$/, ['@dives']],
   // The Dive whose assessment has several findings (ADR 0036).
   [/^apps\/web\/e2e\/fixtures\/assessed-computer\.fit$/, ['@dives']],
+  // The Suunto dive a browser test imports (ADR 0037).
+  [/^apps\/web\/e2e\/fixtures\/suunto-d5\.json$/, ['@dives']],
   [/^apps\/web\/src\/DiversPage\.tsx$/, ['@divers']],
   [/^apps\/web\/src\/(Account|AccountPage|Connections|ProviderBuddies)\.tsx$/, ['@account']],
   // Importing a Provider's dives (ADR 0030): on the Connection, and the dives it makes.
@@ -42,7 +44,7 @@ const AREAS = [
   [/^apps\/server\/src\/mcp\//, ['@account', '@admin']],
   [/^apps\/server\/src\/sites\/import\/|^apps\/server\/src\/providers\/ssi\/ssi-sites\.ts$/, ['@admin', '@sites']],
   [/^apps\/server\/src\/sites\//, ['@sites', '@dives']],
-  [/^apps\/server\/src\/(dives|imports|fit|assessment)\/|^apps\/server\/src\/(routes|vocabulary)\.ts$/, ['@dives']],
+  [/^apps\/server\/src\/(dives|imports|fit|suunto|assessment)\/|^apps\/server\/src\/(routes|vocabulary)\.ts$/, ['@dives']],
   [/^apps\/server\/src\/divers\//, ['@divers']],
   [/^apps\/server\/src\/(users|auth)\//, ['@account', '@admin']],
   [/^apps\/server\/src\/(providers|secrets)\//, ['@dives', '@account']],
@@ -51,7 +53,7 @@ const AREAS = [
   [/^apps\/server\/test\/zip\.ts$/, ['@admin', '@sites']],
 ];
 /** Paths that change no behaviour: no tests. */
-const QUIET = /^(docs\/|samples\/|\.claude\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|skills-lock\.json$|\.gitignore$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$|apps\/server\/test\/fixtures\/write-assessment-fixture\.ts$)/;
+const QUIET = /^(docs\/|samples\/|\.claude\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|skills-lock\.json$|\.gitignore$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$|apps\/server\/test\/fixtures\/write-assessment-fixture\.ts$|apps\/server\/test\/fixtures\/write-suunto-fixture\.ts$)/;
 
 const plan = { typecheck: full, server: full ? 'all' : 'none', web: full ? 'all' : 'none', e2e: full ? 'all' : 'none', areas: new Set(), specs: new Set() };
 const everything = () => Object.assign(plan, { typecheck: true, server: 'all', web: 'all', e2e: 'all' });

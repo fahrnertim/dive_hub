@@ -7,7 +7,7 @@ import {
   dive, diveAssessment, diveFinding, diver, diverManagement, findingDismissal, mutedRule, recording, recordingEvent, sampleSeries,
   type RecordingSummary,
 } from '../db/schema.js';
-import { computerEventFromFit } from '../fit/fit-vocabulary.js';
+import { computerEventOf } from '../imports/computer-events.js';
 import type { ComputerEvent } from '../vocabulary.js';
 import { ENGINE_VERSION, RULES, RULE_IDS, assessProfile, assessSeries, noFlyAfter, type Finding, type RuleId, type SeriesDive } from './rules.js';
 
@@ -18,7 +18,7 @@ export class AssessmentError extends Error {
 }
 
 /** Sample channels the rules read. */
-const CHANNELS = ['depth', 'ndl', 'nextStopDepth', 'po2', 'cns'] as const;
+const CHANNELS = ['depth', 'ndl', 'nextStopDepth', 'ceiling', 'po2', 'cns'] as const;
 /** Dive modes the rules don't cover (ADR 0036): no findings, and they don't count for the dives around them. */
 const NOT_COVERED = ['apnea', 'ccr', 'scr'];
 
@@ -100,7 +100,7 @@ export function createAssessmentService(db: Db) {
       return found && { offsetsMs: found.offsetsMs, values: found.values };
     };
     const depth = series('depth');
-    return depth ? assessProfile({ depth, ndl: series('ndl'), nextStopDepth: series('nextStopDepth'), po2: series('po2'), cns: series('cns') }) : null;
+    return depth ? assessProfile({ depth, ndl: series('ndl'), nextStopDepth: series('nextStopDepth') ?? series('ceiling'), po2: series('po2'), cns: series('cns') }) : null;
   }
 
   async function replaceFindings(tx: Tx, diveId: string, scope: 'profile' | 'series', findings: Finding[], recordingId: string | null) {
@@ -200,7 +200,7 @@ export async function read(tx: Tx | Db, d: { id: string; diverId: string; primar
     })).sort((a, b) => order(a)[0] - order(b)[0] || order(a)[1] - order(b)[1]),
     noFly,
     computerEvents: events.flatMap((e): { atS: number; event: ComputerEvent }[] => {
-      const event = computerEventFromFit(e.type, e.data);
+      const event = computerEventOf(e.type, e.data);
       return event ? [{ atS: Math.round(e.offsetMs / 1000), event }] : [];
     }),
   };

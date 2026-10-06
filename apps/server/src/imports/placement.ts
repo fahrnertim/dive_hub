@@ -1,14 +1,15 @@
 // Placing a Recording (docs/spec/data-model.md, scenario 1): the same for a FIT file's and for a Provider's copy of a dive
 // from a computer (ADR 0030). Its Diver and Device, the same Recording seen again, one deleted with its Dive, and then a
-// new Dive, an attach, or a Duplicate candidate.
-import { and, desc, eq, gte, isNotNull, isNull, lte } from 'drizzle-orm';
+// new Dive, an attach, or a Duplicate candidate. The same dive from a poorer and a fuller file of one Source ends in one
+// Recording (ADR 0037).
+import { and, desc, eq, gte, inArray, isNotNull, isNull, like, lte, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import {
   device, dive, diverManagement, duplicateCandidate, original, recording, recordingEvent, sampleSeries, type ImportOutcome,
 } from '../db/schema.js';
 import { attachRecording, createDiveFromRecording, refreshFromPrimary } from '../dives/dive-service.js';
 import { writeRevision, type Actor } from '../dives/revisions.js';
-import type { ParsedRecording } from '../fit/fit-adapter.js';
+import type { ParsedRecording } from './parsed-recording.js';
 import { linkNearbySite, positionColumns } from '../sites/dive-site-link.js';
 import { alignedForMatching, decideMatch, overlapWindow } from './matching.js';
 
@@ -45,7 +46,15 @@ export async function placeRecording(tx: Tx, c: Placement, rec: ParsedRecording)
   const { fileName, actor } = c;
   // A User only ever writes to the logbooks of Divers they manage.
   const managed = await managedDivers(tx, c.userId);
-  const diverId = await resolveDiver(tx, c, rec, managed);
+  // The same Recording seen before (e.g. a re-export with a different file hash), or this dive from a poorer file of
+  // the same Source, which this one replaces (ADR 0037).
+  const keys = [rec.recordingKey, ...(rec.replacesKey ? [rec.replacesKey] : [])];
+  const [known] = (await tx.select().from(recording).where(and(inArray(recording.recordingKey, keys), isNull(recording.deletedAt))))
+    .sort((a, b) => keys.indexOf(a.recordingKey) - keys.indexOf(b.recordingKey));
+  if (known && !(await recordingIsManaged(tx, known, c.userId, managed))) return { fileName, result: 'skipped', reason: 'not_your_diver' };
+  // A Device first seen on a Recording that is already on a Dive belongs to that Dive's Diver.
+  const [onDive] = known?.diveId ? await tx.select({ diverId: dive.diverId }).from(dive).where(eq(dive.id, known.diveId)) : [];
+  const diverId = await resolveDiver(tx, onDive ? { ...c, diverId: onDive.diverId } : c, rec, managed);
   if (!diverId) return { fileName, result: 'skipped', reason: 'not_your_diver' };
   const deviceId = rec.device ? await resolveDevice(tx, diverId, rec) : null;
   const values = {
@@ -56,11 +65,8 @@ export async function placeRecording(tx: Tx, c: Placement, rec: ParsedRecording)
     ...positionColumns(rec), summary: rec.summary, updatedAt: new Date(),
   };
 
-  // Same Recording seen before (e.g. a re-export with a different file hash): update in place.
-  const [known] = await tx.select().from(recording)
-    .where(and(eq(recording.recordingKey, rec.recordingKey), isNull(recording.deletedAt)));
+  // Update in place.
   if (known) {
-    if (!(await recordingIsManaged(tx, known, c.userId, managed))) return { fileName, result: 'skipped', reason: 'not_your_diver' };
     await tx.update(recording).set(values).where(eq(recording.id, known.id));
     await writeSamples(tx, known.id, rec, true);
     await writeRevision(tx, 'recording', known.id, actor, 'reimport', { originalId: { from: known.originalId, to: c.originalId } });
@@ -72,12 +78,27 @@ export async function placeRecording(tx: Tx, c: Placement, rec: ParsedRecording)
   // Deleted with its Dive (ADR 0026): not created again, so re-importing a whole export doesn't bring it back.
   // Its key stays taken for everyone, or restoring it would clash with a newer Recording.
   const [deleted] = await tx.select().from(recording)
-    .where(and(eq(recording.recordingKey, rec.recordingKey), isNotNull(recording.deletedAt)))
+    .where(and(inArray(recording.recordingKey, keys), isNotNull(recording.deletedAt)))
     .orderBy(desc(recording.deletedAt)).limit(1);
   if (deleted) {
     return (await recordingIsManaged(tx, deleted, c.userId, managed))
       ? { fileName, result: 'skipped', reason: 'deleted_earlier', recordingId: deleted.id }
       : { fileName, result: 'skipped', reason: 'not_your_diver' };
+  }
+
+  // A fuller file's Recording of this dive is here: this one adds nothing (ADR 0037).
+  if (rec.fullerCopyLike) {
+    const fuller = await tx.select().from(recording).where(and(
+      like(recording.recordingKey, rec.fullerCopyLike),
+      sql`abs(${recording.durationSeconds} - ${rec.durationSeconds}) < 1`,
+      ...(rec.maxDepthM === undefined ? [] : [sql`abs(${recording.maxDepthM} - ${rec.maxDepthM}) < 0.02`]),
+    )).orderBy(sql`${recording.deletedAt} nulls first`);
+    for (const f of fuller) {
+      if (!(await recordingIsManaged(tx, f, c.userId, managed))) continue;
+      return f.deletedAt
+        ? { fileName, result: 'skipped', reason: 'deleted_earlier', recordingId: f.id }
+        : { fileName, result: 'skipped', reason: 'fuller_copy_here', recordingId: f.id, ...(f.diveId && { diveId: f.diveId }) };
+    }
   }
 
   const [created] = await tx.insert(recording).values(values).returning();

@@ -149,9 +149,9 @@
   },
   "import": {
     "title": "Import",
-    "drop": "Garmin-FIT-Dateien oder ZIP-Archive hier ablegen",
+    "drop": "Tauchgangsdateien von Garmin oder Suunto oder ZIP-Archive hier ablegen",
     "choose": "Dateien auswählen",
-    "hint": "„Export Original“-ZIPs aus Garmin Connect und direkt von der Uhr kopierte Dateien funktionieren beide.",
+    "hint": "Garmin: „Export Original“-ZIPs aus Garmin Connect oder direkt von der Uhr kopierte FIT-Dateien. Suunto: der JSON-Export eines Tauchgangs aus der Suunto-App; der FIT-Export geht auch, enthält aber viel weniger.",
     "status": {
       "pending": "wartet",
       "processing": "wird verarbeitet",
@@ -169,23 +169,25 @@
       "linked": "mit einem Tauchgang hier verknüpft"
     },
     "reason": {
-      "no_fit_file": "keine FIT-Datei gefunden",
+      "no_dive_file": "keine Tauchgangsdatei gefunden",
+      "no_fit_file": "keine Tauchgangsdatei gefunden",
       "not_a_dive": "kein Tauchgang",
       "not_your_diver": "für einen Taucher aufgezeichnet, den du nicht verwaltest",
       "overlaps_several_dives": "überschneidet sich mit mehreren Tauchgängen",
       "max_depth_differs": "die Maximaltiefe weicht zu stark ab",
       "file_failed": "die Datei konnte nicht gelesen werden",
       "deleted_earlier": "gehört zu einem Tauchgang, den du gelöscht hast; unter „Gelöschte Tauchgänge“ im Logbuch kannst du ihn wiederherstellen",
+      "fuller_copy_here": "dieser Tauchgang ist schon aus einer Datei hier, die mehr enthält",
       "sent_by_dive_hub": "von Dive Hub gesendet",
       "no_match": "kein Tauchgang hier zu dieser Zeit",
       "ambiguous": "mehrere Tauchgänge hier zu dieser Zeit; wähle in der Vorschau einen aus",
       "left_out": "von dir ausgelassen"
     },
     "errorCode": {
-      "unsupported_file": "Das ist weder eine FIT-Datei noch ein ZIP-Archiv.",
+      "unsupported_file": "Das ist weder eine Tauchgangsdatei (FIT, Suunto-JSON) noch ein ZIP-Archiv.",
       "processing_failed": "Die Verarbeitung ist fehlgeschlagen."
     },
-    "skipped": "Übersprungen: {{names}}. Nur FIT-Dateien und ZIP-Archive lassen sich importieren.",
+    "skipped": "Übersprungen: {{names}}. Nur FIT-Dateien, Suunto-JSON-Dateien und ZIP-Archive lassen sich importieren.",
     "decision": {
       "attached": "zu einem Tauchgang hinzugefügt",
       "new_dive": "als eigener Tauchgang angelegt",
@@ -195,14 +197,15 @@
     "uploading_other": "{{count}} Dateien werden hochgeladen …",
     "finished": "{{name}}: {{result}}",
     "importFiles": "Dateien importieren",
-    "dropAnywhere": "Du kannst FIT-Dateien und ZIPs auch irgendwo auf dieser Seite ablegen.",
+    "dropAnywhere": "Du kannst Tauchgangsdateien und ZIPs auch irgendwo auf dieser Seite ablegen.",
     "dropNow": "Zum Importieren ablegen",
     "recent": "Importe",
     "showAll": "Alle Importe zeigen",
     "showFewer": "Weniger zeigen",
     "findTitle": "Wo du deine Tauchgänge findest",
     "findConnect": "Garmin-Connect-Website: Tauchgang öffnen, im Zahnrad-Menü „Export Original“ wählen und das ZIP so importieren, wie es ist.",
-    "findWatch": "Uhr: per USB anschließen und die Dateien aus dem Ordner GARMIN/Activity kopieren.",
+    "findWatch": "Garmin-Uhr: per USB anschließen und die Dateien aus dem Ordner GARMIN/Activity kopieren.",
+    "findSuunto": "Suunto-App: Tauchgang öffnen, oben rechts auf die drei Punkte tippen und „Download JSON file“ wählen.",
     "grouped": "{{what}}: {{count}}",
     "fromProvider": "Tauchgänge aus {{name}}"
   },
@@ -420,7 +423,9 @@
       "apnea": "Apnoe"
     },
     "decoModel": {
-      "buhlmann_zhl16c": "Bühlmann ZHL-16C"
+      "buhlmann_zhl16c": "Bühlmann ZHL-16C",
+      "suunto_fused_rgbm": "Suunto Fused RGBM",
+      "suunto_fused2_rgbm": "Suunto Fused RGBM 2"
     },
     "circuit": {
       "open_circuit": "offenes System",
@@ -1337,7 +1342,11 @@
       "cns_warning": "Warnung der Sauerstoffuhr (CNS)",
       "cns_critical": "Sauerstoffuhr (CNS) an der Grenze",
       "otu_warning": "Warnung zur Sauerstoffdosis (OTU)",
-      "otu_critical": "Sauerstoffdosis (OTU) an der Grenze"
+      "otu_critical": "Sauerstoffdosis (OTU) an der Grenze",
+      "safety_stop_mandatory": "Sicherheitsstopp zur Pflicht geworden",
+      "deep_stop_started": "Tiefenstopp begonnen",
+      "deep_stop_broken": "Tiefenstopp vorzeitig verlassen",
+      "tank_pressure_low": "Flaschendruck niedrig"
     },
     "noFly": {
       "title": "Fliegen nach diesem Tauchgang",

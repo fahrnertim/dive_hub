@@ -769,3 +769,31 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   muted rules are in `GET /api/divers` and on the Divers page.
 - Not yet: gas left (slice 19), the surfacing GF (slice 21), trends, rules for apnea and rebreathers.
 
+**Slice 18a (2026-10-07): Suunto files; file formats behind a registry** ([ADR 0037](../decisions/0037-suunto-file-import-and-file-formats.md),
+[Suunto formats](../references/suunto-formats.md)).
+- `apps/server/src/imports/formats.ts`: the registry (`FileFormat`: `format`, `mediaType`, `parser`, `parserVersion`,
+  `detect`, `parse`). `import-service.ts`, `archive.ts` (`extractFiles` with a predicate) and the position backfill ask
+  it; none names a format. `parsed-recording.ts` holds what every adapter delivers (moved out of `src/fit/`).
+- `apps/server/src/suunto/`: `suunto-json.ts` (the app's JSON export: Device, offset, summary, channels `depth`,
+  `temperature`, `ndl`, `tts`, `ceiling`, `tankPressure`, events), `suunto-vocabulary.ts` (dive modes, RGBM models,
+  computer events).
+- `fit/fit-adapter.ts`: a Suunto dialect (the summary from `session`, the developer field `dive_mode`, the key
+  `suunto:fit:…` without a serial). Garmin files read as before, plus `otuEnd`.
+- `placement.ts`: `replacesKey` (a JSON takes over the FIT's Recording in place, with a `reimport` Revision) and
+  `fullerCopyLike` (a FIT finds the JSON's Recording by key pattern, duration and maximum depth: `skipped`,
+  `fuller_copy_here`); only among Recordings of Divers the User manages.
+- No migration: summaries are JSON, reasons and channels are text. Reasons `no_dive_file` (replaces `no_fit_file`, which
+  stays valid for stored Imports) and `fuller_copy_here`; deco models `suunto_fused_rgbm`, `suunto_fused2_rgbm`; computer
+  events `safety_stop_mandatory`, `deep_stop_started`, `deep_stop_broken`, `tank_pressure_low`
+  (`imports/computer-events.ts` maps stored events of any Source). The assessment's ceiling rule reads `nextStopDepth`,
+  else `ceiling`. MCP: `ceiling` and `tankPressure` are sample channels.
+- Web: the import texts name Suunto, `.json` is accepted by the picker, the new words are translated (en, de).
+- Tests: `suunto-formats.test.ts` (detection, both adapters, vocabulary, the assessment on 10 s samples; real files in
+  `samples/private/suunto` cross-checked when present), `suunto-import.test.ts` (PostgreSQL: scenario 1 with a Garmin and
+  a Suunto, a drifting clock, a Recording overlapping two Dives, FIT then JSON and the reverse, a zip, re-imports,
+  another User's Device); browser `suunto-import.spec.ts` (@dives); fixtures hand-made by `test/fixtures/suunto-dive.ts`.
+- Deliberate simplifications: a FIT after a JSON **without a serial number** is not recognised as the same dive (it
+  attaches as a second Recording); an Ocean's positions and header-less gases are not read; a pod is not a Device and
+  tank pressure is stored, not shown.
+- Not yet: Cylinders and SAC from the pod (slices 19, 22), the pod as a Device (23), SML and DM5 XML, merging two files
+  of one dive.

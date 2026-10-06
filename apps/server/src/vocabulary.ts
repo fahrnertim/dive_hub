@@ -19,7 +19,7 @@ export const DIVE_MODES = ['open_circuit', 'ccr', 'scr', 'gauge', 'apnea'] as co
 export type DiveMode = (typeof DIVE_MODES)[number];
 
 /** Decompression models are proper names; clients show them, they don't translate them. */
-export const DECO_MODELS = ['buhlmann_zhl16c'] as const;
+export const DECO_MODELS = ['buhlmann_zhl16c', 'suunto_fused_rgbm', 'suunto_fused2_rgbm'] as const;
 export type DecoModel = (typeof DECO_MODELS)[number];
 
 /** Whether a gas is breathed directly or is a rebreather's diluent. */
@@ -29,11 +29,13 @@ export type GasCircuit = (typeof GAS_CIRCUITS)[number];
 /**
  * What a dive computer itself noted during a dive (ADR 0036), shown beside Dive Hub's findings, never merged with
  * them. Alerts that say nothing about the dive (dismissed, battery, setpoint switches, the User's own time and depth
- * alarms) have no word here and are left out.
+ * alarms) have no word here and are left out. Suunto's deep stops and its mandatory safety stop (after a fast ascent)
+ * and a tank pod's low pressure have their own words (ADR 0037).
  */
 export const COMPUTER_EVENTS = [
   'ascent_critical', 'safety_stop_started', 'safety_stop_broken', 'safety_stop_complete', 'approaching_ndl', 'ndl_reached',
   'approaching_first_stop', 'ceiling_broken', 'deco_stop_cleared', 'deco_complete', 'po2_warning', 'po2_high', 'po2_low',
   'cns_warning', 'cns_critical', 'otu_warning', 'otu_critical',
+  'safety_stop_mandatory', 'deep_stop_started', 'deep_stop_broken', 'tank_pressure_low',
 ] as const;
 export type ComputerEvent = (typeof COMPUTER_EVENTS)[number];

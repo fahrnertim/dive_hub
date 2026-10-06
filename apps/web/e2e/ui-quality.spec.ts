@@ -636,7 +636,7 @@ test.describe('behaviour', () => {
   test('the logbook comes first; files dropped anywhere on the page are imported', { tag: ['@dives'] }, async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Logbook', level: 1 })).toBeVisible();
-    await expect(page.getByText('Drop Garmin FIT files or zips here')).toHaveCount(0); // the first-run panel
+    await expect(page.getByText('Drop Garmin or Suunto dive files or zips here')).toHaveCount(0); // the first-run panel
     await expect(page.getByRole('button', { name: 'Import files' })).toBeVisible();
 
     await dropFiles(page, [

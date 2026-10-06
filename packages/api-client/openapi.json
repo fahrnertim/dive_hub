@@ -4691,6 +4691,7 @@
                           },
                           "reason": {
                             "enum": [
+                              "no_dive_file",
                               "no_fit_file",
                               "not_a_dive",
                               "not_your_diver",
@@ -4698,6 +4699,7 @@
                               "max_depth_differs",
                               "file_failed",
                               "deleted_earlier",
+                              "fuller_copy_here",
                               "sent_by_dive_hub",
                               "no_match",
                               "ambiguous",
@@ -5080,6 +5082,7 @@
                             },
                             "reason": {
                               "enum": [
+                                "no_dive_file",
                                 "no_fit_file",
                                 "not_a_dive",
                                 "not_your_diver",
@@ -5087,6 +5090,7 @@
                                 "max_depth_differs",
                                 "file_failed",
                                 "deleted_earlier",
+                                "fuller_copy_here",
                                 "sent_by_dive_hub",
                                 "no_match",
                                 "ambiguous",
@@ -5263,6 +5267,7 @@
                           },
                           "reason": {
                             "enum": [
+                              "no_dive_file",
                               "no_fit_file",
                               "not_a_dive",
                               "not_your_diver",
@@ -5270,6 +5275,7 @@
                               "max_depth_differs",
                               "file_failed",
                               "deleted_earlier",
+                              "fuller_copy_here",
                               "sent_by_dive_hub",
                               "no_match",
                               "ambiguous",
@@ -6303,7 +6309,9 @@
                               },
                               "decoModel": {
                                 "enum": [
-                                  "buhlmann_zhl16c"
+                                  "buhlmann_zhl16c",
+                                  "suunto_fused_rgbm",
+                                  "suunto_fused2_rgbm"
                                 ]
                               },
                               "gfLow": {
@@ -6346,6 +6354,16 @@
                                         "open_circuit",
                                         "diluent"
                                       ]
+                                    },
+                                    "tankVolumeL": {
+                                      "type": "number",
+                                      "description": "With a tank pod: the size of the tank, litres"
+                                    },
+                                    "startPressureBar": {
+                                      "type": "number"
+                                    },
+                                    "endPressureBar": {
+                                      "type": "number"
                                     }
                                   }
                                 }
@@ -6366,6 +6384,24 @@
                                 "type": "number"
                               },
                               "cnsEnd": {
+                                "type": "number"
+                              },
+                              "otuStart": {
+                                "type": "number",
+                                "description": "Oxygen dose, OTU"
+                              },
+                              "otuEnd": {
+                                "type": "number"
+                              },
+                              "sacLpm": {
+                                "type": "number",
+                                "description": "Gas consumption at the surface as a tank pod measured it, L/min"
+                              },
+                              "conservatism": {
+                                "type": "number",
+                                "description": "The personal setting of the computer where its model has one (Suunto: -2 to +2)"
+                              },
+                              "surfacePressureBar": {
                                 "type": "number"
                               },
                               "extras": {
@@ -7159,7 +7195,9 @@
                               },
                               "decoModel": {
                                 "enum": [
-                                  "buhlmann_zhl16c"
+                                  "buhlmann_zhl16c",
+                                  "suunto_fused_rgbm",
+                                  "suunto_fused2_rgbm"
                                 ]
                               },
                               "gfLow": {
@@ -7202,6 +7240,16 @@
                                         "open_circuit",
                                         "diluent"
                                       ]
+                                    },
+                                    "tankVolumeL": {
+                                      "type": "number",
+                                      "description": "With a tank pod: the size of the tank, litres"
+                                    },
+                                    "startPressureBar": {
+                                      "type": "number"
+                                    },
+                                    "endPressureBar": {
+                                      "type": "number"
                                     }
                                   }
                                 }
@@ -7222,6 +7270,24 @@
                                 "type": "number"
                               },
                               "cnsEnd": {
+                                "type": "number"
+                              },
+                              "otuStart": {
+                                "type": "number",
+                                "description": "Oxygen dose, OTU"
+                              },
+                              "otuEnd": {
+                                "type": "number"
+                              },
+                              "sacLpm": {
+                                "type": "number",
+                                "description": "Gas consumption at the surface as a tank pod measured it, L/min"
+                              },
+                              "conservatism": {
+                                "type": "number",
+                                "description": "The personal setting of the computer where its model has one (Suunto: -2 to +2)"
+                              },
+                              "surfacePressureBar": {
                                 "type": "number"
                               },
                               "extras": {
@@ -8727,7 +8793,9 @@
                               },
                               "decoModel": {
                                 "enum": [
-                                  "buhlmann_zhl16c"
+                                  "buhlmann_zhl16c",
+                                  "suunto_fused_rgbm",
+                                  "suunto_fused2_rgbm"
                                 ]
                               },
                               "gfLow": {
@@ -8770,6 +8838,16 @@
                                         "open_circuit",
                                         "diluent"
                                       ]
+                                    },
+                                    "tankVolumeL": {
+                                      "type": "number",
+                                      "description": "With a tank pod: the size of the tank, litres"
+                                    },
+                                    "startPressureBar": {
+                                      "type": "number"
+                                    },
+                                    "endPressureBar": {
+                                      "type": "number"
                                     }
                                   }
                                 }
@@ -8790,6 +8868,24 @@
                                 "type": "number"
                               },
                               "cnsEnd": {
+                                "type": "number"
+                              },
+                              "otuStart": {
+                                "type": "number",
+                                "description": "Oxygen dose, OTU"
+                              },
+                              "otuEnd": {
+                                "type": "number"
+                              },
+                              "sacLpm": {
+                                "type": "number",
+                                "description": "Gas consumption at the surface as a tank pod measured it, L/min"
+                              },
+                              "conservatism": {
+                                "type": "number",
+                                "description": "The personal setting of the computer where its model has one (Suunto: -2 to +2)"
+                              },
+                              "surfacePressureBar": {
                                 "type": "number"
                               },
                               "extras": {
@@ -9686,7 +9782,9 @@
                               },
                               "decoModel": {
                                 "enum": [
-                                  "buhlmann_zhl16c"
+                                  "buhlmann_zhl16c",
+                                  "suunto_fused_rgbm",
+                                  "suunto_fused2_rgbm"
                                 ]
                               },
                               "gfLow": {
@@ -9729,6 +9827,16 @@
                                         "open_circuit",
                                         "diluent"
                                       ]
+                                    },
+                                    "tankVolumeL": {
+                                      "type": "number",
+                                      "description": "With a tank pod: the size of the tank, litres"
+                                    },
+                                    "startPressureBar": {
+                                      "type": "number"
+                                    },
+                                    "endPressureBar": {
+                                      "type": "number"
                                     }
                                   }
                                 }
@@ -9749,6 +9857,24 @@
                                 "type": "number"
                               },
                               "cnsEnd": {
+                                "type": "number"
+                              },
+                              "otuStart": {
+                                "type": "number",
+                                "description": "Oxygen dose, OTU"
+                              },
+                              "otuEnd": {
+                                "type": "number"
+                              },
+                              "sacLpm": {
+                                "type": "number",
+                                "description": "Gas consumption at the surface as a tank pod measured it, L/min"
+                              },
+                              "conservatism": {
+                                "type": "number",
+                                "description": "The personal setting of the computer where its model has one (Suunto: -2 to +2)"
+                              },
+                              "surfacePressureBar": {
                                 "type": "number"
                               },
                               "extras": {
@@ -10645,7 +10771,9 @@
                               },
                               "decoModel": {
                                 "enum": [
-                                  "buhlmann_zhl16c"
+                                  "buhlmann_zhl16c",
+                                  "suunto_fused_rgbm",
+                                  "suunto_fused2_rgbm"
                                 ]
                               },
                               "gfLow": {
@@ -10688,6 +10816,16 @@
                                         "open_circuit",
                                         "diluent"
                                       ]
+                                    },
+                                    "tankVolumeL": {
+                                      "type": "number",
+                                      "description": "With a tank pod: the size of the tank, litres"
+                                    },
+                                    "startPressureBar": {
+                                      "type": "number"
+                                    },
+                                    "endPressureBar": {
+                                      "type": "number"
                                     }
                                   }
                                 }
@@ -10708,6 +10846,24 @@
                                 "type": "number"
                               },
                               "cnsEnd": {
+                                "type": "number"
+                              },
+                              "otuStart": {
+                                "type": "number",
+                                "description": "Oxygen dose, OTU"
+                              },
+                              "otuEnd": {
+                                "type": "number"
+                              },
+                              "sacLpm": {
+                                "type": "number",
+                                "description": "Gas consumption at the surface as a tank pod measured it, L/min"
+                              },
+                              "conservatism": {
+                                "type": "number",
+                                "description": "The personal setting of the computer where its model has one (Suunto: -2 to +2)"
+                              },
+                              "surfacePressureBar": {
                                 "type": "number"
                               },
                               "extras": {
@@ -11917,7 +12073,9 @@
                               },
                               "decoModel": {
                                 "enum": [
-                                  "buhlmann_zhl16c"
+                                  "buhlmann_zhl16c",
+                                  "suunto_fused_rgbm",
+                                  "suunto_fused2_rgbm"
                                 ]
                               },
                               "gfLow": {
@@ -11960,6 +12118,16 @@
                                         "open_circuit",
                                         "diluent"
                                       ]
+                                    },
+                                    "tankVolumeL": {
+                                      "type": "number",
+                                      "description": "With a tank pod: the size of the tank, litres"
+                                    },
+                                    "startPressureBar": {
+                                      "type": "number"
+                                    },
+                                    "endPressureBar": {
+                                      "type": "number"
                                     }
                                   }
                                 }
@@ -11980,6 +12148,24 @@
                                 "type": "number"
                               },
                               "cnsEnd": {
+                                "type": "number"
+                              },
+                              "otuStart": {
+                                "type": "number",
+                                "description": "Oxygen dose, OTU"
+                              },
+                              "otuEnd": {
+                                "type": "number"
+                              },
+                              "sacLpm": {
+                                "type": "number",
+                                "description": "Gas consumption at the surface as a tank pod measured it, L/min"
+                              },
+                              "conservatism": {
+                                "type": "number",
+                                "description": "The personal setting of the computer where its model has one (Suunto: -2 to +2)"
+                              },
+                              "surfacePressureBar": {
                                 "type": "number"
                               },
                               "extras": {
@@ -14497,7 +14683,11 @@
                               "cns_warning",
                               "cns_critical",
                               "otu_warning",
-                              "otu_critical"
+                              "otu_critical",
+                              "safety_stop_mandatory",
+                              "deep_stop_started",
+                              "deep_stop_broken",
+                              "tank_pressure_low"
                             ],
                             "description": "What the dive computer itself noted; shown beside the findings, never merged"
                           }
@@ -14962,7 +15152,11 @@
                               "cns_warning",
                               "cns_critical",
                               "otu_warning",
-                              "otu_critical"
+                              "otu_critical",
+                              "safety_stop_mandatory",
+                              "deep_stop_started",
+                              "deep_stop_broken",
+                              "tank_pressure_low"
                             ],
                             "description": "What the dive computer itself noted; shown beside the findings, never merged"
                           }
@@ -33383,6 +33577,7 @@
                           },
                           "reason": {
                             "enum": [
+                              "no_dive_file",
                               "no_fit_file",
                               "not_a_dive",
                               "not_your_diver",
@@ -33390,6 +33585,7 @@
                               "max_depth_differs",
                               "file_failed",
                               "deleted_earlier",
+                              "fuller_copy_here",
                               "sent_by_dive_hub",
                               "no_match",
                               "ambiguous",

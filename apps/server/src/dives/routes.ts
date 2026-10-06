@@ -67,6 +67,9 @@ const SummaryView = Type.Object({
   waterDensity: Type.Optional(Type.Number({ description: 'Density the computer computed depths with, kg/m³' })),
   gases: Type.Optional(Type.Array(Type.Object({
     o2: Type.Number(), he: Type.Number(), circuit: Type.Optional(Type.Enum([...GAS_CIRCUITS])),
+    tankVolumeL: Type.Optional(Type.Number({ description: 'With a tank pod: the size of the tank, litres' })),
+    startPressureBar: Type.Optional(Type.Number()),
+    endPressureBar: Type.Optional(Type.Number()),
   }))),
   minTemperatureC: Type.Optional(Type.Number()),
   maxTemperatureC: Type.Optional(Type.Number()),
@@ -74,6 +77,11 @@ const SummaryView = Type.Object({
   surfaceIntervalSeconds: Type.Optional(Type.Number()),
   cnsStart: Type.Optional(Type.Number()),
   cnsEnd: Type.Optional(Type.Number()),
+  otuStart: Type.Optional(Type.Number({ description: 'Oxygen dose, OTU' })),
+  otuEnd: Type.Optional(Type.Number()),
+  sacLpm: Type.Optional(Type.Number({ description: 'Gas consumption at the surface as a tank pod measured it, L/min' })),
+  conservatism: Type.Optional(Type.Number({ description: 'The personal setting of the computer where its model has one (Suunto: -2 to +2)' })),
+  surfacePressureBar: Type.Optional(Type.Number()),
   extras: Type.Optional(Type.Record(Type.String(), Type.String(), {
     description: 'Source values without a word in our vocabulary, by source field name',
   })),

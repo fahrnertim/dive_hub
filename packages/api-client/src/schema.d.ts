@@ -1550,7 +1550,7 @@ export interface paths {
                                  * @description Why; clients translate it. A failure’s detail stays in the server log
                                  * @enum {unknown}
                                  */
-                                reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "deleted_earlier" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out";
+                                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out";
                                 /**
                                  * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
                                  * @enum {unknown}
@@ -1606,7 +1606,7 @@ export interface paths {
                                  * @description Why; clients translate it. A failure’s detail stays in the server log
                                  * @enum {unknown}
                                  */
-                                reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "deleted_earlier" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out";
+                                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out";
                                 /**
                                  * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
                                  * @enum {unknown}
@@ -1718,7 +1718,7 @@ export interface paths {
                                  * @description Why; clients translate it. A failure’s detail stays in the server log
                                  * @enum {unknown}
                                  */
-                                reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "deleted_earlier" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out";
+                                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out";
                                 /**
                                  * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
                                  * @enum {unknown}
@@ -2001,7 +2001,7 @@ export interface paths {
                                     /** @enum {unknown} */
                                     diveMode?: "open_circuit" | "ccr" | "scr" | "gauge" | "apnea";
                                     /** @enum {unknown} */
-                                    decoModel?: "buhlmann_zhl16c";
+                                    decoModel?: "buhlmann_zhl16c" | "suunto_fused_rgbm" | "suunto_fused2_rgbm";
                                     gfLow?: number;
                                     gfHigh?: number;
                                     /**
@@ -2016,6 +2016,10 @@ export interface paths {
                                         he: number;
                                         /** @enum {unknown} */
                                         circuit?: "open_circuit" | "diluent";
+                                        /** @description With a tank pod: the size of the tank, litres */
+                                        tankVolumeL?: number;
+                                        startPressureBar?: number;
+                                        endPressureBar?: number;
                                     }[];
                                     minTemperatureC?: number;
                                     maxTemperatureC?: number;
@@ -2023,6 +2027,14 @@ export interface paths {
                                     surfaceIntervalSeconds?: number;
                                     cnsStart?: number;
                                     cnsEnd?: number;
+                                    /** @description Oxygen dose, OTU */
+                                    otuStart?: number;
+                                    otuEnd?: number;
+                                    /** @description Gas consumption at the surface as a tank pod measured it, L/min */
+                                    sacLpm?: number;
+                                    /** @description The personal setting of the computer where its model has one (Suunto: -2 to +2) */
+                                    conservatism?: number;
+                                    surfacePressureBar?: number;
                                     /** @description Source values without a word in our vocabulary, by source field name */
                                     extras?: {
                                         [key: string]: string;
@@ -2344,7 +2356,7 @@ export interface paths {
                                     /** @enum {unknown} */
                                     diveMode?: "open_circuit" | "ccr" | "scr" | "gauge" | "apnea";
                                     /** @enum {unknown} */
-                                    decoModel?: "buhlmann_zhl16c";
+                                    decoModel?: "buhlmann_zhl16c" | "suunto_fused_rgbm" | "suunto_fused2_rgbm";
                                     gfLow?: number;
                                     gfHigh?: number;
                                     /**
@@ -2359,6 +2371,10 @@ export interface paths {
                                         he: number;
                                         /** @enum {unknown} */
                                         circuit?: "open_circuit" | "diluent";
+                                        /** @description With a tank pod: the size of the tank, litres */
+                                        tankVolumeL?: number;
+                                        startPressureBar?: number;
+                                        endPressureBar?: number;
                                     }[];
                                     minTemperatureC?: number;
                                     maxTemperatureC?: number;
@@ -2366,6 +2382,14 @@ export interface paths {
                                     surfaceIntervalSeconds?: number;
                                     cnsStart?: number;
                                     cnsEnd?: number;
+                                    /** @description Oxygen dose, OTU */
+                                    otuStart?: number;
+                                    otuEnd?: number;
+                                    /** @description Gas consumption at the surface as a tank pod measured it, L/min */
+                                    sacLpm?: number;
+                                    /** @description The personal setting of the computer where its model has one (Suunto: -2 to +2) */
+                                    conservatism?: number;
+                                    surfacePressureBar?: number;
                                     /** @description Source values without a word in our vocabulary, by source field name */
                                     extras?: {
                                         [key: string]: string;
@@ -2574,7 +2598,7 @@ export interface paths {
                                     /** @enum {unknown} */
                                     diveMode?: "open_circuit" | "ccr" | "scr" | "gauge" | "apnea";
                                     /** @enum {unknown} */
-                                    decoModel?: "buhlmann_zhl16c";
+                                    decoModel?: "buhlmann_zhl16c" | "suunto_fused_rgbm" | "suunto_fused2_rgbm";
                                     gfLow?: number;
                                     gfHigh?: number;
                                     /**
@@ -2589,6 +2613,10 @@ export interface paths {
                                         he: number;
                                         /** @enum {unknown} */
                                         circuit?: "open_circuit" | "diluent";
+                                        /** @description With a tank pod: the size of the tank, litres */
+                                        tankVolumeL?: number;
+                                        startPressureBar?: number;
+                                        endPressureBar?: number;
                                     }[];
                                     minTemperatureC?: number;
                                     maxTemperatureC?: number;
@@ -2596,6 +2624,14 @@ export interface paths {
                                     surfaceIntervalSeconds?: number;
                                     cnsStart?: number;
                                     cnsEnd?: number;
+                                    /** @description Oxygen dose, OTU */
+                                    otuStart?: number;
+                                    otuEnd?: number;
+                                    /** @description Gas consumption at the surface as a tank pod measured it, L/min */
+                                    sacLpm?: number;
+                                    /** @description The personal setting of the computer where its model has one (Suunto: -2 to +2) */
+                                    conservatism?: number;
+                                    surfacePressureBar?: number;
                                     /** @description Source values without a word in our vocabulary, by source field name */
                                     extras?: {
                                         [key: string]: string;
@@ -2799,7 +2835,7 @@ export interface paths {
                                     /** @enum {unknown} */
                                     diveMode?: "open_circuit" | "ccr" | "scr" | "gauge" | "apnea";
                                     /** @enum {unknown} */
-                                    decoModel?: "buhlmann_zhl16c";
+                                    decoModel?: "buhlmann_zhl16c" | "suunto_fused_rgbm" | "suunto_fused2_rgbm";
                                     gfLow?: number;
                                     gfHigh?: number;
                                     /**
@@ -2814,6 +2850,10 @@ export interface paths {
                                         he: number;
                                         /** @enum {unknown} */
                                         circuit?: "open_circuit" | "diluent";
+                                        /** @description With a tank pod: the size of the tank, litres */
+                                        tankVolumeL?: number;
+                                        startPressureBar?: number;
+                                        endPressureBar?: number;
                                     }[];
                                     minTemperatureC?: number;
                                     maxTemperatureC?: number;
@@ -2821,6 +2861,14 @@ export interface paths {
                                     surfaceIntervalSeconds?: number;
                                     cnsStart?: number;
                                     cnsEnd?: number;
+                                    /** @description Oxygen dose, OTU */
+                                    otuStart?: number;
+                                    otuEnd?: number;
+                                    /** @description Gas consumption at the surface as a tank pod measured it, L/min */
+                                    sacLpm?: number;
+                                    /** @description The personal setting of the computer where its model has one (Suunto: -2 to +2) */
+                                    conservatism?: number;
+                                    surfacePressureBar?: number;
                                     /** @description Source values without a word in our vocabulary, by source field name */
                                     extras?: {
                                         [key: string]: string;
@@ -3025,7 +3073,7 @@ export interface paths {
                                     /** @enum {unknown} */
                                     diveMode?: "open_circuit" | "ccr" | "scr" | "gauge" | "apnea";
                                     /** @enum {unknown} */
-                                    decoModel?: "buhlmann_zhl16c";
+                                    decoModel?: "buhlmann_zhl16c" | "suunto_fused_rgbm" | "suunto_fused2_rgbm";
                                     gfLow?: number;
                                     gfHigh?: number;
                                     /**
@@ -3040,6 +3088,10 @@ export interface paths {
                                         he: number;
                                         /** @enum {unknown} */
                                         circuit?: "open_circuit" | "diluent";
+                                        /** @description With a tank pod: the size of the tank, litres */
+                                        tankVolumeL?: number;
+                                        startPressureBar?: number;
+                                        endPressureBar?: number;
                                     }[];
                                     minTemperatureC?: number;
                                     maxTemperatureC?: number;
@@ -3047,6 +3099,14 @@ export interface paths {
                                     surfaceIntervalSeconds?: number;
                                     cnsStart?: number;
                                     cnsEnd?: number;
+                                    /** @description Oxygen dose, OTU */
+                                    otuStart?: number;
+                                    otuEnd?: number;
+                                    /** @description Gas consumption at the surface as a tank pod measured it, L/min */
+                                    sacLpm?: number;
+                                    /** @description The personal setting of the computer where its model has one (Suunto: -2 to +2) */
+                                    conservatism?: number;
+                                    surfacePressureBar?: number;
                                     /** @description Source values without a word in our vocabulary, by source field name */
                                     extras?: {
                                         [key: string]: string;
@@ -3384,7 +3444,7 @@ export interface paths {
                                     /** @enum {unknown} */
                                     diveMode?: "open_circuit" | "ccr" | "scr" | "gauge" | "apnea";
                                     /** @enum {unknown} */
-                                    decoModel?: "buhlmann_zhl16c";
+                                    decoModel?: "buhlmann_zhl16c" | "suunto_fused_rgbm" | "suunto_fused2_rgbm";
                                     gfLow?: number;
                                     gfHigh?: number;
                                     /**
@@ -3399,6 +3459,10 @@ export interface paths {
                                         he: number;
                                         /** @enum {unknown} */
                                         circuit?: "open_circuit" | "diluent";
+                                        /** @description With a tank pod: the size of the tank, litres */
+                                        tankVolumeL?: number;
+                                        startPressureBar?: number;
+                                        endPressureBar?: number;
                                     }[];
                                     minTemperatureC?: number;
                                     maxTemperatureC?: number;
@@ -3406,6 +3470,14 @@ export interface paths {
                                     surfaceIntervalSeconds?: number;
                                     cnsStart?: number;
                                     cnsEnd?: number;
+                                    /** @description Oxygen dose, OTU */
+                                    otuStart?: number;
+                                    otuEnd?: number;
+                                    /** @description Gas consumption at the surface as a tank pod measured it, L/min */
+                                    sacLpm?: number;
+                                    /** @description The personal setting of the computer where its model has one (Suunto: -2 to +2) */
+                                    conservatism?: number;
+                                    surfacePressureBar?: number;
                                     /** @description Source values without a word in our vocabulary, by source field name */
                                     extras?: {
                                         [key: string]: string;
@@ -4141,7 +4213,7 @@ export interface paths {
                                  * @description What the dive computer itself noted; shown beside the findings, never merged
                                  * @enum {unknown}
                                  */
-                                event: "ascent_critical" | "safety_stop_started" | "safety_stop_broken" | "safety_stop_complete" | "approaching_ndl" | "ndl_reached" | "approaching_first_stop" | "ceiling_broken" | "deco_stop_cleared" | "deco_complete" | "po2_warning" | "po2_high" | "po2_low" | "cns_warning" | "cns_critical" | "otu_warning" | "otu_critical";
+                                event: "ascent_critical" | "safety_stop_started" | "safety_stop_broken" | "safety_stop_complete" | "approaching_ndl" | "ndl_reached" | "approaching_first_stop" | "ceiling_broken" | "deco_stop_cleared" | "deco_complete" | "po2_warning" | "po2_high" | "po2_low" | "cns_warning" | "cns_critical" | "otu_warning" | "otu_critical" | "safety_stop_mandatory" | "deep_stop_started" | "deep_stop_broken" | "tank_pressure_low";
                             }[];
                         };
                     };
@@ -4277,7 +4349,7 @@ export interface paths {
                                  * @description What the dive computer itself noted; shown beside the findings, never merged
                                  * @enum {unknown}
                                  */
-                                event: "ascent_critical" | "safety_stop_started" | "safety_stop_broken" | "safety_stop_complete" | "approaching_ndl" | "ndl_reached" | "approaching_first_stop" | "ceiling_broken" | "deco_stop_cleared" | "deco_complete" | "po2_warning" | "po2_high" | "po2_low" | "cns_warning" | "cns_critical" | "otu_warning" | "otu_critical";
+                                event: "ascent_critical" | "safety_stop_started" | "safety_stop_broken" | "safety_stop_complete" | "approaching_ndl" | "ndl_reached" | "approaching_first_stop" | "ceiling_broken" | "deco_stop_cleared" | "deco_complete" | "po2_warning" | "po2_high" | "po2_low" | "cns_warning" | "cns_critical" | "otu_warning" | "otu_critical" | "safety_stop_mandatory" | "deep_stop_started" | "deep_stop_broken" | "tank_pressure_low";
                             }[];
                         };
                     };
@@ -8910,7 +8982,7 @@ export interface paths {
                                  * @description Why; clients translate it. A failure’s detail stays in the server log
                                  * @enum {unknown}
                                  */
-                                reason?: "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "deleted_earlier" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out";
+                                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out";
                                 /**
                                  * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
                                  * @enum {unknown}

@@ -277,7 +277,7 @@ _Avoid_: Error, violation, warning (that is the computer's), issue
 _German_: Hinweis
 
 **Computer event**:
-What a dive computer itself noted during a dive, such as "ascent too fast" or "safety stop left early" (Garmin's dive alerts), in Dive Hub's words. Shown beside the findings, never merged with them: computers judge differently, the rules the same for every source.
+What a dive computer itself noted during a dive, such as "ascent too fast" or "safety stop left early" (Garmin's dive alerts, Suunto's alarms and warnings), in Dive Hub's words. Shown beside the findings, never merged with them: computers judge differently, the rules the same for every source.
 _Avoid_: Alarm, warning (alone), finding
 _German_: on screen "Dein Computer hat vermerkt"
 
@@ -316,7 +316,7 @@ _German_: Anbieter
 ## Data in and out
 
 **Source**:
-A system or format that data comes from: dive data from Garmin, Suunto or a UDDF file, or Dive site data from OpenStreetMap, Wikidata or SSI. SSI is also a Source of site IDs typed in by Users, and of account IDs on Divers. A Source's license, Attribution and link pattern are defined once in code. A Provider is a Source for the kinds of data it imports.
+A system or format that data comes from: dive data from Garmin, Suunto (the Suunto app's JSON and FIT exports) or a UDDF file, or Dive site data from OpenStreetMap, Wikidata or SSI. SSI is also a Source of site IDs typed in by Users, and of account IDs on Divers. A Source's license, Attribution and link pattern are defined once in code. A Provider is a Source for the kinds of data it imports.
 _Avoid_: integration, inbound, origin
 _German_: Quelle
 
@@ -368,6 +368,7 @@ _German_: Verbindung
 **Original**:
 A file or payload exactly as received from a Source, kept unchanged and belonging to one User.
 An archive that only bundles files (such as a zip) is not an Original; the files inside it are.
+Two Originals can hold the same dive (Suunto's FIT and JSON): both are kept, and the Recording is read from the fuller one.
 _Avoid_: Raw file, upload, dump
 _German_: Originaldatei
 
