@@ -1,8 +1,8 @@
 ---
 title: Product specification
-summary: Dive Hub is a self-hosted hub that collects dive data from many sources and can forward it to connected services.
+summary: Dive Hub is a self-hosted hub that collects dive data from many sources and can forward it to connected services; later features (auto-import of sites near Dives, planning tools starting with a lead estimate).
 status: draft
-date: 2026-10-05
+date: 2026-10-06
 ---
 
 # Product specification
@@ -93,6 +93,15 @@ Noted for later; not designed or decided yet.
     fair use, SSI's one large file: download once and reuse it for a while);
   - whether the area's sites are imported, or only the nearest few;
   - what the importing User sees, since the sites are shared by every User.
+
+- **Planning tools, later a dive planner** (owner, 2026-10-06). Tools that help prepare a dive, later combined around a
+  planned dive. The first is a **lead estimate** (weight calculator), decided in
+  [ADR 0031](../decisions/0031-lead-suit-cylinders-and-lead-estimate.md) and designed in the
+  [weight calculator note](../research/2026-10-06-weight-calculator.md): Dives first record lead (placed, with how it felt),
+  the exposure suit and Cylinders, Divers a body weight (slice 17); then a Tools page suggests lead from the Diver's own
+  Dives with the same suit, adjusted by physics for the cylinder and water, with a rule of thumb when there is no history
+  (slice 18). Not decided yet: buoyancy per Equipment item (waits for Equipment items), gas planning on the same Cylinders
+  and the Recordings' SAC, what a planned dive is and whether it becomes the Dive once dived.
 
 ## Non-goals (so far)
 

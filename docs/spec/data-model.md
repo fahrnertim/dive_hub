@@ -1,6 +1,6 @@
 ---
 title: Data model
-summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios; Dives without a Recording, offsets and their source, a Provider's dives as Originals, Recordings and Imports (ADR 0030).
+summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios; Dives without a Recording, offsets and their source, a Provider's dives as Originals, Recordings and Imports (ADR 0030); planned: lead, weighting feedback, exposure suit, Cylinders and body weight (ADR 0031).
 status: draft
 date: 2026-10-06
 ---
@@ -19,7 +19,7 @@ Every entity belongs to exactly one tier. This answers "who can see/change it" a
 |---|---|
 | **Instance** (shared by all Users) | User, Dive site (→ External IDs), Site import, Operator, Agency catalog |
 | **User** | Connection (→ Diver mappings), Import, Original, external Divers they created |
-| **Diver** (via the Users who manage it) | External IDs, Dive (→ Recordings, Cylinders, Participants, Media, Signatures, Pushes), Trip, Certification, Membership, Insurance, Medical exam, Equipment (incl. Devices), Site note |
+| **Diver** (via the Users who manage it) | External IDs, Body weights (planned), Dive (→ Recordings, Cylinders, Lead, Participants, Media, Signatures, Pushes), Trip, Certification, Membership, Insurance, Medical exam, Equipment (incl. Devices), Site note |
 
 ## Overview
 
@@ -106,6 +106,10 @@ Changes to external Divers and External IDs set by hand are Revisions on the Div
 by connecting the account it holds, or by an admin: its Participants and accounts move, it is deleted with
 `merged_into` set (migration 0018), and both get a Revision `merge`.
 
+*Body weight (planned, [ADR 0031](../decisions/0031-lead-suit-cylinders-and-lead-estimate.md)):* dated values
+`(Diver, date, kg)` for the lead estimate's rule of thumb and water term. Seen and set only by the Users who manage the
+Diver, never by other Users (ADR 0028); deleted with the Diver. No height, sex or age.
+
 **Diver management** — `(User, Diver, role)`. A User's *own* Diver is flagged. Several
 Users can manage one Diver (two parents; a dive center handing a guest's log over to
 the guest). External Divers are managed by no one (ADR 0028): shared like Dive sites.
@@ -139,7 +143,14 @@ coverage, validity; B5), **Medical exam** (date, result, valid until, examiner),
   *Implemented (ADR 0025):* the **water type is the Dive site's**, not a Dive value: a Dive without a site has
   none. When the Primary recording's computer was set to other water, the Dive says so (`waterMismatch`, with how
   far its depths read off).
-- *Gas and gear:* Cylinders, weights, Equipment uses (B10, B11).
+- *Gas and gear:* Cylinders, Lead, Equipment uses (B10, B11).
+  *Planned ([ADR 0031](../decisions/0031-lead-suit-cylinders-and-lead-estimate.md), slice 17):* **Lead** entries and
+  **weighting feedback** (`right`, `too_heavy`, `too_light`, optional amount in kg), the **exposure suit** (type `none`,
+  `skin`, `wetsuit`, `semidry`, `drysuit`; thickness in mm; hood; drysuit undergarment `light`, `medium`, `heavy`) and
+  **Cylinders**, all the Dive's own values (not Overrides): part of its version, each change a Revision. "Same as last
+  dive" copies suit, Cylinders (without pressures) and lead from the Diver's previous Dive into the form; nothing is
+  filled without the User. An import from a Provider fills lead and the cylinder where empty and takes them back
+  three-way (amends ADR 0030).
 - *Experience:* dive type/purpose, rating, notes, tags, problems.
 - *Social:* Participants, Joint dive, Visibility, Signatures.
 - *Hub state:* Pushes, Conflicts, Revisions.
@@ -186,10 +197,22 @@ and nothing reaches that User.
   Dive without one becomes primary.
 
 **Cylinder** — per Dive: Equipment item (optional), volume, working pressure, material,
-gas mix (O2/He), start/end pressure, usage window. **Sensor mapping** links a
+gas mix (O2/He), start/end pressure, usage window.
+*Planned (ADR 0031, slice 17):* one or more per Dive (position), material `aluminium`, `steel` or `carbon`; a **cylinder
+catalogue in code** (like the vocabularies: AL80, S80, steel 10/12/15 L, twins, …, each with its empty buoyancy in
+seawater and its source) fills the values when picked; any value can be typed. SSI gives one cylinder's volume, pressures
+and a type ID (material once the IDs are looked up); FIT gives pressures (volume from message 147, later). UDDF:
+`tankmaterial`, `tankvolume`, `tankdata`. **Sensor mapping** links a
 Recording's pressure sensor (e.g. transmitter serial) to a Cylinder (Subsurface idea, B11).
 
-**Weight** — per Dive: amount, type (belt, integrated, trim).
+**Lead** (was *Weight*; planned, ADR 0031, slice 17) — per Dive: one or more entries `(amount kg, placement)`, placement
+`belt`, `integrated`, `trim`, `ankle`, `backplate`, `other` or none given. The total is their sum; **no entries = unknown,
+one entry of 0 = no lead.** Exports and Providers get the total (UDDF `leadquantity`, SSI `weight_kg`); placement and the
+weighting feedback stay here (no exchange format has them).
+
+**Lead estimate** (planned, ADR 0031, slice 18) — not stored: computed on request for a Diver and planned conditions
+(water, suit, Cylinders) from the Diver's Dives with the same suit and a known water type, adjusted by physics for the
+cylinder at reserve and the water; a rule of thumb without history. See the [weight calculator note](../research/2026-10-06-weight-calculator.md).
 
 **Equipment use** — `(Dive, Equipment item, configuration note)`.
 
@@ -460,6 +483,28 @@ Edge cases:
   or re-pushes (P2, with P1 kept).
 - *The answer is lost:* the next attempt finds the dive in SSI's logbook by the Push's remote reference and links it,
   instead of creating it twice.
+
+### 5. Lead for a holiday (planned, ADR 0031)
+
+Tim logs with a 7 mm suit, hood and a 12 L steel cylinder in Lake Constance (fresh water). On six Dives he carried 8 kg
+(one entry, belt); three felt right, one "too heavy, 1 kg". His Diver has a body weight of 82 kg. He plans a week in the
+Red Sea with a 5 mm suit and an AL80.
+
+1. The Tools page asks for the Diver, water (salt), suit (wetsuit 5 mm, no hood) and cylinder (AL80 from the catalogue).
+2. No Dive has that suit. The estimate takes the rule of thumb for 5 mm (10 % of 82 kg, salt water, AL80: 8.2 kg) and
+   shifts it by Tim's personal offset from his 7 mm Dives (rule 10.2 kg, converted to fresh water and steel ≈ 4.4 kg,
+   needed ≈ 7.8 kg: +3.4 kg): **about 11.5 kg, 9.5–13.5**, "no dives with this suit yet; do a weight check".
+3. After the first dive Tim logs 10 kg (belt 6, integrated 4), "too heavy, 2 kg". The estimate for that set-up now
+   rests on it: **8 kg**, "based on 1 dive".
+
+Edge cases:
+- *A Dive without a site* (or a site without a water type) is left out: its water isn't known, and the computer's water
+  setting isn't the water (ADR 0025).
+- *An SSI import* brings 10 kg and a 12 L cylinder without material onto a Dive that has no suit: the Dive shows lead and
+  cylinder (Revision `fill`); the estimate uses it only once the suit is filled in.
+- *0 kg logged* (a drysuit diver with a steel twin set) counts as "no lead"; a Dive with no lead entries is unknown and
+  left out.
+- *The suit changed in SSI's app* isn't possible (SSI has no suit field); lead changed there comes back three-way.
 
 ## Open questions
 

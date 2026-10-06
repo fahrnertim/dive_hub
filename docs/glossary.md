@@ -137,6 +137,45 @@ One Diver's journey that groups their Dives, such as a liveaboard week. Trips of
 _Avoid_: Tour, vacation, expedition
 _German_: Tauchreise
 
+## Gear and planning (planned)
+
+Planned in [ADR 0031](decisions/0031-lead-suit-cylinders-and-lead-estimate.md); not built yet.
+
+**Lead**:
+The ballast a Diver carried on a Dive: one or more amounts with where they sat (belt, integrated, trim, ankle, backplate), and their total. No lead logged means unknown; 0 means none was carried.
+_Avoid_: Weight (alone; that is the body's), ballast, weights
+_German_: Blei
+
+**Weighting feedback**:
+How the lead felt on a Dive: right, too heavy or too light, optionally by how much. What lets the lead estimate learn what was needed, not only what was carried.
+_Avoid_: Rating, buoyancy rating
+_German_: Gefühl mit dem Blei (on screen: "Wie passte das Blei?")
+
+**Exposure suit**:
+What a Diver wore against the cold on a Dive: none, skin, wetsuit, semi-dry or drysuit, with its thickness, a hood, and a drysuit's undergarment. A Dive value, not (yet) an Equipment item.
+_Avoid_: Suit (alone in the code), wetsuit (that is one type), protection
+_German_: Tauchanzug
+
+**Cylinder**:
+A tank a Diver breathed from on a Dive: volume, working pressure, material (aluminium, steel, carbon), start and end pressure, gas. Picked from a catalogue of common cylinders (AL80, steel 12 L, …) or typed.
+_Avoid_: Tank (in the code and docs; fine in English UI text), bottle
+_German_: Flasche
+
+**Body weight**:
+A Diver's weight on a date, seen only by the Users who manage the Diver. Used by the lead estimate's rule of thumb.
+_Avoid_: Weight (alone), mass
+_German_: Körpergewicht
+
+**Lead estimate**:
+A suggestion, computed on request and never stored, of how much lead a Diver should carry in planned conditions: from their own Dives with the same exposure suit, adjusted for the cylinder and the water, else a rule of thumb; always with a range and its reasons, and never a substitute for a weight check.
+_Avoid_: Weight calculator (the tool's name on screen may say so), recommendation, prediction
+_German_: Blei-Schätzung (the tool: "Bleirechner")
+
+**Tools**:
+The page for planning aids such as the lead estimate; the later home of a dive planner that combines them around a planned dive.
+_Avoid_: Planner (until it plans a dive), utilities
+_German_: Werkzeuge
+
 ## Places
 
 **Dive site**:
