@@ -9,7 +9,8 @@ const PASSWORD = 'ssi-password';
 
 describe('SSI client', () => {
   it('signs in, reads the logbook and saves a dive, saying who it is', async () => {
-    const fake = createFakeSsi();
+    // Hausreef with SSI's body of water: salt is the site's water type (an artificial one would be none).
+    const fake = createFakeSsi({ sites: [{ odin_dive_sites_id: 3314, odin_dive_sites_name: 'Hausreef', odin_dive_sites_lat: 27.29, odin_dive_sites_lon: 33.82, odin_countries_code_iso: 'EG', bow: 'salt' }] });
     const seen: Record<string, string>[] = [];
     const fetch: Fetch = (url, init) => { seen.push(init.headers); return fake.fetch(url, init); };
     const client = createSsiClient({ url: URL_, fetch, userAgent: 'DiveHub (+https://example.org)' });
@@ -18,7 +19,7 @@ describe('SSI client', () => {
     const { id } = await client.save(account.token, { odin_user_log_id: null, odin_user_log_nr: 1 });
     const logbook = await client.logbook(account.token);
     expect(logbook.dives.map((d) => String(d.odin_user_log_id))).toEqual([id]);
-    expect(logbook.sites).toEqual([{ id: '3314', name: 'Hausreef', latitude: 27.29, longitude: 33.82, country: 'EG' }]);
+    expect(logbook.sites).toEqual([{ id: '3314', name: 'Hausreef', latitude: 27.29, longitude: 33.82, country: 'EG', waterType: 'salt' }]);
     expect(seen.every((h) => h['User-Agent'] === 'DiveHub (+https://example.org)')).toBe(true);
   });
 
@@ -29,6 +30,19 @@ describe('SSI client', () => {
     const { id } = await client.save(token, { odin_user_log_id: null });
     await client.save(token, { odin_user_log_id: Number(id), odin_user_log_deleted: 1 });
     expect((await client.logbook(token)).dives).toEqual([]);
+  });
+
+  it('reads an update\'s answer, which SSI wraps in success, and SSI\'s reason when it refuses one', async () => {
+    const answering = (body: object): Fetch => async () => ({ status: 200, text: async () => JSON.stringify(body) });
+    // The owner's update of dive #90, 2026-10-06 (from the server log): the usual answer, wrapped in `success`.
+    const saved = createSsiClient({ url: URL_, userAgent: 'x', fetch: answering({
+      success: { ok: 'updated', error: '', temp_id: '', odin_user_log_id: 28_076_338 }, result: 'updated',
+    }) });
+    expect(await saved.save('t', { odin_user_log_id: 28_076_338 })).toEqual({ id: '28076338' });
+    const refused = createSsiClient({ url: URL_, userAgent: 'x', fetch: answering({ success: { ok: '', error: 'not your dive' }, result: '' }) });
+    await expect(refused.save('t', { odin_user_log_id: 1 })).rejects.toMatchObject({ reason: 'refused', message: expect.stringContaining('not your dive') });
+    const empty = createSsiClient({ url: URL_, userAgent: 'x', fetch: answering({ success: { ok: '' }, result: '' }) });
+    await expect(empty.save('t', { odin_user_log_id: 1 })).rejects.toMatchObject({ message: expect.stringContaining('fields: success, result / success: ok') });
   });
 
   it('tells a refused sign-in from an expired token, an outage and nonsense', async () => {

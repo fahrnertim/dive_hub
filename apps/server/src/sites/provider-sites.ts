@@ -1,6 +1,7 @@
 // The Dive site a Provider's dive names (ADR 0030): the site here with that site ID; else one here that is the same site
 // by the Site import's rule (matchingSite: within 100 m, the same name, no ID at that Source yet), which then gets the
-// ID; else, where an admin allowed the Provider's site data, a new site from the values the Provider gives.
+// ID; else, where an admin allowed the Provider's site data, a new site from the values the Provider gives (name,
+// position, country, water type).
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { diveSite, diveSiteExternalId, providerSiteData } from '../db/schema.js';
@@ -9,6 +10,7 @@ import { matchingSite, MATCH_WITHIN_M } from './import/import-plan.js';
 import type { ImportedValues } from './import/site-source.js';
 import { nearSql, type Position } from './site-service.js';
 import { revisionKey, type SiteSource } from './sources.js';
+import type { SiteWaterType } from '../vocabulary.js';
 
 /** What a Provider says about one of its sites. */
 export interface ProviderSite {
@@ -18,6 +20,8 @@ export interface ProviderSite {
   position: Position | null;
   /** ISO 3166-1 alpha-2, or null. */
   country: string | null;
+  /** Fresh, salt or brackish, where the Provider says (ADR 0025: the water of every Dive there). */
+  waterType: SiteWaterType | null;
 }
 
 /** Where the site of a Provider's dive is here: already (`known`), the same site by name and position (`match`), or none. */
@@ -70,11 +74,11 @@ export async function siteForProvider(
   }
   if (!options.allowCreate) return null;
   const imported: ImportedValues = {
-    name: s.name, position: s.position, country: s.country, waterBody: null, description: null, maxDepthM: null, waterType: null,
+    name: s.name, position: s.position, country: s.country, waterBody: null, description: null, maxDepthM: null, waterType: s.waterType,
   };
   const [created] = await tx.insert(diveSite).values({
     name: s.name, latitude: s.position?.latitude ?? null, longitude: s.position?.longitude ?? null, country: s.country,
-    createdBy: options.userId,
+    waterType: s.waterType, createdBy: options.userId,
   }).returning({ id: diveSite.id });
   await tx.insert(diveSiteExternalId).values({
     siteId: created!.id, source: s.source, externalId: s.externalId, providesData: true, imported,
@@ -82,6 +86,7 @@ export async function siteForProvider(
   const changes: Changes = { name: { from: null, to: s.name }, ...idChange };
   if (s.position) changes.position = { from: null, to: s.position };
   if (s.country) changes.country = { from: null, to: s.country };
+  if (s.waterType) changes.waterType = { from: null, to: s.waterType };
   await writeRevision(tx, 'dive_site', created!.id, options.actor, 'create', changes);
   return created!.id;
 }

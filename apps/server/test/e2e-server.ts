@@ -142,6 +142,17 @@ for (const record of [
 
 // Uploads made by the tests are processed in the background, as in the real app.
 const worker = await startWorker(pool, imports, siteImports, app.log);
+// Test-only (never in the production app): a browser test changes a dive in an SSI account's logbook, as the User would
+// in SSI's app (ADR 0030: changes taken back). By the account's e-mail and SSI's dive number; only the fields given.
+app.post('/e2e/fake-ssi/dive', { schema: { hide: true } }, async (request) => {
+  const { email, number, set } = request.body as { email: string; number: number; set: Record<string, unknown> };
+  const account = fakeSsi.accounts.find((a) => a.email === email);
+  const record = [...fakeSsi.dives.values()].find((d) => d.odin_user_log_user_master_id === account?.accountId && d.odin_user_log_nr === number);
+  if (!record) return { found: false };
+  Object.assign(record, set);
+  return { found: true };
+});
+
 await app.listen({ host: '127.0.0.1', port });
 console.log(`e2e server ready on http://localhost:${port}`);
 

@@ -70,7 +70,8 @@ export function SearchList({ label, description, query, onQueryChange, items, on
         <ListBox
           aria-label={listLabel} className="search-list-items" items={items} aria-busy={busy || undefined}
           onAction={(key) => { if (!disabled) onPick(String(key)); }}
-          renderEmptyState={() => empty ?? null}
+          // React Aria wraps the empty state in an option; with nothing to show, none (an option without a name, axe).
+          {...(empty !== undefined && empty !== null && empty !== '' && { renderEmptyState: () => empty })}
         >
           {(item) => (
             <ListBoxItem id={item.id} textValue={item.textValue ?? item.name} className="search-list-item" isDisabled={disabled}>

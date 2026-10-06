@@ -22,6 +22,7 @@ export function contextOf(logbook: SsiLogbook): ImportContext {
       name: s.name, latitude: s.latitude, longitude: s.longitude,
       // SSI gives alpha-3, alpha-2 or a country's name.
       country: alpha2Of(s.country) ?? (s.country && /^[A-Za-z]{2}$/.test(s.country) ? s.country.toUpperCase() : null),
+      waterType: s.waterType,
     }])),
   };
 }
@@ -89,8 +90,8 @@ function deviceOf(r: SsiRecord): ImportedDive['device'] {
 }
 
 /** SSI's dive record in typed values; null when it has no start time. */
-export function parseSsiDive(r: SsiRecord, context: ImportContext): ImportedDive | null {
-  const remoteId = text(r.odin_user_log_id);
+export function parseSsiDive(r: SsiRecord, context: ImportContext, givenId?: string): ImportedDive | null {
+  const remoteId = text(r.odin_user_log_id) ?? givenId ?? null;
   const start = text(r.odin_user_log_datetime)?.replace('T', ' ').replace('+', ' ');
   if (!remoteId || !start || !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(start)) return null;
   const reference = text(r.odin_user_log_divecomputer_dive_ref);

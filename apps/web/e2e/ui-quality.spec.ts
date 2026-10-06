@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { dataFile, type PreparedData } from './prepare.ts';
 import {
-  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, clearParticipants, connectSsi, deletableDive, diveWithoutRecording, expectGoodPage, externalDiver,
+  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, clearParticipants, conflictForLena, connectSsi, deletableDive, diveWithoutRecording, expectGoodPage, externalDiver,
   forgetDivers, leaveLena, leaveSsi, lenaReady, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
@@ -253,6 +253,19 @@ for (const v of variants) {
         await expectGoodPage(page, title('My account'), v);
         await section.getByRole('button', { name: v.english ? 'Import from SSI' : 'Aus SSI importieren' }).click();
         await expect(section.getByRole('link', { name: v.english ? 'Go to the logbook' : 'Zum Logbuch' })).toBeVisible({ timeout: 30_000 });
+        await expectGoodPage(page, title('My account'), v);
+      } finally {
+        await leaveLena(request);
+      }
+    });
+
+    test('my account, importing from SSI: a dive changed both here and in SSI', { tag: ['@account'] }, async ({ page, request }) => {
+      try {
+        await conflictForLena(request, `${v.locale}-${Date.now()}`);
+        await page.goto('/#/account');
+        const section = page.getByRole('region', { name: v.english ? 'Dives of Lena from SSI' : 'Tauchgänge von Lena aus SSI' });
+        await section.getByRole('button', { name: v.english ? 'Show what the import would do' : 'Zeigen, was der Import tun würde' }).click();
+        await expect(section.getByRole('heading', { name: v.english ? 'Changed in both places' : 'An beiden Stellen geändert' })).toBeVisible();
         await expectGoodPage(page, title('My account'), v);
       } finally {
         await leaveLena(request);

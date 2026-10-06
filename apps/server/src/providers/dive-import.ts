@@ -5,10 +5,11 @@
 import { and, desc, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import {
-  connection, dive, diveSite, diver, diverExternalId, device, importJob, importOriginal, original, participant, providerSiteData, push, user,
+  connection, dive, diveSite, diveSiteExternalId, diver, diverExternalId, device, importJob, importOriginal, original, participant, providerSiteData, push, user,
   recording, type ComputerChoice, type DiveImportMode, type ImportOutcome, type ProviderImportPlan, type UtcOffsetSource,
 } from '../db/schema.js';
 import { managedDiverIds, participantsOf } from '../dives/dive-service.js';
+import { columnsOf } from '../dives/dive-values.js';
 import { writeRevision, type Actor, type Changes } from '../dives/revisions.js';
 import { placeLocalTime, wallClockMs, type PlacedTime } from '../dives/time-zone.js';
 import type { ParsedRecording } from '../fit/fit-adapter.js';
@@ -23,6 +24,7 @@ import type { ConnectionService } from './connection-service.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
 import { REFERENCE_PREFIX, type ImportContext, type ImportedDive, type ProviderAdapter } from './provider.js';
 import { currentRemote, fingerprintNow } from './push-service.js';
+import { comparableOf, SYNCED_FIELDS, threeWay, type Comparable, type SyncedField } from './three-way.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 
 /** A dive computer found at the Provider, and how its dives are used. */
@@ -40,6 +42,20 @@ export interface ComputerView {
   fromFiles: boolean;
   /** The Device belongs to a Diver this User doesn't keep: its dives come in as logbook entries (ADR 0030). */
   otherDiver: boolean;
+}
+
+/** A field changed both at the Provider and here since Dive Hub last saw the dive: the User chooses whose value stays. */
+export interface ConflictView {
+  remoteId: string;
+  remoteNumber: number | null;
+  diveId: string;
+  number: number | null;
+  startsAt: Date;
+  utcOffsetSeconds: number | null;
+  utcOffsetSource: UtcOffsetSource;
+  field: SyncedField;
+  hub: string | number | string[] | null;
+  provider: string | number | string[] | null;
 }
 
 /** A Dive here that a Provider's logbook entry may be. */
@@ -114,8 +130,8 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   async function computersOf(q: Db | Tx, run: Run, dives: ImportedDive[], saved: Record<string, ComputerChoice>) {
     const found = new Map<string, ComputerView>();
     for (const d of dives) {
-      // A dive Dive Hub sent carries the computer of Dive Hub's own recording: not one found at the Provider.
-      if (d.evidence !== 'computer' || !d.device || (await sentTo(q, run, d.remoteId))) continue;
+      // A dive Dive Hub sent, or one linked to a Dive here, carries what Dive Hub has or sent: not a computer found there.
+      if (d.evidence !== 'computer' || !d.device || (await sentTo(q, run, d.remoteId)) || (await linkedTo(q, run, d.remoteId))) continue;
       const key = keyOf(d.device);
       const known = found.get(key);
       if (known) { known.dives += 1; continue; }
@@ -222,7 +238,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       return {
         source: source as SiteSource, externalId, name: known?.name ?? '',
         position: known && known.latitude !== null && known.longitude !== null ? { latitude: known.latitude, longitude: known.longitude } : null,
-        country: known?.country ?? null,
+        country: known?.country ?? null, waterType: known?.waterType ?? null,
       };
     });
   }
@@ -330,6 +346,180 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     };
   }
 
+  /**
+   * What the Provider had for this dive when Dive Hub last saw it (ADR 0030, amended): the newer of the Original an
+   * earlier finished Import brought and what Dive Hub last sent there. Null when Dive Hub never saw it.
+   */
+  async function baseOf(q: Db | Tx, run: Run, diveId: string, remoteId: string, notImport?: string): Promise<ImportedDive | null> {
+    const [seen] = await q.select({ storageKey: original.storageKey, at: importJob.createdAt }).from(original)
+      .innerJoin(importOriginal, eq(importOriginal.originalId, original.id))
+      .innerJoin(importJob, eq(importJob.id, importOriginal.importId))
+      .where(and(
+        eq(original.userId, run.userId), eq(original.fileName, `${run.adapter.id}-dive-${remoteId}.json`), eq(importJob.status, 'done'),
+        notImport ? sql`${importJob.id} <> ${notImport}` : undefined,
+      ))
+      .orderBy(desc(importJob.createdAt)).limit(1);
+    const [sent] = await q.select({ payload: push.payload, at: push.createdAt }).from(push)
+      .where(and(eq(push.diveId, diveId), eq(push.provider, run.adapter.id), eq(push.remoteId, remoteId), eq(push.state, 'confirmed'),
+        inArray(push.action, ['create', 'update'])))
+      .orderBy(desc(push.createdAt)).limit(1);
+    const parse = run.adapter.dives!.parse!;
+    if (sent?.payload && (!seen || sent.at > seen.at)) return parse(sent.payload, run.context, remoteId);
+    if (!seen) return null;
+    return parse(JSON.parse((await blobs.read(seen.storageKey)).toString('utf8')) as Record<string, unknown>, run.context, remoteId);
+  }
+
+  /** The Dive here as the comparison sees it, and the fields it compares (values only without a Recording). */
+  async function hubOf(q: Db | Tx, run: Run, diveId: string, siteSource: SiteSource | null) {
+    const [row] = await q.select().from(dive).where(eq(dive.id, diveId));
+    if (!row) return null;
+    const [siteId] = row.siteId && siteSource ? await q.select({ id: diveSiteExternalId.externalId }).from(diveSiteExternalId)
+      .where(and(eq(diveSiteExternalId.siteId, row.siteId), eq(diveSiteExternalId.source, siteSource))) : [];
+    const source = run.adapter.accountSource;
+    const people = await participantsOf(q, diveId);
+    const accounts = source && people.length > 0 ? await q.select({ diverId: diverExternalId.diverId, account: diverExternalId.externalId })
+      .from(diverExternalId).where(and(eq(diverExternalId.source, source), inArray(diverExternalId.diverId, people.map((p) => p.diverId)))) : [];
+    const hub: Comparable = {
+      site: siteId?.id ?? null, notes: row.notes?.trim() || null, buddies: accounts.map((a) => a.account).sort(),
+      startsAt: Math.floor((row.startsAt.getTime() + (row.utcOffsetSeconds ?? 0) * 1000) / 60_000),
+      durationSeconds: row.durationSeconds, maxDepthM: row.maxDepthM, avgDepthM: row.avgDepthM, waterTemperatureC: row.waterTemperatureC,
+    };
+    const fields = row.primaryRecordingId ? SYNCED_FIELDS.filter((f) => ['site', 'notes', 'buddies'].includes(f)) : SYNCED_FIELDS;
+    return { row, hub, fields, people, accounts };
+  }
+
+  /** What changed at the Provider since Dive Hub last saw the dive, compared with the Dive here; null without a base. */
+  async function changesOf(q: Db | Tx, run: Run, diveId: string, d: ImportedDive, notImport?: string) {
+    const base = await baseOf(q, run, diveId, d.remoteId, notImport);
+    if (!base) return null;
+    const source = (Object.keys(d.siteIds)[0] ?? Object.keys(base.siteIds)[0] ?? null) as SiteSource | null;
+    const here = await hubOf(q, run, diveId, source);
+    if (!here) return null;
+    const provider = comparableOf(d);
+    return { ...threeWay(here.fields, comparableOf(base), provider, here.hub), here, provider };
+  }
+
+  /**
+   * Takes the Provider's values for these fields (ADR 0030, amended): one Revision (`update`). A Dive that was up to date
+   * at the Provider stays so (a new `link` Push with its fingerprint).
+   */
+  async function takeChanges(tx: Tx, run: Run, diveId: string, d: ImportedDive, fields: SyncedField[], actor: Actor) {
+    const [current] = await tx.select().from(dive).where(eq(dive.id, diveId)).for('update');
+    if (!current) return false;
+    const pushes = await tx.select().from(push).where(and(eq(push.diveId, diveId), eq(push.provider, run.adapter.id)))
+      .orderBy(desc(push.createdAt), desc(push.id));
+    const remote = currentRemote(pushes);
+    const wasUpToDate = !!remote?.fingerprint && remote.fingerprint === fingerprintNow(run.adapter, await loadOutgoingDive(tx, run.userId, diveId));
+    const changes: Changes = {};
+    let columns: Partial<typeof dive.$inferInsert> = {};
+    const overrides = new Set(current.overrides);
+    for (const field of fields) {
+      if (field === 'site') {
+        const site = sitesOf(run, d)[0];
+        const siteId = site ? await siteForProvider(tx, site, { allowCreate: run.sitesAllowed, userId: run.userId, actor }) : null;
+        if (!siteId || siteId === current.siteId) continue;
+        columns.siteId = siteId;
+        changes.site = { from: await siteRef(tx, current.siteId), to: await siteRef(tx, siteId) };
+      } else if (field === 'notes') {
+        const notes = d.notes?.trim() || null;
+        columns.notes = notes;
+        changes.notes = { from: current.notes, to: notes };
+      } else if (field === 'buddies') {
+        const source = run.adapter.accountSource;
+        if (!source) continue;
+        const before = await participantsOf(tx, diveId);
+        const withAccount = before.length === 0 ? [] : await tx.select({ diverId: diverExternalId.diverId }).from(diverExternalId)
+          .where(and(eq(diverExternalId.source, source), inArray(diverExternalId.diverId, before.map((p) => p.diverId))));
+        const wanted = d.people.length === 0 ? [] : await tx.select({ diverId: diverExternalId.diverId }).from(diverExternalId)
+          .innerJoin(diver, eq(diver.id, diverExternalId.diverId))
+          .where(and(eq(diverExternalId.source, source), inArray(diverExternalId.externalId, d.people), isNull(diver.deletedAt)));
+        // Participants the Provider can't know (no account there) stay; the others are the Provider's list now.
+        const keep = before.filter((p) => !withAccount.some((w) => w.diverId === p.diverId));
+        const add = [...new Set(wanted.map((w) => w.diverId))].filter((id) => id !== current.diverId && !keep.some((k) => k.diverId === id));
+        await tx.delete(participant).where(eq(participant.diveId, diveId));
+        const list = [...keep.map((k) => ({ diveId, diverId: k.diverId, role: k.role })), ...add.map((diverId) => ({ diveId, diverId, role: 'buddy' as const }))];
+        if (list.length > 0) await tx.insert(participant).values(list);
+        changes.participants = { from: before, to: await participantsOf(tx, diveId) };
+      } else if (field === 'startsAt') {
+        const time = await placeTime(tx, run, d);
+        columns = { ...columns, ...columnsOf('startsAt', { at: time.startsAt, utcOffsetSeconds: time.utcOffsetSeconds }), utcOffsetSource: time.utcOffsetSource };
+        changes.startsAt = {
+          from: { at: current.startsAt.toISOString(), utcOffsetSeconds: current.utcOffsetSeconds },
+          to: { at: time.startsAt.toISOString(), utcOffsetSeconds: time.utcOffsetSeconds },
+        };
+        overrides.delete('startsAt');
+      } else {
+        const to = field === 'durationSeconds' ? d.durationSeconds : d[field];
+        if (field === 'durationSeconds' && !to) continue;
+        columns = { ...columns, [field]: to };
+        changes[field] = { from: current[field], to };
+        overrides.delete(field);
+      }
+    }
+    if (Object.keys(changes).length === 0) return false;
+    if (overrides.size !== current.overrides.length) {
+      changes.overrides = { from: current.overrides, to: [...overrides] };
+      columns.overrides = [...overrides];
+    }
+    await tx.update(dive).set({ ...columns, version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
+    await writeRevision(tx, 'dive', diveId, actor, 'update', changes);
+    if (wasUpToDate && remote) {
+      const loaded = await loadOutgoingDive(tx, run.userId, diveId);
+      await tx.insert(push).values({
+        diveId, connectionId: run.connectionId, userId: run.userId, provider: run.adapter.id, mode: run.adapter.dives!.mode,
+        action: 'link', state: 'confirmed', remoteId: remote.remoteId, remoteNumber: remote.remoteNumber, diveVersion: loaded.row.version,
+        fingerprint: fingerprintNow(run.adapter, loaded),
+      });
+    }
+    return true;
+  }
+
+  /**
+   * The Provider's changes since Dive Hub last saw the dive, taken where the Dive here kept its value, and where the User
+   * chose the Provider's in a conflict; then what is still empty is filled. Whether anything changed.
+   */
+  async function sync(tx: Tx, run: Run, plan: ProviderImportPlan, diveId: string, d: ImportedDive, importId: string, actor: Actor) {
+    const found = await changesOf(tx, run, diveId, d, importId);
+    const fields = found
+      ? [...found.take, ...found.conflicts.filter((f) => plan.conflicts?.[`${d.remoteId}:${f}`] === 'provider')]
+      : [];
+    const taken = fields.length > 0 && await takeChanges(tx, run, diveId, d, fields, actor);
+    const filled = await fill(tx, run, diveId, d, actor);
+    return taken || filled;
+  }
+
+  /** The Dive a Provider's dive is linked to already (sent from here, linked, or a Recording of it), for comparing. */
+  async function diveOfLinked(run: Run, a: Assessment, d: ImportedDive): Promise<string | null> {
+    if (a.kind === 'linked') return a.diveId;
+    if (a.kind === 'ours' && a.diveId) {
+      const [own] = await db.select({ diverId: dive.diverId }).from(dive).where(and(eq(dive.id, a.diveId), isNull(dive.deletedAt)));
+      return own && run.managed.has(own.diverId) ? a.diveId : null;
+    }
+    if (a.kind === 'recording') {
+      const [rec] = await db.select({ diveId: recording.diveId }).from(recording)
+        .where(and(eq(recording.recordingKey, `${run.adapter.id}:${d.remoteId}`), isNull(recording.deletedAt)));
+      return rec?.diveId ?? null;
+    }
+    return null;
+  }
+
+  /** A field's value as the preview shows it: the site's and people's names, the local start, the number or text. */
+  async function shown(run: Run, field: SyncedField, c: Comparable, hubSiteId: string | null): Promise<string | number | string[] | null> {
+    if (field === 'site') {
+      if (hubSiteId) return (await db.select({ name: diveSite.name }).from(diveSite).where(eq(diveSite.id, hubSiteId)))[0]?.name ?? null;
+      return c.site ? run.context.sites[c.site]?.name ?? c.site : null;
+    }
+    if (field === 'buddies') {
+      const source = run.adapter.accountSource;
+      if (!source || c.buddies.length === 0) return [];
+      const rows = await db.select({ name: diver.name }).from(diverExternalId).innerJoin(diver, eq(diver.id, diverExternalId.diverId))
+        .where(and(eq(diverExternalId.source, source), inArray(diverExternalId.externalId, c.buddies)));
+      return rows.map((r) => r.name).sort();
+    }
+    if (field === 'startsAt') return c.startsAt === null ? null : new Date(c.startsAt * 60_000).toISOString().slice(0, 16).replace('T', ' ');
+    return c[field];
+  }
+
   /** One dive of a running Import, in its own transaction. `seen`: its Original came with an earlier Import unchanged. */
   async function processDive(
     tx: Tx, run: Run, plan: ProviderImportPlan, d: ImportedDive, at: { importId: string; originalId: string; fileName: string; seen: boolean },
@@ -341,14 +531,17 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       case 'ours': {
         // Sent by Dive Hub: already ours. One whose answer got lost is linked to its Dive, as sending would.
         const [own] = a.diveId ? await tx.select({ diverId: dive.diverId }).from(dive).where(and(eq(dive.id, a.diveId), isNull(dive.deletedAt))) : [];
-        if (own && run.managed.has(own.diverId)) await link(tx, run, a.diveId!, d, false);
-        return { ...base, result: 'skipped', reason: 'sent_by_dive_hub', ...(own && run.managed.has(own.diverId) && { diveId: a.diveId! }) };
+        if (!own || !run.managed.has(own.diverId)) return { ...base, result: 'skipped', reason: 'sent_by_dive_hub' };
+        await link(tx, run, a.diveId!, d, false);
+        // Changed in the Provider's app since it was sent: the Dive takes it, as for any linked dive.
+        if (await sync(tx, run, plan, a.diveId!, d, at.importId, actor)) return { ...base, result: 'updated', diveId: a.diveId! };
+        return { ...base, result: 'skipped', reason: 'sent_by_dive_hub', diveId: a.diveId! };
       }
       case 'deleted':
         return { ...base, result: 'skipped', reason: 'deleted_earlier' };
       case 'linked': {
         // Filled where still empty, also when unchanged: what Dive Hub can fill may have grown (a site an admin allowed).
-        return { ...base, result: (await fill(tx, run, a.diveId, d, actor)) ? 'updated' : 'unchanged', diveId: a.diveId };
+        return { ...base, result: (await sync(tx, run, plan, a.diveId, d, at.importId, actor)) ? 'updated' : 'unchanged', diveId: a.diveId };
       }
       case 'recording': {
         const [known] = await tx.select({ id: recording.id, diveId: recording.diveId }).from(recording)
@@ -359,7 +552,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
           parser: run.adapter.dives!.parser ?? { name: run.adapter.id, version: '1' }, diverId: run.diverId,
         }, asRecording(run, d, await placeTime(tx, run, d)));
         if (placed.diveId && placed.result !== 'skipped') {
-          await fill(tx, run, placed.diveId, d, actor);
+          await sync(tx, run, plan, placed.diveId, d, at.importId, actor);
           await link(tx, run, placed.diveId, d, placed.result === 'created');
         }
         return { ...placed, ...base };
@@ -439,7 +632,8 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       });
       const computers = await computersOf(db, run, dives, row.importComputers);
       run.choices = Object.fromEntries(computers.map((c) => [c.key, c.choice]));
-      const counts = { total: parsed.length, unreadable: parsed.length - dives.length, ours: 0, linked: 0, deleted: 0, recordings: 0, link: 0, decide: 0, create: 0, noMatch: 0 };
+      const counts = { total: parsed.length, unreadable: parsed.length - dives.length, ours: 0, linked: 0, deleted: 0, recordings: 0, link: 0, decide: 0, create: 0, noMatch: 0, changed: 0 };
+      const conflicts: ConflictView[] = [];
       const decisions: { remoteId: string; remoteNumber: number | null; localStart: string; durationSeconds: number; maxDepthM: number | null; candidates: CandidateView[] }[] = [];
       for (const d of dives.sort((a, b) => a.localStart.localeCompare(b.localStart))) {
         const a = await assess(db, run, d);
@@ -455,6 +649,18 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
           decisions.push({
             remoteId: d.remoteId, remoteNumber: d.remoteNumber, localStart: d.localStart, durationSeconds: d.durationSeconds,
             maxDepthM: d.maxDepthM, candidates: a.candidates,
+          });
+        }
+        // Changed at the Provider since Dive Hub last saw it (ADR 0030, amended).
+        const diveId = await diveOfLinked(run, a, d);
+        const found = diveId ? await changesOf(db, run, diveId, d) : null;
+        if (!found) continue;
+        if (found.take.length > 0) counts.changed += 1;
+        for (const field of found.conflicts) {
+          conflicts.push({
+            remoteId: d.remoteId, remoteNumber: d.remoteNumber, diveId: diveId!, number: found.here.row.number, field,
+            startsAt: found.here.row.startsAt, utcOffsetSeconds: found.here.row.utcOffsetSeconds, utcOffsetSource: found.here.row.utcOffsetSource,
+            hub: await shown(run, field, found.here.hub, found.here.row.siteId), provider: await shown(run, field, found.provider, null),
           });
         }
       }
@@ -474,7 +680,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
           else sites.missing += 1;
         }
       }
-      return { mode: row.importMode, windowMinutes: row.importWindowMinutes, computers, counts, sites, sitesAllowed: run.sitesAllowed, decisions };
+      return { mode: row.importMode, windowMinutes: row.importWindowMinutes, computers, counts, sites, sitesAllowed: run.sitesAllowed, decisions, conflicts };
     },
 
     /**
@@ -482,7 +688,9 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
      * the Connection, stores one Original per dive (its record as JSON, never the whole answer), and creates the Import
      * the worker runs, with the context and the decisions.
      */
-    async start(userId: string, connectionId: string, given: { computers: Record<string, ComputerChoice>; decisions: Record<string, string> }) {
+    async start(userId: string, connectionId: string, given: {
+      computers: Record<string, ComputerChoice>; decisions: Record<string, string>; conflicts?: Record<string, 'hub' | 'provider'>;
+    }) {
       const { row, adapter, context, parsed } = await read(userId, connectionId, { recent: true });
       const dives = parsed.flatMap((p) => (p.dive ? [p.dive] : []));
       const run = await runOf(db, userId, adapter, {
@@ -495,7 +703,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
         remoteId, blob: await blobs.putOriginal(Buffer.from(JSON.stringify(record), 'utf8')),
       })));
       const plan: ProviderImportPlan = {
-        context: pick(context), computers: choices, decisions: given.decisions, mode: row.importMode,
+        context: pick(context), computers: choices, decisions: given.decisions, conflicts: given.conflicts ?? {}, mode: row.importMode,
         windowMinutes: row.importWindowMinutes, diverId: row.diverId,
       };
       return db.transaction(async (tx) => {
@@ -571,7 +779,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
 /** The context as kept on the Import: accounts and sites only, whatever else an adapter might add left behind. */
 const pick = (c: ImportContext): ImportContext => ({
   people: Object.fromEntries(Object.entries(c.people).map(([k, v]) => [k, String(v)])),
-  sites: Object.fromEntries(Object.entries(c.sites).map(([k, s]) => [k, { name: s.name, latitude: s.latitude, longitude: s.longitude, country: s.country }])),
+  sites: Object.fromEntries(Object.entries(c.sites).map(([k, s]) => [k, { name: s.name, latitude: s.latitude, longitude: s.longitude, country: s.country, waterType: s.waterType ?? null }])),
 });
 
 export type DiveImportService = ReturnType<typeof createDiveImportService>;

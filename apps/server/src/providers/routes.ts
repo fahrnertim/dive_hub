@@ -12,6 +12,7 @@ import { SITE_SOURCES, SOURCE_INFO } from '../sites/sources.js';
 import type { BuddyService } from './buddy-service.js';
 import type { ConnectionService } from './connection-service.js';
 import type { DiveImportService } from './dive-import.js';
+import { SYNCED_FIELDS } from './three-way.js';
 import { FIND_BY, OPERATIONS, type ProviderAdapter, type Requirement } from './provider.js';
 import type { PushRow, PushService } from './push-service.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
@@ -367,6 +368,9 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     maxDepthM: Nullable(Type.Number()),
     site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
   });
+  const ConflictValue = Type.Union([Type.String(), Type.Number(), Type.Array(Type.String())], {
+    description: 'site: its name; buddies: the names of Divers here (people Dive Hub doesn\'t know are left out); startsAt: local "YYYY-MM-DD HH:MM"',
+  });
   const Preview = Type.Object({
     mode: Type.Enum([...DIVE_IMPORT_MODES]),
     windowMinutes: Type.Integer(),
@@ -390,6 +394,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       decide: Type.Integer({ description: 'Several Dives here in the window: in decisions' }),
       create: Type.Integer({ description: 'No Dive here: a Dive without a Recording (mode create)' }),
       noMatch: Type.Integer({ description: 'No Dive here, and the mode only adds: left out' }),
+      changed: Type.Integer({ description: 'Linked dives changed at the Provider since Dive Hub last saw them: the Dive takes the changes' }),
     }),
     sites: Type.Object({
       known: Type.Integer({ description: 'A site here has the Provider\'s site ID' }),
@@ -398,6 +403,18 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       missing: Type.Integer({ description: 'New, but not allowed (or the Provider says nothing about it): the Dive gets no site' }),
     }, { description: 'The distinct sites the dives name, for Dives that have no site yet (ADR 0030)' }),
     sitesAllowed: Type.Boolean({ description: 'An admin allowed creating sites from this Provider\'s site data' }),
+    conflicts: Type.Array(Type.Object({
+      remoteId: Type.String(),
+      remoteNumber: Nullable(Type.Integer()),
+      diveId: Type.String(),
+      number: Nullable(Type.Integer()),
+      startsAt: DateTime,
+      utcOffsetSeconds: Nullable(Type.Integer()),
+      utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES]),
+      field: Type.Enum([...SYNCED_FIELDS], { description: 'values (startsAt, …) only on Dives without a Recording' }),
+      hub: Nullable(ConflictValue),
+      provider: Nullable(ConflictValue),
+    }), { description: 'Fields changed both at the Provider and here since Dive Hub last saw the dive: the User chooses; Dive Hub\'s stays unless told' }),
     decisions: Type.Array(Type.Object({
       remoteId: Type.String(),
       remoteNumber: Nullable(Type.Integer()),
@@ -419,6 +436,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     return {
       ...p,
       decisions: p.decisions.map((d) => ({ ...d, candidates: d.candidates.map((c) => ({ ...c, startsAt: c.startsAt.toISOString() })) })),
+      conflicts: p.conflicts.map((c) => ({ ...c, startsAt: c.startsAt.toISOString() })),
     };
   });
 
@@ -434,6 +452,11 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
           remoteId: Type.String({ maxLength: 40 }),
           choice: Type.String({ pattern: '^(new|leave_out|[0-9a-f-]{36})$', description: 'A candidate\'s diveId, new, or leave_out' }),
         }, { additionalProperties: false }), { maxItems: 2000 }),
+        conflicts: Type.Optional(Type.Array(Type.Object({
+          remoteId: Type.String({ maxLength: 40 }),
+          field: Type.Enum([...SYNCED_FIELDS]),
+          choice: Type.Enum(['hub', 'provider'], { description: 'hub: the Dive keeps its value; provider: it takes the Provider\'s' }),
+        }, { additionalProperties: false }), { maxItems: 2000 })),
       }, { additionalProperties: false }),
       response: { 202: ImportView, ...errors },
     },
@@ -441,6 +464,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     const created = await diveImports.start(request.user!.id, request.params.id, {
       computers: Object.fromEntries(request.body.computers.map((c) => [c.key, c.choice])),
       decisions: Object.fromEntries(request.body.decisions.map((d) => [d.remoteId, d.choice])),
+      conflicts: Object.fromEntries((request.body.conflicts ?? []).map((c) => [`${c.remoteId}:${c.field}`, c.choice])),
     });
     return reply.code(202).send(toImportView(created));
   });

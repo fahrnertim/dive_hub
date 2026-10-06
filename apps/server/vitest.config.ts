@@ -10,5 +10,8 @@ export default defineConfig({
     maxWorkers: 4,
     // Creating and migrating a database per file can take a few seconds while the machine is busy.
     hookTimeout: 30_000,
+    // Tests that take 1-2 s alone (several sends, imports, password hashing) passed 5 s when the machine was busy
+    // (the whole suite at 100 s instead of 35, 2026-10-06); a test that hangs still fails.
+    testTimeout: 15_000,
   },
 });

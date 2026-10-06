@@ -231,7 +231,7 @@ _German_: Originaldatei
 One ingestion of what a User delivered at once (one or more Originals, possibly unpacked from an archive), producing or updating Recordings and Dives. An import from a Provider reads the account's dives and keeps one Original per dive ([ADR 0030](decisions/0030-importing-dives-from-providers.md)).
 
 **Logbook entry (at a Provider)**:
-A dive at a Provider that was typed in by hand: rough values, no profile, no dive computer. An import matches it to a Dive here by its local start time within the matching window and fills what that Dive lacks (site, Participants, notes), or makes a Dive without a Recording from it. A dive the Provider got from a dive computer becomes a Recording instead, unless the User chose otherwise for that computer ([ADR 0030](decisions/0030-importing-dives-from-providers.md)).
+A dive at a Provider that was typed in by hand: rough values, no profile, no dive computer. An import matches it to a Dive here by its local start time within the matching window and fills what that Dive lacks (site, Participants, notes), or makes a Dive without a Recording from it; what changes at the Provider later comes back unless it was changed here too. A dive the Provider got from a dive computer becomes a Recording instead, unless the User chose otherwise for that computer ([ADR 0030](decisions/0030-importing-dives-from-providers.md)).
 _Avoid_: Manual dive, log entry (alone)
 _German_: Logbucheintrag
 _Avoid_: Sync, upload

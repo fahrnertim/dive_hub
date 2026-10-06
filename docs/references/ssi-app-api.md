@@ -118,8 +118,16 @@ it happens again, the `SSI call` line's `detail` shows SSI's reason.
 - `POST …&what=save_divelog&token=…`, `Content-Type: application/x-www-form-urlencoded`, body `json_data=<the record as JSON>` [S].
 - **Create:** `odin_user_log_id: null`. **Update:** the existing ID. **Delete:** an update with `odin_user_log_deleted: 1`
   (SSI hides the dive; there's no way back in the app) [S].
-- Answer: `{ ok: "added to Log" | "updated" | "deleted", error: "", odin_user_log_id: <id> }` [S]. Dive Hub takes
-  the dive ID from it; without one, the save counts as refused (`ssi_refused`).
+- Answer to a **create**: `{ ok: "added to Log", error: "", odin_user_log_id: <id> }` [R]. Dive Hub takes the dive ID
+  from it; without one, the create counts as refused (`provider_refused`).
+- Answer to an **update**: the same answer **wrapped in `success`**:
+  `{ success: { ok: "updated", error: "", temp_id: "", odin_user_log_id: <id> }, result: … }` [R] (owner's dive #90,
+  2026-10-06, from the server log; the community projects' unwrapped answer [S] was wrong for it). Dive Hub reads the ID
+  and the error from `success` when it is an object. Until 2026-10-06 it looked only at the top level and refused every
+  update SSI had in fact stored: Pushes `provider_refused`, the Dive "changed since sent", the dive at SSI not known as
+  sent by Dive Hub. Sending again records it: confirmed with the fix on the owner's dive #90 (2026-10-06, update confirmed,
+  read back with no differences). A **delete** goes through the same save and is read the same way; its answer hasn't
+  been seen yet [?].
 - **The whole record goes every time**: about 340 keys, unused ones `null` [S]. Whether SSI accepts a partial record is untested.
   - An update re-sends SSI's current record (from `get_divelog`) with Dive Hub's values on top, so values edited in
     the app (rating, buddies, …) survive.
@@ -236,7 +244,8 @@ a synced dive has been seen:
   accounts through `logbook_buddies`), `_comment`, `_ean` / `_ean_percent`, `_gf_set_1` / `_2`, `_cns_start` / `_end`.
   The samples' `ndl` is minutes; 99 means none.
 - Kept: each dive's record as received, as one JSON Original; the buddy list itself never (only entry → account, on the
-  Import), and of `logbook_sites` each site's name, position and country (alpha-2).
+  Import), and of `logbook_sites` each site's name, position, country (alpha-2) and water type (`bow`: salt or fresh;
+  artificial or missing is none, as in the site list). The private flag isn't read (owner, 2026-10-06).
 - A dive's site (slice 15a): the site here with that SSI ID, else the same site by name and position (it gets the ID),
   else, only if an admin allowed SSI's site data, a site made from the logbook's entry (marked "From SSI").
 
@@ -272,7 +281,7 @@ operator's risk: **SSI gives no licence for it**, and the EU database right prot
   | `odin_countries_code_iso` | ISO 3166-1 **alpha-3**; 639 empty; withdrawn `ANT` (Netherlands Antilles) still used | country (alpha-2; `ANT` → none) |
   | `bow` | body of water: `salt` 20,664, `fresh` 2,992, `artificial` 835, missing 19 | water type (artificial → none) |
   | `odin_dive_sites_deleted` | `0`, or `""` for 66 sites | truthy → left out; `""` is not deleted |
-  | `odin_dive_sites_is_private`, `_is_private_owner` | 43 private sites, with an SSI user ID | **left out entirely** |
+  | `odin_dive_sites_is_private`, `_is_private_owner` | 43 private sites, with an SSI user ID; probably older private sites that got published (owner, 2026-10-06) [?] | **left out entirely** |
   | `odin_dive_sites_comment` | moderation notes, 18,217 non-empty; **contain submitters' IP addresses** | **never kept** |
   | `alias_names`, `alias_names_search` | other names, 7,623 sites | not kept (no field yet) |
   | `iso2` | a **language** code (`ja`, `el`), empty for 14,452; not a country | ignored |
@@ -334,6 +343,13 @@ From the research note. Record the result here with date and app version, and tu
   [Buddies](#buddies-checked-2026-10-05)).
 - [x] Buddies sent from Dive Hub show on the dive in the app [R] (owner, 2026-10-06, slice 14).
 - [ ] Same person, two accounts: compare the entry `id` of one shared buddy in both lists (per pair, or one ID).
+- [x] Private sites in the logbook read [R] (owner's account, 2026-10-06, `logbook_sites` downloaded raw through the
+  Connection): 4 of 26 entries are private (`odin_dive_sites_is_private: 1`, `odin_dive_sites_is_private_owner` = the
+  owner's own SSI account). None of the 4 is in the public zip, three of them older than it: private sites stay out of
+  the public list, and the zip's 43 are likely older ones that got published. The flag isn't read: once an admin allows
+  SSI's site data, the dive import makes them shared sites like any other, which the owner wants (2026-10-06).
+  Entries also carry `odin_dive_sites_comment` (9 of 26 non-empty), SSI's statistics (`myloggedDives`, …), aliases and
+  wildlife IDs; Dive Hub keeps only ID, name, position and country.
 - [ ] Surface interval: seconds or minutes. Log a dive in the app with a known surface interval (e.g. 1 h 30 min),
   run `round-trip.ts read`, and look at the dive's surface interval key in `samples/private/ssi/` (90 = minutes,
   5400 = seconds).

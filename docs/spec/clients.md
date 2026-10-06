@@ -314,13 +314,19 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
   - **the sites the dives name** (`sites`): here already, the same site here by name and position (it gets the
     Provider's ID), to be made from the Provider's data, or missing; with `missing` and not `sitesAllowed`, say an admin
     can allow making them and that running the import again then gives the dives their sites;
+  - **dives changed at the Provider** (`counts.changed`): say that Dive Hub takes those changes;
+  - **every field changed in both places** (`conflicts`, ADR 0030 amended): the Dive (number, else its time), the field,
+    Dive Hub's value and the Provider's (`hub`, `provider`: a site's or people's names, a local "YYYY-MM-DD HH:MM", a
+    number in metres, °C or seconds, or text), with "keep Dive Hub's" preselected; send each choice as `conflicts` with the
+    start (`hub` or `provider`). A conflict kept isn't asked again until the Provider changes the field again;
   - **every entry to decide** (`decisions`): the Provider's dive (its number, its local time as logged, depth, duration)
     and the Dives here (`candidates`, closest first, each named by its number, time, depth, duration, site), "A new dive"
     only with mode `create`, and "Leave it out", preselected.
 - **Start** (`POST /api/connections/{id}/dive-import` with `computers` and `decisions`; 202 with the Import): poll the
-  Import until it is done and sum up its outcome; refresh the logbook then. It can be run again: unchanged dives stay
-  as they are, linked ones are only filled where still empty.
-- **Must not suggest it overwrites anything**, and must not show the Provider's people by more than their name (the
+  Import until it is done and sum up its outcome; refresh the logbook then. It can be run again: linked dives take what
+  changed only at the Provider (`updated`), are filled where still empty, and keep what changed only here.
+- **Must not suggest it overwrites what was changed here** (only what changed at the Provider alone, or what the User
+  chose in a conflict), and must not show the Provider's people by more than their name (the
   server keeps only accounts; nothing else of them reaches the client).
 
 - **Admins: sites from a Provider's site data** (`GET /api/admin/provider-site-data`; `PUT …/{provider}`): must show the

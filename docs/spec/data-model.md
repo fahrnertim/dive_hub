@@ -284,7 +284,9 @@ outcome per dive (`created`, `attached`, `updated`, `unchanged`, `duplicate cand
 with `deleted_earlier` for a Recording of a deleted Dive, ADR 0026).
 *From a Provider ([ADR 0030](../decisions/0030-importing-dives-from-providers.md), implemented):* `provider`, `connection_id` and a `plan`: the records' context (entry of the
 buddy list → SSI account, SSI site → name and position; no names of people), the choice per computer, the decisions for
-ambiguous entries, the mode, window and Diver it ran with. Its Originals are stored when it starts; the worker runs it
+ambiguous entries, the choices for fields changed both there and here (`conflicts`), the mode, window and Diver it ran
+with. Fields changed only at the Provider since the last import (or the last send) are taken back by a three-way
+comparison (ADR 0030, slice 15b). Its Originals are stored when it starts; the worker runs it
 like an upload. Outcomes carry `remoteId` and `remoteNumber`; results add `linked`; reasons add `sent_by_dive_hub`,
 `no_match`, `ambiguous`, `left_out`. Matches are linked by `link` Pushes, up to date for Dives made from the Provider.
 An Import can be undone through its Revisions.

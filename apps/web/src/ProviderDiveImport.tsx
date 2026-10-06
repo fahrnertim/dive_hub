@@ -97,12 +97,15 @@ function Preview({ provider: p, connection: c, mode, onSettings, onStarted, onCl
   const preview = useQuery(diveImportPreviewQuery(c.id));
   // Entries with several Dives here: left out unless the User picks one (ADR 0030).
   const [decisions, setDecisions] = useState<Record<string, string>>({});
+  // Fields changed both at the Provider and here: Dive Hub's value stays unless the User takes the Provider's.
+  const [conflicts, setConflicts] = useState<Record<string, 'hub' | 'provider'>>({});
   const start = useMutation({
     mutationFn: async (data: DiveImportPreview) => unwrap(await api.POST('/api/connections/{id}/dive-import', {
       params: { path: { id: c.id } },
       body: {
         computers: data.computers.map((x) => ({ key: x.key, choice: x.choice })),
         decisions: data.decisions.map((d) => ({ remoteId: d.remoteId, choice: decisions[d.remoteId] ?? 'leave_out' })),
+        conflicts: data.conflicts.map((c) => ({ remoteId: c.remoteId, field: c.field, choice: conflicts[`${c.remoteId}:${c.field}`] ?? 'hub' })),
       },
     })),
     onSuccess: async (created) => {
@@ -124,10 +127,22 @@ function Preview({ provider: p, connection: c, mode, onSettings, onStarted, onCl
   }
   const data = preview.data;
   const n = new Intl.NumberFormat(i18n.language);
-  const counted = (['recordings', 'link', 'create', 'decide', 'linked', 'ours', 'deleted', 'noMatch', 'unreadable'] as const)
+  const counted = (['recordings', 'link', 'create', 'decide', 'changed', 'linked', 'ours', 'deleted', 'noMatch', 'unreadable'] as const)
     .filter((k) => data.counts[k] > 0);
   // The local time as the Provider keeps it, without a time zone.
   const local = (text: string) => formatDiveTime(`${text.replace(' ', 'T')}Z`, null, display.locale, true);
+  /** A conflicting value as the User reads it: depths, temperatures and durations in their units, names listed. */
+  const valueText = (field: DiveImportPreview['conflicts'][number]['field'], v: string | number | string[] | null): string => {
+    if (v === null || (Array.isArray(v) && v.length === 0)) return t('common.none');
+    if (Array.isArray(v)) return new Intl.ListFormat(i18n.language, { type: 'conjunction' }).format(v);
+    if (field === 'startsAt' && typeof v === 'string') return local(v);
+    if (typeof v === 'number') {
+      if (field === 'durationSeconds') return display.duration(v);
+      if (field === 'waterTemperatureC') return display.temperature(v);
+      return display.depth(v);
+    }
+    return v;
+  };
   const candidate = (x: Decision['candidates'][number]) => [
     x.number !== null ? t('dive.title', { number: x.number }) : null,
     display.diveTime(x.startsAt, x.utcOffsetSeconds, x.utcOffsetSource),
@@ -168,6 +183,27 @@ function Preview({ provider: p, connection: c, mode, onSettings, onStarted, onCl
               ]}
             />
           ))}
+        </div>
+      )}
+      {data.conflicts.length > 0 && (
+        <div className="provider-import-part">
+          <h4>{pt('importConflicts')}</h4>
+          <Muted>{pt('importConflictsIntro')}</Muted>
+          {data.conflicts.map((c) => {
+            const key = `${c.remoteId}:${c.field}`;
+            const dive = c.number !== null ? t('dive.title', { number: c.number }) : display.diveTime(c.startsAt, c.utcOffsetSeconds, c.utcOffsetSource);
+            return (
+              <RadioGroup
+                key={key} value={conflicts[key] ?? 'hub'}
+                onChange={(value) => setConflicts({ ...conflicts, [key]: value as 'hub' | 'provider' })}
+                label={pt('importConflict', { dive, field: pt(`importField.${c.field}`) })}
+                options={[
+                  { value: 'hub', label: pt('importKeepHub', { value: valueText(c.field, c.hub) }) },
+                  { value: 'provider', label: pt('importTakeProvider', { value: valueText(c.field, c.provider) }) },
+                ]}
+              />
+            );
+          })}
         </div>
       )}
       {data.decisions.length > 0 && (

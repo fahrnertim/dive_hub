@@ -16,7 +16,7 @@ export const DEFAULT_SSI_SITES_URL = 'https://api.divessi.com/app/APP_CACHE_SITE
 const MAX_JSON_BYTES = 200 * 1024 * 1024;
 
 /** SSI's `bow` (body of water): "artificial" (pools, quarries with tanks) says nothing about the water. */
-const WATER_OF_BOW: Record<string, SiteWaterType> = { salt: 'salt', fresh: 'fresh' };
+export const WATER_OF_BOW: Record<string, SiteWaterType> = { salt: 'salt', fresh: 'fresh' };
 
 export function createSsiSiteSource(http: PoliteHttp, url = DEFAULT_SSI_SITES_URL): SiteSourceAdapter {
   return {

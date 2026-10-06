@@ -51,7 +51,10 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
   const status = async (id: string) => (await call('GET', `/api/dives/${id}/providers/ssi`)).json() as { current: { remoteId: string; upToDate: boolean } | null };
   const preview = async () => (await call('GET', `/api/connections/${connectionId}/dive-import`)).json() as Preview;
   /** Starts the import, runs it as the worker would, and answers its outcome by SSI dive. */
-  const runImport = async (body: { computers?: { key: string; choice: string }[]; decisions?: { remoteId: string; choice: string }[] } = {}) => {
+  const runImport = async (body: {
+    computers?: { key: string; choice: string }[]; decisions?: { remoteId: string; choice: string }[];
+    conflicts?: { remoteId: string; field: string; choice: string }[];
+  } = {}) => {
     ctx.ssiClock.advance(5 * 60_000);
     const started = await call('POST', `/api/connections/${connectionId}/dive-import`, { computers: [], decisions: [], ...body });
     expect(started.statusCode).toBe(202);
@@ -73,7 +76,7 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
         sites: [
           { odin_dive_sites_id: 3314, odin_dive_sites_name: 'Hausreef', odin_dive_sites_lat: 27.29, odin_dive_sites_lon: 33.82, odin_countries_code_iso: 'EG' },
           { odin_dive_sites_id: 5120, odin_dive_sites_name: 'Attersee – Schwarzenbach', odin_dive_sites_lat: 47.8512, odin_dive_sites_lon: 13.5514, odin_countries_code_iso: 'AT' },
-          { odin_dive_sites_id: 6066, odin_dive_sites_name: 'Blue Hole', odin_dive_sites_lat: 28.5722, odin_dive_sites_lon: 34.5375, odin_countries_code_iso: 'EGY' },
+          { odin_dive_sites_id: 6066, odin_dive_sites_name: 'Blue Hole', odin_dive_sites_lat: 28.5722, odin_dive_sites_lon: 34.5375, odin_countries_code_iso: 'EGY', bow: 'salt' },
         ],
       }),
     });
@@ -234,8 +237,12 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
       const d = await diveOf(id);
       expect(d.recordings.find((r) => r.isPrimary)!.parser).not.toBe('ssi-app-api');
       expect(d).toMatchObject({ utcOffsetSource: 'device', values: { number: 71 } });
-      // Now Dive Hub has the computer from files: its SSI dives are suggested as logbook entries; the choice kept stays.
-      expect((await preview()).computers[0]).toMatchObject({ choice: 'recordings', suggested: 'entries', fromFiles: true });
+      // Its SSI dive is linked here: not a computer found at SSI any more.
+      expect((await preview()).computers).toEqual([]);
+      // A new SSI dive from it is: now Dive Hub has the computer from files, so it suggests logbook entries; the choice kept stays.
+      remote.computer2 = String(ctx.fakeSsi.addDive(ERIKA, computerDive({ at: '2025-08-12 14:00', depthM: 20, minutes: 40, manufacturer: 'Garmin', product: 'Descent Mk3', serial: '3333' })));
+      expect((await preview()).computers).toEqual([expect.objectContaining({ key: 'garmin:3333', dives: 1, choice: 'recordings', suggested: 'entries', fromFiles: true })]);
+      await call('PATCH', `/api/connections/${connectionId}`, { diveImport: { computers: [{ key: 'garmin:3333', choice: 'entries' }] } });
     });
 
     it('makes a file\'s Recording primary on a Dive that had none', async () => {
@@ -282,9 +289,52 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
       const made = (await diveOf(of('blueHole').diveId!)).site!;
       expect(made.name).toBe('Blue Hole');
       const site = (await call('GET', `/api/dive-sites/${made.id}`)).json() as {
-        country: string; position: { latitude: number }; externalIds: { externalId: string; providesData: boolean }[];
+        country: string; waterType: string; position: { latitude: number }; externalIds: { externalId: string; providesData: boolean }[];
       };
-      expect(site).toMatchObject({ country: 'EG', position: { latitude: 28.5722 }, externalIds: [{ externalId: '6066', providesData: true }] });
+      expect(site).toMatchObject({
+        country: 'EG', waterType: 'salt', position: { latitude: 28.5722 }, externalIds: [{ externalId: '6066', providesData: true }],
+      });
+    }, 30_000);
+
+    it('takes a site changed in SSI\'s app on a dive Dive Hub sent, and the dive stays up to date there', async () => {
+      // In SSI's app, the dive Dive Hub sent (and updated) gets a private site of Erika's.
+      ctx.fakeSsi.sites.push({ odin_dive_sites_id: 1_077_045, odin_dive_sites_name: 'Secret Reef', odin_dive_sites_lat: 28.1, odin_dive_sites_lon: 34.4, odin_countries_code_iso: 'EGY', bow: 'salt' });
+      ctx.fakeSsi.dives.get(Number(remote.matching))!.odin_user_log_dive_sites_id = 1_077_045;
+      expect(await status(fit.a!)).toMatchObject({ current: { upToDate: true } });
+      expect((await preview()).counts).toMatchObject({ changed: 1 });
+      outcome = await runImport();
+      expect(of('matching')).toMatchObject({ result: 'updated', diveId: fit.a });
+      expect((await diveOf(fit.a!)).site).toMatchObject({ name: 'Secret Reef' });
+      expect(await status(fit.a!)).toMatchObject({ current: { remoteId: remote.matching, upToDate: true } });
+      const history = (await call('GET', `/api/dives/${fit.a}/revisions`)).json() as { cause: string }[];
+      expect(history[0]!.cause).toBe('update');
+    });
+
+    it('keeps what changed only here, and asks when both changed; the User\'s choice decides', async () => {
+      const id = of('atSite').diveId!;
+      // Here: new notes. At SSI: nothing yet. The next import keeps them.
+      await call('PATCH', `/api/dives/${id}`, { version: (await diveOf(id)).version, notes: 'Fixed here' });
+      outcome = await runImport();
+      expect((await diveOf(id)).notes).toBe('Fixed here');
+      // Now SSI's app changes them too: a conflict, shown with both values.
+      ctx.fakeSsi.dives.get(Number(remote.atSite))!.odin_user_log_comment = 'Fixed in SSI';
+      const p = (await preview()) as unknown as { conflicts: { remoteId: string; field: string; hub: unknown; provider: unknown }[] };
+      expect(p.conflicts).toEqual([expect.objectContaining({ remoteId: remote.atSite, field: 'notes', hub: 'Fixed here', provider: 'Fixed in SSI' })]);
+      // Left as it is, Dive Hub's value stays, and that was the decision: it isn't asked again.
+      outcome = await runImport();
+      expect((await diveOf(id)).notes).toBe('Fixed here');
+      expect(((await preview()) as unknown as { conflicts: unknown[] }).conflicts).toEqual([]);
+      // Changed in SSI's app again, it is asked again; chosen, SSI's value is taken.
+      ctx.fakeSsi.dives.get(Number(remote.atSite))!.odin_user_log_comment = 'Fixed in SSI again';
+      outcome = await runImport({ conflicts: [{ remoteId: remote.atSite!, field: 'notes', choice: 'provider' }] });
+      expect((await diveOf(id)).notes).toBe('Fixed in SSI again');
+    }, 30_000);
+
+    it('lets a Dive without a Recording follow its values changed in SSI', async () => {
+      ctx.fakeSsi.dives.get(Number(remote.nowhere))!.odin_user_log_depth_m = 14;
+      outcome = await runImport();
+      expect(of('nowhere')).toMatchObject({ result: 'updated' });
+      expect((await diveOf(of('nowhere').diveId!)).values.maxDepthM).toBe(14);
     });
 
     it('only adds to Dives here when told so', async () => {

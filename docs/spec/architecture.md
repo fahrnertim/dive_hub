@@ -655,7 +655,8 @@ Deliberate simplifications, to revisit:
 Implemented:
 - `src/sites/provider-sites.ts`: a dive's SSI site is the site here with its ID, else the same site by the Site import's
   rule, else (with the admin's permission) a new site from the logbook's entry; `matchingSite` moved out of
-  `planSiteImport` into an exported function both use. The logbook's context keeps each site's country (alpha-2).
+  `planSiteImport` into an exported function both use. The logbook's context keeps each site's country (alpha-2) and
+  water type (`bow`, read like the SSI site import's `WATER_OF_BOW`), so a site made from it has both.
 - `provider_site_data` (migration 0017): an admin's permission per Provider; `GET /api/admin/provider-site-data`,
   `PUT /api/admin/provider-site-data/{provider}` (`confirm` required to allow; `provider_site_data_not_confirmed`).
 - The preview's `sites` (known, match, create, missing) and `sitesAllowed`; linked dives are filled on every run.
@@ -664,3 +665,35 @@ Implemented:
 - Tests: `ssi-dive-import.test.ts` (a match by name and position, nothing made without permission, only admins allow and
   only after confirming, a site made from SSI's values with its country); `dive-import.spec.ts` and a ui-quality case for
   the admin panel (@admin).
+
+**Slice 15b (2026-10-06): changes made at the Provider come back** (ADR 0030, amended by the owner).
+
+Implemented:
+- `src/providers/three-way.ts` (pure): the fields, comparing as the Provider keeps values, and the decision per field
+  (take, conflict, nothing). `dive-import.ts`: the base (`baseOf`: the last finished Import's Original or the last Push
+  that sent values, the newer), the Dive's side (`hubOf`), taking values (`takeChanges`: one Revision `update`, the site
+  through `siteForProvider`, Participants with an account replaced, values and their Overrides on Dives without a
+  Recording, and a new up-to-date `link` Push when the Dive was up to date), for linked dives, Recordings' Dives and dives
+  Dive Hub sent. `parse` takes the remote ID for a record that doesn't name it (what was sent before SSI gave one).
+- The preview's `counts.changed` and `conflicts` (with both values as shown); the start's `conflicts` choices, kept on the
+  Import's plan.
+- Web: the count, and "Changed in both places" with a choice per field (keep Dive Hub's preselected).
+- Tests: `three-way.test.ts`; `ssi-dive-import.test.ts` (a site changed in SSI's app on a dive Dive Hub sent comes back and
+  the dive stays up to date; a change made only here stays; a conflict kept, then asked again and taken; a Dive without a
+  Recording follows SSI's depth); `dive-import.spec.ts` and a ui-quality case for the conflict. The e2e server has a
+  test-only route (`POST /e2e/fake-ssi/dive`) for browser tests to change a dive on SSI's side, as in its app.
+
+Found while building (owner's account, 2026-10-06): **SSI answers an update with its usual answer wrapped in
+`success`** (`{ success: { ok, error, odin_user_log_id }, result }`), so Dive Hub, reading only the top level, had refused
+every update SSI had in fact stored (SSI reference). The client now reads `success` when it is an object; the fake SSI
+answers updates that way. And the import's computer list leaves out SSI dives already
+linked to a Dive here (the owner's #90 had the Mk3's profile from such an update). Also fixed: `SearchList` gave React Aria
+an empty state even with nothing to show, which leaves an option without a name while results change (axe, seen in the
+site picker's browser tests); it passes one only when there is text. The server tests' default timeout is 15 s
+(`vitest.config.ts`): tests of 1-2 s passed 5 s when the machine was busy.
+
+Deliberate simplifications:
+- **People Dive Hub doesn't know** (an SSI account without a Diver here) aren't shown in a buddies conflict and can't be
+  added; they need importing from the buddy list first.
+- **A Dive changed by taking SSI's values** shows "changed since sent" when it wasn't up to date before (sending then
+  writes Dive Hub's full values to SSI).

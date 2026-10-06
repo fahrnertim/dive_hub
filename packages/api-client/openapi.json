@@ -29706,6 +29706,7 @@
                     "counts",
                     "sites",
                     "sitesAllowed",
+                    "conflicts",
                     "decisions"
                   ],
                   "properties": {
@@ -29796,7 +29797,8 @@
                         "link",
                         "decide",
                         "create",
-                        "noMatch"
+                        "noMatch",
+                        "changed"
                       ],
                       "properties": {
                         "total": {
@@ -29837,6 +29839,10 @@
                         "noMatch": {
                           "type": "integer",
                           "description": "No Dive here, and the mode only adds: left out"
+                        },
+                        "changed": {
+                          "type": "integer",
+                          "description": "Linked dives changed at the Provider since Dive Hub last saw them: the Dive takes the changes"
                         }
                       }
                     },
@@ -29871,6 +29877,136 @@
                     "sitesAllowed": {
                       "type": "boolean",
                       "description": "An admin allowed creating sites from this Provider's site data"
+                    },
+                    "conflicts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "remoteId",
+                          "remoteNumber",
+                          "diveId",
+                          "number",
+                          "startsAt",
+                          "utcOffsetSeconds",
+                          "utcOffsetSource",
+                          "field",
+                          "hub",
+                          "provider"
+                        ],
+                        "properties": {
+                          "remoteId": {
+                            "type": "string"
+                          },
+                          "remoteNumber": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer"
+                              }
+                            ]
+                          },
+                          "diveId": {
+                            "type": "string"
+                          },
+                          "number": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer"
+                              }
+                            ]
+                          },
+                          "startsAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "utcOffsetSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer"
+                              }
+                            ]
+                          },
+                          "utcOffsetSource": {
+                            "enum": [
+                              "device",
+                              "position",
+                              "nearby",
+                              "unknown"
+                            ]
+                          },
+                          "field": {
+                            "enum": [
+                              "site",
+                              "notes",
+                              "buddies",
+                              "startsAt",
+                              "durationSeconds",
+                              "maxDepthM",
+                              "avgDepthM",
+                              "waterTemperatureC"
+                            ],
+                            "description": "values (startsAt, …) only on Dives without a Recording"
+                          },
+                          "hub": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                ],
+                                "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\""
+                              }
+                            ]
+                          },
+                          "provider": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                ],
+                                "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\""
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "Fields changed both at the Provider and here since Dive Hub last saw the dive: the User chooses; Dive Hub's stays unless told"
                     },
                     "decisions": {
                       "type": "array",
@@ -30548,6 +30684,44 @@
                           "type": "string",
                           "pattern": "^(new|leave_out|[0-9a-f-]{36})$",
                           "description": "A candidate's diveId, new, or leave_out"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "maxItems": 2000
+                  },
+                  "conflicts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "remoteId",
+                        "field",
+                        "choice"
+                      ],
+                      "properties": {
+                        "remoteId": {
+                          "type": "string",
+                          "maxLength": 40
+                        },
+                        "field": {
+                          "enum": [
+                            "site",
+                            "notes",
+                            "buddies",
+                            "startsAt",
+                            "durationSeconds",
+                            "maxDepthM",
+                            "avgDepthM",
+                            "waterTemperatureC"
+                          ]
+                        },
+                        "choice": {
+                          "enum": [
+                            "hub",
+                            "provider"
+                          ],
+                          "description": "hub: the Dive keeps its value; provider: it takes the Provider's"
                         }
                       },
                       "additionalProperties": false

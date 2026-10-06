@@ -137,6 +137,24 @@ export async function lenaReady(api: APIRequestContext): Promise<{ diverId: stri
   return { diverId: lena.id, connectionId };
 }
 
+/** Changes Lena's SSI dive with this number in the fake SSI, as she would in SSI's app (the e2e server's test-only route). */
+export async function editInSsi(api: APIRequestContext, number: number, set: Record<string, unknown>) {
+  const answer = await (await api.post('/e2e/fake-ssi/dive', { data: { email: LENA_SSI.login, number, set }, headers })).json() as { found: boolean };
+  if (!answer.found) throw new Error(`Lena has no SSI dive ${number}`);
+}
+
+/**
+ * A field changed both here and in SSI since the last import (ADR 0030): the notes of Lena's second dive (SSI dive 12),
+ * so the next preview asks whose to keep. Imports the dives first.
+ */
+export async function conflictForLena(api: APIRequestContext, stamp: string) {
+  const { diverId } = await importLena(api);
+  const { dives } = await (await api.get(`/api/dives?diverId=${diverId}&sort=startsAt&order=asc&limit=2`)).json() as { dives: { id: string }[] };
+  await editElsewhere(api, dives[1]!.id, `Changed in Dive Hub ${stamp}`);
+  await editInSsi(api, 12, { odin_user_log_comment: `Changed in SSI ${stamp}` });
+  return dives[1]!.id;
+}
+
 /** Lena's SSI dives imported (nothing new when they are already), the entries with several dives here left out. */
 export async function importLena(api: APIRequestContext) {
   const ready = await lenaReady(api);

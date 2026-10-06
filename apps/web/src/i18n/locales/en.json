@@ -953,7 +953,7 @@
     "importSaved": "Saved.",
     "importTitle": "Dives from {{name}}",
     "importTitleDiver": "Dives of {{diver}} from {{name}}",
-    "importIntro": "Bring the dives of your {{name}} logbook into Dive Hub. Dives here are never overwritten: {{name}} only fills what they lack.",
+    "importIntro": "Bring the dives of your {{name}} logbook into Dive Hub. What you change here stays: {{name}} fills what dives lack, and its later changes come in unless you changed the same thing here.",
     "importMode": "What may the import do?",
     "importOff": "Nothing",
     "importOffHint": "Dive Hub doesn’t import your dives from {{name}}.",
@@ -988,7 +988,9 @@
       "noMatch_one": "{{n}} matches no dive here: left out (the import only adds)",
       "noMatch_other": "{{n}} match no dive here: left out (the import only adds)",
       "unreadable_one": "{{n}} can’t be read: left out",
-      "unreadable_other": "{{n}} can’t be read: left out"
+      "unreadable_other": "{{n}} can’t be read: left out",
+      "changed_one": "{{n}} was changed in {{name}} since: Dive Hub takes the changes",
+      "changed_other": "{{n}} were changed in {{name}} since: Dive Hub takes the changes"
     },
     "importComputers": "Dive computers",
     "importComputersIntro": "These dive computers sent dives to {{name}}. Choose once for each how Dive Hub uses them.",
@@ -1032,7 +1034,22 @@
     "siteDataAllowed": "by {{by}}, {{date}}. Imports make the sites they need.",
     "siteDataStop": "Stop making sites",
     "siteDataAllowedNow": "Dive sites from {{name}} are allowed.",
-    "siteDataStopped": "Imports no longer make sites from {{name}}’s data."
+    "siteDataStopped": "Imports no longer make sites from {{name}}’s data.",
+    "importConflicts": "Changed in both places",
+    "importConflictsIntro": "Since Dive Hub last saw these dives, they were changed both in {{name}} and here. Choose what stays; Dive Hub’s value stays unless you take {{name}}’s.",
+    "importConflict": "{{dive}}: {{field}}",
+    "importField": {
+      "site": "dive site",
+      "notes": "notes",
+      "buddies": "buddies",
+      "startsAt": "start",
+      "durationSeconds": "duration",
+      "maxDepthM": "max depth",
+      "avgDepthM": "average depth",
+      "waterTemperatureC": "water temperature"
+    },
+    "importKeepHub": "Keep Dive Hub’s: {{value}}",
+    "importTakeProvider": "Take {{name}}’s: {{value}}"
   },
   "providers": {
     "ssi": {

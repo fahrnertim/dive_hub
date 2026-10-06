@@ -227,7 +227,10 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
       parse: parseSsiDive,
       parser: SSI_PARSER,
     },
-    diveSites: { find: async (ctx) => (await logbookOf(ctx).recent()).sites },
+    diveSites: {
+      find: async (ctx) => (await logbookOf(ctx).recent()).sites
+        .map(({ id, name, latitude, longitude, country }) => ({ id, name, latitude, longitude, country })),
+    },
     buddies: {
       find: async (ctx) => (await logbookOf(ctx).recent()).buddies.map((b) => ({ remoteId: String(b.id), name: b.name, account: b.account })),
     },

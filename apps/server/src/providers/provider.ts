@@ -275,8 +275,11 @@ export interface ProviderAdapter {
      * a read the adapter kept from moments ago may answer (the start right after a preview); otherwise it reads afresh.
      */
     list?(context: ActionContext, options?: { recent?: boolean }): Promise<DiveListing>;
-    /** One of those records in typed values; null when it is no dive Dive Hub can read. Pure: no calls. */
-    parse?(record: Record<string, unknown>, context: ImportContext): ImportedDive | null;
+    /**
+     * One of those records in typed values; null when it is no dive Dive Hub can read. Pure: no calls. `remoteId` names
+     * the dive when the record doesn't (what Dive Hub sent before it had the Provider's ID).
+     */
+    parse?(record: Record<string, unknown>, context: ImportContext, remoteId?: string): ImportedDive | null;
     /** The parser name and version a Recording made from a Provider's dive carries, e.g. `ssi-app-api`. */
     parser?: { name: string; version: string };
   };

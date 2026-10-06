@@ -2,7 +2,7 @@
 // typed by hand, one from a Mares, and entries between two of her dives here. What the import may do, the window, the
 // preview with the computer and a decision, the outcome, and the dives it made or linked.
 import { expect, test } from '@playwright/test';
-import { E2E_BASE_URL, leaveLena, lenaReady } from './support.ts';
+import { E2E_BASE_URL, conflictForLena, leaveLena, lenaReady } from './support.ts';
 
 const headers = { origin: E2E_BASE_URL };
 
@@ -70,4 +70,25 @@ test('an admin allows making dive sites from SSI logbooks, after confirming, and
   await expect(panel.getByText(/Allowed by Erika, /)).toBeVisible();
   await panel.getByRole('button', { name: 'Stop making sites' }).click();
   await expect(panel.getByRole('button', { name: 'Allow', exact: true })).toBeDisabled();
+});
+
+test('takes back a change made in SSI\'s app when asked, where the dive was changed here too', { tag: ['@account', '@dives'] }, async ({ page, request }) => {
+  try {
+    const stamp = String(Date.now());
+    const diveId = await conflictForLena(request, stamp);
+    await page.goto('/#/account');
+    const section = page.getByRole('region', { name: 'Dives of Lena from SSI' });
+    await section.getByRole('button', { name: 'Show what the import would do' }).click();
+    const conflict = section.getByRole('radiogroup', { name: /: notes$/ });
+    await expect(conflict.getByRole('radio', { name: `Keep Dive Hub’s: Changed in Dive Hub ${stamp}` })).toBeChecked();
+    await conflict.getByText(`Take SSI’s: Changed in SSI ${stamp}`).click();
+    await section.getByRole('button', { name: 'Import from SSI' }).click();
+    await expect(section.getByRole('link', { name: 'Go to the logbook' })).toBeVisible({ timeout: 30_000 });
+    await expect(section.getByText(/^updated: 1$/)).toBeVisible();
+    await page.goto(`/#/dives/${diveId}`);
+    await expect(page.getByText(`Changed in SSI ${stamp}`)).toBeVisible();
+    await expect(page.locator('.history > li').first()).toContainText('Updated from its source');
+  } finally {
+    await leaveLena(request);
+  }
 });

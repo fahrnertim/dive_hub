@@ -215,11 +215,17 @@ export interface ProviderImportPlan {
   context: {
     people: Record<string, string>;
     /** Country: ISO 3166-1 alpha-2 when the Provider gives one we know. */
-    sites: Record<string, { name: string; latitude: number | null; longitude: number | null; country: string | null }>;
+    sites: Record<string, {
+      name: string; latitude: number | null; longitude: number | null; country: string | null;
+      /** Missing on Imports made before it was kept. */
+      waterType?: SiteWaterType | null;
+    }>;
   };
   computers: Record<string, ComputerChoice>;
   /** Per remote dive ID: a Dive's ID, `new`, or `leave_out`. */
   decisions: Record<string, string>;
+  /** Per `remoteId:field` changed in both places: whose value the Dive keeps (`hub` when missing). */
+  conflicts?: Record<string, 'hub' | 'provider'>;
   mode: DiveImportMode;
   windowMinutes: number;
   /** The Connection's Diver: an import still runs after the Connection is gone. */

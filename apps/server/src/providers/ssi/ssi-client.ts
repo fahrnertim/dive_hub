@@ -4,6 +4,9 @@
 // every later call carries the token. Both travel in the query string, so nothing here ever logs a URL or
 // puts one into an error message.
 
+import type { SiteWaterType } from '../../vocabulary.js';
+import { WATER_OF_BOW } from './ssi-sites.js';
+
 /** The client label and version the Android app sends; SSI's API expects them on every call. */
 const APP_PARAMS = { ssiapp: '0815_ADR', version: 'ADR_4.1.272-ssi', lang: 'en', context: 's' } as const;
 export const DEFAULT_SSI_URL = 'https://api.divessi.com/app/a21.php';
@@ -30,6 +33,8 @@ export interface SsiLogbookSite {
   longitude: number | null;
   /** As SSI gives it: ISO alpha-2 or alpha-3, or a country name. */
   country: string | null;
+  /** From SSI's `bow` (body of water): salt or fresh; artificial or missing is null (as in ssi-sites.ts). */
+  waterType: SiteWaterType | null;
 }
 
 /**
@@ -141,7 +146,8 @@ export function createSsiClient(options: SsiClientOptions): SsiClient {
         const longitude = numberOrNull(s.odin_dive_sites_lon);
         const country = [s.odin_countries_code_iso, s.odin_dive_sites_country_iso3, s.odin_dive_sites_meta_country]
           .find((c): c is string => typeof c === 'string' && c.length > 0) ?? null;
-        return [{ id, name, latitude: latitude !== null && longitude !== null ? latitude : null, longitude: latitude !== null ? longitude : null, country }];
+        const waterType = typeof s.bow === 'string' ? WATER_OF_BOW[s.bow] ?? null : null;
+        return [{ id, name, latitude: latitude !== null && longitude !== null ? latitude : null, longitude: latitude !== null ? longitude : null, country, waterType }];
       });
       const buddies = (Array.isArray(data.logbook_buddies) ? data.logbook_buddies : []).filter(isObject).flatMap((b) => {
         const id = idText(b.id);
@@ -156,14 +162,15 @@ export function createSsiClient(options: SsiClientOptions): SsiClient {
     async save(token, record) {
       const data = await call('save_divelog', { token }, record);
       if (data.authenticated === false) throw new SsiError('signed_out', 'save_divelog');
-      const id = idText(data.odin_user_log_id);
-      if (!id) {
-        // SSI's reason, else which fields it sent instead (names only; values may hold personal data).
-        const reason = typeof data.error === 'string' && data.error ? data.error
-          : `no dive id in the answer (ok: ${JSON.stringify(data.ok ?? null)}, fields: ${Object.keys(data).join(', ')})`;
-        throw new SsiError('refused', `save_divelog: ${reason}`);
-      }
-      return { id };
+      // An update answers with the usual answer wrapped in `success`: { success: { ok, error, odin_user_log_id }, result }
+      // (checked 2026-10-06); a create answers it as it is.
+      const answer = isObject(data.success) ? data.success : data;
+      const id = idText(answer.odin_user_log_id);
+      if (id) return { id };
+      // SSI's reason, else which fields it sent instead (names only; values may hold personal data).
+      const reason = typeof answer.error === 'string' && answer.error ? answer.error
+        : `no dive id in the answer (ok: ${JSON.stringify(answer.ok ?? null)}, fields: ${Object.keys(data).join(', ')}${answer === data ? '' : ` / success: ${Object.keys(answer).join(', ')}`})`;
+      throw new SsiError('refused', `save_divelog: ${reason}`);
     },
   };
 }

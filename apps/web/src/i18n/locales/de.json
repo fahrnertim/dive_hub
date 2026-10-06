@@ -953,7 +953,7 @@
     "importSaved": "Gespeichert.",
     "importTitle": "Tauchgänge aus {{name}}",
     "importTitleDiver": "Tauchgänge von {{diver}} aus {{name}}",
-    "importIntro": "Hol die Tauchgänge deines {{name}}-Logbuchs in Dive Hub. Tauchgänge hier werden nie überschrieben: {{name}} ergänzt nur, was ihnen fehlt.",
+    "importIntro": "Hol die Tauchgänge deines {{name}}-Logbuchs in Dive Hub. Was du hier änderst, bleibt: {{name}} ergänzt, was den Tauchgängen fehlt, und spätere Änderungen dort kommen herein, außer du hast dasselbe hier geändert.",
     "importMode": "Was darf der Import?",
     "importOff": "Nichts",
     "importOffHint": "Dive Hub importiert deine Tauchgänge aus {{name}} nicht.",
@@ -988,7 +988,9 @@
       "noMatch_one": "{{n}} passt zu keinem Tauchgang hier: wird ausgelassen (der Import ergänzt nur)",
       "noMatch_other": "{{n}} passen zu keinem Tauchgang hier: werden ausgelassen (der Import ergänzt nur)",
       "unreadable_one": "{{n}} kann nicht gelesen werden: wird ausgelassen",
-      "unreadable_other": "{{n}} können nicht gelesen werden: werden ausgelassen"
+      "unreadable_other": "{{n}} können nicht gelesen werden: werden ausgelassen",
+      "changed_one": "{{n}} wurde seitdem in {{name}} geändert: Dive Hub übernimmt die Änderungen",
+      "changed_other": "{{n}} wurden seitdem in {{name}} geändert: Dive Hub übernimmt die Änderungen"
     },
     "importComputers": "Tauchcomputer",
     "importComputersIntro": "Diese Tauchcomputer haben Tauchgänge an {{name}} geschickt. Wähle für jeden einmal, wie Dive Hub sie nutzt.",
@@ -1032,7 +1034,22 @@
     "siteDataAllowed": "von {{by}}, {{date}}. Importe legen die Tauchplätze an, die sie brauchen.",
     "siteDataStop": "Keine Tauchplätze mehr anlegen",
     "siteDataAllowedNow": "Tauchplätze aus {{name}} sind erlaubt.",
-    "siteDataStopped": "Importe legen keine Tauchplätze mehr aus den Daten von {{name}} an."
+    "siteDataStopped": "Importe legen keine Tauchplätze mehr aus den Daten von {{name}} an.",
+    "importConflicts": "An beiden Stellen geändert",
+    "importConflictsIntro": "Seit Dive Hub diese Tauchgänge zuletzt gesehen hat, wurden sie in {{name}} und hier geändert. Wähle, was bleibt; der Wert aus Dive Hub bleibt, wenn du nicht den von {{name}} übernimmst.",
+    "importConflict": "{{dive}}: {{field}}",
+    "importField": {
+      "site": "Tauchplatz",
+      "notes": "Notizen",
+      "buddies": "Buddys",
+      "startsAt": "Beginn",
+      "durationSeconds": "Dauer",
+      "maxDepthM": "maximale Tiefe",
+      "avgDepthM": "durchschnittliche Tiefe",
+      "waterTemperatureC": "Wassertemperatur"
+    },
+    "importKeepHub": "Aus Dive Hub behalten: {{value}}",
+    "importTakeProvider": "Von {{name}} übernehmen: {{value}}"
   },
   "providers": {
     "ssi": {

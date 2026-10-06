@@ -8150,6 +8150,8 @@ export interface paths {
                                 create: number;
                                 /** @description No Dive here, and the mode only adds: left out */
                                 noMatch: number;
+                                /** @description Linked dives changed at the Provider since Dive Hub last saw them: the Dive takes the changes */
+                                changed: number;
                             };
                             /** @description The distinct sites the dives name, for Dives that have no site yet (ADR 0030) */
                             sites: {
@@ -8164,6 +8166,25 @@ export interface paths {
                             };
                             /** @description An admin allowed creating sites from this Provider's site data */
                             sitesAllowed: boolean;
+                            /** @description Fields changed both at the Provider and here since Dive Hub last saw the dive: the User chooses; Dive Hub's stays unless told */
+                            conflicts: {
+                                remoteId: string;
+                                remoteNumber: null | number;
+                                diveId: string;
+                                number: null | number;
+                                /** Format: date-time */
+                                startsAt: string;
+                                utcOffsetSeconds: null | number;
+                                /** @enum {unknown} */
+                                utcOffsetSource: "device" | "position" | "nearby" | "unknown";
+                                /**
+                                 * @description values (startsAt, …) only on Dives without a Recording
+                                 * @enum {unknown}
+                                 */
+                                field: "site" | "notes" | "buddies" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
+                                hub: null | (string | number | string[]);
+                                provider: null | (string | number | string[]);
+                            }[];
                             /** @description Logbook entries with several Dives here in the window: one of them, a new Dive (mode create), or leave it out */
                             decisions: {
                                 remoteId: string;
@@ -8324,6 +8345,16 @@ export interface paths {
                             remoteId: string;
                             /** @description A candidate's diveId, new, or leave_out */
                             choice: string;
+                        }[];
+                        conflicts?: {
+                            remoteId: string;
+                            /** @enum {unknown} */
+                            field: "site" | "notes" | "buddies" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
+                            /**
+                             * @description hub: the Dive keeps its value; provider: it takes the Provider's
+                             * @enum {unknown}
+                             */
+                            choice: "hub" | "provider";
                         }[];
                     };
                 };

@@ -15,6 +15,8 @@ export interface FakeSsiSite {
   odin_dive_sites_lat: number;
   odin_dive_sites_lon: number;
   odin_countries_code_iso: string;
+  /** Body of water: salt, fresh or artificial. */
+  bow?: string;
 }
 
 /** An entry in an account's SSI buddy list, with the personal data SSI keeps (which Dive Hub must never store). */
@@ -149,7 +151,9 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
         const existing = fake.dives.get(Number(id));
         if (!existing || existing.odin_user_log_user_master_id !== accountId) return answer({ ok: '', error: 'not found' });
         fake.dives.set(Number(id), { ...stored, odin_user_log_id: Number(id) });
-        return answer({ ok: stored.odin_user_log_deleted === 1 ? 'deleted' : 'updated', error: '', temp_id: '', odin_user_log_id: Number(id) });
+        // An update answers with the usual answer wrapped in `success`, as the real SSI does (checked 2026-10-06).
+        const ok = stored.odin_user_log_deleted === 1 ? 'deleted' : 'updated';
+        return answer({ success: { ok, error: '', temp_id: '', odin_user_log_id: Number(id) }, result: ok });
       }
       return answer({ error: `unknown action ${what}` }, 400);
     },

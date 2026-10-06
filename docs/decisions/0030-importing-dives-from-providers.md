@@ -1,6 +1,6 @@
 ---
 title: "ADR 0030: Importing dives from a Provider (SSI first)"
-summary: A Provider can import dives - SSI's logbook through its Connection (built in slice 15; amended - geo-tz's data is ODbL, "sent by Dive Hub" includes dives it sent values to, the computer choice is a Connection setting). Trust is decided per dive by evidence (sent by Dive Hub, from a dive computer, typed by hand) and per computer by the User; dives from a computer become Recordings like FIT files, hand-typed ones fill Dives here or become Dives without a Recording; nothing here is overwritten; matches are linked so sending updates instead of duplicating. A preview first, then an Import in the worker over one JSON Original per dive. Times without a zone get their offset from the position (geo-tz), else nearby dives, else stay unknown. Amends 0027, 0016.
+summary: A Provider can import dives - SSI's logbook through its Connection (built in slice 15; amended - geo-tz's data is ODbL, "sent by Dive Hub" includes dives it sent values to, the computer choice is a Connection setting, sites are matched or made once an admin allowed it, changes made at the Provider come back). Trust is decided per dive by evidence (sent by Dive Hub, from a dive computer, typed by hand) and per computer by the User; dives from a computer become Recordings like FIT files, hand-typed ones fill Dives here or become Dives without a Recording; nothing changed here is overwritten (changes made only at the Provider come back, three-way, amended); matches are linked so sending updates instead of duplicating. A preview first, then an Import in the worker over one JSON Original per dive. Times without a zone get their offset from the position (geo-tz), else nearby dives, else stay unknown. Amends 0027, 0016.
 status: accepted
 date: 2026-10-06
 ---
@@ -43,7 +43,7 @@ The owner decided on 2026-10-06 (the design note's points 1–8 and the question
 ### Logbook entries
 - **One Dive here in the window:** linked to the Provider's dive and **filled where it is empty**: site (only a site that
   already has that SSI site ID; SSI's site data has no licence, ADR 0024), Participants (buddy-list entries → Divers
-  by SSI account), notes. Nothing is overwritten. Sending later updates that remote dive instead of making another.
+  by SSI account), notes. Nothing is overwritten (amended below: changes made only at the Provider come back). Sending later updates that remote dive instead of making another.
 - **Several:** the User decides in the preview (one of them, a new Dive, or leave it out); one that turns ambiguous
   after the preview is left out, with that reason in the outcome.
 - **None:** with "also create", a **Dive without a Recording** with the entry's values, marked as from the Provider,
@@ -112,7 +112,8 @@ Replaces "only a site that already has the SSI site ID is used" for a Dive that 
 - **A site here with that SSI ID** is used, as before.
 - **Else the same site here by the Site import's rule** (`matchingSite`, shared with ADR 0021's import: within 100 m,
   the same name, no SSI ID yet) gets the SSI ID as a reference (Revision `link`). No SSI data is copied.
-- **Else, if an admin allowed it, a new site** from the logbook's entry: name, position, country and SSI's ID, marked
+- **Else, if an admin allowed it, a new site** from the logbook's entry: name, position, country, water type (SSI's
+  `bow`, salt or fresh, as in the SSI site import) and SSI's ID, marked
   "From SSI", the User as its creator (Revision `create`). SSI's site data still has no licence (ADR 0024), so it is the
   operator's decision: an admin confirms the same explanation as for an SSI site import, once per Provider
   (`provider_site_data`, `PUT /api/admin/provider-site-data/{provider}`), and can stop it again. Without it the Dive
@@ -123,6 +124,26 @@ Replaces "only a site that already has the SSI site ID is used" for a Dive that 
 - *Considered:* always creating (duplicates of hand-made and OpenStreetMap sites), only matching (dives in places Dive
   Hub doesn't know stay without a site), the User confirming per import (the risk is the operator's, as for the Site
   import), and running the admin's SSI site import for the IDs (SSI's whole list for a handful of sites).
+
+## Amended: changes made at the Provider come back (owner, 2026-10-06, slice 15b)
+Replaces "nothing here is overwritten" for dives linked to a Provider's dive. Found when the owner changed a dive's site
+to a private one in SSI's app and the import, which only filled empty fields, couldn't bring it.
+- **Three-way per field**, like the Site import's re-import (ADR 0021). The base is what the Provider had when Dive Hub
+  last saw the dive: the newer of the Original an earlier finished Import brought and the payload of the last create or
+  update Push (what Dive Hub sent). Compared as the Provider keeps values (minutes, a minute of duration, 0.1 for depths
+  and temperatures):
+  - unchanged at the Provider since the base: nothing;
+  - changed there, not here: the Dive takes the Provider's value (Revision cause `update`, "Updated from its source");
+  - changed in both, differently: a conflict, listed in the preview; the Dive keeps its value unless the User takes the
+    Provider's. Kept, that import's Original becomes the base, so it isn't asked again until the Provider changes it again.
+- **Fields:** the site (a new one found or made as in slice 15a; the Provider naming none never clears it), notes and
+  buddies (Participants with an account at the Provider follow its list; the others stay) on every linked Dive; the start,
+  duration, depths and water temperature only on a Dive without a Recording (a Recording's values are the computer's).
+- **Also for dives Dive Hub sent** (base: what it sent): a change made in the Provider's app comes back, and a Dive that was
+  up to date there stays so (a new `link` Push with its fingerprint). Without any base (linked by sending, never
+  imported), the import only fills empty fields, as before.
+- *Considered:* asking about every difference (rounding makes most of them noise), a "take from SSI" action per dive
+  (no bulk), and the Provider winning for chosen fields (overwrites changes made here).
 
 ## Considered options
 - **One trust switch per Connection:** one account can hold both kinds of dive.

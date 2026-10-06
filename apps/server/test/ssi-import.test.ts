@@ -8,7 +8,7 @@ import { computerDive, handTypedDive } from './fake-ssi.js';
 
 const logbook: SsiLogbook = {
   dives: [],
-  sites: [{ id: '3314', name: 'Hausreef', latitude: 27.29, longitude: 33.82, country: 'EG' }],
+  sites: [{ id: '3314', name: 'Hausreef', latitude: 27.29, longitude: 33.82, country: 'EG', waterType: 'salt' }],
   buddies: [{ id: 3_786_888, name: 'Kai Lund', account: '4989164' }, { id: 1_111, name: 'No Account', account: null }],
 };
 const context = contextOf(logbook);
@@ -16,7 +16,7 @@ const withId = (record: Record<string, unknown>, id = 27_000_001) => ({ ...recor
 
 describe('SSI dives for an import', () => {
   it('keeps of the logbook only accounts and sites as the context, no names of people', () => {
-    expect(context).toEqual({ people: { 3786888: '4989164' }, sites: { 3314: { name: 'Hausreef', latitude: 27.29, longitude: 33.82, country: 'EG' } } });
+    expect(context).toEqual({ people: { 3786888: '4989164' }, sites: { 3314: { name: 'Hausreef', latitude: 27.29, longitude: 33.82, country: 'EG', waterType: 'salt' } } });
   });
 
   it('reads a dive typed by hand: rounded values, SSI\'s zeros as none, buddies as their SSI accounts', () => {
