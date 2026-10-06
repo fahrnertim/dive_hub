@@ -5,6 +5,7 @@ import { createAuthMiddleware } from 'better-auth/api';
 import { admin } from 'better-auth/plugins/admin';
 import { adminAc, defaultAc, userAc } from 'better-auth/plugins/admin/access';
 import { openAPI } from 'better-auth/plugins';
+import { apiKey } from '@better-auth/api-key';
 import type { Db } from '../db/client.js';
 import { diver, diverManagement } from '../db/schema.js';
 import { hashPassword, MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH, verifyPassword } from './password.js';
@@ -33,6 +34,16 @@ export interface AuthOptions {
  * Admins manage Users but can't impersonate them: signing in as someone would expose Dives whose
  * Visibility excludes the admin.
  */
+/**
+ * AI accesses (ADR 0035) are Better Auth API keys: hashed, named, owned by one User. Their scopes are the key's
+ * permissions (`{ logbook: ['read', 'positions'] }`). The plugin's own endpoints stay off HTTP (PUBLIC_AUTH_PATHS);
+ * src/mcp/access-service.ts calls them server-side.
+ */
+export const AI_ACCESS_PREFIX = 'dh_';
+/** Requests one AI access may make per minute; an LLM client sends several per question. */
+export const AI_ACCESS_RATE = { timeWindow: 60_000, maxRequests: 120 };
+export const AI_ACCESS_NAME_MAX = 60;
+
 const adminRole = defaultAc.newRole({
   ...adminAc.statements,
   user: adminAc.statements.user.filter((action) => action !== 'impersonate'),
@@ -47,6 +58,14 @@ export function createAuth({ db, baseUrl, secret, trustedOrigins = [], rateLimit
     trustedOrigins,
     database: drizzleAdapter(db, { provider: 'pg' }),
     telemetry: { enabled: false },
+    logger: {
+      // A key that is unknown or revoked is an ordinary 401 at /mcp (src/mcp/endpoint.ts), which says so itself; the
+      // api-key plugin would log each one as an error with a stack. Everything else is logged as Better Auth does.
+      log: (level, message, ...args) => {
+        if (message === 'Failed to validate API key:') return;
+        console[level](`${new Date().toISOString()} ${level.toUpperCase()} [Better Auth]: ${message}`, ...args);
+      },
+    },
     emailAndPassword: {
       enabled: true,
       disableSignUp: true,
@@ -79,6 +98,12 @@ export function createAuth({ db, baseUrl, secret, trustedOrigins = [], rateLimit
       admin({ roles: { admin: adminRole, user: userAc }, defaultRole: 'user' }),
       // Only for describing PUBLIC_AUTH_PATHS in our OpenAPI document; its own pages stay off.
       openAPI({ disableDefaultReference: true }),
+      apiKey({
+        defaultPrefix: AI_ACCESS_PREFIX,
+        requireName: true,
+        maximumNameLength: AI_ACCESS_NAME_MAX,
+        rateLimit: { enabled: true, ...AI_ACCESS_RATE },
+      }),
     ],
     hooks: {
       /**

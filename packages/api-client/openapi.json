@@ -316,6 +316,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -422,6 +424,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -578,6 +582,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -777,6 +783,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -883,6 +891,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -1445,6 +1455,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -1572,6 +1584,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -1723,6 +1737,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -1916,6 +1932,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2129,6 +2147,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2400,6 +2420,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2506,6 +2528,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2612,6 +2636,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2757,6 +2783,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2863,6 +2891,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -2969,6 +2999,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -3146,6 +3178,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -3252,6 +3286,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -3358,6 +3394,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -3535,6 +3573,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -3641,6 +3681,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -3747,6 +3789,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -3874,6 +3918,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -3980,6 +4026,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -4086,6 +4134,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -4234,6 +4284,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -4340,6 +4392,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -4446,6 +4500,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -4723,6 +4779,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -4829,6 +4887,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -5289,6 +5349,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -5689,6 +5751,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -6404,6 +6468,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -7257,6 +7323,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -7363,6 +7431,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -7469,6 +7539,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -7655,6 +7727,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -7784,6 +7858,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -7890,6 +7966,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -8019,6 +8097,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -8804,6 +8884,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -8910,6 +8992,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -9016,6 +9100,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -9754,6 +9840,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -9860,6 +9948,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -9966,6 +10056,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -10704,6 +10796,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -10810,6 +10904,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -10972,6 +11068,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -11078,6 +11176,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -11964,6 +12064,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -12070,6 +12172,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -12293,6 +12397,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -12676,6 +12782,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -12782,6 +12890,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -12888,6 +12998,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -13038,6 +13150,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -13144,6 +13258,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -13250,6 +13366,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -13400,6 +13518,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -13506,6 +13626,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -13612,6 +13734,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -13762,6 +13886,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -13868,6 +13994,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -13974,6 +14102,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -14186,6 +14316,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -14292,6 +14424,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -14398,6 +14532,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -14504,6 +14640,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -14759,6 +14897,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -14865,6 +15005,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -14971,6 +15113,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -15077,6 +15221,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -15202,6 +15348,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -15308,6 +15456,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -15414,6 +15564,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -15520,6 +15672,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -15688,6 +15842,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -15810,6 +15966,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -15932,6 +16090,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -16054,6 +16214,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -16345,6 +16507,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -16451,6 +16615,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -16557,6 +16723,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -16663,6 +16831,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -16853,6 +17023,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -16959,6 +17131,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -17065,6 +17239,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -17171,6 +17347,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -17296,6 +17474,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -17402,6 +17582,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -17508,6 +17690,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -17614,6 +17798,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -17778,6 +17964,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -17884,6 +18072,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -17990,6 +18180,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -18096,6 +18288,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -18320,6 +18514,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -18426,6 +18622,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -18532,6 +18730,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -18638,6 +18838,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -19212,6 +19414,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -19770,6 +19974,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -19876,6 +20082,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -19982,6 +20190,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -20088,6 +20298,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -20546,6 +20758,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -21120,6 +21334,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -21226,6 +21442,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -21332,6 +21550,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -21438,6 +21658,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -21563,6 +21785,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -21669,6 +21893,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -21775,6 +22001,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -21881,6 +22109,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -22381,6 +22611,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -22487,6 +22719,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -22593,6 +22827,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -22699,6 +22935,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -23189,6 +23427,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -23295,6 +23535,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -23401,6 +23643,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -23507,6 +23751,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -23995,6 +24241,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -24101,6 +24349,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -24207,6 +24457,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -24313,6 +24565,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -24533,6 +24787,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -25103,6 +25359,8 @@
                             "provider_account_held",
                             "diver_not_external",
                             "provider_import_off",
+                            "ai_access_not_found",
+                            "ai_access_off",
                             "provider_site_data_not_confirmed"
                           ]
                         }
@@ -25214,6 +25472,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -25320,6 +25580,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -25426,6 +25688,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -25871,6 +26135,8 @@
                                   "provider_account_held",
                                   "diver_not_external",
                                   "provider_import_off",
+                                  "ai_access_not_found",
+                                  "ai_access_off",
                                   "provider_site_data_not_confirmed"
                                 ]
                               }
@@ -25985,6 +26251,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -26435,6 +26703,8 @@
                             "provider_account_held",
                             "diver_not_external",
                             "provider_import_off",
+                            "ai_access_not_found",
+                            "ai_access_off",
                             "provider_site_data_not_confirmed"
                           ]
                         }
@@ -26546,6 +26816,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -26652,6 +26924,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -27458,6 +27732,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -27564,6 +27840,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -27670,6 +27948,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -27857,6 +28137,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -28112,6 +28394,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -28218,6 +28502,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -28324,6 +28610,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -28511,6 +28799,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -28702,6 +28992,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -28808,6 +29100,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -28914,6 +29208,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -29101,6 +29397,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -29320,6 +29618,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -29426,6 +29726,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -29532,6 +29834,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -29719,6 +30023,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -30028,6 +30334,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -30134,6 +30442,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -30240,6 +30550,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -30427,6 +30739,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -30552,6 +30866,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -31133,6 +31449,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -31239,6 +31557,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -31345,6 +31665,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -31532,6 +31854,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -31923,6 +32247,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -32029,6 +32355,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -32135,6 +32463,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -32322,6 +32652,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -32492,6 +32824,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -32697,6 +33031,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -32803,6 +33139,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -33146,6 +33484,8 @@
                                     "provider_account_held",
                                     "diver_not_external",
                                     "provider_import_off",
+                                    "ai_access_not_found",
+                                    "ai_access_off",
                                     "provider_site_data_not_confirmed"
                                   ]
                                 }
@@ -33343,6 +33683,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -33694,6 +34036,8 @@
                                   "provider_account_held",
                                   "diver_not_external",
                                   "provider_import_off",
+                                  "ai_access_not_found",
+                                  "ai_access_off",
                                   "provider_site_data_not_confirmed"
                                 ]
                               }
@@ -33890,6 +34234,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -33996,6 +34342,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -34446,6 +34794,8 @@
                                       "provider_account_held",
                                       "diver_not_external",
                                       "provider_import_off",
+                                      "ai_access_not_found",
+                                      "ai_access_off",
                                       "provider_site_data_not_confirmed"
                                     ]
                                   }
@@ -34644,6 +34994,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -34750,6 +35102,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -34856,6 +35210,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -35043,6 +35399,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -35392,6 +35750,8 @@
                                   "provider_account_held",
                                   "diver_not_external",
                                   "provider_import_off",
+                                  "ai_access_not_found",
+                                  "ai_access_off",
                                   "provider_site_data_not_confirmed"
                                 ]
                               }
@@ -35588,6 +35948,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -35694,6 +36056,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -35800,6 +36164,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -35987,6 +36353,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -36193,6 +36561,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -36299,6 +36669,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -36405,6 +36777,8 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"
@@ -36592,6 +36966,1142 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/ai-access": {
+      "get": {
+        "summary": "The signed-in User's AI accesses to the MCP endpoint, and whether this instance offers it (ADR 0035)",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "enabled",
+                    "endpoint",
+                    "accesses"
+                  ],
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean",
+                      "description": "Whether an admin switched the MCP endpoint on; while off, no key works and none can be created"
+                    },
+                    "endpoint": {
+                      "type": "string",
+                      "description": "The URL an LLM client connects to"
+                    },
+                    "accesses": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "name",
+                          "keyStart",
+                          "scopes",
+                          "createdAt",
+                          "lastUsedAt"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "What the User called it, e.g. the LLM client and the machine it runs on"
+                          },
+                          "keyStart": {
+                            "type": "string",
+                            "description": "The key's first characters, to tell accesses apart; the key itself is never returned again"
+                          },
+                          "scopes": {
+                            "type": "array",
+                            "items": {
+                              "enum": [
+                                "logbook:read",
+                                "logbook:positions"
+                              ],
+                              "description": "logbook:read: the User's Dives, sites, Divers and buddies' names. logbook:positions: also the Dives' own entry and exit positions"
+                            }
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "lastUsedAt": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/ai-accesses": {
+      "post": {
+        "summary": "Create an AI access; the key in the answer is shown only now",
+        "description": "Clients say first what an AI access hands to the User's AI provider, and show the key once with how to use it (docs/spec/clients.md). 409 ai_access_off while the instance has the endpoint switched off.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60,
+                    "pattern": "\\S"
+                  },
+                  "positions": {
+                    "type": "boolean",
+                    "description": "Also grant logbook:positions; logbook:read is always granted"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "access",
+                    "key"
+                  ],
+                  "properties": {
+                    "access": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "keyStart",
+                        "scopes",
+                        "createdAt",
+                        "lastUsedAt"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "What the User called it, e.g. the LLM client and the machine it runs on"
+                        },
+                        "keyStart": {
+                          "type": "string",
+                          "description": "The key's first characters, to tell accesses apart; the key itself is never returned again"
+                        },
+                        "scopes": {
+                          "type": "array",
+                          "items": {
+                            "enum": [
+                              "logbook:read",
+                              "logbook:positions"
+                            ],
+                            "description": "logbook:read: the User's Dives, sites, Divers and buddies' names. logbook:positions: also the Dives' own entry and exit positions"
+                          }
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "lastUsedAt": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "key": {
+                      "type": "string",
+                      "description": "The bearer key. Only its hash is stored: it can't be shown again"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/ai-accesses/{id}": {
+      "delete": {
+        "summary": "Revoke an AI access: its key stops working at once; its log stays",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/ai-access-log": {
+      "get": {
+        "summary": "What the User's AI accesses read, newest first: every tool call of the last 90 days, of revoked accesses too",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "query",
+            "name": "accessId",
+            "required": false,
+            "description": "Only this access"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "in": "query",
+            "name": "offset",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "entries",
+                    "total"
+                  ],
+                  "properties": {
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "at",
+                          "accessId",
+                          "accessName",
+                          "tool",
+                          "arguments",
+                          "rows",
+                          "outcome",
+                          "errorCode",
+                          "durationMs"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "accessId": {
+                            "type": "string",
+                            "description": "The AI access; it may be revoked meanwhile"
+                          },
+                          "accessName": {
+                            "type": "string",
+                            "description": "Its name when the call was made"
+                          },
+                          "tool": {
+                            "type": "string",
+                            "description": "The MCP tool called, e.g. logbook_search_dives"
+                          },
+                          "arguments": {
+                            "type": "object",
+                            "description": "What it was asked; search words are replaced by \"[text]\"",
+                            "additionalProperties": {}
+                          },
+                          "rows": {
+                            "type": "integer",
+                            "description": "Dives, sites or Divers the answer held or counted"
+                          },
+                          "outcome": {
+                            "enum": [
+                              "ok",
+                              "error"
+                            ]
+                          },
+                          "errorCode": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "Why a call failed, e.g. dive_not_found, invalid_input, timeout"
+                              }
+                            ]
+                          },
+                          "durationMs": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/ai-access": {
+      "get": {
+        "summary": "Admins: whether this instance offers the MCP endpoint, and how many AI accesses exist",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "enabled",
+                    "changedAt",
+                    "changedBy",
+                    "accesses"
+                  ],
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "changedAt": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      ]
+                    },
+                    "changedBy": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "description": "The admin's name"
+                        }
+                      ]
+                    },
+                    "accesses": {
+                      "type": "integer",
+                      "description": "How many AI accesses Users have, on the whole instance"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Admins: switch the MCP endpoint on or off for the instance (off by default)",
+        "description": "Off rejects every key at once and stops new ones; accesses stay, so switching on again restores those not revoked.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "enabled",
+                    "changedAt",
+                    "changedBy",
+                    "accesses"
+                  ],
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "changedAt": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      ]
+                    },
+                    "changedBy": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "description": "The admin's name"
+                        }
+                      ]
+                    },
+                    "accesses": {
+                      "type": "integer",
+                      "description": "How many AI accesses Users have, on the whole instance"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/ai-accesses": {
+      "delete": {
+        "summary": "Admins: revoke every AI access of every User; their keys stop working at once",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "revoked"
+                  ],
+                  "properties": {
+                    "revoked": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "ai_access_not_found",
+                        "ai_access_off",
                         "provider_site_data_not_confirmed"
                       ],
                       "description": "Stable, machine-readable reason; clients translate it"

@@ -122,6 +122,8 @@ async function deleteUserData(tx: Tx, userId: string) {
   // their secrets for Targets, and a doomed Diver's External IDs go with the Diver.
   await tx.execute(sql`delete from push where dive_id in (select id from doomed_dive)`);
   await tx.execute(sql`delete from connection where user_id = ${userId}`);
+  // AI accesses (ADR 0035): Better Auth's key table names its User as text, without a foreign key.
+  await tx.execute(sql`delete from apikey where reference_id = ${userId}`);
   await tx.execute(sql`delete from diver_external_id where diver_id in (select id from doomed_diver)`);
   await tx.execute(sql`delete from dive where id in (select id from doomed_dive)`);
   await tx.execute(sql`update recording set device_id = null where device_id in (select id from device where diver_id in (select id from doomed_diver))`);

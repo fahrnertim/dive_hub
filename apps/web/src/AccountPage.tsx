@@ -8,6 +8,7 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
+import { AiAccess } from './AiAccess.tsx';
 import { Connections } from './Connections.tsx';
 import { Button, ConfirmButton, Form, Notice, PageHeader, Panel, RadioGroup, Table, TextField } from './ui/index.ts';
 
@@ -22,6 +23,7 @@ export function AccountPage() {
       <ChangePassword />
       <Sessions />
       <Connections />
+      <AiAccess />
     </>
   );
 }

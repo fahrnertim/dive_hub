@@ -8,8 +8,9 @@ date: 2026-10-02
 # ADR 0011: Better Auth for accounts and sessions
 
 ## Status
-Accepted – 2026-10-02. Amended by [ADR 0035](0035-mcp-connector.md) (planned, slice 17): the api-key plugin for AI accesses
-to the MCP endpoint; Better Auth's OAuth and MCP plugins later, which expose more endpoints than the four of ADR 0013.
+Accepted – 2026-10-02. Amended by [ADR 0035](0035-mcp-connector.md) (slice 17, built): the api-key plugin for AI accesses
+to the MCP endpoint, called server-side only (still four endpoints over HTTP); Better Auth's OAuth and MCP plugins
+later, which will expose more.
 
 ## Context
 [ADR 0004](0004-system-architecture.md) asks for built-in accounts, revocable sessions usable by web

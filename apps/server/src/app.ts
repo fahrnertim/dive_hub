@@ -24,6 +24,9 @@ import type { SiteImportService } from './sites/import/site-import-service.js';
 import { siteImportRoutes } from './sites/import/site-import-routes.js';
 import type { ProviderLayer } from './providers/layer.js';
 import { providerRoutes } from './providers/routes.js';
+import { aiAccessRoutes } from './mcp/access-routes.js';
+import type { AiAccessService } from './mcp/access-service.js';
+import { mcpEndpoint } from './mcp/endpoint.js';
 import type { BlobStore } from './storage/blob-store.js';
 import { accountRoutes } from './users/account-routes.js';
 import { adminRoutes } from './users/admin-routes.js';
@@ -41,6 +44,8 @@ export interface AppDeps {
   providers: ProviderLayer;
   blobs: BlobStore;
   auth: Auth;
+  /** AI accesses to the MCP endpoint, the instance's switch and the log (ADR 0035). */
+  aiAccesses: AiAccessService;
   setup: Setup;
   invitations: Invitations;
   /** Public URL of the instance; invitation links point there. */
@@ -90,12 +95,15 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
   await app.register(siteRoutes, { prefix: '/api', ...deps, sites: createSiteService(deps.db) });
   await app.register(siteImportRoutes, { prefix: '/api', ...deps });
   await app.register(providerRoutes, { prefix: '/api', auth: deps.auth, ...deps.providers });
+  await app.register(aiAccessRoutes, { prefix: '/api', auth: deps.auth, accesses: deps.aiAccesses, baseUrl: deps.baseUrl });
+  // The MCP endpoint (ADR 0035): not under /api, authenticated by an AI access's key instead of a session.
+  await app.register(mcpEndpoint, { db: deps.db, accesses: deps.aiAccesses, baseUrl: deps.baseUrl });
 
   const serveWeb = !!deps.webDir && existsSync(deps.webDir);
   if (serveWeb) await app.register(fastifyStatic, { root: deps.webDir!, wildcard: false });
   // Single-page app: unknown page paths get index.html. Unknown API paths and missing files (a path
   // with an extension, e.g. an old asset) get a 404, so a browser never runs HTML as a script.
-  const isPage = (url: string) => !url.startsWith('/api/') && !/\.[a-z0-9]+$/i.test(url.split(/[?#]/)[0]!);
+  const isPage = (url: string) => !url.startsWith('/api/') && url.split(/[?#]/)[0] !== '/mcp' && !/\.[a-z0-9]+$/i.test(url.split(/[?#]/)[0]!);
   app.setNotFoundHandler((request, reply) =>
     serveWeb && request.method === 'GET' && isPage(request.url) ? reply.sendFile('index.html') : reply.code(404).send(problem('not_found')),
   );

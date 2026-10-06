@@ -1,6 +1,6 @@
 ---
 title: An MCP connector for Dive Hub
-summary: Letting a User's LLM client (Claude, ChatGPT, VS Code, Cursor) read their logbook through the Model Context Protocol - the spec as of 2026-07-28 (stateless, Streamable HTTP, OAuth 2.1 with protected-resource metadata and client ID metadata documents), what each client needs (claude.ai and ChatGPT only OAuth from their cloud, so a public HTTPS instance; Claude Code and others also tokens and local servers), Better Auth's mcp, oauth-provider, cimd and api-key plugins (1.7.7, young, open bugs), the TypeScript SDK v2 (Apache-2.0, Fastify adapter, Zod), how self-hosted apps did it (Home Assistant, Grafana, Gitea, Immich, Actual, Firefly, Strava, divetracx), security (prompt injection through data other Users edit, the lethal trifecta, OWASP MCP Top 10), privacy (buddies' names, positions, body weight; GDPR household exemption), tool design; options, the model; decided (ADR 0035) with the prompt for slice 17.
+summary: Letting a User's LLM client (Claude, ChatGPT, VS Code, Cursor) read their logbook through the Model Context Protocol - the spec as of 2026-07-28 (stateless, Streamable HTTP, OAuth 2.1 with protected-resource metadata and client ID metadata documents), what each client needs (claude.ai and ChatGPT only OAuth from their cloud, so a public HTTPS instance; Claude Code and others also tokens and local servers), Better Auth's mcp, oauth-provider, cimd and api-key plugins (1.7.7, young, open bugs), the TypeScript SDK v2 (Apache-2.0, Fastify adapter, Zod), how self-hosted apps did it (Home Assistant, Grafana, Gitea, Immich, Actual, Firefly, Strava, divetracx), security (prompt injection through data other Users edit, the lethal trifecta, OWASP MCP Top 10), privacy (buddies' names, positions, body weight; GDPR household exemption), tool design; options, the model; decided (ADR 0035) with the prompt for slice 17 (done 2026-10-06).
 status: decided
 date: 2026-10-06
 ---
@@ -183,10 +183,11 @@ All made by the owner on 2026-10-06; written down as [ADR 0035](../decisions/003
 | M8 | Order | Next, slice 17; the planned slices move to 18–22 (then 19–23, after the dive assessment became slice 18, ADR 0036) |
 
 ### Still to check
-- **Whether the SDK v2 accepts plain JSON Schema** for tool inputs and outputs (decides M6).
+- ~~Whether the SDK v2 accepts plain JSON Schema~~ Checked while building (2026-10-06): yes, `fromJsonSchema`; the
+  tools are TypeBox. Its Fastify package only does Host checks, so it isn't used. Annotation names are unchanged.
+  See [ADR 0035's amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built-slice-17).
 - **Which protocol revision claude.ai, ChatGPT and VS Code speak** when OAuth comes; the SDK serves both eras.
 - **Better Auth #11553, #11278, #9961** before OAuth is built.
-- **Annotation names** (`readOnlyHint` …) in the 2026-07-28 revision.
 
 ## Slices
 
@@ -233,6 +234,8 @@ All made by the owner on 2026-10-06; written down as [ADR 0035](../decisions/003
 - [fastmcp-openapi] FastMCP, OpenAPI integration: https://gofastmcp.com/integrations/openapi
 
 ## Prompt: the MCP endpoint (slice 17)
+
+**Done 2026-10-06** (slice 17 in the [architecture](../spec/architecture.md)); kept for the record.
 
 ```text
 We're continuing Dive Hub. Everything you need is in this repository; read it first and don't rely on any

@@ -20,6 +20,7 @@ import { skippingClock } from '../src/providers/leases.js';
 import type { ProviderAdapter } from '../src/providers/provider.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
+import { createAiAccessService } from '../src/mcp/access-service.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { createFakeSsi, type FakeSsi } from './fake-ssi.js';
 import { createInvitations } from '../src/users/invitations.js';
@@ -114,10 +115,11 @@ export async function createTestApp(t: TestDatabase, options: {
     ],
     clock,
   });
+  const aiAccesses = createAiAccessService(t.db, auth);
   const app = await buildApp({
-    db: t.db, imports, siteImports, providers, blobs, auth, setup, invitations: createInvitations(t.db), baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir,
+    db: t.db, imports, siteImports, providers, blobs, auth, aiAccesses, setup, invitations: createInvitations(t.db), baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir,
   });
-  return { app, auth, setup, imports, siteImports, providers, fakeSsi, ssiClock, clock, pauses: clock.slept, blobs };
+  return { app, auth, aiAccesses, setup, imports, siteImports, providers, fakeSsi, ssiClock, clock, pauses: clock.slept, blobs };
 }
 
 /** Creates a User the way an admin would (Better Auth's admin API, server-side). */

@@ -52,6 +52,7 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 | `apps/server/src/ssi/` | SSI as a Target (ADR 0024): the app API client, Dive → SSI record, Connections and Pushes, routes; [reference](references/ssi-app-api.md) |
 | `apps/server/src/secrets/` | Encrypting what Dive Hub keeps for Targets (`DIVEHUB_ENCRYPTION_KEY`) |
 | `apps/server/src/sites/import/` | Site import (ADR 0021): Overpass and Wikidata adapters, the plan (matching, 3-way merge), the service and admin routes |
+| `apps/server/src/mcp/` | The MCP endpoint `/mcp`, AI accesses, their log, and the tools (ADR 0035) |
 | `apps/server/src/vocabulary.ts`, `src/fit/fit-vocabulary.ts` | Our words for device values, and the FIT mapping |
 | `apps/web/e2e/` | Playwright browser tests and their fixtures |
 | `packages/api-client` | Typed client generated from the server's OpenAPI description |
@@ -79,6 +80,8 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 | SSI's site list in tests | Hand-made in SSI's format: `apps/server/test/fixtures/site-sources/ssi-sites.json` (invented sites), zipped at run time by `test/zip.ts`; the browser tests' server replays it. **Never commit the real file or anything derived from it** ([ADR 0025](decisions/0025-ssi-site-import-and-site-water-type.md)). To check SSI's format, download it once into `samples/private/` (git-ignored) and compare with the [reference](references/ssi-app-api.md#the-site-list-app_cache_siteszip). |
 | Check SSI's app API with your own account | `SSI_EMAIL=… SSI_PASSWORD=… pnpm --filter @dive-hub/server exec tsx test/fixtures/ssi/round-trip.ts read` (then `token` later, or `write --pause` with `SSI_SITE_ID`). Writes SSI's answers to `samples/private/ssi/` (personal data, git-ignored). Tests never reach SSI; they use `test/fake-ssi.ts` ([SSI app API](references/ssi-app-api.md#when-ssi-changes-something)). |
 | Regenerate the synthetic FIT fixture | `pnpm --filter @dive-hub/server exec tsx test/fixtures/synthetic-dive.ts` |
+| Connect Claude Code to your local Dive Hub (MCP, [ADR 0035](decisions/0035-mcp-connector.md)) | Start the server and the web client. As an admin: Admin → "AI access" → switch on. Then My account → "AI access" → create one and copy the Claude Code line, which is `claude mcp add --transport http dive-hub http://localhost:5173/mcp --header "Authorization: Bearer dh_…"` (the Vite dev server proxies `/mcp`; `http://127.0.0.1:3000/mcp` reaches the API directly and works too). `claude mcp list` shows it connected; ask "how many dives are in my logbook?". What it read is under "What was read" on the account page. `claude mcp remove dive-hub` removes it; revoke the access when done. Without Claude Code: `curl -s http://127.0.0.1:3000/mcp -H "Authorization: Bearer dh_…" -H "content-type: application/json" -H "accept: application/json, text/event-stream" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`. |
+| A new MCP tool | A `defineTool({...})` in `apps/server/src/mcp/tools-*.ts` (static description, TypeBox input and output, `freeText` for arguments that hold words, a `run` over the read-only `tx` limited to `ctx.diverIds`), added to `TOOLS` in `server.ts`; cases in `test/mcp-endpoint.test.ts` (the shape test calls it; isolation and caps where it lists things). Text other Users wrote goes in `shared_*` fields. Never run the `mcp-builder` skill's evaluation scripts against a real logbook (AGENTS.md). |
 | Build and run the image | `docker build -t dive-hub:dev .`, then `POSTGRES_PASSWORD=… docker compose up -d` |
 
 Real dive files go in `samples/private/` (git-ignored). FIT adapter tests cross-check them against
@@ -95,6 +98,9 @@ Garmin's official SDK automatically when present ([samples](../samples/README.md
   types in union order, so `[T, Null]` turns `null` into `0` or `""` (ADR 0015).
 - **Playwright** comes from `@playwright/test`; `@playwright/cli` (for the `playwright-cli` skill) pins its
   own pre-release Playwright internally; both are dev-only.
+- **MCP SDK v2** (`@modelcontextprotocol/server`): tools are TypeBox schemas wrapped with `fromJsonSchema`; the SDK's
+  own Zod never appears in our code (ADR 0009, 0035). The `mcp-builder` skill's TypeScript guide still shows the v1
+  package and Zod: take its design advice, not its imports. `@modelcontextprotocol/client` is a dev dependency for tests.
 - **Better Auth over HTTP** is limited to `PUBLIC_AUTH_PATHS` in `apps/server/src/auth/auth.ts` (ADR 0013).
   Adding a Better Auth feature means adding its path there on purpose; the API client then picks it
   up from the OpenAPI document.

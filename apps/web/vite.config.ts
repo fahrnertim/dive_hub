@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    proxy: { '/api': 'http://127.0.0.1:3000' },
+    // /mcp too: the AI access panel shows the base URL's /mcp as the endpoint (ADR 0035).
+    proxy: { '/api': 'http://127.0.0.1:3000', '/mcp': 'http://127.0.0.1:3000' },
   },
 });

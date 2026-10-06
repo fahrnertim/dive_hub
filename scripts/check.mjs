@@ -35,6 +35,9 @@ const AREAS = [
   // Providers in the web client (ADR 0027): the account's Connections and each Dive's panels read them.
   [/^apps\/web\/src\/lib\/providers\.ts$/, ['@dives', '@account']],
   [/^apps\/web\/src\/Admin\.tsx$/, ['@admin']],
+  // AI accesses to the MCP endpoint (ADR 0035): on the account page, their switch on the admin page.
+  [/^apps\/web\/src\/AiAccess\.tsx$|^apps\/web\/src\/lib\/ai-access\.ts$/, ['@account', '@admin']],
+  [/^apps\/server\/src\/mcp\//, ['@account', '@admin']],
   [/^apps\/server\/src\/sites\/import\/|^apps\/server\/src\/providers\/ssi\/ssi-sites\.ts$/, ['@admin', '@sites']],
   [/^apps\/server\/src\/sites\//, ['@sites', '@dives']],
   [/^apps\/server\/src\/(dives|imports|fit)\/|^apps\/server\/src\/(routes|vocabulary)\.ts$/, ['@dives']],

@@ -3,14 +3,22 @@ import type pg from 'pg';
 import type { FastifyBaseLogger } from 'fastify';
 import { BACKFILL_POSITIONS_TASK, PROCESS_IMPORT_TASK, type ImportService } from './imports/import-service.js';
 import { IMPORT_SITES_TASK, type SiteImportService } from './sites/import/site-import-service.js';
+import type { AiAccessService } from './mcp/access-service.js';
 
-export async function startWorker(pool: pg.Pool, imports: ImportService, siteImports: SiteImportService, log: FastifyBaseLogger): Promise<Runner> {
+/** Drops AI access log entries older than 90 days (ADR 0035). */
+const PURGE_AI_ACCESS_LOG_TASK = 'purge-ai-access-log';
+
+export async function startWorker(
+  pool: pg.Pool, imports: ImportService, siteImports: SiteImportService, aiAccesses: AiAccessService, log: FastifyBaseLogger,
+): Promise<Runner> {
   // An import still "running" now was cut off when the worker last stopped.
   await siteImports.failInterrupted();
   const runner = await run({
     pgPool: pool,
     concurrency: 2,
     noHandleSignals: true,
+    // Every night at 03:17 (UTC).
+    crontab: `17 3 * * * ${PURGE_AI_ACCESS_LOG_TASK}`,
     taskList: {
       [PROCESS_IMPORT_TASK]: async (payload) => {
         const { importId } = payload as { importId: string };
@@ -24,6 +32,10 @@ export async function startWorker(pool: pg.Pool, imports: ImportService, siteImp
         log.info({ siteImportId }, 'importing dive sites');
         await siteImports.run(siteImportId);
         log.info({ siteImportId }, 'dive site import finished');
+      },
+      [PURGE_AI_ACCESS_LOG_TASK]: async () => {
+        const purged = await aiAccesses.purgeLog();
+        if (purged > 0) log.info({ purged }, 'purged old AI access log entries');
       },
       [BACKFILL_POSITIONS_TASK]: async () => {
         const read = await imports.backfillPositions();

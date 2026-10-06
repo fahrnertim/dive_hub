@@ -738,3 +738,46 @@ export const revision = pgTable(
   },
   (t) => [index('revision_entity_idx').on(t.entityType, t.entityId)],
 );
+
+/**
+ * Whether this instance offers the MCP endpoint (ADR 0035): one row once an admin decided, none means off. Switching
+ * it off rejects every AI access at once; the accesses stay, so switching it on again restores those not revoked.
+ */
+export const aiAccessSetting = pgTable(
+  'ai_access_setting',
+  {
+    /** Always true: the table holds one row. */
+    id: boolean('id').primaryKey().default(true),
+    enabled: boolean('enabled').notNull(),
+    changedAt: timestamp('changed_at', { withTimezone: true }).notNull().defaultNow(),
+    changedBy: uuid('changed_by').references(() => user.id, { onDelete: 'set null' }),
+  },
+  (t) => [check('ai_access_setting_one_row_ck', sql`${t.id}`)],
+);
+
+/** How a tool call ended: `error` carries a code in `error_code` (dive_not_found, invalid_input, timeout, …). */
+export const aiAccessOutcome = pgEnum('ai_access_outcome', ['ok', 'error']);
+
+/**
+ * The AI access log (ADR 0035): one row per tool call through the MCP endpoint, shown to its User and kept 90 days.
+ * `access_id` is the AI access (an `apikey` row) without a foreign key, and its name is copied, so the entries of a
+ * revoked access stay readable. `arguments` never holds free text (search words are replaced, src/mcp/tools.ts).
+ */
+export const aiAccessLog = pgTable(
+  'ai_access_log',
+  {
+    id: id(),
+    userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    accessId: uuid('access_id').notNull(),
+    accessName: text('access_name').notNull(),
+    tool: text('tool').notNull(),
+    arguments: jsonb('arguments').$type<Record<string, unknown>>().notNull().default({}),
+    /** Dives, sites or Divers returned. */
+    rows: integer('rows').notNull().default(0),
+    outcome: aiAccessOutcome('outcome').notNull(),
+    errorCode: text('error_code'),
+    durationMs: integer('duration_ms').notNull(),
+    at: createdAt(),
+  },
+  (t) => [index('ai_access_log_user_idx').on(t.userId, t.at), index('ai_access_log_at_idx').on(t.at)],
+);

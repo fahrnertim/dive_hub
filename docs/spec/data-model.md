@@ -1,6 +1,6 @@
 ---
 title: Data model
-summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios; Dives without a Recording, offsets and their source, a Provider's dives as Originals, Recordings and Imports (ADR 0030); planned: lead, weighting feedback, exposure suit, Cylinders and body weight (ADR 0031); SAC and OTU on Recordings for the bottom-time tool (ADR 0032); SAC per Dive and gas plans for groups (ADR 0033); Equipment items with service schedules (ADR 0034); AI accesses and their log for the MCP endpoint (ADR 0035); findings of the dive assessment (ADR 0036).
+summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios; Dives without a Recording, offsets and their source, a Provider's dives as Originals, Recordings and Imports (ADR 0030); planned: lead, weighting feedback, exposure suit, Cylinders and body weight (ADR 0031); SAC and OTU on Recordings for the bottom-time tool (ADR 0032); SAC per Dive and gas plans for groups (ADR 0033); Equipment items with service schedules (ADR 0034); AI accesses, their setting and their log for the MCP endpoint (ADR 0035, built); findings of the dive assessment (ADR 0036).
 status: draft
 date: 2026-10-06
 ---
@@ -18,7 +18,7 @@ Every entity belongs to exactly one tier. This answers "who can see/change it" a
 | Tier | Entities |
 |---|---|
 | **Instance** (shared by all Users) | User, Dive site (→ External IDs), Site import, Operator, Agency catalog |
-| **User** | Connection (→ Diver mappings), Import, Original, external Divers they created, AI accesses and their log (planned) |
+| **User** | Connection (→ Diver mappings), Import, Original, external Divers they created, AI accesses and their log |
 | **Diver** (via the Users who manage it) | External IDs, Body weights (planned), Equipment items with service schedules and records (planned), Dive (→ Recordings, Cylinders, Lead, Participants, Media, Signatures, Pushes), Trip, Certification, Membership, Insurance, Medical exam, Equipment (incl. Devices), Site note |
 
 ## Overview
@@ -349,11 +349,16 @@ an Original, and the Import records the archive's name and hash.
 *From a Provider ([ADR 0030](../decisions/0030-importing-dives-from-providers.md)):* one Original per dive, that dive's record as JSON (`application/json`), never the whole
 answer (which holds the buddy list's personal data). An unchanged dive has the same hash next time.
 
-**AI access** (planned, [ADR 0035](../decisions/0035-mcp-connector.md), slice 17) — a User's permission for one LLM client
-to read through the MCP endpoint: name, scopes (`logbook:read`, opt-in `logbook:positions`), a personal token (Better
-Auth api-key, hashed, shown once; OAuth grants later), created, last used, revoked. It sees what its User sees and nothing
-of other Users' Dives. Only while an admin has switched MCP on for the instance. **AI access log:** every call (time,
-access, tool, arguments without free text, rows, outcome), shown to the User, kept 90 days. Reads write no Revisions.
+**AI access** ([ADR 0035](../decisions/0035-mcp-connector.md), slice 17) — a User's permission for one LLM client to read
+through the MCP endpoint. It is a row of Better Auth's `apikey` table: name, the key's first characters and its SHA-256
+(the key is shown once), the User (`reference_id`, text, no foreign key: deleting a User deletes their keys), scopes as
+permissions (`logbook:read` always, `logbook:positions` opt-in, fixed when it is made), created, last used, and the
+rate-limit counter (120 requests a minute). Revoking deletes the row. It sees what its User sees and nothing of other
+Users' Dives. **AI access setting** (`ai_access_setting`, one row: enabled, changed at, changed by): the admin's switch
+for the instance; off (the default) rejects every key and lets none be made, the accesses stay.
+**AI access log** (`ai_access_log`): one row per tool call — time, User, the access's id and its name then (no foreign
+key, so a revoked access's calls stay), tool, arguments as sent without free text, rows, outcome (`ok`, `error` with a
+code), duration. Shown to the User, deleted after 90 days. Reads write no Revisions.
 
 **Provider site data** — an admin's permission per Provider (`provider_site_data`: provider, allowed at, allowed by) to
 make Dive sites from its site data when Users import dives (ADR 0030, slice 15a). A dive's site is otherwise only found
@@ -618,7 +623,7 @@ Edge cases:
   Lena's Dives don't count for it.
 - *A schedule only by months* (the cylinder) never needs usage.
 
-### 9. Tim asks his LLM about his dives (planned, ADR 0035)
+### 9. Tim asks his LLM about his dives (ADR 0035, slice 17)
 
 The admin has switched MCP on. Tim creates the AI access "Claude Code on my laptop" (`logbook:read`, no positions) and
 puts the key into Claude Code. He asks: "How many dives did I do in Egypt, with whom, and what was my deepest?"
@@ -634,6 +639,8 @@ Edge cases:
 - *Anna's Dive with Tim as her buddy* is Anna's, never returned to Tim.
 - *A 900-Dive logbook:* answers are paged; a Dive's samples only on request and downsampled.
 - *The admin switches MCP off:* every access fails at once; switching on again restores those not revoked.
+- *Anna, an admin, deletes Tim's User:* his accesses and their log go with him.
+- *Tim revokes the access:* its three log entries stay until they are 90 days old.
 - *Tim grants positions later:* a new access with `logbook:positions` (scopes are chosen when it is made).
 
 ### 10. Findings on a Red Sea dive (planned, ADR 0036)

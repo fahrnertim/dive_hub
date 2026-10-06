@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, type FormEvent } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { api, invitationsQuery, keys, meQuery, siteDataQuery, unwrap, usersQuery, type SiteDataView, type UserView } from './api.ts';
+import { AiAccessSetting } from './AiAccess.tsx';
 import { announce } from './lib/announce.ts';
 import { useProviders, useProviderText } from './lib/providers.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
@@ -24,6 +25,7 @@ export function Admin() {
         <a href="#/admin/site-imports" className="btn btn-secondary"><Icon name="siteImport" />{t('siteImport.open')}</a>
       </Panel>
       <ProviderSiteData />
+      <AiAccessSetting />
     </>
   );
 }

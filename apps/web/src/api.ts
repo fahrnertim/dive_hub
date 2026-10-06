@@ -109,6 +109,11 @@ export const keys = {
   importOf: (id: string) => ['imports', id] as const,
   /** Admins: whether Dive sites may be made from a Provider's site data (ADR 0030). */
   siteData: ['admin', 'provider-site-data'] as const,
+  /** The User's AI accesses to the MCP endpoint (ADR 0035), and what they read. */
+  aiAccess: ['me', 'ai-access'] as const,
+  aiAccessLog: ['me', 'ai-access', 'log'] as const,
+  /** Admins: the instance's switch for the MCP endpoint. */
+  aiAccessSetting: ['admin', 'ai-access'] as const,
 };
 
 /**
@@ -340,6 +345,26 @@ export const siteDataQuery = () => queryOptions({
   queryKey: keys.siteData, queryFn: async () => unwrap(await api.GET('/api/admin/provider-site-data')).providers,
 });
 export type SiteDataView = Awaited<ReturnType<NonNullable<ReturnType<typeof siteDataQuery>['queryFn']>>>[number];
+
+async function fetchAiAccess() {
+  return unwrap(await api.GET('/api/me/ai-access'));
+}
+/** The User's AI accesses and whether this instance offers the MCP endpoint (ADR 0035). */
+export const aiAccessQuery = () => queryOptions({ queryKey: keys.aiAccess, queryFn: fetchAiAccess });
+export type AiAccessView = Awaited<ReturnType<typeof fetchAiAccess>>['accesses'][number];
+
+async function fetchAiAccessLog(limit: number) {
+  return unwrap(await api.GET('/api/me/ai-access-log', { params: { query: { limit } } }));
+}
+/** What the User's AI accesses read, newest first; `limit` grows with "show older". */
+export const aiAccessLogQuery = (limit: number) =>
+  queryOptions({ queryKey: [...keys.aiAccessLog, limit] as const, queryFn: () => fetchAiAccessLog(limit), placeholderData: keepPreviousData });
+export type AiAccessLogEntry = Awaited<ReturnType<typeof fetchAiAccessLog>>['entries'][number];
+
+/** Admins: whether this instance offers the MCP endpoint, and how many AI accesses exist. */
+export const aiAccessSettingQuery = () => queryOptions({
+  queryKey: keys.aiAccessSetting, queryFn: async () => unwrap(await api.GET('/api/admin/ai-access')),
+});
 
 /** One Import, asked again every second while it runs (an import from a Provider, ADR 0030). */
 export const importQuery = (id: string) => queryOptions({

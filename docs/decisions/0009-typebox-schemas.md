@@ -8,8 +8,8 @@ date: 2026-10-02
 # ADR 0009: TypeBox for API schemas
 
 ## Status
-Accepted – 2026-10-02. Amended by [ADR 0035](0035-mcp-connector.md) (planned, slice 17) only if the MCP SDK insists on Zod
-for tool schemas: then Zod is allowed inside `src/mcp/`, nowhere else.
+Accepted – 2026-10-02. Not amended by [ADR 0035](0035-mcp-connector.md) after all: the MCP SDK takes JSON Schema, so the
+MCP tools' schemas are TypeBox too (slice 17).
 
 ## Context
 [ADR 0007](0007-fastify-http-framework.md) left the schema library open, to be decided with the

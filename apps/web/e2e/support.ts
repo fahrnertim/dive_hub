@@ -323,3 +323,26 @@ export async function importSsiBuddies(api: APIRequestContext, accounts: string[
   if (!ssi) throw new Error('no SSI connection');
   await api.post(`/api/connections/${ssi.id}/buddies/import`, { data: { accounts }, headers });
 }
+
+type AiAccess = { id: string; name: string };
+
+/** AI access (ADR 0035) switched on for the server, and the seeded User without any access. */
+export async function aiAccessReady(api: APIRequestContext) {
+  await api.put('/api/admin/ai-access', { data: { enabled: true }, headers });
+  const { accesses } = await (await api.get('/api/me/ai-access')).json() as { accesses: AiAccess[] };
+  for (const a of accesses) await api.delete(`/api/me/ai-accesses/${a.id}`, { headers });
+}
+
+/** A new AI access of the seeded User, with its key. */
+export async function createAiAccess(api: APIRequestContext, name: string, positions = false) {
+  const created = await (await api.post('/api/me/ai-accesses', { data: { name, positions }, headers })).json() as { access: AiAccess; key: string };
+  return { ...created.access, key: created.key };
+}
+
+/** Calls a tool of the MCP endpoint with an AI access's key, as an LLM client would (one stateless request). */
+export async function askMcp(api: APIRequestContext, key: string, tool: string, args: Record<string, unknown> = {}) {
+  return api.post('/mcp', {
+    headers: { authorization: `Bearer ${key}`, accept: 'application/json, text/event-stream' },
+    data: { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: tool, arguments: args } },
+  });
+}

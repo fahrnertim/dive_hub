@@ -79,6 +79,8 @@ Built-in accounts (e-mail + password) with Better Auth ([ADR 0011](../decisions/
 invite-only, first admin from a setup token ([ADR 0012](../decisions/0012-invitations-and-admin-bootstrap.md)).
 Sessions are stored in the database. The web client uses an `HttpOnly`, `SameSite=Lax` cookie on the same origin;
 mobile will use the bearer plugin or the Expo integration. OIDC (Authentik, Authelia, Keycloak, …) is planned for later.
+LLM clients reach the MCP endpoint `/mcp` with the key of an AI access instead of a session ([ADR 0035](../decisions/0035-mcp-connector.md)): off until an admin
+switches it on; behind a reverse proxy, `/mcp` must be forwarded like `/api`.
 
 | Setting | Meaning |
 |---|---|
@@ -718,3 +720,28 @@ Implemented:
 - Tests: `diver-claim.test.ts` (asked first, merged on claim, Tim's buddy list then finds Samuel's own Diver, another User's
   Diver never taken, admins only); `dive-import.spec.ts` (@account, @divers) and ui-quality cases for the question and the
   merge dialog, with Lena's SSI account held by an external Diver.
+
+**Slice 17 (2026-10-06): the MCP endpoint, read-only, with AI accesses** ([ADR 0035](../decisions/0035-mcp-connector.md),
+its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built-slice-17), [client contract](clients.md#the-mcp-endpoint)).
+- `apps/server/src/mcp/`: `access-service.ts` (AI accesses on Better Auth's api-key plugin, the instance's switch, the
+  log), `access-routes.ts`, `endpoint.ts` (`/mcp`: Origin check, bearer key, 401/429 that say what to do, the SDK's
+  stateless handler for both protocol eras), `server.ts` (the tools an access's scopes allow, the instructions),
+  `tool.ts` (what every tool shares: argument checks, a read-only transaction with a time limit, paging, the size cap,
+  logging), `tools-logbook.ts`, `tools-sites.ts`, `tools-divers.ts`, `profile.ts` (the profile summary).
+- Tools: `logbook_search_dives`, `logbook_get_dive`, `logbook_stats`, `sites_search`, `sites_get`, `divers_buddies`,
+  `divers_list`. Schemas are TypeBox, handed to the SDK as JSON Schema; no Zod in our code.
+- Migration `0019_ai_access.sql`: `apikey` (Better Auth), `ai_access_setting`, `ai_access_log`. A daily worker job
+  (`purge-ai-access-log`, 03:17 UTC) deletes log entries older than 90 days.
+- Routes: `GET /api/me/ai-access`, `POST /api/me/ai-accesses` (the key once), `DELETE /api/me/ai-accesses/{id}`,
+  `GET /api/me/ai-access-log`; admins: `GET`/`PUT /api/admin/ai-access`, `DELETE /api/admin/ai-accesses`. Codes
+  `ai_access_off`, `ai_access_not_found`.
+- Web: `AiAccess.tsx` — on the account page what an access hands to the AI provider, creating one (the key once, with
+  lines for Claude Code, VS Code and mcp-remote from `lib/ai-access.ts`), the accesses with their last use, revoking, and
+  what was read; on the admin page the switch and "Revoke all". `CopyField`'s button is now named with what it copies.
+- Better Auth's log no longer prints an error with a stack for every unknown key (`auth.ts`, `logger`).
+- Tests: `mcp-endpoint.test.ts` (the SDK's client against `/mcp`: 401s, both eras, isolation, positions only with the
+  scope, marked texts, every tool against its output schema, paging and caps, the time limit, no writes, the log, the
+  rate limit, revoking, the switch, a disabled or deleted User), `mcp-profile.test.ts`; web `ai-access.test.ts`;
+  browser `ai-access.spec.ts` (@account, @admin) and three ui-quality cases.
+- Not yet: OAuth for claude.ai and ChatGPT, body weight (slice 19), key expiry, a filter by access in the log's UI.
+

@@ -62,15 +62,15 @@ The role a Diver has on another Diver's Dive when they dived together. A role, n
 _Avoid_: Partner, companion
 _German_: Buddy
 
-**AI access** (planned):
-A User's permission for one LLM client (Claude, ChatGPT, an editor) to read their logbook through Dive Hub's MCP endpoint, with a name, scopes and a personal token (later OAuth). It sees what its User sees, can be revoked, and works only while an admin has switched MCP on ([ADR 0035](decisions/0035-mcp-connector.md)).
-_Avoid_: Connection (that is a Provider's), integration, API key (that is how it signs in), MCP client
-_German_: KI-Zugang
+**AI access**:
+A User's permission for one LLM client (Claude Code, an editor) to read their logbook through Dive Hub's MCP endpoint, with a name, what it may read (the logbook, optionally the Dives' positions) and a key shown once (later OAuth). It sees what its User sees, can only read, can be revoked, and works only while an admin has switched AI access on ([ADR 0035](decisions/0035-mcp-connector.md)).
+_Avoid_: Connection (that is a Provider's), integration, API key (that is how it signs in; on screen "key"), token, MCP client
+_German_: KI-Zugang (its key: "Schlüssel")
 
-**AI access log** (planned):
-The record of what an AI access read: when, which tool, how many rows, the outcome. Shown to its User.
+**AI access log**:
+The record of what a User's AI accesses read: when, which access, which request (the tool and its arguments, without search words), how many results, and whether it was answered. Shown to its User for 90 days, for revoked accesses too.
 _Avoid_: Audit trail, history (that is Revisions)
-_German_: Protokoll des KI-Zugangs
+_German_: on screen "Was gelesen wurde"
 
 ## Dives
 

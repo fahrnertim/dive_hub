@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { dataFile, type PreparedData } from './prepare.ts';
 import {
-  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveWithoutRecording, expectGoodPage, externalDiver,
+  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, createAiAccess, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveWithoutRecording, expectGoodPage, externalDiver,
   forgetDivers, leaveLena, leaveSsi, lenaReady, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
@@ -186,6 +186,36 @@ for (const v of variants) {
       await expectGoodPage(page, title('My account'), v);
     });
 
+    test('my account, AI access: none yet, then a new key shown once', { tag: ['@account'] }, async ({ page, request }) => {
+      await aiAccessReady(request);
+      try {
+        await page.goto('/#/account');
+        await expect(page.getByText(v.english ? 'You have no AI access yet.' : 'Du hast noch keinen KI-Zugang.')).toBeVisible();
+        await expectGoodPage(page, title('My account'), v);
+        // A long name, as someone might type it.
+        await page.getByRole('textbox', { name: 'Name' }).fill(`Claude Code on the old laptop in the dive shop ${v.locale}`);
+        await page.getByRole('button', { name: v.english ? 'Create AI access' : 'KI-Zugang erstellen' }).click();
+        await expect(page.getByRole('button', { name: v.english ? 'Copy: Key' : 'Kopieren: Schlüssel' })).toBeVisible();
+        await expectGoodPage(page, title('My account'), v);
+      } finally {
+        await aiAccessReady(request);
+      }
+    });
+
+    test('my account, AI access: what was read', { tag: ['@account'] }, async ({ page, request }) => {
+      await aiAccessReady(request);
+      try {
+        const access = await createAiAccess(request, `Editor on the desk ${v.locale}`, true);
+        await askMcp(request, access.key, 'logbook_search_dives', { query: 'wreck', limit: 5, sort: 'depth' });
+        await askMcp(request, access.key, 'logbook_get_dive', { dive_id: '00000000-0000-7000-8000-000000000000' });
+        await page.goto('/#/account');
+        await expect(page.getByRole('region', { name: v.english ? 'What was read' : 'Was gelesen wurde' }).getByText('logbook_get_dive').first()).toBeVisible();
+        await expectGoodPage(page, title('My account'), v);
+      } finally {
+        await aiAccessReady(request);
+      }
+    });
+
     test('my account, connected to SSI, signing in again', { tag: ['@account'] }, async ({ page, request }) => {
       await connectSsi(request);
       await page.goto('/#/account');
@@ -356,6 +386,20 @@ for (const v of variants) {
       // (Below the fold is fine on a short screen; off to the right is not.)
       const revoke = await page.getByRole('button', { name: v.english ? /^Revoke:/ : /^Zurückziehen:/ }).first().boundingBox();
       expect(revoke!.x + revoke!.width).toBeLessThanOrEqual(v.viewport.width);
+    });
+
+    test('admin, AI access switched on with accesses to revoke', { tag: ['@admin'] }, async ({ page, request }) => {
+      await aiAccessReady(request);
+      try {
+        await createAiAccess(request, 'Claude Code');
+        await page.goto('/#/admin');
+        await expect(page.getByRole('button', { name: v.english ? 'Revoke all AI accesses…' : 'Alle KI-Zugänge zurückziehen…' })).toBeVisible();
+        await page.getByRole('button', { name: v.english ? 'Switch AI access off…' : 'KI-Zugang ausschalten…' }).click();
+        await expect(page.getByRole('dialog')).toBeVisible();
+        await expectGoodPage(page, title('Admin'), v);
+      } finally {
+        await aiAccessReady(request);
+      }
     });
 
     test('admin, dive sites from SSI logbooks allowed', { tag: ['@admin'] }, async ({ page, request }) => {

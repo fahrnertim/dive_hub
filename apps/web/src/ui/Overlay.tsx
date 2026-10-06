@@ -29,7 +29,8 @@ export function CopyField({ value, label }: { value: string; label: string }) {
   return (
     <div className="copy-field">
       <input className="input" readOnly value={value} aria-label={label} onFocus={(e) => e.currentTarget.select()} />
-      <Button icon={copied ? 'copied' : 'copy'} onPress={async () => { await navigator.clipboard.writeText(value); setCopied(true); announce(t('common.copied')); }}>
+      {/* Named with what it copies: a page can show several (the rule that no two buttons share a name). */}
+      <Button icon={copied ? 'copied' : 'copy'} aria-label={t('common.forItem', { action: copied ? t('common.copied') : t('common.copy'), item: label })} onPress={async () => { await navigator.clipboard.writeText(value); setCopied(true); announce(t('common.copied')); }}>
         {copied ? t('common.copied') : t('common.copy')}
       </Button>
     </div>

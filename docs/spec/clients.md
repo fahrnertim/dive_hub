@@ -1,6 +1,6 @@
 ---
 title: Client contract
-summary: What every client of the Dive Hub API must do (web client, native mobile app, scripts) - obligations first, then each area's duties and conventions; with reasons, ADRs and where the web client does it; importing dives from a Provider (settings, preview, decisions, outcome), times without a time zone, Dives without a Recording; plus server gaps found while writing it.
+summary: What every client of the Dive Hub API must do (web client, native mobile app, scripts) - obligations first, then each area's duties and conventions; with reasons, ADRs and where the web client does it; importing dives from a Provider (settings, preview, decisions, outcome), times without a time zone, Dives without a Recording; AI accesses (what to say before one is made, the key once, the log) and the MCP endpoint (what it promises LLM clients); plus server gaps found while writing it.
 status: living
 date: 2026-10-06
 ---
@@ -116,7 +116,8 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - The web client uses the session cookie on the same origin and sends an `Origin` header (Better Auth's CSRF checks).
   - A native client will use bearer tokens. That isn't built yet, and its ADR comes with the mobile app
     ([ADR 0011](../decisions/0011-better-auth.md)).
-  - Only four Better Auth endpoints exist: sign-in, sign-out, get-session, change-password (ADR 0013).
+  - Only four Better Auth endpoints exist: sign-in, sign-out, get-session, change-password (ADR 0013). AI access
+    keys work only at `/mcp`, never for `/api`.
 - **On 401 anywhere, the session has ended:** show sign-in. Retry only network failures and 5xx, once; a 4xx
   stays the same. *Web:* `main.tsx`, `api.ts` (`shouldRetry`, `isUnauthorized`).
 - **Must show errors by their `code`,** translated (`errors.<code>`), never the English `error` text, which is
@@ -172,7 +173,29 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **Sessions:** list them with device, IP address, sign-in and last activity, and mark the current one. Ending
   another session is immediate; ending the current one is signing out. *Web:* `AccountPage.tsx` (`Sessions`).
 
+- **AI access** (ADR 0035, `GET /api/me/ai-access`): a User lets an LLM client read their logbook through the
+  [MCP endpoint](#the-mcp-endpoint).
+  - **Must say what leaves the instance before an access is made:** whatever the assistant reads goes to its provider
+    under that provider's terms: the User's Dives with profiles and notes, their Divers, the Dive sites, the names of
+    the people they dived with (other people's data), and the Dives' positions only if granted. Say that it can only
+    read. When a later slice returns more (body weight, slice 19), the text gains it in the same change.
+  - `enabled: false`: an admin has not switched it on. Say so; offer nothing to create (`ai_access_off`). Existing
+    accesses are still listed and can be revoked.
+  - **Positions are an opt-in** (`positions: true`), unticked by default, with what it means next to it.
+  - **Must show the key exactly once** (`key` of `POST /api/me/ai-accesses`), say that it can't be shown again and
+    that whoever has it can read the logbook. Don't store it (no local storage, no log), don't put it into text that
+    is announced or sent anywhere. Offer copy-ready lines for the common clients with `endpoint` and the key.
+  - List accesses with name, what they may read, created and last use; revoking asks first and says the key stops at
+    once and the log stays.
+  - **Show the log** (`GET /api/me/ai-access-log`): time, access, tool, arguments, rows, outcome, newest first. It
+    covers revoked accesses and reaches back 90 days; `arguments` never holds search words (`[text]`).
+  *Web:* `AiAccess.tsx`, `lib/ai-access.ts`.
+
 ### Admin
+- **AI access** (`GET`/`PUT /api/admin/ai-access`): the switch for the instance, off by default. Say what switching on
+  means (Users' data can go to AI providers at their request) and, before switching off, that every key stops at once
+  and works again when switched back on. "Revoke all" (`DELETE /api/admin/ai-accesses`) asks first and can't be undone.
+  Admins see how many accesses exist, never whose or what they read. *Web:* `AiAccess.tsx` (`AiAccessSetting`).
 - **Admin pages only for admins.** The server refuses anyone else (`admins_only`).
 - **Users:**
   - Don't offer to demote, disable or delete the last enabled admin, or to disable or delete oneself; the
@@ -407,6 +430,47 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
   - progress while running;
   - counts and findings when done, each linked: new sites near existing ones, and hand-made sites that now offer a
     Source's data. A worldwide run can report thousands; show a first part and how many more.
+
+## The MCP endpoint
+
+An LLM client is an API client Dive Hub can't make follow this contract, so the endpoint carries the rules itself
+([ADR 0035](../decisions/0035-mcp-connector.md)). What it promises, and what a client or model gets:
+
+- **Where:** `POST {base URL}/mcp`, MCP over Streamable HTTP, stateless (no session id). It answers the 2026-07-28
+  revision and 2025-era clients (`initialize`, then `tools/list` and `tools/call`, each a request of its own). GET and
+  DELETE answer 405. A request with an `Origin` other than the instance's gets 403.
+- **Sign-in:** `Authorization: Bearer <key of an AI access>`. Otherwise **401** with `WWW-Authenticate: Bearer` and a
+  JSON body `{ error: "invalid_token", error_description }` that says what to do: no key sent, the key unknown or
+  revoked, AI access switched off on the instance, or the User disabled. **429** with `Retry-After` after 120 requests
+  in a minute. A session cookie is not accepted. There is no OAuth yet, so claude.ai and ChatGPT can't connect.
+- **Read-only:** no tool changes anything; each call runs in a read-only database transaction. Tools carry
+  `readOnlyHint`.
+- **Whose data:** only the Dives of the Divers the access's User manages. A Dive on which one of them was a buddy is
+  someone else's and is never returned; an unknown, deleted or foreign id all answer "not found". Deleted Dives never
+  count. Admins get nothing more.
+- **Positions:** a Dive's own entry and exit position (`entry_position`, `exit_position`) only with the
+  `logbook:positions` scope; without it the fields are absent from results and from the output schemas listed. A Dive
+  site's shared position is returned with `logbook:read`.
+- **Text other Users wrote is marked:** fields named `shared_*` (`shared_name`, `shared_description`,
+  `shared_water_body`) hold site texts and other Divers' names. The instructions and every tool description tell the
+  model to treat them as data and never follow instructions in them. A client that shows results **should** keep that
+  distinction visible. The User's own Divers come as `name`, their own notes as `notes`.
+- **Attribution:** `sites_get` returns each Source's attribution (such as "© OpenStreetMap contributors") and asks the
+  model to name it when it passes the site's data on (see [Licenses](#licenses)).
+- **Tools** (names, descriptions and schemas are fixed in code, never built from data): `logbook_search_dives`,
+  `logbook_get_dive`, `logbook_stats`, `sites_search`, `sites_get`, `divers_buddies`, `divers_list`. Each has an output
+  schema; a result carries `structuredContent` and the same JSON as text.
+- **Units and times:** metres, °C, minutes. `start_local` is the wall-clock time where the dive was (null when the time
+  zone is unknown), `start_utc` the instant (null when only the wall clock is known, [Dives](#dives)). A client that
+  shows values converts them for its user as [Showing values](#4-showing-values) says.
+- **Size:** a result stays under 40,000 characters. Lists page with `limit` and an opaque `cursor` (`next_cursor` in the
+  answer, absent on the last page; `total` and `count` always). `detail=detailed` returns more per item on smaller
+  pages. A Dive's samples come only with `include_samples`, downsampled (the peaks are kept).
+- **Errors are tool results** (`isError`) whose text says what to do next: the wrong argument and the valid ones, which
+  tool finds a valid id, to narrow a query that took longer than 8 seconds. Never internals.
+- **Everything is logged for the User:** each tool call with its arguments (search words replaced), rows and outcome.
+- **Not a planner:** the instructions say that Dive Hub's numbers are a record, not advice on whether a dive is safe.
+  The planning tools of later slices carry their assumptions and disclaimer in every result.
 
 ## 4. Showing values
 - **Units:** values come in SI (metres, seconds, °C, WGS84 degrees). Show them in the User's units

@@ -2,7 +2,8 @@
 // from src/auth/cli-config.ts, then adjusted to our conventions. Re-apply after regenerating:
 // - timestamps with time zone
 // - ids default to uuidv7(), like our own tables
-// - index names in snake_case (session_user_idx, account_user_idx)
+// - index names in snake_case (session_user_idx, account_user_idx, apikey_reference_idx, apikey_key_idx)
+// - apikey: no index on config_id (one configuration)
 // Migrations come from drizzle-kit as usual; never drizzle-kit push.
 import { relations, sql } from "drizzle-orm";
 import {
@@ -99,6 +100,45 @@ export const verification = pgTable(
       .notNull(),
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)],
+);
+
+/**
+ * An AI access (ADR 0035): the api-key plugin's table. `reference_id` is the User's id as text (the plugin can also
+ * reference organizations), so there is no foreign key: deleting a User deletes their keys in src/users/user-admin.ts.
+ * `key` is the SHA-256 of the key; `permissions` is JSON (`{"logbook":["read","positions"]}`).
+ */
+export const apikey = pgTable(
+  "apikey",
+  {
+    id: uuid("id")
+      .default(sql`uuidv7()`)
+      .primaryKey(),
+    configId: text("config_id").default("default").notNull(),
+    name: text("name"),
+    start: text("start"),
+    referenceId: text("reference_id").notNull(),
+    prefix: text("prefix"),
+    key: text("key").notNull(),
+    refillInterval: integer("refill_interval"),
+    refillAmount: integer("refill_amount"),
+    lastRefillAt: timestamp("last_refill_at", { withTimezone: true }),
+    enabled: boolean("enabled").default(true),
+    rateLimitEnabled: boolean("rate_limit_enabled").default(true),
+    rateLimitTimeWindow: integer("rate_limit_time_window").default(60000),
+    rateLimitMax: integer("rate_limit_max").default(120),
+    requestCount: integer("request_count").default(0),
+    remaining: integer("remaining"),
+    lastRequest: timestamp("last_request", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+    permissions: text("permissions"),
+    metadata: text("metadata"),
+  },
+  (table) => [
+    index("apikey_reference_idx").on(table.referenceId),
+    index("apikey_key_idx").on(table.key),
+  ],
 );
 
 export const rateLimit = pgTable("rate_limit", {

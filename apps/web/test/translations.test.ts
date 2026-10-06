@@ -90,7 +90,8 @@ describe('codes from the API', () => {
     ['cause', 'history.cause'],
     ['overrides', 'history.field'],
     ['action', 'provider.action'],
-    ['outcome', 'provider.result'],
+    // What a Push did at a Provider, and how an AI access's request ended (ADR 0035).
+    ['outcome', 'provider.result', 'aiAccess.outcome'],
     ['notices', 'provider.notice'],
     // A User's role on the instance, and a Participant's on a Dive (ADR 0028).
     ['role', 'admin.roles', 'participants.role'],

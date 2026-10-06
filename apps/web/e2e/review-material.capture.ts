@@ -8,7 +8,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import {
-  E2E_BASE_URL, clearParticipants, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, forgetDivers,
+  E2E_BASE_URL, aiAccessReady, askMcp, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, forgetDivers,
   leaveLena, leaveSsi, lenaReady, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
@@ -98,8 +98,20 @@ test('review material', async ({ page, request, browser }) => {
     await capture(page, '04-divers');
   }
   if (want('account')) {
-    await page.goto('/#/account'); await page.getByRole('heading', { name: 'My account' }).waitFor(); await page.locator('table').waitFor();
+    // AI access (ADR 0035): one access that read something, then a new one with its key on screen.
+    await aiAccessReady(request);
+    const access = await createAiAccess(request, 'Claude Code on my laptop', true);
+    await askMcp(request, access.key, 'logbook_search_dives', { query: 'wreck', country: 'EG', limit: 5 });
+    await askMcp(request, access.key, 'logbook_get_dive', { dive_id: '00000000-0000-7000-8000-000000000000' });
+    await askMcp(request, access.key, 'logbook_stats', { group_by: 'year' });
+    await page.goto('/#/account'); await page.getByRole('heading', { name: 'My account' }).waitFor(); await page.locator('table').first().waitFor();
+    await page.getByRole('region', { name: 'What was read' }).waitFor();
     await capture(page, '05-account');
+    await page.getByRole('textbox', { name: 'Name' }).fill('VS Code at the dive centre');
+    await page.getByRole('button', { name: 'Create AI access' }).click();
+    await page.getByRole('button', { name: 'Copy: Key' }).waitFor();
+    await capture(page, '05b-account-ai-access-key');
+    await page.getByRole('button', { name: 'Done, I copied the key' }).click();
   }
   if (want('admin')) {
     await page.goto('/#/admin'); await page.getByRole('heading', { name: 'Users' }).waitFor();
@@ -116,7 +128,7 @@ test('review material', async ({ page, request, browser }) => {
     await capture(page, '07-logbook-dark', { aria: false });
     await page.emulateMedia({ colorScheme: 'light' });
   }
-  if (want('dives') || want('divers') || want('admin')) {
+  if (want('dives') || want('divers') || want('admin') || want('account')) {
     await setPreferences(request, { language: 'de' });
     await page.setViewportSize({ width: 390, height: 844 });
     // A new language needs a full load; moving by hash afterwards keeps it.
@@ -133,6 +145,10 @@ test('review material', async ({ page, request, browser }) => {
     if (want('admin')) {
       await page.goto('/#/admin'); await page.getByRole('heading', { name: 'Benutzer' }).waitFor();
       await capture(page, '11-admin-de-phone', { aria: false });
+    }
+    if (want('account')) {
+      await page.goto('/#/account'); await page.getByRole('region', { name: 'Was gelesen wurde' }).waitFor();
+      await capture(page, '11b-account-de-phone', { aria: false });
     }
     await setPreferences(request, { language: null });
   }

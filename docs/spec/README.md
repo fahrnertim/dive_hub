@@ -121,7 +121,8 @@ Noted for later; not designed or decided yet.
 - **An MCP connector** (owner, 2026-10-06). A User lets their LLM client read their logbook through a read-only MCP
   endpoint in the app, with a personal token (OAuth for claude.ai and ChatGPT later), scopes, a log and an admin switch.
   Decided in [ADR 0035](../decisions/0035-mcp-connector.md), designed in the [MCP note](../research/2026-10-06-mcp-connector.md)
-  (slice 17, next; the planned features, now slices 18–23, add their tools). Later: OAuth, writes with confirmation.
+  (slice 17, built 2026-10-06: seven read tools over Dives, sites and Divers; the planned features, now slices 18–23, add
+  their tools). Later: OAuth, writes with confirmation.
 
 - **Dive assessment** (owner, 2026-10-06). Findings on every logged Dive from fixed, versioned rules (ascent rate, the last
   metres, safety stop, NDL margin, ceilings, oxygen, gas left, sawtooth, reverse profiles, surface intervals, days in a

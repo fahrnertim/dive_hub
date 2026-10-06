@@ -13,6 +13,7 @@ import { createSecretBox } from './secrets/secret-box.js';
 import { createProviderLayer } from './providers/layer.js';
 import { createSsiAdapter } from './providers/ssi/ssi-adapter.js';
 import { createSsiClient } from './providers/ssi/ssi-client.js';
+import { createAiAccessService } from './mcp/access-service.js';
 import { createLocalBlobStore } from './storage/blob-store.js';
 import { createInvitations } from './users/invitations.js';
 import { createSetup } from './users/setup.js';
@@ -41,10 +42,11 @@ const auth = createAuth({
   trustedOrigins: config.production ? [] : ['http://localhost:5173'],
 });
 const setup = createSetup(db);
+const aiAccesses = createAiAccessService(db, auth);
 
 const app = await buildApp(
   {
-    db, imports, siteImports, providers, blobs, auth, setup, invitations: createInvitations(db), baseUrl: config.baseUrl,
+    db, imports, siteImports, providers, blobs, auth, aiAccesses, setup, invitations: createInvitations(db), baseUrl: config.baseUrl,
     maxUploadBytes: config.maxUploadBytes, trustedProxies: config.trustedProxies, webDir: config.webDir,
   },
   { logger: { level: config.logLevel } },
@@ -62,7 +64,7 @@ if (setupToken) {
   // Deliberately logged: whoever can read the server log may create the first admin (ADR 0012).
   app.log.warn(`No admin yet. Open ${config.baseUrl}/#/setup and enter this setup token (valid 24 h, until the first admin exists): ${setupToken}`);
 }
-const worker = config.inProcessWorker ? await startWorker(pool, imports, siteImports, app.log) : undefined;
+const worker = config.inProcessWorker ? await startWorker(pool, imports, siteImports, aiAccesses, app.log) : undefined;
 await app.listen({ host: config.host, port: config.port });
 
 const shutdown = async () => {
