@@ -1,6 +1,6 @@
 ---
 title: Client contract
-summary: What every client of the Dive Hub API must do (web client, native mobile app, scripts) - obligations first, then each area's duties and conventions; with reasons, ADRs and where the web client does it; importing dives from a Provider (settings, preview, decisions, outcome), times without a time zone, Dives without a Recording; AI accesses (what to say before one is made, the key once, the log) and the MCP endpoint (what it promises LLM clients); plus server gaps found while writing it.
+summary: What every client of the Dive Hub API must do (web client, native mobile app, scripts) - obligations first, then each area's duties and conventions; with reasons, ADRs and where the web client does it; importing dives from a Provider (settings, preview, decisions, outcome), times without a time zone, Dives without a Recording; the dive assessment (findings as facts with sources, the fixed note, no score); AI accesses (what to say before one is made, the key once, the log) and the MCP endpoint (what it promises LLM clients); plus server gaps found while writing it.
 status: living
 date: 2026-10-06
 ---
@@ -286,6 +286,40 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   water; this site is fresh water.") and how the depths read: `depthPercent` negative reads shallow, positive deep,
   rounded ("about 2 % shallow"); `null` means they may read a little off. Depths are not corrected. *Web:* `DiveDetail.tsx`.
 
+### The dive assessment
+Dive Hub comments on a diver's practice here, so the wording is part of the contract (ADR 0036). `GET /api/dives/{id}/assessment`
+returns findings from fixed rules; the client words them.
+
+- **Must show the fixed note with every assessment:** not medical advice; no measure of how safe a dive was;
+  decompression sickness can happen within every limit; with symptoms, call DAN or the emergency services.
+- **Must not show or compute a score,** a grade, a colour for the whole dive, or a ranking of dives by findings. At most
+  a count ("2 findings").
+- **Must word a finding as facts:** what was measured (from `values`, in the User's units), the guidance it is held
+  against, how strong the evidence is (`evidence`), where it comes from (`sources`, as links), and a recommendation.
+  No blame ("you failed to"), no medical claims ("risk of DCS", "dangerous", "unsafe"), no alarm colour: `caution` is
+  a word, not red. An empty list means nothing stands out, not that the dive was safe.
+- **`values` are metres, seconds, m/min (`*_m_min`), bar and percent;** convert depths and rates for the User. A rule
+  can have more than one sentence (a stop that is short, missing, or shorter than the 5 minutes advised): choose by the
+  values. *Web:* `lib/assessment.ts`, texts under `assessment.*`.
+- **Show where on the profile** a finding is (`startSeconds`, `endSeconds`, on the Recording `recordingId`, the Primary
+  one); findings about the dive as a whole have none. When `sampleIntervalSeconds` is 5 or more, say that short fast
+  stretches can be missing.
+- **Dismiss and mute:** `dismissed` findings and those of a `muted` rule leave the main list and the logbook's mark, and
+  stay reachable with a way back; muting asks first and names the Diver. Neither changes what was computed.
+- **The logbook's mark** is `findings` on each Dive of `GET /api/dives` (notes and cautions not put aside); show it as
+  text, not as a colour or an icon alone.
+- **The no-fly time** (`noFly`, on the last dive of a diving day, else null) is information beside the findings: show it
+  apart from them with its `source`, don't count it, and offer nothing to dismiss.
+- **Muted rules are listed with their Diver** (`mutedRules` of `GET /api/divers`), each with a way to show it again: a
+  muted rule shows on no Dive, so the User needs a place to find it. *Web:* `DiversPage.tsx` (`MutedRules`).
+- **Computer events** (`computerEvents`) are what the dive computer noted. Show them apart from the findings ("your
+  computer noted"), never merged, and without the client's own judgement.
+- **The profile's colours** (`ascentBands`: above 4, 9 and 18 m/min) need a legend and the same in words; they must not
+  rest on colour alone.
+- `applies: false`: the rules don't cover this kind of dive; say so. `current: false`: the Dive waits to be assessed with
+  newer rules; say so and offer to reload.
+- *Web:* `Assessment.tsx`, `DepthProfile.tsx`, `DiveList.tsx`.
+
 ### Sending a Dive to a Provider (SSI)
 From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities (ADR 0024, 0027). *Web:* `ProviderPanel.tsx`.
 - **Show where the Dive is there:** not there yet, or its dive number there and when it was sent, with "changed since
@@ -458,7 +492,8 @@ An LLM client is an API client Dive Hub can't make follow this contract, so the 
 - **Attribution:** `sites_get` returns each Source's attribution (such as "© OpenStreetMap contributors") and asks the
   model to name it when it passes the site's data on (see [Licenses](#licenses)).
 - **Tools** (names, descriptions and schemas are fixed in code, never built from data): `logbook_search_dives`,
-  `logbook_get_dive`, `logbook_stats`, `sites_search`, `sites_get`, `divers_buddies`, `divers_list`. Each has an output
+  `logbook_get_dive`, `logbook_get_dive_assessment`, `logbook_stats`, `sites_search`, `sites_get`, `divers_buddies`,
+  `divers_list`. Each has an output
   schema; a result carries `structuredContent` and the same JSON as text.
 - **Units and times:** metres, °C, minutes. `start_local` is the wall-clock time where the dive was (null when the time
   zone is unknown), `start_utc` the instant (null when only the wall clock is known, [Dives](#dives)). A client that
@@ -469,6 +504,8 @@ An LLM client is an API client Dive Hub can't make follow this contract, so the 
 - **Errors are tool results** (`isError`) whose text says what to do next: the wrong argument and the valid ones, which
   tool finds a valid id, to narrow a query that took longer than 8 seconds. Never internals.
 - **Everything is logged for the User:** each tool call with its arguments (search words replaced), rows and outcome.
+- **The dive assessment** comes with its rules for the model in the tool's description and its fixed note in every
+  result: no score, findings as facts with their source, no verdict on a dive's safety ([above](#the-dive-assessment)).
 - **Not a planner:** the instructions say that Dive Hub's numbers are a record, not advice on whether a dive is safe.
   The planning tools of later slices carry their assumptions and disclaimer in every result.
 

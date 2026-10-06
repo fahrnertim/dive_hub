@@ -22,6 +22,9 @@ const DiverView = Type.Object({
   id: Type.String(), name: Type.String(),
   isOwn: Type.Boolean({ description: 'The User\'s own Diver' }),
   diveCount: Type.Integer(), deviceCount: Type.Integer(),
+  mutedRules: Type.Array(Type.String(), {
+    description: 'Rules of the dive assessment not shown for this Diver (ADR 0036); show them again with PUT /divers/{id}/muted-rules/{rule}',
+  }),
 });
 
 const FoundDiver = Type.Object({
@@ -91,7 +94,7 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
     schema: { summary: 'Start keeping another Diver\'s logbook (e.g. a child\'s)', body: Type.Object({ name: Name }), response: { 201: DiverView, ...errors } },
   }, async (request, reply) => {
     const created = await divers.create(request.user!.id, request.body.name.trim());
-    return reply.code(201).send({ id: created.id, name: created.name, isOwn: false, diveCount: 0, deviceCount: 0 });
+    return reply.code(201).send({ id: created.id, name: created.name, isOwn: false, diveCount: 0, deviceCount: 0, mutedRules: [] });
   });
 
   app.patch('/divers/:id', {

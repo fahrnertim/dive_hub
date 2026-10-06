@@ -79,6 +79,8 @@ export function createDiverService(db: Db) {
         isOwn: diverManagement.isOwn,
         diveCount: sql<number>`(select count(*)::int from ${dive} where ${dive.diverId} = ${diver.id} and ${dive.deletedAt} is null)`,
         deviceCount: sql<number>`(select count(*)::int from ${device} where ${device.diverId} = ${diver.id} and ${device.deletedAt} is null)`,
+        /** Rules of the dive assessment the Diver's Users muted (ADR 0036). */
+        mutedRules: sql<string[]>`coalesce((select array_agg(m.rule order by m.rule) from muted_rule m where m.diver_id = ${diver.id}), '{}')`,
       }).from(diverManagement)
         .innerJoin(diver, eq(diver.id, diverManagement.diverId))
         .where(and(eq(diverManagement.userId, userId), live))

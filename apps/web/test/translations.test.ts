@@ -79,8 +79,8 @@ describe('texts a Provider words itself', () => {
 describe('codes from the API', () => {
   it.each([
     ['code', 'errors'],
-    // An Import's reasons, and why a Push left a Participant out (ADR 0029).
-    ['reason', 'import.reason', 'provider.leftOut'],
+    // An Import's reasons, why a Push left a Participant out (ADR 0029), and which no-fly time applies (ADR 0036).
+    ['reason', 'import.reason', 'provider.leftOut', 'assessment.noFly'],
     ['errorCode', 'import.errorCode'],
     ['result', 'import.result'],
     ['waterType', 'vocabulary.waterType'],
@@ -93,6 +93,10 @@ describe('codes from the API', () => {
     // What a Push did at a Provider, and how an AI access's request ended (ADR 0035).
     ['outcome', 'provider.result', 'aiAccess.outcome'],
     ['notices', 'provider.notice'],
+    // The dive assessment (ADR 0036): a finding's rule, severity and evidence, and what the computer noted.
+    ['rule', 'assessment.title'],
+    ['evidence', 'assessment.evidence'],
+    ['event', 'assessment.event'],
     // A User's role on the instance, and a Participant's on a Dive (ADR 0028).
     ['role', 'admin.roles', 'participants.role'],
   ])('every %s has an English text under %s', (property, ...prefixes) => {

@@ -208,11 +208,11 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
   });
 
   describe('the tools', () => {
-    it('lists seven read-only tools with fixed descriptions and output schemas', async () => {
+    it('lists its read-only tools with fixed descriptions and output schemas', async () => {
       const client = await connect(key);
       const { tools } = await client.listTools();
       expect(tools.map((x) => x.name)).toEqual([
-        'logbook_search_dives', 'logbook_get_dive', 'logbook_stats', 'sites_search', 'sites_get', 'divers_buddies', 'divers_list',
+        'logbook_search_dives', 'logbook_get_dive', 'logbook_get_dive_assessment', 'logbook_stats', 'sites_search', 'sites_get', 'divers_buddies', 'divers_list',
       ]);
       for (const listed of tools) {
         expect(listed.annotations).toMatchObject({ readOnlyHint: true, destructiveHint: false });
@@ -302,6 +302,7 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
       const calls: [string, Record<string, unknown>][] = [
         ['logbook_search_dives', {}], ['logbook_search_dives', { detail: 'detailed', country: 'EG', query: 'napoleon', with_diver_id: bob, sort: 'depth' }],
         ['logbook_get_dive', { dive_id: timsDive }], ['logbook_get_dive', { dive_id: timsDive, detail: 'detailed', include_samples: true, sample_channels: ['depth', 'temperature'] }],
+        ['logbook_get_dive_assessment', { dive_id: timsDive }],
         ['logbook_stats', {}], ['logbook_stats', { group_by: 'country' }], ['logbook_stats', { group_by: 'site' }], ['logbook_stats', { group_by: 'year', diver_id: timDiver }],
         ['logbook_stats', { group_by: 'diver' }], ['logbook_stats', { group_by: 'month', from: '2026-01-01' }],
         ['sites_search', {}], ['sites_search', { detail: 'detailed', dived_only: false, query: 'blue' }], ['sites_get', { site_id: site }],
@@ -332,6 +333,29 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
       expect(depth.values.length).toBeLessThanOrEqual(40);
       expect(depth.values.length).toBe(depth.seconds.length);
       expect(Math.max(...depth.values)).toBeCloseTo(31, 0);
+    });
+
+    it("returns a Dive's assessment in sentences with guidance, sources and the fixed note; never another User's", async () => {
+      const client = await connect(key);
+      const assessed = (await tool(client, 'logbook_get_dive_assessment', { dive_id: timsDive })).structuredContent!;
+      expect(assessed).toMatchObject({ dive_id: timsDive, assessed: true, covered: true, computer_events: [] });
+      expect(assessed.note).toContain('not medical advice');
+      expect(assessed.note).toContain('DAN');
+      // 31 m on EAN32 in the synthetic file: the stop of three minutes where five are recommended; the no-fly time beside the findings.
+      const stop = assessed.findings.find((f: { rule: string }) => f.rule === 'safety_stop');
+      expect(stop).toMatchObject({ severity: 'info', dismissed: false, muted: false, evidence: ['experiment', 'rule'] });
+      expect(stop.summary).toMatch(/between 3 and 6 m before surfacing from 31 m; 5 minutes are recommended/);
+      expect(stop.guidance).toContain('3 minutes');
+      expect(stop.sources[0].url).toMatch(/^https:/);
+      expect(stop.start_min).toBeGreaterThan(20);
+      expect(assessed.findings.map((f: { rule: string }) => f.rule)).not.toContain('no_fly');
+      expect(assessed.no_fly).toMatchObject({ hours: 12, source: { url: expect.stringMatching(/^https:\/\/dan\.org/) } });
+      expect(assessed.no_fly.summary).toMatch(/not to fly for 12 hours after this dive, until 2026-03-14 19:30 UTC/);
+      expect(JSON.stringify(assessed)).not.toMatch(/score/i);
+
+      const refused = await tool(client, 'logbook_get_dive_assessment', { dive_id: annasDive });
+      expect(refused.isError).toBe(true);
+      expect(text(refused)).toContain('logbook_search_dives');
     });
 
     it('answers counts and breakdowns in logbook_stats', async () => {

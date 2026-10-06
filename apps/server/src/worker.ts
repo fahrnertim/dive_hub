@@ -4,12 +4,16 @@ import type { FastifyBaseLogger } from 'fastify';
 import { BACKFILL_POSITIONS_TASK, PROCESS_IMPORT_TASK, type ImportService } from './imports/import-service.js';
 import { IMPORT_SITES_TASK, type SiteImportService } from './sites/import/site-import-service.js';
 import type { AiAccessService } from './mcp/access-service.js';
+import type { AssessmentService } from './assessment/assessment-service.js';
+
+/** Assesses every Dive not yet assessed with the current rules (ADR 0036): after a first start with them, or a new engine version. */
+const ASSESS_DIVES_TASK = 'assess-dives';
 
 /** Drops AI access log entries older than 90 days (ADR 0035). */
 const PURGE_AI_ACCESS_LOG_TASK = 'purge-ai-access-log';
 
 export async function startWorker(
-  pool: pg.Pool, imports: ImportService, siteImports: SiteImportService, aiAccesses: AiAccessService, log: FastifyBaseLogger,
+  pool: pg.Pool, imports: ImportService, siteImports: SiteImportService, aiAccesses: AiAccessService, assessments: AssessmentService, log: FastifyBaseLogger,
 ): Promise<Runner> {
   // An import still "running" now was cut off when the worker last stopped.
   await siteImports.failInterrupted();
@@ -37,6 +41,10 @@ export async function startWorker(
         const purged = await aiAccesses.purgeLog();
         if (purged > 0) log.info({ purged }, 'purged old AI access log entries');
       },
+      [ASSESS_DIVES_TASK]: async () => {
+        const divers = await assessments.refreshAll();
+        log.info({ divers }, 'dive assessments are up to date');
+      },
       [BACKFILL_POSITIONS_TASK]: async () => {
         const read = await imports.backfillPositions();
         if (read > 0) log.info({ read }, 'read positions of earlier Recordings');
@@ -45,5 +53,6 @@ export async function startWorker(
   });
   // Once per start; the job key keeps it to one queued job however many workers start.
   await runner.addJob(BACKFILL_POSITIONS_TASK, {}, { jobKey: BACKFILL_POSITIONS_TASK });
+  await runner.addJob(ASSESS_DIVES_TASK, {}, { jobKey: ASSESS_DIVES_TASK });
   return runner;
 }

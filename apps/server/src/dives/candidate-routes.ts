@@ -1,6 +1,7 @@
 // Duplicate candidates: what waits for the User's decision, and the decisions (ADR 0016).
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
+import type { AssessmentService } from '../assessment/assessment-service.js';
 import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import { UTC_OFFSET_SOURCES } from '../db/schema.js';
@@ -10,6 +11,7 @@ import { CandidateError, type Candidates } from './candidates.js';
 export interface CandidateRouteDeps {
   auth: Auth;
   candidates: Candidates;
+  assessments: AssessmentService;
 }
 
 const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
@@ -53,8 +55,13 @@ const STATUS: Record<CandidateError['code'], number> = {
   candidate_not_found: 404, candidate_resolved: 409, not_a_candidate: 400, dive_not_found: 404,
 };
 
-export const candidateRoutes: FastifyPluginAsyncTypebox<CandidateRouteDeps> = async (app, { auth, candidates }) => {
+export const candidateRoutes: FastifyPluginAsyncTypebox<CandidateRouteDeps> = async (app, { auth, candidates, assessments }) => {
   app.addHook('onRequest', requireUser(auth));
+  // A decision places a Recording on a Dive or makes a new one: the dive assessment follows (as in dives/routes.ts).
+  app.addHook('onSend', async (request, reply) => {
+    if (request.method === 'GET' || reply.statusCode >= 300 || !request.user) return;
+    await assessments.refreshUser(request.user.id).catch((error) => request.log.error({ err: error }, 'dive assessment failed'));
+  });
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof CandidateError) return reply.code(STATUS[error.code]).send(problem(error.code));
     throw error;

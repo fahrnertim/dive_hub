@@ -74,6 +74,9 @@ const DiveSummaryView = Type.Object({
   maxDepthM: Nullable(Type.Number()),
   avgDepthM: Nullable(Type.Number()),
   site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
+  findings: Type.Integer({
+    description: 'How many findings of the dive assessment differ from guidance (note or caution) and were not put aside (ADR 0036); 0: no mark',
+  }),
 });
 
 
@@ -126,7 +129,13 @@ async function withDecisions(db: Db, rows: (typeof importJob.$inferSelect)[]) {
   return views;
 }
 
-const toDiveSummary = (d: typeof dive.$inferSelect, siteName: string | null): Static<typeof DiveSummaryView> => ({
+/** Findings that differ from guidance and that the User neither dismissed on the Dive nor muted for its Diver. */
+const FINDINGS_SHOWN = sql<number>`(select count(*)::int from dive_finding f where f.dive_id = "dive"."id" and f.severity <> 'info'
+  and not exists (select 1 from finding_dismissal x where x.dive_id = f.dive_id and x.rule = f.rule)
+  and not exists (select 1 from muted_rule m where m.diver_id = "dive"."diver_id" and m.rule = f.rule))`.mapWith(Number);
+
+const toDiveSummary = (d: typeof dive.$inferSelect, siteName: string | null, findings: number): Static<typeof DiveSummaryView> => ({
+  findings,
   site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null,
   id: d.id, diverId: d.diverId, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
   utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, avgDepthM: d.avgDepthM,
@@ -202,12 +211,12 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
     // Dives without a value (no number, no depth) go last either way; the start time breaks ties.
     const direction = order === 'asc' ? sql`asc nulls last` : sql`desc nulls last`;
     const [rows, [counted]] = await Promise.all([
-      db.select({ d: dive, siteName: diveSite.name }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(where)
+      db.select({ d: dive, siteName: diveSite.name, findings: FINDINGS_SHOWN }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(where)
         .orderBy(sql`${column} ${direction}`, desc(dive.startsAt), desc(dive.id))
         .limit(limit).offset(offset),
       db.select({ n: count() }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(where),
     ]);
-    return { dives: rows.map((r) => toDiveSummary(r.d, r.siteName)), total: counted?.n ?? 0 };
+    return { dives: rows.map((r) => toDiveSummary(r.d, r.siteName, r.findings)), total: counted?.n ?? 0 };
   });
 
   app.get('/recordings/:id/samples', {

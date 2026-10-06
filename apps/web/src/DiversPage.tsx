@@ -134,11 +134,57 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
         </>
       )}
       {(rename.error ?? remove.error) && <Notice tone="danger">{errorText(rename.error ?? remove.error)}</Notice>}
+      <MutedRules diver={d} />
     </li>
   );
 }
 
 /** Admins: merges an external Diver into another Diver, the same person (ADR 0028), picked by name. */
+/**
+ * Rules of the dive assessment a User stopped showing for this Diver (ADR 0036), with the way back: a muted rule shows
+ * on no Dive, so this is where it is found again.
+ */
+function MutedRules({ diver: d }: { diver: DiverView }) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const queryClient = useQueryClient();
+  const show = useMutation({
+    mutationFn: async (rule: string) => {
+      unwrap(await api.PUT('/api/divers/{id}/muted-rules/{rule}', { params: { path: { id: d.id, rule: rule as 'ascent_rate' } }, body: { muted: false } }));
+      return rule;
+    },
+    onSuccess: async (rule) => {
+      await queryClient.invalidateQueries({ queryKey: keys.divers });
+      // The Dives' marks and assessments follow.
+      void queryClient.invalidateQueries({ queryKey: keys.dives });
+      announce(t('assessment.restored', { title: t(`assessment.title.${rule}` as 'assessment.title.ascent_rate') }));
+    },
+  });
+  if (d.mutedRules.length === 0) return null;
+  return (
+    <div className="muted-rules">
+      <span className="meta">{t('divers.mutedRules', { name: d.name })}</span>
+      <ul>
+        {d.mutedRules.map((rule) => {
+          const title = t(`assessment.title.${rule}` as 'assessment.title.ascent_rate');
+          return (
+            <li key={rule}>
+              {title}
+              <Button
+                variant="quiet" size="small" aria-label={t('common.forItem', { action: t('divers.showRule'), item: `${title}, ${d.name}` })}
+                isPending={show.isPending && show.variables === rule} isDisabled={show.isPending} onPress={() => show.mutate(rule)}
+              >
+                {t('divers.showRule')}
+              </Button>
+            </li>
+          );
+        })}
+      </ul>
+      {show.error && <Notice tone="danger">{errorText(show.error)}</Notice>}
+    </div>
+  );
+}
+
 function MergeDialog({ diver: d, onClose }: { diver: ExternalDiverView; onClose: () => void }) {
   const { t } = useTranslation();
   const errorText = useErrorText();

@@ -34,6 +34,10 @@
   /* Depth ramp for the dive profile fill: shallow to deep */
   --color-depth-shallow: var(--palette-surface-light);
   --color-depth-deep: var(--palette-open-water);
+  /* The profile's ascent by speed (ADR 0036): above 4, 9 and 18 m/min. Warm, never the danger red; each >= 3:1 on a panel. */
+  --color-ascent-1: #9a7400;
+  --color-ascent-2: #c2570c;
+  --color-ascent-3: #8a2f0a;
 
   /* Type: IBM Plex Sans, minor-third scale (1.2) on a 16 px base */
   --font-sans: 'IBM Plex Sans Variable', 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -104,6 +108,9 @@
     --color-focus: #62b6e6;
     --color-depth-shallow: #62b6e6;
     --color-depth-deep: #12324d;
+    --color-ascent-1: #e6c04a;
+    --color-ascent-2: #f29a4a;
+    --color-ascent-3: #ffb9a3;
     --shadow-overlay: 0 12px 32px rgb(0 0 0 / 0.5);
     color-scheme: dark;
   }

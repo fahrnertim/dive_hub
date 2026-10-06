@@ -781,3 +781,73 @@ export const aiAccessLog = pgTable(
   },
   (t) => [index('ai_access_log_user_idx').on(t.userId, t.at), index('ai_access_log_at_idx').on(t.at)],
 );
+
+export const findingSeverity = pgEnum('finding_severity', ['info', 'note', 'caution']);
+
+/**
+ * That a Dive was assessed (ADR 0036), and from what: the engine version and the Primary recording as it was then.
+ * A Dive is assessed again when either differs (src/assessment/assessment-service.ts). `applies` is false for dives
+ * the rules don't cover (apnea, rebreathers): they have no findings.
+ */
+export const diveAssessment = pgTable('dive_assessment', {
+  diveId: uuid('dive_id').primaryKey().references(() => dive.id, { onDelete: 'cascade' }),
+  engineVersion: integer('engine_version').notNull(),
+  recordingId: uuid('recording_id'),
+  /** The Recording's `updated_at` when it was read: a re-import changes it. */
+  recordingStamp: timestamp('recording_stamp', { withTimezone: true }),
+  applies: boolean('applies').notNull(),
+  /** The computer's no-decompression limit reached zero; the series rules read it. */
+  enteredDeco: boolean('entered_deco').notNull().default(false),
+  /** Typical seconds between depth samples; at 5 s and more short bursts can be missed. */
+  sampleIntervalS: real('sample_interval_s'),
+  /** Stretches of the ascent by speed, for colouring the profile: [start s, end s, band 1–3]. */
+  ascentBands: jsonb('ascent_bands').$type<[number, number, 1 | 2 | 3][]>().notNull().default([]),
+  computedAt: timestamp('computed_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * One thing the dive assessment noticed on a Dive (ADR 0036): at most one per rule. `values` holds what was measured
+ * and the threshold it was held against; clients render the text from them. Kept on deleted Dives, which count nowhere.
+ */
+export const diveFinding = pgTable(
+  'dive_finding',
+  {
+    id: id(),
+    diveId: uuid('dive_id').notNull().references(() => dive.id, { onDelete: 'cascade' }),
+    /** The Recording whose samples gave it; null for a finding from the Diver's dives around this one. */
+    recordingId: uuid('recording_id'),
+    rule: text('rule').notNull(),
+    severity: findingSeverity('severity').notNull(),
+    /** The stretch of the profile, seconds from the Recording's start. */
+    startS: real('start_s'),
+    endS: real('end_s'),
+    values: jsonb('values').$type<Record<string, number | string | boolean | null>>().notNull(),
+    engineVersion: integer('engine_version').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('dive_finding_dive_rule_uq').on(t.diveId, t.rule)],
+);
+
+/** A User put a finding on a Dive aside (ADR 0036). It goes when the finding does. */
+export const findingDismissal = pgTable(
+  'finding_dismissal',
+  {
+    diveId: uuid('dive_id').notNull().references(() => dive.id, { onDelete: 'cascade' }),
+    rule: text('rule').notNull(),
+    dismissedBy: uuid('dismissed_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.diveId, t.rule] })],
+);
+
+/** A rule a Diver's Users don't want to see on any of the Diver's Dives (ADR 0036). The findings stay as computed. */
+export const mutedRule = pgTable(
+  'muted_rule',
+  {
+    diverId: uuid('diver_id').notNull().references(() => diver.id, { onDelete: 'cascade' }),
+    rule: text('rule').notNull(),
+    mutedBy: uuid('muted_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.diverId, t.rule] })],
+);

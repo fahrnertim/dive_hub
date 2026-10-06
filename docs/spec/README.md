@@ -128,7 +128,8 @@ Noted for later; not designed or decided yet.
   metres, safety stop, NDL margin, ceilings, oxygen, gas left, sawtooth, reverse profiles, surface intervals, days in a
   row …), each with its value, threshold, source, evidence and a recommendation; no score; the computer's own events
   beside them. Decided in [ADR 0036](../decisions/0036-dive-assessment.md), designed in the
-  [assessment note](../research/2026-10-06-dive-assessment.md) (slice 18). Later: trends across dives.
+  [assessment note](../research/2026-10-06-dive-assessment.md) (slice 18, built 2026-10-06 without gas left and the surfacing
+  GF, which slices 19 and 21 add). Later: trends across dives.
 
 ## Non-goals (so far)
 

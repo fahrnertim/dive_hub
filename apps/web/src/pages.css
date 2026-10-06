@@ -223,3 +223,50 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .ai-access-shared { padding-left: var(--space-5); }
 .ai-access-shared li + li { margin-top: var(--space-1); }
 .log-request { overflow-wrap: anywhere; }
+/* The dive assessment (ADR 0036). Under the profile: a lane with one bar per finding at its place in the dive, and
+   what the ascent's colours mean. Neutral on purpose: the accent, never the danger red. */
+.finding-lane { display: grid; gap: var(--space-1); margin-top: var(--space-2); max-width: 100%; }
+.finding-lane-row { position: relative; height: 1.75rem; background: var(--color-surface-sunken); border-radius: var(--radius-sm); }
+.finding-chip { position: absolute; top: 0; height: 100%; min-width: 1.5rem; padding: 0; border: 2px solid var(--color-accent); border-radius: var(--radius-sm);
+  background: var(--color-accent-soft); cursor: pointer; transition: background-color var(--duration-fast); }
+.finding-chip[data-severity='info'] { border-style: dashed; }
+.finding-chip[aria-pressed='true'] { background: var(--color-accent); }
+.finding-chip:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.finding-chip-label { position: absolute; top: 0; line-height: 1.75rem; padding-inline: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; pointer-events: none; }
+@media (hover: hover) { .finding-chip:hover { background: var(--color-accent); } }
+.ascent-legend { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin: var(--space-3) 0 0; padding: 0; list-style: none; font-size: var(--text-sm); color: var(--color-text-muted); }
+.ascent-legend-title { font-weight: var(--weight-semibold); }
+.ascent-swatch { display: inline-block; width: 1.25rem; margin-right: var(--space-2); vertical-align: middle; border-radius: 2px; }
+.ascent-swatch[data-band='1'] { height: 3px; background: var(--color-ascent-1); }
+.ascent-swatch[data-band='2'] { height: 4px; background: var(--color-ascent-2); }
+.ascent-swatch[data-band='3'] { height: 5px; background: var(--color-ascent-3); }
+/* The panel: findings as a list, each with what was measured, the guidance and where it comes from. */
+.assessment { display: grid; gap: var(--space-4); }
+.assessment > * { min-width: 0; margin: 0; }
+.assessment-part { display: grid; gap: var(--space-2); }
+.assessment-part > * { margin: 0; }
+.findings { display: grid; gap: var(--space-3); padding: 0; list-style: none; }
+.finding { display: grid; gap: var(--space-2); padding: var(--space-4); background: var(--color-surface-sunken); border-radius: var(--radius-md); border-left: 3px solid transparent; }
+.finding[data-selected] { border-left-color: var(--color-accent); }
+.finding > * { margin: 0; min-width: 0; }
+.finding-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-3); }
+.finding-title { font-size: var(--text-md); margin: 0; }
+.finding-when { padding: 0; border: none; background: none; font: inherit; font-size: var(--text-sm); color: var(--color-accent); text-decoration: underline; cursor: pointer; min-height: 1.5rem; }
+.finding-when[aria-pressed='true'] { font-weight: var(--weight-semibold); }
+.finding-when:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.finding-facts { display: grid; gap: var(--space-2); margin: 0; font-size: var(--text-sm); }
+.finding-facts dt { font-weight: var(--weight-semibold); color: var(--color-text-muted); }
+.finding-facts dd { margin: 0; }
+.finding-sources { margin: 0; padding-left: var(--space-5); }
+.findings-aside { margin-top: var(--space-3); }
+.computer-events { margin: 0; padding-left: var(--space-5); }
+.assessment-note { font-size: var(--text-sm); color: var(--color-text-muted); }
+.finding-mark { margin-left: var(--space-2); }
+/* Links in a list need 24 px each to be hit (WCAG 2.5.8). */
+.finding-sources li { padding-block: var(--space-1); }
+.finding-sources a { display: inline-block; min-height: 1.5rem; }
+/* On the Divers page: rules of the dive assessment not shown for a Diver, each with the way back (ADR 0036). */
+.muted-rules { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); font-size: var(--text-sm); }
+.muted-rules ul { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin: 0; padding: 0; list-style: none; }
+.muted-rules li { display: flex; align-items: baseline; gap: var(--space-2); }

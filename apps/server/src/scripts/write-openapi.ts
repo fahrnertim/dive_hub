@@ -8,6 +8,7 @@ import type { Db } from '../db/client.js';
 import type { ImportService } from '../imports/import-service.js';
 import type { SiteImportService } from '../sites/import/site-import-service.js';
 import type { AiAccessService } from '../mcp/access-service.js';
+import type { AssessmentService } from '../assessment/assessment-service.js';
 import { createProviderLayer } from '../providers/layer.js';
 import { createSsiAdapter } from '../providers/ssi/ssi-adapter.js';
 import type { SsiClient } from '../providers/ssi/ssi-client.js';
@@ -17,7 +18,7 @@ import type { Invitations } from '../users/invitations.js';
 import type { Setup } from '../users/setup.js';
 
 const app = await buildApp({
-  db: {} as Db, imports: {} as ImportService, siteImports: {} as SiteImportService, blobs: {} as BlobStore, auth, aiAccesses: {} as AiAccessService, setup: {} as Setup, invitations: {} as Invitations,
+  db: {} as Db, imports: {} as ImportService, siteImports: {} as SiteImportService, blobs: {} as BlobStore, auth, aiAccesses: {} as AiAccessService, assessments: {} as AssessmentService, setup: {} as Setup, invitations: {} as Invitations,
   baseUrl: 'http://localhost', maxUploadBytes: 1,
   // The production Providers: their ids become the routes' enum.
   providers: createProviderLayer({ db: {} as Db, blobs: {} as BlobStore, secrets: createSecretBox(undefined), adapters: [createSsiAdapter({ client: {} as SsiClient })] }),

@@ -21,6 +21,7 @@ import type { ProviderAdapter } from '../src/providers/provider.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { createAiAccessService } from '../src/mcp/access-service.js';
+import { createAssessmentService } from '../src/assessment/assessment-service.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { createFakeSsi, type FakeSsi } from './fake-ssi.js';
 import { createInvitations } from '../src/users/invitations.js';
@@ -99,7 +100,8 @@ export async function createTestApp(t: TestDatabase, options: {
   const auth = createTestAuth(t.db, authOptions);
   const setup: Setup = createSetup(t.db);
   const blobs = createLocalBlobStore(t.dataDir);
-  const imports: ImportService = createImportService({ db: t.db, blobs, providerImports: () => providers.diveImports });
+  const assessments = createAssessmentService(t.db);
+  const imports: ImportService = createImportService({ db: t.db, blobs, providerImports: () => providers.diveImports, afterImport: (userId) => assessments.refreshUser(userId) });
   const siteImports = createSiteImportService({ db: t.db, sources: siteSources ?? { osm: unreachable('osm'), wikidata: unreachable('wikidata'), ssi: unreachable('ssi') } });
   // SSI keeps its last logbook read for two minutes (ADR 0027); a test that changes the fake SSI behind Dive Hub's back
   // moves this clock on, as if the change happened a while later. Pauses between actions are skipped and recorded.
@@ -117,9 +119,9 @@ export async function createTestApp(t: TestDatabase, options: {
   });
   const aiAccesses = createAiAccessService(t.db, auth);
   const app = await buildApp({
-    db: t.db, imports, siteImports, providers, blobs, auth, aiAccesses, setup, invitations: createInvitations(t.db), baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir,
+    db: t.db, imports, siteImports, providers, blobs, auth, aiAccesses, assessments, setup, invitations: createInvitations(t.db), baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir,
   });
-  return { app, auth, aiAccesses, setup, imports, siteImports, providers, fakeSsi, ssiClock, clock, pauses: clock.slept, blobs };
+  return { app, auth, aiAccesses, assessments, setup, imports, siteImports, providers, fakeSsi, ssiClock, clock, pauses: clock.slept, blobs };
 }
 
 /** Creates a User the way an admin would (Better Auth's admin API, server-side). */

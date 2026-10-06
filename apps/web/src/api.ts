@@ -85,6 +85,8 @@ export const keys = {
   /** Under ['dives'], so whatever changes the logbook refreshes it too (ADR 0026). */
   deletedDives: ['dives', 'deleted'] as const,
   revisions: (id: string) => ['dives', id, 'revisions'] as const,
+  /** The Dive's assessment (ADR 0036); under the Dive, so whatever changes it reads the findings again. */
+  assessment: (id: string) => ['dives', id, 'assessment'] as const,
   divers: ['divers'] as const,
   devices: ['devices'] as const,
   candidates: (status: 'open' | 'discarded') => ['candidates', status] as const,
@@ -228,6 +230,13 @@ async function fetchDeletedDives() {
 export const deletedDivesQuery = () => queryOptions({ queryKey: keys.deletedDives, queryFn: fetchDeletedDives });
 
 export const diveQuery = (id: string) => queryOptions({ queryKey: keys.dive(id), queryFn: () => fetchDive(id) });
+async function fetchAssessment(id: string) {
+  return unwrap(await api.GET('/api/dives/{id}/assessment', { params: { path: { id } } }));
+}
+/** A Dive's findings, the computer's own events and the ascent bands (ADR 0036). */
+export const assessmentQuery = (id: string) => queryOptions({ queryKey: keys.assessment(id), queryFn: () => fetchAssessment(id) });
+export type AssessmentView = Awaited<ReturnType<typeof fetchAssessment>>;
+
 export const revisionsQuery = (id: string) => queryOptions({ queryKey: keys.revisions(id), queryFn: () => fetchRevisions(id) });
 
 export const samplesQuery = (recordingId: string) =>

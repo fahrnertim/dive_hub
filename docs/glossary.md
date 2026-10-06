@@ -266,15 +266,20 @@ What was done to an Equipment item, when and by whom (optionally at what cost), 
 _Avoid_: Service log, maintenance entry, inspection (that is one kind)
 _German_: Wartungseintrag
 
-**Dive assessment** (planned):
-Dive Hub's look at a logged Dive: findings computed from its profile and the Diver's other dives by fixed rules, each with its source and how strong the evidence is. Not a score, not medical advice ([ADR 0036](decisions/0036-dive-assessment.md)).
+**Dive assessment**:
+Dive Hub's look at a logged Dive: findings computed from its Primary recording's profile and the Diver's other dives by fixed, versioned rules, each with its source and how strong the evidence is. Not a score, not medical advice, and no verdict on how safe a dive was ([ADR 0036](decisions/0036-dive-assessment.md)).
 _Avoid_: Dive score, rating (that is the Diver's), analysis (alone), review
-_German_: Tauchgangsauswertung
+_German_: Tauchgangsauswertung (on screen: "Auswertung")
 
-**Finding** (planned):
-One thing the dive assessment noticed on a Dive, such as a short safety stop or a fast ascent: the measured value, the threshold and its source, a recommendation, the stretch of the profile. The User can dismiss it or mute its rule.
+**Finding**:
+One thing the dive assessment noticed on a Dive, such as a short safety stop or a fast ascent: what was measured, the guidance it is held against with its source and evidence, a recommendation, and the stretch of the profile. At most one per rule and Dive, as information, a note or a caution. The User can put it aside on that Dive (dismiss) or stop its rule being shown for a Diver (mute; listed with the Diver); what was computed stays. DAN's no-fly time is shown beside the findings and is not one.
 _Avoid_: Error, violation, warning (that is the computer's), issue
 _German_: Hinweis
+
+**Computer event**:
+What a dive computer itself noted during a dive, such as "ascent too fast" or "safety stop left early" (Garmin's dive alerts), in Dive Hub's words. Shown beside the findings, never merged with them: computers judge differently, the rules the same for every source.
+_Avoid_: Alarm, warning (alone), finding
+_German_: on screen "Dein Computer hat vermerkt"
 
 ## Places
 

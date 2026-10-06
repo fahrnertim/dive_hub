@@ -27,9 +27,11 @@ export interface ImportServiceDeps {
    * started. Without it, such an Import fails.
    */
   providerImports?: () => { process(job: typeof importJob.$inferSelect): Promise<ImportOutcome> };
+  /** Runs once an Import is done, for its User: the dive assessment catches up (ADR 0036). */
+  afterImport?: (userId: string) => Promise<void>;
 }
 
-export function createImportService({ db, blobs, fit = createFitAdapter(), providerImports }: ImportServiceDeps) {
+export function createImportService({ db, blobs, fit = createFitAdapter(), providerImports, afterImport }: ImportServiceDeps) {
   /** Stores the upload and creates the Import; its job is enqueued in the same transaction (ADR 0010). */
   async function createImport(userId: string, fileName: string, stream: Readable, maxBytes: number) {
     const upload = await blobs.putIncoming(stream, maxBytes);
@@ -66,6 +68,7 @@ export function createImportService({ db, blobs, fit = createFitAdapter(), provi
         if (!providerImports) throw new Error('This server runs no imports from Providers');
         const outcome = await providerImports().process(job);
         await db.update(importJob).set({ status: 'done', outcome, finishedAt: new Date() }).where(eq(importJob.id, importId));
+        await afterImport?.(job.userId);
         return outcome;
       } catch (error) {
         await db.update(importJob).set({ status: 'failed', error: (error as Error).message, finishedAt: new Date() }).where(eq(importJob.id, importId));
@@ -91,6 +94,7 @@ export function createImportService({ db, blobs, fit = createFitAdapter(), provi
         .set({ status: 'done', outcome, finishedAt: new Date(), uploadStorageKey: null })
         .where(eq(importJob.id, importId));
       await blobs.delete(job.uploadStorageKey!);
+      await afterImport?.(job.userId);
       return outcome;
     } catch (error) {
       await db

@@ -1,6 +1,6 @@
 ---
 title: "ADR 0036: Dive assessment - findings with their evidence, no score"
-summary: Every Dive gets findings computed from its Primary recording (and later its Cylinders and the Diver's other dives) by fixed, versioned rules - ascent rate, the last metres, safety stop, descent, depth stability on the stop, lowest NDL, ceilings, ppO2 and CNS, surfacing GF (slice 21), gas left (slice 19), sawtooth, reverse profiles outside the 1999 envelope, surface intervals, dives per day and days in a row, no-fly time as information - each with the measured value, the threshold, its source, how strong the evidence is and a recommendation. No score. Shown under the profile on a time lane, marked in the dive list, the profile coloured by ascent rate; the computer's own events beside them; findings stored with the engine version, dismissals and muted rules per Diver; an MCP tool. Trends later. Slice 18; the planned slices move to 19-23.
+summary: Every Dive gets findings computed from its Primary recording (and later its Cylinders and the Diver's other dives) by fixed, versioned rules - ascent rate, the last metres, safety stop, descent, depth stability on the stop, lowest NDL, ceilings, ppO2 and CNS, surfacing GF (slice 21), gas left (slice 19), sawtooth, reverse profiles outside the 1999 envelope, surface intervals, dives per day and days in a row, no-fly time as information - each with the measured value, the threshold, its source, how strong the evidence is and a recommendation. No score. Shown under the profile on a time lane, marked in the dive list, the profile coloured by ascent rate; the computer's own events beside them; findings stored with the engine version, dismissals and muted rules per Diver; an MCP tool. Trends later. Slice 18, built 2026-10-06 (engine version 1; see the amendment for what the build settled: one finding per rule and Dive, the last metres only above 18 m/min, the no-fly time beside the findings, three ascent bands, computed after every change and at start). The planned slices move to 19-23.
 status: accepted
 date: 2026-10-06
 ---
@@ -8,7 +8,8 @@ date: 2026-10-06
 # ADR 0036: Dive assessment - findings with their evidence, no score
 
 ## Status
-Accepted – 2026-10-06. Not built yet. Designed in [Dive assessment](../research/2026-10-06-dive-assessment.md). Moves the
+Accepted – 2026-10-06. Built as slice 18 on 2026-10-06 with engine version 1; what the build settled or changed is in the
+[amendment](#amendment-2026-10-06-as-built-slice-18-engine-version-1). Designed in [Dive assessment](../research/2026-10-06-dive-assessment.md). Moves the
 planned slices of ADR 0031–0034 once more (to 19–23).
 
 ## Context
@@ -98,3 +99,67 @@ The owner chose on 2026-10-06 the recommendation for each of the note's decision
   are part of the client contract.
 - The rules and their sources are reviewed like code; new evidence means a new engine version, not a silent change.
 - Slices 19 and 21 each add a check; their prompts say so.
+
+## Amendment 2026-10-06: as built (slice 18, engine version 1)
+
+The decisions above stand where this says nothing. The thresholds are `LIMITS` in `apps/server/src/assessment/rules.ts`.
+
+### Checked on the owner's file ("Still to check" of the research note)
+- One real dive was there to check with (a Garmin Descent Mk3, 7.9 m, 74 minutes, a pool): samples every second, `ndl` in
+  seconds, four `dive_alert` events with the codes 17 (ascent critical), 19 (dismissed by timeout), 2 (near surface), 19.
+- **The 15 s window agrees with the computer:** Garmin's "ascent critical" came 15 s after the fastest window we measure
+  (10.8 m/min). No rule fires on that dive: the ascent was above 6 m only briefly and didn't hold 5 s.
+- **False positives on a real logbook are not checked yet:** one pool dive says nothing about how often rules fire. The
+  rules test prints the counts for every file in `samples/private` (`vitest run test/assessment-rules.test.ts
+  --silent=false`); look at them once more dives are there, and tune with a new engine version.
+- Not found, so not used: the US Navy manual's exact ascent tolerance (the ascent rule cites the two bubble studies and
+  Garmin's and Suunto's alarms), Shearwater's and Mares' alarms.
+
+### Settled while building
+- **One finding per rule and Dive.** Several fast stretches are one "fast ascent" finding: it shows the fastest stretch
+  and says how many there were. So a dismissal is keyed by Dive and rule, and survives a recomputation.
+- **The ascent rule looks below 6 m; the last metres are a rule of their own, and a quiet one** (owner, 2026-10-07).
+  BSAC's "last 6 m in a minute" is 6 m/min, and many divers come up the last 5 m after a stop faster than that:
+  remarking on it would lower acceptance of every other finding. The rule measures the final ascent from where the
+  diver last held a depth (at most 6 m, at least 3 m of it) and tells, as `info`, only above 18 m/min: 5 m in under
+  about 17 seconds. The Decision's "the last 6 m in under a minute" is replaced by this.
+- **Safety stop:** time between 2.5 and 6.5 m (3–6 m with half a metre of tolerance) after the diver was last deeper,
+  the swim through that band included. Under 3 minutes: note. 3 to 5 minutes where 5 are recommended (deeper than 30 m,
+  or the NDL at 5 minutes or less): info. Not judged on dives that entered decompression.
+- **Stop stability** looks between arriving at the stop's depth and leaving it, and needs a stop of a minute.
+- **The last metres and the safety stop are judged on dives deeper than 10 m** that end at the surface (a recording
+  that ends deeper than 2 m says nothing about the way up).
+- **Severities of the series rules** (reverse profile, surface interval, dives per day, deep days): all `info`. Their
+  evidence is consensus, convention or an agency rule.
+- **A dive follows another "repetitively"** when it starts within 12 hours of the other's end (for the reverse profile).
+- **The no-fly time is not a finding** (owner, 2026-10-07): it is nothing the diver did, and as a finding it sat on
+  every diving day. The assessment carries it beside the findings (`noFly`) on the last dive of each diving day: 12 h
+  after a single dive, 18 h after several dives that day or diving the day before, 24 h after decompression (DAN says
+  "substantially longer than 18"; the text says so). It can't be dismissed or muted, and marks no Dive.
+- **Entered decompression** means the computer's NDL reached zero. Ceilings are the computer's next stop depth, with
+  Garmin's 0.6 m tolerance, and only looked at then.
+- **ppO2 caution** needs 5 seconds above 1.6 bar in all, so one sample doesn't make it.
+- **Three ascent bands** colour the profile (above 4, 9 and 18 m/min), not Subsurface's four: the 1.5 m/min band would
+  colour most of every ascent. Faster is also thicker, and a legend says how long each lasted.
+- **Not covered:** apnea, CCR and SCR dives (by the Recording's dive mode). Gauge dives are assessed (no NDL, so the
+  NDL rules stay quiet).
+- **The list's mark counts findings that differ from guidance** (note, caution) and were neither dismissed nor muted;
+  `info` findings (a tip, a pop to the surface) don't mark a Dive.
+- **Muting** is done from a finding. A muted rule is listed with its Diver on the Divers page (`mutedRules` of
+  `GET /api/divers`) and shown again from there, or from any Dive that has such a finding (under "put aside").
+- **The lane** is one row per finding with a bar at its stretch (a button) and its title beside it, not chips sharing
+  one line: bars that overlap in time stay separate targets. The words are in the panel below.
+- **Computer events:** 17 of Garmin's `dive_alert` codes are mapped to our vocabulary; dismissals, battery, setpoint
+  switches, "near surface" and the User's own time and depth alarms are left out.
+
+### How it is built
+- `src/assessment/rules.ts` (pure): cleaning, splitting, 15 s windows, the rules, `ENGINE_VERSION`, each rule's
+  evidence labels and sources. `assessment-service.ts`: `dive_assessment` remembers the engine version and the Primary
+  recording (id and `updated_at`) a Dive was assessed from; `dive_finding`, `finding_dismissal`, `muted_rule`.
+- **When:** after every Import, after every change through the dive and decision routes (before the answer goes out),
+  when an assessment is read, and in the worker at every start (`assess-dives`), which is what catches a new engine
+  version. A refresh reads samples only for Dives whose stamp differs; the series rules run over the Diver's dive list
+  each time and write only where a finding differs. A dismissal whose finding is gone is deleted.
+- **MCP:** `logbook_get_dive_assessment` reads the stored assessment (the tool's transaction is read-only), with each
+  finding in English sentences (`texts.ts`), its guidance, evidence, sources, and the fixed note in every result.
+- **Slices 19 and 21** add `gas_left` and the surfacing GF as rules here and raise the engine version.

@@ -1,6 +1,6 @@
 ---
 title: Data model
-summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios; Dives without a Recording, offsets and their source, a Provider's dives as Originals, Recordings and Imports (ADR 0030); planned: lead, weighting feedback, exposure suit, Cylinders and body weight (ADR 0031); SAC and OTU on Recordings for the bottom-time tool (ADR 0032); SAC per Dive and gas plans for groups (ADR 0033); Equipment items with service schedules (ADR 0034); AI accesses, their setting and their log for the MCP endpoint (ADR 0035, built); findings of the dive assessment (ADR 0036).
+summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios; Dives without a Recording, offsets and their source, a Provider's dives as Originals, Recordings and Imports (ADR 0030); planned: lead, weighting feedback, exposure suit, Cylinders and body weight (ADR 0031); SAC and OTU on Recordings for the bottom-time tool (ADR 0032); SAC per Dive and gas plans for groups (ADR 0033); Equipment items with service schedules (ADR 0034); AI accesses, their setting and their log for the MCP endpoint (ADR 0035, built); findings of the dive assessment, dismissals and muted rules (ADR 0036, built).
 status: draft
 date: 2026-10-06
 ---
@@ -200,13 +200,19 @@ and nothing reaches that User.
   A file's Recording attaching to a Dive whose primary is a Provider's copy becomes primary; any Recording attaching to a
   Dive without one becomes primary.
 
-**Finding** (planned, [ADR 0036](../decisions/0036-dive-assessment.md), slice 18) — what the dive assessment found on a
-Dive: Dive, Recording (the Primary recording's samples), rule, severity (`info`, `note`, `caution`), the stretch of the
-profile, the measured value(s), the engine version. Computed by fixed rules (each with a threshold, a source and an
-evidence label) when the Primary recording or the Cylinders change, and again after an engine version change; text is
-rendered from the facts. A User **dismisses** a finding on a Dive or **mutes** a rule for a Diver (`finding_dismissal`,
-muted rules). No score. The computer's own events (Garmin's `dive_alert`) are shown beside findings, never merged.
-Open-circuit scuba only for now; a Dive without a Recording gets only the checks across dives.
+**Finding** ([ADR 0036](../decisions/0036-dive-assessment.md), slice 18) — what the dive assessment found on a Dive
+(`dive_finding`): Dive, Recording (the Primary recording, null for a finding from the dives around it), rule, severity
+(`info`, `note`, `caution`), the stretch of the profile in seconds, `values` (what was measured and the threshold),
+the engine version. At most one per rule and Dive. Text is rendered from the values, by each client in its language.
+**Dive assessment** (`dive_assessment`, one row per Dive): the engine version and the Primary recording (id and its
+`updated_at`) it was computed from, whether the rules cover the dive (not apnea or rebreathers), whether it entered
+decompression, the sample interval, and the ascent's stretches by speed for colouring the profile. A Dive is assessed
+again when the engine version or that Recording differ; the findings across dives whenever the Diver's dives change.
+A User **dismisses** a finding on a Dive (`finding_dismissal`: Dive, rule, by whom; it goes when the finding does) or
+**mutes** a rule for a Diver (`muted_rule`: Diver, rule, by whom; listed with the Diver). No score. DAN's no-fly time is
+computed when an assessment is read, for the last dive of a diving day, and is not a finding. The computer's own events (Garmin's
+`dive_alert`, stored as Recording events) are shown beside findings, never merged. A Dive without a Recording gets only
+the checks across dives. Deleted Dives keep their findings and count nowhere.
 
 **Cylinder** — per Dive: Equipment item (optional), volume, working pressure, material,
 gas mix (O2/He), start/end pressure, usage window.
@@ -643,17 +649,18 @@ Edge cases:
 - *Tim revokes the access:* its three log entries stay until they are 90 days old.
 - *Tim grants positions later:* a new access with `logbook:positions` (scopes are chosen when it is made).
 
-### 10. Findings on a Red Sea dive (planned, ADR 0036)
+### 10. Findings on a Red Sea dive (ADR 0036, slice 18)
 
 Tim's Garmin dive: 28 m, 52 min, EAN32, a 2-minute stop at 5 m, then 5 m to the surface in 20 s; between minutes 30 and 40
 he went from 14 m up to 4 m and down to 16 m twice; end pressure 40 bar.
 
-1. Findings: safety stop 2 of 3 minutes (note); the last 6 m in 20 s (note, BSAC's minute); 11 m/min for 25 s from 14 to
-   4 m (note); gas left 40 bar (caution, once slice 19 logs the Cylinder). No sawtooth (two excursions of 10 m; the rule
-   needs four of 6 m).
-2. Beside them: the Garmin noted "safety stop broken" at minute 49.
+1. Findings: safety stop 2 of 3 minutes (note); 11 m/min for 25 s from 14 to 4 m (note); gas left 40 bar (caution, once
+   slice 19 logs the Cylinder). No sawtooth (two excursions of 10 m; the rule needs four of 6 m). Nothing about the last
+   5 m in 20 s (15 m/min): the last metres are remarked on only above 18 m/min.
+2. Beside them: the Garmin noted "safety stop broken" at minute 49; and DAN's no-fly time, as it was the day's last dive.
 3. The dive list marks the Dive; the profile is coloured by ascent rate.
-4. Tim dismisses the "last metres" note on this Dive; it stays dismissed here; muting the rule would hide it everywhere.
+4. Tim dismisses the safety stop note on this Dive; it stays dismissed here. Muting the rule would hide it on all his
+   Dives; the Divers page lists it and shows it again.
 5. A later engine version (a threshold tuned on real dives) recomputes the findings; a dismissal of a finding that no
    longer exists disappears with it.
 

@@ -8,7 +8,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import {
-  E2E_BASE_URL, aiAccessReady, askMcp, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, forgetDivers,
+  E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, forgetDivers,
   leaveLena, leaveSsi, lenaReady, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
@@ -92,6 +92,13 @@ test('review material', async ({ page, request, browser }) => {
     await tabOrder(page, '02-dive', 30);
     await page.getByRole('button', { name: 'Edit dive' }).click();
     await capture(page, '03-dive-edit');
+    // The dive assessment (ADR 0036): a dive with several findings, one of them shown on the profile.
+    const assessed = await assessedDive(request);
+    await page.goto(`/#/dives/${assessed}`); await page.getByRole('heading', { name: 'Assessment' }).waitFor();
+    await page.getByRole('group', { name: 'Findings along the dive' }).getByRole('button', { name: /^Fast ascent/ }).click();
+    await capture(page, '03b-dive-assessment');
+    await page.goto('/#/?q=77'); await page.getByText('2 findings').waitFor();
+    await capture(page, '03c-logbook-finding-mark', { aria: false });
   }
   if (want('divers')) {
     await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Devices' }).waitFor(); await page.locator('table').waitFor();
@@ -137,6 +144,8 @@ test('review material', async ({ page, request, browser }) => {
       await capture(page, '08-logbook-de-phone', { aria: false });
       await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: /Tauchgang 42/ }).waitFor();
       await capture(page, '09-dive-de-phone', { aria: false });
+      await page.goto(`/#/dives/${await assessedDive(request)}`); await page.getByRole('heading', { name: 'Auswertung' }).waitFor();
+      await capture(page, '09b-dive-assessment-de-phone', { aria: false });
     }
     if (want('divers')) {
       await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Geräte' }).waitFor();

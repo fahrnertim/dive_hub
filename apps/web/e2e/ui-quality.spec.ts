@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { dataFile, type PreparedData } from './prepare.ts';
 import {
-  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, createAiAccess, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveWithoutRecording, expectGoodPage, externalDiver,
+  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveWithoutRecording, expectGoodPage, externalDiver,
   forgetDivers, leaveLena, leaveSsi, lenaReady, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
@@ -61,6 +61,43 @@ for (const v of variants) {
       await page.getByRole('button', { name: v.english ? 'Edit dive' : 'Tauchgang bearbeiten' }).click();
       await expect(page.getByRole('button', { name: v.english ? 'Save' : 'Speichern' })).toBeVisible();
       await expectGoodPage(page, title('Dive 42'), v);
+    });
+
+    test("a dive's assessment: several findings, one shown on the profile", { tag: ['@dives'] }, async ({ page, request }) => {
+      const id = await assessedDive(request);
+      await page.goto(`/#/dives/${id}`);
+      const lane = page.getByRole('group', { name: v.english ? 'Findings along the dive' : 'Hinweise im Verlauf des Tauchgangs' });
+      await lane.getByRole('button', { name: v.english ? /^Fast ascent/ : /^Schneller Aufstieg/ }).click();
+      await expect(page.getByText(v.english ? /Not medical advice/ : /Kein medizinischer Rat/)).toBeVisible();
+      await expectGoodPage(page, title('Dive 77'), v);
+      // The lane stays inside the page on a phone.
+      const box = await lane.boundingBox();
+      expect(box!.x + box!.width).toBeLessThanOrEqual(v.viewport.width);
+    });
+
+    test("a dive's assessment: a finding put aside and a rule muted", { tag: ['@dives'] }, async ({ page, request }) => {
+      const id = await assessedDive(request);
+      try {
+        await putAside(request, id, { dismiss: ['ppo2'], mute: ['ascent_rate'] });
+        await page.goto(`/#/dives/${id}`);
+        await page.getByText(v.english ? '2 findings put aside' : '2 Hinweise beiseitegelegt').click();
+        await expect(page.getByRole('button', { name: v.english ? 'Show again: Fast ascent' : 'Wieder zeigen: Schneller Aufstieg' })).toBeVisible();
+        await expectGoodPage(page, title('Dive 77'), v);
+      } finally {
+        await assessedDive(request);
+      }
+    });
+
+    test("a dive's assessment: nothing stands out", { tag: ['@dives'] }, async ({ page, request }) => {
+      const id = await assessedDive(request);
+      try {
+        await putAside(request, id, { dismiss: 'all' });
+        await page.goto(`/#/dives/${id}`);
+        await expect(page.getByText(v.english ? 'Nothing stands out on this dive.' : 'An diesem Tauchgang fällt nichts auf.')).toBeVisible();
+        await expectGoodPage(page, title('Dive 77'), v);
+      } finally {
+        await assessedDive(request);
+      }
     });
 
     test('unknown dive', { tag: ['@dives'] }, async ({ page }) => {
@@ -169,6 +206,18 @@ for (const v of variants) {
       await page.getByRole('button', { name: v.english ? 'New dive site' : 'Neuer Tauchplatz' }).click();
       await expect(page.getByRole('button', { name: v.english ? 'Create and choose' : 'Anlegen und auswählen' })).toBeVisible();
       await expectGoodPage(page, title('Dive 42'), v);
+    });
+
+    test('Divers, with a rule of the assessment muted', { tag: ['@divers', '@dives'] }, async ({ page, request }) => {
+      const id = await assessedDive(request);
+      try {
+        await putAside(request, id, { mute: ['ascent_rate', 'safety_stop'] });
+        await page.goto('/#/divers');
+        await expect(page.getByRole('button', { name: v.english ? /^Show again: Fast ascent, / : /^Wieder zeigen: Schneller Aufstieg, / })).toBeVisible();
+        await expectGoodPage(page, title('Divers'), v);
+      } finally {
+        await assessedDive(request);
+      }
     });
 
     test('Divers and Devices', { tag: ['@divers'] }, async ({ page, request }) => {

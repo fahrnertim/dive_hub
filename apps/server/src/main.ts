@@ -14,6 +14,7 @@ import { createProviderLayer } from './providers/layer.js';
 import { createSsiAdapter } from './providers/ssi/ssi-adapter.js';
 import { createSsiClient } from './providers/ssi/ssi-client.js';
 import { createAiAccessService } from './mcp/access-service.js';
+import { createAssessmentService } from './assessment/assessment-service.js';
 import { createLocalBlobStore } from './storage/blob-store.js';
 import { createInvitations } from './users/invitations.js';
 import { createSetup } from './users/setup.js';
@@ -23,7 +24,8 @@ const config = loadConfig();
 const { db, pool } = createDb(config.databaseUrl);
 const blobs = createLocalBlobStore(config.dataDir);
 // Imports of a Provider's dives run in the worker like uploads (ADR 0030); the layer is built below.
-const imports = createImportService({ db, blobs, providerImports: () => providers.diveImports });
+const assessments = createAssessmentService(db);
+const imports = createImportService({ db, blobs, providerImports: () => providers.diveImports, afterImport: assessments.refreshUser });
 const siteImports = createSiteImportService({
   db, sources: createSiteSources({ contact: config.contact, overpassUrl: config.overpassUrl, wikidataUrl: config.wikidataSparqlUrl, ssiSitesUrl: config.ssiSitesUrl }),
 });
@@ -46,7 +48,7 @@ const aiAccesses = createAiAccessService(db, auth);
 
 const app = await buildApp(
   {
-    db, imports, siteImports, providers, blobs, auth, aiAccesses, setup, invitations: createInvitations(db), baseUrl: config.baseUrl,
+    db, imports, siteImports, providers, blobs, auth, aiAccesses, assessments, setup, invitations: createInvitations(db), baseUrl: config.baseUrl,
     maxUploadBytes: config.maxUploadBytes, trustedProxies: config.trustedProxies, webDir: config.webDir,
   },
   { logger: { level: config.logLevel } },
@@ -64,7 +66,7 @@ if (setupToken) {
   // Deliberately logged: whoever can read the server log may create the first admin (ADR 0012).
   app.log.warn(`No admin yet. Open ${config.baseUrl}/#/setup and enter this setup token (valid 24 h, until the first admin exists): ${setupToken}`);
 }
-const worker = config.inProcessWorker ? await startWorker(pool, imports, siteImports, aiAccesses, app.log) : undefined;
+const worker = config.inProcessWorker ? await startWorker(pool, imports, siteImports, aiAccesses, assessments, app.log) : undefined;
 await app.listen({ host: config.host, port: config.port });
 
 const shutdown = async () => {

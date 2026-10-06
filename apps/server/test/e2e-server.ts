@@ -32,6 +32,7 @@ import { createInvitations } from '../src/users/invitations.js';
 import { createSetup } from '../src/users/setup.js';
 import { startWorker } from '../src/worker.js';
 import { createAiAccessService } from '../src/mcp/access-service.js';
+import { createAssessmentService } from '../src/assessment/assessment-service.js';
 
 export const E2E_USER = { email: 'erika@example.com', name: 'Erika', password: 'correct horse battery staple' };
 
@@ -53,7 +54,8 @@ url.pathname = `/${dbName}`;
 const { db, pool } = createDb(url.toString());
 await migrateDatabase(db, pool, here('../drizzle'));
 const blobs = createLocalBlobStore(await mkdtemp(join(tmpdir(), 'divehub-e2e-')));
-const imports = createImportService({ db, blobs, providerImports: () => providers.diveImports });
+const assessments = createAssessmentService(db);
+const imports = createImportService({ db, blobs, providerImports: () => providers.diveImports, afterImport: assessments.refreshUser });
 
 /**
  * Overpass and Wikidata as recorded, SSI's site list hand-made in its format (test/fixtures/site-sources): the
@@ -110,7 +112,7 @@ const providers = createProviderLayer({
 const auth = createAuth({ db, baseUrl: `http://localhost:${port}`, secret: 'e2e-secret-with-enough-entropy-0123456789abcdef' });
 const aiAccesses = createAiAccessService(db, auth);
 const app = await buildApp({
-  db, imports, siteImports, providers, blobs, auth, aiAccesses, setup: createSetup(db), invitations: createInvitations(db),
+  db, imports, siteImports, providers, blobs, auth, aiAccesses, assessments, setup: createSetup(db), invitations: createInvitations(db),
   baseUrl: `http://localhost:${port}`, maxUploadBytes: 1 << 26, webDir: here('../../web/dist'),
 });
 
@@ -143,7 +145,7 @@ for (const record of [
 ]) fakeSsi.addDive(6_100_200, record);
 
 // Uploads made by the tests are processed in the background, as in the real app.
-const worker = await startWorker(pool, imports, siteImports, aiAccesses, app.log);
+const worker = await startWorker(pool, imports, siteImports, aiAccesses, assessments, app.log);
 // Test-only (never in the production app): a browser test changes a dive in an SSI account's logbook, as the User would
 // in SSI's app (ADR 0030: changes taken back). By the account's e-mail and SSI's dive number; only the fields given.
 app.post('/e2e/fake-ssi/dive', { schema: { hide: true } }, async (request) => {

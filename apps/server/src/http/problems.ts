@@ -76,6 +76,7 @@ export const PROBLEMS = {
   provider_account_held: 'An external diver here has this account; send claim to make them your diver (they merge into it)',
   diver_not_external: 'Only an external diver (one no User keeps) can be merged into another',
   provider_import_off: 'Importing dives from this account is off; choose what the import may do first',
+  finding_not_found: 'This dive has no such finding (anymore)',
   ai_access_not_found: 'No such AI access',
   ai_access_off: 'AI access is switched off on this instance; an admin can switch it on',
   provider_site_data_not_confirmed: 'Allowing dive sites from this service needs the explanation about its missing licence confirmed (confirm)',

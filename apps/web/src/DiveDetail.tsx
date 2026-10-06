@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
 import { api, ApiError, diveQuery, diversQuery, keys, unwrap, type DiveView, type OverridableField, type RecordingSummary } from './api.ts';
+import { AssessmentPanel, AssessmentProvider } from './Assessment.tsx';
 import { DeleteDiveDialog } from './DeleteDive.tsx';
 import { DepthProfile } from './DepthProfile.tsx';
 import { DiveEditForm } from './DiveEditForm.tsx';
@@ -106,7 +107,11 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
           : <DiveFacts dive={d} />}
       </Panel>
       <Participants dive={d} />
-      <Recordings dive={d} initial={recordingId} />
+      {/* The assessment belongs to the Primary recording's profile and to the panel under it (ADR 0036). */}
+      <AssessmentProvider diveId={d.id}>
+        <Recordings dive={d} initial={recordingId} />
+        <AssessmentPanel dive={d} diverName={diverName} />
+      </AssessmentProvider>
       <ProviderPanels dive={d} diverName={diverName} />
       <DiveHistory dive={d} />
       {moving && <MoveDialog dive={d} onClose={() => setMoving(false)} />}

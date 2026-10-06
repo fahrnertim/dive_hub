@@ -1,6 +1,6 @@
 ---
 title: Dive assessment - findings on a logged dive
-summary: Automatic checks on a logged Dive that point out improvement potential with the measured value, the threshold, its source and how strong the evidence is - ascent rate and the last metres, safety stop, gas left, NDL margin and ceilings, oxygen, sawtooth, reverse profiles, surface intervals and days in a row, flying, depth stability, descent; what the evidence says (often less than diver lore: reverse profiles, deep stops, headaches), what computers record (Garmin's dive alerts), how logbooks present it (Subsurface colours, Submersion's findings and trends, scores in new apps), implementation details and pitfalls; the model; decided (ADR 0036) with the prompt for slice 18.
+summary: Automatic checks on a logged Dive that point out improvement potential with the measured value, the threshold, its source and how strong the evidence is - ascent rate and the last metres, safety stop, gas left, NDL margin and ceilings, oxygen, sawtooth, reverse profiles, surface intervals and days in a row, flying, depth stability, descent; what the evidence says (often less than diver lore: reverse profiles, deep stops, headaches), what computers record (Garmin's dive alerts), how logbooks present it (Subsurface colours, Submersion's findings and trends, scores in new apps), implementation details and pitfalls; the model; decided (ADR 0036) with the prompt for slice 18 (done 2026-10-06).
 status: decided
 date: 2026-10-06
 ---
@@ -128,6 +128,9 @@ All made by the owner on 2026-10-06, each as recommended; written down as [ADR 0
 | X8 | Order and MCP | Slice 18, after MCP; an MCP tool; the planned slices move to 19–23 |
 
 ### Still to check
+- Checked while building (2026-10-06), see [ADR 0036's amendment](../decisions/0036-dive-assessment.md#amendment-2026-10-06-as-built-slice-18-engine-version-1):
+  the Mk3's samples are 1 s apart and its "ascent critical" agrees with a 15 s window; the four `dive_alert` codes were 17, 19,
+  2 and 19. Still open: false positives on a real logbook (only one pool dive was there to run the rules over).
 - **Garmin's sensor noise** on the owner's files (whether a 15 s window is enough; what the Mk3's own `ascentRate` and its
   "ascent critical" events say against our rate).
 - **What the four `dive_alert` events** on the owner's dive were (codes), to test the mapping.
@@ -181,6 +184,8 @@ All made by the owner on 2026-10-06, each as recommended; written down as [ADR 0
 - [sub-sanitizer] Submersion profile depth sanitizer: https://github.com/submersion-app/submersion/blob/main/lib/core/deco/profile_depth_sanitizer.dart
 
 ## Prompt: the dive assessment (slice 18)
+
+**Done 2026-10-06** (slice 18 in the [architecture](../spec/architecture.md)); kept for the record.
 
 ```text
 We're continuing Dive Hub. Everything you need is in this repository; read it first and don't rely on any

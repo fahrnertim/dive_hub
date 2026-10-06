@@ -346,3 +346,40 @@ export async function askMcp(api: APIRequestContext, key: string, tool: string, 
     data: { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: tool, arguments: args } },
   });
 }
+
+type AssessedFinding = { rule: string; dismissed: boolean; muted: boolean };
+
+/**
+ * Dive 77 (e2e/fixtures/assessed-computer.fit), whose assessment has several findings (ADR 0036): imported the first
+ * time; every finding shown again, whatever an earlier test put aside.
+ */
+export async function assessedDive(api: APIRequestContext): Promise<string> {
+  const { dives } = await (await api.get('/api/dives?q=77')).json() as { dives: { id: string; number: number | null; diverId: string }[] };
+  let found = dives.find((d) => d.number === 77);
+  if (!found) {
+    const upload = await api.post('/api/imports', {
+      headers, multipart: { file: { name: 'assessed-computer.fit', mimeType: 'application/octet-stream', buffer: readFileSync('e2e/fixtures/assessed-computer.fit') } },
+    });
+    const url = `/api/imports/${(await upload.json() as { id: string }).id}`;
+    await expect.poll(async () => (await (await api.get(url)).json()).status).toBe('done');
+    const id = ((await (await api.get(url)).json()) as { outcome: { diveId?: string }[] }).outcome[0]!.diveId!;
+    found = { id, number: 77, diverId: (await (await api.get(`/api/dives/${id}`)).json() as { diverId: string }).diverId };
+  }
+  const { findings } = await (await api.get(`/api/dives/${found.id}/assessment`)).json() as { findings: AssessedFinding[] };
+  for (const f of findings) {
+    if (f.dismissed) await api.put(`/api/dives/${found.id}/findings/${f.rule}/dismissal`, { data: { dismissed: false }, headers });
+    if (f.muted) await api.put(`/api/divers/${found.diverId}/muted-rules/${f.rule}`, { data: { muted: false }, headers });
+  }
+  return found.id;
+}
+
+/** Puts findings of a Dive aside as its User would: dismissed on the Dive, or their rule muted for its Diver. */
+export async function putAside(api: APIRequestContext, diveId: string, options: { dismiss?: string[] | 'all'; mute?: string[] }) {
+  const { diverId } = await (await api.get(`/api/dives/${diveId}`)).json() as { diverId: string };
+  // 'all': whatever the Dive has on this server (dives of other specs around it can add findings of their own).
+  const dismiss = options.dismiss === 'all'
+    ? (await (await api.get(`/api/dives/${diveId}/assessment`)).json() as { findings: AssessedFinding[] }).findings.map((f) => f.rule)
+    : options.dismiss ?? [];
+  for (const rule of dismiss) await api.put(`/api/dives/${diveId}/findings/${rule}/dismissal`, { data: { dismissed: true }, headers });
+  for (const rule of options.mute ?? []) await api.put(`/api/divers/${diverId}/muted-rules/${rule}`, { data: { muted: true }, headers });
+}

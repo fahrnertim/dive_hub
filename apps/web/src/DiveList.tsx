@@ -130,7 +130,11 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
                 }}
               >
                 <td className="num cell-lead">{d.number ?? t('common.none')}</td>
-                <td className="cell-main"><a href={`#/dives/${d.id}`}>{display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource)}</a></td>
+                <td className="cell-main">
+                  <a href={`#/dives/${d.id}`}>{display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource)}</a>
+                  {/* The dive assessment found something that differs from guidance (ADR 0036): text, not a colour or an icon alone. */}
+                  {d.findings > 0 && <span className="badge finding-mark">{t('logbook.findings', { count: d.findings })}</span>}
+                </td>
                 {several && <td className="cell-sub">{nameOf.get(d.diverId) ?? t('common.none')}</td>}
                 <td className="cell-sub">{d.site?.name ?? t('common.none')}</td>
                 <td className="num cell-sub">{display.depth(d.maxDepthM)}</td>

@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import { samplesQuery } from './api.ts';
+import { FindingLane, useAssessment } from './Assessment.tsx';
+import { bandSeconds, clock, formatRate } from './lib/assessment.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { perMinute, summarize } from './lib/profile.ts';
 import { depthIn, temperatureIn } from './lib/units.ts';
@@ -45,6 +47,19 @@ export function DepthProfile({ recordingId }: { recordingId: string }) {
   const summaryId = useId();
   const dark = useColorScheme();
   const { units, locale } = display;
+  // The Dive's assessment refers to its Primary recording's profile (ADR 0036): only that one is coloured by ascent
+  // speed and carries the findings' lane.
+  const { assessment, selected } = useAssessment();
+  const assessed = assessment?.recordingId === recordingId ? assessment : undefined;
+  const bands = assessed?.ascentBands;
+  const highlighted = assessed?.findings.find((f) => f.rule === selected && f.startSeconds !== null);
+  const overlay = useRef<{ bands: number[][]; stretch: [number, number] | null }>({ bands: [], stretch: null });
+  const plotRef = useRef<uPlot | null>(null);
+  const [plotBox, setPlotBox] = useState<{ left: number; width: number } | null>(null);
+  useEffect(() => {
+    overlay.current = { bands: bands ?? [], stretch: highlighted ? [highlighted.startSeconds!, highlighted.endSeconds ?? highlighted.startSeconds!] : null };
+    plotRef.current?.redraw(false);
+  }, [bands, highlighted]);
   const depthUnit = display.unit('depth');
   const temperatureUnit = display.unit('temperature');
 
@@ -85,12 +100,56 @@ export function DepthProfile({ recordingId }: { recordingId: string }) {
       return gradient;
     };
 
+    const ascent = [1, 2, 3].map((band) => token(el, `--color-ascent-${band}`, line));
+    /** Over the profile: the selected finding's stretch as a band of light, and the ascent coloured by its speed. */
+    const drawAssessment = (u: uPlot) => {
+      const { bands: stretches, stretch: chosen } = overlay.current;
+      if (stretches.length === 0 && !chosen) return;
+      const { left, top, width, height } = u.bbox;
+      const x = (seconds: number) => u.valToPos(seconds / 60, 'x', true);
+      const ratio = devicePixelRatio || 1;
+      u.ctx.save();
+      u.ctx.beginPath();
+      u.ctx.rect(left, top, width, height);
+      u.ctx.clip();
+      if (chosen) {
+        u.ctx.fillStyle = withAlpha(line, '2e');
+        u.ctx.fillRect(x(chosen[0]), top, Math.max(3 * ratio, x(chosen[1]) - x(chosen[0])), height);
+      }
+      const minutes = u.data[0] as number[];
+      const depths = u.data[1] as (number | null)[];
+      for (const [start = 0, end = 0, band = 1] of stretches) {
+        u.ctx.beginPath();
+        let drawing = false;
+        for (let i = 0; i < minutes.length; i++) {
+          const seconds = minutes[i]! * 60;
+          if (seconds < start || seconds > end || depths[i] == null) continue;
+          const px = u.valToPos(minutes[i]!, 'x', true);
+          const py = u.valToPos(depths[i]!, 'y', true);
+          if (drawing) u.ctx.lineTo(px, py);
+          else u.ctx.moveTo(px, py);
+          drawing = true;
+        }
+        // Faster is also thicker: the bands don't rest on colour alone.
+        u.ctx.strokeStyle = ascent[band - 1]!;
+        u.ctx.lineWidth = (2 + band) * ratio;
+        u.ctx.lineCap = 'round';
+        u.ctx.stroke();
+      }
+      u.ctx.restore();
+    };
+    const measure = (u: uPlot) => {
+      const ratio = devicePixelRatio || 1;
+      setPlotBox({ left: u.bbox.left / ratio, width: u.bbox.width / ratio });
+    };
+
     const axis = { stroke: text, font, labelFont: font, grid: { stroke: grid, width: 1 }, ticks: { stroke: grid } };
     const plot = new uPlot(
       {
         width: el.clientWidth,
         height: 320,
         scales: { x: { time: false }, temp: { auto: true } },
+        hooks: { draw: [drawAssessment], ready: [measure], setSize: [measure] },
         axes: [
           { ...axis, label: t('dive.minutes'), values: (_u, ticks) => ticks.map((v) => number.format(v)) },
           { ...axis, label: `${t('dive.depth')} (${depthUnit})`, values: (_u, ticks) => ticks.map((v) => number.format(Math.abs(v))) },
@@ -115,10 +174,12 @@ export function DepthProfile({ recordingId }: { recordingId: string }) {
       data,
       el,
     );
+    plotRef.current = plot;
     const resize = new ResizeObserver(() => plot.setSize({ width: el.clientWidth, height: 320 }));
     resize.observe(el);
     return () => {
       resize.disconnect();
+      plotRef.current = null;
       plot.destroy();
     };
   // display.duration is recreated each render; units and locale capture what it depends on.
@@ -128,10 +189,22 @@ export function DepthProfile({ recordingId }: { recordingId: string }) {
   const depth = samples.data?.series.find((s) => s.channel === 'depth');
   const temperature = samples.data?.series.find((s) => s.channel === 'temperature');
   const summary = depth && summarize(depth, temperature);
+  const [brisk, quick, veryQuick] = bandSeconds(bands ?? []);
+  const rate = (metresPerMinute: number) => formatRate(metresPerMinute, units, locale);
   return (
     <div className="profile-figure">
       {/* The picture for sighted users; the summary and the table say the same in text (UI review B6). */}
       <div ref={container} className="profile" role="img" aria-label={t('dive.profile')} aria-describedby={summary ? summaryId : undefined} />
+      {assessed && depth && <FindingLane totalSeconds={(depth.offsetsMs.at(-1) ?? 0) / 1000} plot={plotBox} />}
+      {/* The ascent's colours in words: what each means and how long it lasted (the text alternative to the colours). */}
+      {bands && bands.length > 0 && (
+        <ul className="ascent-legend" aria-label={t('assessment.bands')}>
+          <li className="ascent-legend-title" aria-hidden="true">{t('assessment.bands')}</li>
+          {([[4, brisk], [9, quick], [18, veryQuick]] as const).map(([limit, seconds], i) => seconds > 0 && (
+            <li key={limit}><span className="ascent-swatch" data-band={i + 1} aria-hidden="true" />{t('assessment.bandAbove', { rate: rate(limit) })}: {clock(seconds)} min</li>
+          ))}
+        </ul>
+      )}
       {summary && depth && (
         <>
           <p id={summaryId} className="visually-hidden">

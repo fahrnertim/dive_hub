@@ -745,3 +745,27 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   browser `ai-access.spec.ts` (@account, @admin) and three ui-quality cases.
 - Not yet: OAuth for claude.ai and ChatGPT, body weight (slice 19), key expiry, a filter by access in the log's UI.
 
+**Slice 18 (2026-10-06): the dive assessment** ([ADR 0036](../decisions/0036-dive-assessment.md), its
+[amendment](../decisions/0036-dive-assessment.md#amendment-2026-10-06-as-built-slice-18-engine-version-1), [client contract](clients.md#the-dive-assessment)).
+- `apps/server/src/assessment/`: `rules.ts` (pure: spike cleaning, splitting at the surface, 15 s windows, fourteen rules
+  with their thresholds, evidence labels and sources, `ENGINE_VERSION` 1), `assessment-service.ts` (stored findings,
+  refreshed per Diver by a stamp of engine version and Primary recording; dismissals, muted rules), `routes.ts`,
+  `texts.ts` (English sentences and the fixed note, for MCP).
+- Migration `0020_dive_assessment.sql`: `dive_assessment`, `dive_finding`, `finding_dismissal`, `muted_rule`.
+- Refreshed after every Import (`afterImport`), after every change through `dives/routes.ts` and
+  `dives/candidate-routes.ts` (an `onSend` hook), when read, and by the worker at start (`assess-dives`).
+- Routes: `GET /api/dives/{id}/assessment`, `PUT /api/dives/{id}/findings/{rule}/dismissal`,
+  `PUT /api/divers/{id}/muted-rules/{rule}`; `GET /api/dives` carries `findings` per Dive. Code `finding_not_found`.
+- Computer events: `COMPUTER_EVENTS` in `vocabulary.ts`, Garmin's `dive_alert` codes in `fit/fit-vocabulary.ts`.
+- MCP: `logbook_get_dive_assessment` (eight tools now).
+- Web: `Assessment.tsx` (the panel under the Recordings, the findings' lane, a context shared with the profile),
+  `DepthProfile.tsx` (the ascent coloured by speed with a legend in words, the selected finding's stretch),
+  `lib/assessment.ts`, the mark in `DiveList.tsx`; tokens `--color-ascent-1..3`.
+- Tests: `assessment-rules.test.ts` (every rule on synthetic profiles, what must not fire, 5 s data, real files when
+  present), `assessment.test.ts` (API: after imports, edits, deleting and restoring, dismiss, mute, another User, a new
+  engine version, a Dive without a Recording), the MCP tool in `mcp-endpoint.test.ts`; web `assessment.test.ts`; browser
+  `assessment.spec.ts` (@dives) and three ui-quality cases; fixture `assessed-computer.fit` (dive 77).
+- DAN's no-fly time is computed when an assessment is read (`noFlyAfter`) and returned beside the findings; a Diver's
+  muted rules are in `GET /api/divers` and on the Divers page.
+- Not yet: gas left (slice 19), the surfacing GF (slice 21), trends, rules for apnea and rebreathers.
+

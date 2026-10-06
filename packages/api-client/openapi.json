@@ -316,6 +316,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -424,6 +425,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -582,6 +584,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -783,6 +786,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -891,6 +895,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -1455,6 +1460,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -1584,6 +1590,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -1737,6 +1744,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -1932,6 +1940,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -2147,6 +2156,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -2420,6 +2430,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -2528,6 +2539,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -2636,6 +2648,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -2783,6 +2796,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -2891,6 +2905,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -2999,6 +3014,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -3178,6 +3194,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -3286,6 +3303,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -3394,6 +3412,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -3573,6 +3592,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -3681,6 +3701,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -3789,6 +3810,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -3918,6 +3940,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -4026,6 +4049,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -4134,6 +4158,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -4284,6 +4309,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -4392,6 +4418,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -4500,6 +4527,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -4779,6 +4807,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -4887,6 +4916,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -5349,6 +5379,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -5483,7 +5514,8 @@
                           "durationSeconds",
                           "maxDepthM",
                           "avgDepthM",
-                          "site"
+                          "site",
+                          "findings"
                         ],
                         "properties": {
                           "id": {
@@ -5569,6 +5601,10 @@
                                 "type": "null"
                               }
                             ]
+                          },
+                          "findings": {
+                            "type": "integer",
+                            "description": "How many findings of the dive assessment differ from guidance (note or caution) and were not put aside (ADR 0036); 0: no mark"
                           }
                         }
                       }
@@ -5751,6 +5787,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -6468,6 +6505,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -7323,6 +7361,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -7431,6 +7470,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -7539,6 +7579,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -7727,6 +7768,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -7858,6 +7900,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -7966,6 +8009,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -8097,6 +8141,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -8884,6 +8929,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -8992,6 +9038,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -9100,6 +9147,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -9840,6 +9888,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -9948,6 +9997,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -10056,6 +10106,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -10796,6 +10847,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -10904,6 +10956,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -11068,6 +11121,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -11176,6 +11230,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -12064,6 +12119,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -12172,6 +12228,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -12397,6 +12454,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -12782,6 +12840,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -12890,6 +12949,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -12998,6 +13058,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -13150,6 +13211,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -13258,6 +13320,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -13366,6 +13429,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -13518,6 +13582,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -13626,6 +13691,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -13734,6 +13800,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -13886,6 +13953,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -13994,6 +14062,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -14102,6 +14171,1068 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dives/{id}/assessment": {
+      "get": {
+        "summary": "A Dive's assessment: findings from fixed rules with their values, evidence and sources; the computer's own events",
+        "description": "Not medical advice and not a score: clients show the fixed note with it and word findings as facts (docs/spec/clients.md).",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "engineVersion",
+                    "current",
+                    "applies",
+                    "recordingId",
+                    "sampleIntervalSeconds",
+                    "ascentBands",
+                    "findings",
+                    "noFly",
+                    "computerEvents"
+                  ],
+                  "properties": {
+                    "engineVersion": {
+                      "type": "integer",
+                      "description": "The version of the rules the findings were computed with"
+                    },
+                    "current": {
+                      "type": "boolean",
+                      "description": "False while the Dive waits to be assessed with the current rules (after an update)"
+                    },
+                    "applies": {
+                      "type": "boolean",
+                      "description": "False for dives the rules don't cover (apnea, rebreathers): no findings"
+                    },
+                    "recordingId": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "description": "The Recording whose profile the findings' stretches refer to (the Primary recording)"
+                        }
+                      ]
+                    },
+                    "sampleIntervalSeconds": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number",
+                          "description": "Typical time between depth samples; at 5 s and more, short bursts can be missing"
+                        }
+                      ]
+                    },
+                    "ascentBands": {
+                      "type": "array",
+                      "items": {
+                        "type": "array",
+                        "additionalItems": false,
+                        "items": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 3
+                          }
+                        ],
+                        "minItems": 3
+                      },
+                      "description": "Stretches of the ascent [start s, end s, band]: 1 above 4, 2 above 9, 3 above 18 m/min, for colouring the profile"
+                    },
+                    "findings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "rule",
+                          "severity",
+                          "startSeconds",
+                          "endSeconds",
+                          "values",
+                          "evidence",
+                          "sources",
+                          "dismissed",
+                          "muted"
+                        ],
+                        "properties": {
+                          "rule": {
+                            "enum": [
+                              "ascent_rate",
+                              "last_metres",
+                              "safety_stop",
+                              "descent_rate",
+                              "stop_stability",
+                              "ndl",
+                              "ceiling",
+                              "ppo2",
+                              "cns",
+                              "sawtooth",
+                              "reverse_profile",
+                              "surface_interval",
+                              "dives_per_day",
+                              "deep_days"
+                            ],
+                            "description": "Which check found it; clients have a title and texts per rule (docs/spec/clients.md)"
+                          },
+                          "severity": {
+                            "enum": [
+                              "info",
+                              "note",
+                              "caution"
+                            ],
+                            "description": "info: good to know; note: differs from guidance; caution: differs clearly. Never a verdict on the dive"
+                          },
+                          "startSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "description": "The stretch of the Primary recording's profile, from its start; null for a finding about the dive as a whole"
+                              }
+                            ]
+                          },
+                          "endSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "values": {
+                            "type": "object",
+                            "description": "What was measured and the threshold it is held against, in metres, minutes (m_min: m/min), seconds, bar, percent; clients render the text from them",
+                            "additionalProperties": {
+                              "anyOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "evidence": {
+                            "type": "array",
+                            "items": {
+                              "enum": [
+                                "experiment",
+                                "observational",
+                                "case_series",
+                                "consensus",
+                                "rule",
+                                "opinion"
+                              ]
+                            },
+                            "description": "How strong the evidence behind the rule is"
+                          },
+                          "sources": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "title",
+                                "url"
+                              ],
+                              "properties": {
+                                "title": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "description": "Where the guidance comes from"
+                          },
+                          "dismissed": {
+                            "type": "boolean",
+                            "description": "The User put it aside on this Dive"
+                          },
+                          "muted": {
+                            "type": "boolean",
+                            "description": "The User put this rule aside for the Dive's Diver"
+                          }
+                        }
+                      },
+                      "description": "In the order of the dive; at most one per rule. There is no score"
+                    },
+                    "noFly": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "hours",
+                            "reason",
+                            "until",
+                            "source"
+                          ],
+                          "properties": {
+                            "hours": {
+                              "type": "integer",
+                              "description": "12 after a single dive without stops, 18 after several dives or days of diving, 24 after decompression (DAN: \"substantially longer than 18\")"
+                            },
+                            "reason": {
+                              "enum": [
+                                "single",
+                                "several",
+                                "decompression"
+                              ]
+                            },
+                            "until": {
+                              "type": "string",
+                              "format": "date-time",
+                              "description": "From when the guideline is met"
+                            },
+                            "source": {
+                              "type": "object",
+                              "required": [
+                                "title",
+                                "url"
+                              ],
+                              "properties": {
+                                "title": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          },
+                          "description": "DAN's no-fly time, on the last dive of a diving day; null on the others. Information beside the findings, not one of them"
+                        }
+                      ]
+                    },
+                    "computerEvents": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "atSeconds",
+                          "event"
+                        ],
+                        "properties": {
+                          "atSeconds": {
+                            "type": "integer"
+                          },
+                          "event": {
+                            "enum": [
+                              "ascent_critical",
+                              "safety_stop_started",
+                              "safety_stop_broken",
+                              "safety_stop_complete",
+                              "approaching_ndl",
+                              "ndl_reached",
+                              "approaching_first_stop",
+                              "ceiling_broken",
+                              "deco_stop_cleared",
+                              "deco_complete",
+                              "po2_warning",
+                              "po2_high",
+                              "po2_low",
+                              "cns_warning",
+                              "cns_critical",
+                              "otu_warning",
+                              "otu_critical"
+                            ],
+                            "description": "What the dive computer itself noted; shown beside the findings, never merged"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dives/{id}/findings/{rule}/dismissal": {
+      "put": {
+        "summary": "Put a finding aside on this Dive, or bring it back; what was computed stays",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "dismissed"
+                ],
+                "properties": {
+                  "dismissed": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          },
+          {
+            "schema": {
+              "enum": [
+                "ascent_rate",
+                "last_metres",
+                "safety_stop",
+                "descent_rate",
+                "stop_stability",
+                "ndl",
+                "ceiling",
+                "ppo2",
+                "cns",
+                "sawtooth",
+                "reverse_profile",
+                "surface_interval",
+                "dives_per_day",
+                "deep_days"
+              ]
+            },
+            "in": "path",
+            "name": "rule",
+            "required": true,
+            "description": "Which check found it; clients have a title and texts per rule (docs/spec/clients.md)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "engineVersion",
+                    "current",
+                    "applies",
+                    "recordingId",
+                    "sampleIntervalSeconds",
+                    "ascentBands",
+                    "findings",
+                    "noFly",
+                    "computerEvents"
+                  ],
+                  "properties": {
+                    "engineVersion": {
+                      "type": "integer",
+                      "description": "The version of the rules the findings were computed with"
+                    },
+                    "current": {
+                      "type": "boolean",
+                      "description": "False while the Dive waits to be assessed with the current rules (after an update)"
+                    },
+                    "applies": {
+                      "type": "boolean",
+                      "description": "False for dives the rules don't cover (apnea, rebreathers): no findings"
+                    },
+                    "recordingId": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "description": "The Recording whose profile the findings' stretches refer to (the Primary recording)"
+                        }
+                      ]
+                    },
+                    "sampleIntervalSeconds": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number",
+                          "description": "Typical time between depth samples; at 5 s and more, short bursts can be missing"
+                        }
+                      ]
+                    },
+                    "ascentBands": {
+                      "type": "array",
+                      "items": {
+                        "type": "array",
+                        "additionalItems": false,
+                        "items": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 3
+                          }
+                        ],
+                        "minItems": 3
+                      },
+                      "description": "Stretches of the ascent [start s, end s, band]: 1 above 4, 2 above 9, 3 above 18 m/min, for colouring the profile"
+                    },
+                    "findings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "rule",
+                          "severity",
+                          "startSeconds",
+                          "endSeconds",
+                          "values",
+                          "evidence",
+                          "sources",
+                          "dismissed",
+                          "muted"
+                        ],
+                        "properties": {
+                          "rule": {
+                            "enum": [
+                              "ascent_rate",
+                              "last_metres",
+                              "safety_stop",
+                              "descent_rate",
+                              "stop_stability",
+                              "ndl",
+                              "ceiling",
+                              "ppo2",
+                              "cns",
+                              "sawtooth",
+                              "reverse_profile",
+                              "surface_interval",
+                              "dives_per_day",
+                              "deep_days"
+                            ],
+                            "description": "Which check found it; clients have a title and texts per rule (docs/spec/clients.md)"
+                          },
+                          "severity": {
+                            "enum": [
+                              "info",
+                              "note",
+                              "caution"
+                            ],
+                            "description": "info: good to know; note: differs from guidance; caution: differs clearly. Never a verdict on the dive"
+                          },
+                          "startSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "description": "The stretch of the Primary recording's profile, from its start; null for a finding about the dive as a whole"
+                              }
+                            ]
+                          },
+                          "endSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "values": {
+                            "type": "object",
+                            "description": "What was measured and the threshold it is held against, in metres, minutes (m_min: m/min), seconds, bar, percent; clients render the text from them",
+                            "additionalProperties": {
+                              "anyOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "evidence": {
+                            "type": "array",
+                            "items": {
+                              "enum": [
+                                "experiment",
+                                "observational",
+                                "case_series",
+                                "consensus",
+                                "rule",
+                                "opinion"
+                              ]
+                            },
+                            "description": "How strong the evidence behind the rule is"
+                          },
+                          "sources": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "title",
+                                "url"
+                              ],
+                              "properties": {
+                                "title": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "description": "Where the guidance comes from"
+                          },
+                          "dismissed": {
+                            "type": "boolean",
+                            "description": "The User put it aside on this Dive"
+                          },
+                          "muted": {
+                            "type": "boolean",
+                            "description": "The User put this rule aside for the Dive's Diver"
+                          }
+                        }
+                      },
+                      "description": "In the order of the dive; at most one per rule. There is no score"
+                    },
+                    "noFly": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "hours",
+                            "reason",
+                            "until",
+                            "source"
+                          ],
+                          "properties": {
+                            "hours": {
+                              "type": "integer",
+                              "description": "12 after a single dive without stops, 18 after several dives or days of diving, 24 after decompression (DAN: \"substantially longer than 18\")"
+                            },
+                            "reason": {
+                              "enum": [
+                                "single",
+                                "several",
+                                "decompression"
+                              ]
+                            },
+                            "until": {
+                              "type": "string",
+                              "format": "date-time",
+                              "description": "From when the guideline is met"
+                            },
+                            "source": {
+                              "type": "object",
+                              "required": [
+                                "title",
+                                "url"
+                              ],
+                              "properties": {
+                                "title": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          },
+                          "description": "DAN's no-fly time, on the last dive of a diving day; null on the others. Information beside the findings, not one of them"
+                        }
+                      ]
+                    },
+                    "computerEvents": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "atSeconds",
+                          "event"
+                        ],
+                        "properties": {
+                          "atSeconds": {
+                            "type": "integer"
+                          },
+                          "event": {
+                            "enum": [
+                              "ascent_critical",
+                              "safety_stop_started",
+                              "safety_stop_broken",
+                              "safety_stop_complete",
+                              "approaching_ndl",
+                              "ndl_reached",
+                              "approaching_first_stop",
+                              "ceiling_broken",
+                              "deco_stop_cleared",
+                              "deco_complete",
+                              "po2_warning",
+                              "po2_high",
+                              "po2_low",
+                              "cns_warning",
+                              "cns_critical",
+                              "otu_warning",
+                              "otu_critical"
+                            ],
+                            "description": "What the dive computer itself noted; shown beside the findings, never merged"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/divers/{id}/muted-rules/{rule}": {
+      "put": {
+        "summary": "Hide a rule's findings on every Dive of a Diver the User keeps, or show them again",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "muted"
+                ],
+                "properties": {
+                  "muted": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          },
+          {
+            "schema": {
+              "enum": [
+                "ascent_rate",
+                "last_metres",
+                "safety_stop",
+                "descent_rate",
+                "stop_stability",
+                "ndl",
+                "ceiling",
+                "ppo2",
+                "cns",
+                "sawtooth",
+                "reverse_profile",
+                "surface_interval",
+                "dives_per_day",
+                "deep_days"
+              ]
+            },
+            "in": "path",
+            "name": "rule",
+            "required": true,
+            "description": "Which check found it; clients have a title and texts per rule (docs/spec/clients.md)"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -14145,7 +15276,8 @@
                       "name",
                       "isOwn",
                       "diveCount",
-                      "deviceCount"
+                      "deviceCount",
+                      "mutedRules"
                     ],
                     "properties": {
                       "id": {
@@ -14163,6 +15295,13 @@
                       },
                       "deviceCount": {
                         "type": "integer"
+                      },
+                      "mutedRules": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Rules of the dive assessment not shown for this Diver (ADR 0036); show them again with PUT /divers/{id}/muted-rules/{rule}"
                       }
                     }
                   }
@@ -14207,7 +15346,8 @@
                     "name",
                     "isOwn",
                     "diveCount",
-                    "deviceCount"
+                    "deviceCount",
+                    "mutedRules"
                   ],
                   "properties": {
                     "id": {
@@ -14225,6 +15365,13 @@
                     },
                     "deviceCount": {
                       "type": "integer"
+                    },
+                    "mutedRules": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Rules of the dive assessment not shown for this Diver (ADR 0036); show them again with PUT /divers/{id}/muted-rules/{rule}"
                     }
                   }
                 }
@@ -14316,6 +15463,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -14424,6 +15572,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -14532,6 +15681,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -14640,6 +15790,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -14788,7 +15939,8 @@
                     "name",
                     "isOwn",
                     "diveCount",
-                    "deviceCount"
+                    "deviceCount",
+                    "mutedRules"
                   ],
                   "properties": {
                     "id": {
@@ -14806,6 +15958,13 @@
                     },
                     "deviceCount": {
                       "type": "integer"
+                    },
+                    "mutedRules": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Rules of the dive assessment not shown for this Diver (ADR 0036); show them again with PUT /divers/{id}/muted-rules/{rule}"
                     }
                   }
                 }
@@ -14897,6 +16056,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -15005,6 +16165,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -15113,6 +16274,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -15221,6 +16383,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -15348,6 +16511,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -15456,6 +16620,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -15564,6 +16729,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -15672,6 +16838,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -15842,6 +17009,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -15966,6 +17134,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -16090,6 +17259,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -16214,6 +17384,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -16507,6 +17678,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -16615,6 +17787,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -16723,6 +17896,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -16831,6 +18005,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -17023,6 +18198,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -17131,6 +18307,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -17239,6 +18416,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -17347,6 +18525,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -17474,6 +18653,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -17582,6 +18762,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -17690,6 +18871,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -17798,6 +18980,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -17964,6 +19147,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -18072,6 +19256,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -18180,6 +19365,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -18288,6 +19474,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -18514,6 +19701,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -18622,6 +19810,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -18730,6 +19919,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -18838,6 +20028,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -19414,6 +20605,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -19974,6 +21166,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -20082,6 +21275,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -20190,6 +21384,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -20298,6 +21493,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -20758,6 +21954,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -21334,6 +22531,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -21442,6 +22640,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -21550,6 +22749,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -21658,6 +22858,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -21785,6 +22986,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -21893,6 +23095,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -22001,6 +23204,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -22109,6 +23313,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -22611,6 +23816,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -22719,6 +23925,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -22827,6 +24034,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -22935,6 +24143,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -23427,6 +24636,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -23535,6 +24745,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -23643,6 +24854,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -23751,6 +24963,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -24241,6 +25454,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -24349,6 +25563,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -24457,6 +25672,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -24565,6 +25781,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -24787,6 +26004,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -25359,6 +26577,7 @@
                             "provider_account_held",
                             "diver_not_external",
                             "provider_import_off",
+                            "finding_not_found",
                             "ai_access_not_found",
                             "ai_access_off",
                             "provider_site_data_not_confirmed"
@@ -25472,6 +26691,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -25580,6 +26800,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -25688,6 +26909,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -26135,6 +27357,7 @@
                                   "provider_account_held",
                                   "diver_not_external",
                                   "provider_import_off",
+                                  "finding_not_found",
                                   "ai_access_not_found",
                                   "ai_access_off",
                                   "provider_site_data_not_confirmed"
@@ -26251,6 +27474,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -26703,6 +27927,7 @@
                             "provider_account_held",
                             "diver_not_external",
                             "provider_import_off",
+                            "finding_not_found",
                             "ai_access_not_found",
                             "ai_access_off",
                             "provider_site_data_not_confirmed"
@@ -26816,6 +28041,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -26924,6 +28150,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -27732,6 +28959,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -27840,6 +29068,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -27948,6 +29177,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -28137,6 +29367,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -28394,6 +29625,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -28502,6 +29734,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -28610,6 +29843,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -28799,6 +30033,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -28992,6 +30227,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -29100,6 +30336,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -29208,6 +30445,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -29397,6 +30635,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -29618,6 +30857,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -29726,6 +30966,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -29834,6 +31075,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -30023,6 +31265,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -30334,6 +31577,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -30442,6 +31686,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -30550,6 +31795,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -30739,6 +31985,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -30866,6 +32113,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -31449,6 +32697,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -31557,6 +32806,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -31665,6 +32915,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -31854,6 +33105,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -32247,6 +33499,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -32355,6 +33608,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -32463,6 +33717,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -32652,6 +33907,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -32824,6 +34080,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -33031,6 +34288,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -33139,6 +34397,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -33484,6 +34743,7 @@
                                     "provider_account_held",
                                     "diver_not_external",
                                     "provider_import_off",
+                                    "finding_not_found",
                                     "ai_access_not_found",
                                     "ai_access_off",
                                     "provider_site_data_not_confirmed"
@@ -33683,6 +34943,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -34036,6 +35297,7 @@
                                   "provider_account_held",
                                   "diver_not_external",
                                   "provider_import_off",
+                                  "finding_not_found",
                                   "ai_access_not_found",
                                   "ai_access_off",
                                   "provider_site_data_not_confirmed"
@@ -34234,6 +35496,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -34342,6 +35605,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -34794,6 +36058,7 @@
                                       "provider_account_held",
                                       "diver_not_external",
                                       "provider_import_off",
+                                      "finding_not_found",
                                       "ai_access_not_found",
                                       "ai_access_off",
                                       "provider_site_data_not_confirmed"
@@ -34994,6 +36259,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -35102,6 +36368,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -35210,6 +36477,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -35399,6 +36667,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -35750,6 +37019,7 @@
                                   "provider_account_held",
                                   "diver_not_external",
                                   "provider_import_off",
+                                  "finding_not_found",
                                   "ai_access_not_found",
                                   "ai_access_off",
                                   "provider_site_data_not_confirmed"
@@ -35948,6 +37218,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -36056,6 +37327,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -36164,6 +37436,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -36353,6 +37626,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -36561,6 +37835,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -36669,6 +37944,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -36777,6 +38053,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -36966,6 +38243,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -37261,6 +38539,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -37369,6 +38648,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -37498,6 +38778,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -37787,6 +39068,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -37967,6 +39249,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"
@@ -38100,6 +39383,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
                         "provider_site_data_not_confirmed"

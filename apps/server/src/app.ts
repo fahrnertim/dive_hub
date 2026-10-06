@@ -24,6 +24,8 @@ import type { SiteImportService } from './sites/import/site-import-service.js';
 import { siteImportRoutes } from './sites/import/site-import-routes.js';
 import type { ProviderLayer } from './providers/layer.js';
 import { providerRoutes } from './providers/routes.js';
+import { assessmentRoutes } from './assessment/routes.js';
+import type { AssessmentService } from './assessment/assessment-service.js';
 import { aiAccessRoutes } from './mcp/access-routes.js';
 import type { AiAccessService } from './mcp/access-service.js';
 import { mcpEndpoint } from './mcp/endpoint.js';
@@ -44,6 +46,8 @@ export interface AppDeps {
   providers: ProviderLayer;
   blobs: BlobStore;
   auth: Auth;
+  /** The dive assessment (ADR 0036): kept up to date after whatever changes a logbook. */
+  assessments: AssessmentService;
   /** AI accesses to the MCP endpoint, the instance's switch and the log (ADR 0035). */
   aiAccesses: AiAccessService;
   setup: Setup;
@@ -91,6 +95,7 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
   await app.register(apiRoutes, { prefix: '/api', ...deps });
   await app.register(diveRoutes, { prefix: '/api', ...deps, dives: createDiveService(deps.db), pushes: deps.providers.pushes });
   await app.register(candidateRoutes, { prefix: '/api', ...deps, candidates: createCandidates(deps.db) });
+  await app.register(assessmentRoutes, { prefix: '/api', auth: deps.auth, assessments: deps.assessments });
   await app.register(diverRoutes, { prefix: '/api', ...deps, divers: createDiverService(deps.db) });
   await app.register(siteRoutes, { prefix: '/api', ...deps, sites: createSiteService(deps.db) });
   await app.register(siteImportRoutes, { prefix: '/api', ...deps });

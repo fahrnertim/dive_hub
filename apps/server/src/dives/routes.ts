@@ -20,6 +20,7 @@ import { waterMismatch } from './water.js';
 import { recordingPosition } from '../sites/dive-site-link.js';
 import { PositionSchema } from '../sites/routes.js';
 import type { PushService } from '../providers/push-service.js';
+import type { AssessmentService } from '../assessment/assessment-service.js';
 import { ProviderServiceError } from '../providers/registry.js';
 import { replyProviderError } from '../providers/routes.js';
 
@@ -29,6 +30,7 @@ export interface DiveRouteDeps {
   dives: DiveService;
   /** Deleting a Dive asks every Provider it is at (ADR 0026, 0027). */
   pushes: PushService;
+  assessments: AssessmentService;
 }
 
 const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
@@ -197,8 +199,15 @@ const DeleteProblem = Type.Object({
 /** Deleted Dives listed at most (newest deletion first). */
 const DELETED_SHOWN = 100;
 
-export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { db, auth, dives, pushes }) => {
+export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { db, auth, dives, pushes, assessments }) => {
   app.addHook('onRequest', requireUser(auth));
+  // Whatever changed a Dive may change its findings and those of the dives around it (ADR 0036): brought up to date
+  // before the answer goes out, so the client's next read sees them. A failure here never fails the change itself.
+  app.addHook('onSend', async (request, reply) => {
+    if (request.method === 'GET' || reply.statusCode >= 300 || !request.user) return;
+    await assessments.refreshUser(request.user.id).catch((error) => request.log.error({ err: error }, 'dive assessment failed'));
+  });
+
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof DiveError) return reply.code(STATUS[error.code]).send(problem(error.code));
     if (error instanceof ProviderServiceError) return replyProviderError(error, reply);
