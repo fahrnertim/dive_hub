@@ -24,6 +24,7 @@ date: 2026-10-02
 | Garmin Descent multi-gas dive | wanted (if available) |
 | Garmin Descent with tank transmitter (tank pod) | later (no file yet) |
 | Suunto FIT + JSON | later phase |
+| Suunto dive with a tank pod (pressure over the dive, so a measured SAC) | owner can provide (2026-10-06); for Suunto import and the gas tools ([note](../docs/research/2026-10-06-gas-consumption-planning.md)) |
 
 ## Fixtures
 

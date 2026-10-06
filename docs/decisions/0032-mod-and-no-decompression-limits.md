@@ -8,7 +8,9 @@ date: 2026-10-06
 # ADR 0032: MOD and bottom time on the Tools page - Bühlmann ZHL-16C with gradient factors, capped by oxygen and gas
 
 ## Status
-Accepted – 2026-10-06. Not built yet. Designed in [MOD and no-decompression limits](../research/2026-10-06-gas-and-ndl-tools.md);
+Accepted – 2026-10-06. Not built yet. Amended by [ADR 0033](0033-gas-plans-rules-and-groups.md) (slice 20): the bottom
+time's gas limit becomes the chosen gas rule's ascent pressure, and its default SAC the Diver's planning SAC from the
+logbook (FIT carries SAC only with a tank pod; the owner's Garmin files have none). Designed in [MOD and no-decompression limits](../research/2026-10-06-gas-and-ndl-tools.md);
 builds on the Tools page and Cylinders of [ADR 0031](0031-lead-suit-cylinders-and-lead-estimate.md).
 
 ## Context

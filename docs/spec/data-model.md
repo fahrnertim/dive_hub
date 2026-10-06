@@ -1,6 +1,6 @@
 ---
 title: Data model
-summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios; Dives without a Recording, offsets and their source, a Provider's dives as Originals, Recordings and Imports (ADR 0030); planned: lead, weighting feedback, exposure suit, Cylinders and body weight (ADR 0031); SAC and OTU on Recordings for the bottom-time tool (ADR 0032).
+summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios; Dives without a Recording, offsets and their source, a Provider's dives as Originals, Recordings and Imports (ADR 0030); planned: lead, weighting feedback, exposure suit, Cylinders and body weight (ADR 0031); SAC and OTU on Recordings for the bottom-time tool (ADR 0032); SAC per Dive and gas plans for groups (ADR 0033).
 status: draft
 date: 2026-10-06
 ---
@@ -223,6 +223,14 @@ stored: computed on request. MOD, best mix, EAD and END for any gas mix; for a p
 SAC, the shortest of the no-decompression limit (ZHL-16C with the Diver's GF, clean tissues), the oxygen limit and the
 gas, and which binds. Reads the Diver's Recordings (GF, SAC) and recent Dives (the 48-hour warning), the Cylinder
 catalogue (ADR 0031) and the planned site's water type. See the [gas and NDL note](../research/2026-10-06-gas-and-ndl-tools.md).
+
+**Gas plan** (planned, [ADR 0033](../decisions/0033-gas-plans-rules-and-groups.md), slice 20) — not stored: computed on
+request for levels and a group of Divers, each with a Cylinder and a SAC; the gas rule's turn and ascent pressures per
+Diver (rock bottom at every level by default, never below 50 bar), the controlling Diver, real gas above 200 bar. Only
+Divers the User manages bring their logbook SAC; others a typed one (ADR 0028). Amends ADR 0032's gas limit and SAC.
+**SAC per Dive** is computed from its Cylinder (one or identical cylinders, both pressures, a volume, at least 15 minutes)
+or a tank pod's SAC, not stored; a Diver's **planning SAC** is the 85th percentile of their last 20 such Dives (at least
+5, else 20 L/min). See the [gas consumption note](../research/2026-10-06-gas-consumption-planning.md).
 
 **Equipment use** — `(Dive, Equipment item, configuration note)`.
 
@@ -534,6 +542,25 @@ Edge cases:
 - *No Recording with a GF* (an SSI-only logbook, or another computer): GF high 85, "default".
 - *EAN40 at 30 m:* ppO2 1.6, the oxygen limit (45 min) is shown beside the NDL, and the page says 1.6 is the contingency
   limit.
+
+### 7. A guided group's gas (planned, ADR 0033)
+
+A guide plans 18 m for 30 min, then 10 m for 10 min, with Tim (his own Diver; planning SAC 19 L/min from 12 Dives), Anna
+(another User's Diver; SAC typed 16), Bob (an external Diver; default 25) and Lena (SAC typed 18, a 12 L steel at 220 bar;
+the others an AL80 at 200 bar). Rule: rock bottom, never below 50 bar.
+
+1. Rock bottom at 18 m: Tim and Bob about 52 bar (their SAC + the highest other, ×2); Anna and Lena under 50, so 50.
+2. Bob reaches his ascent pressure at about minute 24, Tim at about 32: the group leaves 18 m at minute 24; Bob is the
+   controlling Diver; the page shows everyone's pressures then and suggests a larger cylinder for Bob.
+3. Nothing is stored; Anna's and Lena's typed values stay in the address, and nothing of Anna's logbook was read.
+
+Edge cases:
+- *Thirds chosen for a wreck penetration:* the turn is by litres of the smallest supply relative to its consumer; the page
+  says thirds need overhead training.
+- *Tim's Dives with two different cylinders* don't give a SAC; with fewer than 5 usable Dives his planning SAC is 20,
+  "default".
+- *A 300 bar fill:* about 10 % less gas than ideal; the pressures account for it.
+- *30 m instead of 18 m:* rock bottom rises well above 50 bar, and the page shows why the fixed reserve isn't enough there.
 
 ## Open questions
 

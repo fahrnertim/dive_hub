@@ -139,7 +139,7 @@ _German_: Tauchreise
 
 ## Gear and planning (planned)
 
-Planned in [ADR 0031](decisions/0031-lead-suit-cylinders-and-lead-estimate.md) and [ADR 0032](decisions/0032-mod-and-no-decompression-limits.md); not built yet.
+Planned in [ADR 0031](decisions/0031-lead-suit-cylinders-and-lead-estimate.md) and [ADR 0032](decisions/0032-mod-and-no-decompression-limits.md) and [ADR 0033](decisions/0033-gas-plans-rules-and-groups.md); not built yet.
 
 **Lead**:
 The ballast a Diver carried on a Dive: one or more amounts with where they sat (belt, integrated, trim, ankle, backplate), and their total. No lead logged means unknown; 0 means none was carried.
@@ -197,7 +197,7 @@ _Avoid_: Oxygen toxicity (that is the harm), O2 clock
 _German_: Sauerstoffbelastung
 
 **SAC**:
-A diver's gas consumption at the surface in litres per minute; at depth it multiplies by the ambient pressure. Dive Hub takes it from the Diver's computer (FIT) or as typed.
+A diver's gas consumption at the surface in litres per minute; at depth it multiplies by the ambient pressure. Dive Hub computes it per Dive from its Cylinder's pressures (or a tank pod), plans with a high percentile of recent Dives, or takes it as typed ([ADR 0033](decisions/0033-gas-plans-rules-and-groups.md)).
 _Avoid_: RMV (fine as a synonym in UI text), air consumption, breathing rate
 _German_: Atemminutenvolumen (AMV)
 
@@ -205,6 +205,36 @@ _German_: Atemminutenvolumen (AMV)
 How long a planned dive may stay at its depth: the shortest of the no-decompression limit, the oxygen limit and the gas above the reserve, said with which one binds. An estimate on the Tools page, never a substitute for the dive computer.
 _Avoid_: Dive time, NDL (one of its limits), runtime
 _German_: Grundzeit
+
+**Gas plan**:
+How much gas a planned dive uses, for one Diver or a group: per Diver and segment the litres and pressures, and where the dive turns and ascends by a gas rule. Computed on the Tools page, never stored ([ADR 0033](decisions/0033-gas-plans-rules-and-groups.md)).
+_Avoid_: Air plan, gas calculation, consumption plan
+_German_: Gasplanung
+
+**Gas rule**:
+A rule that says how much of the gas may be used before turning or ascending: a fixed reserve, a fixed ascent pressure, halves, thirds, sixths, or rock bottom.
+_Avoid_: Reserve rule, air rule
+_German_: Gasregel (on screen: "Drittelregel", "Halbe-Regel")
+
+**Rock bottom**:
+The gas two divers need to reach the surface together on one supply from the worst point of a dive, with stress and time to solve the problem. The pressure where the ascent must start, at the latest.
+_Avoid_: Minimum gas (fine in UI text), reserve (that is fixed)
+_German_: Mindestgas (Rock Bottom)
+
+**Turn pressure**:
+The pressure at which a dive that comes back the way it went heads back (halves, thirds, sixths).
+_Avoid_: Return pressure, half-tank
+_German_: Umkehrdruck
+
+**Ascent pressure**:
+The pressure at which a Diver must start the ascent: rock bottom, never below the reserve, or a fixed value a briefing sets ("up at 100 bar").
+_Avoid_: Turn pressure (that is horizontal), reserve
+_German_: Aufstiegsdruck
+
+**Controlling diver**:
+In a group's gas plan, the Diver who reaches a turn or ascent pressure first and so decides when the group turns or ascends.
+_Avoid_: Worst diver, weakest link, limiting diver
+_German_: bestimmender Taucher
 
 **Tools**:
 The page for planning aids such as the lead estimate; the later home of a dive planner that combines them around a planned dive.

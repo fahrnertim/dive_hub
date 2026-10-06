@@ -1,6 +1,6 @@
 ---
 title: Product specification
-summary: Dive Hub is a self-hosted hub that collects dive data from many sources and can forward it to connected services; later features (auto-import of sites near Dives, planning tools: a lead estimate, MOD and bottom time).
+summary: Dive Hub is a self-hosted hub that collects dive data from many sources and can forward it to connected services; later features (auto-import of sites near Dives, planning tools: a lead estimate, MOD and bottom time, gas plans for groups).
 status: draft
 date: 2026-10-06
 ---
@@ -103,7 +103,11 @@ Noted for later; not designed or decided yet.
   (slice 18). The second is **MOD and bottom time**, decided in [ADR 0032](../decisions/0032-mod-and-no-decompression-limits.md)
   and designed in the [gas and NDL note](../research/2026-10-06-gas-and-ndl-tools.md): MOD, best mix, EAD and END for any
   mix; for air and nitrox to 40 m the shortest of the no-decompression limit (Bühlmann ZHL-16C with the Diver's own GF),
-  the oxygen limit and the gas (slice 19). Not decided yet: buoyancy per Equipment item (waits for Equipment items),
+  the oxygen limit and the gas (slice 19). The third is a **gas plan** for a Diver or a group, decided in
+  [ADR 0033](../decisions/0033-gas-plans-rules-and-groups.md) and designed in the
+  [gas consumption note](../research/2026-10-06-gas-consumption-planning.md): levels, every gas rule explained (rock bottom
+  by default, never below 50 bar), any number of Divers with the controlling one marked, SAC per Dive from the logbook
+  (slice 20). Not decided yet: sharing a planning SAC with buddies, buoyancy per Equipment item (waits for Equipment items),
   repetitive dives from the logbook, sites' altitude, trimix limits, what a planned dive is and whether it becomes the
   Dive once dived.
 
