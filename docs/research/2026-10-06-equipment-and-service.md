@@ -1,6 +1,6 @@
 ---
 title: Equipment items and service intervals
-summary: Equipment items of a Diver (the data model's Equipment item, not built), which Dives they were used on, and service schedules the User sets up (several per item, by months, dives or hours, whichever first) with service records that reset them; how logbooks and formats do it (Subsurface has none, Submersion the richest model, MacDive and SSI dates only, Diving Log counts all dives, UDDF days only, DiveJSON months and dives), maintenance patterns from aviation and bike trackers, pitfalls; the model; decided (ADR 0034) with the prompt for slice 21.
+summary: Equipment items of a Diver (the data model's Equipment item, not built), which Dives they were used on, and service schedules the User sets up (several per item, by months, dives or hours, whichever first) with service records that reset them; how logbooks and formats do it (Subsurface has none, Submersion the richest model, MacDive and SSI dates only, Diving Log counts all dives, UDDF days only, DiveJSON months and dives), maintenance patterns from aviation and bike trackers, pitfalls; the model; decided (ADR 0034) with the prompt for slice 22.
 status: decided
 date: 2026-10-06
 ---
@@ -112,7 +112,7 @@ All made by the owner on 2026-10-06; written down as [ADR 0034](../decisions/003
 | E7 | Parts | One item per set, several schedules; parts as items later |
 | E8 | Cylinders | A Dive's Cylinder may name the Diver's cylinder item |
 | E9 | SSI's gear | Later, as a Provider kind `equipment` |
-| E10 | Order | Slice 21, after the planning tools |
+| E10 | Order | Slice 22, after the planning tools |
 
 ### Still to check
 - **Existing Devices:** the migration creates their items; whether a Device whose Diver changed (ADR 0016) keeps one item.
@@ -121,7 +121,7 @@ All made by the owner on 2026-10-06; written down as [ADR 0034](../decisions/003
 
 ## Slices
 
-1. **Slice 21: Equipment items and service schedules** (after slices 17–20): items, usage, schedules and records,
+1. **Slice 22: Equipment items and service schedules** (after slices 18–21): items, usage, schedules and records,
    reminders in the app, Devices linked, a Dive's Cylinder naming an item. Smallest thing to learn from: whether "on every
    Dive while in use" with exceptions matches how the owner logs.
 2. **Later:** lending and holders over time; parts as items; receipts; SSI's gear; the suit naming an item; gear buoyancy
@@ -144,7 +144,7 @@ All made by the owner on 2026-10-06; written down as [ADR 0034](../decisions/003
 - [strava] Strava shoe notifications: https://support.strava.com/en-us/articles/15401878-how-do-i-manage-shoe-mileage-notifications-on-strava
 - [undercurrent] Undercurrent, regulator servicing (manufacturers' "2 years or 100 dives"): https://undercurrent.org/UCnow/dive_magazine/2018/RegulatorServicing201801.html
 
-## Prompt: Equipment items and service schedules (slice 21)
+## Prompt: Equipment items and service schedules (slice 22)
 
 ```text
 We're continuing Dive Hub. Everything you need is in this repository; read it first and don't rely on any
@@ -152,7 +152,7 @@ local memory (AGENTS.md Rule #1).
 
 Task: Equipment items of a Diver with service schedules the User sets up and service records, usage from items on
 every Dive while in use (with exceptions), items put on single Dives, Devices and a Dive's Cylinder; due dates shown
-in the app. As decided in ADR 0034 and docs/research/2026-10-06-equipment-and-service.md. Slices 17-20 are built.
+in the app. As decided in ADR 0034 and docs/research/2026-10-06-equipment-and-service.md. Slices 18-21 are built.
 Everything is decided; don't re-litigate it. Ask me before building only if something in the code makes it harder
 than it looks.
 
@@ -184,12 +184,13 @@ Build:
   records, retiring), the item form (the note that intervals come from the manual or the stamp, no defaults), the
   record form (which schedules it resets), gear on the dive page (from every-dive items, put on, taken off), the
   Cylinder naming an item, a count in the navigation and a dismissible logbook notice; translations (en, de).
+- MCP (ADR 0035): an `equipment_list` tool (items, schedules with due, due soon and overdue and their reasons, records).
 - Tests: test-first for usage and due (whichever first, from the last record, a backdated record, a deleted Dive, taken
   off on a holiday, a Device's Dives, a named cylinder, months across month ends); API tests (another User's Diver's
   items unseen); browser tests (@equipment, @dives); ui-quality cases (nothing yet, due soon, overdue, retired, a
   schedule by dives).
 - Docs: ADR 0034 (amend with what changed while building), data model, glossary (no longer planned), architecture
-  (slice 21), clients.md (equipment duties: intervals are the User's, due reasons shown, notices dismissible), index.md;
+  (slice 22), clients.md (equipment duties: intervals are the User's, due reasons shown, notices dismissible), index.md;
   mark this prompt done.
 
 Rules:

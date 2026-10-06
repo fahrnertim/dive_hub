@@ -95,6 +95,10 @@ rejected, and why — in [docs/skills.md](docs/skills.md).
 - **email-and-password-best-practices**: same rules as better-auth-\* (never `npx auth@latest migrate`; use
   `auth:generate` + drizzle-kit). Keep our argon2id parameters (m = 19 MiB, t = 2, p = 1) and 15-character
   minimum from [ADR 0012](docs/decisions/0012-invitations-and-admin-bootstrap.md), not the skill's example values.
+- **mcp-builder** (anthropics/skills): TypeScript only (ignore its Python guide), our Fastify app and SDK v2, tool schemas per
+  [ADR 0035](docs/decisions/0035-mcp-connector.md) (TypeBox if the SDK takes JSON Schema, else Zod only in `src/mcp/`). Its
+  evaluation scripts (Python, Anthropic API) run only when the owner asks, with their own key, against fake data, never a
+  real logbook. Read-only tools; write tools need a new ADR.
 - **better-layout**, **better-typography**, **better-colors** (jakubkrehel): our tokens and hex notation stay (no oklch rewrite).
   Their hand-offs to `better-accessibility`, `better-ui` and `better-writing` go to our `accessibility` skill, `emil-design-eng`
   and the writing rules in [docs/spec/design-system.md](docs/spec/design-system.md#writing). Surfaces follow

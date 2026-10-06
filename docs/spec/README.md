@@ -1,6 +1,6 @@
 ---
 title: Product specification
-summary: Dive Hub is a self-hosted hub that collects dive data from many sources and can forward it to connected services; later features (auto-import of sites near Dives, planning tools: a lead estimate, MOD and bottom time, gas plans for groups; equipment with service intervals).
+summary: Dive Hub is a self-hosted hub that collects dive data from many sources and can forward it to connected services; later features (auto-import of sites near Dives, planning tools: a lead estimate, MOD and bottom time, gas plans for groups; equipment with service intervals; an MCP connector for LLMs).
 status: draft
 date: 2026-10-06
 ---
@@ -98,16 +98,16 @@ Noted for later; not designed or decided yet.
   planned dive. The first is a **lead estimate** (weight calculator), decided in
   [ADR 0031](../decisions/0031-lead-suit-cylinders-and-lead-estimate.md) and designed in the
   [weight calculator note](../research/2026-10-06-weight-calculator.md): Dives first record lead (placed, with how it felt),
-  the exposure suit and Cylinders, Divers a body weight (slice 17); then a Tools page suggests lead from the Diver's own
+  the exposure suit and Cylinders, Divers a body weight (slice 18); then a Tools page suggests lead from the Diver's own
   Dives with the same suit, adjusted by physics for the cylinder and water, with a rule of thumb when there is no history
-  (slice 18). The second is **MOD and bottom time**, decided in [ADR 0032](../decisions/0032-mod-and-no-decompression-limits.md)
+  (slice 19). The second is **MOD and bottom time**, decided in [ADR 0032](../decisions/0032-mod-and-no-decompression-limits.md)
   and designed in the [gas and NDL note](../research/2026-10-06-gas-and-ndl-tools.md): MOD, best mix, EAD and END for any
   mix; for air and nitrox to 40 m the shortest of the no-decompression limit (Bühlmann ZHL-16C with the Diver's own GF),
-  the oxygen limit and the gas (slice 19). The third is a **gas plan** for a Diver or a group, decided in
+  the oxygen limit and the gas (slice 20). The third is a **gas plan** for a Diver or a group, decided in
   [ADR 0033](../decisions/0033-gas-plans-rules-and-groups.md) and designed in the
   [gas consumption note](../research/2026-10-06-gas-consumption-planning.md): levels, every gas rule explained (rock bottom
   by default, never below 50 bar), any number of Divers with the controlling one marked, SAC per Dive from the logbook
-  (slice 20). Not decided yet: sharing a planning SAC with buddies, buoyancy per Equipment item (waits for Equipment items),
+  (slice 21). Not decided yet: sharing a planning SAC with buddies, buoyancy per Equipment item (waits for Equipment items),
   repetitive dives from the logbook, sites' altitude, trimix limits, what a planned dive is and whether it becomes the
   Dive once dived.
 
@@ -115,8 +115,13 @@ Noted for later; not designed or decided yet.
   up (several per item; months, dives and/or hours, whichever first) and service records; usage from items on every Dive
   while in use (with exceptions), items put on single Dives, Devices and Cylinders; reminders in the app. Decided in
   [ADR 0034](../decisions/0034-equipment-items-and-service-schedules.md), designed in the
-  [equipment note](../research/2026-10-06-equipment-and-service.md) (slice 21). Later: lending and holders over time, parts,
+  [equipment note](../research/2026-10-06-equipment-and-service.md) (slice 22). Later: lending and holders over time, parts,
   receipts, SSI's gear list.
+
+- **An MCP connector** (owner, 2026-10-06). A User lets their LLM client read their logbook through a read-only MCP
+  endpoint in the app, with a personal token (OAuth for claude.ai and ChatGPT later), scopes, a log and an admin switch.
+  Decided in [ADR 0035](../decisions/0035-mcp-connector.md), designed in the [MCP note](../research/2026-10-06-mcp-connector.md)
+  (slice 17, next; the planned features move to slices 18–22 and add their tools). Later: OAuth, writes with confirmation.
 
 ## Non-goals (so far)
 

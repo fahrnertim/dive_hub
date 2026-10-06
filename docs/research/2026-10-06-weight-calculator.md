@@ -269,9 +269,9 @@ All made by the owner on 2026-10-06, each as recommended; written down as [ADR 0
 
 ## Slices
 
-1. **Slice A (17): logging lead, suit, Cylinders and feedback.** Needs nothing new; gives the estimate its history and the
+1. **Slice A (18): logging lead, suit, Cylinders and feedback.** Needs nothing new; gives the estimate its history and the
    SSI import 45 weights at once. Smallest thing to learn from: whether Users log feedback at all.
-2. **Slice B (18): the lead estimate and the Tools page.** Needs A's values (and some dives logged with them).
+2. **Slice B (19): the lead estimate and the Tools page.** Needs A's values (and some dives logged with them).
 3. **Later:** Equipment items (gear per Dive, service records) → gear buoyancy as differences and regression; sending lead
    and Cylinders to SSI; gas planning on the same Cylinders and the Recordings' SAC; the dive planner combining the tools
    around a planned dive.
@@ -310,7 +310,7 @@ All made by the owner on 2026-10-06, each as recommended; written down as [ADR 0
 - [divebeginner] https://divebeginner.com/weight-calculator/
 - [buoyancy-calc] https://apps.apple.com/us/app/id1482332472
 
-## Prompt A: logging lead, suit, Cylinders and feedback (slice 17)
+## Prompt A: logging lead, suit, Cylinders and feedback (slice 18)
 
 ```text
 We're continuing Dive Hub. Everything you need is in this repository; read it first and don't rely on any
@@ -356,12 +356,14 @@ Build:
   (pick from the catalogue or type), "Same as last dive"; history lines; body weight on the Diver's page (managed
   Divers only, saying who sees it); metric/imperial (kg/lb, L/cu ft, bar/psi) through lib/units.ts; translations
   (en, de: Blei, Tauchanzug, Flasche).
+- MCP (ADR 0035): the Dive tools return lead, feedback, suit and Cylinders; the Diver tool returns body weight
+  (managed Divers only).
 - Tests: test-first where it fits; lead totals (unknown vs 0), Revisions and version; the catalogue's values; the SSI
   fill and three-way for lead and cylinder (fake SSI with weights and tanks); body weight hidden from other Users;
   browser tests with area tags (@dives, @divers); ui-quality cases for every new state (no lead logged, no lead, a
   drysuit, several Cylinders).
 - Docs: ADR 0031 (amend with what changed while building), data model (built), glossary (no longer planned),
-  architecture (slice 17), clients.md (the new Dive values, units, body weight privacy, the import's new fields), the SSI
+  architecture (slice 18), clients.md (the new Dive values, units, body weight privacy, the import's new fields), the SSI
   reference (tank type IDs), index.md; mark this prompt done.
 
 Rules:
@@ -372,7 +374,7 @@ Rules:
 - End with a short summary: what was built, what you checked, simplifications, what you need me to decide.
 ```
 
-## Prompt B: the lead estimate and the Tools page (slice 18)
+## Prompt B: the lead estimate and the Tools page (slice 19)
 
 ```text
 We're continuing Dive Hub. Everything you need is in this repository; read it first and don't rely on any
@@ -402,10 +404,12 @@ Build:
 - Web: a Tools page (a navigation entry; the dive planner's later home) with the calculator: the Diver, water, suit,
   Cylinders (catalogue), the answer with its range, the dives it rests on, each adjustment, and the weight-check advice
   always visible; a hint on the dive form ("last time with this suit: 8 kg, felt right"); translations (en, de).
+- MCP (ADR 0035): a `planning_lead_estimate` tool with the same inputs, answering the range, its reasons and the
+  weight-check advice in every result.
 - Tests: test-first for estimate.ts (scenario 5's numbers, unknown water left out, 0 lead, feedback amounts, no history
   with and without body weight, imperial rounding); API tests (only managing Users); browser tests (@tools, @dives)
   and ui-quality cases (no history, rule of thumb only, based on N dives).
-- Docs: ADR 0031 (amend), data model, glossary, architecture (slice 18), clients.md (the estimate's duties: range,
+- Docs: ADR 0031 (amend), data model, glossary, architecture (slice 19), clients.md (the estimate's duties: range,
   reasons, the weight-check advice, never presented as certain), index.md; mark this prompt done.
 
 Rules:
