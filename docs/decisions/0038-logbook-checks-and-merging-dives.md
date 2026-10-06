@@ -1,6 +1,6 @@
 ---
 title: "ADR 0038: Logbook checks, and merging two Dives"
-summary: Planned - a scan of the logbook for contradictions (a Dive without a Recording overlapping one with a Recording; two Dives of one Diver overlapping) by pure rules and the import's own matching, computed each time, shown in "Needs your decision" with resolutions (merge, two dives, correct a time, move to another Diver, delete); nothing merges unasked. Merging two Dives is fill the kept one, move the Provider link, delete the other the normal way. A Dive linked to a Provider moves to another Diver as a copy, the old one deleted with its link so the import doesn't bring it back. Amends 0016, 0030. Slices 18b (merge) and 18c (checks).
+summary: Built (slices 18b, 18c) - a scan of the logbook for contradictions (a Dive without a Recording overlapping one with a Recording; two Dives of one Diver overlapping) by pure rules and the import's own matching, computed each time, shown in "Needs your decision" with resolutions (merge, two dives, correct a time, move to another Diver, delete); nothing merges unasked. Merging two Dives is fill the kept one, move the Provider link, delete the other the normal way. A Dive linked to a Provider moves to another Diver as a copy, the old one deleted with its link so the import doesn't bring it back. Amends 0016, 0030.
 status: accepted
 date: 2026-10-07
 ---
@@ -8,8 +8,8 @@ date: 2026-10-07
 # ADR 0038: Logbook checks, and merging two Dives
 
 ## Status
-Accepted – 2026-10-07 (owner). Slice 18b (merging, moving a linked Dive) is built, see the
-[amendment](#amendment-2026-10-07-as-built-slice-18b); slice 18c (the checks) is planned. Amends
+Accepted – 2026-10-07 (owner). Built on 2026-10-07: slice 18b (merging, moving a linked Dive) and slice 18c (the checks);
+what the builds settled is in the two amendments below. Amends
 [ADR 0016](0016-recording-decisions-and-divers.md) ("Needs your decision" also holds logbook checks; moving a linked
 Dive) and [ADR 0030](0030-importing-dives-from-providers.md) (entries are no longer kept out of that panel). Designed in
 [Logbook housekeeping](../research/2026-10-07-logbook-housekeeping.md).
@@ -120,3 +120,22 @@ and read links as the Pushes do (per Dive and Provider, `currentRemote`), never 
 - **The dive page tells of an overlapping Dive already** (a notice with "Merge the two…"). Slice 18c adds the logbook's
   panel, remembering "these are two dives", and the count after an Import.
 - **Not carried over:** findings put aside on the Dive that goes; they are computed again on the kept Dive.
+
+## Amendment 2026-10-07: as built (slice 18c)
+- **Two rules, version 1:** `recording_beside_entry` (exactly one of the two Dives has a Recording; the import's five
+  minutes of tolerance) and `overlapping_dives` (both or neither has one; a real overlap). The depth check doesn't decide
+  whether a pair is a check, only whether it is **obvious**: one partner each, depths agreeing, no dive left over at a
+  Provider.
+- **The answer is kept per pair** in `logbook_check_answer` with the two starts it was given for; a changed start asks
+  again. It can be taken back (Undo, "Ask again").
+- **A deliberate split is an answer.** Splitting a Recording off its Dive, or making a Dive of a Duplicate candidate,
+  records "two dives" for the pairs it makes: the User just decided that.
+- **The dive page follows the same rules:** its merge candidates are the Dive's checks, and an answered pair is no longer
+  hinted at there.
+- **Run on reading**, not as a job: the web client reads the checks with the logbook, so they are up to date after every
+  import, edit, merge, move and delete. An Import's outcome doesn't carry a count; the panel above the logbook shows it.
+- **"Merge the clear pairs"** is offered from two obvious pairs on, after saying what it does; the client merges them one
+  by one.
+- **Resolutions** on the panel are merge and "two dives"; correcting a time, moving and deleting stay on the dive page,
+  which the panel links to and says so.
+

@@ -39,6 +39,7 @@ export const PROBLEMS = {
   diver_external_id_connected: 'A connection uses this account; disconnect it first',
   participant_invalid: 'A diver is on the list twice, or is the dive\'s own diver',
   merge_not_possible: 'Only two different dives of one diver can be merged',
+  check_not_found: 'These two dives are not at the same time (anymore)',
   device_not_found: 'Device not found',
   candidate_not_found: 'Nothing to decide here (anymore)',
   candidate_resolved: 'This was already decided',

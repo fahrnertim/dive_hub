@@ -279,6 +279,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -389,6 +390,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -549,6 +551,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -752,6 +755,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -862,6 +866,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -1428,6 +1433,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -1559,6 +1565,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -1714,6 +1721,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -1911,6 +1919,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -2128,6 +2137,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -2403,6 +2413,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -2513,6 +2524,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -2623,6 +2635,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -2772,6 +2785,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -2882,6 +2896,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -2992,6 +3007,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -3173,6 +3189,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -3283,6 +3300,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -3393,6 +3411,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -3574,6 +3593,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -3684,6 +3704,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -3794,6 +3815,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -3925,6 +3947,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -4035,6 +4058,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -4145,6 +4169,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -4297,6 +4322,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -4407,6 +4433,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -4517,6 +4544,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -4800,6 +4828,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -4910,6 +4939,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -5378,6 +5408,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -5787,6 +5818,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -6536,6 +6568,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -7423,6 +7456,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -7533,6 +7567,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -7643,6 +7678,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -7833,6 +7869,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -7966,6 +8003,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -8076,6 +8114,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -8209,6 +8248,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -9028,6 +9068,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -9138,6 +9179,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -9248,6 +9290,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -10020,6 +10063,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -10130,6 +10174,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -10240,6 +10285,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -11013,6 +11059,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -11123,6 +11170,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -11225,6 +11273,8 @@
                       "fromProvider",
                       "recordings",
                       "at",
+                      "rule",
+                      "answered",
                       "keeps",
                       "bothAt"
                     ],
@@ -11234,7 +11284,7 @@
                       },
                       "version": {
                         "type": "integer",
-                        "description": "Send it as `otherVersion` when merging"
+                        "description": "Send it when merging"
                       },
                       "number": {
                         "anyOf": [
@@ -11343,6 +11393,17 @@
                           }
                         }
                       },
+                      "rule": {
+                        "enum": [
+                          "recording_beside_entry",
+                          "overlapping_dives"
+                        ],
+                        "description": "recording_beside_entry: a Dive without a Recording and one with a Recording at the same time, as an import would have attached them; overlapping_dives: two Dives of one Diver that overlap in time"
+                      },
+                      "answered": {
+                        "type": "boolean",
+                        "description": "The User said these are two dives: don't hint at the pair again (it can still be merged)"
+                      },
                       "keeps": {
                         "type": "string",
                         "description": "Which of the two Dives a merge keeps: the one with a Recording when only one has, else the Dive asked about"
@@ -11408,6 +11469,511 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/logbook-checks": {
+      "get": {
+        "summary": "Logbook checks: pairs of Dives in the User's logbooks that can't both be right as they stand",
+        "description": "Computed from the logbook each time by fixed rules (ADR 0038): a Dive without a Recording beside a Dive with one, or two Dives of one Diver that overlap. `status=answered` lists the pairs the User said are two dives, to ask again. Resolve one by merging (POST /dives/{id}/merge), answering (PUT /logbook-checks/answer), correcting a time, moving or deleting one of the Dives. Never merge unasked (docs/spec/clients.md).",
+        "parameters": [
+          {
+            "schema": {
+              "enum": [
+                "open",
+                "answered"
+              ],
+              "default": "open"
+            },
+            "in": "query",
+            "name": "status",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "rule",
+                      "obvious",
+                      "diverId",
+                      "dive",
+                      "other"
+                    ],
+                    "properties": {
+                      "rule": {
+                        "enum": [
+                          "recording_beside_entry",
+                          "overlapping_dives"
+                        ],
+                        "description": "recording_beside_entry: a Dive without a Recording and one with a Recording at the same time, as an import would have attached them; overlapping_dives: two Dives of one Diver that overlap in time"
+                      },
+                      "obvious": {
+                        "type": "boolean",
+                        "description": "An import would have put the two together by itself, and no dive is left over at a Provider: may be merged with others in one go"
+                      },
+                      "diverId": {
+                        "type": "string"
+                      },
+                      "dive": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "version",
+                          "number",
+                          "startsAt",
+                          "utcOffsetSeconds",
+                          "utcOffsetSource",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "site",
+                          "fromProvider",
+                          "recordings",
+                          "at"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "version": {
+                            "type": "integer",
+                            "description": "Send it when merging"
+                          },
+                          "number": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer"
+                              }
+                            ]
+                          },
+                          "startsAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "utcOffsetSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer"
+                              }
+                            ]
+                          },
+                          "utcOffsetSource": {
+                            "enum": [
+                              "device",
+                              "position",
+                              "nearby",
+                              "unknown"
+                            ]
+                          },
+                          "durationSeconds": {
+                            "type": "number"
+                          },
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "site": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "fromProvider": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "recordings": {
+                            "type": "integer",
+                            "description": "How many Recordings it has"
+                          },
+                          "at": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "provider",
+                                "remoteNumber"
+                              ],
+                              "properties": {
+                                "provider": {
+                                  "type": "string"
+                                },
+                                "remoteNumber": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "integer",
+                                      "description": "The Provider's own dive number"
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "description": "The earlier of the two Dives"
+                      },
+                      "other": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "version",
+                          "number",
+                          "startsAt",
+                          "utcOffsetSeconds",
+                          "utcOffsetSource",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "site",
+                          "fromProvider",
+                          "recordings",
+                          "at",
+                          "keeps",
+                          "bothAt"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "version": {
+                            "type": "integer",
+                            "description": "Send it when merging"
+                          },
+                          "number": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer"
+                              }
+                            ]
+                          },
+                          "startsAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "utcOffsetSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer"
+                              }
+                            ]
+                          },
+                          "utcOffsetSource": {
+                            "enum": [
+                              "device",
+                              "position",
+                              "nearby",
+                              "unknown"
+                            ]
+                          },
+                          "durationSeconds": {
+                            "type": "number"
+                          },
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "site": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "fromProvider": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "recordings": {
+                            "type": "integer",
+                            "description": "How many Recordings it has"
+                          },
+                          "at": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "provider",
+                                "remoteNumber"
+                              ],
+                              "properties": {
+                                "provider": {
+                                  "type": "string"
+                                },
+                                "remoteNumber": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "integer",
+                                      "description": "The Provider's own dive number"
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          },
+                          "keeps": {
+                            "type": "string",
+                            "description": "Which of the two a merge keeps"
+                          },
+                          "bothAt": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "Providers both Dives are at (see GET /dives/{id}/merge-candidates)"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/logbook-checks/answer": {
+      "put": {
+        "summary": "Answer a logbook check: these two Dives are two dives (or take the answer back)",
+        "description": "The answer holds until one of the two Dives changes its start; then the pair is asked about again. `answer: null` takes it back. 404 dive_not_found for a Dive not in the User's logbooks, check_not_found when the two break no rule together.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "diveIds",
+                  "answer"
+                ],
+                "properties": {
+                  "diveIds": {
+                    "type": "array",
+                    "additionalItems": false,
+                    "items": [
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    ],
+                    "minItems": 2
+                  },
+                  "answer": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "enum": [
+                          "two_dives"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -12193,6 +12759,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -12326,6 +12893,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -12436,6 +13004,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -12569,6 +13138,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -12758,6 +13328,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -12868,6 +13439,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -13812,6 +14384,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -13922,6 +14495,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -14149,6 +14723,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -14536,6 +15111,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -14646,6 +15222,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -14756,6 +15333,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -14910,6 +15488,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -15020,6 +15599,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -15130,6 +15710,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -15284,6 +15865,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -15394,6 +15976,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -15504,6 +16087,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -15658,6 +16242,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -15768,6 +16353,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -15878,6 +16464,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -16306,6 +16893,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -16776,6 +17364,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -16950,6 +17539,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -17182,6 +17772,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -17292,6 +17883,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -17402,6 +17994,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -17512,6 +18105,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -17779,6 +18373,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -17889,6 +18484,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -17999,6 +18595,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -18109,6 +18706,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -18238,6 +18836,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -18348,6 +18947,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -18458,6 +19058,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -18568,6 +19169,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -18740,6 +19342,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -18866,6 +19469,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -18992,6 +19596,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -19118,6 +19723,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -19413,6 +20019,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -19523,6 +20130,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -19633,6 +20241,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -19743,6 +20352,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -19937,6 +20547,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -20047,6 +20658,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -20157,6 +20769,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -20267,6 +20880,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -20396,6 +21010,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -20506,6 +21121,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -20616,6 +21232,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -20726,6 +21343,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -20894,6 +21512,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -21004,6 +21623,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -21114,6 +21734,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -21224,6 +21845,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -21452,6 +22074,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -21562,6 +22185,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -21672,6 +22296,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -21782,6 +22407,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -22360,6 +22986,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -22922,6 +23549,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -23032,6 +23660,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -23142,6 +23771,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -23252,6 +23882,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -23714,6 +24345,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -24292,6 +24924,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -24402,6 +25035,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -24512,6 +25146,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -24622,6 +25257,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -24751,6 +25387,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -24861,6 +25498,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -24971,6 +25609,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -25081,6 +25720,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -25585,6 +26225,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -25695,6 +26336,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -25805,6 +26447,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -25915,6 +26558,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -26409,6 +27053,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -26519,6 +27164,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -26629,6 +27275,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -26739,6 +27386,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -27231,6 +27879,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -27341,6 +27990,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -27451,6 +28101,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -27561,6 +28212,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -27785,6 +28437,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -28359,6 +29012,7 @@
                             "diver_external_id_connected",
                             "participant_invalid",
                             "merge_not_possible",
+                            "check_not_found",
                             "device_not_found",
                             "candidate_not_found",
                             "candidate_resolved",
@@ -28474,6 +29128,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -28584,6 +29239,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -28694,6 +29350,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -29143,6 +29800,7 @@
                                   "diver_external_id_connected",
                                   "participant_invalid",
                                   "merge_not_possible",
+                                  "check_not_found",
                                   "device_not_found",
                                   "candidate_not_found",
                                   "candidate_resolved",
@@ -29261,6 +29919,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -29715,6 +30374,7 @@
                             "diver_external_id_connected",
                             "participant_invalid",
                             "merge_not_possible",
+                            "check_not_found",
                             "device_not_found",
                             "candidate_not_found",
                             "candidate_resolved",
@@ -29830,6 +30490,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -29940,6 +30601,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -30750,6 +31412,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -30860,6 +31523,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -30970,6 +31634,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -31161,6 +31826,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -31420,6 +32086,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -31530,6 +32197,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -31640,6 +32308,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -31831,6 +32500,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -32026,6 +32696,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -32136,6 +32807,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -32246,6 +32918,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -32437,6 +33110,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -32660,6 +33334,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -32770,6 +33445,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -32880,6 +33556,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -33071,6 +33748,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -33384,6 +34062,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -33494,6 +34173,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -33604,6 +34284,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -33795,6 +34476,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -33924,6 +34606,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -34509,6 +35192,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -34619,6 +35303,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -34729,6 +35414,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -34920,6 +35606,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -35317,6 +36004,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -35427,6 +36115,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -35537,6 +36226,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -35728,6 +36418,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -35902,6 +36593,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -36111,6 +36803,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -36221,6 +36914,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -36568,6 +37262,7 @@
                                     "diver_external_id_connected",
                                     "participant_invalid",
                                     "merge_not_possible",
+                                    "check_not_found",
                                     "device_not_found",
                                     "candidate_not_found",
                                     "candidate_resolved",
@@ -36769,6 +37464,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -37124,6 +37820,7 @@
                                   "diver_external_id_connected",
                                   "participant_invalid",
                                   "merge_not_possible",
+                                  "check_not_found",
                                   "device_not_found",
                                   "candidate_not_found",
                                   "candidate_resolved",
@@ -37324,6 +38021,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -37434,6 +38132,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -37888,6 +38587,7 @@
                                       "diver_external_id_connected",
                                       "participant_invalid",
                                       "merge_not_possible",
+                                      "check_not_found",
                                       "device_not_found",
                                       "candidate_not_found",
                                       "candidate_resolved",
@@ -38090,6 +38790,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -38200,6 +38901,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -38310,6 +39012,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -38501,6 +39204,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -38854,6 +39558,7 @@
                                   "diver_external_id_connected",
                                   "participant_invalid",
                                   "merge_not_possible",
+                                  "check_not_found",
                                   "device_not_found",
                                   "candidate_not_found",
                                   "candidate_resolved",
@@ -39054,6 +39759,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -39164,6 +39870,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -39274,6 +39981,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -39465,6 +40173,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -39675,6 +40384,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -39785,6 +40495,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -39895,6 +40606,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -40086,6 +40798,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -40383,6 +41096,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -40493,6 +41207,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -40624,6 +41339,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -40915,6 +41631,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -41097,6 +41814,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -41232,6 +41950,7 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "merge_not_possible",
+                        "check_not_found",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",

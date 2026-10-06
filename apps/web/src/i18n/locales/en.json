@@ -360,6 +360,7 @@
     "diver_external_id_connected": "A connection uses this account. Disconnect it first.",
     "participant_invalid": "Someone is on the list twice, or is the dive’s own diver.",
     "merge_not_possible": "Only two different dives of the same Diver can be merged.",
+    "check_not_found": "These two dives are no longer at the same time.",
     "device_not_found": "This device doesn’t exist or isn’t yours.",
     "candidate_not_found": "There’s nothing to decide here (anymore).",
     "candidate_resolved": "This was already decided.",
@@ -530,6 +531,29 @@
     "none": "Nothing to decide.",
     "discardedNotice": "Discarded the recording from {{time}}.",
     "divesGone": "The dives it might have belonged to are no longer in your logbook."
+  },
+  "checks": {
+    "intro_one": "Two dives in your logbook are at the same time.",
+    "intro_other": "{{count}} pairs of dives in your logbook are at the same time.",
+    "rule": {
+      "recording_beside_entry": "A dive without a recording and a dive with one are at the same time",
+      "overlapping_dives": "Two dives overlap in time"
+    },
+    "how": "If they are the same dive, merge them. If a time is wrong or one belongs to another Diver, open that dive and correct it there.",
+    "pair": "{{first}} and {{second}}",
+    "merge": "Merge the two…",
+    "twoDives": "They are two dives",
+    "keptApart": "Kept as two dives. You are asked again if one of them changes its time.",
+    "mergeAll": "Merge the {{count}} clear pairs…",
+    "mergeAllTitle": "Merge {{count}} pairs of dives?",
+    "mergeAllBody": "In each of these pairs one dive has a recording and the other has none, at the same time and about as deep: what an import puts together by itself. The dive with the recording is kept and takes over what it lacks from the other, which goes to “Deleted dives”.",
+    "mergeAllConfirm": "Merge {{count}} pairs",
+    "mergedAll": "{{count}} pairs merged.",
+    "showAnswered": "Show pairs kept as two dives",
+    "hideAnswered": "Hide pairs kept as two dives",
+    "answered": "Pairs kept as two dives",
+    "answeredIntro": "Dives at the same time that you said are two dives.",
+    "askAgain": "Ask again"
   },
   "merge": {
     "hint": "Another dive in this logbook was at the same time: {{facts}}. If both are the same dive, you can merge them into one.",

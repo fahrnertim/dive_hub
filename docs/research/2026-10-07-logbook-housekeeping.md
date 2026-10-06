@@ -1,6 +1,6 @@
 ---
 title: Logbook housekeeping (findings and proposal)
-summary: Two observations on the owner's logbook - a hand-typed SSI entry whose time was corrected after its computer's file came in stands beside the file's Dive, and two overlapping SSI entries became two Dives nobody was asked about - are gaps in ADR 0030 and ADR 0016, not bugs and not caused by the Suunto import. Proposed instead of two point fixes - a scan of the logbook for contradictions (overlapping Dives) that offers resolutions in "Needs your decision"; merging two Dives as fill, move the Provider link, normal delete. Decided in ADR 0038 (slices 18b, 18c); nothing built but a reproducing test.
+summary: Two observations on the owner's logbook - a hand-typed SSI entry whose time was corrected after its computer's file came in stands beside the file's Dive, and two overlapping SSI entries became two Dives nobody was asked about - are gaps in ADR 0030 and ADR 0016, not bugs and not caused by the Suunto import. Proposed instead of two point fixes - a scan of the logbook for contradictions (overlapping Dives) that offers resolutions in "Needs your decision"; merging two Dives as fill, move the Provider link, normal delete. Decided in ADR 0038 and built (slices 18b, 18c).
 status: decided
 date: 2026-10-07
 ---

@@ -272,15 +272,18 @@ export async function deletableDive(api: APIRequestContext): Promise<string> {
 }
 
 /**
- * Two Dives at the same time (ADR 0038): dive 31 from two computers (e2e/fixtures/mergeable-*.fit), the backup split off
- * into a Dive of its own. Imported the first time; split again when an earlier test merged them. `kept` is the main
- * computer's Dive.
+ * Two Dives at the same time (ADR 0038): dive 31 from two computers (e2e/fixtures/mergeable-*.fit) as `kept`, with both
+ * Recordings, and `other`, a Dive without one beside it. Made once: the backup is split off, merged back, and the Dive
+ * that the merge deleted is restored (it gave its Recording away). Later the same deleted Dive is restored again, so
+ * merging in a test never leaves a second deleted "Dive 31".
  */
 export async function mergeablePair(api: APIRequestContext): Promise<{ kept: string; other: string }> {
-  type Shown = { id: string; version: number; recordings: { id: string; isPrimary: boolean; device: { serialNumber: string } | null }[] };
+  type Shown = { id: string; version: number; recordings: { id: string; device: { serialNumber: string } | null }[] };
   const find = async () => (await (await api.get('/api/dives?q=31')).json() as { dives: { id: string; number: number | null }[] })
     .dives.filter((d) => d.number === 31).map((d) => d.id);
   const shown = async (id: string) => await (await api.get(`/api/dives/${id}`)).json() as Shown;
+  const merged = async (into: string) => (await (await api.get('/api/dives/deleted')).json() as { dives: (DeletedDive & { mergedInto: string | null })[] })
+    .dives.find((d) => d.number === 31 && d.mergedInto === into);
   let ids = await find();
   if (ids.length === 0) {
     for (const name of ['mergeable-main.fit', 'mergeable-backup.fit']) {
@@ -293,14 +296,32 @@ export async function mergeablePair(api: APIRequestContext): Promise<{ kept: str
     ids = await find();
   }
   if (ids.length === 1) {
-    const one = await shown(ids[0]!);
-    const backup = one.recordings.find((r) => r.device?.serialNumber === '882')!;
-    await api.post(`/api/recordings/${backup.id}/detach`, { data: { version: one.version }, headers });
+    const kept = ids[0]!;
+    if (!(await merged(kept))) {
+      const one = await shown(kept);
+      const backup = one.recordings.find((r) => r.device?.serialNumber === '882')!;
+      const split = await (await api.post(`/api/recordings/${backup.id}/detach`, { data: { version: one.version }, headers })).json() as { diveId: string };
+      await api.post(`/api/dives/${kept}/merge`, { data: { version: (await shown(kept)).version, otherId: split.diveId, otherVersion: (await shown(split.diveId)).version }, headers });
+    }
+    const gone = (await merged(kept))!;
+    await api.post(`/api/dives/${gone.id}/restore`, { data: { version: gone.version }, headers });
     ids = await find();
   }
   const dives = await Promise.all(ids.map(shown));
-  const kept = dives.find((d) => d.recordings.some((r) => r.device?.serialNumber === '881'))!.id;
-  return { kept, other: dives.find((d) => d.id !== kept)!.id };
+  const kept = dives.find((d) => d.recordings.length > 0)!.id;
+  const other = dives.find((d) => d.id !== kept)!.id;
+  // An earlier test may have answered "these are two dives": asked about again.
+  await api.put('/api/logbook-checks/answer', { data: { diveIds: [kept, other], answer: null }, headers });
+  return { kept, other };
+}
+
+/** Merges the pair again, so the logbook has nothing to decide for the tests that follow. */
+export async function mergePair(api: APIRequestContext): Promise<void> {
+  const { dives } = await (await api.get('/api/dives?q=31')).json() as { dives: { id: string; number: number | null }[] };
+  const ids = dives.filter((d) => d.number === 31).map((d) => d.id);
+  if (ids.length < 2) return;
+  const version = async (id: string) => (await (await api.get(`/api/dives/${id}`)).json() as { version: number }).version;
+  await api.post(`/api/dives/${ids[0]}/merge`, { data: { version: await version(ids[0]!), otherId: ids[1], otherVersion: await version(ids[1]!) }, headers });
 }
 
 /** Sends the Dive to the fake SSI, at a site of its own whose SSI ID no other spec uses. */

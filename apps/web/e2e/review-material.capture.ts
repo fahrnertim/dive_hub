@@ -8,7 +8,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import {
-  E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, forgetDivers, mergeablePair,
+  E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, forgetDivers, mergePair, mergeablePair,
   leaveLena, leaveSsi, lenaReady, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
@@ -429,8 +429,9 @@ test('review material', async ({ page, request, browser }) => {
     await page.emulateMedia({ colorScheme: 'light' });
   }
 
-  // Merging two Dives (ADR 0038), with dive 31 from two computers split into two Dives: the hint on the dive page and the
-  // dialog, the kept Dive afterwards, the deleted dives saying where the other went; the hint in German on a dark phone.
+  // Merging two Dives (ADR 0038), with dive 31 and a Dive without a Recording beside it: the hint on the dive page and the
+  // dialog, the pair as a logbook check on the logbook, the kept Dive afterwards, the deleted dives saying where the other
+  // went; the hint, the dialog and the check in German on a dark phone.
   if (want('dives')) {
     await page.setViewportSize({ width: 1280, height: 900 });
     await setPreferences(request, { language: 'en' });
@@ -438,11 +439,14 @@ test('review material', async ({ page, request, browser }) => {
     await page.goto(`/#/dives/${pair.kept}`); await page.reload();
     await page.getByRole('button', { name: 'Merge the two…' }).waitFor();
     await capture(page, '70-dive-merge-hint');
+    await page.goto('/'); await page.getByRole('button', { name: /^They are two dives: / }).waitFor();
+    await capture(page, '70b-logbook-check');
+    await page.goto(`/#/dives/${pair.kept}`); await page.getByRole('button', { name: 'Merge the two…' }).waitFor();
     await page.getByRole('button', { name: 'Merge the two…' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Merge', exact: true }).waitFor();
     await capture(page, '71-dive-merge-dialog', { full: false });
     await page.getByRole('dialog').getByRole('button', { name: 'Merge', exact: true }).click();
-    await page.getByText('Another dive of the same time was merged into this one').waitFor();
+    await page.getByText('Another dive of the same time was merged into this one').first().waitFor();
     await capture(page, '72-dive-merged');
     await page.goto('/'); await page.getByRole('button', { name: /^Show deleted dives/ }).click();
     await page.getByText('Merged into another dive.').first().waitFor();
@@ -458,6 +462,9 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('dialog').getByRole('button', { name: 'Zusammenführen', exact: true }).waitFor();
     await capture(page, '75-dive-merge-dialog-de-dark-390', { full: false, aria: false });
     await page.keyboard.press('Escape');
+    await page.goto('/'); await page.getByRole('button', { name: /^Es sind zwei Tauchgänge: / }).waitFor();
+    await capture(page, '76-logbook-check-de-dark-390', { aria: false });
+    await mergePair(request);
     await setPreferences(request, { language: null });
     await page.emulateMedia({ colorScheme: 'light' });
   }

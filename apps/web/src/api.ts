@@ -48,6 +48,7 @@ export type RecordingSummary = DiveView['recordings'][number]['summary'];
 export type DiverView = Awaited<ReturnType<typeof fetchDivers>>[number];
 export type DeviceView = Awaited<ReturnType<typeof fetchDevices>>[number];
 export type CandidateView = Awaited<ReturnType<typeof fetchCandidates>>[number];
+export type LogbookCheckView = Awaited<ReturnType<typeof fetchLogbookChecks>>[number];
 export type MergeCandidateView = Awaited<ReturnType<typeof fetchMergeCandidates>>[number];
 export type DeletedDiveView = Awaited<ReturnType<typeof fetchDeletedDives>>['dives'][number];
 export type SiteView = Awaited<ReturnType<typeof fetchSite>>;
@@ -86,6 +87,8 @@ export const keys = {
   /** Under ['dives'], so whatever changes the logbook refreshes it too (ADR 0026). */
   deletedDives: ['dives', 'deleted'] as const,
   revisions: (id: string) => ['dives', id, 'revisions'] as const,
+  /** Logbook checks (ADR 0038); under ['dives'], so whatever changes the logbook computes them again. */
+  logbookChecks: (status: 'open' | 'answered') => ['dives', 'checks', status] as const,
   /** Dives this one may be merged with (ADR 0038); under the Dive, so whatever changes it asks again. */
   mergeCandidates: (id: string) => ['dives', id, 'merge-candidates'] as const,
   /** The Dive's assessment (ADR 0036); under the Dive, so whatever changes it reads the findings again. */
@@ -232,6 +235,12 @@ async function fetchDeletedDives() {
 /** The User's deleted Dives, to restore them, and which Providers they are still at (ADR 0026, 0027). */
 export const deletedDivesQuery = () => queryOptions({ queryKey: keys.deletedDives, queryFn: fetchDeletedDives });
 
+async function fetchLogbookChecks(status: 'open' | 'answered') {
+  return unwrap(await api.GET('/api/logbook-checks', { params: { query: { status } } }));
+}
+/** Pairs of Dives that can't both be right as they stand, or those the User said are two dives (ADR 0038). */
+export const logbookChecksQuery = (status: 'open' | 'answered') =>
+  queryOptions({ queryKey: keys.logbookChecks(status), queryFn: () => fetchLogbookChecks(status) });
 async function fetchMergeCandidates(id: string) {
   return unwrap(await api.GET('/api/dives/{id}/merge-candidates', { params: { path: { id } } }));
 }

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, diveProvidersQuery, keys, mergeCandidatesQuery, unwrap, type DiveView, type MergeCandidateView, type ProviderView } from './api.ts';
+import { api, ApiError, diveProvidersQuery, keys, mergeCandidatesQuery, unwrap, type DiveView, type LogbookCheckView, type MergeCandidateView, type ProviderView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { deleteChoice } from './lib/deletion.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
@@ -17,10 +17,12 @@ export function MergeHint({ dive: d }: { dive: DiveView }) {
   const display = useDisplay();
   const candidates = useQuery(mergeCandidatesQuery(d.id));
   const [merging, setMerging] = useState<MergeCandidateView | null>(null);
-  if (!candidates.data || candidates.data.length === 0) return null;
+  // A pair the User said are two dives isn't hinted at again (ADR 0038).
+  const open = (candidates.data ?? []).filter((c) => !c.answered);
+  if (open.length === 0) return null;
   return (
     <>
-      {candidates.data.map((c) => {
+      {open.map((c) => {
         const facts = [
           display.diveTime(c.startsAt, c.utcOffsetSeconds, c.utcOffsetSource), display.duration(c.durationSeconds),
           ...(c.maxDepthM !== null ? [display.depth(c.maxDepthM)] : []), c.site?.name,
@@ -52,7 +54,12 @@ function CopySentence({ provider: p, number, canDelete }: { provider: ProviderVi
  * the dialog asks whether to delete the other one's dive there too, as the delete dialog does (ADR 0026, 0027); if that
  * fails, nothing is merged.
  */
-function MergeDialog({ dive: d, other, onClose }: { dive: DiveView; other: MergeCandidateView; onClose: () => void }) {
+export function MergeDialog({ dive: d, other, onClose, stay, onMerged }: {
+  dive: Pick<DiveView, 'id' | 'version'>; other: Pick<MergeCandidateView, 'id' | 'version' | 'keeps' | 'bothAt' | 'at'> | LogbookCheckView['other'];
+  onClose: () => void;
+  /** On the logbook: stay there instead of opening the kept Dive. */
+  stay?: boolean; onMerged?: () => void;
+}) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const names = useNames();
@@ -74,10 +81,11 @@ function MergeDialog({ dive: d, other, onClose }: { dive: DiveView; other: Merge
     onSuccess: async (kept) => {
       queryClient.setQueryData(keys.dive(kept.id), kept);
       queryClient.removeQueries({ queryKey: keys.dive(leaving) });
-      if (kept.id !== d.id) location.hash = `#/dives/${kept.id}`;
+      if (kept.id !== d.id && !stay) location.hash = `#/dives/${kept.id}`;
       await queryClient.invalidateQueries({ predicate: (q) => !(q.queryKey[0] === 'dives' && q.queryKey[1] === leaving) });
       announce(t('merge.done'));
       onClose();
+      onMerged?.();
     },
   });
   const asking = (choice?.ask.length ?? 0) > 0;

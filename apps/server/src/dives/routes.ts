@@ -15,6 +15,8 @@ import { Problem, problem } from '../http/problems.js';
 import { DECO_MODELS, DIVE_MODES, GAS_CIRCUITS, SITE_WATER_TYPES, WATER_TYPES } from '../vocabulary.js';
 import { DiveError, participantsOf, type DiveService } from './dive-service.js';
 import type { Merging } from './merging.js';
+import { LOGBOOK_CHECK_RULES } from './logbook-check-rules.js';
+import type { LogbookChecks } from './logbook-checks.js';
 import { valuesFromRecording, type DiveValues } from './dive-values.js';
 import { REVISION_CAUSES } from './revisions.js';
 import { waterMismatch } from './water.js';
@@ -31,6 +33,8 @@ export interface DiveRouteDeps {
   dives: DiveService;
   /** Merging two Dives and moving one to another Diver (ADR 0038). */
   merging: Merging;
+  /** What in a logbook can't be right as it stands (ADR 0038). */
+  checks: LogbookChecks;
   /** Deleting a Dive asks every Provider it is at (ADR 0026, 0027). */
   pushes: PushService;
   assessments: AssessmentService;
@@ -174,7 +178,7 @@ const fromValues = (v: Partial<Static<typeof ValuesSchema>>): Partial<DiveValues
 const STATUS: Record<DiveError['code'], number> = {
   dive_not_found: 404, dive_changed: 409, dive_values_inconsistent: 400, recording_not_on_dive: 400,
   recording_not_found: 404, last_recording: 409, diver_not_found: 404, site_not_found: 404, participant_invalid: 400,
-  merge_not_possible: 400,
+  merge_not_possible: 400, check_not_found: 404,
 };
 
 const DeletedDiveView = Type.Object({
@@ -202,9 +206,15 @@ const At = Type.Array(Type.Object({
   remoteNumber: Nullable(Type.Integer({ description: 'The Provider\'s own dive number' })),
 }));
 
-const MergeCandidate = Type.Object({
+const Rule = Type.Enum([...LOGBOOK_CHECK_RULES], {
+  description: 'recording_beside_entry: a Dive without a Recording and one with a Recording at the same time, as an import would have '
+    + 'attached them; overlapping_dives: two Dives of one Diver that overlap in time',
+});
+
+/** A Dive as a check or a merge shows it. */
+const PairedDive = {
   id: Type.String(),
-  version: Type.Integer({ description: 'Send it as `otherVersion` when merging' }),
+  version: Type.Integer({ description: 'Send it when merging' }),
   number: Nullable(Type.Integer()),
   startsAt: DateTime,
   utcOffsetSeconds: Nullable(Type.Integer()),
@@ -215,9 +225,27 @@ const MergeCandidate = Type.Object({
   fromProvider: Nullable(Type.String()),
   recordings: Type.Integer({ description: 'How many Recordings it has' }),
   at: At,
+};
+
+const MergeCandidate = Type.Object({
+  ...PairedDive,
+  rule: Rule,
+  answered: Type.Boolean({ description: 'The User said these are two dives: don\'t hint at the pair again (it can still be merged)' }),
   keeps: Type.String({ description: 'Which of the two Dives a merge keeps: the one with a Recording when only one has, else the Dive asked about' }),
   bothAt: Type.Array(Type.String(), {
     description: 'Providers both Dives are at: the dive of the one not kept stays there unless `alsoAt` names the Provider (docs/spec/clients.md)',
+  }),
+});
+
+const CheckView = Type.Object({
+  rule: Rule,
+  obvious: Type.Boolean({ description: 'An import would have put the two together by itself, and no dive is left over at a Provider: may be merged with others in one go' }),
+  diverId: Type.String(),
+  dive: Type.Object(PairedDive, { description: 'The earlier of the two Dives' }),
+  other: Type.Object({
+    ...PairedDive,
+    keeps: Type.String({ description: 'Which of the two a merge keeps' }),
+    bothAt: Type.Array(Type.String(), { description: 'Providers both Dives are at (see GET /dives/{id}/merge-candidates)' }),
   }),
 });
 
@@ -237,7 +265,7 @@ const DeleteProblem = Type.Object({
 /** Deleted Dives listed at most (newest deletion first). */
 const DELETED_SHOWN = 100;
 
-export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { db, auth, dives, merging, pushes, assessments }) => {
+export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { db, auth, dives, merging, checks, pushes, assessments }) => {
   app.addHook('onRequest', requireUser(auth));
   // Whatever changed a Dive may change its findings and those of the dives around it (ADR 0036): brought up to date
   // before the answer goes out, so the client's next read sees them. A failure here never fails the change itself.
@@ -372,11 +400,57 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       description: 'Overlap as an import matches a Recording to a Dive (5 minutes of tolerance; local times where a time zone is unknown).',
       params: IdParams, response: { 200: Type.Array(MergeCandidate), 404: Problem },
     },
-  }, async (request) => (await merging.candidates(request.user!.id, request.params.id)).map(({ dive: d, siteName, recordings, at, keeps, bothAt }) => ({
+  }, async (request) => (await merging.candidates(request.user!.id, request.params.id)).map(({ dive: d, siteName, recordings, at, keeps, bothAt, rule, answered }) => ({
     id: d.id, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
     utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
     site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null, fromProvider: d.fromProvider, recordings, at, keeps, bothAt,
+    rule, answered,
   })));
+
+  app.get('/logbook-checks', {
+    schema: {
+      summary: 'Logbook checks: pairs of Dives in the User\'s logbooks that can\'t both be right as they stand',
+      description: 'Computed from the logbook each time by fixed rules (ADR 0038): a Dive without a Recording beside a Dive with one, '
+        + 'or two Dives of one Diver that overlap. `status=answered` lists the pairs the User said are two dives, to ask again. '
+        + 'Resolve one by merging (POST /dives/{id}/merge), answering (PUT /logbook-checks/answer), correcting a time, moving or '
+        + 'deleting one of the Dives. Never merge unasked (docs/spec/clients.md).',
+      querystring: Type.Object({ status: Type.Optional(Type.Enum(['open', 'answered'], { default: 'open' })) }),
+      response: { 200: Type.Array(CheckView) },
+    },
+  }, async (request) => {
+    const list = await checks.list(request.user!.id, request.query.status ?? 'open');
+    const remote = await pushes.currentOf([...new Set(list.flatMap((c) => c.dives.map((d) => d.id)))]);
+    const at = (id: string) => [...(remote.get(id)?.entries() ?? [])].map(([provider, p]) => ({ provider, remoteNumber: p.remoteNumber }));
+    const paired = (d: (typeof list)[number]['dives'][number]) => ({
+      id: d.id, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
+      utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
+      site: d.siteId && d.siteName !== null ? { id: d.siteId, name: d.siteName } : null, fromProvider: d.fromProvider, recordings: d.recordings, at: at(d.id),
+    });
+    return list.map(({ rule, obvious, dives: [a, b] }) => {
+      const bothAt = at(b.id).filter((t) => at(a.id).some((m) => m.provider === t.provider)).map((t) => t.provider);
+      return {
+        rule, obvious: obvious && bothAt.length === 0, diverId: a.diverId, dive: paired(a),
+        other: { ...paired(b), keeps: a.recordings === 0 && b.recordings > 0 ? b.id : a.id, bothAt },
+      };
+    });
+  });
+
+  app.put('/logbook-checks/answer', {
+    schema: {
+      summary: 'Answer a logbook check: these two Dives are two dives (or take the answer back)',
+      description: 'The answer holds until one of the two Dives changes its start; then the pair is asked about again. '
+        + '`answer: null` takes it back. 404 dive_not_found for a Dive not in the User\'s logbooks, check_not_found when the two '
+        + 'break no rule together.',
+      body: Type.Object({
+        diveIds: Type.Tuple([Type.String({ format: 'uuid' }), Type.String({ format: 'uuid' })]),
+        answer: Nullable(Type.Enum(['two_dives'])),
+      }, { additionalProperties: false }),
+      response: { 204: Type.Null(), 404: Problem },
+    },
+  }, async (request, reply) => {
+    await checks.answer(request.user!.id, request.body.diveIds, request.body.answer);
+    return reply.code(204).send(null);
+  });
 
   app.post('/dives/:id/merge', {
     schema: {

@@ -4,6 +4,7 @@ import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { device, dive, diverManagement, duplicateCandidate, original, recording } from '../db/schema.js';
 import { attachRecording, createDiveFromRecording, managedDiverIds } from './dive-service.js';
+import { keepApart } from './logbook-check-answers.js';
 import type { Actor } from './revisions.js';
 
 export class CandidateError extends Error {
@@ -87,6 +88,8 @@ export function createCandidates(db: Db) {
         const diverId = dev && managed.has(dev.diverId) ? dev.diverId : own!.diverId;
         const actor: Actor = { type: 'user', id: userId };
         const diveId = await createDiveFromRecording(tx, r, diverId, actor, 'create');
+        // Decided to be a dive of its own: not asked again as a logbook check with the Dives it might have been (ADR 0038).
+        await keepApart(tx, userId, diveId, c.candidateDiveIds);
         await resolve(tx, c.id, 'new_dive');
         return diveId;
       });

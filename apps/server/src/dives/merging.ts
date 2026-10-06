@@ -5,13 +5,14 @@
 import { and, desc, eq, gte, inArray, isNull, lte, ne, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { OVERRIDABLE_FIELDS, dive, diveSite, participant, push, recording, type OverridableField } from '../db/schema.js';
-import { OVERLAP_TOLERANCE_SECONDS, alignedForMatching, overlaps } from '../imports/matching.js';
+import { OVERLAP_TOLERANCE_SECONDS } from '../imports/matching.js';
 import { currentRemote, type PushRow } from '../providers/push-service.js';
 import { liveSite } from '../sites/dive-site-link.js';
 import {
   DiveError, applyToDive, attachRecording, lockManagedDive, managedDiverIds, participantsOf,
 } from './dive-service.js';
 import { valuesOfDive, type DiveValues } from './dive-values.js';
+import { createLogbookChecks } from './logbook-checks.js';
 import { writeRevision, type Actor, type Changes } from './revisions.js';
 
 type DiveRow = typeof dive.$inferSelect;
@@ -42,11 +43,12 @@ const keptOf = <T>(a: T, aRecordings: number, b: T, bRecordings: number): [kept:
   (aRecordings === 0 && bRecordings > 0 ? [b, a] : [a, b]);
 
 export function createMerging(db: Db) {
+  const checks = createLogbookChecks(db);
   return {
     /**
-     * The Dives of the same Diver this one may be merged with: those overlapping it in time, by the import's own
-     * tolerance, compared in local time where an offset is unknown (ADR 0030). With how many Recordings each has, the
-     * Providers each is at, and which of the two a merge would keep.
+     * The Dives of the same Diver this one breaks a rule of the logbook checks with (ADR 0038): at the same time, as the
+     * checks see it. With how many Recordings each has, the Providers each is at, which of the two a merge would keep,
+     * and whether the User answered that they are two dives.
      */
     async candidates(userId: string, diveId: string) {
       const [row] = await db.select().from(dive).where(and(eq(dive.id, diveId), isNull(dive.deletedAt)));
@@ -58,14 +60,14 @@ export function createMerging(db: Db) {
           lte(dive.startsAt, new Date(row.startsAt.getTime() + reach)),
           gte(dive.startsAt, new Date(row.startsAt.getTime() - 48 * 3600_000 - MAX_OFFSET_MS)),
         ));
-      const aligned = alignedForMatching(row, near.map(({ d, siteName }) => ({ ...d, siteName })));
-      const span = { startsAt: row.startsAt, durationSeconds: row.durationSeconds, maxDepthM: undefined };
-      const hits = aligned.filter((d) => overlaps(span, { ...d, maxDepthM: undefined }, OVERLAP_TOLERANCE_SECONDS));
-      if (hits.length === 0) return [];
-      const ids = [row.id, ...hits.map((h) => h.id)];
-      const recs = await db.select({ diveId: recording.diveId }).from(recording).where(and(inArray(recording.diveId, ids), isNull(recording.deletedAt)));
+      if (near.length === 0) return [];
+      const all = [row.id, ...near.map(({ d }) => d.id)];
+      const recs = await db.select({ diveId: recording.diveId }).from(recording).where(and(inArray(recording.diveId, all), isNull(recording.deletedAt)));
       const count = (id: string) => recs.filter((r) => r.diveId === id).length;
-      const pushes = await pushesOf(db, ids);
+      const found = await checks.against(row.id, near.map(({ d }) => ({ ...d, recordings: count(d.id) })), { ...row, recordings: count(row.id) });
+      const hits = found.map((f) => ({ id: f.other.id, rule: f.rule, answered: f.answered, siteName: near.find(({ d }) => d.id === f.other.id)!.siteName }));
+      if (hits.length === 0) return [];
+      const pushes = await pushesOf(db, [row.id, ...hits.map((h) => h.id)]);
       const at = (id: string) => [...byProvider(pushes, id)].flatMap(([provider, rows]) => {
         const remote = currentRemote(rows);
         return remote ? [{ provider, remoteNumber: remote.remoteNumber }] : [];
@@ -75,7 +77,7 @@ export function createMerging(db: Db) {
         const original = near.find(({ d }) => d.id === h.id)!.d;
         const theirs = at(h.id);
         return {
-          dive: original, siteName: h.siteName, recordings: count(h.id), at: theirs,
+          dive: original, siteName: h.siteName, recordings: count(h.id), at: theirs, rule: h.rule, answered: h.answered,
           keeps: keptOf(row.id, count(row.id), h.id, count(h.id))[0],
           // Where both are at a Provider, the other's dive there stays behind: the client asks whether to delete it there.
           bothAt: theirs.filter((t) => mine.some((m) => m.provider === t.provider)).map((t) => t.provider),

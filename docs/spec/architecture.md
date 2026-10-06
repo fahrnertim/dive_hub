@@ -822,4 +822,30 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 - Deliberate simplifications: a merged or moved Dive's findings put aside don't follow it (the assessment is computed
   again); a moved Dive's Device stays with the old Diver (ADR 0016); a dive Dive Hub sent whose Dive was merged away is
   still skipped by the import as "sent by Dive Hub", not compared with the kept Dive; no undo beyond restoring.
-- Not yet: finding such pairs unasked, in "Needs your decision" (slice 18c).
+- Not yet: finding such pairs unasked, in "Needs your decision" (slice 18c, below).
+
+**Slice 18c (2026-10-07): logbook checks** ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md)).
+- `apps/server/src/dives/logbook-check-rules.ts` (pure, `LOGBOOK_CHECKS_VERSION` 1): `ruleFor` two Dives
+  (`recording_beside_entry` with the import's tolerance when exactly one has a Recording, `overlapping_dives` on a real
+  overlap otherwise; local times where an offset is unknown) and `findChecks` over a logbook (each pair once; `obvious`
+  when an import would have attached them: one partner each, depths agreeing).
+- `logbook-checks.ts` (`createLogbookChecks`): `list` (the User's Divers' live Dives, the pairs, without those answered),
+  `against` (one Dive's pairs, for the dive page's merge candidates, which follow the same rules now) and `answer`.
+  `logbook-check-answers.ts`: `keepApart`, called when a Recording is split off (`detach`) or a Duplicate candidate
+  becomes a Dive of its own.
+- Table `logbook_check_answer` (migration 0021): the rule, the two Dives (smaller id first), their starts when answered
+  (the answer holds while both are unchanged), who answered. Nothing else is stored: checks are computed on every read.
+- Routes: `GET /api/logbook-checks?status=open|answered`, `PUT /api/logbook-checks/answer`; `merge-candidates` gains
+  `rule` and `answered`. Problem `check_not_found`.
+- Web: `LogbookChecks.tsx` inside "Needs your decision" (`Decisions.tsx`): the pairs with "Merge the two…" (the merge
+  dialog, staying on the logbook) and "They are two dives" (with Undo), "Merge the N clear pairs…" from two obvious pairs
+  on, the answered pairs with "Ask again"; the dive page's hint leaves answered pairs out (en, de).
+- Tests: `logbook-check-rules.test.ts` (the rules), `logbook-checks.test.ts` (PostgreSQL: both observations found, another
+  User sees none, answering, taking back, asked again after a time change, resolved by merging and by moving a time, a
+  split-off pair answered by itself); browser `dive-merge.spec.ts` (@dives) and the ui-quality case.
+- Deliberate simplifications: every read compares each Dive with those starting within its length plus 28 hours (fine
+  for thousands of Dives; no index or cache); the checks run when asked for, not in the worker, and an Import's outcome
+  doesn't count them (the panel above the logbook does, as soon as the Import ends); merging the clear pairs is one request
+  per pair from the client; no rule looks at Dives of two Divers (a dive filed under the wrong Diver shows up as an
+  overlap only in its own logbook).
+- Not yet: rules beyond overlaps (a number twice, a dive inside a no-fly time), telling by e-mail, the checks over MCP.

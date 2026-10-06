@@ -360,6 +360,7 @@
     "diver_external_id_connected": "Eine Verbindung nutzt dieses Konto. Trenne sie zuerst.",
     "participant_invalid": "Jemand steht doppelt auf der Liste oder ist der Taucher dieses Tauchgangs selbst.",
     "merge_not_possible": "Nur zwei verschiedene Tauchgänge desselben Tauchers lassen sich zusammenführen.",
+    "check_not_found": "Diese beiden Tauchgänge liegen nicht mehr zur selben Zeit.",
     "device_not_found": "Dieses Gerät gibt es nicht oder es gehört nicht zu dir.",
     "candidate_not_found": "Hier gibt es (nichts mehr) zu entscheiden.",
     "candidate_resolved": "Das wurde schon entschieden.",
@@ -530,6 +531,29 @@
     "none": "Nichts zu entscheiden.",
     "discardedNotice": "Aufzeichnung vom {{time}} verworfen.",
     "divesGone": "Die Tauchgänge, zu denen sie gehören könnte, sind nicht mehr in deinem Logbuch."
+  },
+  "checks": {
+    "intro_one": "Zwei Tauchgänge in deinem Logbuch liegen zur selben Zeit.",
+    "intro_other": "{{count}} Paare von Tauchgängen in deinem Logbuch liegen zur selben Zeit.",
+    "rule": {
+      "recording_beside_entry": "Ein Tauchgang ohne Aufzeichnung und einer mit Aufzeichnung liegen zur selben Zeit",
+      "overlapping_dives": "Zwei Tauchgänge überschneiden sich zeitlich"
+    },
+    "how": "Wenn es derselbe Tauchgang ist, führe sie zusammen. Wenn eine Zeit falsch ist oder einer zu einem anderen Taucher gehört, öffne diesen Tauchgang und korrigiere es dort.",
+    "pair": "{{first}} und {{second}}",
+    "merge": "Beide zusammenführen …",
+    "twoDives": "Es sind zwei Tauchgänge",
+    "keptApart": "Bleiben zwei Tauchgänge. Du wirst wieder gefragt, wenn einer von ihnen seine Zeit ändert.",
+    "mergeAll": "Die {{count}} eindeutigen Paare zusammenführen …",
+    "mergeAllTitle": "{{count}} Paare von Tauchgängen zusammenführen?",
+    "mergeAllBody": "In jedem dieser Paare hat ein Tauchgang eine Aufzeichnung und der andere keine, zur selben Zeit und etwa gleich tief: was ein Import von sich aus zusammenlegt. Der Tauchgang mit der Aufzeichnung bleibt und übernimmt vom anderen, was ihm fehlt; der andere kommt zu den „Gelöschten Tauchgängen“.",
+    "mergeAllConfirm": "{{count}} Paare zusammenführen",
+    "mergedAll": "{{count}} Paare zusammengeführt.",
+    "showAnswered": "Paare zeigen, die zwei Tauchgänge bleiben",
+    "hideAnswered": "Paare ausblenden, die zwei Tauchgänge bleiben",
+    "answered": "Paare, die zwei Tauchgänge bleiben",
+    "answeredIntro": "Tauchgänge zur selben Zeit, von denen du gesagt hast, dass es zwei sind.",
+    "askAgain": "Wieder fragen"
   },
   "merge": {
     "hint": "In diesem Logbuch gibt es einen weiteren Tauchgang zur selben Zeit: {{facts}}. Wenn beide derselbe Tauchgang sind, kannst du sie zusammenführen.",

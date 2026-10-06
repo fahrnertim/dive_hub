@@ -8,7 +8,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { dataFile, type PreparedData } from './prepare.ts';
 import {
   E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveWithoutRecording, expectGoodPage, externalDiver,
-  forgetDivers, leaveLena, leaveSsi, lenaReady, mergeablePair, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences,
+  forgetDivers, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
@@ -425,15 +425,23 @@ for (const v of variants) {
       }
     });
 
-    test('a dive with another at the same time, and merging them asked first', { tag: ['@dives'] }, async ({ page, request }) => {
+    test('a dive with another at the same time, merging them asked first, and the pair on the logbook', { tag: ['@dives'] }, async ({ page, request }) => {
       const { kept } = await mergeablePair(request);
-      await page.goto(`/#/dives/${kept}`);
-      const open = page.getByRole('button', { name: v.english ? 'Merge the two…' : /^Beide zusammenführen/ });
-      await expect(open).toBeVisible();
-      await expectGoodPage(page, title('Dive 31'), v);
-      await open.click();
-      await expect(page.getByRole('dialog').getByRole('button', { name: v.english ? 'Merge' : 'Zusammenführen', exact: true })).toBeVisible();
-      await expectGoodPage(page, title('Dive 31'), v);
+      try {
+        await page.goto(`/#/dives/${kept}`);
+        const open = page.getByRole('button', { name: v.english ? 'Merge the two…' : /^Beide zusammenführen/ });
+        await expect(open).toBeVisible();
+        await expectGoodPage(page, title('Dive 31'), v);
+        await open.click();
+        await expect(page.getByRole('dialog').getByRole('button', { name: v.english ? 'Merge' : 'Zusammenführen', exact: true })).toBeVisible();
+        await expectGoodPage(page, title('Dive 31'), v);
+        // The same pair waits on the logbook as a logbook check, with its decisions.
+        await page.goto('/');
+        await expect(page.getByRole('button', { name: v.english ? /^They are two dives: / : /^Es sind zwei Tauchgänge: / })).toBeVisible();
+        await expectGoodPage(page, title('Logbook'), v);
+      } finally {
+        await mergePair(request);
+      }
     });
 
     test('admin, with a link to pass on', { tag: ['@admin'] }, async ({ page }) => {

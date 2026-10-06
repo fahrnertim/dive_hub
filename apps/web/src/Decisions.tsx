@@ -1,15 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, candidatesQuery, keys, unwrap, type CandidateView } from './api.ts';
+import { api, candidatesQuery, keys, logbookChecksQuery, unwrap, type CandidateView, type LogbookCheckView } from './api.ts';
+import { AnsweredChecks, LogbookChecks } from './LogbookChecks.tsx';
 import { deviceName } from './lib/devices.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { Button, Muted, Notice, Panel } from './ui/index.ts';
 
 /**
- * Duplicate candidates on the logbook (ADR 0016): Recordings that don't clearly belong to one Dive,
- * with the Dives they might belong to and the three decisions. Hidden when nothing waits.
+ * What waits for the User on the logbook. Duplicate candidates (ADR 0016): Recordings that don't clearly belong to one
+ * Dive, with the Dives they might belong to and the three decisions. Logbook checks (ADR 0038): pairs of Dives at the
+ * same time. Hidden when nothing waits.
  */
 export function Decisions() {
   const { t } = useTranslation();
@@ -20,21 +22,25 @@ export function Decisions() {
   const [undo, setUndo] = useState<CandidateView>();
   const list = useRef<HTMLUListElement>(null);
   const count = open.data?.length ?? 0;
+  const checks = useQuery(logbookChecksQuery('open')).data?.length ?? 0;
+  const [keptApart, setKeptApart] = useState<LogbookCheckView>();
   // Offered only while that Recording is still discarded (it may be decided again another way).
   const undoable = undo && discarded.data?.some((c) => c.id === undo.id) ? undo : undefined;
   const undoNotice = undoable && <UndoDiscard key={undoable.id} candidate={undoable} onDone={() => setUndo(undefined)} />;
 
-  if (count === 0 && !showDiscarded) {
-    if (!discarded.data?.length) return null;
+  if (count === 0 && checks === 0 && !showDiscarded) {
     return (
       <div className="decisions-quiet">
         {undoNotice}
-        <Button variant="quiet" onPress={() => setShowDiscarded(true)}>{t('decisions.showDiscarded')}</Button>
+        {/* A pair just kept as two dives is offered back here; then only the ways to decide again are left. */}
+        <LogbookChecks undo={keptApart} setUndo={setKeptApart} />
+        {(discarded.data?.length ?? 0) > 0 && <Button variant="quiet" onPress={() => setShowDiscarded(true)}>{t('decisions.showDiscarded')}</Button>}
+        <AnsweredChecks />
       </div>
     );
   }
   return (
-    <Panel title={t('decisions.title')} attention={count > 0}>
+    <Panel title={t('decisions.title')} attention={count + checks > 0}>
       {count > 0 && <p>{t('decisions.intro', { count })}</p>}
       {undoNotice}
       <ul className="decisions" ref={list}>
@@ -42,9 +48,11 @@ export function Decisions() {
           <Decision key={c.id} candidate={c} list={list} index={index} count={count} onDiscarded={() => setUndo(c)} />
         ))}
       </ul>
+      <LogbookChecks undo={keptApart} setUndo={setKeptApart} />
       {showDiscarded ? <Discarded onHide={() => setShowDiscarded(false)} /> : (discarded.data?.length ?? 0) > 0 && (
         <Button variant="quiet" onPress={() => setShowDiscarded(true)}>{t('decisions.showDiscarded')}</Button>
       )}
+      <AnsweredChecks />
     </Panel>
   );
 }

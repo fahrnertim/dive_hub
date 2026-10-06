@@ -431,6 +431,25 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
   the admin ticked that (`provider_site_data_not_confirmed`); show who allowed it and when, and offer stopping it.
   *Web:* `Admin.tsx` (`ProviderSiteData`).
 
+### Logbook checks
+([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md); `GET /api/logbook-checks`, computed each time)
+- **Must show them where the User lands after an import** (the logbook), in the same place as Duplicate candidates: each
+  is a pair of Dives of one Diver at the same time (`dive`, `other`), with the reason (`rule`:
+  `recording_beside_entry`, a Dive without a Recording beside one with a Recording; `overlapping_dives`). Show both Dives
+  (time, depth, duration, site, with or without a recording, the Diver when the User keeps several) and link to them.
+- **Never merge unasked.** Offer per pair: merge (the merge dialog of [Dives](#dives), with `other.keeps` and
+  `other.bothAt`), and "they are two dives" (`PUT /api/logbook-checks/answer` with both ids and `two_dives`). Say that a
+  wrong time or a Dive of another Diver is corrected on the Dive itself (edit, move, delete).
+- **"They are two dives" can be taken back:** offer Undo right away (`answer: null`), and list the answered pairs
+  (`status=answered`) with "Ask again". The server asks again by itself once one of the two changes its start.
+- **Pairs marked `obvious`** (an import would have put them together; no dive left over at a Provider) may be merged in
+  one go, after saying what that does and how many. Not the others. *Web:* from two such pairs on.
+- A Recording split off its Dive, or made a Dive of its own from a Duplicate candidate, is answered by the server as two
+  dives: such a pair is not listed until it is asked about again.
+- The dive page's hint (`merge-candidates`) leaves out pairs with `answered`.
+- The checks change with every import, edit, merge, move and delete: read them again then. *Web:* `LogbookChecks.tsx`,
+  `Decisions.tsx` (their query sits under the dives').
+
 ### Duplicate candidates
 - **Show them where the User decides,** first on the logbook ("Needs your decision"), with the Recording (time,
   depth, duration, Device), why it waits (`reason`) and the Dives it might belong to (ADR 0016).

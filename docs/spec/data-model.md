@@ -154,6 +154,11 @@ coverage, validity; B5), **Medical exam** (date, result, valid until, examiner),
 - *Experience:* dive type/purpose, rating, notes, tags, problems.
 - *Social:* Participants, Joint dive, Visibility, Signatures.
 - *Hub state:* Pushes, Conflicts, Revisions.
+- *Logbook checks (ADR 0038, implemented):* pairs of a Diver's Dives that can't both be right as they stand (a Dive
+  without a Recording beside one with a Recording; two overlapping Dives) are computed from the logbook on every read,
+  never stored. **LogbookCheckAnswer** keeps only a User's answer "these are two dives": the rule, the two Dives and
+  their starts when it was given; it holds while both starts are unchanged. Splitting a Recording off, or making a Dive
+  of a Duplicate candidate, gives that answer.
 - *Merging (ADR 0038, implemented):* two Dives of one Diver that are the same descent become one. The Dive with a
   Recording is kept (of two alike, the one chosen): it gets the other's Recordings, fills what it lacks (site,
   Participants, values; notes appended) and takes the other's link at each Provider where it has none (the Pushes move).

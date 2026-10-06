@@ -853,6 +853,25 @@ export const findingDismissal = pgTable(
   (t) => [primaryKey({ columns: [t.diveId, t.rule] })],
 );
 
+/**
+ * A User's answer to a logbook check (ADR 0038): these two Dives, which a rule found at the same time, are two dives.
+ * The checks themselves are computed, never stored. The answer holds while both Dives start when they did (`startsA`,
+ * `startsB`); `diveA` is the smaller id.
+ */
+export const logbookCheckAnswer = pgTable(
+  'logbook_check_answer',
+  {
+    rule: text('rule').notNull(),
+    diveA: uuid('dive_a').notNull().references(() => dive.id, { onDelete: 'cascade' }),
+    diveB: uuid('dive_b').notNull().references(() => dive.id, { onDelete: 'cascade' }),
+    startsA: timestamp('starts_a', { withTimezone: true }).notNull(),
+    startsB: timestamp('starts_b', { withTimezone: true }).notNull(),
+    answeredBy: uuid('answered_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.diveA, t.diveB] }), index('logbook_check_answer_b_idx').on(t.diveB)],
+);
+
 /** A rule a Diver's Users don't want to see on any of the Diver's Dives (ADR 0036). The findings stay as computed. */
 export const mutedRule = pgTable(
   'muted_rule',

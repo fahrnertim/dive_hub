@@ -10,11 +10,12 @@ import {
 } from './dive-values.js';
 import { writeRevision, type Actor, type Changes, type RevisionCause } from './revisions.js';
 import { liveSite, siteRef } from '../sites/dive-site-link.js';
+import { keepApart } from './logbook-check-answers.js';
 
 export class DiveError extends Error {
   constructor(readonly code:
     | 'dive_not_found' | 'dive_changed' | 'dive_values_inconsistent' | 'recording_not_on_dive'
-    | 'recording_not_found' | 'last_recording' | 'diver_not_found' | 'site_not_found' | 'participant_invalid' | 'merge_not_possible') {
+    | 'recording_not_found' | 'last_recording' | 'diver_not_found' | 'site_not_found' | 'participant_invalid' | 'merge_not_possible' | 'check_not_found') {
     super(code);
   }
 }
@@ -263,7 +264,10 @@ export function createDiveService(db: Db) {
           values, overrides: current.overrides, notes: current.notes, primaryRecordingId: primary,
           ...(taken && { offsetSource: taken.offsetSource }),
         }, actor, 'detach', { recordings: { from: rec.id, to: null } });
-        return createDiveFromRecording(tx, rec, current.diverId, actor, 'detach');
+        const created = await createDiveFromRecording(tx, rec, current.diverId, actor, 'detach');
+        // Split off on purpose: the two Dives at the same time are two dives (ADR 0038), not a check to answer.
+        await keepApart(tx, userId, created, [current.id]);
+        return created;
       });
     },
 

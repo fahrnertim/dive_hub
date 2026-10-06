@@ -36,7 +36,7 @@ export function overlaps(a: TimeSpan, b: TimeSpan, tolerance: number): boolean {
   return aStart < bEnd && bStart < aEnd;
 }
 
-function depthsDisagree(a: number | undefined, b: number | undefined): boolean {
+export function depthsDisagree(a: number | undefined, b: number | undefined): boolean {
   if (a === undefined || b === undefined) return false;
   return Math.abs(a - b) > Math.max(3, 0.25 * Math.max(a, b));
 }

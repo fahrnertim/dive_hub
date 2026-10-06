@@ -93,8 +93,9 @@ describe('codes from the API', () => {
     // What a Push did at a Provider, and how an AI access's request ended (ADR 0035).
     ['outcome', 'provider.result', 'aiAccess.outcome'],
     ['notices', 'provider.notice'],
-    // The dive assessment (ADR 0036): a finding's rule, severity and evidence, and what the computer noted.
-    ['rule', 'assessment.title'],
+    // The dive assessment (ADR 0036): a finding's rule, severity and evidence, and what the computer noted; the rule of
+    // a logbook check (ADR 0038).
+    ['rule', 'assessment.title', 'checks.rule'],
     ['evidence', 'assessment.evidence'],
     ['event', 'assessment.event'],
     // A User's role on the instance, and a Participant's on a Dive (ADR 0028).
