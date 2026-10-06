@@ -139,7 +139,7 @@ _German_: Tauchreise
 
 ## Gear and planning (planned)
 
-Planned in [ADR 0031](decisions/0031-lead-suit-cylinders-and-lead-estimate.md); not built yet.
+Planned in [ADR 0031](decisions/0031-lead-suit-cylinders-and-lead-estimate.md) and [ADR 0032](decisions/0032-mod-and-no-decompression-limits.md); not built yet.
 
 **Lead**:
 The ballast a Diver carried on a Dive: one or more amounts with where they sat (belt, integrated, trim, ankle, backplate), and their total. No lead logged means unknown; 0 means none was carried.
@@ -170,6 +170,41 @@ _German_: Körpergewicht
 A suggestion, computed on request and never stored, of how much lead a Diver should carry in planned conditions: from their own Dives with the same exposure suit, adjusted for the cylinder and the water, else a rule of thumb; always with a range and its reasons, and never a substitute for a weight check.
 _Avoid_: Weight calculator (the tool's name on screen may say so), recommendation, prediction
 _German_: Blei-Schätzung (the tool: "Bleirechner")
+
+**Gas mix**:
+What a Diver breathes, as fractions of oxygen and helium (the rest nitrogen): air, nitrox (more oxygen), trimix (with helium). A Cylinder holds one; a Recording lists those its computer knew.
+_Avoid_: Gas (alone, where the mix is meant), blend, EANx (fine in UI text: "EAN32")
+_German_: Gasgemisch
+
+**MOD**:
+Maximum operating depth: the deepest a gas mix may be breathed at a chosen ppO2 limit (1.4 working, 1.6 contingency), in the water and at the altitude planned ([ADR 0032](decisions/0032-mod-and-no-decompression-limits.md)).
+_Avoid_: Max depth (that is the Dive's deepest point)
+_German_: MOD (maximale Einsatztiefe)
+
+**No-decompression limit (NDL)**:
+How long a diver may stay at a depth and still ascend directly, without decompression stops, by a decompression model (Bühlmann ZHL-16C) and gradient factors. Dive Hub computes it for clean tissues, air and nitrox, to 40 m; a dive computer also shows its own, in the Recording's samples.
+_Avoid_: No-deco time, no-stop time, bottom time (that is wider)
+_German_: Nullzeit
+
+**Gradient factors (GF)**:
+A diver's conservatism setting for a Bühlmann model, low and high, in percent (e.g. 40/85); for a no-stop dive only the high one matters. Dive computers record theirs on each Recording.
+_Avoid_: Conservatism (alone), safety level
+_German_: Gradientenfaktoren
+
+**Oxygen exposure**:
+The share of the oxygen limit a dive uses (CNS %, NOAA's table) and the longer-term dose (OTU). Can limit a nitrox dive before the NDL does.
+_Avoid_: Oxygen toxicity (that is the harm), O2 clock
+_German_: Sauerstoffbelastung
+
+**SAC**:
+A diver's gas consumption at the surface in litres per minute; at depth it multiplies by the ambient pressure. Dive Hub takes it from the Diver's computer (FIT) or as typed.
+_Avoid_: RMV (fine as a synonym in UI text), air consumption, breathing rate
+_German_: Atemminutenvolumen (AMV)
+
+**Bottom time**:
+How long a planned dive may stay at its depth: the shortest of the no-decompression limit, the oxygen limit and the gas above the reserve, said with which one binds. An estimate on the Tools page, never a substitute for the dive computer.
+_Avoid_: Dive time, NDL (one of its limits), runtime
+_German_: Grundzeit
 
 **Tools**:
 The page for planning aids such as the lead estimate; the later home of a dive planner that combines them around a planned dive.

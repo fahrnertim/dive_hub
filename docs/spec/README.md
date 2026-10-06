@@ -1,6 +1,6 @@
 ---
 title: Product specification
-summary: Dive Hub is a self-hosted hub that collects dive data from many sources and can forward it to connected services; later features (auto-import of sites near Dives, planning tools starting with a lead estimate).
+summary: Dive Hub is a self-hosted hub that collects dive data from many sources and can forward it to connected services; later features (auto-import of sites near Dives, planning tools: a lead estimate, MOD and bottom time).
 status: draft
 date: 2026-10-06
 ---
@@ -100,8 +100,12 @@ Noted for later; not designed or decided yet.
   [weight calculator note](../research/2026-10-06-weight-calculator.md): Dives first record lead (placed, with how it felt),
   the exposure suit and Cylinders, Divers a body weight (slice 17); then a Tools page suggests lead from the Diver's own
   Dives with the same suit, adjusted by physics for the cylinder and water, with a rule of thumb when there is no history
-  (slice 18). Not decided yet: buoyancy per Equipment item (waits for Equipment items), gas planning on the same Cylinders
-  and the Recordings' SAC, what a planned dive is and whether it becomes the Dive once dived.
+  (slice 18). The second is **MOD and bottom time**, decided in [ADR 0032](../decisions/0032-mod-and-no-decompression-limits.md)
+  and designed in the [gas and NDL note](../research/2026-10-06-gas-and-ndl-tools.md): MOD, best mix, EAD and END for any
+  mix; for air and nitrox to 40 m the shortest of the no-decompression limit (Bühlmann ZHL-16C with the Diver's own GF),
+  the oxygen limit and the gas (slice 19). Not decided yet: buoyancy per Equipment item (waits for Equipment items),
+  repetitive dives from the logbook, sites' altitude, trimix limits, what a planned dive is and whether it becomes the
+  Dive once dived.
 
 ## Non-goals (so far)
 

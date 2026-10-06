@@ -1,6 +1,6 @@
 ---
 title: Data model
-summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios; Dives without a Recording, offsets and their source, a Provider's dives as Originals, Recordings and Imports (ADR 0030); planned: lead, weighting feedback, exposure suit, Cylinders and body weight (ADR 0031).
+summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios; Dives without a Recording, offsets and their source, a Provider's dives as Originals, Recordings and Imports (ADR 0030); planned: lead, weighting feedback, exposure suit, Cylinders and body weight (ADR 0031); SAC and OTU on Recordings for the bottom-time tool (ADR 0032).
 status: draft
 date: 2026-10-06
 ---
@@ -182,6 +182,10 @@ and nothing reaches that User.
   per sensor), CNS, NDL, deco stop/ceiling, TTS, heading, heart rate, GPS (B6), events
   (gas switch, alarms, bookmarks, setpoint changes). Unknown source fields are kept in a
   per-source extension area (A7) rather than dropped.
+- *Planned ([ADR 0032](../decisions/0032-mod-and-no-decompression-limits.md), slice 19):* the summary also keeps FIT's
+  `avg_volume_sac`, `avg_rmv` (L/min at the surface) and `o2_toxicity` (OTU); older Recordings read their Originals again
+  once. The bottom-time tool takes its default SAC from them and its default GF from `gfHigh`; tests compare its NDL with
+  the computer's `ndl` samples.
 - *Source logbook fields*: notes, buddy names, site name and similar values the Source
   delivered (UDDF, Subsurface). They're kept as the baseline for 3-way merges on re-import.
 - *Positions (B6, implemented in ADR 0020):* entry and exit position from the Device, both optional.
@@ -213,6 +217,12 @@ weighting feedback stay here (no exchange format has them).
 **Lead estimate** (planned, ADR 0031, slice 18) — not stored: computed on request for a Diver and planned conditions
 (water, suit, Cylinders) from the Diver's Dives with the same suit and a known water type, adjusted by physics for the
 cylinder at reserve and the water; a rule of thumb without history. See the [weight calculator note](../research/2026-10-06-weight-calculator.md).
+
+**Gas numbers and bottom time** (planned, [ADR 0032](../decisions/0032-mod-and-no-decompression-limits.md), slice 19) — not
+stored: computed on request. MOD, best mix, EAD and END for any gas mix; for a planned depth, air or nitrox, Cylinder and
+SAC, the shortest of the no-decompression limit (ZHL-16C with the Diver's GF, clean tissues), the oxygen limit and the
+gas, and which binds. Reads the Diver's Recordings (GF, SAC) and recent Dives (the 48-hour warning), the Cylinder
+catalogue (ADR 0031) and the planned site's water type. See the [gas and NDL note](../research/2026-10-06-gas-and-ndl-tools.md).
 
 **Equipment use** — `(Dive, Equipment item, configuration note)`.
 
@@ -505,6 +515,25 @@ Edge cases:
 - *0 kg logged* (a drysuit diver with a steel twin set) counts as "no lead"; a Dive with no lead entries is unknown and
   left out.
 - *The suit changed in SSI's app* isn't possible (SSI has no suit field); lead changed there comes back three-way.
+
+### 6. A nitrox dive at 30 m (planned, ADR 0032)
+
+Tim plans 30 m on EAN32 with an AL80 in the Red Sea. His latest Garmin Recording says GF 40/85; his recent Recordings
+have a median SAC of 18 L/min.
+
+1. *Gas:* MOD 33.4 m at 1.4 and 39.7 m at 1.6 (salt water); at 30 m his ppO2 is 1.29.
+2. *Bottom time:* NDL about 19 min (GF 85, "from your Garmin"), oxygen about 180 min, gas about 20 min above 50 bar after
+   the ascent gas. The page says the NDL binds and the gas is close.
+3. He dived two hours ago (a Dive in his logbook): the page says the limit is shorter than shown and his computer knows
+   by how much.
+
+Edge cases:
+- *Beyond the MOD or 40 m* (EAN32 at 36 m): no bottom time, "outside recreational limits"; the MOD is still shown.
+- *A mountain lake at 900 m, fresh water:* surface pressure 0.91 bar from the altitude; without it the NDL would be too
+  long, so the page says when no altitude was given.
+- *No Recording with a GF* (an SSI-only logbook, or another computer): GF high 85, "default".
+- *EAN40 at 30 m:* ppO2 1.6, the oxygen limit (45 min) is shown beside the NDL, and the page says 1.6 is the contingency
+  limit.
 
 ## Open questions
 
