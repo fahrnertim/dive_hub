@@ -241,6 +241,21 @@ The page for planning aids such as the lead estimate; the later home of a dive p
 _Avoid_: Planner (until it plans a dive), utilities
 _German_: Werkzeuge
 
+**Equipment item** (planned):
+A piece of a Diver's gear, such as a regulator set, a BCD, a cylinder or a dive computer, with maker, model, serial and status (in use, retired, lost, sold). A Device has one. Either on every Dive of its Diver while in use (unless taken off a Dive) or only on the Dives it was put on ([ADR 0034](decisions/0034-equipment-items-and-service-schedules.md)).
+_Avoid_: Gear item (fine in UI text), asset, kit (that is a set)
+_German_: Ausrüstungsgegenstand (on screen: "Ausrüstung")
+
+**Service schedule** (planned):
+A rule for one kind of service on an Equipment item, set up by the User: every so many months, dives and/or dive hours, due at whichever comes first, counted from the last service of that kind. An item can have several (a cylinder's visual inspection and its pressure test).
+_Avoid_: Service interval (the number inside it), reminder, maintenance plan
+_German_: Wartungsplan (on screen: "Wartung alle …")
+
+**Service record** (planned):
+What was done to an Equipment item, when and by whom (optionally at what cost), and which service schedules it resets.
+_Avoid_: Service log, maintenance entry, inspection (that is one kind)
+_German_: Wartungseintrag
+
 ## Places
 
 **Dive site**:

@@ -1,6 +1,6 @@
 ---
 title: Product specification
-summary: Dive Hub is a self-hosted hub that collects dive data from many sources and can forward it to connected services; later features (auto-import of sites near Dives, planning tools: a lead estimate, MOD and bottom time, gas plans for groups).
+summary: Dive Hub is a self-hosted hub that collects dive data from many sources and can forward it to connected services; later features (auto-import of sites near Dives, planning tools: a lead estimate, MOD and bottom time, gas plans for groups; equipment with service intervals).
 status: draft
 date: 2026-10-06
 ---
@@ -110,6 +110,13 @@ Noted for later; not designed or decided yet.
   (slice 20). Not decided yet: sharing a planning SAC with buddies, buoyancy per Equipment item (waits for Equipment items),
   repetitive dives from the logbook, sites' altitude, trimix limits, what a planned dive is and whether it becomes the
   Dive once dived.
+
+- **Equipment and service intervals** (owner, 2026-10-06). A Diver's Equipment items with service schedules the User sets
+  up (several per item; months, dives and/or hours, whichever first) and service records; usage from items on every Dive
+  while in use (with exceptions), items put on single Dives, Devices and Cylinders; reminders in the app. Decided in
+  [ADR 0034](../decisions/0034-equipment-items-and-service-schedules.md), designed in the
+  [equipment note](../research/2026-10-06-equipment-and-service.md) (slice 21). Later: lending and holders over time, parts,
+  receipts, SSI's gear list.
 
 ## Non-goals (so far)
 

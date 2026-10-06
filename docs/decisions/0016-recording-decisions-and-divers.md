@@ -9,7 +9,8 @@ date: 2026-10-03
 
 ## Status
 Accepted – 2026-10-03. Amended by [ADR 0028](0028-shared-divers-and-participants.md) (2026-10-05): every User sees every
-Diver by name; external Divers are managed by no one; Participants are built.
+Diver by name; external Divers are managed by no one; Participants are built. Amended by
+[ADR 0034](0034-equipment-items-and-service-schedules.md) (planned, slice 21): each Device is linked to an Equipment item.
 
 ## Context
 Slices 1–5 recorded Duplicate candidates but left no way to decide them, filed every Recording

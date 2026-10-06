@@ -1,6 +1,6 @@
 ---
 title: Data model
-summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios; Dives without a Recording, offsets and their source, a Provider's dives as Originals, Recordings and Imports (ADR 0030); planned: lead, weighting feedback, exposure suit, Cylinders and body weight (ADR 0031); SAC and OTU on Recordings for the bottom-time tool (ADR 0032); SAC per Dive and gas plans for groups (ADR 0033).
+summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios; Dives without a Recording, offsets and their source, a Provider's dives as Originals, Recordings and Imports (ADR 0030); planned: lead, weighting feedback, exposure suit, Cylinders and body weight (ADR 0031); SAC and OTU on Recordings for the bottom-time tool (ADR 0032); SAC per Dive and gas plans for groups (ADR 0033); Equipment items with service schedules (ADR 0034).
 status: draft
 date: 2026-10-06
 ---
@@ -19,7 +19,7 @@ Every entity belongs to exactly one tier. This answers "who can see/change it" a
 |---|---|
 | **Instance** (shared by all Users) | User, Dive site (→ External IDs), Site import, Operator, Agency catalog |
 | **User** | Connection (→ Diver mappings), Import, Original, external Divers they created |
-| **Diver** (via the Users who manage it) | External IDs, Body weights (planned), Dive (→ Recordings, Cylinders, Lead, Participants, Media, Signatures, Pushes), Trip, Certification, Membership, Insurance, Medical exam, Equipment (incl. Devices), Site note |
+| **Diver** (via the Users who manage it) | External IDs, Body weights (planned), Equipment items with service schedules and records (planned), Dive (→ Recordings, Cylinders, Lead, Participants, Media, Signatures, Pushes), Trip, Certification, Membership, Insurance, Medical exam, Equipment (incl. Devices), Site note |
 
 ## Overview
 
@@ -202,7 +202,8 @@ and nothing reaches that User.
 
 **Cylinder** — per Dive: Equipment item (optional), volume, working pressure, material,
 gas mix (O2/He), start/end pressure, usage window.
-*Planned (ADR 0031, slice 17):* one or more per Dive (position), material `aluminium`, `steel` or `carbon`; a **cylinder
+*Planned (ADR 0031, slice 17):* one or more per Dive (position); it may name the Diver's own cylinder item (ADR 0034,
+slice 21), which fills its values and counts the Dive for that item's schedules, material `aluminium`, `steel` or `carbon`; a **cylinder
 catalogue in code** (like the vocabularies: AL80, S80, steel 10/12/15 L, twins, …, each with its empty buoyancy in
 seawater and its source) fills the values when picked; any value can be typed. SSI gives one cylinder's volume, pressures
 and a type ID (material once the IDs are looked up); FIT gives pressures (volume from message 147, later). UDDF:
@@ -289,6 +290,27 @@ category-specific properties (e.g. tank volume, working pressure, material),
 **Device** — an Equipment item that records data (dive computer, transmitter):
 serial number, firmware history. Assigning a Device to a Diver is how Imports attribute Recordings.
 *Implemented (ADR 0016):* reassigning affects only Imports from then on; single Dives can be moved.
+*Planned ([ADR 0034](../decisions/0034-equipment-items-and-service-schedules.md), slice 21):* each Device is linked to an
+Equipment item (`device.equipment_item_id`, created with it; a migration for existing Devices); its Dives are those of
+its Recordings.
+
+**Equipment item, usage, schedules and records** (planned, ADR 0034, slice 21):
+- *Item:* a Diver's (Users who manage it see and change it); category (vocabulary in code), name, maker, model, serial,
+  purchase date, notes, status (`in use`, `retired`, `lost`, `sold`), **on every Dive while in use** with its in-use date;
+  version, Revisions; retired, never deleted once used. One item per regulator set; parts later.
+- *Usage:* an every-Dive item counts all its Diver's Dives from its in-use date except those it was **taken off**; other
+  items the Dives they were **put on** (`equipment_use (Dive, item, on/off)`; "same as last dive", sets; never
+  automatic); a Device the Dives of its Recordings; a cylinder item the Dives whose Cylinder names it. Deleted Dives count
+  nowhere.
+- *Service schedule:* item, name, interval in months, dives and/or hours (at least one), start date ("last done before
+  Dive Hub"), active. Due at whichever comes first, from the newest record that resets it; computed, never stored. **The
+  User sets every interval**; no built-in templates.
+- *Service record:* item, date, the schedules it resets, by whom, notes, optional cost and currency; a fact (deleting a
+  schedule keeps it; a backdated record never moves a clock back).
+- *Reminders:* in the app (Equipment page, a count in the navigation, a dismissible logbook notice); due soon within 30
+  days or 10 % of a count.
+- *Later:* lending and holders over time, parts as items, receipts (Media), SSI's gear (`get_gear`, gear sets, a dive's
+  gear ids), the exposure suit naming an item.
 
 ### Data in and out
 
@@ -561,6 +583,26 @@ Edge cases:
   "default".
 - *A 300 bar fill:* about 10 % less gas than ideal; the pressures account for it.
 - *30 m instead of 18 m:* rock bottom rises well above 50 bar, and the page shows why the fixed reserve isn't enough there.
+
+### 8. A regulator and a cylinder due for service (planned, ADR 0034)
+
+Tim adds his regulator set (on every Dive while in use since 2025-04; schedule "service: 24 months or 100 dives", last
+done 2025-04) and his 12 L steel cylinder (schedules "visual inspection: 12 months", last 2026-03, and "pressure test:
+60 months", last 2023-03 by the stamp). His Garmin is a Device, so it has an item already.
+
+1. Since 2025-04 Tim logged 87 Dives; the regulator is **due soon** (within 10 % of 100 dives). The Equipment page says
+   "87 of 100 dives"; the navigation shows 1.
+2. On a holiday he rented a regulator: he takes his own off those 9 Dives; it is now at 78.
+3. The shop services it in 2026-11: a record (date, shop, "full service", 140 EUR) resets the schedule; counting starts
+   again. A record he enters later for 2025-10 (a repair) doesn't move the clock back.
+4. A record "pressure test with visual inspection" resets both cylinder schedules.
+5. He sells the cylinder: status `sold`; its Dives and records stay; its schedules no longer remind.
+
+Edge cases:
+- *A deleted Dive* doesn't count; restoring it counts again.
+- *Lena borrows the regulator* for a week: not modelled yet (lending later); Tim takes it off those Dives of his, and
+  Lena's Dives don't count for it.
+- *A schedule only by months* (the cylinder) never needs usage.
 
 ## Open questions
 
