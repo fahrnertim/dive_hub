@@ -242,7 +242,9 @@ a synced dive has been seen:
   ("Mares Puck4_2418005226"), read as the same Device the newer shape names. Newer records (app 4.1.231) fill all of them,
   with `divecomputer_ref` the model alone ("Puck4"). Both keep the profile in `depthDataset` and `tempDataset`, not in
   `diveSamples` (empty); `divecomputer_dive_ref` is the app's own ("2025-07-07T10:55:00.000_0"), `gf_set` "85 / 85" with
-  `gf_set_1` / `_2` empty, an `alarmDataset`, and no water setting.
+  `gf_set_1` / `_2` empty, an `alarmDataset`, and no water setting. **GF is not taken from `gf_set`** (owner, 2026-10-06):
+  whether "85 / 85" is the computer's setting or a value SSI's app fills in is unknown [?], and SSI names no deco model
+  for it; Dive Hub doesn't assume. Revisit when a dive with a known setting shows what SSI writes.
 - *Typed by hand:* everything else.
 - Read: `odin_user_log_datetime` (local, no time zone), `_divetime` (minutes; a computer's dive takes its profile's
   length), `_depth_m`, `_avg_depth_m`, `_watertemp_c`, `_watertemp_max_c` (0 counts as none), `_pos_start_*`,
