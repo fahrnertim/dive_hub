@@ -233,6 +233,7 @@
   font-size: var(--text-xs); font-weight: var(--weight-semibold); line-height: 1; }
 .avatar[data-tone='1'] { background: var(--color-success-soft); }
 .avatar[data-tone='2'] { background: var(--color-surface-sunken); }
+.avatar-inline { width: 1.5rem; height: 1.5rem; border-width: 0; font-size: 0.6875rem; }
 .avatar-more { background: var(--color-surface); color: var(--color-text-muted); }
 .avatar-stack { display: inline-flex; }
 .avatar-stack > .avatar + .avatar { margin-inline-start: -0.5rem; }

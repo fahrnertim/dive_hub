@@ -9,7 +9,7 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, Dialog, Form, Muted, Notice, PageHeader, Panel, SearchList, Select, Table, TextField, type SearchListItem } from './ui/index.ts';
+import { Button, Dialog, Form, DiverAvatar, Muted, Notice, PageHeader, Panel, SearchList, Select, Table, TextField, type SearchListItem } from './ui/index.ts';
 
 /** The Divers whose logbooks the User keeps, their Devices (ADR 0016), and the other divers Users dived with (ADR 0028). */
 export function DiversPage() {
@@ -119,6 +119,7 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
         </Form>
       ) : (
         <>
+          <DiverAvatar inline name={d.name} diverId={d.id} />
           <span className="diver-name">{d.name}{d.isOwn && ` (${t('divers.own')})`}</span>
           <a href={`#/?diver=${d.id}`} className="meta">{t('divers.dives', { count: d.diveCount })}</a>
           <span className="actions">
@@ -301,6 +302,7 @@ function OtherDiverRow({ diver: d, list, index, count }: { diver: ExternalDiverV
         </Form>
       ) : (
         <>
+          <DiverAvatar inline name={d.name} diverId={d.id} />
           <span className="diver-name">{d.name}</span>
           <span className="meta">{[
             ...d.accounts.map((source) => t('divers.hasAccount', { name: t(`divers.service.${source}`) })),

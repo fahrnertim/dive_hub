@@ -5,12 +5,12 @@ import { connectionsQuery, divesQuery, diversQuery, PAGE_SIZE, siteQuery, type D
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import {
-  avatarTone, initials, LOGBOOK_FILTERS, logbookHref, mixName, monthGroups, SORT_CHOICES, sortChoice, toggled, type LogbookFilter, type MonthFigures,
+  LOGBOOK_FILTERS, logbookHref, mixName, monthGroups, SORT_CHOICES, sortChoice, toggled, type LogbookFilter, type MonthFigures,
 } from './lib/logbook.ts';
 import { useAddressSearch } from './lib/address-search.ts';
 import { usePageTitle } from './lib/page.ts';
 import { useNames, useProviders } from './lib/providers.ts';
-import { Avatar, Button, Icon, Muted, Notice, PageHeader, Panel, Select, TextField, ToggleChip } from './ui/index.ts';
+import { Avatar, Button, DiverAvatar, Icon, Muted, Notice, PageHeader, Panel, Select, TextField, ToggleChip } from './ui/index.ts';
 
 const ALL = 'all';
 /** A stack shows this many circles, then "+2". */
@@ -306,7 +306,7 @@ function Buddies({ people }: { people: DiveSummary['participants'] }) {
   return (
     <span className="dive-buddies">
       <span className="avatar-stack" aria-hidden="true">
-        {people.slice(0, CIRCLES).map((p) => <Avatar key={p.diverId} letters={initials(p.name)} tone={avatarTone(p.diverId)} />)}
+        {people.slice(0, CIRCLES).map((p) => <DiverAvatar key={p.diverId} name={p.name} diverId={p.diverId} />)}
         {more > 0 && <span className="avatar avatar-more">{t('logbook.morePeople', { count: more })}</span>}
       </span>
       <span className="visually-hidden">

@@ -7,7 +7,7 @@ import {
 import { announce } from './lib/announce.ts';
 import { useErrorText } from './lib/display.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
-import { Button, Dialog, Notice, RadioGroup, SearchList, Select, type SearchListItem } from './ui/index.ts';
+import { Button, Dialog, DiverAvatar, Notice, RadioGroup, SearchList, Select, type SearchListItem } from './ui/index.ts';
 
 const ROLES: ParticipantRole[] = ['buddy', 'guide', 'instructor'];
 /** The row that adds a new Diver by the name typed. */
@@ -66,7 +66,7 @@ export function Participants({ dive: d }: { dive: DiveView }) {
         <div className="site-fact" role="group" aria-labelledby={labelId}>
           {!nobody && (
             <ul className="people-fact">
-              {d.participants.map((p) => <li key={p.diverId}>{t('participants.withRole', { name: p.name, role: t(`participants.role.${p.role}`) })}</li>)}
+              {d.participants.map((p) => <li key={p.diverId}><DiverAvatar inline name={p.name} diverId={p.diverId} /><span>{t('participants.withRole', { name: p.name, role: t(`participants.role.${p.role}`) })}</span></li>)}
             </ul>
           )}
           {!nobody && (
@@ -83,6 +83,7 @@ export function Participants({ dive: d }: { dive: DiveView }) {
         <ul className="diver-list" ref={rows}>
           {d.participants.map((p, index) => (
             <li key={p.diverId} className="diver-row participant-row">
+              <DiverAvatar inline name={p.name} diverId={p.diverId} />
               <span className="diver-name">{p.name}</span>
               {/* Changing the role saves at once, like a Device's owner on the Divers page. */}
               <span className="participant-role">

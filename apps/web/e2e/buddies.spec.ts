@@ -48,7 +48,7 @@ test('puts buddies on a dive, finds one in the SSI buddy list, and sends both to
   await dialog.getByRole('searchbox', { name: 'Find a diver' }).fill('kai');
   await dialog.getByRole('option', { name: /Kai Lund/ }).click();
   await expect(dialog).toBeHidden();
-  await expect(people.getByRole('listitem')).toHaveText(['Kai Lund (Buddy)']);
+  await expect(people.locator('li > :not(.avatar)')).toHaveText(['Kai Lund (Buddy)']);
 
   await people.getByRole('button', { name: 'Add someone' }).click();
   dialog = page.getByRole('dialog');
@@ -56,7 +56,7 @@ test('puts buddies on a dive, finds one in the SSI buddy list, and sends both to
   await dialog.getByRole('searchbox', { name: 'Find a diver' }).fill('Mia');
   await dialog.getByRole('option', { name: /Add “Mia” as a new diver/ }).click();
   await expect(dialog).toBeHidden();
-  await expect(people.getByRole('listitem')).toHaveText(['Kai Lund (Buddy)', 'Mia (Guide)']);
+  await expect(people.locator('li > :not(.avatar)')).toHaveText(['Kai Lund (Buddy)', 'Mia (Guide)']);
 
   // Roles change, and people leave, in a dialog from the fact. Edits within ten minutes are one history entry with
   // the net change (lib/history.ts).
@@ -68,7 +68,7 @@ test('puts buddies on a dive, finds one in the SSI buddy list, and sends both to
   await expect(dialog.getByRole('button', { name: /Role of Kai Lund/ })).toContainText('Instructor');
   await dialog.getByRole('button', { name: 'Done' }).click();
   // In the order the server lists them: by role.
-  await expect(people.getByRole('listitem')).toHaveText(['Mia (Guide)', 'Kai Lund (Instructor)']);
+  await expect(people.locator('li > :not(.avatar)')).toHaveText(['Mia (Guide)', 'Kai Lund (Instructor)']);
   await expect(change).toBeFocused();
   await openLine(page, 'History');
   await expect(page.getByText('Kai Lund added as Instructor')).toBeVisible();
@@ -96,7 +96,7 @@ test('puts buddies on a dive, finds one in the SSI buddy list, and sends both to
   await change.click();
   await dialog.getByRole('button', { name: 'Remove: Mia' }).click();
   await dialog.getByRole('button', { name: 'Done' }).click();
-  await expect(people.getByRole('listitem')).toHaveText(['Kai Lund (Instructor)']);
+  await expect(people.locator('li > :not(.avatar)')).toHaveText(['Kai Lund (Instructor)']);
   await expect(ssi.getByText('Changed since sent')).toBeVisible();
 
 });

@@ -20,6 +20,18 @@ let invitationToken: string;
 let resetToken: string;
 let siteId: string;
 let importedSiteId: string;
+
+/** Circles stay round and on screen, also at twice the text size (WCAG 1.4.4). Whole pages at 200 % are the layout test's. */
+async function expectCirclesFit(page: Page) {
+  const zoom = await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
+  const bad = await page.locator('.avatar-inline').evaluateAll((els) => els
+    .filter((e) => e.checkVisibility())
+    .map((e) => ({ box: e.getBoundingClientRect(), text: e.textContent }))
+    .filter(({ box }) => Math.abs(box.width - box.height) > 1 || box.right > document.documentElement.clientWidth)
+    .map((c) => c.text));
+  await zoom.evaluate((el) => (el as Element).remove());
+  expect(bad, 'circles that are not round or stick out').toEqual([]);
+}
 let offerSiteId: string;
 
 // Prepared once per server before any test (e2e/prepare.ts): a crowd, links to pass on, an imported site.
@@ -257,7 +269,11 @@ for (const v of variants) {
       await page.goto('/#/divers');
       await expect(page.getByText('Ulla Berg')).toBeVisible();
       await expect(page.getByRole('table')).toBeVisible();
+      // A circle beside each name: decoration (the name is the text), the same two letters as in the logbook row.
+      const ulla = page.getByRole('listitem').filter({ hasText: 'Ulla Berg' }).first();
+      await expect(ulla.locator('.avatar[aria-hidden="true"]')).toHaveText('UB');
       await expectGoodPage(page, title('Divers'), v);
+      await expectCirclesFit(page);
     });
 
     test('my account', { tag: ['@account'] }, async ({ page }) => {
@@ -331,7 +347,10 @@ for (const v of variants) {
       await openLine(page, v.english ? 'History' : 'Verlauf');
       const find = page.getByRole('button', { name: v.english ? 'Find Ulla Berg in your SSI buddy list' : 'Ulla Berg in deiner SSI-Buddyliste suchen' });
       await expect(find).toBeVisible();
+      const people = page.getByRole('group', { name: v.english ? 'Buddies and guides' : 'Buddys und Guides' }).getByRole('listitem');
+      await expect(people.locator('.avatar[aria-hidden="true"]')).toHaveText(['KL', 'UB']);
       await expectGoodPage(page, title('Dive 42'), v);
+      await expectCirclesFit(page);
       // Roles and taking someone off, in the dialog from the fact.
       await page.getByRole('button', { name: v.english ? 'Change: Buddies and guides' : 'Ändern: Buddys und Guides' }).click();
       await expect(page.getByRole('dialog').getByRole('listitem').first()).toBeVisible();
