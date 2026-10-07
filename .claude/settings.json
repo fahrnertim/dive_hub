@@ -1,5 +1,6 @@
 {
   "autoMemoryEnabled": false,
+  "autoCompactWindow": 300000,
   "env": {
     "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"
   },

@@ -2,7 +2,7 @@
 title: Documentation index
 summary: Map of all project knowledge. One line per document.
 status: living
-date: 2026-10-06
+date: 2026-10-07
 ---
 
 # Documentation index
@@ -22,8 +22,9 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 ## Development
 - [development.md](development.md) — setup, layout, common tasks (incl. SSI's hand-made site list for tests, connecting Claude Code to a local Dive Hub over MCP, adding an MCP tool, changing a rule of the dive assessment and seeing how often rules fire on real dives), tooling notes.
 
-## Agent skills
-- [skills.md](skills.md) — installed agent skills, rejected candidates, how to vet and install.
+## Agents
+- [agents/working-economically.md](agents/working-economically.md) — rules that keep a session's context small: one slice per session, the hand-over prompt, narrow reading, quiet output, subagents and models, what is never saved on.
+- [skills.md](skills.md) — installed agent skills, our overrides of them, rejected candidates, how to vet and install.
 
 ## Sample files
 - [../samples/README.md](../samples/README.md) — where real dive files go (`samples/private/`, git-ignored) and how fixtures are derived; wanted files (a dive from both a Garmin and a Suunto, Suunto Ocean or EON exports).
@@ -67,6 +68,7 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [0036 Dive assessment](decisions/0036-dive-assessment.md) — built (slice 18, engine version 1): findings from fixed, versioned rules with their sources and evidence (profile practice, decompression and oxygen, shape and series; gas left with slice 19, the surfacing GF with 21), no score; a time lane under the profile, a list mark, the ascent coloured by speed, the computer's events beside; stored with the engine version, dismiss and mute; an MCP tool; trends later. Amendment: one finding per rule and Dive, the last metres only above 18 m/min and the no-fly time beside the findings (owner, 2026-10-07), muted rules listed with the Diver, three ascent bands, what the owner's one real dive showed.
 - [0037 Suunto file import; file formats as adapters behind one registry](decisions/0037-suunto-file-import-and-file-formats.md) — built (slice 18a): the Suunto app's JSON and FIT exports each become a Recording, no merging, the JSON replacing the thin FIT's Recording in place (`fuller_copy_here` the other way round); formats recognised by content behind `imports/formats.ts`; keys `suunto:<serial>:<start>` and `suunto:fit:…`; RGBM models, four computer events, OTU, the pod's SAC, tank size and pressures, channels `ceiling` and `tankPressure`; 5-minute window kept; legacy formats later. Amends 0015, 0036.
 - [0038 Logbook checks, and merging two Dives](decisions/0038-logbook-checks-and-merging-dives.md) — built (slices 18b, 18c): a scan of the logbook for contradictions (a Dive without a Recording overlapping one with a Recording, two Dives of one Diver overlapping) by pure rules and the import's matching, computed each time, in "Needs your decision" with resolutions; nothing merges unasked; merging two Dives = fill the kept one, move the Provider link, normal delete; a linked Dive moves to another Diver as a copy, the old one deleted with its link; slices 18b, 18c. Amends 0016, 0030.
+- [0039 Working economically with LLM agents](decisions/0039-working-economically.md) — one slice per session with a hand-over prompt, compaction at 300,000 tokens, narrow reading, Sonnet and Haiku subagents for research and search, skill overrides moved to docs/skills.md, `scripts/token-report.mjs`.
 - [Template](decisions/template.md) — copy for new ADRs.
 
 ## References
@@ -108,4 +110,5 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [2026-10-06 Dive assessment](research/2026-10-06-dive-assessment.md) — what the evidence says on ascent rates, safety and deep stops, reverse and sawtooth profiles, headaches, gas left, NDL margin, oxygen, surface intervals, flying and temperature (often less than diver lore), what computers record (Garmin's dive alerts), how logbooks present it (Subsurface, Submersion's findings), implementation details and pitfalls; decided (ADR 0036) with the prompt for slice 18 (done; false positives on a real logbook still to look at).
 - [2026-10-07 Suunto file import](research/2026-10-07-suunto-import.md) — probe of two real Suunto D5 dives as the Suunto app exports them: a thin FIT (no serial, no events, no positions, depth and temperature every 10 s) and a JSON that holds all of it and more (serial, firmware, Fused2 RGBM, NDL, ceiling, tank pod pressure and SAC, alarms; SI units); the FIT is a subset of the JSON; an unclear UTC offset; other models and legacy formats from public sources; nine decisions with recommendations, decided in ADR 0037, with the implementation prompt (done, slice 18a).
 - [2026-10-07 Logbook housekeeping](research/2026-10-07-logbook-housekeeping.md) — two observations on the owner's logbook (a corrected SSI time leaves the entry's Dive beside its file's Dive; two overlapping SSI entries become two Dives unasked): gaps in ADR 0030 and 0016, not the Suunto import; reproduced in a test; proposed: a scan of the logbook for contradictions with resolutions in "Needs your decision", merging two Dives as fill, move the link, normal delete; decided in ADR 0038.
+- [2026-10-07 Token usage](research/2026-10-07-token-usage.md) — where the tokens of 20 Claude Code sessions went (measured), what the documentation says, a ranked proposal of rules; decided in ADR 0039.
 - [2026-10-04 SSI app API](research/2026-10-04-ssi-api.md) — community projects that reverse-engineered MySSI's private API (divesend, divebridge, divessi-log-importer, …): password → token, create/update/delete with profile and SSI dive ID back, dives stay unconfirmed, site list without licence, no terms or partner programme; API by default, QR as fallback; decided in ADR 0024.

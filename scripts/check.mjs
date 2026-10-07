@@ -55,7 +55,7 @@ const AREAS = [
   [/^apps\/server\/test\/zip\.ts$/, ['@admin', '@sites']],
 ];
 /** Paths that change no behaviour: no tests. */
-const QUIET = /^(docs\/|samples\/|\.claude\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|skills-lock\.json$|\.gitignore$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$|apps\/server\/test\/fixtures\/write-assessment-fixture\.ts$|apps\/server\/test\/fixtures\/write-suunto-fixture\.ts$|apps\/server\/test\/fixtures\/write-merge-fixture\.ts$)/;
+const QUIET = /^(docs\/|samples\/|\.claude\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|skills-lock\.json$|\.gitignore$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$|apps\/server\/test\/fixtures\/write-assessment-fixture\.ts$|apps\/server\/test\/fixtures\/write-suunto-fixture\.ts$|apps\/server\/test\/fixtures\/write-merge-fixture\.ts$|scripts\/token-report\.mjs$)/;
 
 const plan = { typecheck: full, server: full ? 'all' : 'none', web: full ? 'all' : 'none', e2e: full ? 'all' : 'none', areas: new Set(), specs: new Set() };
 const everything = () => Object.assign(plan, { typecheck: true, server: 'all', web: 'all', e2e: 'all' });

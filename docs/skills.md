@@ -2,13 +2,16 @@
 title: Agent skills
 summary: Which agent skills the project uses, which were considered and rejected, and why.
 status: living
-date: 2026-10-05
+date: 2026-10-07
 ---
 
 # Agent skills
 
 Rule (see [AGENTS.md](../AGENTS.md#skills)): before starting anything new, search for
 specialized skills, vet them, propose them to the user, and record the outcome here.
+Installed skills are there to be loaded: before working in an area, load the ones under [Installed](#installed)
+that fit it, also for familiar tools (14 of them were never loaded in the first 20 sessions,
+[ADR 0039](decisions/0039-working-economically.md)). Before using one, read its entry under [Overrides](#overrides).
 
 ## How to search and install
 
@@ -17,7 +20,7 @@ specialized skills, vet them, propose them to the user, and record the outcome h
   remote fetches), overlap with skills we already have. Install counts alone are not a signal.
 - Install at project level, copied and pinned: `npx skills add <owner/repo> -s <skill> --copy`
   (files land in `.claude/skills/`, the version is pinned in `skills-lock.json`).
-- Project-specific adjustments go in [AGENTS.md](../AGENTS.md#skills), never into the skill files.
+- Project-specific adjustments go under [Overrides](#overrides), never into the skill files.
 
 ## Installed
 
@@ -52,6 +55,62 @@ specialized skills, vet them, propose them to the user, and record the outcome h
 | ux-search, ux-selection-controls | uxcel-lab/product-skills | live search results, choosing the right selection control (the site picker) | 2026-10-05 |
 
 Install with telemetry off: `DISABLE_TELEMETRY=1 npx skills add <owner/repo> -s <skill> -a claude-code --copy -y`.
+
+## Overrides
+
+Where a skill and this project disagree, these rules win. They lived in AGENTS.md until 2026-10-07
+([ADR 0039](decisions/0039-working-economically.md)); rows of the decisions log that say "AGENTS.md overrides" mean this section.
+
+- **domain-modeling**: the glossary is `docs/glossary.md` (not root `GLOSSARY.md`);
+  ADRs go in `docs/decisions/` using our [template](decisions/template.md)
+  (not `docs/adr/`). Its "offer ADRs sparingly" criteria apply.
+- **tdd**, **codebase-design**: same paths — glossary is `docs/glossary.md`, ADRs are in
+  `docs/decisions/`. Test and interface names use the glossary's terms.
+- **vercel-react-best-practices**: our web client is a Vite SPA, not Next.js. Ignore the
+  `server-*` rules (React Server Components, server actions).
+- **tanstack-query-best-practices**: community skill, not from TanStack; official docs win on conflict.
+- **better-auth-\***: follow [ADR 0011](decisions/0011-better-auth.md). Run the auth CLI at the
+  project's pinned version (not `@latest`), generate into its own schema file, never `drizzle-kit push`
+  (migrations are generated, reviewed and committed), and don't run `npx auth mcp`.
+- **frontend-design**: our product is an app, not a landing page; ignore the "hero" guidance. The brief is
+  [docs/spec/design-system.md](spec/design-system.md) and the tokens in `apps/web/src/design/tokens.css`:
+  extend them, don't restyle single pages.
+- **accessibility**: target WCAG 2.2 AA; build on the React Aria components in `apps/web/src/ui/`.
+- **playwright-cli**: tests live in `apps/web/e2e` and run with `pnpm --filter @dive-hub/web test:e2e` (every test has an area tag, [ADR 0023](decisions/0023-faster-checks.md))
+  (installed Edge/Chrome; don't run `npx playwright install`). Keep tests at the User's level: roles,
+  labels and visible text, not CSS classes. A new page or state gets a case in `e2e/ui-quality.spec.ts`
+  ([page rules](spec/design-system.md#rules-every-page-follows)).
+- **emil-design-eng**: skip its fixed opening line; write findings in our review documents' format
+  (its Before/After table is fine inside them). Motion respects `prefers-reduced-motion` and the
+  duration tokens in `apps/web/src/design/tokens.css`.
+- **mobile-native**: skip its fixed opening line. Keep pull-to-refresh (no `overscroll-behavior: none` on `html`/`body`):
+  the logbook is a scrolling document. Hover rules stay in `@media (hover: hover)` as `source-rules.test.ts` checks.
+  Its "test on real hardware" step needs the owner's phone; say what could only be checked in emulation.
+- **review-animations**, **find-animation-opportunities**: reduced motion means our `--duration-*` tokens
+  drop to 0 (not "gentler, not zero"), until an ADR says otherwise. Map their Base UI/Framer examples to
+  React Aria (`data-placement`, `--trigger-anchor-point`) and plain CSS transitions. Findings go in our
+  review documents' format.
+- **ux-tables**, **ux-inputs-and-forms**, **ux-empty-states**, **ux-menus**, **ux-loaders-and-progress**,
+  **ux-notifications-and-toasts**, **ux-search**, **ux-selection-controls** (uxcel): the design system and React Aria win on conflict. Row actions
+  stay visible (never hover-only); no truncate-plus-tooltip on phones; notices and toasts can always be
+  dismissed, and errors never time out (WCAG 2.2.1, 4.1.3). Skip their hand-offs to `ux-*-audit` skills
+  and orchestration docs we don't have, and their mobile push and marketing parts. ux-search's placement rules
+  (a search bar on every page) are for site search, not for pickers and list filters.
+- **suggest-lucide-icons**: a name must also exist in the installed `lucide-react` version (check
+  `node_modules/lucide-react`), not only in `@latest`. Run its script as `PYTHONUTF8=1 python …` (Windows' default encoding fails). New icons go into the
+  map in `apps/web/src/ui/Icon.tsx` ([ADR 0018](decisions/0018-icons-and-motion.md)). Icons are
+  `aria-hidden`; the control keeps its visible text or `aria-label`.
+- **email-and-password-best-practices**: same rules as better-auth-\* (never `npx auth@latest migrate`; use
+  `auth:generate` + drizzle-kit). Keep our argon2id parameters (m = 19 MiB, t = 2, p = 1) and 15-character
+  minimum from [ADR 0012](decisions/0012-invitations-and-admin-bootstrap.md), not the skill's example values.
+- **mcp-builder** (anthropics/skills): TypeScript only (ignore its Python guide), our Fastify app and SDK v2, tool schemas per
+  [ADR 0035](decisions/0035-mcp-connector.md) (TypeBox if the SDK takes JSON Schema, else Zod only in `src/mcp/`). Its
+  evaluation scripts (Python, Anthropic API) run only when the owner asks, with their own key, against fake data, never a
+  real logbook. Read-only tools; write tools need a new ADR.
+- **better-layout**, **better-typography**, **better-colors** (jakubkrehel): our tokens and hex notation stay (no oklch rewrite).
+  Their hand-offs to `better-accessibility`, `better-ui` and `better-writing` go to our `accessibility` skill, `emil-design-eng`
+  and the writing rules in [docs/spec/design-system.md](spec/design-system.md#writing). Surfaces follow
+  [ADR 0019](decisions/0019-tonal-surfaces.md): tones, not shadows, on the page. Findings go in our review documents' format.
 
 ## Pending (install when the matching library or phase is chosen)
 
@@ -145,3 +204,4 @@ Details and commands: [skills vetting](research/2026-10-02-agent-skills-vetting.
 | 2026-10-05 | `npx skills find` for "relationships", "contacts", "people picker", "data mapping", "validation rules", "privacy personal data", "gdpr", "entity matching" (buddies, Push requirements, [ADR 0028](decisions/0028-shared-divers-and-participants.md), [ADR 0029](decisions/0029-push-requirements-and-buddies.md)) | nothing installed | wshobson/agents `gdpr-data-handling` (commit be57c0b, one 2.7 KB SKILL.md, no scripts) read and rejected: a generic summary of the law (legal bases, data-subject rights, consent boxes) whose "details" point to an empty `references/` folder; its one practical rule, collect no more than needed, is already in `security-and-hardening`. The rest were vendor skills (Lark contacts, Azure, Firebase, Convex), OSINT people search, or skills rejected before (web-design-guidelines, taste-skill). `ux-selection-controls` and `ux-search` (installed) covered the role choice and the Diver and buddy pickers |
 | 2026-10-05 | `npx skills find` for "distributed lock", "lease", "postgres locking", "job concurrency" (provider layer cleanup, leases in PostgreSQL) | nothing installed | Only unrelated or rejected hits: Redis skills (upstash `upstash-redis-js`, affaan-m/ecc `redis-patterns`; we have no Redis), `supabase-postgres-best-practices` (rejected 2026-10-02) and Prisma's Postgres setup (we use Drizzle), and general agent-workflow skills (obra/superpowers debugging and code review, distributed tracing, Turborepo caching). None covers leases or row-level locking in plain PostgreSQL; `postgres-drizzle` and `codebase-design` covered the work |
 | 2026-10-06 | mcp-builder, used for slice 17 ([ADR 0035](decisions/0035-mcp-connector.md)) | note | Its best-practices file shaped the tools (namespaced names, paging fields, annotations, errors that say what to do, a size cap). Its TypeScript guide still shows SDK v1 (`@modelcontextprotocol/sdk`, Express, Zod): we use SDK v2 with TypeBox through `fromJsonSchema`. Its Markdown/JSON `response_format` was not taken: results are structured content with an output schema, and `detail` chooses concise or detailed. The evaluation scripts were not run |
+| 2026-10-07 | `npx skills find` for "token usage", "context management", "claude code cost", "prompt caching", "context engineering", "agents md" (token usage, [research note](research/2026-10-07-token-usage.md)) | nothing installed | Only the registry pages were read, not the skill files. mattpocock/skills `writing-for-agents` (pointers instead of inline material, every always-loaded word costs each turn) is a candidate for rewriting AGENTS.md, pending the owner. anthropics/claude-plugins-official `claude-md-improver` not needed: it also targets `CLAUDE.local.md` (against ADR 0001), and Claude Code's built-in `/doctor prompt-audit` covers the audit. juliusbrussee/caveman `verify-and-stop` (fewer verification steps) not pursued: it would work against our checks rule. The rest: Lark, marketing, unrelated vendor skills |
