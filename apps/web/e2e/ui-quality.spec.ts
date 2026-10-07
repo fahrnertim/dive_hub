@@ -20,6 +20,7 @@ let invitationToken: string;
 let resetToken: string;
 let siteId: string;
 let importedSiteId: string;
+let centreId: string;
 
 /** Circles stay round and on screen, also at twice the text size (WCAG 1.4.4). Whole pages at 200 % are the layout test's. */
 async function expectCirclesFit(page: Page) {
@@ -38,7 +39,7 @@ let offerSiteId: string;
 // Read here, not when the file loads: Playwright may load spec files before the global setup wrote it.
 // Other specs on this server may have changed the language; these tests let the browser decide.
 test.beforeAll(async ({ playwright }) => {
-  ({ diveId, invitationToken, resetToken, siteId, importedSiteId, offerSiteId } =
+  ({ diveId, invitationToken, resetToken, siteId, importedSiteId, offerSiteId, centreId } =
     JSON.parse(readFileSync(dataFile(Number(process.env.TEST_PARALLEL_INDEX ?? 0) % E2E_SERVERS), 'utf8')) as PreparedData);
   const api = await playwright.request.newContext({ baseURL: E2E_BASE_URL, storageState: E2E_SESSION, extraHTTPHeaders: headers });
   await setPreferences(api, { language: null, units: null });
@@ -156,6 +157,35 @@ for (const v of variants) {
       await page.getByRole('button', { name: v.english ? 'New dive site' : 'Neuer Tauchplatz' }).click();
       await expect(page.getByRole('button', { name: v.english ? 'Create dive site' : 'Tauchplatz anlegen' })).toBeVisible();
       await expectGoodPage(page, title('Dive sites'), v);
+    });
+
+    test('Dive centres, and creating one', { tag: ['@sites'] }, async ({ page }) => {
+      await page.goto('/#/centres');
+      await expect(page.getByRole('link', { name: /^Tauchsportzentrum Beispielhausen/ })).toBeVisible();
+      await expectGoodPage(page, title('Dive centres'), v);
+      await page.getByRole('button', { name: v.english ? 'New dive centre' : 'Neue Tauchbasis' }).click();
+      await expect(page.getByRole('button', { name: v.english ? 'Create dive centre' : 'Tauchbasis anlegen' })).toBeVisible();
+      await expectGoodPage(page, title('Dive centres'), v);
+    });
+
+    test('a dive centre with its code, changing its number and adding a dive site', { tag: ['@sites'] }, async ({ page }) => {
+      await page.goto(`/#/centres/${centreId}`);
+      const code = page.getByRole('img', { name: /Tauchsportzentrum Beispielhausen/ });
+      await expect(code).toBeVisible();
+      // The code is a square that fits the page, dark on white in both colour schemes: a scanner needs that.
+      const box = (await code.boundingBox())!;
+      expect(Math.abs(box.width - box.height)).toBeLessThan(1);
+      expect(box.width).toBeGreaterThanOrEqual(200);
+      expect(await code.locator('.qr-code-paper').evaluate((el) => getComputedStyle(el).fill)).toBe('rgb(255, 255, 255)');
+      expect(await code.locator('.qr-code-ink').evaluate((el) => getComputedStyle(el).fill)).toBe('rgb(0, 0, 0)');
+      await expectGoodPage(page, undefined, v);
+      await page.getByRole('button', { name: v.english ? 'Change: SSI centre number' : 'Ändern: SSI-Centernummer' }).click();
+      await expect(page.getByRole('button', { name: v.english ? 'Save' : 'Speichern' })).toBeVisible();
+      await expectGoodPage(page, undefined, v);
+      await page.getByRole('button', { name: v.english ? 'Cancel' : 'Abbrechen' }).click();
+      await page.getByRole('button', { name: v.english ? 'Add dive site' : 'Tauchplatz hinzufügen' }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await expectGoodPage(page, undefined, v);
     });
 
     test('a dive site, reading and editing', { tag: ['@sites'] }, async ({ page }) => {
@@ -610,7 +640,8 @@ test.describe('behaviour', () => {
   const sweep: [string, () => string, string[]][] = [
     ['logbook', () => '/', ['@dives']], ['dive', () => `/#/dives/${diveId}`, ['@dives']], ['Divers', () => '/#/divers', ['@divers']],
     ['Dive sites', () => '/#/sites', ['@sites']], ['a dive site', () => `/#/sites/${siteId}`, ['@sites']],
-    ['an imported dive site', () => `/#/sites/${importedSiteId}`, ['@sites']], ['account', () => '/#/account', ['@account']],
+    ['an imported dive site', () => `/#/sites/${importedSiteId}`, ['@sites']],
+    ['Dive centres', () => '/#/centres', ['@sites']], ['a dive centre', () => `/#/centres/${centreId}`, ['@sites']], ['account', () => '/#/account', ['@account']],
     ['Review', () => '/#/review', ['@dives']], ['admin', () => '/#/admin', ['@admin']], ['site import', () => '/#/admin/site-imports', ['@admin', '@sites']],
   ];
   for (const [name, path, tag] of sweep) {
@@ -629,7 +660,7 @@ test.describe('behaviour', () => {
   }
 
   test('text at 200 % still fits: nothing scrolls sideways (WCAG 1.4.4)', { tag: ['@layout'] }, async ({ page }) => {
-    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/review', '/#/account', '/#/admin', '/#/admin/site-imports']) {
+    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/centres', `/#/centres/${centreId}`, '/#/review', '/#/account', '/#/admin', '/#/admin/site-imports']) {
       await page.goto(path);
       await page.getByRole('heading', { level: 1 }).waitFor();
       await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });

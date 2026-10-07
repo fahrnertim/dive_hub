@@ -3,7 +3,7 @@
 // Any User can take up the data a Source offers for a hand-made site (ADR 0025).
 import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, ne, or, sql, type SQL, type SQLWrapper } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
-import { dive, diveSite, diveSiteExternalId, revision, siteImport } from '../db/schema.js';
+import { dive, diveCentreSite, diveSite, diveSiteExternalId, revision, siteImport } from '../db/schema.js';
 import { writeRevision, type Changes } from '../dives/revisions.js';
 import type { SiteWaterType } from '../vocabulary.js';
 import { IMPORTED_FIELDS, type ImportedValues } from './import/site-source.js';
@@ -282,6 +282,11 @@ export function createSiteService(db: Db) {
           });
         }
 
+        // The Dive centres responsible for the merged site are responsible for the kept one (ADR 0043).
+        await tx.execute(sql`insert into ${diveCentreSite} (centre_id, site_id)
+          select l.centre_id, ${kept.id}::uuid from ${diveCentreSite} l where l.site_id = ${merged.id} on conflict do nothing`);
+        await tx.delete(diveCentreSite).where(eq(diveCentreSite.siteId, merged.id));
+
         await tx.update(diveSite).set({ ...toColumns(fill), version: sql`${diveSite.version} + 1`, updatedAt: new Date() }).where(eq(diveSite.id, kept.id));
         await tx.update(diveSite).set({ mergedInto: kept.id, deletedAt: new Date(), version: sql`${diveSite.version} + 1`, updatedAt: new Date() })
           .where(eq(diveSite.id, merged.id));
@@ -368,6 +373,7 @@ export function createSiteService(db: Db) {
         const [used] = await tx.select({ id: dive.id }).from(dive).where(and(eq(dive.siteId, id), isNull(dive.deletedAt))).limit(1);
         if (used) throw new SiteError('site_in_use');
         await tx.update(diveSite).set({ deletedAt: new Date(), updatedAt: new Date() }).where(eq(diveSite.id, id));
+        await tx.delete(diveCentreSite).where(eq(diveCentreSite.siteId, id));
         await writeRevision(tx, 'dive_site', id, { type: 'user', id: actor.userId }, 'delete', { deletedAt: { from: null, to: new Date().toISOString() } });
       });
     },

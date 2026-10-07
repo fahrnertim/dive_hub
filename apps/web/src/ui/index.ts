@@ -14,3 +14,4 @@ export { Disclosure } from './Disclosure.tsx';
 export { DateTimeField, NumberField, Select, TextArea } from './Fields.tsx';
 export { TextField } from './TextField.tsx';
 export { SearchList, type SearchListItem } from './SearchList.tsx';
+export { QrCode } from './QrCode.tsx';

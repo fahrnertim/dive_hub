@@ -347,6 +347,57 @@ export const diveSiteExternalId = pgTable(
   ],
 );
 
+/**
+ * A business that runs dives, shared by every User of the instance like a Dive site (ADR 0043): any User creates and
+ * edits it (with `version` and Revisions), its creator or an admin deletes it. The name is kept as typed, since
+ * its SSI verification code is built from it.
+ */
+export const diveCentre = pgTable(
+  'dive_centre',
+  {
+    id: id(),
+    name: text('name').notNull(),
+    createdBy: uuid('created_by').references(() => user.id, { onDelete: 'set null' }),
+    version: integer('version').notNull().default(1),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    deletedAt: deletedAt(),
+  },
+  (t) => [check('dive_centre_name_ck', sql`${t.name} ~ '\\S' and length(${t.name}) <= 200`)],
+);
+
+export const centreSource = pgEnum('centre_source', ['ssi']);
+
+/**
+ * A Dive centre's identifier at a Source (ADR 0043), e.g. its SSI centre number: unique per Source, at most one per
+ * Source and centre. Deleted with the centre, so the number is free again.
+ */
+export const diveCentreExternalId = pgTable(
+  'dive_centre_external_id',
+  {
+    id: id(),
+    centreId: uuid('centre_id').notNull().references(() => diveCentre.id, { onDelete: 'cascade' }),
+    source: centreSource('source').notNull(),
+    externalId: text('external_id').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex('dive_centre_external_id_source_uq').on(t.source, t.externalId),
+    uniqueIndex('dive_centre_external_id_centre_source_uq').on(t.centreId, t.source),
+  ],
+);
+
+/** A Dive site a Dive centre is responsible for (ADR 0043), many to many. A Dive's centres are those of its site. */
+export const diveCentreSite = pgTable(
+  'dive_centre_site',
+  {
+    centreId: uuid('centre_id').notNull().references(() => diveCentre.id, { onDelete: 'cascade' }),
+    siteId: uuid('site_id').notNull().references(() => diveSite.id, { onDelete: 'cascade' }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.centreId, t.siteId] }), index('dive_centre_site_site_idx').on(t.siteId)],
+);
+
 export const siteImportStatus = pgEnum('site_import_status', ['queued', 'running', 'done', 'failed']);
 
 export interface SiteImportProgress {

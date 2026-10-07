@@ -170,8 +170,8 @@ dive and must not guess; a check can offer the pair and let the User decide.
 - **As built:** `ruleFor` says whether a pair qualifies; `findChecks` then keeps, nearest start first, each Dive in one pair at
   most, and drops both pairs of a Dive with two equally near partners (it is not offered a farther one either). Depth needs
   both values. The dive page's merge candidates use the pairwise test only (no one-to-one), so they may hint at a pair
-  the panel left out for a tie. Not built: the warning about the Provider's verification on the "Send update" card
-  (the panel's rule text and the client contract do not cover it yet).
+  the panel left out for a tie. The warning about the Provider's verification on the "Send update" card was
+  built with [ADR 0043](0043-dive-centres-and-ssi-verification-codes.md) (`current.updateRemovesVerification`).
 
 ## Amendment 2026-10-07: a fourth rule about one Dive, `short_shallow_dive` (rule version 3)
 Why: a dive computer that gets wet for a moment records a "dive": switched on at the surface, a test, or a false start

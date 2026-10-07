@@ -38,6 +38,17 @@ export function localTime(at: Date, utcOffsetSeconds: number | null) {
 }
 
 /**
+ * Whether an update would change the start time SSI has for the dive, which removes a dive centre's verification of
+ * that entry there (ADR 0038, 0043). `previous` is the record sent last; without it (a dive linked at SSI and never
+ * sent) what SSI has isn't known, and the answer is yes, so the User is warned rather than surprised.
+ */
+export function startChangesAtSsi(previous: Record<string, unknown> | null, dive: { startsAt: Date; utcOffsetSeconds: number | null }): boolean {
+  const sent = previous?.odin_user_log_datetime;
+  if (typeof sent !== 'string') return true;
+  return sent.replace('T', ' ').slice(0, 16) !== localTime(dive.startsAt, dive.utcOffsetSeconds).dateTime;
+}
+
+/**
  * A number SSI's app reads as a floating-point value: always with a decimal point. Its strict JSON
  * decoding refuses `0` where it expects `0.0` (divesend's notes), and JSON.stringify drops the ".0".
  */

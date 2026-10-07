@@ -26,7 +26,8 @@
     "administration": "Administration",
     "toDecide_one": "{{count}} to decide",
     "toDecide_other": "{{count}} to decide",
-    "sites": "Dive sites"
+    "sites": "Dive sites",
+    "centres": "Dive centres"
   },
   "form": {
     "required": "Fill in this field.",
@@ -445,7 +446,12 @@
     "diver_not_external": "Only a diver no User keeps can be merged into another.",
     "ai_access_not_found": "This AI access no longer exists.",
     "ai_access_off": "AI access is switched off on this Dive Hub. An admin can switch it on.",
-    "finding_not_found": "This dive no longer has that finding. Reload the page."
+    "finding_not_found": "This dive no longer has that finding. Reload the page.",
+    "centre_not_found": "This dive centre doesn’t exist (anymore).",
+    "centre_changed": "Someone renamed the dive centre meanwhile. Reload the page and try again.",
+    "centre_not_deletable": "Only whoever created the dive centre, or an admin, can delete it.",
+    "centre_external_id_taken": "Another dive centre already has this number.",
+    "code_not_recognised": "This isn’t a code Dive Hub knows. Paste the whole text of the dive centre’s QR code."
   },
   "vocabulary": {
     "waterType": {
@@ -1217,7 +1223,9 @@
     "claimQuestion_one": "This {{name}} account is {{diver}} here, a buddy on {{count}} dive. Is that you?",
     "claimQuestion_other": "This {{name}} account is {{diver}} here, a buddy on {{count}} dives. Is that you?",
     "claimExplain": "Connecting makes {{diver}} {{mine}}: the dives that list {{diver}} then list {{mine}}. Nothing of those dives becomes yours.",
-    "claimConfirm": "Yes, I am {{diver}}: connect"
+    "claimConfirm": "Yes, I am {{diver}}: connect",
+    "removesVerification": "This update changes the dive’s start time in {{name}}. {{name}} then removes the dive centre’s verification of this dive.",
+    "removedVerification": "The start time changed in {{name}}, so a dive centre’s verification of this dive is gone there."
   },
   "providers": {
     "ssi": {
@@ -1538,5 +1546,78 @@
       "decompression": "<b>Flying after this dive:</b> not before {{until}} ({{hours}} hours; after decompression stops DAN says well over 18).",
       "guidance": "From DAN’s 2002 consensus; it also applies to drives over high passes. Shown after the last dive of a diving day."
     }
+  },
+  "centres": {
+    "title": "Dive centres",
+    "intro": "Businesses that run dives, shared by everyone on this Dive Hub. A centre’s SSI code shows on every dive at its dive sites.",
+    "new": "New dive centre",
+    "create": "Create dive centre",
+    "created": "{{name}} created.",
+    "search": "Find a dive centre",
+    "empty": "No dive centres yet. Create the first one.",
+    "noMatch": "No dive centres match “{{q}}”.",
+    "hasCode": "SSI code",
+    "noCodeShort": "no SSI code",
+    "siteCount_one": "{{count}} dive site",
+    "siteCount_other": "{{count}} dive sites",
+    "pasteCode": "Text of the centre’s SSI code (optional)",
+    "pasteCodeHint": "If you have the text of the centre’s QR code, paste it here: name and number are taken from it.",
+    "readCode": "Read code",
+    "codeRead": "Code read: {{name}}.",
+    "otherCode": {
+      "buddy": "This is a diver’s buddy code, not a dive centre’s.",
+      "professional": "This is a dive professional’s code, not a dive centre’s."
+    },
+    "alreadyHere": "{{name}} already has this number.",
+    "open": "Open {{name}}",
+    "name": "Name",
+    "nameHint": "With an SSI centre number: exactly as SSI spells it, with legal form and town (“Name, Town”). Dive Hub shows it without the town.",
+    "ssiNumber": "SSI centre number",
+    "ssiNumberOptional": "SSI centre number (optional)",
+    "ssiNumberHint": "Digits only. With it, the centre has an SSI verification code.",
+    "ssiNumberEditHint": "The number, or the whole text of the centre’s code. Leave empty to remove it.",
+    "notSet": "Not set",
+    "change": "Change",
+    "add": "Add",
+    "save": "Save",
+    "saved": "Dive centre saved.",
+    "rename": "Rename",
+    "moreActions": "More",
+    "delete": "Delete dive centre",
+    "deleteTitle": "Delete this dive centre?",
+    "deleteBody": "Its code no longer shows on dives. Dive sites and dives stay as they are.",
+    "deleteConfirm": "Delete dive centre",
+    "deleted": "{{name}} deleted.",
+    "back": "Dive centres",
+    "backToCentres": "To the dive centres",
+    "notFound": "Dive centre not found",
+    "codeOf": "SSI verification code of {{name}}",
+    "codeCaption": "SSI verification code",
+    "codeUse": "Scan it in SSI’s app on a logbook entry, and SSI shows that dive as verified.",
+    "noCode": "No verification code yet: it needs the SSI centre number.",
+    "sharedHint": "Everyone on this Dive Hub sees and can change this dive centre.",
+    "sites": "Dive sites",
+    "sitesIntro": "Every dive at one of these dive sites shows this centre’s code.",
+    "noSites": "No dive sites yet.",
+    "addSite": "Add dive site",
+    "addSiteTitle": "Add a dive site to {{name}}",
+    "noSitesToAdd": "Type a name to find a dive site.",
+    "removeSite": "Remove",
+    "siteAdded": "{{name}} added.",
+    "siteRemoved": "Dive site removed.",
+    "atSiteIntro": "The centres that run dives here. Their SSI codes show on every dive at this site.",
+    "noneAtSite": "No dive centre yet.",
+    "addCentre": "Add dive centre",
+    "addCentreTitle": "Add a dive centre to {{name}}",
+    "noneToAdd": "No other dive centres yet. Create one.",
+    "removeCentre": "Remove",
+    "centreAdded": "{{name}} added.",
+    "centreRemoved": "{{name}} removed.",
+    "diveCodes": "Verification code",
+    "diveCodesHint": "From the dive centres of this dive’s site. Scan one in SSI’s app on this dive’s logbook entry, or show it to the others who were on the dive.",
+    "toCentre": "To the dive centre",
+    "showCode_one": "Show the centre’s code",
+    "showCode_other": "Show the centres’ codes",
+    "fullName": "Full name"
   }
 }

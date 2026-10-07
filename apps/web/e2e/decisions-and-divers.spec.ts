@@ -75,7 +75,8 @@ test('a second Diver gets a dive and a device; the logbook can show one Diver', 
   await page.goto('/#/divers');
   await page.getByRole('textbox', { name: 'Add a Diver' }).fill('Mia');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
-  await expect(page.locator('.diver-list')).toContainText('Mia');
+  // The first list: the Divers with a logbook. Other specs on this server may have left divers in the second.
+  await expect(page.locator('.diver-list').first()).toContainText('Mia');
 
   // The backup computer belongs to Mia from now on.
   const backupRow = page.getByRole('row').filter({ hasText: '999' });

@@ -215,7 +215,8 @@ initials only; 8 buddy-list entries, 5 dives with buddies) [R]:
     `buddy;<SSI account ID>;firstName:<first name>;lastName:<last name>;email:<e-mail>;leaderNr:<leader number>`.
 
   They are fixed (the same code every time), carry no token or signature, and the app reads them by camera or from an
-  image file. Whether the app checks the name against the number is [?]. An unverified dive doesn't count towards SSI's
+  image file. Whether the app checks the name against the number is [?]. Whether it reads a name with an umlaut or
+  another non-ASCII letter from a code written as UTF-8 bytes is [?]: no such code has been seen (owner, 2026-10-08). An unverified dive doesn't count towards SSI's
   recognition levels (German "Anerkennungsstufen"; the English name is [?]). Used by
   [ADR 0043](../decisions/0043-dive-centres-and-ssi-verification-codes.md).
 - Still open: whether another account's list gives the same person **another** entry `id` (a row per pair of accounts)

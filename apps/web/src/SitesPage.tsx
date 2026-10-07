@@ -15,6 +15,7 @@ import { SiteForm, typedSources } from './SiteForm.tsx';
 import { useProviders, useProviderText } from './lib/providers.ts';
 import type { ProviderView } from './api.ts';
 import { SiteHistory } from './SiteHistory.tsx';
+import { SiteCentres } from './CentresPage.tsx';
 import { ActionMenu, Button, Checkbox, ConfirmDialog, Icon, Muted, Notice, PageHeader, Panel, Select, Table, TextField } from './ui/index.ts';
 
 /** "Egypt · Red Sea": where a site is, in words. */
@@ -303,6 +304,7 @@ export function SitePage({ id }: { id: string }) {
           </>
         )}
       </Panel>
+      {!editing && <SiteCentres site={s} />}
       {!editing && <NearbySites site={s} />}
       <SiteHistory site={s} />
       <ConfirmDialog

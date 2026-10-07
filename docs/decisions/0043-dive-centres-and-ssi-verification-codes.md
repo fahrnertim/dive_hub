@@ -8,7 +8,8 @@ date: 2026-10-08
 # ADR 0043: Dive centres and SSI verification codes
 
 ## Status
-Accepted – 2026-10-08 (decided with the owner). Nothing is built yet.
+Accepted – 2026-10-08 (decided with the owner). Slice 1 (the Dive centre) is built, see [As built](#as-built-slice-1);
+slices 2 and 3 are not.
 
 ## Context
 SSI shows a dive as verified once the diver scans a dive centre's or a professional's QR code on that logbook entry.
@@ -55,6 +56,34 @@ Dive Hub has no dive centre so far; SSI's dive centre field is sent empty.
 - **Clients** get a duty, written into the [client contract](../spec/clients.md) in the same change: the API gives
   the finished text per centre and the client draws it as a QR code. The format stays on the server.
 - **In the repository** the formats stand with placeholders only. A real person's code is never written down.
+
+### As built (slice 1)
+Decided with the owner on 2026-10-08 while building:
+- **The SSI centre number is digits only** (1 to 10, no leading zero). Where a number is typed, the whole text of a
+  centre's code is taken too, and the number read from it.
+- **Name and display name.** The centre's name is the whole name as its Source spells it (SSI: "name, town"); it is
+  what is stored, edited and written into the code. The API also gives a **display name**, made by the rule of the
+  Source the centre has an ID at: for SSI, the name without the town after the last comma
+  (`providers/ssi/ssi-centre.ts`); another Source may bring another rule. A centre without such an ID shows its whole
+  name. Clients show the display name and offer the whole name for editing.
+- **Tables:** `dive_centre` (name, version, creator, soft delete), `dive_centre_external_id` (one per centre and
+  source, unique per source on the instance) and `dive_centre_site` (the links). Merging two Dive sites moves the
+  links to the kept site; deleting a site or a centre removes its links.
+- **Revisions are written, not shown yet**: every change to a centre (name, number, links, deletion) writes a
+  Revision of the entity `dive_centre`; no client shows a centre's history.
+- **API:** `/api/dive-centres` (list, create, rename with `version`, delete), `PUT …/external-ids/{source}`,
+  `PUT`/`DELETE …/sites/{siteId}`, and `POST /api/verification-codes/read` for a pasted text. A Dive carries
+  `verificationCodes`. Setting the number and the links leaves the centre's `version` alone, as for sites (ADR 0029).
+- **The QR code is drawn by the client** with [`uqr`](https://github.com/unjs/uqr) (MIT, no dependencies), error
+  correction M, quiet zone 4, black on white in both colour schemes. The text is encoded as UTF-8 bytes. **Whether
+  SSI's app reads a name with an umlaut this way is unknown: no code with one has been seen.** If one fails, look here
+  first.
+- **The "Send update" warning** comes from the Push status (`current.updateRemovesVerification`): the SSI adapter
+  compares the start time (to the minute) it would send with the one in the last Push's stored payload. When that
+  payload is unknown (the Dive was linked to an entry that was already at SSI, so nothing was sent), **it warns
+  anyway**: a warning too many costs a glance, a missing one costs a verification. The web client also says after the
+  update that the verification is gone, and both notices lead to the Dive's code when its site has one.
+- **Navigation:** Dive centres are a fourth main entry in the web client.
 
 ### Scanner (slice 2, planned)
 A client reads a code by camera or from an image file and sends its text to the same route. New technology for the

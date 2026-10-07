@@ -15,6 +15,8 @@ export interface PreparedData {
   importedSiteId: string;
   /** A site made here that SSI's list describes: its page offers SSI's data (ADR 0025). */
   offerSiteId: string;
+  /** A Dive centre with a long name and an SSI centre number (both made up), responsible for `siteId` (ADR 0043). */
+  centreId: string;
 }
 
 export const dataFile = (slot: number) => `e2e/.state/data-${slot}.json`;
@@ -92,6 +94,15 @@ async function offerSsiData(api: APIRequestContext) {
   return site.id;
 }
 
+/** A Dive centre whose long name has to wrap beside its code, at the crowd's site. */
+async function addCentre(api: APIRequestContext, siteId: string): Promise<string> {
+  const name = 'Tauchsportzentrum Beispielhausen am Musterstädter See GmbH & Co. KG, Beispielhausen';
+  const { centres } = await (await api.get(`/api/dive-centres?q=${encodeURIComponent('Tauchsportzentrum Beispielhausen')}`)).json() as { centres: { id: string }[] };
+  if (centres[0]) return centres[0].id;
+  const created = await api.post('/api/dive-centres', { data: { name, externalIds: [{ source: 'ssi', externalId: '700003' }], siteIds: [siteId] } });
+  return (await created.json() as { id: string }).id;
+}
+
 export async function prepareServer(baseURL: string, session: string, slot: number) {
   const api = await request.newContext({ baseURL, storageState: session, extraHTTPHeaders: { origin: baseURL } });
   const { dives } = await (await api.get('/api/dives?q=42')).json() as { dives: { id: string; number: number | null }[] };
@@ -101,7 +112,9 @@ export async function prepareServer(baseURL: string, session: string, slot: numb
     siteId: await addCrowd(api, baseURL),
     importedSiteId: await importEgypt(api),
     offerSiteId: await offerSsiData(api),
+    centreId: '',
   };
+  data.centreId = await addCentre(api, data.siteId);
   writeFileSync(dataFile(slot), JSON.stringify(data, null, 2));
   await api.dispose();
 }

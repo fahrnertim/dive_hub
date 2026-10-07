@@ -66,7 +66,7 @@ test.describe('on a phone', () => {
     const bar = page.getByRole('navigation', { name: 'Main' });
     const box = (await bar.boundingBox())!;
     expect(Math.round(box.y + box.height)).toBe(780);
-    for (const name of ['Logbook', 'Divers', 'Dive sites']) {
+    for (const name of ['Logbook', 'Divers', 'Dive sites', 'Dive centres']) {
       const link = bar.getByRole('link', { name });
       await expect(link).toBeVisible();
       await expect(link.locator('svg')).toBeVisible();

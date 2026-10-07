@@ -22,6 +22,8 @@ import { diverRoutes } from './divers/routes.js';
 import { apiRoutes } from './routes.js';
 import { createSiteService } from './sites/site-service.js';
 import { siteRoutes } from './sites/routes.js';
+import { createCentreService } from './centres/centre-service.js';
+import { centreRoutes } from './centres/routes.js';
 import type { SiteImportService } from './sites/import/site-import-service.js';
 import { siteImportRoutes } from './sites/import/site-import-routes.js';
 import type { ProviderLayer } from './providers/layer.js';
@@ -100,6 +102,7 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
   await app.register(assessmentRoutes, { prefix: '/api', auth: deps.auth, assessments: deps.assessments });
   await app.register(diverRoutes, { prefix: '/api', ...deps, divers: createDiverService(deps.db) });
   await app.register(siteRoutes, { prefix: '/api', ...deps, sites: createSiteService(deps.db) });
+  await app.register(centreRoutes, { prefix: '/api', ...deps, centres: createCentreService(deps.db) });
   await app.register(siteImportRoutes, { prefix: '/api', ...deps });
   await app.register(providerRoutes, { prefix: '/api', auth: deps.auth, ...deps.providers });
   await app.register(aiAccessRoutes, { prefix: '/api', auth: deps.auth, accesses: deps.aiAccesses, baseUrl: deps.baseUrl });

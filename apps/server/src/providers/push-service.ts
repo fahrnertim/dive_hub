@@ -8,7 +8,7 @@ import { push } from '../db/schema.js';
 import type { ConnectionService } from './connection-service.js';
 import { LeaseBusy, type Leases } from './leases.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
-import { ProviderError, referenceOf, type Delivered, type ProviderAdapter, type RemoteDive, type RemoteSite } from './provider.js';
+import { ProviderError, referenceOf, type Delivered, type OutgoingDive, type ProviderAdapter, type RemoteDive, type RemoteSite } from './provider.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { forProvider, leftOutBy, unmetRequirements } from './requirements.js';
 
@@ -187,6 +187,15 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
     return { unmet, outgoing: forProvider(loaded.outgoing, unmet) };
   }
 
+  /** The remote dive a Dive has now: whether it is up to date, and what an update would cost there (ADR 0043). */
+  function remoteState(current: PushRow, dives: NonNullable<ProviderAdapter['dives']>, outgoing: OutgoingDive) {
+    const upToDate = current.fingerprint !== null && current.fingerprint === dives.fingerprint(outgoing);
+    return {
+      remoteId: current.remoteId!, remoteNumber: current.remoteNumber, sentAt: current.createdAt, upToDate,
+      updateRemovesVerification: !upToDate && (dives.updateRemovesVerification?.(outgoing, current.payload) ?? false),
+    };
+  }
+
   /** A Dive's state at one Provider. */
   async function statusAt(userId: string, provider: string, loaded: Awaited<ReturnType<typeof loadOutgoingDive>>) {
     const { adapter, dives, exports } = exporter(provider);
@@ -200,10 +209,7 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
       connection: conn ? { id: conn.id, state: conn.state, accountLabel: conn.accountLabel } : null,
       siteId: row.siteId,
       unmet,
-      current: current ? {
-        remoteId: current.remoteId!, remoteNumber: current.remoteNumber, sentAt: current.createdAt,
-        upToDate: current.fingerprint !== null && current.fingerprint === dives.fingerprint(outgoing),
-      } : null,
+      current: current ? remoteState(current, dives, outgoing) : null,
       pushes,
     };
   }

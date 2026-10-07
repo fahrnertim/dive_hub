@@ -393,3 +393,13 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .candidate-facts { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); overflow-wrap: anywhere; }
 .diff { background: var(--color-accent-soft); color: var(--color-text); border-radius: var(--radius-sm); padding-inline: var(--space-1); font-weight: var(--weight-semibold); }
 .review-links { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin-top: var(--space-4); font-size: var(--text-sm); }
+
+/* A verification code (ADR 0043). The code itself is black on white in both themes: a scanner needs that contrast. */
+.code-figures { display: flex; flex-wrap: wrap; gap: var(--space-5); margin-bottom: var(--space-4); }
+.code-figure { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-4); margin: 0 0 var(--space-4); }
+.code-figures .code-figure { margin-bottom: 0; }
+.code-figure figcaption { display: flex; flex-direction: column; gap: var(--space-1); min-width: 12rem; flex: 1; color: var(--color-text-muted); font-size: var(--text-sm); }
+.code-figure figcaption strong { color: var(--color-text); font-size: var(--text-base); }
+.qr-code { display: block; width: min(100%, 15rem); height: auto; flex: none; border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.qr-code-paper { fill: #fff; }
+.qr-code-ink { fill: #000; }

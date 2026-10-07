@@ -23,6 +23,8 @@ const AREAS = [
   [/^apps\/web\/src\/SiteImportPage\.tsx$/, ['@admin', '@sites']],
   [/^apps\/web\/src\/(SitesPage|SiteForm|SiteHistory)\.tsx$|^apps\/web\/src\/lib\/(site-origin|sites-list|geo)\.ts$/, ['@sites']],
   [/^apps\/web\/src\/SitePicker\.tsx$/, ['@sites', '@dives']],
+  // Dive centres and their verification codes (ADR 0043): their own pages, a panel on a Dive site, a line on a Dive.
+  [/^apps\/web\/src\/CentresPage\.tsx$|^apps\/web\/src\/ui\/QrCode\.tsx$/, ['@sites', '@dives']],
   [/^apps\/web\/src\/lib\/address-search\.ts$/, ['@sites', '@dives']],
   [/^apps\/web\/src\/(DiveDetail|DiveEditForm|DiveHistory|DiveList|ProfileSketch|DepthProfile|Decisions|ReviewPage|ReviewStrip|ReviewRows|ImportPanel|DeleteDive|DeletedDives|MergeDive|LogbookChecks|Participants|Assessment)\.tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|sketch|logbook|review|devices|importable|deletion|assessment)\.ts$/, ['@dives']],
   // The Dive the deletion browser tests delete and restore (ADR 0026).
@@ -46,6 +48,7 @@ const AREAS = [
   [/^apps\/server\/src\/mcp\//, ['@account', '@admin']],
   [/^apps\/server\/src\/sites\/import\/|^apps\/server\/src\/providers\/ssi\/ssi-sites\.ts$/, ['@admin', '@sites']],
   [/^apps\/server\/src\/sites\//, ['@sites', '@dives']],
+  [/^apps\/server\/src\/centres\//, ['@sites', '@dives']],
   [/^apps\/server\/src\/(dives|imports|fit|suunto|assessment)\/|^apps\/server\/src\/(routes|vocabulary)\.ts$/, ['@dives']],
   [/^apps\/server\/src\/divers\//, ['@divers']],
   [/^apps\/server\/src\/(users|auth)\//, ['@account', '@admin']],

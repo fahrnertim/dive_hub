@@ -22,7 +22,7 @@ test.use({ reducedMotion: 'reduce' });
 const areas = process.env.REVIEW_AREAS?.split(',').map((a) => a.trim()).filter(Boolean);
 const want = (area: string) => !areas?.length || areas.includes(area);
 /** Which area a capture belongs to, by its name. */
-const areaOf = (name: string) => (/site/.test(name) ? 'sites' : /divers/.test(name) ? 'divers'
+const areaOf = (name: string) => (/site|centre/.test(name) ? 'sites' : /divers/.test(name) ? 'divers'
   : /account|signin|invitation/.test(name) ? 'account' : /admin/.test(name) ? 'admin' : 'dives');
 
 /** Counts the page's requests until their bodies are read, so a capture can wait until the data is on screen. */
@@ -211,6 +211,12 @@ test('review material', async ({ page, request, browser }) => {
   await request.post('/api/dive-sites', { headers, data: { name: 'Eel Garden', position: { latitude: 28.5101, longitude: 34.5172 }, country: 'EG', waterBody: 'Red Sea' } });
   const diveNow = await (await request.get(`/api/dives/${sitedDive}`)).json() as { version: number };
   await request.patch(`/api/dives/${sitedDive}`, { headers, data: { version: diveNow.version, siteId: site.id } });
+  // Dive centres (ADR 0043): one with an SSI centre number at Lighthouse, so its code shows there and on the dive, and
+  // one without a number. Name and number are made up.
+  const centre = await (await request.post('/api/dive-centres', {
+    headers, data: { name: 'Example Divers Red Sea GmbH, Musterstadt', externalIds: [{ source: 'ssi', externalId: '700001' }], siteIds: [site.id] },
+  })).json() as { id: string };
+  await request.post('/api/dive-centres', { headers, data: { name: 'Tauchschule Beispiel' } });
 
   // Site import (ADR 0021): Malta from the recorded OpenStreetMap answer; one site with the SSI ID and depth set.
   const started = await (await request.post('/api/admin/site-imports', {
@@ -265,6 +271,18 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('dialog').getByRole('button', { name: de ? 'Neuer Tauchplatz' : 'New dive site' }).click();
     await capture(page, `${prefix}-site-picker-new`, { full: false, aria: false, axe });
     await page.keyboard.press('Escape');
+    await page.goto(`/#/dives/${sitedDive}`);
+    await page.getByRole('button', { name: de ? 'Verifizierungscode' : 'Verification code', exact: true }).click();
+    await page.getByRole('img', { name: /Example Divers Red Sea GmbH/ }).waitFor();
+    await capture(page, `${prefix}-dive-centre-code`, { aria: false, axe });
+    await page.goto('/#/centres'); await page.getByRole('link', { name: 'Example Divers Red Sea GmbH' }).waitFor();
+    await capture(page, `${prefix}-centres`, { aria: false, axe });
+    await page.getByRole('button', { name: de ? 'Neue Tauchbasis' : 'New dive centre' }).click();
+    await capture(page, `${prefix}-centre-new`, { aria: false, axe });
+    await page.goto(`/#/centres/${centre.id}`); await page.getByRole('img', { name: /Example Divers Red Sea GmbH/ }).waitFor();
+    await capture(page, `${prefix}-centre`, { aria: false, axe });
+    await page.getByRole('button', { name: de ? 'Ändern: SSI-Centernummer' : 'Change: SSI centre number' }).click();
+    await capture(page, `${prefix}-centre-number`, { aria: false, axe });
     await page.goto(`/#/sites/${imported.id}`); await page.getByRole('heading', { name: 'Ras il-Ħobż' }).waitFor();
     await capture(page, `${prefix}-imported-site`, { aria: false, axe });
     await page.getByRole('button', { name: de ? 'Tauchplatz bearbeiten' : 'Edit dive site' }).click();

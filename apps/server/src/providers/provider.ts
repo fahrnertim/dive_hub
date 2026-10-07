@@ -277,6 +277,12 @@ export interface ProviderAdapter {
     mode: 'api' | 'qr';
     /** What decides "outdated": a hash of what this Provider receives of the Dive. */
     fingerprint(dive: OutgoingDive): string;
+    /**
+     * Whether updating the remote dive with this Dive would remove a verification it has at the Provider (ADR 0043; SSI:
+     * a changed start time). `previous` is the payload the current Push recorded, null for a dive linked and never sent.
+     * From Dive Hub's data alone: the Provider isn't asked. Absent: the Provider has no such thing.
+     */
+    updateRemovesVerification?(dive: OutgoingDive, previous: Record<string, unknown> | null): boolean;
     open(context: ActionContext): DiveExportAction;
     /**
      * With `dives.import` `list` (ADR 0030): the account's dives as the Provider keeps them, read in one action. `recent`:

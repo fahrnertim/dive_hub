@@ -23,12 +23,14 @@ const Admin = lazy(() => import('./Admin.tsx').then((m) => ({ default: m.Admin }
 const DiversPage = lazy(() => import('./DiversPage.tsx').then((m) => ({ default: m.DiversPage })));
 const SitesPage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitesPage })));
 const SitePage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitePage })));
+const CentresPage = lazy(() => import('./CentresPage.tsx').then((m) => ({ default: m.CentresPage })));
+const CentrePage = lazy(() => import('./CentresPage.tsx').then((m) => ({ default: m.CentrePage })));
 const ReviewPage = lazy(() => import('./ReviewPage.tsx').then((m) => ({ default: m.ReviewPage })));
 const SiteImportPage = lazy(() => import('./SiteImportPage.tsx').then((m) => ({ default: m.SiteImportPage })));
 
 /**
  * Minimal hash routing: "#/" (logbook, "#/?diver=<id>" for one Diver, "#/?site=<id>" for one Dive site),
- * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers", "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/account", "#/admin", "#/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
+ * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers", "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/centres", "#/centres/<id>", "#/account", "#/admin", "#/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
  */
 function useRoute(): string {
   const [route, setRoute] = useState(() => location.hash.slice(1) || '/');
@@ -102,6 +104,7 @@ function Navigation({ route, me }: { route: string; me: Me }) {
         </a>
         <a href="#/divers" {...current(route === '/divers')}><Icon name="divers" />{t('nav.divers')}</a>
         <a href="#/sites" {...current(route === '/sites' || route.startsWith('/sites/') || route.startsWith('/sites?'))}><Icon name="site" />{t('nav.sites')}</a>
+        <a href="#/centres" {...current(route === '/centres' || route.startsWith('/centres/'))}><Icon name="centre" />{t('nav.centres')}</a>
       </nav>
       {/* The account is a labelled menu, not a bare name link (UI review C6). */}
       <div className="user-menu">
@@ -141,6 +144,9 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   if (path === '/sites') return <SitesPage params={sitesParams(params)} />;
   const siteId = /^\/sites\/([\w-]+)$/.exec(path!)?.[1];
   if (siteId) return <SitePage key={siteId} id={siteId} />;
+  if (path === '/centres') return <CentresPage />;
+  const centreId = /^\/centres\/([\w-]+)$/.exec(path!)?.[1];
+  if (centreId) return <CentrePage key={centreId} id={centreId} />;
   if (route === '/admin' || route === '/admin/site-imports') {
     if (me.user.role !== 'admin') return <><PageHeader title={t('nav.admin')} /><Notice tone="danger">{t('errors.admins_only')}</Notice></>;
     return route === '/admin' ? <Admin /> : <SiteImportPage />;

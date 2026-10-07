@@ -27,7 +27,7 @@ export type RevisionCause = (typeof REVISION_CAUSES)[number];
 export type Changes = Record<string, { from: unknown; to: unknown }>;
 
 export async function writeRevision(
-  tx: Tx, entityType: 'dive' | 'recording' | 'device' | 'dive_site' | 'diver', entityId: string, actor: Actor, cause: RevisionCause, changes: Changes,
+  tx: Tx, entityType: 'dive' | 'recording' | 'device' | 'dive_site' | 'diver' | 'dive_centre', entityId: string, actor: Actor, cause: RevisionCause, changes: Changes,
 ) {
   await tx.insert(revision).values({ entityType, entityId, actorType: actor.type, actorId: actor.id, cause, changes });
 }

@@ -155,6 +155,10 @@ const StatusView = Type.Object({
     remoteNumber: Nullable(Type.Integer()),
     sentAt: DateTime,
     upToDate: Type.Boolean({ description: 'false: the Dive changed since it was sent (outdated), or it was linked and never sent' }),
+    updateRemovesVerification: Type.Boolean({
+      description: 'An update now would remove the dive centre\'s verification of the dive at the Provider (SSI: it changes the start time there, '
+        + 'or the dive was linked and never sent, so the start time there isn\'t known). Say so before sending (docs/spec/clients.md, ADR 0043)',
+    }),
   }, { description: 'The remote dive this Dive has now; null when none (never sent, deleted)' })),
   pushes: Type.Array(PushView, { description: 'Newest first' }),
 });

@@ -4,6 +4,14 @@
 import { expect, test } from '@playwright/test';
 import { clearParticipants, connectSsi, forgetDivers, importSsiBuddies, leaveSsi, openLine, readyForSsi, resetDive } from './support.ts';
 
+// The diver made here is taken off the dive and deleted again: another spec on the same server adds a Diver of the
+// same name, and two of them make buttons with the same name on the Divers page.
+test.afterAll(async ({ request }) => {
+  const dive = await resetDive(request);
+  await clearParticipants(request, dive.id);
+  await forgetDivers(request, 'Mia');
+});
+
 test('adds a buddy from the SSI buddy list on the account page', { tag: ['@account', '@divers'] }, async ({ page, request }) => {
   const dive = await resetDive(request);
   await clearParticipants(request, dive.id);

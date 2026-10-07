@@ -5,6 +5,7 @@ import {
   api, ApiError, buddiesQuery, keys, providerSitesQuery, providerStatusQuery, unwrap,
   type DiveView, type ProviderStatusView, type ProviderView, type PushView, type RequirementView, type UnmetView,
 } from './api.ts';
+import { showDiveCodes } from './CentresPage.tsx';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
 import { exporting, typedSiteId, useNames, useProviders, useProviderText, waitsForUser } from './lib/providers.ts';
@@ -39,6 +40,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
   const exports = p.data.dives!.export!;
   const status = useQuery(providerStatusQuery(d.id, p.id));
   const [existing, setExisting] = useState<Existing | null>(null);
+  const [verificationRemoved, setVerificationRemoved] = useState(false);
   const can = (op: (typeof exports.operations)[number]) => exports.operations.includes(op);
   const refresh = async (next?: ProviderStatusView) => {
     if (next) queryClient.setQueryData(keys.providerStatus(d.id, p.id), next);
@@ -49,6 +51,8 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
     mutationFn: async (onExisting?: 'link' | 'create') =>
       unwrap(await api.POST('/api/dives/{id}/providers/{provider}', { params: { path: { id: d.id, provider: p.id } }, body: onExisting ? { onExisting } : {} })),
     onSuccess: async (sent) => {
+      // Said again after the update, with the way to the code (ADR 0043).
+      setVerificationRemoved(sent.outcome === 'updated' && !!status.data?.current?.updateRemovesVerification);
       await refresh(sent.status);
       if (sent.outcome === 'exists') {
         setExisting(sent.existing);
@@ -106,6 +110,12 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
       {last?.leftOut && last.leftOut.length > 0 && last.state !== 'failed' && <LeftOut provider={p} push={last} />}
       {last?.differences && last.differences.length > 0 && <Differences provider={p} push={last} />}
 
+      {ready && !signInNeeded && s.current?.updateRemovesVerification && can('update') && (
+        <Notice>{pt('removesVerification')} <VerifyAgain dive={d} /></Notice>
+      )}
+      {verificationRemoved && !s.current?.updateRemovesVerification && (
+        <Notice>{pt('removedVerification')} <VerifyAgain dive={d} /></Notice>
+      )}
       {ready && !signInNeeded && (
         <div className="form-actions">
           {(!s.current || !s.current.upToDate) && (
@@ -162,6 +172,13 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
       </Dialog>
     </section>
   );
+}
+
+/** Where the Dive's site has a centre with a code: the way to it, to verify the dive again (ADR 0043). */
+function VerifyAgain({ dive: d }: { dive: DiveView }) {
+  const { t } = useTranslation();
+  if (d.verificationCodes.length === 0) return null;
+  return <Button variant="quiet" size="small" icon="code" onPress={showDiveCodes}>{t('centres.showCode', { count: d.verificationCodes.length })}</Button>;
 }
 
 /** A Provider's line when there is nothing to open: its name, and what there is to say beside it. */

@@ -21,6 +21,7 @@ import { useNames, useProviders } from './lib/providers.ts';
 import { SitePicker } from './SitePicker.tsx';
 import { Participants } from './Participants.tsx';
 import { ProviderPanels } from './ProviderPanel.tsx';
+import { DiveCodes } from './CentresPage.tsx';
 import { ActionMenu, Button, ConfirmDialog, Dialog, ErrorBoundary, Icon, Muted, Notice, PageHeader, Panel, Select } from './ui/index.ts';
 
 /** One Dive (ADR 0015): its values with Overrides marked, notes, Recordings, and its history. */
@@ -126,6 +127,7 @@ export function DiveDetail({ id, recordingId, list = '' }: { id: string; recordi
       {/* What is looked at now and then is one line each, until it is opened. */}
       <div className="panel dive-lines">
         <ProviderPanels dive={d} diverName={diverName} />
+        <DiveCodes dive={d} />
         <DiveHistory dive={d} />
       </div>
       {moving && <MoveDialog dive={d} onClose={() => setMoving(false)} />}

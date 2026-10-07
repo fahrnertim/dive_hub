@@ -299,7 +299,7 @@ _Avoid_: Spot, location, divesite
 _German_: Tauchplatz
 
 **Dive centre**:
-A business that runs dives, shared across the whole instance like a Dive site: every User can use and edit it. It is responsible for the Dive sites it is linked to, and a Dive counts as belonging to the centres of its site. With its SSI centre number it has an SSI verification code, the QR code a diver scans in SSI's app so that SSI shows a dive as verified ([ADR 0043](decisions/0043-dive-centres-and-ssi-verification-codes.md)).
+A business that runs dives, shared across the whole instance like a Dive site: every User can use and edit it. It is responsible for the Dive sites it is linked to, and a Dive counts as belonging to the centres of its site. Its name is the whole name as its Source spells it (SSI: with the town after a comma); its display name is the shorter one shown, made by that Source's rule. With its SSI centre number it has an SSI verification code, the QR code a diver scans in SSI's app so that SSI shows a dive as verified ([ADR 0043](decisions/0043-dive-centres-and-ssi-verification-codes.md)).
 _Avoid_: Dive center, dive shop, dive base, operator
 _German_: Tauchcenter
 

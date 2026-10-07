@@ -26,7 +26,8 @@
     "administration": "Verwaltung",
     "toDecide_one": "{{count}} zu entscheiden",
     "toDecide_other": "{{count}} zu entscheiden",
-    "sites": "Tauchplätze"
+    "sites": "Tauchplätze",
+    "centres": "Tauchbasen"
   },
   "form": {
     "required": "Bitte fülle dieses Feld aus.",
@@ -445,7 +446,12 @@
     "diver_not_external": "Nur ein Taucher, den kein User führt, kann in einen anderen zusammengeführt werden.",
     "ai_access_not_found": "Diesen KI-Zugang gibt es nicht mehr.",
     "ai_access_off": "Der KI-Zugang ist auf diesem Dive Hub ausgeschaltet. Ein Admin kann ihn einschalten.",
-    "finding_not_found": "Diesen Hinweis hat der Tauchgang nicht mehr. Lade die Seite neu."
+    "finding_not_found": "Diesen Hinweis hat der Tauchgang nicht mehr. Lade die Seite neu.",
+    "centre_not_found": "Diese Tauchbasis gibt es nicht (mehr).",
+    "centre_changed": "Jemand hat die Tauchbasis inzwischen umbenannt. Lade die Seite neu und versuche es noch einmal.",
+    "centre_not_deletable": "Nur wer die Tauchbasis angelegt hat oder ein Admin kann sie löschen.",
+    "centre_external_id_taken": "Eine andere Tauchbasis hat diese Nummer schon.",
+    "code_not_recognised": "Diesen Code kennt Dive Hub nicht. Füge den ganzen Text des QR-Codes der Tauchbasis ein."
   },
   "vocabulary": {
     "waterType": {
@@ -1217,7 +1223,9 @@
     "claimQuestion_one": "Dieses {{name}}-Konto ist hier {{diver}}, Buddy bei {{count}} Tauchgang. Bist du das?",
     "claimQuestion_other": "Dieses {{name}}-Konto ist hier {{diver}}, Buddy bei {{count}} Tauchgängen. Bist du das?",
     "claimExplain": "Beim Verbinden wird {{diver}} zu {{mine}}: die Tauchgänge, die {{diver}} nennen, nennen dann {{mine}}. Nichts von diesen Tauchgängen wird deins.",
-    "claimConfirm": "Ja, ich bin {{diver}}: verbinden"
+    "claimConfirm": "Ja, ich bin {{diver}}: verbinden",
+    "removesVerification": "Diese Aktualisierung ändert die Startzeit des Tauchgangs in {{name}}. {{name}} entfernt dann die Verifizierung der Tauchbasis für diesen Tauchgang.",
+    "removedVerification": "Die Startzeit hat sich in {{name}} geändert; eine Verifizierung der Tauchbasis für diesen Tauchgang ist dort damit weg."
   },
   "providers": {
     "ssi": {
@@ -1538,5 +1546,78 @@
       "decompression": "<b>Fliegen nach diesem Tauchgang:</b> nicht vor {{until}} ({{hours}} Stunden; nach Dekostopps nennt DAN deutlich mehr als 18).",
       "guidance": "Aus DANs Konsens von 2002; gilt auch für Fahrten über hohe Pässe. Wird nach dem letzten Tauchgang eines Tauchtags gezeigt."
     }
+  },
+  "centres": {
+    "title": "Tauchbasen",
+    "intro": "Betriebe, die Tauchgänge durchführen, gemeinsam für alle in diesem Dive Hub. Der SSI-Code einer Basis steht bei jedem Tauchgang an ihren Tauchplätzen.",
+    "new": "Neue Tauchbasis",
+    "create": "Tauchbasis anlegen",
+    "created": "{{name}} angelegt.",
+    "search": "Tauchbasis suchen",
+    "empty": "Noch keine Tauchbasen. Lege die erste an.",
+    "noMatch": "Keine Tauchbasis passt zu „{{q}}“.",
+    "hasCode": "SSI-Code",
+    "noCodeShort": "kein SSI-Code",
+    "siteCount_one": "{{count}} Tauchplatz",
+    "siteCount_other": "{{count}} Tauchplätze",
+    "pasteCode": "Text des SSI-Codes der Basis (optional)",
+    "pasteCodeHint": "Wenn du den Text des QR-Codes der Basis hast, füge ihn hier ein: Name und Nummer werden daraus übernommen.",
+    "readCode": "Code lesen",
+    "codeRead": "Code gelesen: {{name}}.",
+    "otherCode": {
+      "buddy": "Das ist der Buddy-Code eines Tauchers, nicht der einer Tauchbasis.",
+      "professional": "Das ist der Code eines Tauchprofis, nicht der einer Tauchbasis."
+    },
+    "alreadyHere": "{{name}} hat diese Nummer schon.",
+    "open": "{{name}} öffnen",
+    "name": "Name",
+    "nameHint": "Mit SSI-Centernummer: genau wie SSI ihn schreibt, mit Rechtsform und Ort („Name, Ort“). Dive Hub zeigt ihn ohne den Ort.",
+    "ssiNumber": "SSI-Centernummer",
+    "ssiNumberOptional": "SSI-Centernummer (optional)",
+    "ssiNumberHint": "Nur Ziffern. Mit ihr hat die Basis einen SSI-Verifizierungscode.",
+    "ssiNumberEditHint": "Die Nummer oder der ganze Text des Codes der Basis. Leer lassen, um sie zu entfernen.",
+    "notSet": "Nicht gesetzt",
+    "change": "Ändern",
+    "add": "Hinzufügen",
+    "save": "Speichern",
+    "saved": "Tauchbasis gespeichert.",
+    "rename": "Umbenennen",
+    "moreActions": "Mehr",
+    "delete": "Tauchbasis löschen",
+    "deleteTitle": "Diese Tauchbasis löschen?",
+    "deleteBody": "Ihr Code steht dann nicht mehr bei Tauchgängen. Tauchplätze und Tauchgänge bleiben, wie sie sind.",
+    "deleteConfirm": "Tauchbasis löschen",
+    "deleted": "{{name}} gelöscht.",
+    "back": "Tauchbasen",
+    "backToCentres": "Zu den Tauchbasen",
+    "notFound": "Tauchbasis nicht gefunden",
+    "codeOf": "SSI-Verifizierungscode von {{name}}",
+    "codeCaption": "SSI-Verifizierungscode",
+    "codeUse": "Scanne ihn in der SSI-App an einem Logbucheintrag, und SSI zeigt diesen Tauchgang als verifiziert.",
+    "noCode": "Noch kein Verifizierungscode: dafür fehlt die SSI-Centernummer.",
+    "sharedHint": "Alle in diesem Dive Hub sehen diese Tauchbasis und können sie ändern.",
+    "sites": "Tauchplätze",
+    "sitesIntro": "Jeder Tauchgang an einem dieser Tauchplätze zeigt den Code dieser Basis.",
+    "noSites": "Noch keine Tauchplätze.",
+    "addSite": "Tauchplatz hinzufügen",
+    "addSiteTitle": "Tauchplatz zu {{name}} hinzufügen",
+    "noSitesToAdd": "Tippe einen Namen, um einen Tauchplatz zu finden.",
+    "removeSite": "Entfernen",
+    "siteAdded": "{{name}} hinzugefügt.",
+    "siteRemoved": "Tauchplatz entfernt.",
+    "atSiteIntro": "Die Basen, die hier Tauchgänge durchführen. Ihre SSI-Codes stehen bei jedem Tauchgang an diesem Platz.",
+    "noneAtSite": "Noch keine Tauchbasis.",
+    "addCentre": "Tauchbasis hinzufügen",
+    "addCentreTitle": "Tauchbasis zu {{name}} hinzufügen",
+    "noneToAdd": "Noch keine anderen Tauchbasen. Lege eine an.",
+    "removeCentre": "Entfernen",
+    "centreAdded": "{{name}} hinzugefügt.",
+    "centreRemoved": "{{name}} entfernt.",
+    "diveCodes": "Verifizierungscode",
+    "diveCodesHint": "Von den Tauchbasen des Tauchplatzes. Scanne einen in der SSI-App am Logbucheintrag dieses Tauchgangs, oder zeige ihn den anderen, die dabei waren.",
+    "toCentre": "Zur Tauchbasis",
+    "showCode_one": "Code der Basis zeigen",
+    "showCode_other": "Codes der Basen zeigen",
+    "fullName": "Voller Name"
   }
 }

@@ -7,7 +7,7 @@ import {
 } from '../provider.js';
 import { SsiError, type SsiBuddy, type SsiClient, type SsiLogbook, type SsiRecord } from './ssi-client.js';
 import {
-  buddyIdsOf, COMPARED_FIELDS, compareReadBack, createRecord, deleteRecord, fingerprint, localTime, updateRecord, withBuddies,
+  buddyIdsOf, COMPARED_FIELDS, compareReadBack, createRecord, deleteRecord, fingerprint, localTime, startChangesAtSsi, updateRecord, withBuddies,
   type DiveForSsi,
 } from './ssi-record.js';
 import { contextOf, parseSsiDive, ssiOrigin, SSI_PARSER } from './ssi-import.js';
@@ -216,6 +216,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
     },
     dives: {
       mode: 'api', fingerprint: (dive) => fingerprint(forSsi(dive)), open,
+      updateRemovesVerification: (dive, previous) => startChangesAtSsi(previous, dive),
       async list(ctx, options) {
         const read = logbookOf(ctx);
         const logbook = await (options?.recent ? read.recent() : read.current());

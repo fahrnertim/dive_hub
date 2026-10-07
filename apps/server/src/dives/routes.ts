@@ -22,6 +22,8 @@ import { REVISION_CAUSES } from './revisions.js';
 import { waterMismatch } from './water.js';
 import { recordingPosition } from '../sites/dive-site-link.js';
 import { PositionSchema } from '../sites/routes.js';
+import { createCentreService } from '../centres/centre-service.js';
+import { VerificationCodeView } from '../centres/routes.js';
 import type { PushService } from '../providers/push-service.js';
 import type { AssessmentService } from '../assessment/assessment-service.js';
 import { ProviderServiceError } from '../providers/registry.js';
@@ -143,6 +145,13 @@ const DiveView = Type.Object({
   })),
   recordings: Type.Array(RecordingView),
   participants: Type.Array(Participant, { description: 'Buddies first, then guides and instructors (ADR 0028)' }),
+  verificationCodes: Type.Array(Type.Object({
+    centre: Type.Object({ id: Type.String(), name: Type.String(), displayName: Type.String({ description: 'The name to show' }) }, { description: 'The Dive centre the code belongs to; name it beside the code' }),
+    ...VerificationCodeView.properties,
+  }), {
+    description: 'The verification codes of the Dive centres responsible for the Dive\'s site, by centre name (ADR 0043). No other condition: '
+      + 'not a Push, not the Diver. Draw each text as a QR code (docs/spec/clients.md)',
+  }),
 });
 
 const EditBody = Type.Object({
@@ -282,6 +291,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     throw error;
   });
 
+  const centres = createCentreService(db);
+
   /** The Dive if the signed-in User manages its Diver. */
   const findDive = async (request: FastifyRequest, id: string) => {
     const [row] = await db.select({ d: dive }).from(dive)
@@ -326,6 +337,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
         summary: r.summary as RecordingSummary, channels,
       })),
       participants: await participantsOf(db, row.id),
+      verificationCodes: await centres.codesOfDive(row.id),
     };
   };
 

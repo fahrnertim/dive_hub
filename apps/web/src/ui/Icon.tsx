@@ -3,14 +3,17 @@
 // Names were checked with the suggest-lucide-icons skill against the installed version.
 import {
   ArrowDown, ArrowRightLeft, ArrowUp, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert,
-  CircleCheck, CircleUser, CloudDownload, CloudUpload, Copy, Ellipsis, ExternalLink, Info, KeyRound, Link, LogIn, LogOut, MapPin, Merge, Pencil, Plus, Scissors, Shield, ShieldOff,
-  Star, Trash, Undo2, Unlink, Upload, User, UserCheck, Users, UserX, type LucideIcon,
+  CircleCheck, CircleUser, CloudDownload, CloudUpload, Copy, Ellipsis, ExternalLink, Info, KeyRound, Link, LogIn, LogOut, MapPin, Merge, Pencil, Plus, QrCode, Scissors, Shield, ShieldOff,
+  Star, Store, Trash, Undo2, Unlink, Upload, User, UserCheck, Users, UserX, type LucideIcon,
 } from 'lucide-react';
 
 const ICONS = {
   logbook: BookOpen,
   divers: Users,
   site: MapPin,
+  /** A Dive centre, and its verification code (ADR 0043). */
+  centre: Store,
+  code: QrCode,
   external: ExternalLink,
   admin: Shield,
   account: CircleUser,

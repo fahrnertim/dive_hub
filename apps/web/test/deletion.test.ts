@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { deleteChoice, deletedNotice } from '../src/lib/deletion.ts';
 
 const connection = { id: 'c1', state: 'active' as const, accountLabel: 'erika@example.com' };
-const current = { remoteId: '9', remoteNumber: 8, sentAt: '2026-10-05T10:00:00Z', upToDate: true };
+const current = { remoteId: '9', remoteNumber: 8, sentAt: '2026-10-05T10:00:00Z', upToDate: true, updateRemovesVerification: false };
 
 describe('deleteChoice', () => {
   it('waits while the Dive\'s state at the Providers loads', () => {

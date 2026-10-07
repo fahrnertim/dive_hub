@@ -21,7 +21,7 @@ export class ApiError extends Error {
     /** The Provider a provider_* code is about, named for the translated text (ADR 0027). */
     readonly provider?: { id: string; name: string },
     /** What else the refusal says: what is unmet (ADR 0029), the Diver that has an account already (ADR 0028). */
-    readonly details: { unmet?: UnmetView[]; diver?: { id: string; name: string; dives?: number } } = {},
+    readonly details: { unmet?: UnmetView[]; diver?: { id: string; name: string; dives?: number }; centre?: { id: string; name: string } } = {},
   ) {
     super(message);
   }
@@ -63,6 +63,8 @@ export type DeletedDiveView = Awaited<ReturnType<typeof fetchDeletedDives>>['div
 export type SiteView = Awaited<ReturnType<typeof fetchSite>>;
 export type Position = NonNullable<SiteView['position']>;
 export type ExternalIdView = SiteView['externalIds'][number];
+export type CentreView = Awaited<ReturnType<typeof fetchCentre>>;
+export type VerificationCodeView = NonNullable<CentreView['verificationCode']>;
 export type SiteRevisionView = Awaited<ReturnType<typeof fetchSiteRevisions>>[number];
 export type SiteImportView = Awaited<ReturnType<typeof fetchSiteImport>>;
 export type SiteImportArea = SiteImportView['area'];
@@ -109,6 +111,9 @@ export const keys = {
   sites: ['sites'] as const,
   site: (id: string) => ['sites', id] as const,
   siteRevisions: (id: string) => ['sites', id, 'revisions'] as const,
+  /** Dive centres (ADR 0043). A Dive's codes follow them: whatever changes a centre also refreshes ['dives']. */
+  centres: ['centres'] as const,
+  centre: (id: string) => ['centres', id] as const,
   siteImports: ['site-imports'] as const,
   providers: ['providers'] as const,
   connections: ['connections'] as const,
@@ -143,12 +148,12 @@ export function unwrap<T>(result: { data?: T; error?: unknown; response: Respons
     // Our routes answer { error }; Fastify's validation errors carry the useful text in `message`.
     const body = result.error as {
       code?: ProblemCode; error?: string; message?: string; provider?: string; providerName?: string;
-      unmet?: UnmetView[]; diver?: { id: string; name: string; dives?: number };
+      unmet?: UnmetView[]; diver?: { id: string; name: string; dives?: number }; centre?: { id: string; name: string };
     } | undefined;
     const message = body?.error ?? body?.message ?? `Request failed (${result.response.status})`;
     const provider = body?.provider ? { id: body.provider, name: body.providerName ?? body.provider } : undefined;
     throw new ApiError(message, result.response.status, body?.code, provider, {
-      ...(body?.unmet && { unmet: body.unmet }), ...(body?.diver && { diver: body.diver }),
+      ...(body?.unmet && { unmet: body.unmet }), ...(body?.diver && { diver: body.diver }), ...(body?.centre && { centre: body.centre }),
     });
   }
   return result.data as T;
@@ -307,6 +312,17 @@ export const sitesQuery = (p: SitesParams & { near?: Position | undefined; withi
   placeholderData: keepPreviousData,
 });
 export const siteQuery = (id: string) => queryOptions({ queryKey: keys.site(id), queryFn: () => fetchSite(id) });
+
+async function fetchCentre(id: string) {
+  return unwrap(await api.GET('/api/dive-centres/{id}', { params: { path: { id } } }));
+}
+/** Dive centres (ADR 0043) by name: the ones matching words, or the ones of a Dive site. */
+export const centresQuery = (p: { q?: string | undefined; siteId?: string | undefined } = {}) => queryOptions({
+  queryKey: [...keys.centres, { q: p.q, siteId: p.siteId }],
+  queryFn: async () => unwrap(await api.GET('/api/dive-centres', { params: { query: { ...(p.q && { q: p.q }), ...(p.siteId && { siteId: p.siteId }), limit: 100 } } })),
+  placeholderData: keepPreviousData,
+});
+export const centreQuery = (id: string) => queryOptions({ queryKey: keys.centre(id), queryFn: () => fetchCentre(id) });
 
 async function fetchSiteRevisions(id: string) {
   return unwrap(await api.GET('/api/dive-sites/{id}/revisions', { params: { path: { id } } }));

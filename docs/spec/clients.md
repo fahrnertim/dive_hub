@@ -412,6 +412,11 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
   and ask: link to it (`onExisting: link`) or send a new one (`create`).
 - **Must show the Provider's `notices`:** `shows_unconfirmed` means it shows the dive as unconfirmed (SSI: only a dive
   center can confirm it there).
+- **Must warn before an update that removes the Provider's verification** (`current.updateRemovesVerification`: the
+  update changes the dive's start time there, and SSI then drops a dive centre's verification of the entry; it is
+  also true when what is at the Provider is unknown). Say it before the User sends, and after the update that the
+  verification is gone. Where the Dive has `verificationCodes`, lead to them from both
+  ([Dive centres](#dive-centres-and-verification-codes)). *Web:* `ProviderPanel.tsx`.
 - **Must ask before "Delete in SSI"**, saying SSI's app can't bring it back and the Dive stays here. Deleting the Dive
   itself asks about every Provider in its own dialog ([Dives](#dives)).
 - **Show what went wrong:** the latest Push's `failureCode` (with the Provider's name), and its read-back `differences`
@@ -569,6 +574,32 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
   - progress while running;
   - counts and findings when done, each linked: new sites near existing ones, and hand-made sites that now offer a
     Source's data. A worldwide run can report thousands; show a first part and how many more.
+
+### Dive centres and verification codes
+[ADR 0043](../decisions/0043-dive-centres-and-ssi-verification-codes.md). A Dive centre is shared like a Dive site.
+- **Show `displayName`; edit `name`.** `name` is the whole name as the centre's Source spells it (SSI: "name, town")
+  and is what the code holds, so offer it unchanged for editing and say that it must stay as SSI spells it.
+  `displayName` is the server's shorter form. Never shorten a name in the client: the rule belongs to the Source.
+- **Must draw a verification code from its `text`, unchanged**, as a QR code: the text as UTF-8 bytes, dark on white
+  with the quiet zone in every colour scheme, large enough to scan from another phone (the web client: 15 rem), with
+  the centre's display name beside it. Never build or parse the text in the client; the format is the server's.
+- **On a Dive, show every entry of `verificationCodes`**, each with its centre's name. No other condition: don't hide
+  them by Push state, Diver or who is looking. An empty list shows nothing.
+- **Never say a Dive is verified.** Dive Hub doesn't know: scanning happens in the Provider's app.
+- **A code is not a secret**, but it is only for this purpose: don't offer sharing it elsewhere.
+- **Creating a centre:** name and, optionally, the SSI centre number (digits; `invalid_input` otherwise). Offer
+  pasting a code's text: `POST /api/verification-codes/read` answers with its `kind`. Take name and number from a
+  `centre`, and say so when `existing` names a centre that already has the number; say that a `buddy` or
+  `professional` code is not a centre's and keep nothing of it (it holds a person's e-mail); `code_not_recognised`
+  for anything else.
+- **The number** is set on its own (`PUT /api/dive-centres/{id}/external-ids/ssi`, `null` removes it; the whole text of
+  a centre's code is accepted too). `centre_external_id_taken` names the centre that has it: say so and lead there.
+- **Links to Dive sites** are set from the centre and from the site (`PUT`/`DELETE /api/dive-centres/{id}/sites/{siteId}`;
+  `GET /api/dive-centres?siteId=` for a site's centres). Say that every Dive at the site then shows the code.
+- **Deleting** is offered when `canDelete`; say that its code no longer shows on Dives and that sites and Dives stay.
+- **Renaming** sends `version` (`centre_changed` on a conflict: reload and ask again).
+
+*Web:* `CentresPage.tsx`, `ui/QrCode.tsx`.
 
 ## The MCP endpoint
 
