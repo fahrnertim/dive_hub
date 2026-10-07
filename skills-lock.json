@@ -175,6 +175,12 @@
       "skillPath": "ux/components/menus/SKILL.md",
       "computedHash": "f8947ebc9844d540db607b833bc0a7103d5531977fcf591343f918ab22f4890a"
     },
+    "ux-navigation": {
+      "source": "uxcel-lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/navigation/SKILL.md",
+      "computedHash": "57506b865158a7988f370897a6ac549f7be808e7d594a33dfbc172dbf7a79211"
+    },
     "ux-notifications-and-toasts": {
       "source": "uxcel-lab/product-skills",
       "sourceType": "github",

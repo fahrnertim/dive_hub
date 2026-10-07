@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dive Hub – UI redesign mock (2026-10-07)</title>
+<!--
+  Mock for docs/research/2026-10-07-ui-redesign-proposal.md. Static HTML with made-up data; not the app.
+  Tokens copied from apps/web/src/design/tokens.css. The bar at the top switches screen, width and theme.
+-->
+<style>
+  :root {
+    --color-bg: #e9eef2; --color-surface: #ffffff; --color-surface-sunken: #e8eef2; --color-text: #0b2236;
+    --color-text-muted: #4e6578; --color-border: #d5dfe6; --color-border-strong: #6e8497; --color-accent: #0f5e8c;
+    --color-accent-soft: #e1eef6; --color-success: #2a7150; --color-success-soft: #e5f3ec; --color-brand-flag: #c8102e;
+    --color-depth-shallow: #8fd3e8; --color-depth-deep: #0f5e8c; --color-ascent-2: #c2570c;
+    --font-sans: 'IBM Plex Sans Variable', 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --text-xs: 0.694rem; --text-sm: 0.833rem; --text-md: 1rem; --text-lg: 1.2rem; --text-xl: 1.44rem; --text-2xl: 1.728rem;
+    --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem; --space-5: 1.5rem; --space-6: 2rem;
+    --radius-md: 6px; --radius-lg: 14px;
+  }
+  [data-theme="dark"] {
+    --color-bg: #061522; --color-surface: #0e2338; --color-surface-sunken: #0a1c2e; --color-text: #dce8f0;
+    --color-text-muted: #8fa6b8; --color-border: #1d3a55; --color-border-strong: #6a849d; --color-accent: #62b6e6;
+    --color-accent-soft: #12324d; --color-success: #5cc593; --color-success-soft: #10301f;
+    --color-depth-shallow: #62b6e6; --color-depth-deep: #12324d; --color-ascent-2: #f29a4a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--font-sans); background: #cfd8de; color: var(--color-text); line-height: 1.5; }
+  a { color: var(--color-accent); text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); text-underline-offset: 2px; }
+  h1, h2, h3, p, ul, dl, dd { margin: 0; padding: 0; }
+  ul { list-style: none; }
+  button, select, input { font: inherit; color: inherit; }
+
+  /* Mock controls, not part of the proposal */
+  .mock-bar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center;
+    padding: var(--space-2) var(--space-4); background: #0b2236; color: #fff; font-size: var(--text-sm); }
+  .mock-bar fieldset { border: 0; margin: 0; padding: 0; display: flex; gap: var(--space-1); align-items: center; }
+  .mock-bar legend { float: left; margin-inline-end: var(--space-2); opacity: .75; padding: 0; }
+  .mock-bar button { background: transparent; border: 1px solid #58738a; color: #fff; border-radius: var(--radius-md); padding: 2px 10px; cursor: pointer; }
+  .mock-bar button[aria-pressed="true"] { background: #fff; color: #0b2236; border-color: #fff; }
+
+  .frame { margin: var(--space-5) auto; background: var(--color-bg); container-type: inline-size; max-width: 1280px; min-height: 80vh; position: relative; }
+  .frame[data-width="phone"] { max-width: 390px; }
+  .screen[hidden] { display: none; }
+
+  /* App chrome */
+  .app-header { background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+  .app-header-inner, .app-main { max-width: 1120px; margin: 0 auto; padding-inline: var(--space-4); }
+  .app-header-inner { display: flex; align-items: center; gap: var(--space-5); min-height: 56px; }
+  .brand { display: flex; gap: var(--space-2); align-items: center; font-weight: 700; font-size: var(--text-lg); }
+  .flag { width: 28px; height: 21px; border-radius: 2px; background: linear-gradient(to bottom right, var(--color-brand-flag) 42%, #fff 42%, #fff 58%, var(--color-brand-flag) 58%); }
+  .app-nav { display: flex; gap: var(--space-4); }
+  .app-nav a { color: var(--color-text-muted); text-decoration: none; padding-block: var(--space-1); }
+  .app-nav a[aria-current] { color: var(--color-text); border-bottom: 2px solid var(--color-accent); }
+  .count { display: inline-block; min-width: 1.4em; text-align: center; font-size: var(--text-xs); font-weight: 600; border-radius: 99px;
+    background: var(--color-text); color: var(--color-surface); padding: 0 .4em; margin-inline-start: var(--space-1); }
+  .user { margin-inline-start: auto; font-weight: 600; }
+  .app-main { padding-block: var(--space-5) 6rem; display: grid; gap: var(--space-5); }
+  .tabbar { display: none; }
+
+  .page-head { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: end; justify-content: space-between; }
+  h1 { font-size: var(--text-2xl); letter-spacing: -0.01em; }
+  h2 { font-size: var(--text-lg); letter-spacing: -0.01em; }
+  .muted { color: var(--color-text-muted); }
+  .small { font-size: var(--text-sm); }
+  .num { font-variant-numeric: tabular-nums; text-align: end; white-space: nowrap; }
+  .panel { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-5); display: grid; gap: var(--space-4); }
+  .btn { background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); padding: var(--space-2) var(--space-4); font-weight: 600; cursor: pointer; min-height: 40px; }
+  .btn-small { min-height: 32px; padding: var(--space-1) var(--space-3); font-size: var(--text-sm); }
+  .btn-quiet { border-color: transparent; background: transparent; color: var(--color-accent); }
+  .badge { display: inline-block; font-size: var(--text-xs); background: var(--color-surface-sunken); border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
+
+  /* 1. The one-line strip that replaces the open "Needs your decision" panel on the logbook */
+  .strip { background: var(--color-accent-soft); border-radius: var(--radius-lg); padding: var(--space-3) var(--space-5);
+    display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: center; justify-content: space-between; }
+
+  /* 2. Logbook: toolbar, month groups, dive rows */
+  .stats { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-6); }
+  .stats dt { font-size: var(--text-sm); color: var(--color-text-muted); }
+  .stats dd { font-size: var(--text-lg); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-4); align-items: end; }
+  .field { display: grid; gap: 2px; }
+  .field label { font-size: var(--text-sm); font-weight: 600; }
+  .field input, .field select { height: 40px; border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-surface); padding-inline: var(--space-3); }
+  .field.grow { flex: 1 1 14rem; }
+  .toolbar .range { margin-inline-start: auto; }
+  .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+  .chip { background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: 99px; padding: 2px var(--space-3); min-height: 32px; font-size: var(--text-sm); cursor: pointer; }
+  .chip[aria-pressed="true"] { background: var(--color-accent-soft); border-color: var(--color-accent); font-weight: 600; }
+  .chip[aria-pressed="true"]::before { content: "✓ "; }
+  .group-head { display: flex; justify-content: space-between; align-items: baseline; padding-block: var(--space-4) var(--space-2);
+    border-bottom: 1px solid var(--color-border); font-weight: 600; }
+  .group-head:first-of-type { padding-block-start: 0; }
+  .dive-row { display: grid; grid-template-columns: 3ch 112px minmax(0, 1fr) 5.5rem 9ch 8ch; gap: var(--space-4); align-items: center;
+    padding-block: var(--space-3); border-bottom: 1px solid var(--color-border); }
+  .dive-row:hover { background: color-mix(in srgb, var(--color-accent-soft) 45%, transparent); }
+  .dive-no { color: var(--color-text-muted); }
+  .spark { display: block; width: 112px; height: 40px; }
+  .spark-none { width: 112px; height: 40px; border: 1px dashed var(--color-border-strong); border-radius: 4px; display: grid; place-items: center; font-size: var(--text-xs); color: var(--color-text-muted); }
+  .dive-title { font-weight: 600; font-size: var(--text-md); }
+  .dive-meta { display: flex; flex-wrap: wrap; gap: 2px var(--space-2); align-items: center; font-size: var(--text-sm); color: var(--color-text-muted); }
+  .dive-meta > * + *::before { content: "·"; margin-inline-end: var(--space-2); }
+  .dive-meta .badge::before { content: none; }
+  .dive-num b { display: block; font-weight: 600; }
+  .dive-num span { font-size: var(--text-xs); color: var(--color-text-muted); }
+  .stack > span:first-child { display: flex; }
+  .stack i { font-style: normal; font-size: var(--text-xs); font-weight: 600; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--color-accent-soft); box-shadow: 0 0 0 2px var(--color-surface); margin-inline-end: -6px; }
+  .stack i[data-tone="1"] { background: var(--color-success-soft); }
+  .stack i[data-tone="2"] { background: var(--color-surface-sunken); }
+  .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .col-head { display: grid; grid-template-columns: 3ch 112px minmax(0, 1fr) 5.5rem 9ch 8ch; gap: var(--space-4); font-size: var(--text-sm); color: var(--color-text-muted); }
+
+  /* 3. Dive page: findings as one line each, details on demand */
+  .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: var(--space-4); }
+  .facts dt { font-size: var(--text-sm); color: var(--color-text-muted); }
+  .facts dd { font-weight: 600; font-size: var(--text-lg); }
+  .facts dd.plain { font-size: var(--text-md); font-weight: 400; }
+  .profile { height: 220px; border-radius: 4px; background: linear-gradient(to bottom, var(--color-depth-shallow), var(--color-depth-deep));
+    clip-path: polygon(0 0, 7% 88%, 66% 90%, 80% 12%, 90% 12%, 100% 0); opacity: .9; }
+  .lane { display: grid; gap: 3px; }
+  .lane div { height: 14px; background: var(--color-surface-sunken); position: relative; }
+  .lane i { position: absolute; inset-block: 0; background: var(--color-accent); }
+  .panel-head { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: baseline; justify-content: space-between; }
+  .findings { display: grid; }
+  .finding { border-bottom: 1px solid var(--color-border); }
+  .finding > summary { display: grid; grid-template-columns: 1rem minmax(0, 1fr) auto; gap: var(--space-3); align-items: baseline; padding-block: var(--space-3); cursor: pointer; list-style: none; }
+  .finding > summary::-webkit-details-marker { display: none; }
+  .finding > summary::before { content: "›"; font-weight: 700; color: var(--color-text-muted); transition: rotate 120ms; display: inline-block; }
+  .finding[open] > summary::before { rotate: 90deg; }
+  .finding[data-selected] { box-shadow: inset 3px 0 0 var(--color-accent); padding-inline-start: var(--space-3); }
+  .finding-line b { margin-inline-end: var(--space-2); }
+  .finding-body { padding: 0 0 var(--space-4) calc(1rem + var(--space-3)); display: grid; gap: var(--space-3); max-width: 70ch; font-size: var(--text-sm); }
+  .finding-body dt { font-weight: 600; }
+  .finding-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .also > summary { padding-block: var(--space-3); cursor: pointer; color: var(--color-accent); font-weight: 600; }
+  .oneline { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); align-items: baseline; }
+
+  /* 4. Review page: a pair as two dive rows side by side */
+  .subnav { display: flex; gap: var(--space-4); border-bottom: 1px solid var(--color-border); }
+  .subnav a { text-decoration: none; color: var(--color-text-muted); padding-block: var(--space-2); }
+  .subnav a[aria-current] { color: var(--color-text); border-bottom: 2px solid var(--color-accent); font-weight: 600; }
+  .item { display: grid; gap: var(--space-3); padding-block: var(--space-4); border-bottom: 1px solid var(--color-border); }
+  .item:first-of-type { padding-block-start: 0; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+  .mini { background: var(--color-surface-sunken); border-radius: var(--radius-md); padding: var(--space-3); display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: var(--space-3); align-items: center; }
+  .diff { background: var(--color-accent-soft); border-radius: 3px; padding-inline: 3px; }
+  .item-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+
+  /* Phone: rows collapse late, navigation moves to the bottom */
+  @container (max-width: 40rem) {
+    .app-nav { display: none; }
+    .tabbar { display: grid; grid-template-columns: repeat(4, 1fr); position: sticky; bottom: 0; background: var(--color-surface);
+      border-top: 1px solid var(--color-border); padding-bottom: env(safe-area-inset-bottom); }
+    .tabbar a { display: grid; justify-items: center; gap: 2px; padding: var(--space-2) 0; font-size: var(--text-xs); color: var(--color-text-muted); text-decoration: none; }
+    .tabbar a[aria-current] { color: var(--color-text); font-weight: 600; box-shadow: inset 0 2px 0 var(--color-accent); }
+    .tabbar svg { width: 22px; height: 22px; }
+    .panel { padding: var(--space-4); }
+    .col-head { display: none; }
+    .dive-row { grid-template-columns: 84px minmax(0, 1fr); gap: var(--space-3); }
+    .dive-row .dive-no { display: none; }
+    .spark, .spark-none { width: 84px; }
+    .dive-num { display: none; }
+    .stack { grid-column: 2; }
+    .stack:empty { display: none; }
+    .phone-only { display: inline !important; }
+    .pair { grid-template-columns: 1fr; }
+    .mini { grid-template-columns: 84px minmax(0, 1fr); }
+    .finding > summary { grid-template-columns: 1rem minmax(0, 1fr); }
+    .finding > summary .when { grid-column: 2; }
+    .toolbar .range { margin-inline-start: 0; }
+  }
+  .phone-only { display: none; }
+</style>
+</head>
+<body>
+
+<div class="mock-bar">
+  <strong>Mock, not the app</strong>
+  <fieldset><legend>Screen</legend>
+    <button data-screen="logbook" aria-pressed="true">Logbook</button>
+    <button data-screen="dive" aria-pressed="false">Dive</button>
+    <button data-screen="review" aria-pressed="false">Review</button>
+  </fieldset>
+  <fieldset><legend>Width</legend>
+    <button data-width="desktop" aria-pressed="true">1280</button>
+    <button data-width="phone" aria-pressed="false">390</button>
+  </fieldset>
+  <fieldset><legend>Theme</legend>
+    <button data-theme-set="light" aria-pressed="true">Light</button>
+    <button data-theme-set="dark" aria-pressed="false">Dark</button>
+  </fieldset>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="depth" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="var(--color-depth-shallow)"/><stop offset="1" stop-color="var(--color-depth-deep)"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="frame" id="frame" data-width="desktop">
+  <header class="app-header">
+    <div class="app-header-inner">
+      <span class="brand"><span class="flag"></span>Dive Hub</span>
+      <nav class="app-nav" aria-label="Main">
+        <a href="#" aria-current="page">Logbook<span class="count" title="mock">3</span></a>
+        <a href="#">Dive sites</a>
+        <a href="#">Divers</a>
+        <a href="#">Equipment</a>
+      </nav>
+      <span class="user">Erika ▾</span>
+    </div>
+  </header>
+
+  <!-- ───────────── Logbook ───────────── -->
+  <main class="app-main screen" data-name="logbook">
+    <div class="page-head">
+      <div><h1>Logbook</h1></div>
+      <button class="btn">Import files</button>
+    </div>
+
+    <div class="strip">
+      <span><strong>3 things need your decision:</strong> 1 recording, 2 pairs of dives at the same time.</span>
+      <button class="btn btn-small" data-screen="review">Review them</button>
+    </div>
+
+    <section class="panel">
+      <dl class="stats">
+        <div><dt>Dives</dt><dd>128</dd></div>
+        <div><dt>Under water</dt><dd>96 h 40 min</dd></div>
+        <div><dt>Deepest</dt><dd>40 m</dd></div>
+        <div><dt>Last dive</dt><dd>Apr 2, 2026</dd></div>
+      </dl>
+      <div class="toolbar">
+        <div class="field grow"><label for="q">Search</label><input id="q" type="search" placeholder=""></div>
+        <div class="field"><label for="dv">Diver</label><select id="dv"><option>All Divers</option></select></div>
+        <div class="field"><label for="so">Sort by</label><select id="so"><option>Newest first</option><option>Oldest first</option><option>Deepest first</option><option>Longest first</option><option>Number</option></select></div>
+        <span class="muted small range">1–50 of 128 dives</span>
+      </div>
+      <div class="chips" role="group" aria-label="Show only">
+        <span class="small muted">Show only</span>
+        <button class="chip" aria-pressed="false">No recording <span class="muted">14</span></button>
+        <button class="chip" aria-pressed="false">No dive site <span class="muted">31</span></button>
+        <button class="chip" aria-pressed="false">With findings <span class="muted">9</span></button>
+        <button class="chip" aria-pressed="false">Not in SSI <span class="muted">22</span></button>
+      </div>
+
+      <div>
+        <div class="col-head" aria-hidden="true"><span class="num">#</span><span>Profile</span><span>Dive</span><span>Buddies</span><span class="num">Max depth</span><span class="num">Duration</span></div>
+
+        <div class="group-head"><span>April 2026</span><span class="muted small">1 dive · 30 min</span></div>
+        <ul>
+          <li class="dive-row">
+            <span class="num dive-no">31</span>
+            <svg class="spark" viewBox="0 0 112 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L8 22 L30 26 L55 24 L80 16 L96 6 L104 6 L112 0 Z" fill="url(#depth)"/></svg>
+            <div>
+              <a class="dive-title" href="#">Lighthouse</a>
+              <div class="dive-meta"><span>Thu, Apr 2 · 10:00 AM</span><span>Erika</span><span>EAN32</span><span class="phone-only">16.4 m · 30 min</span><span class="badge">same time as another dive</span></div>
+            </div>
+            <span class="stack"><span aria-hidden="true"><i data-tone="0">LM</i></span><span class="vh">with Lena Meier</span></span>
+            <span class="num dive-num"><b>16.4 m</b></span>
+            <span class="num dive-num"><b>30 min</b></span>
+          </li>
+        </ul>
+
+        <div class="group-head"><span>February 2026</span><span class="muted small">2 dives · 50 min</span></div>
+        <ul>
+          <li class="dive-row">
+            <span class="num dive-no">77</span>
+            <svg class="spark" viewBox="0 0 112 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L8 38 L74 39 L90 6 L104 5 L112 0 Z" fill="url(#depth)"/><path d="M74 39 L90 6" stroke="var(--color-ascent-2)" stroke-width="2" fill="none"/></svg>
+            <div>
+              <a class="dive-title" href="#">Feb 20, 2026 · 11:00 AM</a>
+              <div class="dive-meta"><span>No dive site</span><span>Erika</span><span>EAN32</span><span class="phone-only">40 m · 20 min</span><span class="badge">2 findings</span></div>
+            </div>
+            <span class="stack"></span>
+            <span class="num dive-num"><b>40 m</b></span>
+            <span class="num dive-num"><b>20 min</b></span>
+          </li>
+          <li class="dive-row">
+            <span class="num dive-no">7</span>
+            <svg class="spark" viewBox="0 0 112 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L10 14 L40 18 L70 12 L96 7 L104 7 L112 0 Z" fill="url(#depth)"/></svg>
+            <div>
+              <a class="dive-title" href="#">Lighthouse</a>
+              <div class="dive-meta"><span>Tue, Feb 10 · 10:00 AM</span><span>Erika</span><span>Air</span><span class="phone-only">12.4 m · 30 min</span></div>
+            </div>
+            <span class="stack"><span aria-hidden="true"><i data-tone="0">LM</i><i data-tone="1">TK</i></span><span class="vh">with Lena Meier, Tom Keller</span></span>
+            <span class="num dive-num"><b>12.4 m</b></span>
+            <span class="num dive-num"><b>30 min</b></span>
+          </li>
+        </ul>
+
+        <div class="group-head"><span>August 2025</span><span class="muted small">3 dives · 2 h 15 min</span></div>
+        <ul>
+          <li class="dive-row">
+            <span class="num dive-no">–</span>
+            <svg class="spark" viewBox="0 0 112 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L8 20 L20 12 L32 22 L44 12 L58 21 L72 10 L92 6 L104 6 L112 0 Z" fill="url(#depth)"/></svg>
+            <div>
+              <a class="dive-title" href="#">Ras il-Ħobż</a>
+              <div class="dive-meta"><span>Mon, Aug 11 · 9:30 AM</span><span>Lena</span><span>Air</span><span class="phone-only">22 m · 40 min</span><span class="badge">2 findings</span></div>
+            </div>
+            <span class="stack"><span aria-hidden="true"><i data-tone="0">EF</i><i data-tone="1">TK</i><i data-tone="2">JS</i><i data-tone="0">+2</i></span><span class="vh">with Erika Fahrner, Tom Keller, Jo Sand, and 2 more</span></span>
+            <span class="num dive-num"><b>22 m</b></span>
+            <span class="num dive-num"><b>40 min</b></span>
+          </li>
+          <li class="dive-row">
+            <span class="num dive-no">–</span>
+            <svg class="spark" viewBox="0 0 112 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L10 15 L50 16 L85 10 L98 6 L106 6 L112 0 Z" fill="url(#depth)"/></svg>
+            <div>
+              <a class="dive-title" href="#">Ras il-Ħobż</a>
+              <div class="dive-meta"><span>Sun, Aug 10 · 2:30 PM</span><span>Lena</span><span>3 h 45 min after the dive before</span><span class="phone-only">16 m · 50 min</span></div>
+            </div>
+            <span class="stack"><span aria-hidden="true"><i data-tone="0">EF</i></span><span class="vh">with Erika Fahrner</span></span>
+            <span class="num dive-num"><b>16 m</b></span>
+            <span class="num dive-num"><b>50 min</b></span>
+          </li>
+          <li class="dive-row">
+            <span class="num dive-no">–</span>
+            <div class="spark-none">no recording</div>
+            <div>
+              <a class="dive-title" href="#">Ras il-Ħobż</a>
+              <div class="dive-meta"><span>Sun, Aug 10 · 10:00 AM</span><span>Lena</span><span>from SSI</span><span class="phone-only">20 m · 45 min</span></div>
+            </div>
+            <span class="stack"></span>
+            <span class="num dive-num"><b>20 m</b></span>
+            <span class="num dive-num"><b>45 min</b></span>
+          </li>
+        </ul>
+      </div>
+      <p class="small"><a href="#">Imports</a> · <a href="#">Deleted dives (2)</a></p>
+    </section>
+  </main>
+
+  <!-- ───────────── Dive ───────────── -->
+  <main class="app-main screen" data-name="dive" hidden>
+    <div class="page-head">
+      <div>
+        <p class="small"><a href="#">‹ Logbook</a></p>
+        <h1>Dive 77</h1>
+        <p class="muted">Fri, Feb 20, 2026 · 11:00 AM (UTC+2) · Erika</p>
+      </div>
+      <div class="item-actions"><button class="btn btn-small btn-quiet">‹ Dive 7</button><button class="btn btn-small btn-quiet">Dive 9 ›</button><button class="btn">Edit dive</button><button class="btn btn-quiet">More ▾</button></div>
+    </div>
+
+    <section class="panel">
+      <dl class="facts">
+        <div><dt>Max depth</dt><dd>40 m</dd></div>
+        <div><dt>Avg depth</dt><dd>28.7 m</dd></div>
+        <div><dt>Duration</dt><dd>20 min</dd></div>
+        <div><dt>Water</dt><dd>25 °C</dd></div>
+        <div><dt>Gas</dt><dd>EAN32</dd></div>
+        <div><dt>Dive site</dt><dd class="plain"><a href="#">Choose dive site</a></dd></div>
+        <div><dt>Buddies and guides</dt><dd class="plain"><a href="#">Add someone</a></dd></div>
+        <div><dt>Notes</dt><dd class="plain"><a href="#">Add notes</a></dd></div>
+      </dl>
+      <div class="profile" role="img" aria-label="Depth profile (placeholder)"></div>
+      <div class="lane" aria-hidden="true">
+        <div><i style="left:7%;width:60%"></i></div>
+        <div><i style="left:66%;width:14%"></i></div>
+      </div>
+      <p class="small muted">Garmin Descent Mk3 (7777) · Open circuit · Bühlmann ZHL-16C, GF 40/85 · <a href="#">All values of the recording</a> · <a href="#">Profile as a table</a></p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Assessment</h2>
+        <span class="muted small">2 findings differ from guidance · 2 for information</span>
+      </div>
+      <div class="findings">
+        <details class="finding" data-selected open>
+          <summary>
+            <span class="finding-line"><b>Fast ascent</b><span class="badge">Note</span> Up to 13 m/min for 162 s, from 39.2 m to 5 m.</span>
+            <span class="muted small when">13:20–16:02</span>
+          </summary>
+          <div class="finding-body">
+            <p><b>Guidance.</b> Tables and dive computers assume about 9 to 10 m/min (30 ft/min). In experiments faster ascents gave more bubbles, and 10 m/min with a stop the fewest. <span class="muted">Based on experiments and an agency or maker rule.</span></p>
+            <p><b>Next time.</b> Start the ascent early enough to take it slowly, and watch your computer’s ascent indicator, most of all in the shallower half.</p>
+            <p><b>Sources.</b> <a href="#">Carturan et al. 2002</a> · <a href="#">Marroni et al. 2004</a> · <a href="#">Garmin Descent</a> · <a href="#">Suunto D5</a></p>
+            <div class="finding-actions"><button class="btn btn-small">Put aside on this dive</button><button class="btn btn-small btn-quiet">Don’t show for Erika…</button></div>
+          </div>
+        </details>
+        <details class="finding">
+          <summary>
+            <span class="finding-line"><b>High oxygen pressure</b><span class="badge">Note</span> Reached 1.6 bar; above 1.4 bar for 12:38 min.</span>
+            <span class="muted small when">1:10–13:48</span>
+          </summary>
+          <div class="finding-body"><p><b>Guidance.</b> NOAA’s limits use 1.4 bar as the working limit and 1.6 bar for contingencies. <span class="muted">Based on an agency or maker rule.</span></p><p><b>Next time.</b> Check the maximum operating depth of your gas before the dive and stay above it.</p><p><b>Sources.</b> <a href="#">NOAA oxygen exposure limits</a></p><div class="finding-actions"><button class="btn btn-small">Put aside on this dive</button><button class="btn btn-small btn-quiet">Don’t show for Erika…</button></div></div>
+        </details>
+        <details class="also">
+          <summary>2 more for information: Fast descent, Short safety stop</summary>
+          <details class="finding">
+            <summary><span class="finding-line"><b>Fast descent</b><span class="badge">Info</span> Up to 29.5 m/min through the first 10 m.</span><span class="muted small when">0:00–0:36</span></summary>
+            <div class="finding-body"><p><b>Guidance.</b> No study links descent speed to harm. <span class="muted">Based on expert opinion.</span></p></div>
+          </details>
+          <details class="finding">
+            <summary><span class="finding-line"><b>Short safety stop</b><span class="badge">Info</span> 3:06 min between 3 and 6 m; 5 minutes are recommended after a dive this deep.</span><span class="muted small when">15:54–19:00</span></summary>
+            <div class="finding-body"><p><b>Guidance.</b> A stop of 3 minutes at 3 to 6 m cut bubbles by about a factor of ten.</p></div>
+          </details>
+        </details>
+      </div>
+      <p class="oneline"><b>Flying after this dive:</b> not before Feb 21, 2026, 4:20 AM (12 hours). <a class="small" href="#">DAN 2002: flying after diving</a></p>
+      <p class="small muted">Not medical advice, and no measure of how safe a dive was. With symptoms after a dive, call DAN or the emergency services. <a href="#">What the assessment can and can’t tell</a></p>
+    </section>
+
+    <section class="panel">
+      <details><summary><b>SSI</b> <span class="muted">· Erika isn’t connected</span></summary></details>
+      <details><summary><b>History</b> <span class="muted">· created from an import on Oct 7, 2026</span></summary></details>
+    </section>
+  </main>
+
+  <!-- ───────────── Review ───────────── -->
+  <main class="app-main screen" data-name="review" hidden>
+    <div class="page-head">
+      <div><p class="small"><a href="#" data-screen="logbook">‹ Logbook</a></p><h1>Review</h1></div>
+    </div>
+    <nav class="subnav" aria-label="Review">
+      <a href="#" aria-current="page">To decide<span class="count">3</span></a>
+      <a href="#">Imports</a>
+      <a href="#">Decided</a>
+      <a href="#">Deleted dives</a>
+    </nav>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Dives at the same time</h2>
+        <button class="btn btn-small">Merge the 2 clear pairs…</button>
+      </div>
+      <p class="muted">The same dive twice? Merge them. A wrong time or the wrong Diver? Open the dive and correct it.</p>
+      <div>
+        <div class="item">
+          <div class="pair">
+            <div class="mini">
+              <svg class="spark" viewBox="0 0 112 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L8 22 L30 26 L55 24 L80 16 L96 6 L104 6 L112 0 Z" fill="url(#depth)"/></svg>
+              <div><a class="dive-title" href="#">Dive 31</a> <span class="badge">stays when merged</span><div class="small muted">Apr 2, 2026 · 10:00 AM · <span class="diff">16.4 m</span> · 30 min · Garmin Descent Mk3</div></div>
+            </div>
+            <div class="mini">
+              <div class="spark-none">no recording</div>
+              <div><a class="dive-title" href="#">Dive 31</a><div class="small muted">Apr 2, 2026 · 10:00 AM · <span class="diff">16.1 m</span> · 30 min · from SSI · <span class="diff">Lighthouse</span></div></div>
+            </div>
+          </div>
+          <div class="item-actions"><button class="btn btn-small">Merge the two…</button><button class="btn btn-small btn-quiet">They are two dives</button></div>
+        </div>
+        <div class="item">
+          <div class="pair">
+            <div class="mini">
+              <svg class="spark" viewBox="0 0 112 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L10 15 L50 16 L85 10 L98 6 L106 6 L112 0 Z" fill="url(#depth)"/></svg>
+              <div><a class="dive-title" href="#">Aug 10, 2025 · 2:30 PM</a> <span class="badge">stays when merged</span><div class="small muted">16 m · 50 min · Ras il-Ħobż</div></div>
+            </div>
+            <div class="mini">
+              <div class="spark-none">no recording</div>
+              <div><a class="dive-title" href="#">Aug 10, 2025 · 2:30 PM</a><div class="small muted">16 m · <span class="diff">48 min</span> · from SSI</div></div>
+            </div>
+          </div>
+          <div class="item-actions"><button class="btn btn-small">Merge the two…</button><button class="btn btn-small btn-quiet">They are two dives</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Recordings without a dive</h2>
+      <div class="item">
+        <div class="pair">
+          <div class="mini">
+            <svg class="spark" viewBox="0 0 112 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L8 38 L74 39 L90 6 L104 5 L112 0 Z" fill="url(#depth)"/></svg>
+            <div><span class="dive-title">Recording</span> <span class="badge">max depth differs too much</span><div class="small muted">Jan 15, 2026 · 11:01 AM · <span class="diff">40 m</span> · 30 min · Garmin Descent Mk3 (777)</div></div>
+          </div>
+          <div class="mini">
+            <svg class="spark" viewBox="0 0 112 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L10 17 L50 18 L85 10 L98 6 L106 6 L112 0 Z" fill="url(#depth)"/></svg>
+            <div><a class="dive-title" href="#">Dive 42</a><div class="small muted">Jan 15, 2026 · 11:00 AM · <span class="diff">18.5 m</span> · 30 min</div></div>
+          </div>
+        </div>
+        <div class="item-actions"><button class="btn btn-small">Add to Dive 42</button><button class="btn btn-small">Make it a new dive</button><button class="btn btn-small btn-quiet">Discard</button></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="Main (phone)">
+    <a href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>Logbook</a>
+    <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.5 7-11a7 7 0 0 0-14 0c0 4.500 7 11 7 11z"/><circle cx="12" cy="10" r="2.500"/></svg>Dive sites</a>
+    <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.500"/><path d="M2.500 20a6.500 6.500 0 0 1 13 0M16 4.500a3.500 3.500 0 0 1 0 7M18 14a6.500 6.500 0 0 1 3.500 6"/></svg>Divers</a>
+    <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="1.500"/><circle cx="12" cy="12" r="1.500"/><circle cx="19" cy="12" r="1.500"/></svg>More</a>
+  </nav>
+</div>
+
+<script>
+  const frame = document.getElementById('frame');
+  const press = (group, el) => { for (const b of document.querySelectorAll(`.mock-bar [${group}]`)) b.setAttribute('aria-pressed', String(b === el)); };
+  const show = (name) => {
+    for (const s of document.querySelectorAll('.screen')) s.hidden = s.dataset.name !== name;
+    press('data-screen', document.querySelector(`.mock-bar [data-screen="${name}"]`));
+    scrollTo(0, 0);
+  };
+  document.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-screen], [data-width], [data-theme-set], a[href="#"], .chip');
+    if (!el) return;
+    if (el.matches('.chip')) { el.setAttribute('aria-pressed', String(el.getAttribute('aria-pressed') !== 'true')); return; }
+    if (el.matches('a')) e.preventDefault();
+    if (el.dataset.screen) show(el.dataset.screen);
+    if (el.dataset.width) { frame.dataset.width = el.dataset.width; press('data-width', el); }
+    if (el.dataset.themeSet) { frame.dataset.theme = el.dataset.themeSet; press('data-theme-set', el); }
+  });
+</script>
+</body>
+</html>

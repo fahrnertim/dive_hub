@@ -53,6 +53,7 @@ that fit it, also for familiar tools (14 of them were never loaded in the first 
 | mcp-builder | anthropics/skills | designing and testing the MCP endpoint's tools | 2026-10-06 |
 | mobile-native | emilkowalski/skills | platform fixes so the web app feels native on a phone (input zoom, long-press, `theme-color`, safe areas) | 2026-10-04 |
 | ux-search, ux-selection-controls | uxcel-lab/product-skills | live search results, choosing the right selection control (the site picker) | 2026-10-05 |
+| ux-navigation | uxcel-lab/product-skills | choosing the navigation pattern (top bar, tabs, bottom bar on phones), "where am I" signals, pagination | 2026-10-07 |
 
 Install with telemetry off: `DISABLE_TELEMETRY=1 npx skills add <owner/repo> -s <skill> -a claude-code --copy -y`.
 
@@ -91,11 +92,12 @@ Where a skill and this project disagree, these rules win. They lived in AGENTS.m
   React Aria (`data-placement`, `--trigger-anchor-point`) and plain CSS transitions. Findings go in our
   review documents' format.
 - **ux-tables**, **ux-inputs-and-forms**, **ux-empty-states**, **ux-menus**, **ux-loaders-and-progress**,
-  **ux-notifications-and-toasts**, **ux-search**, **ux-selection-controls** (uxcel): the design system and React Aria win on conflict. Row actions
+  **ux-notifications-and-toasts**, **ux-search**, **ux-selection-controls**, **ux-navigation** (uxcel): the design system and React Aria win on conflict. Row actions
   stay visible (never hover-only); no truncate-plus-tooltip on phones; notices and toasts can always be
   dismissed, and errors never time out (WCAG 2.2.1, 4.1.3). Skip their hand-offs to `ux-*-audit` skills
   and orchestration docs we don't have, and their mobile push and marketing parts. ux-search's placement rules
-  (a search bar on every page) are for site search, not for pickers and list filters.
+  (a search bar on every page) are for site search, not for pickers and list filters. ux-navigation: targets follow
+  WCAG 2.2 AA (24 px, not its 44 px); its footer, mega-menu and language-picker parts don't apply.
 - **suggest-lucide-icons**: a name must also exist in the installed `lucide-react` version (check
   `node_modules/lucide-react`), not only in `@latest`. Run its script as `PYTHONUTF8=1 python …` (Windows' default encoding fails). New icons go into the
   map in `apps/web/src/ui/Icon.tsx` ([ADR 0018](decisions/0018-icons-and-motion.md)). Icons are
@@ -205,3 +207,4 @@ Details and commands: [skills vetting](research/2026-10-02-agent-skills-vetting.
 | 2026-10-05 | `npx skills find` for "distributed lock", "lease", "postgres locking", "job concurrency" (provider layer cleanup, leases in PostgreSQL) | nothing installed | Only unrelated or rejected hits: Redis skills (upstash `upstash-redis-js`, affaan-m/ecc `redis-patterns`; we have no Redis), `supabase-postgres-best-practices` (rejected 2026-10-02) and Prisma's Postgres setup (we use Drizzle), and general agent-workflow skills (obra/superpowers debugging and code review, distributed tracing, Turborepo caching). None covers leases or row-level locking in plain PostgreSQL; `postgres-drizzle` and `codebase-design` covered the work |
 | 2026-10-06 | mcp-builder, used for slice 17 ([ADR 0035](decisions/0035-mcp-connector.md)) | note | Its best-practices file shaped the tools (namespaced names, paging fields, annotations, errors that say what to do, a size cap). Its TypeScript guide still shows SDK v1 (`@modelcontextprotocol/sdk`, Express, Zod): we use SDK v2 with TypeBox through `fromJsonSchema`. Its Markdown/JSON `response_format` was not taken: results are structured content with an output schema, and `detail` chooses concise or detailed. The evaluation scripts were not run |
 | 2026-10-07 | `npx skills find` for "token usage", "context management", "claude code cost", "prompt caching", "context engineering", "agents md" (token usage, [research note](research/2026-10-07-token-usage.md)) | nothing installed | Only the registry pages were read, not the skill files. mattpocock/skills `writing-for-agents` (pointers instead of inline material, every always-loaded word costs each turn) is a candidate for rewriting AGENTS.md, pending the owner. anthropics/claude-plugins-official `claude-md-improver` not needed: it also targets `CLAUDE.local.md` (against ADR 0001), and Claude Code's built-in `/doctor prompt-audit` covers the audit. juliusbrussee/caveman `verify-and-stop` (fewer verification steps) not pursued: it would work against our checks rule. The rest: Lark, marketing, unrelated vendor skills |
+| 2026-10-07 | uxcel-lab/product-skills `ux-navigation` (commit 5007cd0, the commit of our eight uxcel skills) | installed (owner approved 2026-10-07) | For the navigation part of the [UI redesign proposal](research/2026-10-07-ui-redesign-proposal.md#5-navigation); `ux-menus` hands off to it. MIT, one SKILL.md (143 lines, read in full), no scripts, no fetches, only links to Uxcel lessons. Pattern choice by structure (top bar, sidebar, tabs, bottom bar, breadcrumbs), "where am I" signals, pagination. Overrides needed: 44 px targets (we use WCAG 2.2 AA's 24 px), truncate-plus-tooltip on breadcrumbs (no tooltips), hand-offs to `ux-*-audit` skipped as for the others; its footer, mega-menu and language-picker parts don't apply. `cards` from the same repository not looked at |
