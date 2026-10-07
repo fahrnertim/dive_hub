@@ -19,24 +19,39 @@ test.beforeAll(async ({ request }) => {
 });
 
 test('a recording that doesn\'t clearly fit is put aside, brought back and added to a dive', { tag: ['@dives'] }, async ({ page }) => {
+  // The logbook says it in one line and counts it in the navigation; the decisions are on the Review page.
   await page.goto('/');
-  const panel = page.locator('section.panel').filter({ has: page.getByRole('heading', { name: 'Needs your decision' }) });
-  await expect(panel).toContainText('One recording doesn’t clearly belong to a dive.');
+  await expect(page.getByRole('heading', { name: 'Logbook', level: 1 })).toBeVisible();
+  await expect(page.locator('#main').getByText('One thing needs your decision: 1 recording.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Needs your decision' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Logbook 1 to decide' })).toBeVisible();
+  await expectGoodPage(page, 'Logbook');
+
+  await page.getByRole('link', { name: 'Review them' }).click();
+  await expect(page).toHaveURL(/#\/review$/);
+  await expect(page.getByRole('heading', { name: 'Review', level: 1 })).toBeFocused();
+  const panel = page.locator('section.panel').filter({ has: page.getByRole('heading', { name: 'Recordings without a dive' }) });
   await expect(panel).toContainText('Garmin Descent Mk3 (777)');
   await expect(panel).toContainText('the max depth differs too much');
-  await expectGoodPage(page, 'Logbook'); // with the decision panel and the Import history on it
+  // The values that differ from the dive are marked, and the button names its target.
+  await expect(panel.locator('mark').first()).toBeVisible();
+  await expect(panel.getByRole('button', { name: /^Add to Dive 42:/ })).toBeVisible();
+  await expectGoodPage(page, 'Review');
 
   await panel.getByRole('button', { name: /^Discard:/ }).click();
-  await expect(page.getByRole('heading', { name: 'Needs your decision' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Recordings without a dive' })).toHaveCount(0);
   // The Discard button is gone; focus is on the way back.
   await expect(page.getByRole('button', { name: 'Undo' })).toBeFocused();
-  await page.getByRole('button', { name: 'Show discarded recordings' }).click();
+  await expect(page.getByRole('link', { name: 'Logbook', exact: true })).toBeVisible(); // no count while nothing waits
+  await page.getByRole('link', { name: 'Decided' }).click();
   await page.getByRole('button', { name: 'Decide again' }).click();
-  await page.getByRole('button', { name: 'Hide discarded recordings' }).click();
+  await page.getByRole('link', { name: /^To decide/ }).click();
 
-  await page.getByRole('button', { name: 'Add to this dive' }).click();
-  await expect(page.getByRole('heading', { name: 'Needs your decision' })).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: 'Logbook', level: 1 })).toBeFocused(); // nothing left to decide
+  await page.getByRole('button', { name: /^Add to Dive 42:/ }).click();
+  await expect(page.getByText('Nothing waits for your decision.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Review', level: 1 })).toBeFocused(); // nothing left to decide
+  await page.getByRole('link', { name: '‹ Logbook' }).click();
+  await expect(page.getByText(/needs? your decision/)).toHaveCount(0);
   await page.getByRole('link', { name: 'Jan 15, 2026, 11:00 AM (UTC+2)' }).click();
   await expect(page.getByRole('tab', { name: /\(777\)/ })).toBeVisible();
   await expect(page.locator('.history > li').first()).toContainText('Recording added');

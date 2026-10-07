@@ -7,12 +7,13 @@ import { DiveList, LogbookHeader } from './DiveList.tsx';
 import { logbookParams } from './lib/logbook.ts';
 import { sitesParams } from './lib/sites-list.ts';
 import { pickLanguage } from './i18n/index.ts';
-import { Decisions } from './Decisions.tsx';
-import { DeletedDives, DeletedNotices } from './DeletedDives.tsx';
+import { DeletedNotices } from './DeletedDives.tsx';
 import { ImportFilesButton, ImportPanel, ImportProvider, RecentImports } from './ImportPanel.tsx';
+import { ReviewLinks, ReviewStrip } from './ReviewStrip.tsx';
 import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
 import { useFocusOnNavigate } from './lib/page.ts';
+import { reviewTab, useWaiting } from './lib/review.ts';
 import { ActionMenu, BrandMark, ErrorBoundary, Icon, Muted, Notice, PageHeader } from './ui/index.ts';
 
 // Pages most visits don't need load on demand: the chart library, account settings, admin.
@@ -22,11 +23,12 @@ const Admin = lazy(() => import('./Admin.tsx').then((m) => ({ default: m.Admin }
 const DiversPage = lazy(() => import('./DiversPage.tsx').then((m) => ({ default: m.DiversPage })));
 const SitesPage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitesPage })));
 const SitePage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitePage })));
+const ReviewPage = lazy(() => import('./ReviewPage.tsx').then((m) => ({ default: m.ReviewPage })));
 const SiteImportPage = lazy(() => import('./SiteImportPage.tsx').then((m) => ({ default: m.SiteImportPage })));
 
 /**
  * Minimal hash routing: "#/" (logbook, "#/?diver=<id>" for one Diver, "#/?site=<id>" for one Dive site),
- * "#/dives/<id>" ("?recording=<id>"), "#/divers", "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/account", "#/admin", "#/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
+ * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers", "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/account", "#/admin", "#/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
  */
 function useRoute(): string {
   const [route, setRoute] = useState(() => location.hash.slice(1) || '/');
@@ -88,13 +90,17 @@ function Navigation({ route, me }: { route: string; me: Me }) {
   const { t } = useTranslation();
   const signOut = useSignOut();
   const current = (active: boolean) => (active ? { 'aria-current': 'page' as const } : {});
+  // What waits for a decision is counted beside the logbook, visible from every page (UI redesign 4.3).
+  const { total: waiting } = useWaiting();
   return (
     <>
       <nav className="app-nav" aria-label={t('nav.main')}>
-        <a href="#/" {...current(route === '/' || route.startsWith('/?') || route.startsWith('/dives/'))}><Icon name="logbook" />{t('nav.logbook')}</a>
+        <a href="#/" {...current(route === '/' || route.startsWith('/?') || route.startsWith('/dives/') || route.startsWith('/review'))}>
+          <Icon name="logbook" />{t('nav.logbook')}
+          {waiting > 0 && <span className="count"><span aria-hidden="true">{waiting}</span><span className="visually-hidden">{t('nav.toDecide', { count: waiting })}</span></span>}
+        </a>
         <a href="#/divers" {...current(route === '/divers')}><Icon name="divers" />{t('nav.divers')}</a>
         <a href="#/sites" {...current(route === '/sites' || route.startsWith('/sites/') || route.startsWith('/sites?'))}><Icon name="site" />{t('nav.sites')}</a>
-        {me.user.role === 'admin' && <a href="#/admin" {...current(route === '/admin' || route.startsWith('/admin/'))}><Icon name="admin" />{t('nav.admin')}</a>}
       </nav>
       {/* The account is a labelled menu, not a bare name link (UI review C6). */}
       <div className="user-menu">
@@ -104,6 +110,8 @@ function Navigation({ route, me }: { route: string; me: Me }) {
           label={<>{me.user.name}<span className="visually-hidden">{t('nav.accountMenu')}</span></>}
           actions={[
             { id: 'account', label: t('nav.account'), href: '#/account', icon: 'user' },
+            // Rare and for one role: not in the bar (UI redesign 5.1).
+            ...(me.user.role === 'admin' ? [{ id: 'admin', label: t('nav.administration'), href: '#/admin', icon: 'admin' as const }] : []),
             { id: 'sign-out', label: t('common.signOut'), onAction: () => void signOut(), icon: 'signOut' },
           ]}
         />
@@ -128,6 +136,7 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   if (diveId) return <DiveDetail key={diveId} id={diveId} recordingId={params.get('recording') ?? undefined} />;
   if (route === '/account') return <AccountPage />;
   if (route === '/divers') return <DiversPage />;
+  if (path === '/review') return <ReviewPage tab={reviewTab(params)} />;
   if (path === '/sites') return <SitesPage params={sitesParams(params)} />;
   const siteId = /^\/sites\/([\w-]+)$/.exec(path!)?.[1];
   if (siteId) return <SitePage key={siteId} id={siteId} />;
@@ -141,7 +150,8 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
 /**
  * The logbook page. On the first run the Import is the main action and comes first; once there are
  * dives, the logbook comes first and importing is a button, or dropping files on the page (UI review B5).
- * The page head comes first in both, then what waits for a decision (visual refresh 2); deleted dives come last (ADR 0026).
+ * The page head comes first in both, then one line for what waits for a decision (UI redesign 4.1), which is decided
+ * on the Review page; the first run's Import panel stays until the first dives exist (4.7).
  */
 function Logbook({ params }: { params: LogbookParams }) {
   const all = useQuery(divesQuery());
@@ -150,18 +160,18 @@ function Logbook({ params }: { params: LogbookParams }) {
     <ImportProvider>
       <LogbookHeader params={params} importAction={returning && <ImportFilesButton />} />
       <DeletedNotices />
-      <Decisions />
+      <ReviewStrip />
       {returning ? (
         <>
           <DiveList params={params} />
           <RecentImports />
-          <DeletedDives />
+          <ReviewLinks />
         </>
       ) : (
         <>
           {all.data && <ImportPanel />}
           <DiveList params={params} searchable={false} />
-          <DeletedDives />
+          <ReviewLinks />
         </>
       )}
     </ImportProvider>

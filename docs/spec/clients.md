@@ -461,10 +461,11 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
   `Decisions.tsx` (their query sits under the dives').
 
 ### Duplicate candidates
-- **Show them where the User decides,** first on the logbook ("Needs your decision"), with the Recording (time,
-  depth, duration, Device), why it waits (`reason`) and the Dives it might belong to (ADR 0016).
+- **Show them where the User decides,** on a page of their own ("Review", reached from one line on the logbook and a count
+  in the navigation), with the Recording (time, depth, duration, Device), why it waits (`reason`) and the Dives it might
+  belong to side by side, the values that differ marked (ADR 0016; UI redesign 4).
 - **Three decisions:** add to one of those Dives, make it a Dive of its own, or discard. Discard offers Undo, and
-  discarded ones can be shown and reopened. *Web:* `Decisions.tsx`.
+  discarded ones can be shown and reopened ("Decided"). *Web:* `Decisions.tsx`, `ReviewPage.tsx`.
 - **No Dives left** (they were deleted, ADR 0026): say so; making it a Dive of its own and discarding remain.
 - **Several candidates at once:** every button names the Recording or Dive it acts on (in its accessible name).
 

@@ -433,9 +433,9 @@ for (const v of variants) {
         await expect(page.getByRole('button', { name: v.english ? 'Undo' : 'Rückgängig' })).toBeVisible();
         await expectGoodPage(page, title('Logbook'), v);
         await page.reload();
-        await page.getByRole('button', { name: v.english ? 'Show deleted dives' : 'Gelöschte Tauchgänge zeigen', exact: true }).click();
+        await page.getByRole('link', { name: v.english ? 'Show deleted dives' : 'Gelöschte Tauchgänge zeigen', exact: true }).click();
         await expect(page.getByRole('button', { name: v.english ? 'Delete in SSI: Dive 9' : 'In SSI löschen: Tauchgang 9' })).toBeVisible();
-        await expectGoodPage(page, title('Logbook'), v);
+        await expectGoodPage(page, title('Review'), v);
       } finally {
         await deletableDive(request);
       }
@@ -451,9 +451,13 @@ for (const v of variants) {
         await open.click();
         await expect(page.getByRole('dialog').getByRole('button', { name: v.english ? 'Merge' : 'Zusammenführen', exact: true })).toBeVisible();
         await expectGoodPage(page, title('Dive 31'), v);
-        // The same pair waits on the logbook as a logbook check, with its decisions.
+        // The same pair waits as a logbook check, with its decisions on the Review page and a line on the logbook.
         await page.goto('/');
+        await page.getByRole('link', { name: v.english ? 'Review them' : 'Durchsehen' }).click();
         await expect(page.getByRole('button', { name: v.english ? /^They are two dives: / : /^Es sind zwei Tauchgänge: / })).toBeVisible();
+        await expectGoodPage(page, title('Review'), v);
+        await page.goto('/');
+        await expect(page.getByRole('link', { name: v.english ? 'Review them' : 'Durchsehen' })).toBeVisible();
         await expectGoodPage(page, title('Logbook'), v);
       } finally {
         await mergePair(request);
@@ -537,7 +541,7 @@ test.describe('behaviour', () => {
     ['logbook', () => '/', ['@dives']], ['dive', () => `/#/dives/${diveId}`, ['@dives']], ['Divers', () => '/#/divers', ['@divers']],
     ['Dive sites', () => '/#/sites', ['@sites']], ['a dive site', () => `/#/sites/${siteId}`, ['@sites']],
     ['an imported dive site', () => `/#/sites/${importedSiteId}`, ['@sites']], ['account', () => '/#/account', ['@account']],
-    ['admin', () => '/#/admin', ['@admin']], ['site import', () => '/#/admin/site-imports', ['@admin', '@sites']],
+    ['Review', () => '/#/review', ['@dives']], ['admin', () => '/#/admin', ['@admin']], ['site import', () => '/#/admin/site-imports', ['@admin', '@sites']],
   ];
   for (const [name, path, tag] of sweep) {
     test(`${name} fits every width from 320 to 1440 px: no page or table scrolls sideways`, { tag: [...tag, '@layout'] }, async ({ page }) => {
@@ -555,7 +559,7 @@ test.describe('behaviour', () => {
   }
 
   test('text at 200 % still fits: nothing scrolls sideways (WCAG 1.4.4)', { tag: ['@layout'] }, async ({ page }) => {
-    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/account', '/#/admin', '/#/admin/site-imports']) {
+    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/review', '/#/account', '/#/admin', '/#/admin/site-imports']) {
       await page.goto(path);
       await page.getByRole('heading', { level: 1 }).waitFor();
       await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
@@ -679,10 +683,12 @@ test.describe('behaviour', () => {
       { name: 'main-computer.fit', bytes: [...readFileSync('e2e/fixtures/main-computer.fit')] },
     ]);
     await expect(page.getByText('Skipped notes.txt')).toBeVisible();
+    await expect(page.locator('[data-announcer]')).toHaveText('main-computer.fit: already imported');
+    // The Imports are on the Review page, one link away from the logbook.
+    await page.getByRole('link', { name: 'Imports', exact: true }).click();
     const imports = page.locator('section.panel').filter({ has: page.getByRole('heading', { name: 'Imports' }) });
     await expect(imports.getByText('main-computer.fit').first()).toBeVisible();
     await expect(imports.getByText('already imported').first()).toBeVisible();
-    await expect(page.locator('[data-announcer]')).toHaveText('main-computer.fit: already imported');
   });
 
   test('the chosen recording is in the address, so a reload keeps it', { tag: ['@dives'] }, async ({ page, request }) => {
@@ -717,6 +723,9 @@ test.describe('behaviour', () => {
     await page.goto('/');
     await page.getByRole('button', { name: /^Erika\s*, account$/ }).click();
     await expect(page.getByRole('menuitem', { name: 'Sign out' })).toBeVisible();
+    // Administration is for admins only and lives here, not in the bar (the test User is the admin).
+    await expect(page.getByRole('menuitem', { name: 'Administration' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Admin' })).toHaveCount(0);
     await page.getByRole('menuitem', { name: 'My account' }).click();
     await expect(page.getByRole('heading', { name: 'My account', level: 1 })).toBeVisible();
   });

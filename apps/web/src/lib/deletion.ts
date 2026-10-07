@@ -49,12 +49,10 @@ interface State {
   justDeleted: JustDeleted | undefined;
   /** The reminder about deleted dives still at a Provider, dismissed for this visit (it comes back on reload). */
   reminderDismissed: boolean;
-  /** The list of deleted dives is open. */
-  listOpen: boolean;
 }
 
 // Shared by the dive page (which deletes and leaves) and the logbook (which shows the outcome): the page changes in between.
-let state: State = { justDeleted: undefined, reminderDismissed: false, listOpen: false };
+let state: State = { justDeleted: undefined, reminderDismissed: false };
 const listeners = new Set<() => void>();
 
 export function updateDeletion(change: Partial<State>) {

@@ -6,8 +6,9 @@ import { announce } from './lib/announce.ts';
 import { deletedNotice, updateDeletion, useDeletion, type JustDeleted } from './lib/deletion.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { focusHeading, refocusAfterRemoval } from './lib/focus.ts';
+import { reviewHref } from './lib/review.ts';
 import { exporting, useNames, useProviders, useProviderText } from './lib/providers.ts';
-import { Button, ConfirmButton, Muted, Notice, Panel } from './ui/index.ts';
+import { Button, ConfirmButton, LinkButton, Muted, Notice, Panel } from './ui/index.ts';
 
 /** "Dive 9", or the Dive's time when it has no number. */
 function useDiveName() {
@@ -46,7 +47,7 @@ function useProviderOf() {
  */
 export function DeletedNotices() {
   const { t } = useTranslation();
-  const { justDeleted, reminderDismissed, listOpen } = useDeletion();
+  const { justDeleted, reminderDismissed } = useDeletion();
   const deleted = useQuery(deletedDivesQuery());
   const names = useNames();
   const providerOf = useProviderOf();
@@ -54,14 +55,13 @@ export function DeletedNotices() {
   const entry = justDeleted && deleted.data?.dives.find((d) => d.id === justDeleted.id);
   if (justDeleted && entry) return <JustDeletedNotice key={entry.id} just={justDeleted} dive={entry} />;
   const still = deleted.data?.dives.filter((d) => d.stillAt.length > 0) ?? [];
-  // The open list says it on each dive.
-  if (still.length === 0 || reminderDismissed || listOpen) return null;
+  if (still.length === 0 || reminderDismissed) return null;
   const where = [...new Set(still.flatMap((d) => d.stillAt.map((s) => providerOf(s.provider).name)))];
   return (
     <Notice tone="info">
       <p>{t('deleted.reminder', { count: still.length, name: names(where) })}</p>
       <div className="form-actions">
-        <Button onPress={() => updateDeletion({ listOpen: true })}>{t('deleted.showList')}</Button>
+        <LinkButton href={reviewHref('deleted')}>{t('deleted.showList')}</LinkButton>
         <Button variant="quiet" onPress={() => { updateDeletion({ reminderDismissed: true }); focusHeading(); }}>{t('common.dismiss')}</Button>
       </div>
     </Notice>
@@ -89,41 +89,24 @@ function JustDeletedNotice({ just, dive: d }: { just: JustDeleted; dive: Deleted
 }
 
 /**
- * At the bottom of the logbook: "Show deleted dives", and the list to restore them from, marking those still at a
- * Provider with "Delete in …" (ADR 0026, 0027). Opening moves focus to the list's heading, closing back to the button.
+ * The Review page's "Deleted dives" (ADR 0026, 0027): the list to restore them from, marking those still at a Provider
+ * with "Delete in …". Nothing while there are none.
  */
 export function DeletedDives() {
   const { t } = useTranslation();
   const deleted = useQuery(deletedDivesQuery());
   const providers = useProviders();
   const names = useNames();
-  const { listOpen } = useDeletion();
   const list = useRef<HTMLUListElement>(null);
-  const show = useRef<HTMLButtonElement>(null);
-  const wasOpen = useRef(listOpen);
   const dives = deleted.data?.dives ?? [];
   const count = dives.length;
-  useEffect(() => {
-    if (listOpen && !wasOpen.current) focusHeading(list.current);
-    if (!listOpen && wasOpen.current) show.current?.focus();
-    wasOpen.current = listOpen;
-  }, [listOpen]);
-
   if (count === 0) return null;
-  if (!listOpen) {
-    return (
-      <div className="decisions-quiet">
-        <Button ref={show} variant="quiet" onPress={() => updateDeletion({ listOpen: true })}>{t('deleted.show', { count })}</Button>
-      </div>
-    );
-  }
   return (
     <Panel title={t('deleted.title')}>
       <Muted>{t('deleted.intro', { name: names(exporting(providers.data).map((p) => p.name)) })}</Muted>
       <ul className="decisions" ref={list}>
         {dives.map((d, index) => <DeletedRow key={d.id} dive={d} list={list} index={index} count={count} />)}
       </ul>
-      <Button variant="quiet" onPress={() => updateDeletion({ listOpen: false })}>{t('deleted.hide')}</Button>
     </Panel>
   );
 }

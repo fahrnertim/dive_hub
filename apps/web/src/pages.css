@@ -306,3 +306,23 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .muted-rules { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); font-size: var(--text-sm); }
 .muted-rules ul { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin: 0; padding: 0; list-style: none; }
 .muted-rules li { display: flex; align-items: baseline; gap: var(--space-2); }
+
+/* Review page and the logbook's strip (UI redesign 4) */
+.strip { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-accent-soft); margin-bottom: var(--space-4); }
+.strip > p { margin: 0; }
+.back { margin: 0; font-size: var(--text-sm); }
+.subnav { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); border-bottom: 1px solid var(--color-border); margin-bottom: var(--space-4); }
+.subnav a { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); text-decoration: none; padding: var(--space-2) 0; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.subnav a[aria-current='page'] { color: var(--color-text); font-weight: var(--weight-semibold); border-bottom-color: var(--color-accent); }
+/* The count of what waits: beside the navigation's Logbook and the Review page's first part. */
+.count { display: inline-block; min-width: 1.5em; padding: 0 var(--space-1); border-radius: var(--radius-sm); background: var(--color-accent-soft); color: var(--color-text);
+  font-size: var(--text-sm); font-weight: var(--weight-semibold); text-align: center; line-height: 1.4; }
+/* The two candidates of a decision side by side, the values that differ marked; stacked when the room is narrow. */
+.candidates { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: var(--space-3); }
+.candidate { background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); display: grid; gap: var(--space-1); align-content: start; min-width: 0; }
+.candidate-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-2); }
+.candidate-title { font-weight: var(--weight-semibold); font-size: var(--text-md); }
+.candidate-facts { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); overflow-wrap: anywhere; }
+.diff { background: var(--color-accent-soft); color: var(--color-text); border-radius: var(--radius-sm); padding-inline: var(--space-1); font-weight: var(--weight-semibold); }
+.review-links { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin-top: var(--space-4); font-size: var(--text-sm); }

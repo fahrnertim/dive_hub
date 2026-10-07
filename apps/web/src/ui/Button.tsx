@@ -1,5 +1,5 @@
-import type { Ref } from 'react';
-import { Button as AriaButton, type ButtonProps as AriaButtonProps } from 'react-aria-components';
+import type { ReactNode, Ref } from 'react';
+import { Button as AriaButton, Link as AriaLink, type ButtonProps as AriaButtonProps } from 'react-aria-components';
 import { Icon, type IconName } from './Icon.tsx';
 
 export interface ButtonProps extends Omit<AriaButtonProps, 'className'> {
@@ -27,5 +27,17 @@ export function Button({ variant = 'secondary', size, className, icon, children,
         </>
       )}
     </AriaButton>
+  );
+}
+
+/** A link that looks like a button: it goes somewhere (`href`) instead of doing something. */
+export function LinkButton({ href, variant = 'secondary', size, icon, children }: {
+  href: string; variant?: ButtonProps['variant']; size?: 'small' | undefined; icon?: IconName | undefined; children: ReactNode;
+}) {
+  return (
+    <AriaLink href={href} className={['btn', `btn-${variant}`, size && `btn-${size}`].filter(Boolean).join(' ')}>
+      {icon && <Icon name={icon} />}
+      {children}
+    </AriaLink>
   );
 }

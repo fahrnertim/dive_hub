@@ -836,7 +836,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   (the answer holds while both are unchanged), who answered. Nothing else is stored: checks are computed on every read.
 - Routes: `GET /api/logbook-checks?status=open|answered`, `PUT /api/logbook-checks/answer`; `merge-candidates` gains
   `rule` and `answered`. Problem `check_not_found`.
-- Web: `LogbookChecks.tsx` inside "Needs your decision" (`Decisions.tsx`): the pairs with "Merge the two…" (the merge
+- Web: `LogbookChecks.tsx` on the Review page (`ReviewPage.tsx`, since UI redesign slice B; first inside "Needs your decision"): the pairs with "Merge the two…" (the merge
   dialog, staying on the logbook) and "They are two dives" (with Undo), "Merge the N clear pairs…" from two obvious pairs
   on, the answered pairs with "Ask again"; the dive page's hint leaves answered pairs out (en, de).
 - Tests: `logbook-check-rules.test.ts` (the rules), `logbook-checks.test.ts` (PostgreSQL: both observations found, another

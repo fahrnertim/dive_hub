@@ -23,6 +23,9 @@
     "account": "Mein Konto",
     "divers": "Taucher",
     "accountMenu": ", Konto",
+    "administration": "Verwaltung",
+    "toDecide_one": "{{count}} zu entscheiden",
+    "toDecide_other": "{{count}} zu entscheiden",
     "sites": "Tauchplätze"
   },
   "form": {
@@ -201,6 +204,7 @@
     "dropAnywhere": "Du kannst Tauchgangsdateien und ZIPs auch irgendwo auf dieser Seite ablegen.",
     "dropNow": "Zum Importieren ablegen",
     "recent": "Importe",
+    "none": "Noch nichts importiert.",
     "showAll": "Alle Importe zeigen",
     "showFewer": "Weniger zeigen",
     "findTitle": "Wo du deine Tauchgänge findest",
@@ -515,28 +519,23 @@
     }
   },
   "decisions": {
-    "title": "Braucht deine Entscheidung",
-    "intro_one": "Eine Aufzeichnung gehört nicht eindeutig zu einem Tauchgang.",
-    "intro_other": "{{count}} Aufzeichnungen gehören nicht eindeutig zu einem Tauchgang.",
+    "title": "Aufzeichnungen ohne Tauchgang",
+    "intro_one": "Diese Aufzeichnung gehört nicht eindeutig zu einem Tauchgang. Ist es einer von diesen?",
+    "intro_other": "Diese {{count}} Aufzeichnungen gehören nicht eindeutig zu einem Tauchgang. Sind es welche von diesen?",
     "recording": "Aufzeichnung",
     "device": "{{name}} ({{serial}})",
     "unknownDevice": "unbekanntes Gerät",
     "why": "Nicht automatisch zugeordnet: {{reason}}.",
-    "maybe": "Sie könnte gehören zu",
-    "addTo": "Zu diesem Tauchgang hinzufügen",
+    "addTo": "Zu {{name}} hinzufügen",
     "newDive": "Eigenen Tauchgang anlegen",
     "discard": "Verwerfen",
     "discarded": "Verworfene Aufzeichnungen",
-    "showDiscarded": "Verworfene Aufzeichnungen zeigen",
-    "hideDiscarded": "Verworfene Aufzeichnungen ausblenden",
     "reopen": "Neu entscheiden",
-    "none": "Nichts zu entscheiden.",
     "discardedNotice": "Aufzeichnung vom {{time}} verworfen.",
     "divesGone": "Die Tauchgänge, zu denen sie gehören könnte, sind nicht mehr in deinem Logbuch."
   },
   "checks": {
-    "intro_one": "Zwei Tauchgänge in deinem Logbuch liegen zur selben Zeit.",
-    "intro_other": "{{count}} Paare von Tauchgängen in deinem Logbuch liegen zur selben Zeit.",
+    "title": "Tauchgänge zur selben Zeit",
     "rule": {
       "recording_beside_entry": "Ein Tauchgang ohne Aufzeichnung und einer mit Aufzeichnung liegen zur selben Zeit",
       "overlapping_dives": "Zwei Tauchgänge überschneiden sich zeitlich"
@@ -552,8 +551,6 @@
     "mergeAllBody": "In jedem dieser Paare hat ein Tauchgang eine Aufzeichnung und der andere keine, zur selben Zeit und etwa gleich tief: was ein Import von sich aus zusammenlegt. Der Tauchgang mit der Aufzeichnung bleibt und übernimmt vom anderen, was ihm fehlt; der andere kommt zu den „Gelöschten Tauchgängen“.",
     "mergeAllConfirm": "{{count}} Paare zusammenführen",
     "mergedAll": "{{count}} Paare zusammengeführt.",
-    "showAnswered": "Paare zeigen, die zwei Tauchgänge bleiben",
-    "hideAnswered": "Paare ausblenden, die zwei Tauchgänge bleiben",
     "answered": "Paare, die zwei Tauchgänge bleiben",
     "answeredIntro": "Tauchgänge zur selben Zeit, von denen du gesagt hast, dass es zwei sind.",
     "askAgain": "Wieder fragen"
@@ -579,6 +576,28 @@
     "nothingMerged": "Es wurde nichts zusammengeführt.",
     "done": "Die beiden Tauchgänge sind jetzt einer."
   },
+  "review": {
+    "title": "Durchsicht",
+    "parts": "Teile der Durchsicht",
+    "tab": {
+      "decide": "Zu entscheiden",
+      "imports": "Importe",
+      "decided": "Entschieden",
+      "deleted": "Gelöschte Tauchgänge"
+    },
+    "nothingWaits": "Nichts wartet auf deine Entscheidung.",
+    "nothingDecided": "Noch nichts entschieden: verworfene Aufzeichnungen und Paare, die zwei Tauchgänge bleiben, erscheinen hier.",
+    "nothingDeleted": "Keine gelöschten Tauchgänge.",
+    "strip": {
+      "things_one": "Eine Sache braucht deine Entscheidung: {{parts}}.",
+      "things_other": "{{count}} Dinge brauchen deine Entscheidung: {{parts}}.",
+      "recordings_one": "{{count}} Aufzeichnung",
+      "recordings_other": "{{count}} Aufzeichnungen",
+      "pairs_one": "{{count}} Paar Tauchgänge zur selben Zeit",
+      "pairs_other": "{{count}} Paare Tauchgänge zur selben Zeit",
+      "go": "Durchsehen"
+    }
+  },
   "deleted": {
     "notice": "{{name}} gelöscht.",
     "noticeKept": "{{name}} gelöscht. Er ist noch in {{provider}}, als Tauchgang {{number}}: Unter „Gelöschte Tauchgänge“ kannst du ihn dort löschen.",
@@ -586,8 +605,6 @@
     "reminder_one": "Ein Tauchgang, den du gelöscht hast, ist noch in {{name}}.",
     "reminder_other": "{{count}} Tauchgänge, die du gelöscht hast, sind noch in {{name}}.",
     "showList": "Gelöschte Tauchgänge zeigen",
-    "show": "Gelöschte Tauchgänge zeigen ({{count}})",
-    "hide": "Gelöschte Tauchgänge ausblenden",
     "title": "Gelöschte Tauchgänge",
     "intro": "Sie zählen nirgends, und ihre Dateien erneut zu importieren holt sie nicht zurück. Wiederherstellen holt einen Tauchgang mit seinen Aufzeichnungen und seinem Verlauf zurück, aber nicht nach {{name}}.",
     "deletedOn": "Gelöscht am {{date}}",

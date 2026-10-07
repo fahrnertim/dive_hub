@@ -87,6 +87,12 @@ test('review material', async ({ page, request, browser }) => {
     await page.goto('/'); await page.getByRole('heading', { name: 'Logbook' }).waitFor();
     await capture(page, '01-logbook');
     await tabOrder(page, '01-logbook');
+    // The odd computer's recording waits: the logbook says it in one line, the Review page decides.
+    await page.getByRole('link', { name: 'Review them' }).click(); await page.getByRole('heading', { name: 'Review', level: 1 }).waitFor();
+    await capture(page, '01a-review');
+    await tabOrder(page, '01a-review');
+    await page.getByRole('link', { name: 'Imports', exact: true }).click(); await page.getByRole('heading', { name: 'Imports', level: 2 }).waitFor();
+    await capture(page, '01b-review-imports');
     await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: /Dive 42/ }).waitFor();
     await capture(page, '02-dive');
     await tabOrder(page, '02-dive', 30);
@@ -414,14 +420,13 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('button', { name: 'Undo' }).waitFor();
     await capture(page, '34-logbook-deleted');
     await page.reload();
-    await page.getByRole('button', { name: 'Show deleted dives', exact: true }).click();
+    await page.getByRole('link', { name: 'Show deleted dives', exact: true }).click();
     await page.getByRole('button', { name: 'Restore: Dive 9' }).waitFor();
     await capture(page, '35-logbook-deleted-dives');
     await setPreferences(request, { language: 'de' });
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload();
-    await page.getByRole('button', { name: 'Gelöschte Tauchgänge zeigen', exact: true }).click();
     await page.getByRole('button', { name: 'Wiederherstellen: Tauchgang 9' }).waitFor();
     await capture(page, '36-logbook-deleted-dives-de-dark-390', { aria: false });
     await deletableDive(request);
@@ -445,8 +450,9 @@ test('review material', async ({ page, request, browser }) => {
     await page.goto(`/#/dives/${pair.kept}`); await page.reload();
     await page.getByRole('button', { name: 'Merge the two…' }).waitFor();
     await capture(page, '70-dive-merge-hint');
-    await page.goto('/'); await page.getByRole('button', { name: /^They are two dives: / }).waitFor();
-    await capture(page, '70b-logbook-check');
+    await page.goto('/'); await page.getByRole('link', { name: 'Review them' }).click();
+    await page.getByRole('button', { name: /^They are two dives: / }).waitFor();
+    await capture(page, '70b-review-check');
     await page.goto(`/#/dives/${pair.kept}`); await page.getByRole('button', { name: 'Merge the two…' }).waitFor();
     await page.getByRole('button', { name: 'Merge the two…' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Merge', exact: true }).waitFor();
@@ -455,7 +461,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('tab').nth(1).waitFor(); await openLine(page, 'History');
     await page.getByText('Another dive of the same time was merged into this one').first().waitFor();
     await capture(page, '72-dive-merged');
-    await page.goto('/'); await page.getByRole('button', { name: /^Show deleted dives/ }).click();
+    await page.goto('/#/review?tab=deleted');
     await page.getByText('Merged into another dive.').first().waitFor();
     await capture(page, '73-logbook-deleted-merged');
     pair = await mergeablePair(request);
@@ -469,8 +475,9 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('dialog').getByRole('button', { name: 'Zusammenführen', exact: true }).waitFor();
     await capture(page, '75-dive-merge-dialog-de-dark-390', { full: false, aria: false });
     await page.keyboard.press('Escape');
-    await page.goto('/'); await page.getByRole('button', { name: /^Es sind zwei Tauchgänge: / }).waitFor();
-    await capture(page, '76-logbook-check-de-dark-390', { aria: false });
+    await page.goto('/'); await page.getByRole('link', { name: 'Durchsehen' }).click();
+    await page.getByRole('button', { name: /^Es sind zwei Tauchgänge: / }).waitFor();
+    await capture(page, '76-review-check-de-dark-390', { aria: false });
     await mergePair(request);
     await setPreferences(request, { language: null });
     await page.emulateMedia({ colorScheme: 'light' });

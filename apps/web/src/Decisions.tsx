@@ -1,58 +1,59 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, candidatesQuery, keys, logbookChecksQuery, unwrap, type CandidateView, type LogbookCheckView } from './api.ts';
-import { AnsweredChecks, LogbookChecks } from './LogbookChecks.tsx';
+import { api, candidatesQuery, keys, unwrap, type CandidateView } from './api.ts';
+import { Candidates, CandidateRow, type Fact } from './ReviewRows.tsx';
+import { differingFacts } from './lib/review.ts';
 import { deviceName } from './lib/devices.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
-import { Button, Muted, Notice, Panel } from './ui/index.ts';
+import { Badge, Button, Notice, Panel } from './ui/index.ts';
 
 /**
- * What waits for the User on the logbook. Duplicate candidates (ADR 0016): Recordings that don't clearly belong to one
- * Dive, with the Dives they might belong to and the three decisions. Logbook checks (ADR 0038): pairs of Dives at the
- * same time. Hidden when nothing waits.
+ * Duplicate candidates on the Review page (ADR 0016): Recordings that don't clearly belong to one Dive, each beside the
+ * Dives it might belong to, with the three decisions. Nothing while none waits.
  */
-export function Decisions() {
+export function RecordingDecisions() {
   const { t } = useTranslation();
   const open = useQuery(candidatesQuery('open'));
   const discarded = useQuery(candidatesQuery('discarded'));
-  const [showDiscarded, setShowDiscarded] = useState(false);
   // The Recording just discarded, offered back with "Undo" (UI review B2).
   const [undo, setUndo] = useState<CandidateView>();
   const list = useRef<HTMLUListElement>(null);
   const count = open.data?.length ?? 0;
-  const checks = useQuery(logbookChecksQuery('open')).data?.length ?? 0;
-  const [keptApart, setKeptApart] = useState<LogbookCheckView>();
   // Offered only while that Recording is still discarded (it may be decided again another way).
   const undoable = undo && discarded.data?.some((c) => c.id === undo.id) ? undo : undefined;
-  const undoNotice = undoable && <UndoDiscard key={undoable.id} candidate={undoable} onDone={() => setUndo(undefined)} />;
-
-  if (count === 0 && checks === 0 && !showDiscarded) {
-    return (
-      <div className="decisions-quiet">
-        {undoNotice}
-        {/* A pair just kept as two dives is offered back here; then only the ways to decide again are left. */}
-        <LogbookChecks undo={keptApart} setUndo={setKeptApart} />
-        {(discarded.data?.length ?? 0) > 0 && <Button variant="quiet" onPress={() => setShowDiscarded(true)}>{t('decisions.showDiscarded')}</Button>}
-        <AnsweredChecks />
-      </div>
-    );
-  }
   return (
-    <Panel title={t('decisions.title')} attention={count + checks > 0}>
-      {count > 0 && <p>{t('decisions.intro', { count })}</p>}
-      {undoNotice}
+    <>
+      {undoable && <UndoDiscard key={undoable.id} candidate={undoable} onDone={() => setUndo(undefined)} />}
+      {count > 0 && (
+        <Panel title={t('decisions.title')} attention>
+          <p className="muted">{t('decisions.intro', { count })}</p>
+          <ul className="decisions" ref={list}>
+            {open.data?.map((c, index) => (
+              <Decision key={c.id} candidate={c} list={list} index={index} count={count} onDiscarded={() => setUndo(c)} />
+            ))}
+          </ul>
+        </Panel>
+      )}
+    </>
+  );
+}
+
+/** The Recordings put aside, with the way to decide again (the Review page's "Decided"). Nothing while there are none. */
+export function DiscardedRecordings() {
+  const { t } = useTranslation();
+  const discarded = useQuery(candidatesQuery('discarded'));
+  const list = useRef<HTMLUListElement>(null);
+  const count = discarded.data?.length ?? 0;
+  if (count === 0) return null;
+  return (
+    <Panel title={t('decisions.discarded')}>
       <ul className="decisions" ref={list}>
-        {open.data?.map((c, index) => (
-          <Decision key={c.id} candidate={c} list={list} index={index} count={count} onDiscarded={() => setUndo(c)} />
+        {discarded.data?.map((c, index) => (
+          <DiscardedItem key={c.id} candidate={c} onReopened={() => refocusAfterRemoval(list.current, index, count)} />
         ))}
       </ul>
-      <LogbookChecks undo={keptApart} setUndo={setKeptApart} />
-      {showDiscarded ? <Discarded onHide={() => setShowDiscarded(false)} /> : (discarded.data?.length ?? 0) > 0 && (
-        <Button variant="quiet" onPress={() => setShowDiscarded(true)}>{t('decisions.showDiscarded')}</Button>
-      )}
-      <AnsweredChecks />
     </Panel>
   );
 }
@@ -131,38 +132,49 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
   });
   // Several Recordings may wait at once; their buttons say which one they decide about.
   const recordingName = display.diveTime(c.recording.startsAt, c.recording.utcOffsetSeconds, c.recording.utcOffsetSource);
+  const r = c.recording;
+  const recording = {
+    time: recordingName, depth: display.depth(r.maxDepthM), duration: display.duration(r.durationSeconds),
+  };
+  const device = r.device
+    ? t('decisions.device', { name: deviceName(r.device.manufacturer, r.device.product), serial: r.device.serialNumber })
+    : t('decisions.unknownDevice');
+  const diveName = (d: CandidateView['dives'][number]) => (d.number !== null ? t('dive.title', { number: d.number }) : display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource));
+  const valuesOf = (d: CandidateView['dives'][number]) => ({
+    time: display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource), depth: display.depth(d.maxDepthM), duration: display.duration(d.durationSeconds),
+  });
+  const factsOf = (values: Record<string, string | undefined>): Fact[] => Object.entries(values).map(([key, text]) => ({ key, text }));
+  // The Recording's values differ from any of its Dives; each Dive's from the Recording.
+  const markedRecording = new Set(c.dives.flatMap((d) => [...differingFacts(recording, valuesOf(d))]));
   return (
     <li className="decision">
-      <RecordingLine c={c} />
+      <Candidates>
+        <CandidateRow
+          title={<span className="candidate-title">{t('decisions.recording')}</span>} marked={markedRecording}
+          // Why it wasn't added: a badge, in words the User knows (UI redesign 4.5).
+          badge={<Badge>{t(`import.reason.${c.reason}`)}</Badge>}
+          facts={[...factsOf(recording), { key: 'device', text: device }]}
+        />
+        {c.dives.map((d) => (
+          <CandidateRow
+            key={d.id} title={<a className="candidate-title" href={`#/dives/${d.id}`}>{d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}</a>}
+            marked={differingFacts(recording, valuesOf(d))} facts={factsOf(valuesOf(d))}
+          />
+        ))}
+      </Candidates>
       {/* The Dives it might belong to were deleted (ADR 0026): what's left is a Dive of its own, or discarding it. */}
       {c.dives.length === 0 && <p className="muted">{t('decisions.divesGone')}</p>}
-      {c.dives.length > 0 && (
-        <div>
-          <h3 className="decision-subtitle">{t('decisions.maybe')}</h3>
-          <ul className="decision-dives">
-            {c.dives.map((d) => (
-              <li key={d.id} className="decision-dive">
-                <span>
-                  <a href={`#/dives/${d.id}`}>
-                    {d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}
-                  </a>
-                  {' · '}{display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource)} · {display.depth(d.maxDepthM)} · {display.duration(d.durationSeconds)}
-                </span>
-                <Button
-                  size="small"
-                  aria-label={t('common.forItem', { action: t('decisions.addTo'), item: d.number !== null ? t('dive.title', { number: d.number }) : display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource) })}
-                  isPending={decide.isPending && decide.variables.kind === 'attach' && decide.variables.diveId === d.id}
-                  isDisabled={decide.isPending}
-                  onPress={() => decide.mutate({ kind: 'attach', diveId: d.id })}
-                >
-                  {t('decisions.addTo')}
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
       <div className="form-actions">
+        {c.dives.map((d) => (
+          <Button
+            key={d.id} icon="merge" aria-label={t('common.forItem', { action: t('decisions.addTo', { name: diveName(d) }), item: recordingName })}
+            isPending={decide.isPending && decide.variables.kind === 'attach' && decide.variables.diveId === d.id}
+            isDisabled={decide.isPending}
+            onPress={() => decide.mutate({ kind: 'attach', diveId: d.id })}
+          >
+            {t('decisions.addTo', { name: diveName(d) })}
+          </Button>
+        ))}
         <Button
           icon="add" aria-label={t('common.forItem', { action: t('decisions.newDive'), item: recordingName })}
           isPending={decide.isPending && decide.variables.kind === 'new-dive'} isDisabled={decide.isPending}
@@ -180,25 +192,6 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
       </div>
       {decide.error && <Notice tone="danger">{errorText(decide.error)}</Notice>}
     </li>
-  );
-}
-
-function Discarded({ onHide }: { onHide: () => void }) {
-  const { t } = useTranslation();
-  const discarded = useQuery(candidatesQuery('discarded'));
-  const list = useRef<HTMLUListElement>(null);
-  const count = discarded.data?.length ?? 0;
-  return (
-    <section className="discarded">
-      <h3>{t('decisions.discarded')}</h3>
-      {discarded.data?.length === 0 && <Muted>{t('decisions.none')}</Muted>}
-      <ul className="decisions" ref={list}>
-        {discarded.data?.map((c, index) => (
-          <DiscardedItem key={c.id} candidate={c} onReopened={() => refocusAfterRemoval(list.current, index, count)} />
-        ))}
-      </ul>
-      <Button variant="quiet" onPress={onHide}>{t('decisions.hideDiscarded')}</Button>
-    </section>
   );
 }
 

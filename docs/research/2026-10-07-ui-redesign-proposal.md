@@ -236,6 +236,16 @@ stored profile sketch).
   the last sending failed, or the connection needs a new sign-in. Checked in the browser tests in English and German,
   light and dark, at 320 px, at 200 % text and with axe (`e2e/ui-quality.spec.ts`), which the mock was not.
 
+- **Slice B (2026-10-07):** the Review page (`#/review`, part in `?tab=decide|imports|decided|deleted`) and the strip on
+  the logbook (4.1 to 4.7), the count beside "Logbook" in the navigation (4.3, 5.4: Review is a sub-page, so "Logbook"
+  stays the current item), Admin in the account menu as "Administration" (5.1). Different from the mock: the sketches are
+  left out until slice D, so a candidate is a row of facts with the differing values marked (`<mark>`); the parts are
+  links with `aria-current`, not React Aria tabs (the part is in the address); the logbook keeps the running imports and
+  upload errors, the history of Imports is the Review page's; under the logbook list, links to Imports, Decided and
+  Deleted dives (with counts); the "Show deleted dives" reminder is a link to the Review page; a pair says its rule only
+  when the group holds more than one kind. Checked in the browser tests (English and German, light and dark, 320 px, 200 %
+  text, axe; Review is in the width sweep).
+
 ## Not verified
 
 - The mock was looked at in Edge at 1280 and 390 px, light, and the logbook in dark. Not in German, not at 320 px,

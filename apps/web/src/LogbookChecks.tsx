@@ -3,10 +3,12 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, diversQuery, keys, logbookChecksQuery, unwrap, type LogbookCheckView } from './api.ts';
 import { MergeDialog } from './MergeDive.tsx';
+import { differingFacts } from './lib/review.ts';
+import { Candidates, CandidateRow, type Fact } from './ReviewRows.tsx';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
-import { Badge, Button, ConfirmButton, Muted, Notice } from './ui/index.ts';
+import { Badge, Button, ConfirmButton, Muted, Notice, Panel } from './ui/index.ts';
 
 type Paired = LogbookCheckView['dive'];
 const keyOf = (c: LogbookCheckView) => `${c.dive.id}:${c.other.id}`;
@@ -32,54 +34,73 @@ function useAnswer(onAnswered?: () => void) {
   });
 }
 
+/** What a Dive says on a row; the first four are compared with the other Dive of the pair. */
+function useDiveFacts() {
+  const { t } = useTranslation();
+  const display = useDisplay();
+  return (d: Paired, showDiver?: string) => {
+    const values = {
+      time: display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource), depth: display.depth(d.maxDepthM),
+      duration: display.duration(d.durationSeconds), site: d.site?.name,
+    };
+    const facts: Fact[] = [
+      ...Object.entries(values).map(([key, text]) => ({ key, text })),
+      { key: 'recording', text: d.recordings > 0 ? t('merge.withRecording') : t('merge.withoutRecording') }, { key: 'diver', text: showDiver },
+    ];
+    return { values, facts };
+  };
+}
+
+/** The two Dives of a pair side by side, what differs between them marked; `stays` marks the one a merge keeps (ADR 0038). */
+function PairRows({ check: c, showDiver, stays }: { check: LogbookCheckView; showDiver: string | undefined; stays: boolean }) {
+  const { t } = useTranslation();
+  const diveFacts = useDiveFacts();
+  const first = diveFacts(c.dive, showDiver);
+  const second = diveFacts(c.other, showDiver);
+  const marked = differingFacts(first.values, second.values);
+  const row = (d: Paired, facts: Fact[]) => (
+    <CandidateRow
+      key={d.id} facts={facts} marked={marked}
+      title={<a className="candidate-title" href={`#/dives/${d.id}`}>{d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}</a>}
+      badge={stays && c.other.keeps === d.id ? <Badge>{t('checks.stays')}</Badge> : undefined}
+    />
+  );
+  return <Candidates>{row(c.dive, first.facts)}{row(c.other, second.facts)}</Candidates>;
+}
+
 /**
- * Logbook checks in "Needs your decision" (ADR 0038): pairs of Dives at the same time, each with the ways to resolve
- * it. Nothing merges unasked; the pairs an import would have put together by itself can be merged in one go.
+ * Logbook checks on the Review page (ADR 0038): pairs of Dives at the same time, in one group that explains itself once,
+ * each pair with the ways to resolve it. Nothing merges unasked; the pairs an import would have put together by itself
+ * can be merged in one go.
  */
-export function LogbookChecks({ undo, setUndo }: {
-  /** The pair just kept as two dives, offered back with "Undo"; kept by the panel, which is rebuilt when nothing waits. */
-  undo: LogbookCheckView | undefined; setUndo: (check: LogbookCheckView | undefined) => void;
-}) {
+export function PairDecisions() {
   const { t } = useTranslation();
   const open = useQuery(logbookChecksQuery('open'));
   const answered = useQuery(logbookChecksQuery('answered'));
+  // The pair just kept as two dives, offered back with "Undo".
+  const [undo, setUndo] = useState<LogbookCheckView>();
   const list = useRef<HTMLUListElement>(null);
   const checks = open.data ?? [];
   const undoable = undo && answered.data?.some((c) => keyOf(c) === keyOf(undo)) ? undo : undefined;
-  if (checks.length === 0 && !undoable) return null;
   return (
     <>
-      {checks.length > 0 && <p>{t('checks.intro', { count: checks.length })}</p>}
       {undoable && <UndoAnswer key={keyOf(undoable)} check={undoable} onDone={() => setUndo(undefined)} />}
-      <ul className="decisions" ref={list}>
-        {checks.map((c, index) => <Check key={keyOf(c)} check={c} list={list} index={index} count={checks.length} onAnswered={() => setUndo(c)} />)}
-      </ul>
-      <MergeObvious checks={checks.filter((c) => c.obvious)} />
+      {checks.length > 0 && (
+        <Panel title={t('checks.title')} attention actions={<MergeObvious checks={checks.filter((c) => c.obvious)} />}>
+          <p className="muted">{t('checks.how')}</p>
+          <ul className="decisions" ref={list}>
+            {checks.map((c, index) => <Check key={keyOf(c)} check={c} list={list} index={index} count={checks.length} onAnswered={() => setUndo(c)} ruleShown={new Set(checks.map((x) => x.rule)).size > 1} />)}
+          </ul>
+        </Panel>
+      )}
     </>
   );
 }
 
-function DiveLine({ dive: d, showDiver, stays }: { dive: Paired; showDiver: string | undefined; stays?: boolean }) {
-  const { t } = useTranslation();
-  const display = useDisplay();
-  const facts = [
-    display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource), display.depth(d.maxDepthM), display.duration(d.durationSeconds), d.site?.name,
-    d.recordings > 0 ? t('merge.withRecording') : t('merge.withoutRecording'), showDiver,
-  ].filter(Boolean);
-  return (
-    <li className="decision-dive">
-      <span>
-        <a href={`#/dives/${d.id}`}>{d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}</a>
-        {' · '}{facts.join(' · ')}
-      </span>
-      {/* Which of the two a merge keeps (ADR 0038): said on the pair, before the dialog. */}
-      {stays && <Badge>{t('checks.stays')}</Badge>}
-    </li>
-  );
-}
-
-function Check({ check: c, list, index, count, onAnswered }: {
+function Check({ check: c, list, index, count, onAnswered, ruleShown }: {
   check: LogbookCheckView; list: RefObject<HTMLUListElement | null>; index: number; count: number; onAnswered: () => void;
+  /** The group holds different kinds of pairs: each says which it is, else the group's head says it for all. */
+  ruleShown: boolean;
 }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
@@ -92,14 +113,8 @@ function Check({ check: c, list, index, count, onAnswered }: {
   const pair = t('checks.pair', { first: nameOf(c.dive), second: nameOf(c.other) });
   return (
     <li className="decision">
-      <div className="decision-recording">
-        <p><strong>{t(`checks.rule.${c.rule}`)}</strong></p>
-        <p className="muted">{t('checks.how')}</p>
-      </div>
-      <ul className="decision-dives">
-        <DiveLine dive={c.dive} showDiver={diver} stays={c.other.keeps === c.dive.id} />
-        <DiveLine dive={c.other} showDiver={diver} stays={c.other.keeps === c.other.id} />
-      </ul>
+      {ruleShown && <p className="muted">{t(`checks.rule.${c.rule}`)}</p>}
+      <PairRows check={c} showDiver={diver} stays />
       <div className="form-actions">
         <Button icon="merge" aria-label={t('common.forItem', { action: t('checks.merge'), item: pair })} isDisabled={answer.isPending} onPress={() => setMerging(true)}>
           {t('checks.merge')}
@@ -166,40 +181,35 @@ function MergeObvious({ checks }: { checks: LogbookCheckView[] }) {
   );
 }
 
-/** The pairs the User said are two dives, to be asked about again; hidden while there are none. */
+/** The pairs the User said are two dives, to be asked about again (the Review page's "Decided"). Nothing while there are none. */
 export function AnsweredChecks() {
   const { t } = useTranslation();
   const answered = useQuery(logbookChecksQuery('answered'));
   const nameOf = useDiveName();
   const answer = useAnswer();
-  const [shown, setShown] = useState(false);
   const pairs = answered.data ?? [];
   if (pairs.length === 0) return null;
-  if (!shown) return <Button variant="quiet" onPress={() => setShown(true)}>{t('checks.showAnswered')}</Button>;
   return (
-    <section className="discarded">
-      <h3>{t('checks.answered')}</h3>
+    <Panel title={t('checks.answered')}>
       <Muted>{t('checks.answeredIntro')}</Muted>
       <ul className="decisions">
         {pairs.map((c) => {
           const pair = t('checks.pair', { first: nameOf(c.dive), second: nameOf(c.other) });
           return (
             <li key={keyOf(c)} className="decision">
-              <ul className="decision-dives">
-                <DiveLine dive={c.dive} showDiver={undefined} />
-                <DiveLine dive={c.other} showDiver={undefined} />
-              </ul>
-              <Button
-                variant="quiet" aria-label={t('common.forItem', { action: t('checks.askAgain'), item: pair })}
-                isPending={answer.isPending && answer.variables.check === c} onPress={() => answer.mutate({ check: c, answer: null })}
-              >
-                {t('checks.askAgain')}
-              </Button>
+              <PairRows check={c} showDiver={undefined} stays={false} />
+              <div className="form-actions">
+                <Button
+                  variant="quiet" aria-label={t('common.forItem', { action: t('checks.askAgain'), item: pair })}
+                  isPending={answer.isPending && answer.variables.check === c} onPress={() => answer.mutate({ check: c, answer: null })}
+                >
+                  {t('checks.askAgain')}
+                </Button>
+              </div>
             </li>
           );
         })}
       </ul>
-      <Button variant="quiet" onPress={() => setShown(false)}>{t('checks.hideAnswered')}</Button>
-    </section>
+    </Panel>
   );
 }

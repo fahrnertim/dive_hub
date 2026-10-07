@@ -23,6 +23,9 @@
     "account": "My account",
     "divers": "Divers",
     "accountMenu": ", account",
+    "administration": "Administration",
+    "toDecide_one": "{{count}} to decide",
+    "toDecide_other": "{{count}} to decide",
     "sites": "Dive sites"
   },
   "form": {
@@ -201,6 +204,7 @@
     "dropAnywhere": "You can also drop dive files and zips anywhere on this page.",
     "dropNow": "Drop to import",
     "recent": "Imports",
+    "none": "Nothing imported yet.",
     "showAll": "Show all imports",
     "showFewer": "Show fewer",
     "findTitle": "Where to find your dives",
@@ -515,28 +519,23 @@
     }
   },
   "decisions": {
-    "title": "Needs your decision",
-    "intro_one": "One recording doesn’t clearly belong to a dive.",
-    "intro_other": "{{count}} recordings don’t clearly belong to a dive.",
+    "title": "Recordings without a dive",
+    "intro_one": "This recording doesn’t clearly belong to a dive. Is it one of these?",
+    "intro_other": "These {{count}} recordings don’t clearly belong to a dive. Are they one of these?",
     "recording": "Recording",
     "device": "{{name}} ({{serial}})",
     "unknownDevice": "unknown device",
     "why": "Not added automatically: {{reason}}.",
-    "maybe": "It might belong to",
-    "addTo": "Add to this dive",
+    "addTo": "Add to {{name}}",
     "newDive": "Make it a new dive",
     "discard": "Discard",
     "discarded": "Discarded recordings",
-    "showDiscarded": "Show discarded recordings",
-    "hideDiscarded": "Hide discarded recordings",
     "reopen": "Decide again",
-    "none": "Nothing to decide.",
     "discardedNotice": "Discarded the recording from {{time}}.",
     "divesGone": "The dives it might have belonged to are no longer in your logbook."
   },
   "checks": {
-    "intro_one": "Two dives in your logbook are at the same time.",
-    "intro_other": "{{count}} pairs of dives in your logbook are at the same time.",
+    "title": "Dives at the same time",
     "rule": {
       "recording_beside_entry": "A dive without a recording and a dive with one are at the same time",
       "overlapping_dives": "Two dives overlap in time"
@@ -552,8 +551,6 @@
     "mergeAllBody": "In each of these pairs one dive has a recording and the other has none, at the same time and about as deep: what an import puts together by itself. The dive with the recording is kept and takes over what it lacks from the other, which goes to “Deleted dives”.",
     "mergeAllConfirm": "Merge {{count}} pairs",
     "mergedAll": "{{count}} pairs merged.",
-    "showAnswered": "Show pairs kept as two dives",
-    "hideAnswered": "Hide pairs kept as two dives",
     "answered": "Pairs kept as two dives",
     "answeredIntro": "Dives at the same time that you said are two dives.",
     "askAgain": "Ask again"
@@ -579,6 +576,28 @@
     "nothingMerged": "Nothing was merged.",
     "done": "The two dives are one now."
   },
+  "review": {
+    "title": "Review",
+    "parts": "Parts of the review",
+    "tab": {
+      "decide": "To decide",
+      "imports": "Imports",
+      "decided": "Decided",
+      "deleted": "Deleted dives"
+    },
+    "nothingWaits": "Nothing waits for your decision.",
+    "nothingDecided": "Nothing decided yet: recordings you discarded and pairs you kept as two dives show here.",
+    "nothingDeleted": "No deleted dives.",
+    "strip": {
+      "things_one": "One thing needs your decision: {{parts}}.",
+      "things_other": "{{count}} things need your decision: {{parts}}.",
+      "recordings_one": "{{count}} recording",
+      "recordings_other": "{{count}} recordings",
+      "pairs_one": "{{count}} pair of dives at the same time",
+      "pairs_other": "{{count}} pairs of dives at the same time",
+      "go": "Review them"
+    }
+  },
   "deleted": {
     "notice": "{{name}} deleted.",
     "noticeKept": "{{name}} deleted. It is still in {{provider}}, as dive {{number}}: you can delete it there under “Deleted dives”.",
@@ -586,8 +605,6 @@
     "reminder_one": "A dive you deleted is still in {{name}}.",
     "reminder_other": "{{count}} dives you deleted are still in {{name}}.",
     "showList": "Show deleted dives",
-    "show": "Show deleted dives ({{count}})",
-    "hide": "Hide deleted dives",
     "title": "Deleted dives",
     "intro": "They count nowhere, and importing their files again doesn’t bring them back. Restoring brings a dive back with its recordings and history, but not to {{name}}.",
     "deletedOn": "Deleted {{date}}",

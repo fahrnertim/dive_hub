@@ -13,9 +13,8 @@ const statusTone = (i: ImportView) => {
   if (i.status === 'done') return 'success';
   return i.status === 'failed' ? 'danger' : 'neutral';
 };
-/** Imports shown without "Show all": the running ones and those of the last day, at most this many. */
+/** Imports shown without "Show all imports". */
 const RECENT = 3;
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 interface ImportState {
   /** Uploads the importable files and names the rest. */
@@ -161,22 +160,30 @@ export function ImportPanel() {
 }
 
 /**
- * For a returning User: the logbook comes first, and Imports show here only while something is
- * running, happened in the last day, or went wrong. Older ones are behind "Show all imports".
+ * For a returning User the logbook comes first, and Imports show on it only while something is running, being uploaded
+ * or went wrong; the history is on the Review page (UI redesign 4.2).
  */
 export function RecentImports() {
   const { t } = useTranslation();
   const { uploading, uploadingCount, error, skipped } = useImport();
-  const imports = useQuery(importsQuery());
-  const [now] = useState(() => Date.now());
-  const all = imports.data ?? [];
-  const recent = all.filter((i) => isRunning(i) || now - Date.parse(i.createdAt) < DAY_MS);
-  if (recent.length === 0 && !uploading && !error && skipped.length === 0) return null;
+  const running = (useQuery(importsQuery()).data ?? []).filter(isRunning);
+  if (running.length === 0 && !uploading && !error && skipped.length === 0) return null;
   return (
     <Panel title={t('import.recent')}>
       {uploading && <Muted>{t('import.uploading', { count: uploadingCount })}</Muted>}
       <ImportNotices />
-      <ImportList imports={all} />
+      <ImportList imports={running} />
+    </Panel>
+  );
+}
+
+/** The Review page's "Imports": what was imported, newest first, the last few and "Show all imports". */
+export function ImportHistory() {
+  const { t } = useTranslation();
+  const imports = useQuery(importsQuery()).data ?? [];
+  return (
+    <Panel title={t('import.recent')}>
+      {imports.length === 0 ? <Muted>{t('import.none')}</Muted> : <ImportList imports={imports} />}
     </Panel>
   );
 }

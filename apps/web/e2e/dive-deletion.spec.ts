@@ -42,12 +42,13 @@ test('deletes a dive after asking, offers Undo, and restores it from the deleted
   const { version } = await (await request.get(`/api/dives/${id}`)).json() as { version: number };
   await request.delete(`/api/dives/${id}`, { data: { version }, headers: { origin: E2E_BASE_URL } });
   await page.reload();
-  await page.getByRole('button', { name: 'Show deleted dives (1)' }).click();
+  await page.getByRole('link', { name: 'Deleted dives (1)' }).click();
   const panel = page.locator('section', { has: page.getByRole('heading', { name: 'Deleted dives' }) });
-  await expect(panel.getByRole('heading', { name: 'Deleted dives' })).toBeFocused();
+  await expect(page.getByRole('heading', { name: 'Review', level: 1 })).toBeFocused();
   await expect(panel).toContainText(/Deleted .*2026/);
   await panel.getByRole('button', { name: 'Restore: Dive 9' }).click();
   await expect(panel).toHaveCount(0);
+  await page.getByRole('link', { name: '‹ Logbook' }).click();
   await expect(diveNine(page)).toBeVisible();
   await diveNine(page).click();
   await expect(page.locator('.history > li').first()).toContainText('Restored');
@@ -66,9 +67,9 @@ test('keeps a dive in SSI when asked to, reminds about it, and deletes it there 
   // Next visit: the reminder, until it's gone from SSI.
   await page.reload();
   await expect(page.locator('#main').getByText('A dive you deleted is still in SSI.')).toBeVisible();
-  await page.getByRole('button', { name: 'Show deleted dives', exact: true }).click();
+  await page.getByRole('link', { name: 'Show deleted dives', exact: true }).click();
   const panel = page.locator('section', { has: page.getByRole('heading', { name: 'Deleted dives' }) });
-  await expect(panel.getByRole('heading', { name: 'Deleted dives' })).toBeFocused();
+  await expect(page.getByRole('heading', { name: 'Review', level: 1 })).toBeFocused();
   await expect(panel).toContainText(/Still in SSI, as dive \d+\./);
   await panel.getByRole('button', { name: 'Delete in SSI: Dive 9' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Delete in SSI' }).click();
@@ -76,6 +77,7 @@ test('keeps a dive in SSI when asked to, reminds about it, and deletes it there 
   await expect(panel.getByRole('button', { name: 'Restore: Dive 9' })).toBeFocused();
   await expect(page.locator('#main').getByText('A dive you deleted is still in SSI.')).toHaveCount(0);
   await panel.getByRole('button', { name: 'Restore: Dive 9' }).click();
+  await page.getByRole('link', { name: '‹ Logbook' }).click();
   await expect(diveNine(page)).toBeVisible();
 });
 
