@@ -139,3 +139,11 @@ and read links as the Pushes do (per Dive and Provider, `currentRemote`), never 
 - **Resolutions** on the panel are merge and "two dives"; correcting a time, moving and deleting stay on the dive page,
   which the panel links to and says so.
 
+## Amendment 2026-10-07: after the first use (owner)
+- **A dive Dive Hub sent follows its link.** Its record at the Provider carries a reference to the Dive it was sent from.
+  When that Dive was merged into another, the import now takes the Dive the link is on (the kept one) instead of the
+  one the reference names, so changes made at the Provider keep coming back three-way (ADR 0030). A Dive moved as a copy
+  is unchanged: its links stayed on the deleted Dive, and the import skips it.
+- **Which Dive is kept is said three times:** on the dive page's hint, on each pair in "Needs your decision" ("stays
+  when merged"), and in the dialog, where the two are listed as "Stays" and "Goes to deleted dives" with what tells them
+  apart. "This dive is kept" said nothing on the logbook, where both are listed.

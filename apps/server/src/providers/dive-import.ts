@@ -196,6 +196,10 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   /** What the import does with one dive (the preview says it, the worker does it). */
   async function assess(q: Db | Tx, run: Run, d: ImportedDive): Promise<Assessment> {
     if (d.evidence === 'ours') {
+      // The Dive it is linked to now, when that isn't the one our reference names: the Dive it was sent from was merged
+      // into another, which took the link (ADR 0038). Changes made at the Provider then come back to that Dive.
+      const now = await linkedTo(q, run, d.remoteId);
+      if (now && !now.deleted) return { kind: 'ours', diveId: now.diveId };
       const id = d.reference?.slice(REFERENCE_PREFIX.length) ?? '';
       return { kind: 'ours', diveId: uuid.test(id) ? id : null };
     }

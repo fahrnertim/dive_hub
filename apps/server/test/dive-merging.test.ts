@@ -227,6 +227,25 @@ describe.skipIf(!(await databaseReachable()))('merging two Dives, and moving a l
     });
   });
 
+  describe('a dive Dive Hub sent, whose Dive is merged into another', () => {
+    it('is compared with the kept Dive from then on: a change made at the Provider comes back to it', async () => {
+      const sent = (await uploadSuunto('2026-03-18')).diveId!;
+      const kept = (await uploadSuunto('2026-03-19')).diveId!;
+      const { sites } = await json<{ sites: { id: string }[] }>('GET', '/api/dive-sites?q=Schwarzenbach');
+      await call('PATCH', `/api/dives/${sent}`, { version: (await diveOf(sent)).version, siteId: sites[0]!.id });
+      expect(await json('POST', `/api/dives/${sent}/providers/ssi`, {})).toMatchObject({ outcome: 'created' });
+      const remote = (await at(sent, 'ssi'))!;
+      // SSI's record carries Dive Hub's reference to the Dive it was sent from.
+      expect(String(ctx.fakeSsi.dives.get(Number(remote))!.odin_user_log_divecomputer_dive_ref)).toContain(sent);
+      expect((await merge(kept, sent)).json()).toMatchObject({ id: kept });
+      expect(await at(kept, 'ssi')).toBe(remote);
+
+      ctx.fakeSsi.dives.get(Number(remote))!.odin_user_log_comment = 'Added in SSI';
+      expect((await runImport()).find((o) => o.remoteId === remote)).toMatchObject({ result: 'updated', diveId: kept });
+      expect((await diveOf(kept)).notes).toBe('Added in SSI');
+    });
+  });
+
   describe('a Dive at two Providers', () => {
     let entry: string;
     let fromFile: string;

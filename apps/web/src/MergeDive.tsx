@@ -8,13 +8,28 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { useNames, useProviders, useProviderText } from './lib/providers.ts';
 import { Button, Dialog, Muted, Notice } from './ui/index.ts';
 
+/** One of the two Dives of a merge, with what tells it from the other. */
+export type MergeSide = Pick<LogbookCheckView['dive'], 'id' | 'version' | 'number' | 'startsAt' | 'utcOffsetSeconds' | 'utcOffsetSource' | 'durationSeconds' | 'maxDepthM' | 'site' | 'recordings'>;
+
+/** "Dive 31 · Apr 2, 2026, 10:00 · 30 min · 16.4 m · Hausreef · with a recording": a Dive told from another at the same time. */
+function useSideText() {
+  const { t } = useTranslation();
+  const display = useDisplay();
+  return (d: Omit<MergeSide, 'id' | 'version'>, named = true) => [
+    ...(named ? [d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')] : []),
+    display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource), display.duration(d.durationSeconds),
+    ...(d.maxDepthM !== null ? [display.depth(d.maxDepthM)] : []), d.site?.name,
+    d.recordings > 0 ? t('merge.withRecording') : t('merge.withoutRecording'),
+  ].filter(Boolean).join(' · ');
+}
+
 /**
  * On the dive page (ADR 0038): another Dive of the same Diver at the same time, which may be the same dive logged twice
  * (a logbook entry and its computer's file, or two entries). Says so and offers to merge the two.
  */
 export function MergeHint({ dive: d }: { dive: DiveView }) {
   const { t } = useTranslation();
-  const display = useDisplay();
+  const sideText = useSideText();
   const candidates = useQuery(mergeCandidatesQuery(d.id));
   const [merging, setMerging] = useState<MergeCandidateView | null>(null);
   // A pair the User said are two dives isn't hinted at again (ADR 0038).
@@ -23,14 +38,11 @@ export function MergeHint({ dive: d }: { dive: DiveView }) {
   return (
     <>
       {open.map((c) => {
-        const facts = [
-          display.diveTime(c.startsAt, c.utcOffsetSeconds, c.utcOffsetSource), display.duration(c.durationSeconds),
-          ...(c.maxDepthM !== null ? [display.depth(c.maxDepthM)] : []), c.site?.name,
-          c.recordings > 0 ? t('merge.withRecording') : t('merge.withoutRecording'),
-        ].filter(Boolean);
+        // Which of the two a merge keeps, said before the dialog: the one with the recording, else this one.
+        const keeps = c.keeps === d.id ? 'merge.hintKeepsThis' : 'merge.hintKeepsOther';
         return (
           <Notice key={c.id} tone="info">
-            <p>{t('merge.hint', { facts: facts.join(' · ') })}</p>
+            <p>{t('merge.hint', { facts: sideText(c, false) })} {t(keeps)}</p>
             <div className="form-actions">
               <Button icon="merge" onPress={() => setMerging(c)}>{t('merge.action')}</Button>
               <a href={`#/dives/${c.id}`} className="btn btn-quiet">{t('merge.open')}</a>
@@ -38,7 +50,15 @@ export function MergeHint({ dive: d }: { dive: DiveView }) {
           </Notice>
         );
       })}
-      {merging && <MergeDialog dive={d} other={merging} onClose={() => setMerging(null)} />}
+      {merging && (
+        <MergeDialog
+          dive={{
+            id: d.id, version: d.version, number: d.values.number, startsAt: d.values.startsAt.at, utcOffsetSeconds: d.values.startsAt.utcOffsetSeconds,
+            utcOffsetSource: d.utcOffsetSource, durationSeconds: d.values.durationSeconds, maxDepthM: d.values.maxDepthM, site: d.site, recordings: d.recordings.length,
+          }}
+          other={merging} onClose={() => setMerging(null)}
+        />
+      )}
     </>
   );
 }
@@ -50,12 +70,13 @@ function CopySentence({ provider: p, number, canDelete }: { provider: ProviderVi
 }
 
 /**
- * Merges the two Dives after saying which is kept and what happens to the other (ADR 0038). Where both are at a Provider,
+ * Merges the two Dives after saying which stays and which goes, each by what tells it from the other (ADR 0038): "this
+ * dive" would say nothing on the logbook, where both are listed. Where both are at a Provider,
  * the dialog asks whether to delete the other one's dive there too, as the delete dialog does (ADR 0026, 0027); if that
  * fails, nothing is merged.
  */
 export function MergeDialog({ dive: d, other, onClose, stay, onMerged }: {
-  dive: Pick<DiveView, 'id' | 'version'>; other: Pick<MergeCandidateView, 'id' | 'version' | 'keeps' | 'bothAt' | 'at'> | LogbookCheckView['other'];
+  dive: MergeSide; other: MergeSide & Pick<MergeCandidateView, 'keeps' | 'bothAt' | 'at'>;
   onClose: () => void;
   /** On the logbook: stay there instead of opening the kept Dive. */
   stay?: boolean; onMerged?: () => void;
@@ -63,6 +84,7 @@ export function MergeDialog({ dive: d, other, onClose, stay, onMerged }: {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const names = useNames();
+  const sideText = useSideText();
   const queryClient = useQueryClient();
   const providers = useProviders();
   const providerOf = (id: string) => providers.data?.find((p) => p.id === id) ?? { id, name: id } as ProviderView;
@@ -92,7 +114,9 @@ export function MergeDialog({ dive: d, other, onClose, stay, onMerged }: {
 
   return (
     <Dialog title={t('merge.title')} isOpen onOpenChange={(open) => !open && !merge.isPending && onClose()}>
-      <p>{t(keepsThis ? 'merge.keepsThis' : 'merge.keepsOther')}</p>
+      <p><strong>{t('merge.stays')}</strong> {sideText(keepsThis ? d : other)}</p>
+      <p><strong>{t('merge.goes')}</strong> {sideText(keepsThis ? other : d)}</p>
+      <p>{(d.recordings === 0) !== (other.recordings === 0) && `${t('merge.whyRecording')} `}{t('merge.takes')}</p>
       {keepsThis && moves.length > 0 && <p>{t('merge.linkMoves', { name: names(moves.map((c) => providerOf(c.provider).name)) })}</p>}
       <p>{t('merge.other')}</p>
       {choice?.ask.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} number={c.remoteNumber} canDelete />)}

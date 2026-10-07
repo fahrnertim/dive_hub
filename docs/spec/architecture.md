@@ -820,8 +820,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   restoring, a Dive at two Providers merged and moved, an unlinked move); browser `dive-merge.spec.ts` (@dives) and a
   ui-quality case; fixtures `mergeable-main.fit`, `mergeable-backup.fit` (`test/fixtures/write-merge-fixture.ts`).
 - Deliberate simplifications: a merged or moved Dive's findings put aside don't follow it (the assessment is computed
-  again); a moved Dive's Device stays with the old Diver (ADR 0016); a dive Dive Hub sent whose Dive was merged away is
-  still skipped by the import as "sent by Dive Hub", not compared with the kept Dive; no undo beyond restoring.
+  again); a moved Dive's Device stays with the old Diver (ADR 0016); no undo beyond restoring.
 - Not yet: finding such pairs unasked, in "Needs your decision" (slice 18c, below).
 
 **Slice 18c (2026-10-07): logbook checks** ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md)).
@@ -848,4 +847,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   doesn't count them (the panel above the logbook does, as soon as the Import ends); merging the clear pairs is one request
   per pair from the client; no rule looks at Dives of two Divers (a dive filed under the wrong Diver shows up as an
   overlap only in its own logbook).
+- Afterwards (2026-10-07): the import follows a dive Dive Hub sent to the Dive it is linked to now (`assess` in
+  `providers/dive-import.ts`: the current link before our reference), so a Dive merged into another keeps taking changes
+  made at the Provider; and the web client says which of two Dives a merge keeps (the hint, the pair, the dialog).
 - Not yet: rules beyond overlaps (a number twice, a dive inside a no-fly time), telling by e-mail, the checks over MCP.

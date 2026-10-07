@@ -6,7 +6,7 @@ import { MergeDialog } from './MergeDive.tsx';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
-import { Button, ConfirmButton, Muted, Notice } from './ui/index.ts';
+import { Badge, Button, ConfirmButton, Muted, Notice } from './ui/index.ts';
 
 type Paired = LogbookCheckView['dive'];
 const keyOf = (c: LogbookCheckView) => `${c.dive.id}:${c.other.id}`;
@@ -59,7 +59,7 @@ export function LogbookChecks({ undo, setUndo }: {
   );
 }
 
-function DiveLine({ dive: d, showDiver }: { dive: Paired; showDiver: string | undefined }) {
+function DiveLine({ dive: d, showDiver, stays }: { dive: Paired; showDiver: string | undefined; stays?: boolean }) {
   const { t } = useTranslation();
   const display = useDisplay();
   const facts = [
@@ -72,6 +72,8 @@ function DiveLine({ dive: d, showDiver }: { dive: Paired; showDiver: string | un
         <a href={`#/dives/${d.id}`}>{d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}</a>
         {' · '}{facts.join(' · ')}
       </span>
+      {/* Which of the two a merge keeps (ADR 0038): said on the pair, before the dialog. */}
+      {stays && <Badge>{t('checks.stays')}</Badge>}
     </li>
   );
 }
@@ -95,8 +97,8 @@ function Check({ check: c, list, index, count, onAnswered }: {
         <p className="muted">{t('checks.how')}</p>
       </div>
       <ul className="decision-dives">
-        <DiveLine dive={c.dive} showDiver={diver} />
-        <DiveLine dive={c.other} showDiver={diver} />
+        <DiveLine dive={c.dive} showDiver={diver} stays={c.other.keeps === c.dive.id} />
+        <DiveLine dive={c.other} showDiver={diver} stays={c.other.keeps === c.other.id} />
       </ul>
       <div className="form-actions">
         <Button icon="merge" aria-label={t('common.forItem', { action: t('checks.merge'), item: pair })} isDisabled={answer.isPending} onPress={() => setMerging(true)}>

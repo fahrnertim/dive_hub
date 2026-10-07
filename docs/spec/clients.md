@@ -263,8 +263,12 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - **Must say on a Dive that another Dive of its Diver was at the same time** (`GET /api/dives/{id}/merge-candidates`
     not empty): show that Dive (time, duration, depth, site, with or without a recording), link to it, and offer to merge
     the two. Never merge unasked: two overlapping Dives can be two dives with wrongly typed times.
-  - **Must say before merging** which Dive is kept (`keeps`: the one with a Recording when only one has, else the Dive
-    asked about), that it takes over what it lacks from the other (recordings, site, buddies, values; the other's notes
+  - **Must say which Dive is kept, before the dialog and in it** (`keeps`: the one with a Recording when only one has,
+    else the Dive asked about). Name each of the two by what tells it from the other (time, duration, depth, site, with or
+    without a recording), not as "this dive" and "the other": on the logbook both are listed. *Web:* the hint on the
+    dive page says which stays, a pair on the logbook marks it ("stays when merged"), and the dialog lists "Stays:" and
+    "Goes to “Deleted dives”:".
+  - **Must say before merging** that the kept Dive takes over what it lacks from the other (recordings, site, buddies, values; the other's notes
     are appended), that a link to a Provider goes to the kept Dive (`at`, where it has none itself), and that the other
     goes to the deleted dives and can be restored.
   - **Must ask about each Provider both Dives are at** (`bothAt`), in the same dialog, as when deleting: the dive of the
