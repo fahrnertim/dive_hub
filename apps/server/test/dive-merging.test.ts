@@ -114,7 +114,8 @@ describe.skipIf(!(await databaseReachable()))('merging two Dives, and moving a l
       expect(placed.result).toBe('created');
       fromFile = placed.diveId!;
       expect(fromFile).not.toBe(fromEntry);
-      expect(await candidatesOf(fromEntry)).toEqual([]);
+      // Same day, same depth and duration, hours apart: the third logbook check offers the pair, as nothing to merge by itself.
+      expect(await candidatesOf(fromEntry)).toEqual([expect.objectContaining({ id: fromFile, rule: 'entry_apart_from_recording' })]);
     });
 
     it('corrected at the Provider, the entry\'s Dive takes the new time and stands beside the file\'s, with nothing asked', async () => {

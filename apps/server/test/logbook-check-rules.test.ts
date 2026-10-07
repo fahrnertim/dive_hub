@@ -39,10 +39,80 @@ describe('the rule two Dives break together', () => {
   });
 });
 
+describe('an entry apart from a Recording (rule version 2)', () => {
+  // The Egypt dive of the research note: the watch says 08:49, the typed entry 10:55; depth and duration agree.
+  const file1 = file('file', '06:49:00', 38, { maxDepthM: 24.1, utcOffsetSeconds: 10800 });
+  const entry = (id: string, time: string, minutes: number, depth: number | null) =>
+    dive(id, time, minutes, { maxDepthM: depth, utcOffsetSeconds: 10800 });
+
+  it('pairs an entry and a Recording on the same local day whose depth and duration agree', () => {
+    expect(ruleFor(entry('entry', '08:55:00', 37, 24.0), file1)).toBe('entry_apart_from_recording');
+    expect(ruleFor(file1, entry('entry', '08:55:00', 37, 24.0))).toBe('entry_apart_from_recording');
+  });
+
+  it('needs depth within 0.2 m or 3 % (the larger), and duration within 3 minutes', () => {
+    expect(ruleFor(entry('e', '08:55:00', 38, 24.3), file1)).toBe('entry_apart_from_recording'); // 0.2 m off
+    expect(ruleFor(entry('e', '08:55:00', 38, 24.8), file1)).toBe('entry_apart_from_recording'); // 3 % of 24.8 is 0.74
+    expect(ruleFor(entry('e', '08:55:00', 38, 25.2), file1)).toBeNull();
+    expect(ruleFor(entry('e', '08:55:00', 41, 24.1), file1)).toBe('entry_apart_from_recording');
+    expect(ruleFor(entry('e', '08:55:00', 42, 24.1), file1)).toBeNull();
+    expect(ruleFor(entry('e', '08:55:00', 38, null), file1)).toBeNull();
+  });
+
+  it('only when exactly one has a Recording, and never beside a pair the first rule finds', () => {
+    const second = file('b', '08:55:00', 38, { maxDepthM: 24.1, utcOffsetSeconds: 10800 });
+    expect(ruleFor(file('a', '08:55:00', 38, { maxDepthM: 24.1, utcOffsetSeconds: 10800 }), second)).toBe('overlapping_dives');
+    expect(ruleFor(file('a', '10:55:00', 38, { maxDepthM: 24.1, utcOffsetSeconds: 10800 }), second)).toBeNull();
+    expect(ruleFor(entry('a', '08:55:00', 38, 24.1), entry('b', '10:55:00', 38, 24.1))).toBeNull();
+    expect(ruleFor(entry('e', '06:50:00', 38, 24.1), file1)).toBe('recording_beside_entry');
+  });
+
+  it('only on the same local day, each by its own offset; a missing offset reads as wall-clock time', () => {
+    // 21:30 UTC at +3 is 00:30 the next day: not the file's day.
+    expect(ruleFor(entry('e', '21:30:00', 38, 24.1), file1)).toBeNull();
+    expect(ruleFor(entry('e', '20:30:00', 38, 24.1), file1)).toBe('entry_apart_from_recording'); // 23:30 local
+    const unknown = dive('e', '10:55:00', 38, { maxDepthM: 24.1, utcOffsetSeconds: null, utcOffsetSource: 'unknown' });
+    expect(ruleFor(unknown, file1)).toBe('entry_apart_from_recording');
+  });
+
+  it('is never obvious, and the nearest start wins, one to one', () => {
+    const morning = file('m', '05:00:00', 40, { maxDepthM: 20, utcOffsetSeconds: 10800 });
+    const noon = file('n', '09:00:00', 40, { maxDepthM: 20, utcOffsetSeconds: 10800 });
+    const typed = entry('typed', '08:00:00', 40, 20); // 11:00 local: the noon file (12:00) is nearer than the morning one (08:00)
+    const found = findChecks([morning, noon, typed]).filter((c) => c.rule === 'entry_apart_from_recording');
+    expect(found.map((c) => [c.dives.map((d) => d.id).sort(), c.obvious])).toEqual([[['n', 'typed'], false]]);
+  });
+
+  it('gives each Dive at most one pair: the farther entry stays unpaired', () => {
+    const f = file('f', '08:00:00', 40, { maxDepthM: 20, utcOffsetSeconds: 10800 });
+    const near = entry('near', '09:00:00', 40, 20);
+    const far = entry('far', '12:00:00', 40, 20);
+    const found = findChecks([f, near, far]).filter((c) => c.rule === 'entry_apart_from_recording');
+    expect(found.map((c) => c.dives.map((d) => d.id).sort())).toEqual([['f', 'near']]);
+  });
+
+  it('a tie gives no suggestion', () => {
+    const f = file('f', '08:00:00', 40, { maxDepthM: 20, utcOffsetSeconds: 10800 });
+    const before = entry('before', '06:00:00', 40, 20);
+    const after = entry('after', '10:00:00', 40, 20);
+    expect(findChecks([f, before, after]).filter((c) => c.rule === 'entry_apart_from_recording')).toEqual([]);
+  });
+
+  it('finds the research note\'s eleven Egypt pairs when each typed entry is the only one that fits', () => {
+    const days = [['06:49', '08:55', 38], ['11:53', '13:10', 47], ['04:29', '06:35', 41]] as const;
+    const dives = days.flatMap(([w, s, m], i) => [
+      file(`w${i}`, `${w}:00`, m - 1, { maxDepthM: 20 + i * 5, utcOffsetSeconds: 10800, startsAt: new Date(`2023-10-0${i + 1}T${w}:00Z`) }),
+      entry(`s${i}`, `${s}:00`, m, 20 + i * 5.1),
+    ].map((d, k) => (k === 1 ? { ...d, startsAt: new Date(`2023-10-0${i + 1}T${s}:00Z`) } : d)));
+    const found = findChecks(dives).filter((c) => c.rule === 'entry_apart_from_recording');
+    expect(found).toHaveLength(3);
+  });
+});
+
 describe('the checks of a logbook', () => {
   it('finds each pair once, the earlier Dive first, and nothing among dives one after the other', () => {
     const checks = findChecks([
-      dive('later', '11:28:00', 42), dive('earlier', '11:13:00', 44), file('morning', '06:00:00', 40), dive('evening', '17:00:00', 40),
+      dive('later', '11:28:00', 42), dive('earlier', '11:13:00', 44), file('morning', '06:00:00', 40, { maxDepthM: 35 }), dive('evening', '17:00:00', 40),
     ]);
     expect(checks.map((c) => [c.rule, c.dives.map((d) => d.id)])).toEqual([['overlapping_dives', ['earlier', 'later']]]);
   });

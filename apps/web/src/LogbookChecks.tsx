@@ -11,6 +11,13 @@ import { refocusAfterRemoval } from './lib/focus.ts';
 import { Badge, Button, ConfirmButton, Muted, Notice, Panel } from './ui/index.ts';
 
 type Paired = LogbookCheckView['dive'];
+/** How far apart the two Dives start on the wall clock, each by its own offset, in seconds. */
+const startsApartSeconds = (c: LogbookCheckView) => {
+  const local = (d: Paired) => Date.parse(d.startsAt) + (d.utcOffsetSeconds ?? 0) * 1000;
+  return Math.round(Math.abs(local(c.dive) - local(c.other)) / 1000);
+};
+/** This rule's text says nothing the group's head does: a pair far apart on the clock is not "at the same time". */
+const APART = 'entry_apart_from_recording';
 const keyOf = (c: LogbookCheckView) => `${c.dive.id}:${c.other.id}`;
 
 /** "Dive 9", or the Dive's time when it has no number. */
@@ -111,9 +118,10 @@ function Check({ check: c, list, index, count, onAnswered, ruleShown }: {
   const diver = (divers.data?.length ?? 0) > 1 ? divers.data?.find((v) => v.id === c.diverId)?.name : undefined;
   // Several pairs may wait at once; their buttons say which one they decide about.
   const pair = t('checks.pair', { first: nameOf(c.dive), second: nameOf(c.other) });
+  const display = useDisplay();
   return (
     <li className="decision">
-      {ruleShown && <p className="muted">{t(`checks.rule.${c.rule}`)}</p>}
+      {(ruleShown || c.rule === APART) && <p className="muted">{t(`checks.rule.${c.rule}`, { difference: display.duration(startsApartSeconds(c)) })}</p>}
       <PairRows check={c} showDiver={diver} stays />
       <div className="form-actions">
         <Button icon="merge" aria-label={t('common.forItem', { action: t('checks.merge'), item: pair })} isDisabled={answer.isPending} onPress={() => setMerging(true)}>

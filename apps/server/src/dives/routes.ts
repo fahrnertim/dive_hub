@@ -208,7 +208,9 @@ const At = Type.Array(Type.Object({
 
 const Rule = Type.Enum([...LOGBOOK_CHECK_RULES], {
   description: 'recording_beside_entry: a Dive without a Recording and one with a Recording at the same time, as an import would have '
-    + 'attached them; overlapping_dives: two Dives of one Diver that overlap in time',
+    + 'attached them; overlapping_dives: two Dives of one Diver that overlap in time; entry_apart_from_recording: a Dive without a '
+    + 'Recording and one with one on the same local day, not overlapping, with depth (0.2 m or 3 %) and duration (3 minutes) agreeing: '
+    + 'probably one dive typed with another start (never `obvious`; show both local start times and their difference)',
 });
 
 /** A Dive as a check or a merge shows it. */
@@ -410,8 +412,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   app.get('/logbook-checks', {
     schema: {
       summary: 'Logbook checks: pairs of Dives in the User\'s logbooks that can\'t both be right as they stand',
-      description: 'Computed from the logbook each time by fixed rules (ADR 0038): a Dive without a Recording beside a Dive with one, '
-        + 'or two Dives of one Diver that overlap. `status=answered` lists the pairs the User said are two dives, to ask again. '
+      description: 'Computed from the logbook each time by fixed rules (ADR 0038): a Dive without a Recording beside a Dive with one '
+        + '(at the same time, or on the same day with the same depth and duration), or two Dives of one Diver that overlap. `status=answered` lists the pairs the User said are two dives, to ask again. '
         + 'Resolve one by merging (POST /dives/{id}/merge), answering (PUT /logbook-checks/answer), correcting a time, moving or '
         + 'deleting one of the Dives. Never merge unasked (docs/spec/clients.md).',
       querystring: Type.Object({ status: Type.Optional(Type.Enum(['open', 'answered'], { default: 'open' })) }),

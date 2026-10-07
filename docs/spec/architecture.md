@@ -830,7 +830,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 - Not yet: finding such pairs unasked, in "Needs your decision" (slice 18c, below).
 
 **Slice 18c (2026-10-07): logbook checks** ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md)).
-- `apps/server/src/dives/logbook-check-rules.ts` (pure, `LOGBOOK_CHECKS_VERSION` 1): `ruleFor` two Dives
+- `apps/server/src/dives/logbook-check-rules.ts` (pure, `LOGBOOK_CHECKS_VERSION` 2; the third rule `entry_apart_from_recording` is in the ADR's last amendment): `ruleFor` two Dives
   (`recording_beside_entry` with the import's tolerance when exactly one has a Recording, `overlapping_dives` on a real
   overlap otherwise; local times where an offset is unknown) and `findChecks` over a logbook (each pair once; `obvious`
   when an import would have attached them: one partner each, depths agreeing).

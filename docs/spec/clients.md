@@ -463,8 +463,15 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
 ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md); `GET /api/logbook-checks`, computed each time)
 - **Must show them where the User lands after an import** (the logbook), in the same place as Duplicate candidates: each
   is a pair of Dives of one Diver at the same time (`dive`, `other`), with the reason (`rule`:
-  `recording_beside_entry`, a Dive without a Recording beside one with a Recording; `overlapping_dives`). Show both Dives
-  (time, depth, duration, site, with or without a recording, the Diver when the User keeps several) and link to them.
+  `recording_beside_entry`, a Dive without a Recording beside one with a Recording; `overlapping_dives`;
+  `entry_apart_from_recording`, an entry and a Recording's Dive on the same local day that don't overlap but agree in
+  depth and duration). Show both Dives (time, depth, duration, site, with or without a recording, the Diver when the User
+  keeps several) and link to them.
+- **Show the rule's text on every pair of `entry_apart_from_recording`,** also when it is the only kind in the list (the
+  list's heading says "at the same time", which isn't so here), with both local start times and how far apart they are.
+  Such a pair is never `obvious`: it is merged only by the User's own click on that pair. After a merge the kept Dive may be
+  outdated at the Provider: sending its start time there can remove the Provider's verification of the entry (SSI's dive
+  centre QR), so say so before sending.
 - **Never merge unasked.** Offer per pair: merge (the merge dialog of [Dives](#dives), with `other.keeps` and
   `other.bothAt`), and "they are two dives" (`PUT /api/logbook-checks/answer` with both ids and `two_dives`). Say that a
   wrong time or a Dive of another Diver is corrected on the Dive itself (edit, move, delete).

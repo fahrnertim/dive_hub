@@ -576,7 +576,8 @@
     "title": "Tauchgänge zur selben Zeit",
     "rule": {
       "recording_beside_entry": "Ein Tauchgang ohne Aufzeichnung und einer mit Aufzeichnung liegen zur selben Zeit",
-      "overlapping_dives": "Zwei Tauchgänge überschneiden sich zeitlich"
+      "overlapping_dives": "Zwei Tauchgänge überschneiden sich zeitlich",
+      "entry_apart_from_recording": "Wahrscheinlich derselbe Tauchgang mit anderer Startzeit: die Starts liegen {{difference}} auseinander, Tiefe und Dauer stimmen überein"
     },
     "how": "Wenn es derselbe Tauchgang ist, führe sie zusammen. Wenn eine Zeit falsch ist oder einer zu einem anderen Taucher gehört, öffne diesen Tauchgang und korrigiere es dort.",
     "pair": "{{first}} und {{second}}",

@@ -576,7 +576,8 @@
     "title": "Dives at the same time",
     "rule": {
       "recording_beside_entry": "A dive without a recording and a dive with one are at the same time",
-      "overlapping_dives": "Two dives overlap in time"
+      "overlapping_dives": "Two dives overlap in time",
+      "entry_apart_from_recording": "Probably the same dive with another start time: the starts are {{difference}} apart, depth and duration agree"
     },
     "how": "If they are the same dive, merge them. If a time is wrong or one belongs to another Diver, open that dive and correct it there.",
     "pair": "{{first}} and {{second}}",

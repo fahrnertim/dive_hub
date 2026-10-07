@@ -148,7 +148,7 @@ and read links as the Pushes do (per Dive and Provider, `currentRemote`), never 
   when merged"), and in the dialog, where the two are listed as "Stays" and "Goes to deleted dives" with what tells them
   apart. "This dive is kept" said nothing on the logbook, where both are listed.
 
-## Amendment 2026-10-07: a third rule, `entry_apart_from_recording` (planned, rule version 2)
+## Amendment 2026-10-07: a third rule, `entry_apart_from_recording` (built, rule version 2)
 Why: a Recording's start and the same dive typed into a Provider's logbook can lie hours apart (the Suunto and SSI
 mismatch, [research note](../research/2026-10-07-suunto-ssi-mismatch.md)). Matching (ADR 0030) cannot see them as one
 dive and must not guess; a check can offer the pair and let the User decide.
@@ -167,3 +167,8 @@ dive and must not guess; a check can offer the pair and let the User decide.
   the dive centre's QR verification of that entry, so the card says so before the User sends.
 - **Clients** get a duty: showing the rule's text and both local times with their difference
   ([client contract](../spec/clients.md), updated in the same change).
+- **As built:** `ruleFor` says whether a pair qualifies; `findChecks` then keeps, nearest start first, each Dive in one pair at
+  most, and drops both pairs of a Dive with two equally near partners (it is not offered a farther one either). Depth needs
+  both values. The dive page's merge candidates use the pairwise test only (no one-to-one), so they may hint at a pair
+  the panel left out for a tie. Not built: the warning about the Provider's verification on the "Send update" card
+  (the panel's rule text and the client contract do not cover it yet).

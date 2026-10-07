@@ -3367,10 +3367,10 @@ export interface paths {
                                 remoteNumber: null | number;
                             }[];
                             /**
-                             * @description recording_beside_entry: a Dive without a Recording and one with a Recording at the same time, as an import would have attached them; overlapping_dives: two Dives of one Diver that overlap in time
+                             * @description recording_beside_entry: a Dive without a Recording and one with a Recording at the same time, as an import would have attached them; overlapping_dives: two Dives of one Diver that overlap in time; entry_apart_from_recording: a Dive without a Recording and one with one on the same local day, not overlapping, with depth (0.2 m or 3 %) and duration (3 minutes) agreeing: probably one dive typed with another start (never `obvious`; show both local start times and their difference)
                              * @enum {unknown}
                              */
-                            rule: "recording_beside_entry" | "overlapping_dives";
+                            rule: "recording_beside_entry" | "overlapping_dives" | "entry_apart_from_recording";
                             /** @description The User said these are two dives: don't hint at the pair again (it can still be merged) */
                             answered: boolean;
                             /** @description Which of the two Dives a merge keeps: the one with a Recording when only one has, else the Dive asked about */
@@ -3420,7 +3420,7 @@ export interface paths {
         };
         /**
          * Logbook checks: pairs of Dives in the User's logbooks that can't both be right as they stand
-         * @description Computed from the logbook each time by fixed rules (ADR 0038): a Dive without a Recording beside a Dive with one, or two Dives of one Diver that overlap. `status=answered` lists the pairs the User said are two dives, to ask again. Resolve one by merging (POST /dives/{id}/merge), answering (PUT /logbook-checks/answer), correcting a time, moving or deleting one of the Dives. Never merge unasked (docs/spec/clients.md).
+         * @description Computed from the logbook each time by fixed rules (ADR 0038): a Dive without a Recording beside a Dive with one (at the same time, or on the same day with the same depth and duration), or two Dives of one Diver that overlap. `status=answered` lists the pairs the User said are two dives, to ask again. Resolve one by merging (POST /dives/{id}/merge), answering (PUT /logbook-checks/answer), correcting a time, moving or deleting one of the Dives. Never merge unasked (docs/spec/clients.md).
          */
         get: {
             parameters: {
@@ -3441,10 +3441,10 @@ export interface paths {
                     content: {
                         "application/json": {
                             /**
-                             * @description recording_beside_entry: a Dive without a Recording and one with a Recording at the same time, as an import would have attached them; overlapping_dives: two Dives of one Diver that overlap in time
+                             * @description recording_beside_entry: a Dive without a Recording and one with a Recording at the same time, as an import would have attached them; overlapping_dives: two Dives of one Diver that overlap in time; entry_apart_from_recording: a Dive without a Recording and one with one on the same local day, not overlapping, with depth (0.2 m or 3 %) and duration (3 minutes) agreeing: probably one dive typed with another start (never `obvious`; show both local start times and their difference)
                              * @enum {unknown}
                              */
-                            rule: "recording_beside_entry" | "overlapping_dives";
+                            rule: "recording_beside_entry" | "overlapping_dives" | "entry_apart_from_recording";
                             /** @description An import would have put the two together by itself, and no dive is left over at a Provider: may be merged with others in one go */
                             obvious: boolean;
                             diverId: string;

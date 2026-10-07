@@ -53,7 +53,8 @@ export function createMerging(db: Db) {
     async candidates(userId: string, diveId: string) {
       const [row] = await db.select().from(dive).where(and(eq(dive.id, diveId), isNull(dive.deletedAt)));
       if (!row || !(await managedDiverIds(db, userId)).has(row.diverId)) throw new DiveError('dive_not_found');
-      const reach = (row.durationSeconds + OVERLAP_TOLERANCE_SECONDS) * 1000 + MAX_OFFSET_MS;
+      // The same local day is a check too (entry_apart_from_recording): up to a day and both offsets away either way.
+      const reach = Math.max((row.durationSeconds + OVERLAP_TOLERANCE_SECONDS) * 1000 + MAX_OFFSET_MS, 24 * 3600_000 + 2 * MAX_OFFSET_MS);
       const near = await db.select({ d: dive, siteName: diveSite.name }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId))
         .where(and(
           eq(dive.diverId, row.diverId), isNull(dive.deletedAt), ne(dive.id, row.id),

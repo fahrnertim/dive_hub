@@ -83,7 +83,8 @@ describe.skipIf(!(await databaseReachable()))('logbook checks', () => {
   });
 
   it('finds the two overlapping entries, and nothing between dives one after the other or a day apart', async () => {
-    const list = await checks();
+    // The entry typed at 20:14 and its file at 09:07 are the same dive hours apart: the pair of the third rule, never obvious.
+    const list = (await checks()).filter((c) => c.rule !== 'entry_apart_from_recording');
     expect(list).toHaveLength(1);
     expect(list[0]).toMatchObject({ rule: 'overlapping_dives', obvious: false, dive: { id: first, recordings: 0 }, other: { id: second, keeps: first, bothAt: ['ssi'] } });
   });
@@ -157,5 +158,31 @@ describe.skipIf(!(await databaseReachable()))('logbook checks', () => {
     // Asked again when the User wants to be.
     await answer(main.diveId!, split.diveId, null);
     expect((await checks()).map((c) => [c.rule, c.obvious])).toEqual([['overlapping_dives', false]]);
+  });
+
+  it('offers an entry typed hours after its file (same day, depth and duration agree), never as obvious; merging keeps the file and takes the link', async () => {
+    // Typed as 11:00 at the lake (UTC+2: 09:00 UTC); the watch says 06:30 UTC. Depth 34 / 34.2 m, 33 / 33.75 minutes.
+    const remoteId = addEntry('2026-05-10 11:00', 33, 34);
+    const entryDive = (await runImport()).find((o) => o.remoteId === remoteId)!.diveId!;
+    const { payload, headers } = multipartFile('dive.json', makeSuuntoJson({
+      start: new Date('2026-05-10T06:30:00.000Z'), durationSeconds: 2025, maxDepthM: 34.2, serialNumber: '900000000001',
+    }));
+    const created = await ctx.app.inject({ method: 'POST', url: '/api/imports', payload, headers: { ...headers, cookie: tim } });
+    await ctx.imports.processImport(created.json().id);
+    const fileDive = ((await call('GET', `/api/imports/${created.json().id}`)).json() as { outcome: Outcome[] }).outcome[0]!.diveId!;
+    expect(fileDive).not.toBe(entryDive);
+
+    const found = (await checks()).find((c) => c.rule === 'entry_apart_from_recording')!;
+    expect(pairOf(found)).toEqual([entryDive, fileDive].sort());
+    expect(found).toMatchObject({ obvious: false, other: { keeps: fileDive } });
+    // Asked about the Dive page too.
+    const candidates = (await call('GET', `/api/dives/${fileDive}/merge-candidates`)).json() as { id: string; rule: string }[];
+    expect(candidates).toEqual([expect.objectContaining({ id: entryDive, rule: 'entry_apart_from_recording' })]);
+
+    const merged = await call('POST', `/api/dives/${found.dive.id}/merge`, { version: found.dive.version, otherId: found.other.id, otherVersion: found.other.version });
+    expect(merged.json()).toMatchObject({ id: fileDive });
+    const link = (await call('GET', `/api/dives/${fileDive}/providers/ssi`)).json() as { current: { remoteId: string } | null };
+    expect(link.current?.remoteId).toBe(remoteId);
+    expect((await checks()).filter((c) => c.rule === 'entry_apart_from_recording')).toEqual([]);
   });
 });
