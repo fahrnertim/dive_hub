@@ -71,6 +71,7 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [0039 Working economically with LLM agents](decisions/0039-working-economically.md) — one slice per session with a hand-over prompt, compaction at 300,000 tokens, narrow reading, Sonnet and Haiku subagents for research and search, skill overrides moved to docs/skills.md, `scripts/token-report.mjs`.
 - [0040 Logbook rows and filters](decisions/0040-logbook-rows-and-filters.md) — `GET /api/dives` pages by 25, takes `only` filters (no-recording, no-site, with-findings, not-at-provider), returns their counts, the logbook totals, month figures and per Dive Recordings, gas, surface interval, source and Participants; amends 0017.
 - [0041 The profile sketch in the logbook](decisions/0041-logbook-profile-sketch.md) — `dive_assessment.profile` keeps 48 depths of the Primary recording; `GET /api/dives` sends it as `profile` with the ascent bands; the row draws it on one depth scale.
+- [0042 Previous and next dive follow the list the User came from](decisions/0042-dive-neighbours-and-list-in-address.md) — a Dive's address carries `?list=`; `GET /api/dives/:id/neighbours` orders neighbours like the list; "Logbook" goes back to the list on the right page.
 - [Template](decisions/template.md) — copy for new ADRs.
 
 ## References

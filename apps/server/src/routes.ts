@@ -118,6 +118,13 @@ const DiveListView = Type.Object({
 });
 
 
+const DiveNeighboursView = Type.Object({
+  previous: Nullable(Type.Object({ id: Type.String() })),
+  next: Nullable(Type.Object({ id: Type.String() })),
+  position: Nullable(Type.Integer({ description: 'Where the Dive is in the list, from 1; null when the list does not show it' })),
+  total: Type.Integer({ description: 'How many Dives the list shows' }),
+});
+
 const SamplesQuery = Type.Object({
   channels: Type.Optional(Type.String({ description: 'Comma-separated channel names; default all' })),
   maxPoints: Type.Optional(Type.Integer({ minimum: 4, maximum: 20000, default: 2000 })),
@@ -257,22 +264,11 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
     return row ? (await withDecisions(db, [row]))[0]! : reply.code(404).send(problem('import_not_found'));
   });
 
-  app.get('/dives', {
-    schema: {
-      summary: 'A page of the Dives of the Divers the signed-in User manages (newest first unless sorted otherwise)',
-      querystring: DiveListQuery,
-      response: { 200: DiveListView },
-    },
-  }, async (request) => {
-    const { diverId, siteId, q, only, sort = 'startsAt', order = 'desc', limit = 25, offset = 0 } = request.query;
+  /** What the list shows and in which order: the Diver, search and filters, shared by the page and a Dive's neighbours (ADR 0042). */
+  const listScope = async (request: FastifyRequest, query: Static<typeof DiveListQuery>) => {
+    const { diverId, siteId, q, only, sort = 'startsAt', order = 'desc' } = query;
     const managed = await managedDiverIds(request);
     const divers = diverId ? managed.filter((id) => id === diverId) : managed;
-    if (divers.length === 0) {
-      return {
-        dives: [], total: 0, counts: { noRecording: 0, noSite: 0, withFindings: 0, notAtProvider: 0 },
-        totals: { dives: 0, durationSeconds: 0, deepestM: null, lastDiveAt: null }, months: [],
-      };
-    }
     const filters: Record<DiveOnly, SQL> = {
       'no-recording': NO_RECORDING,
       'no-site': isNull(dive.siteId),
@@ -294,9 +290,28 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
     const column = { startsAt: dive.startsAt, number: dive.number, maxDepth: dive.maxDepthM, duration: dive.durationSeconds }[sort];
     // Dives without a value (no number, no depth) go last either way; the start time breaks ties.
     const direction = order === 'asc' ? sql`asc nulls last` : sql`desc nulls last`;
+    const orderBy = [sql`${column} ${direction}`, desc(dive.startsAt), desc(dive.id)];
+    return { divers, filters, base, where, orderBy, sort };
+  };
+
+  app.get('/dives', {
+    schema: {
+      summary: 'A page of the Dives of the Divers the signed-in User manages (newest first unless sorted otherwise)',
+      querystring: DiveListQuery,
+      response: { 200: DiveListView },
+    },
+  }, async (request) => {
+    const { limit = 25, offset = 0 } = request.query;
+    const { divers, filters, base, where, orderBy, sort } = await listScope(request, request.query);
+    if (divers.length === 0) {
+      return {
+        dives: [], total: 0, counts: { noRecording: 0, noSite: 0, withFindings: 0, notAtProvider: 0 },
+        totals: { dives: 0, durationSeconds: 0, deepestM: null, lastDiveAt: null }, months: [],
+      };
+    }
     const [rows, [counted], [counts], [totals]] = await Promise.all([
       db.select({ d: dive, siteName: diveSite.name, findings: FINDINGS_SHOWN }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(where)
-        .orderBy(sql`${column} ${direction}`, desc(dive.startsAt), desc(dive.id))
+        .orderBy(...orderBy)
         .limit(limit).offset(offset),
       db.select({ n: count() }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(where),
       db.select({
@@ -354,6 +369,38 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
       counts: counts!,
       totals: { ...totals!, lastDiveAt: totals!.lastDiveAt?.toISOString() ?? null },
       months,
+    };
+  });
+
+  app.get('/dives/:id/neighbours', {
+    schema: {
+      summary: 'The Dives before and after one in the logbook list’s order (ADR 0042)',
+      description: 'Takes the list’s own settings (diverId, siteId, q, only, sort, order; not limit or offset). `previous` is the row above in that list, `next` the row below. '
+        + 'When the list does not show the Dive, `position` and both neighbours are empty.',
+      params: IdParams,
+      querystring: Type.Omit(DiveListQuery, ['limit', 'offset']),
+      response: { 200: DiveNeighboursView, 404: Problem },
+    },
+  }, async (request, reply) => {
+    const managed = await managedDiverIds(request);
+    const [own] = managed.length === 0 ? [] : await db.select({ id: dive.id }).from(dive)
+      .where(and(eq(dive.id, request.params.id), inArray(dive.diverId, managed), isNull(dive.deletedAt)));
+    if (!own) return reply.code(404).send(problem('dive_not_found'));
+    const { where, orderBy } = await listScope(request, request.query);
+    const window = sql`over (order by ${sql.join(orderBy, sql`, `)})`;
+    const shown = db.select({
+      id: dive.id,
+      position: sql<number>`(row_number() ${window})::int`.as('position'),
+      previous: sql<string | null>`lag(${dive.id}) ${window}`.as('previous'),
+      next: sql<string | null>`lead(${dive.id}) ${window}`.as('next'),
+    }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(where).as('shown');
+    const [[row], [counted]] = await Promise.all([
+      db.select().from(shown).where(eq(shown.id, own.id)),
+      db.select({ n: count() }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(where),
+    ]);
+    return {
+      previous: row?.previous ? { id: row.previous } : null, next: row?.next ? { id: row.next } : null,
+      position: row?.position ?? null, total: counted?.n ?? 0,
     };
   });
 

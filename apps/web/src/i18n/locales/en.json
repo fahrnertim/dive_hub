@@ -270,6 +270,10 @@
   },
   "dive": {
     "back": "Logbook",
+    "neighbours": "Dives in the list",
+    "previousDive": "Previous dive",
+    "nextDive": "Next dive",
+    "positionInList": "{{position}} of {{total}}",
     "title": "Dive {{number}}",
     "titleNoNumber": "Dive",
     "maxDepth": "Max depth",

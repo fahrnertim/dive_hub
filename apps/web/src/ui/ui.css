@@ -280,9 +280,22 @@
 @media (max-width: 40rem) {
   /* Phone header: brand and user menu on the first row, the navigation on its own second row. */
   .app-header-inner { gap: var(--space-2) var(--space-3); }
-  /* It wraps rather than scrolls: with four sections a scrolling strip hid the last ones on small phones. */
-  .app-nav { order: 3; flex-basis: 100%; flex-wrap: wrap; gap: 0 var(--space-4); }
-  .app-nav a { white-space: nowrap; }
+  /* The navigation is a bar at the bottom of the screen (UI redesign 5.3): the thumb reaches it, the header keeps the
+     brand and the account, and three sections no longer wrap to a second row. Same landmark as on a wide screen. */
+  .app-nav { position: fixed; inset: auto 0 0 0; z-index: 5; gap: 0; flex: none; background: var(--color-surface);
+    border-top: 1px solid var(--color-border); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .app-nav a { flex: 1 1 0; min-width: 0; flex-direction: column; justify-content: center; gap: var(--space-1); text-align: center;
+    padding: var(--space-2) var(--space-1); border-bottom: none; border-top: 2px solid transparent; font-size: var(--text-sm);
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
+  .app-nav a[aria-current='page'] { border-top-color: var(--color-accent); border-bottom-color: transparent; }
+  /* The count sits on the icon's corner, so the Logbook item is as tall as the others. */
+  .app-nav a { position: relative; }
+  .app-nav .count { position: absolute; top: var(--space-1); left: calc(50% + 0.5rem); }
+  .app-nav a:active { background: var(--color-surface-sunken, var(--color-border)); }
+  /* The bar must not cover the end of a page or a focused control (WCAG 2.4.11). */
+  html { scroll-padding-bottom: 6rem; }
+  .app-main { padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px)); }
+  .app-header-inner { padding-top: calc(var(--space-3) + env(safe-area-inset-top, 0px)); }
   .panel { padding: var(--space-5) var(--space-4); }
   .copy-field { flex-direction: column; }
   /* On a phone the button wraps under the field anyway; no alignment margin. */
@@ -311,3 +324,14 @@
 @container table (max-width: 22rem) {
   .table-cards td { grid-template-columns: minmax(0, 1fr); gap: 0; }
 }
+
+/* Previous and next dive, beside the way back to the logbook (UI redesign 2.4). */
+.dive-trail { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); margin-bottom: var(--space-3); }
+.neighbours { display: flex; align-items: center; gap: var(--space-3); }
+.neighbour { display: inline-flex; align-items: center; gap: var(--space-1); }
+.neighbour[aria-disabled='true'] { color: var(--color-text-muted); opacity: 0.6; }
+.neighbour-position { color: var(--color-text-muted); font-size: var(--text-sm); }
+@media (max-width: 40rem) {
+  .neighbours { width: 100%; justify-content: space-between; }
+}
+.neighbour-position { white-space: nowrap; }

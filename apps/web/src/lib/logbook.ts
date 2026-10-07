@@ -9,8 +9,8 @@ export function toggled(only: readonly LogbookFilter[] | undefined, filter: Logb
   return only?.includes(filter) ? only.filter((f) => f !== filter) : [...(only ?? []), filter];
 }
 
-/** The logbook's address for these settings; defaults are left out ("#/" is the newest first). */
-export function logbookHref(p: LogbookParams): string {
+/** The settings as a query string; defaults are left out. */
+export function listQuery(p: LogbookParams): string {
   const query = new URLSearchParams();
   if (p.diverId) query.set('diver', p.diverId);
   if (p.siteId) query.set('site', p.siteId);
@@ -21,8 +21,42 @@ export function logbookHref(p: LogbookParams): string {
   if (only.length > 0) query.set('only', only.join(','));
   if (p.page && p.page > 1) query.set('page', String(p.page));
   // A comma needs no escaping in a query: "?only=no-recording,no-site" stays readable.
-  const text = query.toString().replaceAll('%2C', ',');
-  return text ? `#/?${text}` : '#/';
+  return query.toString().replaceAll('%2C', ',');
+}
+
+/** The logbook's address for these settings ("#/" is the newest first). */
+export function logbookHref(p: LogbookParams): string {
+  return logbookHrefOf(listQuery(p));
+}
+
+/** The logbook's address for a list's query string (see listQuery). */
+export function logbookHrefOf(list: string | undefined): string {
+  return list ? `#/?${list}` : '#/';
+}
+
+/**
+ * A Dive's address. `list` is the logbook's query the User came from (ADR 0042): it makes previous and next follow that
+ * list and "Logbook" go back to it, and survives a reload or a copied link.
+ */
+export function diveHref(id: string, list: string | undefined, recording?: string): string {
+  const query = new URLSearchParams();
+  if (list) query.set('list', list);
+  if (recording) query.set('recording', recording);
+  const text = query.toString();
+  return text ? `#/dives/${id}?${text}` : `#/dives/${id}`;
+}
+
+/** The list named in a Dive's address, cleaned the way the logbook reads its own address. */
+export function listOfDiveAddress(query: URLSearchParams): string {
+  return listQuery(logbookParams(new URLSearchParams(query.get('list') ?? '')));
+}
+
+/** What the API's neighbours ask takes of a list: everything but the page. */
+export function neighbourParams(p: LogbookParams) {
+  return {
+    ...(p.diverId && { diverId: p.diverId }), ...(p.siteId && { siteId: p.siteId }), ...(p.q && { q: p.q }),
+    ...(p.sort && { sort: p.sort }), ...(p.order && { order: p.order }), ...(p.only?.length && { only: p.only.join(',') }),
+  };
 }
 
 /** The settings in the address of the logbook (see logbookHref). */

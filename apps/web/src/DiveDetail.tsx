@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
-import { api, ApiError, diveProvidersQuery, diveQuery, diversQuery, keys, unwrap, type DiveView, type OverridableField, type RecordingSummary } from './api.ts';
+import { api, ApiError, diveNeighboursQuery, diveProvidersQuery, PAGE_SIZE, diveQuery, diversQuery, keys, unwrap, type DiveView, type NeighboursView, type OverridableField, type RecordingSummary } from './api.ts';
 import { AssessmentPanel, AssessmentProvider } from './Assessment.tsx';
 import { DeleteDiveDialog } from './DeleteDive.tsx';
 import { DepthProfile } from './DepthProfile.tsx';
@@ -15,7 +15,7 @@ import { deviceName } from './lib/devices.ts';
 import { useFormatValue } from './lib/dive-values.ts';
 import { focusFirstIn, focusHeading } from './lib/focus.ts';
 import { mapsUrl } from './lib/geo.ts';
-import { mixName } from './lib/logbook.ts';
+import { diveHref, listQuery, logbookHrefOf, logbookParams, mixName, neighbourParams } from './lib/logbook.ts';
 import { usePageTitle } from './lib/page.ts';
 import { useNames, useProviders } from './lib/providers.ts';
 import { SitePicker } from './SitePicker.tsx';
@@ -24,12 +24,16 @@ import { ProviderPanels } from './ProviderPanel.tsx';
 import { ActionMenu, Button, ConfirmDialog, Dialog, ErrorBoundary, Icon, Muted, Notice, PageHeader, Panel, Select } from './ui/index.ts';
 
 /** One Dive (ADR 0015): its values with Overrides marked, notes, Recordings, and its history. */
-export function DiveDetail({ id, recordingId }: { id: string; recordingId?: string | undefined }) {
+export function DiveDetail({ id, recordingId, list = '' }: { id: string; recordingId?: string | undefined; list?: string }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const display = useDisplay();
   const dive = useQuery(diveQuery(id));
   const divers = useQuery(diversQuery());
+  const neighbours = useQuery(diveNeighboursQuery(id, neighbourParams(logbookParams(new URLSearchParams(list)))));
+  // "Logbook" goes back to the list as it was, on the page this Dive is on now (ADR 0042).
+  const position = neighbours.data?.position;
+  const logbook = logbookHrefOf(position ? listQuery({ ...logbookParams(new URLSearchParams(list)), page: Math.ceil(position / PAGE_SIZE) }) : list);
   // Editing opens at the dive number, or at the notes when asked for from there.
   const [editing, setEditing] = useState<false | 'values' | 'notes'>(false);
   const [moving, setMoving] = useState(false);
@@ -56,7 +60,7 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
         <Panel>
           <div className="empty-state">
             <p>{errorText(dive.error)}</p>
-            <a href="#/" className="btn btn-secondary"><Icon name="back" />{t('dive.backToLogbook')}</a>
+            <a href={logbook} className="btn btn-secondary"><Icon name="back" />{t('dive.backToLogbook')}</a>
           </div>
         </Panel>
       </>
@@ -65,7 +69,7 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
   if (dive.error) {
     return (
       <>
-        <p><a href="#/" className="back-link"><Icon name="back" />{t('dive.back')}</a></p>
+        <p><a href={logbook} className="back-link"><Icon name="back" />{t('dive.back')}</a></p>
         <Notice tone="danger">{errorText(dive.error)}</Notice>
       </>
     );
@@ -76,7 +80,10 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
 
   return (
     <>
-      <p><a href="#/" className="back-link"><Icon name="back" />{t('dive.back')}</a></p>
+      <div className="dive-trail">
+        <a href={logbook} className="back-link"><Icon name="back" />{t('dive.back')}</a>
+        <Neighbours n={neighbours.data} list={list} />
+      </div>
       <div className="dive-head">
         <PageHeader
           title={title}
@@ -112,7 +119,7 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
           {editing
             ? <DiveEditForm key={d.version} dive={d} focus={editing === 'notes' ? 'notes' : undefined} onDone={() => setEditing(false)} />
             : <DiveFacts dive={d} onAddNotes={() => setEditing('notes')} />}
-          <Recordings dive={d} initial={recordingId} />
+          <Recordings dive={d} initial={recordingId} list={list} />
         </Panel>
         <AssessmentPanel dive={d} diverName={diverName} />
       </AssessmentProvider>
@@ -146,6 +153,29 @@ function DiveLoading() {
       <div className="panel skeleton skeleton-facts" />
       <div className="panel skeleton skeleton-chart" />
     </div>
+  );
+}
+
+/**
+ * Previous and next dive in the order of the list the User came from (UI redesign 2.4, ADR 0042). "Previous" is the row above
+ * in that list, so with the newest first it is the newer dive. Not shown while the list doesn't show this Dive.
+ */
+function Neighbours({ n, list }: { n: NeighboursView | undefined; list: string }) {
+  const { t } = useTranslation();
+  if (!n || n.position === null) return null;
+  const step = (to: { id: string } | null, label: string, icon: 'previous' | 'next') => {
+    const inner = <><Icon name={icon} /><span className="neighbour-label">{label}</span></>;
+    // At the end of the list the control stays, so the others don't move; it says it is unavailable.
+    return to
+      ? <a href={diveHref(to.id, list)} className="neighbour" rel={icon === 'previous' ? 'prev' : 'next'}>{inner}</a>
+      : <span className="neighbour" aria-disabled="true">{inner}</span>;
+  };
+  return (
+    <nav className="neighbours" aria-label={t('dive.neighbours')}>
+      {step(n.previous, t('dive.previousDive'), 'previous')}
+      <span className="neighbour-position num">{t('dive.positionInList', { position: n.position, total: n.total })}</span>
+      {step(n.next, t('dive.nextDive'), 'next')}
+    </nav>
   );
 }
 
@@ -313,7 +343,7 @@ function DiveFacts({ dive: d, onAddNotes }: { dive: DiveView; onAddNotes: () => 
  * that say which one is primary. The tab is in the address (?recording=…), and the actions on a Recording are in a
  * menu (UI review C3). The heading is for heading navigation only: the chart is seen as one without a title.
  */
-function Recordings({ dive: d, initial }: { dive: DiveView; initial: string | undefined }) {
+function Recordings({ dive: d, initial, list }: { dive: DiveView; initial: string | undefined; list: string }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const queryClient = useQueryClient();
@@ -323,14 +353,14 @@ function Recordings({ dive: d, initial }: { dive: DiveView; initial: string | un
   const recording = d.recordings.find((r) => r.id === selected) ?? d.recordings.find((r) => r.isPrimary) ?? d.recordings[0];
   const select = (id: string) => {
     setSelected(id);
-    history.replaceState(null, '', `#/dives/${d.id}?recording=${id}`);
+    history.replaceState(null, '', diveHref(d.id, list, id));
   };
   const splitOff = useMutation({
     mutationFn: async (recordingId: string) =>
       unwrap(await api.POST('/api/recordings/{id}/detach', { params: { path: { id: recordingId } }, body: { version: d.version } })),
     onSuccess: async () => {
       setSelected(undefined);
-      history.replaceState(null, '', `#/dives/${d.id}`);
+      history.replaceState(null, '', diveHref(d.id, list));
       await queryClient.invalidateQueries({ queryKey: keys.dives });
     },
   });

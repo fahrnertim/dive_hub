@@ -270,6 +270,10 @@
   },
   "dive": {
     "back": "Logbuch",
+    "neighbours": "Tauchgänge in der Liste",
+    "previousDive": "Vorheriger Tauchgang",
+    "nextDive": "Nächster Tauchgang",
+    "positionInList": "{{position}} von {{total}}",
     "title": "Tauchgang {{number}}",
     "titleNoNumber": "Tauchgang",
     "maxDepth": "Maximaltiefe",

@@ -287,6 +287,15 @@ stored profile sketch).
   Checked in the browser tests (the sweeps at 320 px, 200 % text and axe) and in the review screenshots at 1280 and 320 px;
   not looked at: dark mode and German of the sketch, 25 real Dives.
 
+- **Slice E (2026-10-07):** previous and next dive (2.4) and "Logbook" back to the list as it was (2.5),
+  [ADR 0042](../decisions/0042-dive-neighbours-and-list-in-address.md): `?list=` in the Dive's address and
+  `GET /api/dives/:id/neighbours`. The phone bottom bar (5.3): below 40 rem the main navigation (the same landmark) is fixed at
+  the bottom with icon above text, three items; the header keeps brand and account; the page's end is padded clear of the bar
+  and `viewport-fit=cover` with safe-area padding is set. Different from the mock: no "More" item, because Admin and Account are
+  already in the account menu and there are only three sections. Checked in the browser tests (`e2e/navigation.spec.ts` and the
+  width sweeps: English and German, light and dark, 320 px, 200 % text, axe). Not checked: a real phone (safe areas, the bar with
+  the software keyboard open), a list of more than one page across the page boundary.
+
 ## Not verified
 
 - The mock was looked at in Edge at 1280 and 390 px, light, and the logbook in dark. Not in German, not at 320 px,

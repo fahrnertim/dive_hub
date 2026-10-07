@@ -148,6 +148,12 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   is a sketch of its shape on **one depth scale for all rows**, fast ascent drawn thicker as well as coloured; it is
   decoration, so depth and duration stay text. `null` is drawn as nothing (an empty dashed box when `recordings` is 0).
   *Web:* `DiveList.tsx`, `ProfileSketch.tsx`, `lib/sketch.ts`.
+- **Previous and next dive** ([ADR 0042](../decisions/0042-dive-neighbours-and-list-in-address.md)): a Dive opened from the
+  logbook keeps the list's settings with it and asks `GET /api/dives/{id}/neighbours` with them (no `limit`/`offset`).
+  "Previous" is the row above in that list (with the newest first, the newer dive), "next" the row below; show the position
+  (`position` of `total`), keep the control at the ends but say it is unavailable, and show nothing when `position` is
+  `null`. "Back to the logbook" returns to the list as it was, on page `ceil(position / 25)`. Without a list, the whole
+  logbook newest first. *Web:* `DiveDetail.tsx` (`Neighbours`), `lib/logbook.ts` (`diveHref`, `neighbourParams`).
 - **Follow merged sites:** a site with `mergedInto` is gone. Open the kept site instead (ADR 0022).
 - **Render Providers from `GET /api/providers`** ([ADR 0027](../decisions/0027-providers-as-adapters.md)): its list is
   the instance's, and it changes only with the server (cache it for the session). Offer a Connection panel per Provider

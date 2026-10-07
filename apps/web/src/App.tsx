@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { AcceptInvitation, ResetPassword, Setup, SignIn, useSignOut } from './Account.tsx';
 import { divesQuery, meQuery, setupQuery, type LogbookParams, type Me } from './api.ts';
 import { DiveList, LogbookHeader } from './DiveList.tsx';
-import { logbookParams } from './lib/logbook.ts';
+import { listOfDiveAddress, logbookParams } from './lib/logbook.ts';
 import { sitesParams } from './lib/sites-list.ts';
 import { pickLanguage } from './i18n/index.ts';
 import { DeletedNotices } from './DeletedDives.tsx';
@@ -133,7 +133,7 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   const [path, query = ''] = route.split('?');
   const params = new URLSearchParams(query);
   const diveId = /^\/dives\/([\w-]+)$/.exec(path!)?.[1];
-  if (diveId) return <DiveDetail key={diveId} id={diveId} recordingId={params.get('recording') ?? undefined} />;
+  if (diveId) return <DiveDetail key={diveId} id={diveId} recordingId={params.get('recording') ?? undefined} list={listOfDiveAddress(params)} />;
   if (route === '/account') return <AccountPage />;
   if (route === '/divers') return <DiversPage />;
   if (path === '/review') return <ReviewPage tab={reviewTab(params)} />;

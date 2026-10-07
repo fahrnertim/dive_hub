@@ -5,7 +5,7 @@ import { connectionsQuery, divesQuery, diversQuery, PAGE_SIZE, siteQuery, type D
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import {
-  LOGBOOK_FILTERS, logbookHref, mixName, monthGroups, SORT_CHOICES, sortChoice, toggled, type LogbookFilter, type MonthFigures,
+  diveHref, listQuery, LOGBOOK_FILTERS, logbookHref, mixName, monthGroups, SORT_CHOICES, sortChoice, toggled, type LogbookFilter, type MonthFigures,
 } from './lib/logbook.ts';
 import { useAddressSearch } from './lib/address-search.ts';
 import { usePageTitle } from './lib/page.ts';
@@ -148,7 +148,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
                 <ul className="dive-rows">
                   {group.dives.map((d) => (
                     <DiveRow
-                      key={d.id} dive={d} year={!byDate} scaleM={sketchScale(dives.data.totals.deepestM)}
+                      key={d.id} dive={d} list={listQuery(params)} year={!byDate} scaleM={sketchScale(dives.data.totals.deepestM)}
                       diver={several ? nameOf.get(d.diverId) : undefined}
                       from={d.fromProvider ? providerName(d.fromProvider) : undefined}
                     />
@@ -249,7 +249,9 @@ function MonthHead({ month, figures }: { month: string; figures: MonthFigures | 
  * One Dive: the site as its title (the date while it has none), then what makes it this dive, who was there, and the
  * two numbers in columns. The title is the link (keyboard and screen readers); the whole row is a larger click target.
  */
-function DiveRow({ dive: d, diver, from, year, scaleM }: {
+function DiveRow({ dive: d, diver, from, year, scaleM, list }: {
+  /** The list the row is in; it goes into the Dive's address (ADR 0042). */
+  list: string;
   dive: DiveSummary;
   /** The metres a sketch's height stands for, the same in every row. */
   scaleM: number;
@@ -265,7 +267,7 @@ function DiveRow({ dive: d, diver, from, year, scaleM }: {
   const open = (e: MouseEvent) => {
     // A click with a modifier key or on the link itself is the browser's (new tab, etc.).
     if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button !== 0 || (e.target as Element).closest('a')) return;
-    location.hash = `/dives/${d.id}`;
+    location.hash = diveHref(d.id, list).slice(1);
   };
   return (
     <li className="dive-row" onClick={open}>
@@ -273,7 +275,7 @@ function DiveRow({ dive: d, diver, from, year, scaleM }: {
         {d.number === null ? <span aria-hidden="true">{t('common.none')}</span> : <><span className="visually-hidden">{t('logbook.numberLabel')} </span>{d.number}</>}
       </span>
       <div className="dive-main">
-        <a className="dive-title" href={`#/dives/${d.id}`}>
+        <a className="dive-title" href={diveHref(d.id, list)}>
           {d.site?.name ?? display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource)}
         </a>
         <p className="dive-facts">

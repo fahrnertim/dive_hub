@@ -2,7 +2,7 @@ import { createApiClient, type paths } from '@dive-hub/api-client';
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import { createAuthClient } from 'better-auth/client';
 import { SITES_PAGE, type SitesParams } from './lib/sites-list.ts';
-import type { LogbookFilter } from './lib/logbook.ts';
+import type { LogbookFilter, neighbourParams } from './lib/logbook.ts';
 
 export const api = createApiClient();
 /** Better Auth's own endpoints (sign-in, sign-out) at /api/auth on this origin; the session is a cookie. */
@@ -253,6 +253,13 @@ async function fetchMergeCandidates(id: string) {
 /** The Dives of the same Diver at the same time as this one, which it may be merged with (ADR 0038). */
 export const mergeCandidatesQuery = (id: string) => queryOptions({ queryKey: keys.mergeCandidates(id), queryFn: () => fetchMergeCandidates(id) });
 
+/** The Dives before and after one in a list's order (ADR 0042); under the Dive, so whatever changes the logbook asks again. */
+export const diveNeighboursQuery = (id: string, list: ReturnType<typeof neighbourParams>) => queryOptions({
+  queryKey: [...keys.dive(id), 'neighbours', list],
+  queryFn: async () => unwrap(await api.GET('/api/dives/{id}/neighbours', { params: { path: { id }, query: list } })),
+  placeholderData: keepPreviousData,
+});
+export interface NeighboursView { previous: { id: string } | null; next: { id: string } | null; position: number | null; total: number }
 export const diveQuery = (id: string) => queryOptions({ queryKey: keys.dive(id), queryFn: () => fetchDive(id) });
 async function fetchAssessment(id: string) {
   return unwrap(await api.GET('/api/dives/{id}/assessment', { params: { path: { id } } }));

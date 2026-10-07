@@ -797,7 +797,7 @@ test.describe('behaviour', () => {
     // Months say nothing about a list sorted by depth; the deepest dive leads it.
     await expect(list.getByRole('heading')).toHaveCount(0);
     const { dives } = await (await request.get('/api/dives?sort=maxDepth&limit=1')).json() as { dives: { id: string }[] };
-    await expect(diveRows(page).first().getByRole('link')).toHaveAttribute('href', `#/dives/${dives[0]!.id}`);
+    await expect(diveRows(page).first().getByRole('link')).toHaveAttribute('href', `#/dives/${dives[0]!.id}?list=sort%3DmaxDepth`);
     await sort.click();
     await page.getByRole('option', { name: 'Shallowest first' }).click();
     await expect(page).toHaveURL(/sort=maxDepth&order=asc$/);

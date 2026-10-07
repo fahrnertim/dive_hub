@@ -1881,6 +1881,89 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/dives/{id}/neighbours": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Dives before and after one in the logbook list’s order (ADR 0042)
+         * @description Takes the list’s own settings (diverId, siteId, q, only, sort, order; not limit or offset). `previous` is the row above in that list, `next` the row below. When the list does not show the Dive, `position` and both neighbours are empty.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Only this Diver's Dives */
+                    diverId?: string;
+                    /** @description Only Dives at this Dive site */
+                    siteId?: string;
+                    /** @description A dive number, or words from the notes or the site name */
+                    q?: string;
+                    sort?: "startsAt" | "number" | "maxDepth" | "duration";
+                    order?: "desc" | "asc";
+                    /** @description Comma-separated "show only" filters, all of which must fit: no-recording (a logbook entry without a Recording), no-site, with-findings (the list’s mark is set), not-at-provider (a Provider the User is connected to for the Diver has no current dive for it) */
+                    only?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            previous: {
+                                id: string;
+                            } | null;
+                            next: {
+                                id: string;
+                            } | null;
+                            position: number | null;
+                            /** @description How many Dives the list shows */
+                            total: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_unsupported" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_data_not_confirmed";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                            /** @description The Provider a provider_* code is about (ADR 0027) */
+                            provider?: string;
+                            /** @description Its name, to put into the translated text */
+                            providerName?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/recordings/{id}/samples": {
         parameters: {
             query?: never;

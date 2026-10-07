@@ -18,7 +18,7 @@ test('a row says its number, when and with whom; a month heading and the logbook
     await page.goto('/#/?q=42');
     const row = diveRows(page).filter({ hasText: 'Number 42' });
     await expect(row).toHaveCount(1);
-    await expect(row.getByRole('link')).toHaveAttribute('href', `#/dives/${id}`);
+    await expect(row.getByRole('link')).toHaveAttribute('href', `#/dives/${id}?list=q%3D42`);
     // Circles with two letters for the eye; the names and roles are text for screen readers.
     await expect(row.getByText('KL', { exact: true })).toBeVisible();
     await expect(row.getByText('UB', { exact: true })).toBeVisible();
