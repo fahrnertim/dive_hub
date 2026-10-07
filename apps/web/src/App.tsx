@@ -12,7 +12,7 @@ import { ImportFilesButton, ImportPanel, ImportProvider, RecentImports } from '.
 import { ReviewLinks, ReviewStrip } from './ReviewStrip.tsx';
 import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
-import { useFocusOnNavigate } from './lib/page.ts';
+import { useFocusOnNavigate, useTypingMark } from './lib/page.ts';
 import { reviewTab, useWaiting } from './lib/review.ts';
 import { ActionMenu, BrandMark, ErrorBoundary, Icon, Muted, Notice, PageHeader } from './ui/index.ts';
 
@@ -62,6 +62,7 @@ export function App() {
   const me = useQuery(meQuery());
   useLanguage(me.data);
   useFocusOnNavigate(route);
+  useTypingMark();
 
   return (
     <>

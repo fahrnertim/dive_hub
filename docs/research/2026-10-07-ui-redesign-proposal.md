@@ -293,8 +293,8 @@ stored profile sketch).
   the bottom with icon above text, three items; the header keeps brand and account; the page's end is padded clear of the bar
   and `viewport-fit=cover` with safe-area padding is set. Different from the mock: no "More" item, because Admin and Account are
   already in the account menu and there are only three sections. Checked in the browser tests (`e2e/navigation.spec.ts` and the
-  width sweeps: English and German, light and dark, 320 px, 200 % text, axe). Not checked: a real phone (safe areas, the bar with
-  the software keyboard open), a list of more than one page across the page boundary.
+  width sweeps: English and German, light and dark, 320 px, 200 % text, axe). With the software keyboard open the bar hides (`data-typing` on `<html>`, `useTypingMark`): a fixed bar stays at the layout
+  viewport's edge behind the keyboard and only rose above it when the browser scrolled (found on Android Chrome). Not checked: a real phone (safe areas, the keyboard fix beyond emulated focus), a list of more than one page across the page boundary.
 
 ## Not verified
 

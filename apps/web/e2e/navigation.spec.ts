@@ -81,6 +81,14 @@ test.describe('on a phone', () => {
     const last = (await page.locator('#main > *').last().boundingBox())!;
     expect(last.y + last.height).toBeLessThanOrEqual(box.y);
 
+    // While a field has focus the keyboard is open: the bar steps aside, wherever the field is on the page, and comes back.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.getByRole('searchbox', { name: 'Search' }).click();
+    await expect(bar).toBeHidden();
+    await page.getByRole('heading', { level: 1 }).click();
+    await page.evaluate(() => (document.activeElement as HTMLElement).blur());
+    await expect(bar).toBeVisible();
+
     await bar.getByRole('link', { name: 'Divers' }).click();
     await expect(page.getByRole('heading', { name: 'Divers', level: 1 })).toBeVisible();
     await expect(bar.getByRole('link', { name: 'Divers' })).toHaveAttribute('aria-current', 'page');

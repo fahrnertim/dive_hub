@@ -292,6 +292,8 @@
   .app-nav a { position: relative; }
   .app-nav .count { position: absolute; top: var(--space-1); left: calc(50% + 0.5rem); }
   .app-nav a:active { background: var(--color-surface-sunken, var(--color-border)); }
+  /* With the keyboard open the bar would sit behind it (or float up by chance): it steps aside while a field has focus. */
+  html[data-typing] .app-nav { display: none; }
   /* The bar must not cover the end of a page or a focused control (WCAG 2.4.11). */
   html { scroll-padding-bottom: 6rem; }
   .app-main { padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px)); }

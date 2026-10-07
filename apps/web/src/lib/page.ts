@@ -45,3 +45,24 @@ export function useFocusOnNavigate(route: string) {
     return () => cancelAnimationFrame(frame);
   }, [path]);
 }
+
+/** Fields the on-screen keyboard opens for: text, search, number, … but not checkboxes, buttons or file pickers. */
+const NON_TEXT_INPUTS = new Set(['checkbox', 'radio', 'button', 'submit', 'reset', 'file', 'range', 'color', 'image', 'hidden']);
+const opensKeyboard = (el: EventTarget | null): boolean => el instanceof HTMLElement
+  && (el instanceof HTMLTextAreaElement || el.isContentEditable || (el instanceof HTMLInputElement && !NON_TEXT_INPUTS.has(el.type)));
+
+/**
+ * Marks the page while a field that opens the on-screen keyboard has focus (`data-typing` on <html>). The phone's bottom bar
+ * hides then: a fixed bar stays at the layout viewport's edge, behind the keyboard, and rises above it only when the
+ * browser happens to scroll (UI redesign 5.3). Moving from one field to another keeps the mark.
+ */
+export function useTypingMark() {
+  useEffect(() => {
+    const root = document.documentElement;
+    const on = (e: FocusEvent) => { if (opensKeyboard(e.target)) root.dataset.typing = ''; };
+    const off = (e: FocusEvent) => { if (!opensKeyboard(e.relatedTarget)) delete root.dataset.typing; };
+    addEventListener('focusin', on);
+    addEventListener('focusout', off);
+    return () => { removeEventListener('focusin', on); removeEventListener('focusout', off); delete root.dataset.typing; };
+  }, []);
+}
