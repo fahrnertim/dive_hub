@@ -5,6 +5,8 @@ export interface TimeSpan {
   startsAt: Date;
   durationSeconds: number;
   maxDepthM: number | undefined;
+  /** Probably no dive (`probablyNoDive`, ADR 0038): the caller says so, as the logbook check does. */
+  probablyNoDive?: boolean;
 }
 
 export interface CandidateDive extends TimeSpan {
@@ -14,7 +16,9 @@ export interface CandidateDive extends TimeSpan {
 export type MatchDecision =
   | { kind: 'create' }
   | { kind: 'attach'; diveId: string }
-  | { kind: 'duplicate-candidate'; diveIds: string[]; reason: 'overlaps_several_dives' | 'max_depth_differs' };
+  | { kind: 'duplicate-candidate'; diveIds: string[]; reason: DuplicateReason };
+
+export type DuplicateReason = 'overlaps_several_dives' | 'max_depth_differs' | 'probably_no_dive';
 
 /** Allowed clock drift between devices. Tune with real files (open question in the data model). */
 export const OVERLAP_TOLERANCE_SECONDS = 5 * 60;
@@ -46,7 +50,13 @@ export function decideMatch(
   dives: CandidateDive[],
   tolerance = OVERLAP_TOLERANCE_SECONDS,
 ): MatchDecision {
-  const hits = dives.filter((d) => overlaps(recording, d, tolerance));
+  const inReach = dives.filter((d) => overlaps(recording, d, tolerance));
+  // A probable non-dive never attaches by itself (ADR 0030, amended): the User decides beside every Dive in reach.
+  if (recording.probablyNoDive && inReach.length > 0) {
+    return { kind: 'duplicate-candidate', diveIds: inReach.map((d) => d.id), reason: 'probably_no_dive' };
+  }
+  // Nor is a Dive that is one a candidate for a real Recording, which is placed as if it weren't there.
+  const hits = inReach.filter((d) => !d.probablyNoDive);
   if (hits.length === 0) return { kind: 'create' };
   if (hits.length > 1) {
     return { kind: 'duplicate-candidate', diveIds: hits.map((d) => d.id), reason: 'overlaps_several_dives' };

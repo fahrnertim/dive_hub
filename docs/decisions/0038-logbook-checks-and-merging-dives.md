@@ -207,7 +207,15 @@ Decided with the owner on 2026-10-07.
   dialog and lands on the logbook with its Undo. Not tested through the API: a short Dive at a Provider getting no
   suggestion (the pure rule's test covers it).
 
-### Open, for the next slice: the same test in matching (ADR 0030, not changed here)
+### The same test in matching (done 2026-10-07: [ADR 0030, amended](0030-importing-dives-from-providers.md#amended-a-probable-non-dive-is-never-matched-by-itself-owner-2026-10-07); rule version 4)
+Built as planned below, with two corrections to what was written here: `decideMatch` does not decide
+`recording_beside_entry` (the rules share its parts, `overlaps` and `depthsDisagree`), so what followed is only `obvious`:
+a pair with a probable non-dive in it is listed but never obvious, and is no second partner that makes another pair
+ambiguous. And the import's "decide" step did take a single candidate already, while the preview only counted the
+automatic links. A short Dive linked at a Provider getting no suggestion is tested through the API now
+(`false-start-import.test.ts`).
+
+What the owner's question about false starts had found:
 What the owner's question about false starts found, read from `imports/matching.ts` and `providers/dive-import.ts`:
 - **An entry links to a single Dive in its window without a depth check.** When the false start and the real Recording
   lie within the import's 5 minutes, the real Recording waits as a Duplicate candidate (depths disagree), the false

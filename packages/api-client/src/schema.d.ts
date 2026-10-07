@@ -1550,7 +1550,7 @@ export interface paths {
                                  * @description Why; clients translate it. A failure’s detail stays in the server log
                                  * @enum {unknown}
                                  */
-                                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out";
+                                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "probably_no_dive" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out";
                                 /**
                                  * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
                                  * @enum {unknown}
@@ -1606,7 +1606,7 @@ export interface paths {
                                  * @description Why; clients translate it. A failure’s detail stays in the server log
                                  * @enum {unknown}
                                  */
-                                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out";
+                                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "probably_no_dive" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out";
                                 /**
                                  * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
                                  * @enum {unknown}
@@ -1718,7 +1718,7 @@ export interface paths {
                                  * @description Why; clients translate it. A failure’s detail stays in the server log
                                  * @enum {unknown}
                                  */
-                                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out";
+                                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "probably_no_dive" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out";
                                 /**
                                  * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
                                  * @enum {unknown}
@@ -4378,7 +4378,7 @@ export interface paths {
                         "application/json": {
                             id: string;
                             /** @enum {unknown} */
-                            reason: "overlaps_several_dives" | "max_depth_differs";
+                            reason: "overlaps_several_dives" | "max_depth_differs" | "probably_no_dive";
                             /** @enum {unknown} */
                             status: "open" | "discarded";
                             /** Format: date-time */
@@ -9679,6 +9679,8 @@ export interface paths {
                                         id: string;
                                         name: string;
                                     };
+                                    /** @description A Recording under 2 minutes that stayed above 3 m (a false start): the entry never links to it by itself, so it is asked about even as the only Dive */
+                                    probablyNoDive: boolean;
                                 }[];
                             }[];
                         };
@@ -9871,7 +9873,7 @@ export interface paths {
                                  * @description Why; clients translate it. A failure’s detail stays in the server log
                                  * @enum {unknown}
                                  */
-                                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out";
+                                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "probably_no_dive" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out";
                                 /**
                                  * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
                                  * @enum {unknown}

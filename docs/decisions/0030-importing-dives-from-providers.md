@@ -1,6 +1,6 @@
 ---
 title: "ADR 0030: Importing dives from a Provider (SSI first)"
-summary: A Provider can import dives - SSI's logbook through its Connection (built in slice 15; amended - geo-tz's data is ODbL, "sent by Dive Hub" includes dives it sent values to, the computer choice is a Connection setting, sites are matched or made once an admin allowed it, changes made at the Provider come back). Trust is decided per dive by evidence (sent by Dive Hub, from a dive computer, typed by hand) and per computer by the User; dives from a computer become Recordings like FIT files, hand-typed ones fill Dives here or become Dives without a Recording; nothing changed here is overwritten (changes made only at the Provider come back, three-way, amended); matches are linked so sending updates instead of duplicating. A preview first, then an Import in the worker over one JSON Original per dive. Times without a zone get their offset from the position (geo-tz), else nearby dives, else stay unknown. Amends 0027, 0016.
+summary: A Provider can import dives - SSI's logbook through its Connection (built in slice 15; amended - geo-tz's data is ODbL, "sent by Dive Hub" includes dives it sent values to, the computer choice is a Connection setting, sites are matched or made once an admin allowed it, changes made at the Provider come back). Trust is decided per dive by evidence (sent by Dive Hub, from a dive computer, typed by hand) and per computer by the User; dives from a computer become Recordings like FIT files, hand-typed ones fill Dives here or become Dives without a Recording; nothing changed here is overwritten (changes made only at the Provider come back, three-way, amended); matches are linked so sending updates instead of duplicating; a probable non-dive (a false start) is never matched by itself, the import asks (amended 2026-10-07). A preview first, then an Import in the worker over one JSON Original per dive. Times without a zone get their offset from the position (geo-tz), else nearby dives, else stay unknown. Amends 0027, 0016.
 status: accepted
 date: 2026-10-06
 ---
@@ -8,7 +8,7 @@ date: 2026-10-06
 # ADR 0030: Importing dives from a Provider (SSI first)
 
 ## Status
-Accepted – 2026-10-06. Amended by [ADR 0031](0031-lead-suit-cylinders-and-lead-estimate.md) (planned: an import also
+Accepted – 2026-10-06. Amended 2026-10-07 (below): a probable non-dive is never matched by itself. Amended by [ADR 0031](0031-lead-suit-cylinders-and-lead-estimate.md) (planned: an import also
 fills lead and the cylinder and takes them back three-way). Amends [ADR 0027](0027-providers-as-adapters.md) (dives get an `import` direction with `list`) and
 [ADR 0016](0016-recording-decisions-and-divers.md) (a Recording that attaches to a Dive without one becomes its
 primary). Designed in [Importing dives from SSI](../research/2026-10-06-ssi-import.md).
@@ -149,6 +149,47 @@ to a private one in SSI's app and the import, which only filled empty fields, co
   imported), the import only fills empty fields, as before.
 - *Considered:* asking about every difference (rounding makes most of them noise), a "take from SSI" action per dive
   (no bulk), and the Provider winning for chosen fields (overwrites changes made here).
+
+## Amended: a probable non-dive is never matched by itself (owner, 2026-10-07)
+Why: a computer that gets wet for a moment records a "dive" (ADR 0038, `short_shallow_dive`). Found in the owner's
+logbook (2024-04-19: 50 s at 1.8 m, the real dive 5 min 24 s later) and read from the code: the real Recording waited as
+a Duplicate candidate because the false start's Dive was in its five minutes and the depths disagreed; the Provider's
+entry of the real dive then linked to the false start, the only Dive in its window; and a false start attached by itself
+to an entry without a depth and became its Primary recording. Amends "Logbook entries" and "Dives from a computer"
+above, and the matching of files (ADR 0016's Duplicate candidates).
+
+- **One test, shared with the check:** `probablyNoDive` in `dives/logbook-check-rules.ts` (a Recording under 2 minutes
+  that stayed above 3 m; for a Dive: it has a Recording and those values). Fixed numbers, no setting (ADR 0038).
+- **Placing a Recording:**
+  - A Dive that is a probable non-dive is **no candidate** for a Recording that is a real dive: that one is placed as if
+    the false start weren't there (a Dive of its own, or attached to another Dive in reach).
+  - A Recording that is a probable non-dive **never attaches by itself**. With no Dive in reach it becomes a Dive, as
+    before (the check then offers it for deleting). With any Dive in reach, a probable non-dive or not, it waits as a
+    **Duplicate candidate** with the reason `probably_no_dive`; its three decisions (add, a Dive of its own, discard) are
+    unchanged.
+- **Linking a logbook entry:**
+  - A probable non-dive **doesn't count as a match**: one other Dive in the window is linked as before, several others
+    are decided among themselves.
+  - When the **only** Dives in the window are probable non-dives, the import **asks** in the preview: that Dive (marked
+    as probably no dive), a new Dive (only with "also create"), or leave it out, preselected. Without a decision the entry
+    is left out, as an ambiguous one is.
+- **The check follows** (ADR 0038): a `recording_beside_entry` pair with a probable non-dive in it is still listed but
+  never `obvious`, so it is not part of "Merge the clear pairs". Rule version 4.
+- **Nothing made before is repaired:** a link or an attachment the import made earlier stays; the User deletes the false
+  start or splits it off, as before.
+- **Accepted:** two computers that recorded the same false start end in a question instead of one Dive with two
+  Recordings.
+- **As built:** `decideMatch` takes `probablyNoDive` on the Recording and on each candidate (`placement.ts` and `assess`
+  in `providers/dive-import.ts` compute it with the shared test; a Dive counts when it has a live Recording). The
+  Duplicate candidate's reason and the Import outcome's are `probably_no_dive`; a candidate in the preview's `decisions`
+  carries `probablyNoDive`. An entry left without a decision is skipped as `ambiguous`, whose text names both cases.
+  `keepApart` counted every Dive's Recordings as 0 (a subquery in a one-table select loses its table names), so a
+  Duplicate candidate made a Dive beside an entry's Dive was not answered as "two dives": fixed with this, found by its
+  test. Not tested in a browser: the marked single candidate in the preview (server tests and the client's label only).
+- *Considered:* silently making a new Dive when the only match is a probable non-dive (the User never learns a false
+  start was in the way, and the "only add" mode would drop the entry without saying why); asking whenever a probable
+  non-dive is in reach (the real Recording is held up again); not listing such a pair as a check (a false start linked at
+  a Provider gets no `short_shallow_dive` suggestion, so nothing would point to it).
 
 ## Considered options
 - **One trust switch per Connection:** one account can hold both kinds of dive.

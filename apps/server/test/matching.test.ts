@@ -29,6 +29,37 @@ describe('decideMatch', () => {
       kind: 'duplicate-candidate', diveIds: ['a'],
     });
   });
+
+  describe('a probable non-dive (ADR 0030, amended)', () => {
+    // The owner's 2024-04-19: 50 s at 1.8 m, the real dive 5 min 24 s later.
+    const falseStart = { startsAt: plus(0), durationSeconds: 50, maxDepthM: 1.8, probablyNoDive: true };
+    const real = { startsAt: new Date(plus(0).getTime() + 324_000), durationSeconds: 42 * 60, maxDepthM: 18.3 };
+
+    it('is no candidate for a real Recording: that one becomes a Dive of its own', () => {
+      expect(decideMatch(real, [{ id: 'false-start', ...falseStart }])).toEqual({ kind: 'create' });
+    });
+
+    it('is no candidate either when the depths would agree, and does not make one real Dive several', () => {
+      const shallow = { ...real, maxDepthM: 2.6 };
+      expect(decideMatch(shallow, [{ id: 'false-start', ...falseStart }])).toEqual({ kind: 'create' });
+      expect(decideMatch(real, [{ id: 'false-start', ...falseStart }, { id: 'a', ...real, maxDepthM: 18 }])).toEqual({ kind: 'attach', diveId: 'a' });
+    });
+
+    it('as a Recording never attaches by itself: it waits for the User beside every Dive in reach', () => {
+      // An entry without a depth: nothing disagrees, and it would have become the entry's Primary recording.
+      expect(decideMatch(falseStart, [{ id: 'entry', ...span(2, 40) }])).toEqual({
+        kind: 'duplicate-candidate', diveIds: ['entry'], reason: 'probably_no_dive',
+      });
+      // The same false start from a second computer.
+      expect(decideMatch(falseStart, [{ id: 'other', ...falseStart }, { id: 'entry', ...span(2, 40) }])).toEqual({
+        kind: 'duplicate-candidate', diveIds: ['other', 'entry'], reason: 'probably_no_dive',
+      });
+    });
+
+    it('as a Recording becomes a Dive when nothing is in reach', () => {
+      expect(decideMatch(falseStart, [{ id: 'a', ...span(120, 40, 18) }])).toEqual({ kind: 'create' });
+    });
+  });
 });
 
 describe('a Provider\'s logbook entries (ADR 0030)', () => {

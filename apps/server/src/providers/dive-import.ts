@@ -16,6 +16,7 @@ import type { ParsedRecording } from '../imports/parsed-recording.js';
 import { PROCESS_IMPORT_TASK } from '../imports/import-service.js';
 import { deviceDiver, placeRecording } from '../imports/placement.js';
 import { entryMatches } from '../imports/matching.js';
+import { probablyNoDive } from '../dives/logbook-check-rules.js';
 import { siteRef } from '../sites/dive-site-link.js';
 import { siteDataAllowed, siteForProvider, siteOutlook, type ProviderSite } from '../sites/provider-sites.js';
 import type { SiteSource } from '../sites/sources.js';
@@ -68,6 +69,8 @@ export interface CandidateView {
   durationSeconds: number;
   maxDepthM: number | null;
   site: { id: string; name: string } | null;
+  /** Probably no dive (a Recording under 2 minutes above 3 m): the reason the User is asked about a single Dive (ADR 0030). */
+  probablyNoDive: boolean;
 }
 
 /** What the import would do with one dive (ADR 0030). */
@@ -231,14 +234,22 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       ));
     const matches = entryMatches(local, rows, run.windowMinutes);
     const taken = await withRemote(q, run, matches.map((m) => m.id));
-    const live = matches.filter((m) => !m.deletedAt && !taken.has(m.id));
-    if (live.length === 1) return { kind: 'link', diveId: live[0]!.id };
-    if (live.length > 1) {
+    const free = matches.filter((m) => !m.deletedAt && !taken.has(m.id));
+    // A probable non-dive doesn't count as a match (ADR 0030, amended); where nothing else is in the window, the User
+    // decides about it instead of the entry linking to it by itself.
+    const withRecording = new Set(free.length === 0 ? [] : (await q.selectDistinct({ diveId: recording.diveId }).from(recording)
+      .where(and(inArray(recording.diveId, free.map((m) => m.id)), isNull(recording.deletedAt)))).map((r) => r.diveId));
+    const noDive = new Set(free.filter((m) => probablyNoDive({ ...m, recordings: withRecording.has(m.id) ? 1 : 0 })).map((m) => m.id));
+    const real = free.filter((m) => !noDive.has(m.id));
+    const live = real.length > 0 ? real : free;
+    if (real.length === 1) return { kind: 'link', diveId: live[0]!.id };
+    if (live.length > 0) {
       return {
         kind: 'decide',
         candidates: live.map((m) => ({
           diveId: m.id, number: m.number, startsAt: m.startsAt, utcOffsetSeconds: m.utcOffsetSeconds, utcOffsetSource: m.utcOffsetSource,
           durationSeconds: m.durationSeconds, maxDepthM: m.maxDepthM, site: m.siteId && m.siteName !== null ? { id: m.siteId, name: m.siteName } : null,
+          probablyNoDive: noDive.has(m.id),
         })),
       };
     }
@@ -589,7 +600,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
           await link(tx, run, choice, d, false);
           return { ...base, result: 'linked', diveId: choice };
         }
-        // Several Dives and no decision that still fits (it turned ambiguous after the preview): left out.
+        // No decision that still fits (it turned ambiguous after the preview, or the User wasn't asked yet): left out.
         return { ...base, result: 'skipped', reason: 'ambiguous' };
       }
       case 'create':

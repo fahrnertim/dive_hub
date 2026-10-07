@@ -199,6 +199,8 @@ function Preview({ provider: p, connection: c, mode, onSettings, onStarted, onCl
     x.number !== null ? t('dive.title', { number: x.number }) : null,
     display.diveTime(x.startsAt, x.utcOffsetSeconds, x.utcOffsetSource),
     display.depth(x.maxDepthM), display.duration(x.durationSeconds), x.site?.name,
+    // Why a single Dive is asked about: the entry never links to a false start by itself (ADR 0030).
+    x.probablyNoDive ? pt('importProbablyNoDive') : null,
   ].filter(Boolean).join(' · ');
 
   return (

@@ -131,6 +131,17 @@ describe('the checks of a logbook', () => {
     expect(several.filter((c) => c.rule === 'recording_beside_entry').map((c) => c.obvious)).toEqual([false, false]);
   });
 
+  it('never obvious with a probable non-dive in it, which holds up no other pair (rule version 4)', () => {
+    // An entry without a depth and a false start of 50 s at 1.8 m: an import asks, so merging in one go must not.
+    const falseStart = file('false-start', '08:07:00', 0, { durationSeconds: 50, maxDepthM: 1.8 });
+    const [alone] = findChecks([dive('entry', '08:09:00', 40, { maxDepthM: null }), falseStart]);
+    expect(alone).toMatchObject({ rule: 'recording_beside_entry', obvious: false });
+    // The real Recording beside the same entry stays obvious: the false start is no second partner.
+    const both = findChecks([dive('entry', '08:12:00', 40), falseStart, file('real', '08:12:24', 42)]);
+    expect(both.filter((c) => c.rule === 'recording_beside_entry').map((c) => [c.dives.map((d) => d.id), c.obvious]))
+      .toEqual([[['false-start', 'entry'], false], [['entry', 'real'], true]]);
+  });
+
   it('keeps Divers apart', () => {
     expect(findChecks([dive('mine', '11:13:00', 44), dive('hers', '11:13:00', 44, { diverId: 'lena' })])).toEqual([]);
   });

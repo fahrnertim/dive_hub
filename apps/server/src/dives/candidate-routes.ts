@@ -6,6 +6,7 @@ import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import { UTC_OFFSET_SOURCES } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
+import type { DuplicateReason } from '../imports/matching.js';
 import { CandidateError, type Candidates } from './candidates.js';
 
 export interface CandidateRouteDeps {
@@ -34,7 +35,7 @@ const DiveBrief = Type.Object({
 
 const CandidateView = Type.Object({
   id: Type.String(),
-  reason: Type.Enum(['overlaps_several_dives', 'max_depth_differs']),
+  reason: Type.Enum(['overlaps_several_dives', 'max_depth_differs', 'probably_no_dive']),
   status: Type.Enum(['open', 'discarded']),
   createdAt: DateTime,
   recording: Type.Object({
@@ -77,7 +78,7 @@ export const candidateRoutes: FastifyPluginAsyncTypebox<CandidateRouteDeps> = as
     const status = request.query.status ?? 'open';
     return (await candidates.list(request.user!.id, status)).map(({ candidate: c, recording: r, device: d, dives }) => ({
       id: c.id,
-      reason: c.reason as 'overlaps_several_dives' | 'max_depth_differs',
+      reason: c.reason as DuplicateReason,
       status,
       createdAt: c.createdAt.toISOString(),
       recording: {

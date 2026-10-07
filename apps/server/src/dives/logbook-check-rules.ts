@@ -4,14 +4,15 @@
 import { OVERLAP_TOLERANCE_SECONDS, alignedForMatching, depthsDisagree, localStartMs, overlaps } from '../imports/matching.js';
 
 /** Changes when a rule changes what it finds. */
-export const LOGBOOK_CHECKS_VERSION = 3;
+export const LOGBOOK_CHECKS_VERSION = 4;
 
 /**
  * `recording_beside_entry`: a Dive without a Recording and a Dive with one at the same time, as an import would have
  * attached them (its tolerance). `overlapping_dives`: two Dives of one Diver that really overlap in time.
  * `entry_apart_from_recording` (version 2): an entry and a Recording's Dive on the same local day that don't overlap but
  * agree in depth and duration: the same dive typed with another start. `short_shallow_dive` (version 3), about one Dive:
- * a Recording so short and shallow that it is probably no dive (a computer that got wet, a false start).
+ * a Recording so short and shallow that it is probably no dive (a computer that got wet, a false start). Version 4: a
+ * `recording_beside_entry` pair with such a Dive in it is never obvious.
  */
 export const LOGBOOK_CHECK_RULES = ['recording_beside_entry', 'overlapping_dives', 'entry_apart_from_recording', 'short_shallow_dive'] as const;
 export type LogbookCheckRule = (typeof LOGBOOK_CHECK_RULES)[number];
@@ -94,7 +95,10 @@ export interface LogbookCheck {
   rule: PairRule;
   /** The two Dives, the earlier first. */
   dives: [CheckedDive, CheckedDive];
-  /** An import would have put the two together by itself: one Recording's Dive, one entry's, no other in reach, depths agreeing. */
+  /**
+   * An import would have put the two together by itself: one Recording's Dive, one entry's, no other in reach, depths
+   * agreeing, neither probably no dive.
+   */
   obvious: boolean;
 }
 
@@ -124,10 +128,13 @@ export function findChecks(dives: CheckedDive[]): LogbookCheck[] {
       }
     }
   }
-  const partners = (id: string) => found.filter((f) => f.rule === 'recording_beside_entry' && (f.a.id === id || f.b.id === id)).length;
+  // An import neither attaches a probable non-dive by itself nor counts it as a candidate (ADR 0030, amended): such a
+  // pair is never obvious, and no partner that makes another pair ambiguous.
+  const real = (f: { a: CheckedDive; b: CheckedDive }) => !probablyNoDive(f.a) && !probablyNoDive(f.b);
+  const partners = (id: string) => found.filter((f) => f.rule === 'recording_beside_entry' && real(f) && (f.a.id === id || f.b.id === id)).length;
   const checks: LogbookCheck[] = found.map(({ rule, a, b }) => ({
     rule, dives: [a, b],
-    obvious: rule === 'recording_beside_entry' && partners(a.id) === 1 && partners(b.id) === 1
+    obvious: rule === 'recording_beside_entry' && real({ a, b }) && partners(a.id) === 1 && partners(b.id) === 1
       && !depthsDisagree(a.maxDepthM ?? undefined, b.maxDepthM ?? undefined),
   }));
   // Never obvious: each needs the User's own click.

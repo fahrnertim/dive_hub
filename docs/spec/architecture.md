@@ -844,6 +844,11 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   `shortDives` and `keep` in `createLogbookChecks` (the route tells them which Dives are at a Provider, from the Pushes),
   `keepRestored` in `logbook-check-answers.ts` (called by `restore`). Table `logbook_check_dive_answer` (migration 0023):
   the Dive, the rule, the duration and depth the answer was given for. Web: `ShortDiveDecisions` and `KeptDives`.
+- The same test in matching (rule version 4, [ADR 0030, amended](../decisions/0030-importing-dives-from-providers.md)):
+  `decideMatch` gets `probablyNoDive` for the Recording and each candidate from `placement.ts` (never attached by itself:
+  a Duplicate candidate with the reason `probably_no_dive`; such a Dive is no candidate for a real Recording), `assess` in
+  `providers/dive-import.ts` leaves such Dives out of an entry's matches and asks when nothing else is in the window, and
+  `findChecks` never calls such a pair `obvious`. Tests: `matching.test.ts`, `false-start-import.test.ts`.
 - Routes: `GET /api/logbook-checks?status=open|answered`, `PUT /api/logbook-checks/answer`; `merge-candidates` gains
   `rule` and `answered`. Problem `check_not_found`.
 - Web: `LogbookChecks.tsx` on the Review page (`ReviewPage.tsx`, since UI redesign slice B; first inside "Needs your decision"): the pairs with "Merge the two…" (the merge

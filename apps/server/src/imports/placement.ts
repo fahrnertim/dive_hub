@@ -1,6 +1,6 @@
 // Placing a Recording (docs/spec/data-model.md, scenario 1): the same for a FIT file's and for a Provider's copy of a dive
 // from a computer (ADR 0030). Its Diver and Device, the same Recording seen again, one deleted with its Dive, and then a
-// new Dive, an attach, or a Duplicate candidate. The same dive from a poorer and a fuller file of one Source ends in one
+// new Dive, an attach, or a Duplicate candidate (always one for a probable non-dive beside a Dive). The same dive from a poorer and a fuller file of one Source ends in one
 // Recording (ADR 0037).
 import { and, desc, eq, gte, inArray, isNotNull, isNull, like, lte, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
@@ -8,6 +8,7 @@ import {
   device, dive, diverManagement, duplicateCandidate, original, recording, recordingEvent, sampleSeries, type ImportOutcome,
 } from '../db/schema.js';
 import { attachRecording, createDiveFromRecording, refreshFromPrimary } from '../dives/dive-service.js';
+import { probablyNoDive } from '../dives/logbook-check-rules.js';
 import { writeRevision, type Actor } from '../dives/revisions.js';
 import type { ParsedRecording } from './parsed-recording.js';
 import { linkNearbySite, positionColumns } from '../sites/dive-site-link.js';
@@ -119,7 +120,13 @@ export async function placeRecording(tx: Tx, c: Placement, rec: ParsedRecording)
       gte(dive.startsAt, new Date(window.from.getTime() - 24 * 3600_000 - MAX_OFFSET_MS)),
     ));
   const candidates = alignedForMatching({ utcOffsetSeconds: values.utcOffsetSeconds, utcOffsetSource: values.utcOffsetSource }, found);
-  const decision = decideMatch(rec, candidates.map((d) => ({ ...d, maxDepthM: d.maxDepthM ?? undefined })));
+  // A probable non-dive, as the logbook check sees it (ADR 0038), is matched by the User, not by itself (ADR 0030, amended).
+  const withRecording = new Set(found.length === 0 ? [] : (await tx.selectDistinct({ diveId: recording.diveId }).from(recording)
+    .where(and(inArray(recording.diveId, found.map((d) => d.id)), isNull(recording.deletedAt)))).map((r) => r.diveId));
+  const decision = decideMatch(
+    { ...rec, probablyNoDive: probablyNoDive({ recordings: 1, durationSeconds: rec.durationSeconds, maxDepthM: rec.maxDepthM ?? null }) },
+    candidates.map((d) => ({ ...d, maxDepthM: d.maxDepthM ?? undefined, probablyNoDive: probablyNoDive({ ...d, recordings: withRecording.has(d.id) ? 1 : 0 }) })),
+  );
 
   if (decision.kind === 'create') {
     const newDiveId = await createDiveFromRecording(tx, created!, diverId, actor, 'import-create');

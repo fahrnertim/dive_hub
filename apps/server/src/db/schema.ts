@@ -178,6 +178,8 @@ export const utcOffsetSource = pgEnum('utc_offset_source', [...UTC_OFFSET_SOURCE
 export const OUTCOME_REASONS = [
   // `no_fit_file` is what `no_dive_file` was called before other formats were read (ADR 0037); old Imports keep it.
   'no_dive_file', 'no_fit_file', 'not_a_dive', 'not_your_diver', 'overlaps_several_dives', 'max_depth_differs', 'file_failed',
+  // The Recording is probably no dive (under 2 minutes, above 3 m) and a Dive is in reach: never attached by itself (ADR 0030).
+  'probably_no_dive',
   // The Recording is on a Dive the User deleted: it isn't created again (ADR 0026).
   'deleted_earlier',
   // The same dive is here from a file that holds more (Suunto's JSON beside its FIT, ADR 0037).

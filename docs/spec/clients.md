@@ -446,7 +446,10 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
     start (`hub` or `provider`). A conflict kept isn't asked again until the Provider changes the field again;
   - **every entry to decide** (`decisions`): the Provider's dive (its number, its local time as logged, depth, duration)
     and the Dives here (`candidates`, closest first, each named by its number, time, depth, duration, site), "A new dive"
-    only with mode `create`, and "Leave it out", preselected.
+    only with mode `create`, and "Leave it out", preselected. **It can be a single Dive:** an entry never links by itself
+    to a probable non-dive (`probablyNoDive` on the candidate: a Recording under 2 minutes above 3 m, a false start), so
+    when nothing else is in the window the User is asked. Mark such a candidate in words and say why the question is
+    asked; don't word the list as "several dives" only.
 - **Start** (`POST /api/connections/{id}/dive-import` with `computers` and `decisions`; 202 with the Import): poll the
   Import until it is done and sum up its outcome; refresh the logbook then. It can be run again: linked dives take what
   changed only at the Provider (`updated`), are filled where still empty, and keep what changed only here.
@@ -486,7 +489,8 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
 - **"They are two dives" can be taken back:** offer Undo right away (`answer: null`), and list the answered pairs
   (`status=answered`) with "Ask again". The server asks again by itself once one of the two changes its start.
 - **Pairs marked `obvious`** (an import would have put them together; no dive left over at a Provider) may be merged in
-  one go, after saying what that does and how many. Not the others. *Web:* from two such pairs on.
+  one go, after saying what that does and how many. Not the others. *Web:* from two such pairs on. A pair with a
+  probable non-dive in it is never `obvious` (rule version 4): an import asks about it too.
 - A Recording split off its Dive, or made a Dive of its own from a Duplicate candidate, is answered by the server as two
   dives: such a pair is not listed until it is asked about again.
 - The dive page's hint (`merge-candidates`) leaves out pairs with `answered`.
@@ -496,7 +500,10 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
 ### Duplicate candidates
 - **Show them where the User decides,** on a page of their own ("Review", reached from one line on the logbook and a count
   in the navigation), with the Recording (time, depth, duration, Device), why it waits (`reason`) and the Dives it might
-  belong to side by side, the values that differ marked (ADR 0016; UI redesign 4).
+  belong to side by side, the values that differ marked (ADR 0016; UI redesign 4). Reasons: `overlaps_several_dives`,
+  `max_depth_differs`, and `probably_no_dive` (ADR 0030, amended): a Recording under 2 minutes above 3 m is never
+  added to a Dive by itself, so it waits beside every Dive in reach, even one whose values agree. Show every reason in
+  words; the same value is an Import outcome's `reason`.
 - **Three decisions:** add to one of those Dives, make it a Dive of its own, or discard. Discard offers Undo, and
   discarded ones can be shown and reopened ("Decided"). *Web:* `Decisions.tsx`, `ReviewPage.tsx`.
 - **No Dives left** (they were deleted, ADR 0026): say so; making it a Dive of its own and discarding remain.

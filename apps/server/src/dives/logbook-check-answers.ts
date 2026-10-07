@@ -2,7 +2,7 @@
 // making a Dive of a Recording that might have belonged to another, says "these are two dives". Kept like an answer
 // given on the logbook, so the pair isn't asked about right after the decision. Restoring a Dive that is probably no dive
 // says "keep it" the same way.
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { dive, logbookCheckAnswer, logbookCheckDiveAnswer, recording } from '../db/schema.js';
 import { ordered, probablyNoDive, ruleFor } from './logbook-check-rules.js';
@@ -11,11 +11,10 @@ import { ordered, probablyNoDive, ruleFor } from './logbook-check-rules.js';
 export async function keepApart(tx: Tx, userId: string, diveId: string, otherIds: string[]): Promise<void> {
   const ids = [...new Set([diveId, ...otherIds])];
   if (ids.length < 2) return;
-  const rows = await tx.select({
-    d: dive,
-    recordings: sql<number>`(select count(*)::int from ${recording} where ${recording.diveId} = ${dive.id} and ${recording.deletedAt} is null)`,
-  }).from(dive).where(and(inArray(dive.id, ids), isNull(dive.deletedAt)));
-  const dives = rows.map(({ d, recordings }) => ({ ...d, recordings }));
+  const rows = await tx.select().from(dive).where(and(inArray(dive.id, ids), isNull(dive.deletedAt)));
+  // Counted apart: in a subquery of a one-table select the columns lose their table, and every Dive counted 0.
+  const live = await tx.select({ diveId: recording.diveId }).from(recording).where(and(inArray(recording.diveId, ids), isNull(recording.deletedAt)));
+  const dives = rows.map((d) => ({ ...d, recordings: live.filter((r) => r.diveId === d.id).length }));
   const self = dives.find((d) => d.id === diveId);
   if (!self) return;
   for (const other of dives) {

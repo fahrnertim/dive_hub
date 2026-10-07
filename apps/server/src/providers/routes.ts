@@ -373,6 +373,9 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     durationSeconds: Type.Number(),
     maxDepthM: Nullable(Type.Number()),
     site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
+    probablyNoDive: Type.Boolean({
+      description: 'A Recording under 2 minutes that stayed above 3 m (a false start): the entry never links to it by itself, so it is asked about even as the only Dive',
+    }),
   });
   const ConflictValue = Type.Union([Type.String(), Type.Number(), Type.Array(Type.String())], {
     description: 'site: its name; buddies: the names of Divers here (people Dive Hub doesn\'t know are left out); startsAt: local "YYYY-MM-DD HH:MM"',

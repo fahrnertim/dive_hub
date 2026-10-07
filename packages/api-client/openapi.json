@@ -4754,6 +4754,7 @@
                               "overlaps_several_dives",
                               "max_depth_differs",
                               "file_failed",
+                              "probably_no_dive",
                               "deleted_earlier",
                               "fuller_copy_here",
                               "sent_by_dive_hub",
@@ -5149,6 +5150,7 @@
                                 "overlaps_several_dives",
                                 "max_depth_differs",
                                 "file_failed",
+                                "probably_no_dive",
                                 "deleted_earlier",
                                 "fuller_copy_here",
                                 "sent_by_dive_hub",
@@ -5334,6 +5336,7 @@
                               "overlaps_several_dives",
                               "max_depth_differs",
                               "file_failed",
+                              "probably_no_dive",
                               "deleted_earlier",
                               "fuller_copy_here",
                               "sent_by_dive_hub",
@@ -15484,7 +15487,8 @@
                       "reason": {
                         "enum": [
                           "overlaps_several_dives",
-                          "max_depth_differs"
+                          "max_depth_differs",
+                          "probably_no_dive"
                         ]
                       },
                       "status": {
@@ -36349,7 +36353,8 @@
                                 "utcOffsetSource",
                                 "durationSeconds",
                                 "maxDepthM",
-                                "site"
+                                "site",
+                                "probablyNoDive"
                               ],
                               "properties": {
                                 "diveId": {
@@ -36421,6 +36426,10 @@
                                       }
                                     }
                                   ]
+                                },
+                                "probablyNoDive": {
+                                  "type": "boolean",
+                                  "description": "A Recording under 2 minutes that stayed above 3 m (a false start): the entry never links to it by itself, so it is asked about even as the only Dive"
                                 }
                               }
                             },
@@ -37221,6 +37230,7 @@
                               "overlaps_several_dives",
                               "max_depth_differs",
                               "file_failed",
+                              "probably_no_dive",
                               "deleted_earlier",
                               "fuller_copy_here",
                               "sent_by_dive_hub",
