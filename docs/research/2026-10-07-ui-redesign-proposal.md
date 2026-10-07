@@ -265,13 +265,12 @@ stored profile sketch).
   - A chip released at count 0 stays until focus leaves it, so the focus doesn't jump.
   - The Diver choice moved from the page header into the toolbar, beside the search.
   - With no result, the message names the search and the filters, and "Show all dives" clears both and focuses the search.
-  - Circles are in the logbook only. Open, as a small slice before D (owner, 2026-10-07): a circle beside each name
-    on the dive page's Participants and on the Divers page, so the circle seen in a row is learned where the name is.
-    Proposed to leave out: the account menu (it shows one person, so a circle tells nothing apart) and the Diver of a
-    row (beside the buddies' circles, "whose dive" and "with whom" would look the same). The owner asked whether the
-    dive page should show only the stack, without names; proposed against it: the dive page is where "TK" stops being
-    a guess, the roles (Guide, Instructor) would be hidden too, and the names would be reached only through the
-    dialog that changes them. Not decided yet.
+  - Circles are in the logbook only. Decided by the owner (2026-10-07), as a small slice before D: a circle beside
+    each name on the dive page's Participants and on the Divers page, so the circle seen in a row is learned where the
+    name is. Left out: the account menu (it shows one person, so a circle tells nothing apart) and the Diver of a
+    row (beside the buddies' circles, "whose dive" and "with whom" would look the same). The dive page keeps the
+    names beside the circles, not the stack alone: it is where "TK" stops being a guess, the roles (Guide,
+    Instructor) would be hidden too, and the names would be reached only through the dialog that changes them.
 
   Tried on the phone: the chips wrap (two lines at 390 and 320 px in English and German), because a pressed chip must stay
   in sight, which a row that scrolls sideways doesn't promise. The circles were tried at the end of the title's line (at
