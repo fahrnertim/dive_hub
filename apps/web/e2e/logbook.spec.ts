@@ -55,6 +55,7 @@ test('a row sketches its dive from the recorded profile; a dive without a record
   await expect(row.locator('svg.sketch path.sketch-line')).toHaveCount(1);
   // The sketch is decoration: nothing for a screen reader to stop at, and it stays inside its box.
   await expect(row.locator('.sketch')).toHaveAttribute('aria-hidden', 'true');
+  await expect(row.locator('.sketch')).toBeVisible(); // boundingBox() doesn't wait, and is null until it is
   expect((await row.locator('.sketch').boundingBox())!.width).toBeGreaterThan(60);
 
   await page.goto('/#/?only=no-recording');

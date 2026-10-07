@@ -5,6 +5,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { assessProfile } from '../src/assessment/rules.js';
+import { probablyNoDive } from '../src/dives/logbook-check-rules.js';
 import { createFitAdapter } from '../src/fit/fit-adapter.js';
 import { computerEventOf } from '../src/imports/computer-events.js';
 import { createFileFormats, formatOf } from '../src/imports/formats.js';
@@ -254,7 +255,9 @@ describe.skipIf(privateJsons.length + privateFits.length === 0)('Suunto adapters
     expect(rec!.device?.serialNumber).toBeTruthy();
     expect(rec!.maxDepthM).toBeGreaterThan(1);
     const depth = series(rec!, 'depth')!;
-    expect(depth.values.length).toBeGreaterThan(20);
+    // A false start (ADR 0038: under 2 min above 3 m) has only a few samples; a real dive keeps the full expectation.
+    const falseStart = probablyNoDive({ recordings: 1, durationSeconds: rec!.durationSeconds, maxDepthM: rec!.maxDepthM ?? null });
+    expect(depth.values.length).toBeGreaterThan(falseStart ? 0 : 20);
     expect(Math.max(...depth.values)).toBeLessThanOrEqual(rec!.maxDepthM! + 0.01);
     for (const t of series(rec!, 'temperature')?.values ?? []) expect(t).toBeGreaterThan(-3), expect(t).toBeLessThan(40);
     for (const p of series(rec!, 'tankPressure')?.values ?? []) expect(p).toBeGreaterThan(0), expect(p).toBeLessThan(350);
