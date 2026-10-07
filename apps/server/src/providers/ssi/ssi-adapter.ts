@@ -10,7 +10,7 @@ import {
   buddyIdsOf, COMPARED_FIELDS, compareReadBack, createRecord, deleteRecord, fingerprint, localTime, updateRecord, withBuddies,
   type DiveForSsi,
 } from './ssi-record.js';
-import { contextOf, parseSsiDive, SSI_PARSER } from './ssi-import.js';
+import { contextOf, parseSsiDive, ssiOrigin, SSI_PARSER } from './ssi-import.js';
 
 /** Two dives this close in time (minutes) count as the same descent. */
 const SAME_DIVE_MINUTES = 2;
@@ -225,6 +225,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         };
       },
       parse: parseSsiDive,
+      origin: ssiOrigin,
       parser: SSI_PARSER,
     },
     diveSites: {

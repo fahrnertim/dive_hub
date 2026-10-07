@@ -393,6 +393,19 @@ for (const v of variants) {
       }
     });
 
+    test('my account, the times of the dives at SSI', { tag: ['@account'] }, async ({ page, request }) => {
+      await lenaReady(request);
+      try {
+        await page.goto('/#/account');
+        const section = page.getByRole('region', { name: v.english ? 'Dives of Lena from SSI' : 'Tauchgänge von Lena aus SSI' });
+        await section.getByRole('button', { name: v.english ? 'Show when each dive was made' : 'Zeigen, wann jeder Tauchgang angelegt wurde' }).click();
+        await expect(section.getByRole('region', { name: v.english ? 'Dives in SSI with start and origin' : 'Tauchgänge in SSI mit Beginn und Herkunft' })).toBeVisible();
+        await expectGoodPage(page, title('My account'), v);
+      } finally {
+        await leaveLena(request);
+      }
+    });
+
     test('my account, importing from SSI: a dive changed both here and in SSI', { tag: ['@account'] }, async ({ page, request }) => {
       try {
         await conflictForLena(request, `${v.locale}-${uniqueWord()}`);

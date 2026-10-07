@@ -1,6 +1,6 @@
 // SSI's dives as ImportedDives (ADR 0030). Pure: no database, no network. What SSI returns for a dive is in the SSI
 // reference ("A dive as SSI returns it"); fields a dive synced by SSI's own app may carry are read defensively.
-import { REFERENCE_PREFIX, type ImportContext, type ImportedDive, type Series } from '../provider.js';
+import { REFERENCE_PREFIX, type DiveOrigin, type ImportContext, type ImportedDive, type Series } from '../provider.js';
 import type { SsiLogbook, SsiRecord } from './ssi-client.js';
 import { alpha2Of } from '../../sites/countries.js';
 import { buddyIdsOf, SAMPLE_INTERVAL_MS } from './ssi-record.js';
@@ -98,6 +98,22 @@ function deviceOfRef(r: SsiRecord): ImportedDive['device'] {
   const m = /^(\S+)(?:\s+(.+?))?_([A-Za-z0-9-]+)$/.exec(text(r.odin_user_log_divecomputer_ref) ?? '');
   if (!m) return null;
   return { manufacturer: m[1]!.toLowerCase(), product: m[2] ?? null, serialNumber: m[3]!, firmware: text(r.odin_user_log_divecomputer_firmware) };
+}
+
+/**
+ * Who made and who confirmed an SSI dive: its creation time (a text as SSI keeps it, or seconds since 1970), and whether the
+ * dive centre or the dive leader signed it. The names stay out.
+ */
+export function ssiOrigin(r: SsiRecord): DiveOrigin {
+  const made = r.odin_user_log_crdate;
+  const seconds = typeof made === 'number' ? made : null;
+  const flag = (v: unknown) => v === true || v === 1 || v === '1';
+  const id = (v: unknown) => { const n = numberOf(v); return n !== null && n !== 0; };
+  return {
+    createdAt: seconds !== null ? new Date(seconds * 1000).toISOString() : text(made),
+    confirmedByCentre: flag(r.odin_user_log_divecenter_confirmed) || id(r.odin_user_log_divecenter_confirmed_id),
+    confirmedByLeader: flag(r.odin_user_log_leader_confirmed) || id(r.odin_user_log_leader_confirmed_id),
+  };
 }
 
 /** SSI's dive record in typed values; null when it has no start time. */

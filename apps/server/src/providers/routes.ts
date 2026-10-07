@@ -431,6 +431,29 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     }), { description: 'Logbook entries with several Dives here in the window: one of them, a new Dive (mode create), or leave it out' }),
   });
 
+  const DiveTimes = Type.Object({
+    provider: Type.String(),
+    dives: Type.Array(Type.Object({
+      remoteId: Type.String(),
+      remoteNumber: Nullable(Type.Integer()),
+      localStart: Type.String({ description: 'Local wall-clock time as the Provider keeps it, without a time zone' }),
+      durationSeconds: Type.Number(),
+      maxDepthM: Nullable(Type.Number()),
+      madeBy: Type.Enum(['ours', 'computer', 'logbook'], { description: 'ours: Dive Hub sent it; computer: synced from a dive computer; logbook: typed by hand' }),
+      createdAt: Nullable(Type.String({ description: 'When the Provider made the record, as it keeps it' })),
+      confirmedByCentre: Type.Boolean(),
+      confirmedByLeader: Type.Boolean(),
+    })),
+  });
+
+  app.get('/connections/:id/dive-times', {
+    schema: {
+      summary: 'How each dive at the Provider came about and when it starts, oldest first (to find why times differ); stores nothing',
+      description: 'Works whatever the import mode of the Connection is. One paced action at the Provider. No names of people or places.',
+      params: IdParams, response: { 200: DiveTimes, ...errors },
+    },
+  }, async (request) => diveImports.diveTimes(request.user!.id, request.params.id));
+
   app.get('/connections/:id/dive-import', {
     schema: {
       summary: 'Preview importing the account\'s dives (ADR 0030): reads them from the Provider and says what would happen; stores nothing',

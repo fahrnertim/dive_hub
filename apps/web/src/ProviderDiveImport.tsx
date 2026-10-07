@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  api, diveImportPreviewQuery, importQuery, keys, unwrap, type ConnectionView, type DiveImportMode, type DiveImportPreview,
+  api, diveImportPreviewQuery, diveTimesQuery, importQuery, keys, unwrap, type ConnectionView, type DiveImportMode, type DiveImportPreview,
   type ProviderView,
 } from './api.ts';
 import { ProviderImportSummary } from './ImportPanel.tsx';
@@ -11,7 +11,7 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { deviceName } from './lib/devices.ts';
 import { useProviderText } from './lib/providers.ts';
 import { formatDiveTime } from './lib/units.ts';
-import { Button, Muted, Notice, RadioGroup, Select } from './ui/index.ts';
+import { Button, Muted, Notice, RadioGroup, Select, Table } from './ui/index.ts';
 
 const WINDOWS = ['5', '15', '30', '60'] as const;
 type Window = (typeof WINDOWS)[number];
@@ -28,10 +28,12 @@ const choice = (label: string, hint: string) => (
  */
 export function ProviderDiveImport({ provider: p, connection: c, several }: { provider: ProviderView; connection: ConnectionView; several: boolean }) {
   const pt = useProviderText(p);
+  const { t } = useTranslation();
   const errorText = useErrorText();
   const queryClient = useQueryClient();
   const [previewing, setPreviewing] = useState(false);
   const [importId, setImportId] = useState<string | null>(null);
+  const [timing, setTiming] = useState(false);
   const settings = useMutation({
     mutationFn: async (diveImport: { mode?: DiveImportMode; windowMinutes?: 5 | 15 | 30 | 60; computers?: { key: string; choice: 'recordings' | 'entries' }[] }) =>
       unwrap(await api.PATCH('/api/connections/{id}', { params: { path: { id: c.id } }, body: { diveImport } })),
@@ -78,7 +80,57 @@ export function ProviderDiveImport({ provider: p, connection: c, several }: { pr
         />
       )}
       {importId && <Outcome provider={p} connectionId={c.id} importId={importId} onDone={() => setImportId(null)} />}
+      {!timing ? (
+        <div className="form-actions">
+          <Button
+            variant="quiet" icon="info" onPress={() => setTiming(true)}
+            aria-label={t('common.forItem', { action: pt('timesShow'), item: c.accountLabel })}
+          >{pt('timesShow')}</Button>
+        </div>
+      ) : <DiveTimes provider={p} connection={c} onClose={() => setTiming(false)} />}
     </section>
+  );
+}
+
+/**
+ * How each dive in the account started and came about (read only, nothing stored): the start as the Provider keeps it,
+ * whether typed by hand or synced from a computer, when the record was made and who confirmed it. For finding why a
+ * time differs from a dive computer's; works whatever the import setting is.
+ */
+function DiveTimes({ provider: p, connection: c, onClose }: { provider: ProviderView; connection: ConnectionView; onClose: () => void }) {
+  const pt = useProviderText(p);
+  const { t, i18n } = useTranslation();
+  const errorText = useErrorText();
+  const times = useQuery(diveTimesQuery(c.id));
+  const n = new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 1 });
+  const close = <div className="form-actions"><Button onPress={onClose}>{t('common.close')}</Button></div>;
+
+  if (times.isPending) return <Muted>{pt('timesReading')}</Muted>;
+  if (times.error) return <div className="provider-import-part"><Notice tone="danger">{errorText(times.error)}</Notice>{close}</div>;
+  const how = { logbook: pt('timesHowLogbook'), computer: pt('timesHowComputer'), ours: pt('timesHowOurs') };
+  return (
+    <div className="provider-import-part">
+      <Muted>{pt('timesIntro')}</Muted>
+      {times.data.dives.length === 0 ? <Muted>{pt('timesEmpty')}</Muted> : (
+        <Table
+          cards label={pt('timesTable')}
+          head={[pt('timesNumber'), pt('timesStart'), { label: pt('timesDuration'), numeric: true }, { label: pt('timesDepth'), numeric: true }, pt('timesHow'), pt('timesCreated'), pt('timesConfirmed')]}
+        >
+          {times.data.dives.map((d) => (
+            <tr key={d.remoteId}>
+              <td>{d.remoteNumber ?? t('common.none')}</td>
+              <td className="date">{d.localStart}</td>
+              <td>{n.format(Math.round(d.durationSeconds / 60))}</td>
+              <td>{d.maxDepthM === null ? t('common.none') : n.format(d.maxDepthM)}</td>
+              <td>{how[d.madeBy]}</td>
+              <td className="date">{d.createdAt ?? t('common.none')}</td>
+              <td>{[d.confirmedByCentre && pt('timesCentre'), d.confirmedByLeader && pt('timesLeader')].filter(Boolean).join(', ') || t('common.none')}</td>
+            </tr>
+          ))}
+        </Table>
+      )}
+      {close}
+    </div>
   );
 }
 

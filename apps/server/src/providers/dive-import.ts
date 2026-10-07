@@ -117,10 +117,10 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   }
 
   /** The Connection's account's dives, read in one paced action, each parsed (null: not a dive Dive Hub can read). */
-  async function read(userId: string, connectionId: string, options: { recent?: boolean } = {}) {
+  async function read(userId: string, connectionId: string, options: { recent?: boolean; whateverTheMode?: boolean } = {}) {
     const row = await connections.own(userId, connectionId);
     const { adapter, list, parse } = importer(row.provider);
-    if (row.importMode === 'off') throw new ProviderServiceError('provider_import_off', named(adapter));
+    if (row.importMode === 'off' && !options.whateverTheMode) throw new ProviderServiceError('provider_import_off', named(adapter));
     const listing = await connections.withAccess(row, (ctx) => list(ctx, options));
     const parsed = listing.records.map(({ remoteId, record }) => ({ remoteId, record, dive: parse(record, listing.context) }));
     return { row, adapter, context: listing.context, parsed };
@@ -637,6 +637,21 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
         ...(set.mode && { importMode: set.mode }), ...(set.windowMinutes && { importWindowMinutes: set.windowMinutes }),
         ...(set.computers && { importComputers: { ...row.importComputers, ...set.computers } }), updatedAt: new Date(),
       }).where(eq(connection.id, row.id));
+    },
+
+    /**
+     * How each dive at the Provider came about and when it starts (one paced action, nothing stored, whatever the import
+     * mode): to find why a dive's time differs from a computer's. Oldest first; no names.
+     */
+    async diveTimes(userId: string, connectionId: string) {
+      const { row, adapter, parsed } = await read(userId, connectionId, { whateverTheMode: true });
+      const origin = adapter.dives?.origin;
+      const dives = parsed.flatMap((p) => (p.dive ? [{
+        remoteId: p.dive.remoteId, remoteNumber: p.dive.remoteNumber, localStart: p.dive.localStart,
+        durationSeconds: p.dive.durationSeconds, maxDepthM: p.dive.maxDepthM, madeBy: p.dive.evidence,
+        ...(origin ? origin(p.record) : { createdAt: null, confirmedByCentre: false, confirmedByLeader: false }),
+      }] : []));
+      return { provider: row.provider, dives: dives.sort((a, b) => a.localStart.localeCompare(b.localStart)) };
     },
 
     /**

@@ -624,6 +624,12 @@ Implemented:
   serial) through the same placement as files (`src/imports/placement.ts`, split out of the import service); a logbook
   entry → linked and filled, decided, a Dive without a Recording (`dive.from_provider`), or left out. Links are `link`
   Pushes, up to date (with the fingerprint) for Dives made from the Provider's dive.
+- **The dive times** (`GET /api/connections/{id}/dive-times`, `DiveImportService.diveTimes`, optional adapter hook
+  `dives.origin`): a read-only look at how each dive at a Provider started and came about (local start, typed by hand or
+  from a computer or sent by Dive Hub, when the record was made, whether the dive centre or leader confirmed it), oldest
+  first, for finding why a dive's time differs from a computer's ([research](../research/2026-10-07-suunto-ssi-mismatch.md)).
+  One paced action, works whatever the import mode, stores nothing, names no person, centre or place. Tests:
+  `ssi-dive-times.test.ts`; `dive-import.spec.ts` (@account) and a ui-quality case. Optional for clients (no new duty).
 - **Primary recordings** (`attachRecording`): a Recording attaching to a Dive without one becomes primary; a file's over a
   Provider's copy (a Recording whose Import has a Provider). Values without Override follow, with the offset's source.
 - **API:** the Dive and the dive list carry `utcOffsetSource`, the Dive `fromProvider`; an Import `provider`, results

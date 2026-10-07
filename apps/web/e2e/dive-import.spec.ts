@@ -57,6 +57,26 @@ test('imports Lena\'s SSI dives from her Connection: the setting, the preview, a
   }
 });
 
+test('shows when each of Lena\'s SSI dives was made, whatever the import setting is, and changes nothing', { tag: ['@account'] }, async ({ page, request }) => {
+  const { connectionId } = await lenaReady(request);
+  await request.patch(`/api/connections/${connectionId}`, { data: { diveImport: { mode: 'off', windowMinutes: 15 } }, headers });
+  try {
+    await page.goto('/#/account');
+    const section = page.getByRole('region', { name: 'Dives of Lena from SSI' });
+    await section.getByRole('button', { name: 'Show when each dive was made' }).click();
+    const table = section.getByRole('region', { name: 'Dives in SSI with start and origin' });
+    await expect(table.getByRole('columnheader', { name: 'Start (local time)' })).toBeVisible();
+    // Lena's computer dive and her hand-typed ones, oldest first; the import is still off.
+    await expect(table.getByRole('row', { name: /dive computer/ })).toHaveCount(1);
+    await expect(table.getByRole('row', { name: /typed by hand/ }).first()).toBeVisible();
+    await expect(section.getByRole('radio', { name: /^Nothing/ })).toBeChecked();
+    await section.getByRole('button', { name: 'Close' }).click();
+    await expect(section.getByRole('button', { name: 'Show when each dive was made' })).toBeVisible();
+  } finally {
+    await leaveLena(request);
+  }
+});
+
 test('an admin allows making dive sites from SSI logbooks, after confirming, and stops it again', { tag: ['@admin'] }, async ({ page, request }) => {
   await request.put('/api/admin/provider-site-data/ssi', { data: { allowed: false }, headers });
   await page.goto('/#/admin');

@@ -257,6 +257,14 @@ export interface ImportedDive {
   notes: string | null;
 }
 
+/** How a Provider's dive record came about, to find why its times differ from a computer's. Never used in matching. */
+export interface DiveOrigin {
+  /** When the record was made at the Provider, as it keeps it (SSI: the creation time); null when it says nothing. */
+  createdAt: string | null;
+  confirmedByCentre: boolean;
+  confirmedByLeader: boolean;
+}
+
 export interface ProviderAdapter {
   id: ProviderId;
   capabilities: Capabilities;
@@ -280,6 +288,8 @@ export interface ProviderAdapter {
      * the dive when the record doesn't (what Dive Hub sent before it had the Provider's ID).
      */
     parse?(record: Record<string, unknown>, context: ImportContext, remoteId?: string): ImportedDive | null;
+    /** How one of those records came about (who made and who confirmed it). Pure: no calls, no names of people or places. */
+    origin?(record: Record<string, unknown>): DiveOrigin;
     /** The parser name and version a Recording made from a Provider's dive carries, e.g. `ssi-app-api`. */
     parser?: { name: string; version: string };
   };

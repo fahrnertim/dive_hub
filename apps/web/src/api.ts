@@ -117,6 +117,7 @@ export const keys = {
   buddies: (connectionId: string) => ['connections', connectionId, 'buddies'] as const,
   /** What importing the account's dives would do (ADR 0030); under ['connections']. */
   diveImport: (connectionId: string) => ['connections', connectionId, 'dive-import'] as const,
+  diveTimes: (connectionId: string) => ['connections', connectionId, 'dive-times'] as const,
   importOf: (id: string) => ['imports', id] as const,
   /** Admins: whether Dive sites may be made from a Provider's site data (ADR 0030). */
   siteData: ['admin', 'provider-site-data'] as const,
@@ -379,6 +380,13 @@ async function fetchDiveImportPreview(connectionId: string) {
 /** What importing the account's dives would do now (ADR 0030); reads the Provider, so only when the User asks. */
 export const diveImportPreviewQuery = (connectionId: string) =>
   queryOptions({ queryKey: keys.diveImport(connectionId), queryFn: () => fetchDiveImportPreview(connectionId), staleTime: Infinity, retry: false });
+
+async function fetchDiveTimes(connectionId: string) {
+  return unwrap(await api.GET('/api/connections/{id}/dive-times', { params: { path: { id: connectionId } } }));
+}
+/** How each dive at the Provider started and came about, to find why times differ (read only); reads the Provider, so only when asked. */
+export const diveTimesQuery = (connectionId: string) =>
+  queryOptions({ queryKey: keys.diveTimes(connectionId), queryFn: () => fetchDiveTimes(connectionId), staleTime: 0, gcTime: 0, retry: false });
 
 /** Admins: per Provider whose dives Users import, whether new Dive sites may be made from its site data (ADR 0030). */
 export const siteDataQuery = () => queryOptions({
