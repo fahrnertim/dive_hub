@@ -298,6 +298,11 @@ A place where dives happen, shared across the whole instance: every User can use
 _Avoid_: Spot, location, divesite
 _German_: Tauchplatz
 
+**Dive centre**:
+A business that runs dives, shared across the whole instance like a Dive site: every User can use and edit it. It is responsible for the Dive sites it is linked to, and a Dive counts as belonging to the centres of its site. With its SSI centre number it has an SSI verification code, the QR code a diver scans in SSI's app so that SSI shows a dive as verified ([ADR 0043](decisions/0043-dive-centres-and-ssi-verification-codes.md)).
+_Avoid_: Dive center, dive shop, dive base, operator
+_German_: Tauchcenter
+
 **Water type (of a Dive site)**:
 The water at a Dive site: fresh, salt or brackish. It is the water type of every Dive there; a Dive without a site has none. Any User sets it on the site; an SSI site import fills it. Not the computer's water setting.
 _Avoid_: Salinity, water (alone), body of water (that is the lake or sea's name)

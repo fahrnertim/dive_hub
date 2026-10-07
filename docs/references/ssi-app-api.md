@@ -207,6 +207,17 @@ initials only; 8 buddy-list entries, 5 dives with buddies) [R]:
   `buddy;<SSI account ID>;firstName:<first name>;lastName:<last name>;email:<e-mail>`. The number is the person's SSI
   account, the same as `buddy_master_id` in the list (checked against an entry in the owner's list). Whether SSI's app
   needs the name and e-mail, or adds the entry from the account ID alone, is [?].
+- **Verification codes** [R] (owner, 2026-10-08, real codes, anonymized here). A diver scans one on a logbook entry and
+  SSI shows the dive as verified. Two kinds are known:
+  - a dive centre's: `center;<centre number>;name:<name as SSI spells it>` (the name seen had a legal form and a town,
+    separated by a comma);
+  - a professional's: the buddy code with the leader number at its end,
+    `buddy;<SSI account ID>;firstName:<first name>;lastName:<last name>;email:<e-mail>;leaderNr:<leader number>`.
+
+  They are fixed (the same code every time), carry no token or signature, and the app reads them by camera or from an
+  image file. Whether the app checks the name against the number is [?]. An unverified dive doesn't count towards SSI's
+  recognition levels (German "Anerkennungsstufen"; the English name is [?]). Used by
+  [ADR 0043](../decisions/0043-dive-centres-and-ssi-verification-codes.md).
 - Still open: whether another account's list gives the same person **another** entry `id` (a row per pair of accounts)
   or the same one [?]; how to add an entry (no call is known [S]). Buddy IDs set by Dive Hub are accepted and show on
   the dive in the app [R] (owner, 2026-10-06).
