@@ -246,6 +246,11 @@ stored profile sketch).
   when the group holds more than one kind. Checked in the browser tests (English and German, light and dark, 320 px, 200 %
   text, axe; Review is in the width sweep).
 
+- **Slice C, part 1 (2026-10-07):** the API for the rows and the "Show only" filters, [ADR 0040](../decisions/0040-logbook-rows-and-filters.md)
+  (amends ADR 0017): page size 25, `only`, `counts`, `totals`, `months`, and per Dive the Recordings, gas, surface interval,
+  source and Participants. The filter for Not in SSI is `not-at-provider`; "same time as another dive" is left to the strip and
+  the Review page. The web client (part 2) is not changed yet.
+
 ## Not verified
 
 - The mock was looked at in Edge at 1280 and 390 px, light, and the logbook in dark. Not in German, not at 320 px,

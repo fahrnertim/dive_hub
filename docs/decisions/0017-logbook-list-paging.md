@@ -1,6 +1,6 @@
 ---
 title: "ADR 0017: Logbook list with offset paging, column sorting and search"
-summary: GET /api/dives returns one page { dives, total } (limit ≤ 200, offset), sorted by date, number, depth or duration, searchable by number and notes; the web client keeps these settings in the address.
+summary: GET /api/dives returns one page { dives, total } (limit ≤ 200, offset; default 25 since ADR 0040), sorted by date, number, depth or duration, searchable by number and notes; the web client keeps these settings in the address.
 status: accepted
 date: 2026-10-03
 ---
@@ -17,7 +17,7 @@ Real logbooks have hundreds of dives, and a club's shared logbook can have thous
 before real logbooks arrive. The project owner chose on 2026-10-03 to fix all review findings.
 
 ## Decision
-- **One page per request.** `GET /api/dives` takes `limit` (1–200, default 50) and `offset`
+- **One page per request.** `GET /api/dives` takes `limit` (1–200, default 25 since ADR 0040) and `offset`
   (default 0) and returns `{ dives, total }`. `total` counts every Dive the query matches, so a
   client can show "51–100 of 312" and its page buttons.
 - **Offset paging, not cursor paging.** Sorting by several columns, some of them nullable (dive
@@ -42,3 +42,7 @@ before real logbooks arrive. The project owner chose on 2026-10-03 to fix all re
   existing index on `dive.diver_id`.
 - Search covers what Dives have today (number, notes). A full-text index can come when sites,
   buddies and other text fields arrive.
+
+## Amendment (2026-10-07): page size, filters, counts and row fields
+[ADR 0040](0040-logbook-rows-and-filters.md) sets the default `limit` to 25 and adds the `only` filters, `counts`,
+`totals`, `months` and the fields the logbook rows need. The rest of this decision stands.

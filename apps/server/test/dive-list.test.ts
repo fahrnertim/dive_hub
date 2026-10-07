@@ -64,11 +64,11 @@ describe.skipIf(!(await databaseReachable()))('the logbook list', () => {
     expect(numbers(await list('?q=4'))).toEqual([4]);
     expect(numbers(await list('?q=turtle'))).toEqual([3]);
     expect(numbers(await list(`?q=${encodeURIComponent('100%')}`))).toEqual([3]); // % is a letter here
-    expect(await list(`?q=${encodeURIComponent('1_0')}`)).toEqual({ dives: [], total: 0 }); // so is _
+    expect(await list(`?q=${encodeURIComponent('1_0')}`)).toMatchObject({ dives: [], total: 0 }); // so is _
   });
 
   it('shows nothing of other Users', async () => {
-    expect(await list('', other)).toEqual({ dives: [], total: 0 });
+    expect(await list('', other)).toMatchObject({ dives: [], total: 0 });
     expect((await list('?q=turtle', other)).total).toBe(0);
   });
 
