@@ -65,6 +65,9 @@ Anything in the prompt that is worth keeping longer than the next session belong
 Unchanged, [ADR 0023](../decisions/0023-faster-checks.md): `pnpm check` while working, `pnpm check:full` before
 proposing a commit, the review capture when UI changed. They were not a relevant cost.
 
+A commit that touches only documentation (`docs/`, `AGENTS.md`, `CLAUDE.md`, `README.md`) needs no check: none of
+them reads it (amendment of 2026-10-08 to ADR 0023). Say so when handing over the commit.
+
 ## Subagents and models
 
 | Work | Where | Model |
@@ -86,7 +89,7 @@ proposing a commit, the review capture when UI changed. They were not a relevant
 
 ## Never saved on
 
-- `pnpm check:full` before proposing a commit.
+- `pnpm check:full` before proposing a commit that changes more than documentation.
 - Tests first.
 - Reading an ADR in full before changing what it decided.
 - The review of the screenshots when UI changed.

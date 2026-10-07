@@ -100,3 +100,16 @@ Result (measured 2026-10-04):
 - A new browser test needs an area tag. Untagged tests run only in the full check (`--grep-invert` lists them).
 - Specs set up the data they need and assert only what holds whatever ran before them on the same server.
 - The review capture no longer runs automatically. Whoever builds a UI slice runs it for that slice's areas.
+
+## Amendment 2026-10-08: no check for a commit of documentation only
+Why: `pnpm check` already runs nothing for documentation, and no check reads Markdown. `pnpm check:full` doesn't look
+at what changed, so before a commit of documentation it tested again, for three minutes, code that had not changed.
+Decided with the owner on 2026-10-08.
+
+- **A commit that touches only documentation needs no check**: files under `docs/`, `AGENTS.md`, `CLAUDE.md` and
+  `README.md`. "It runs before every commit" above now means every other commit.
+- **Narrower than what `pnpm check` keeps quiet about.** `.claude/`, `samples/`, the compose files, the Dockerfile and
+  the fixture scripts run nothing in `pnpm check` either, but they can break something, so a commit with any of them
+  keeps the full check.
+- **One other file in the commit and the full check runs**, as before.
+- The message that hands over the commit says that no check ran and why, and which commit the last full check passed on.

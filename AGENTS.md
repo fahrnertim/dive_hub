@@ -36,6 +36,7 @@ Start at [docs/index.md](docs/index.md) — it lists every document.
 - Record significant decisions as ADRs; don't re-litigate accepted ones without a new ADR.
 - **Checks** ([ADR 0023](docs/decisions/0023-faster-checks.md)): `pnpm check` while working (only what the change touches),
   `pnpm check:full` before proposing a commit, and the review capture with `REVIEW_AREAS` only when UI changed.
+  A commit of documentation only (`docs/`, `AGENTS.md`, `CLAUDE.md`, `README.md`) needs no check.
   A new page or module gets its path in `scripts/check.mjs`, and a new browser test gets an area tag.
 - A change that gives API clients a new duty (something to show, ask, format or send) updates the
   [client contract](docs/spec/clients.md) in the same change.
@@ -61,5 +62,5 @@ The full rules, with the hand-over prompt: [docs/agents/working-economically.md]
   `docs/index.md` and the glossary are searched, not read through.
 - **Keep long output out of the conversation**: filter it, or write it to a file and search that.
 - **Research and broad searches go to a subagent** on a smaller model; implementation and checks stay in the session.
-- **Never saved on**: `pnpm check:full` before a commit, tests first, reading an ADR in full before changing what
+- **Never saved on**: `pnpm check:full` before a commit that changes more than documentation, tests first, reading an ADR in full before changing what
   it decided, reviewing the screenshots when UI changed, reading the code around an edit.
