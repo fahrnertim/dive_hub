@@ -2,7 +2,7 @@
 // Mia Stone): adding Kai from the list on the account page, putting him and a new diver on a dive, finding the new
 // one in the SSI buddy list from the dive's SSI panel, and sending the dive with both as buddies.
 import { expect, test } from '@playwright/test';
-import { clearParticipants, connectSsi, forgetDivers, importSsiBuddies, leaveSsi, readyForSsi, resetDive } from './support.ts';
+import { clearParticipants, connectSsi, forgetDivers, importSsiBuddies, leaveSsi, openLine, readyForSsi, resetDive } from './support.ts';
 
 test('adds a buddy from the SSI buddy list on the account page', { tag: ['@account', '@divers'] }, async ({ page, request }) => {
   const dive = await resetDive(request);
@@ -38,8 +38,9 @@ test('puts buddies on a dive, finds one in the SSI buddy list, and sends both to
   await importSsiBuddies(request, ['4989164']);
 
   await page.goto(`/#/dives/${dive.id}`);
-  const people = page.locator('section', { has: page.getByRole('heading', { name: 'Buddies and guides' }) });
-  await expect(people.getByText('Nobody else is on this dive yet.')).toBeVisible();
+  // Who dived along is one of the dive's facts: with nobody yet, it is the way to add someone.
+  const people = page.getByRole('group', { name: 'Buddies and guides' });
+  await expect(people.getByRole('listitem')).toHaveCount(0);
 
   await people.getByRole('button', { name: 'Add someone' }).click();
   let dialog = page.getByRole('dialog');
@@ -47,7 +48,7 @@ test('puts buddies on a dive, finds one in the SSI buddy list, and sends both to
   await dialog.getByRole('searchbox', { name: 'Find a diver' }).fill('kai');
   await dialog.getByRole('option', { name: /Kai Lund/ }).click();
   await expect(dialog).toBeHidden();
-  await expect(people.getByRole('listitem').filter({ hasText: 'Kai Lund' })).toContainText('Buddy');
+  await expect(people.getByRole('listitem')).toHaveText(['Kai Lund (Buddy)']);
 
   await people.getByRole('button', { name: 'Add someone' }).click();
   dialog = page.getByRole('dialog');
@@ -55,16 +56,26 @@ test('puts buddies on a dive, finds one in the SSI buddy list, and sends both to
   await dialog.getByRole('searchbox', { name: 'Find a diver' }).fill('Mia');
   await dialog.getByRole('option', { name: /Add “Mia” as a new diver/ }).click();
   await expect(dialog).toBeHidden();
-  await expect(people.getByRole('listitem').filter({ hasText: 'Mia' })).toContainText('Guide');
+  await expect(people.getByRole('listitem')).toHaveText(['Kai Lund (Buddy)', 'Mia (Guide)']);
 
-  // A role changes in place. Edits within ten minutes are one history entry with the net change (lib/history.ts).
-  await people.getByRole('button', { name: /Role of Kai Lund/ }).click();
+  // Roles change, and people leave, in a dialog from the fact. Edits within ten minutes are one history entry with
+  // the net change (lib/history.ts).
+  const change = people.getByRole('button', { name: 'Change: Buddies and guides' });
+  await change.click();
+  dialog = page.getByRole('dialog', { name: 'Buddies and guides' });
+  await dialog.getByRole('button', { name: /Role of Kai Lund/ }).click();
   await page.getByRole('option', { name: 'Instructor' }).click();
-  await expect(people.getByRole('button', { name: /Role of Kai Lund/ })).toContainText('Instructor');
+  await expect(dialog.getByRole('button', { name: /Role of Kai Lund/ })).toContainText('Instructor');
+  await dialog.getByRole('button', { name: 'Done' }).click();
+  // In the order the server lists them: by role.
+  await expect(people.getByRole('listitem')).toHaveText(['Mia (Guide)', 'Kai Lund (Instructor)']);
+  await expect(change).toBeFocused();
+  await openLine(page, 'History');
   await expect(page.getByText('Kai Lund added as Instructor')).toBeVisible();
 
   // SSI doesn't know who Mia is yet: the panel says so and finds her in the SSI buddy list.
   const ssi = page.locator('section', { has: page.getByRole('heading', { name: 'SSI', exact: true }) });
+  await openLine(page, 'SSI');
   await expect(ssi.getByText('SSI gets this dive without Mia')).toBeVisible();
   await ssi.getByRole('button', { name: 'Find Mia in your SSI buddy list' }).click();
   dialog = page.getByRole('dialog');
@@ -82,7 +93,10 @@ test('puts buddies on a dive, finds one in the SSI buddy list, and sends both to
   await expect(ssi.getByText(/Sent without/)).toHaveCount(0);
 
   // Taking Mia off changes what SSI would get.
-  await people.getByRole('button', { name: 'Remove: Mia' }).click();
+  await change.click();
+  await dialog.getByRole('button', { name: 'Remove: Mia' }).click();
+  await dialog.getByRole('button', { name: 'Done' }).click();
+  await expect(people.getByRole('listitem')).toHaveText(['Kai Lund (Instructor)']);
   await expect(ssi.getByText('Changed since sent')).toBeVisible();
 
 });

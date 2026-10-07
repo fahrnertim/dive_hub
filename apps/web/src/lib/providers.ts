@@ -19,6 +19,13 @@ export type StrayOverride = { [Id in keyof Overrides]: Exclude<Paths<Overrides[I
 
 /** The Providers that take dives, in the server's order. */
 export const exporting = (providers: ProviderView[] | undefined) => (providers ?? []).filter((p) => p.data.dives?.export);
+/**
+ * Whether the Dive at a Provider has something that waits for the User: it changed since it was sent, the last
+ * sending failed, or the connection needs a new sign-in. Its line on the dive page then opens by itself.
+ */
+export const waitsForUser = (s: {
+  connection: { state: string } | null; current: { upToDate: boolean } | null; pushes: { state: string }[];
+}) => !!s.connection && (s.connection.state === 'needs_sign_in' || s.pushes[0]?.state === 'failed' || (!!s.current && !s.current.upToDate));
 /** The Providers a User connects to (any sign-in but none). */
 export const connectable = (providers: ProviderView[] | undefined) => (providers ?? []).filter((p) => p.signIn.kind !== 'none');
 

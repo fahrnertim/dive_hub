@@ -13,7 +13,7 @@ import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { deviceName } from './lib/devices.ts';
 import { useFormatValue } from './lib/dive-values.ts';
-import { focusHeading } from './lib/focus.ts';
+import { focusFirstIn, focusHeading } from './lib/focus.ts';
 import { mapsUrl } from './lib/geo.ts';
 import { usePageTitle } from './lib/page.ts';
 import { useNames, useProviders } from './lib/providers.ts';
@@ -29,7 +29,8 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
   const display = useDisplay();
   const dive = useQuery(diveQuery(id));
   const divers = useQuery(diversQuery());
-  const [editing, setEditing] = useState(false);
+  // Editing opens at the dive number, or at the notes when asked for from there.
+  const [editing, setEditing] = useState<false | 'values' | 'notes'>(false);
   const [moving, setMoving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   // Closing the edit form puts focus back on "Edit dive" (the form had it; UI review B1).
@@ -37,7 +38,7 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
   const wasEditing = useRef(false);
   useEffect(() => {
     if (wasEditing.current && !editing) editButton.current?.focus();
-    wasEditing.current = editing;
+    wasEditing.current = !!editing;
   }, [editing]);
   const v = dive.data?.values;
   const notFound = dive.error instanceof ApiError && dive.error.status === 404;
@@ -90,7 +91,7 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
           )}
           actions={!editing && (
             <>
-              <Button ref={editButton} icon="edit" onPress={() => setEditing(true)}>{t('dive.edit')}</Button>
+              <Button ref={editButton} icon="edit" onPress={() => setEditing('values')}>{t('dive.edit')}</Button>
               <ActionMenu
                 label={t('dive.moreActions')} aria-label={t('common.forItem', { action: t('dive.moreActions'), item: title ?? '' })}
                 actions={[
@@ -103,19 +104,22 @@ export function DiveDetail({ id, recordingId }: { id: string; recordingId?: stri
         />
       </div>
       {!editing && <MergeHint dive={d} />}
-      <Panel>
-        {editing
-          ? <DiveEditForm key={d.version} dive={d} onDone={() => setEditing(false)} />
-          : <DiveFacts dive={d} />}
-      </Panel>
-      <Participants dive={d} />
       {/* The assessment belongs to the Primary recording's profile and to the panel under it (ADR 0036). */}
       <AssessmentProvider diveId={d.id}>
-        <Recordings dive={d} initial={recordingId} />
+        {/* The dive's facts and its profile are one panel: the profile is on the first screen (UI redesign, slice A). */}
+        <Panel>
+          {editing
+            ? <DiveEditForm key={d.version} dive={d} focus={editing === 'notes' ? 'notes' : undefined} onDone={() => setEditing(false)} />
+            : <DiveFacts dive={d} onAddNotes={() => setEditing('notes')} />}
+          <Recordings dive={d} initial={recordingId} />
+        </Panel>
         <AssessmentPanel dive={d} diverName={diverName} />
       </AssessmentProvider>
-      <ProviderPanels dive={d} diverName={diverName} />
-      <DiveHistory dive={d} />
+      {/* What is looked at now and then is one line each, until it is opened. */}
+      <div className="panel dive-lines">
+        <ProviderPanels dive={d} diverName={diverName} />
+        <DiveHistory dive={d} />
+      </div>
       {moving && <MoveDialog dive={d} onClose={() => setMoving(false)} />}
       {deleting && <DeleteDiveDialog dive={d} name={d.values.number !== null ? t('dive.title', { number: d.values.number }) : display.diveTime(d.values.startsAt.at, d.values.startsAt.utcOffsetSeconds, d.utcOffsetSource)} onClose={() => setDeleting(false)} />}
     </>
@@ -240,11 +244,26 @@ function WaterFact({ dive: d }: { dive: DiveView }) {
   );
 }
 
-function DiveFacts({ dive: d }: { dive: DiveView }) {
+const gasName = (g: NonNullable<RecordingSummary['gases']>[number], air: string) =>
+  g.he > 0 ? `${g.o2}/${g.he}` : g.o2 === 21 ? air : `EAN${g.o2}`;
+
+/** The gases of a Recording by name: "Air", "EAN32", "18/45 (diluent)". */
+function useGasNames() {
+  const { t } = useTranslation();
+  return (gases: RecordingSummary['gases']) =>
+    (gases ?? []).map((g) => gasName(g, t('dive.air')) + (g.circuit === 'diluent' ? ` (${t('vocabulary.circuit.diluent')})` : '')).join(', ');
+}
+
+/**
+ * What the Dive was: its values, the gas of the Primary recording, where, with whom, and the notes. Who dived along
+ * and the notes are facts too; empty, each is the way to add them.
+ */
+function DiveFacts({ dive: d, onAddNotes }: { dive: DiveView; onAddNotes: () => void }) {
   const { t } = useTranslation();
   const format = useFormatValue();
   const display = useDisplay();
   const [picking, setPicking] = useState(false);
+  const gases = useGasNames()(d.recordings.find((r) => r.isPrimary)?.summary.gases);
   const fact = (field: OverridableField, label: string) => (
     <Fact label={label} mark={<EditedMark dive={d} field={field} />}>{format(field, d.values[field])}</Fact>
   );
@@ -255,6 +274,7 @@ function DiveFacts({ dive: d }: { dive: DiveView }) {
         {fact('avgDepthM', t('dive.avgDepth'))}
         {fact('durationSeconds', t('dive.duration'))}
         {fact('waterTemperatureC', t('dive.waterTemperature'))}
+        {gases && <Fact label={t('dive.gas')}>{gases}</Fact>}
         <WaterFact dive={d} />
         <Fact label={t('dive.site')}>
           <span className="site-fact">
@@ -272,20 +292,28 @@ function DiveFacts({ dive: d }: { dive: DiveView }) {
             </a>
           </Fact>
         )}
+        <Participants dive={d} />
+        {!d.notes && (
+          <Fact label={t('dive.notes')}>
+            <Button variant="quiet" size="small" icon="add" onPress={onAddNotes}>{t('dive.addNotes')}</Button>
+          </Fact>
+        )}
       </dl>
       {picking && <SitePicker dive={d} onClose={() => setPicking(false)} />}
-      <h2 className="subheading">{t('dive.notes')}</h2>
-      {d.notes ? <p className="notes">{d.notes}</p> : <Muted>{t('dive.noNotes')}</Muted>}
+      {d.notes && (
+        <>
+          <h2 className="subheading">{t('dive.notes')}</h2>
+          <p className="notes">{d.notes}</p>
+        </>
+      )}
     </>
   );
 }
 
-const gasName = (g: NonNullable<RecordingSummary['gases']>[number], air: string) =>
-  g.he > 0 ? `${g.o2}/${g.he}` : g.o2 === 21 ? air : `EAN${g.o2}`;
-
 /**
- * The Recordings of the Dive as tabs: which one is primary, the device's own data and the profile.
- * The tab is in the address (?recording=…), and the actions on a Recording are in a menu (UI review C3).
+ * The Recordings of the Dive, in the panel of its facts: the profile, and under it what recorded it. Several are tabs
+ * that say which one is primary. The tab is in the address (?recording=…), and the actions on a Recording are in a
+ * menu (UI review C3). The heading is for heading navigation only: the chart is seen as one without a title.
  */
 function Recordings({ dive: d, initial }: { dive: DiveView; initial: string | undefined }) {
   const { t } = useTranslation();
@@ -323,10 +351,16 @@ function Recordings({ dive: d, initial }: { dive: DiveView; initial: string | un
     : t('dive.recordingN', { n: d.recordings.indexOf(r) + 1 }));
 
   if (d.recordings.length === 1) {
-    return <Panel title={t('dive.recording')}><RecordingDetails recording={recording} /></Panel>;
+    return (
+      <div className="dive-recording">
+        <h2 className="visually-hidden">{t('dive.recording')}</h2>
+        <RecordingDetails recording={recording} named />
+      </div>
+    );
   }
   return (
-    <Panel title={t('dive.recordings')}>
+    <div className="dive-recording">
+      <h2 className="visually-hidden">{t('dive.recordings')}</h2>
       <div ref={content}>
         <Tabs selectedKey={recording.id} onSelectionChange={(key) => select(String(key))}>
           <TabList aria-label={t('dive.recordings')} className="tab-list">
@@ -358,9 +392,9 @@ function Recordings({ dive: d, initial }: { dive: DiveView; initial: string | un
         isOpen={splitting} onOpenChange={setSplitting}
         title={t('dive.splitOffTitle')} body={t('dive.splitOffBody')} confirmLabel={t('dive.splitOffConfirm')}
         onConfirm={() => splitOff.mutateAsync(recording.id)}
-        onDone={() => requestAnimationFrame(() => focusHeading(content.current))}
+        onDone={() => requestAnimationFrame(() => { if (!focusFirstIn(content.current?.querySelector('[role="tablist"]'))) focusHeading(); })}
       />
-    </Panel>
+    </div>
   );
 }
 
@@ -373,58 +407,64 @@ function NoRecording({ dive: d }: { dive: DiveView }) {
   const providers = useProviders();
   const name = providers.data?.find((x) => x.id === d.fromProvider)?.name ?? d.fromProvider;
   return (
-    <Panel title={t('dive.recording')}>
+    <div className="dive-recording">
+      <h2 className="visually-hidden">{t('dive.recording')}</h2>
       <div className="empty-state">
         <p>{name ? t('dive.noRecordingFrom', { name }) : t('dive.noRecording')}</p>
         <Muted>{t('dive.noRecordingNext')}</Muted>
       </div>
-    </Panel>
+    </div>
   );
 }
 
-/** What one Recording's device says: dive mode, deco model, gases, temperatures, and the profile. */
-function RecordingDetails({ recording }: { recording: DiveView['recordings'][number] }) {
+/**
+ * One Recording: its profile, and under it one line that says what recorded it (the device when no tab names it, the
+ * dive mode, the deco model). Everything else the device says is a step away, as the profile's table is.
+ */
+function RecordingDetails({ recording, named }: { recording: DiveView['recordings'][number]; named?: boolean }) {
   const { t } = useTranslation();
   const display = useDisplay();
+  const gases = useGasNames()(recording.summary.gases);
   const s = recording.summary;
-  const gases = s.gases ?? [];
-  return (
+  const mode = s.diveMode && t(`vocabulary.diveMode.${s.diveMode}`);
+  const deco = s.decoModel && `${t(`vocabulary.decoModel.${s.decoModel}`)}${s.gfLow !== undefined ? `, GF ${s.gfLow}/${s.gfHigh}` : ''}`;
+  const device = named && recording.device && `${deviceName(recording.device.manufacturer, recording.device.product)} (${recording.device.serialNumber})`;
+  const values: [string, string][] = [];
+  if (mode) values.push([t('dive.diveMode'), mode]);
+  if (deco) values.push([t('dive.decoModel'), deco]);
+  if (gases) values.push([t('dive.gases'), gases]);
+  // The computer's setting, not the Dive's water (that is the site's, ADR 0025).
+  if (s.waterType) {
+    values.push([t('dive.computerWater'), t(`vocabulary.waterType.${s.waterType}`)
+      + (s.waterDensity !== undefined && s.waterType !== 'en13319' ? ` (${new Intl.NumberFormat(display.locale).format(s.waterDensity)} kg/m³)` : '')]);
+  }
+  if (s.minTemperatureC !== undefined) {
+    values.push([t('dive.temperatureRange'), display.temperature(s.minTemperatureC)
+      + (s.maxTemperatureC !== undefined && s.maxTemperatureC !== s.minTemperatureC ? ` – ${display.temperature(s.maxTemperatureC)}` : '')]);
+  }
+  const about = (
     <>
-      <dl className="facts facts-small">
-        {s.diveMode && <Fact label={t('dive.diveMode')}>{t(`vocabulary.diveMode.${s.diveMode}`)}</Fact>}
-        {s.decoModel && (
-          <Fact label={t('dive.decoModel')}>
-            {t(`vocabulary.decoModel.${s.decoModel}`)}{s.gfLow !== undefined && `, GF ${s.gfLow}/${s.gfHigh}`}
-          </Fact>
-        )}
-        {gases.length > 0 && (
-          <Fact label={t('dive.gases')}>
-            {gases.map((g) => gasName(g, t('dive.air')) + (g.circuit === 'diluent' ? ` (${t('vocabulary.circuit.diluent')})` : '')).join(', ')}
-          </Fact>
-        )}
-        {/* The computer's setting, not the Dive's water (that is the site's, ADR 0025). */}
-        {s.waterType && (
-          <Fact label={t('dive.computerWater')}>
-            {t(`vocabulary.waterType.${s.waterType}`)}
-            {s.waterDensity !== undefined && s.waterType !== 'en13319' && ` (${new Intl.NumberFormat(display.locale).format(s.waterDensity)} kg/m³)`}
-          </Fact>
-        )}
-        {s.minTemperatureC !== undefined && (
-          <Fact label={t('dive.temperatureRange')}>
-            {display.temperature(s.minTemperatureC)}
-            {s.maxTemperatureC !== undefined && s.maxTemperatureC !== s.minTemperatureC && ` – ${display.temperature(s.maxTemperatureC)}`}
-          </Fact>
-        )}
-      </dl>
-      {s.extras && (
+      {(device || mode || deco) && (
+        <ul className="recording-line">
+          {device && <li translate="no">{device}</li>}
+          {mode && <li>{mode}</li>}
+          {deco && <li>{deco}</li>}
+        </ul>
+      )}
+      {(values.length > 0 || s.extras) && (
         <details className="extras">
-          <summary>{t('dive.otherValues')}</summary>
-          <dl>{Object.entries(s.extras).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+          <summary>{t('dive.allValues')}</summary>
+          <dl>
+            {values.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+            {Object.entries(s.extras ?? {}).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
+          </dl>
         </details>
       )}
-      <ErrorBoundary key={recording.id} fallback={<Notice tone="danger">{t('dive.profileFailed')}</Notice>}>
-        <DepthProfile recordingId={recording.id} />
-      </ErrorBoundary>
     </>
+  );
+  return (
+    <ErrorBoundary key={recording.id} fallback={<><Notice tone="danger">{t('dive.profileFailed')}</Notice>{about}</>}>
+      <DepthProfile recordingId={recording.id}>{about}</DepthProfile>
+    </ErrorBoundary>
   );
 }

@@ -81,6 +81,7 @@ test('a dive takes its site\'s water type, and says when the computer was set to
   // Without a site the dive has no water type; the computer's setting is shown as such.
   await page.goto(`/#/dives/${diveId}`);
   await expect(page.locator('dl.facts').first()).toContainText('Choose a dive site, and the dive takes its water type.');
+  await page.getByText('All values of the recording').click();
   await expect(page.getByText('Water setting on the computer')).toBeVisible();
 
   const { sites } = await (await request.get('/api/dive-sites?q=club%20notes')).json() as { sites: { id: string; version: number }[] };

@@ -1,7 +1,8 @@
-// The dive page in a real browser (ADR 0015): reading a Dive, editing it, going back to the
-// recording's values, switching the Primary recording, the history, other languages and units.
+// The dive page in a real browser (ADR 0015): reading a Dive (its facts and profile in one panel, the rest a step
+// away), editing it, going back to the recording's values, switching the Primary recording, the history, other
+// languages and units.
 import { expect, test } from '@playwright/test';
-import { editElsewhere, resetDive, setPreferences } from './support.ts';
+import { editElsewhere, openLine, resetDive, setPreferences } from './support.ts';
 
 let diveId: string;
 
@@ -18,10 +19,30 @@ test('shows the dive with the recording\'s values, the device data and how it ca
   await expect(facts).toContainText('30 min');
   // The water type is the dive site's (ADR 0025); the computer's own setting is with its data.
   await expect(facts).toContainText('Choose a dive site, and the dive takes its water type.');
-  await expect(page.locator('dl.facts-small')).toContainText('Water setting on the computerSalt water (1,025 kg/m³)');
   // In the facts only: the history may say "Edited" when other specs changed this Dive on this server before.
   await expect(page.locator('dl.facts').first().getByText('edited')).toHaveCount(0);
-  await expect(page.getByText('Bühlmann ZHL-16C, GF 40/85')).toBeVisible();
+  // The facts and the profile share one panel, so the profile is on the first screen. Who dived along and the notes
+  // are facts too: empty, each is its own way in, not a panel.
+  const panel = page.locator('section', { has: page.getByRole('img', { name: 'Depth profile' }) });
+  await expect(panel).toContainText('18.5 m');
+  await expect(facts).toContainText('GasEAN32');
+  await expect(facts.getByRole('button', { name: 'Add someone' })).toBeVisible();
+  await expect(facts.getByRole('button', { name: 'Add notes' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Buddies and guides' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Notes' })).toHaveCount(0);
+  // The tabs name the devices. Under the chart, one line says how it was recorded; the computer's other values are a
+  // step away.
+  await expect(panel.getByRole('tab', { name: 'Garmin Descent Mk3 (111) (primary)' })).toBeVisible();
+  await expect(panel.getByRole('listitem').filter({ hasText: 'Bühlmann ZHL-16C, GF 40/85' })).toBeVisible();
+  await expect(panel.getByText('Water setting on the computer')).toBeHidden();
+  await panel.getByText('All values of the recording').click();
+  await expect(panel.getByText('Salt water (1,025 kg/m³)')).toBeVisible();
+  // The history is one line that says the latest change, until it is opened.
+  const history = page.locator('section', { has: page.getByRole('heading', { name: 'History', exact: true }) });
+  await expect(page.getByRole('button', { name: 'History', exact: true })).toHaveAttribute('aria-expanded', 'false');
+  await expect(history.getByText(/ on \w+ \d+, \d{4}/)).toBeVisible();
+  await expect(page.locator('.history > li').first()).toBeHidden();
+  await openLine(page, 'History');
   // More than three entries hide behind "Show the whole history"; how many there are depends on what
   // other specs did on this server before (ADR 0023).
   // The button comes with the history: wait for the history before asking whether it is there.
@@ -44,10 +65,23 @@ test('edits values and notes, marks them as edited and records the change', { ta
   await expect(facts).toContainText('19.2 m');
   await expect(facts.getByText('edited')).toHaveCount(1);
   await expect(page.getByText('Turtle at the wreck')).toBeVisible();
+  // With notes, they have their heading and paragraph, and the fact that offered to add them is gone.
+  await expect(page.getByRole('heading', { name: 'Notes' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add notes' })).toHaveCount(0);
+  await openLine(page, 'History');
   const latest = page.locator('.history > li').first();
   await expect(latest).toContainText('Edited');
   await expect(latest).toContainText('Max depth: 18.5 m → 19.2 m (set by hand)');
   await expect(latest).toContainText('Notes changed');
+});
+
+test('adds notes from the facts: the form opens at the notes', { tag: ['@dives'] }, async ({ page }) => {
+  await page.goto(`/#/dives/${diveId}`);
+  await page.getByRole('button', { name: 'Add notes' }).click();
+  await expect(page.getByRole('textbox', { name: 'Notes' })).toBeFocused();
+  await page.keyboard.type('Pike under the jetty');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Pike under the jetty')).toBeVisible();
 });
 
 test('goes back to the recording\'s value', { tag: ['@dives'] }, async ({ page }) => {
@@ -63,6 +97,7 @@ test('goes back to the recording\'s value', { tag: ['@dives'] }, async ({ page }
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.locator('dl.facts').first()).toContainText('18.5 m');
   await expect(page.locator('dl.facts').first().getByText('edited')).toHaveCount(0);
+  await openLine(page, 'History');
   // Set by hand and back within minutes is one history entry with no net change to max depth.
   await expect(page.locator('.history > li').first()).not.toContainText('Max depth');
 });
@@ -74,6 +109,7 @@ test('switches the Primary recording; values without Override follow it', { tag:
   await page.getByRole('menuitem', { name: 'Make this the primary recording' }).click();
   await expect(page.locator('dl.facts').first()).toContainText('29 min');
   await expect(page.getByRole('tab', { name: 'Garmin Descent Mk3 (999) (primary)' })).toBeVisible();
+  await openLine(page, 'History');
   await expect(page.locator('.history > li').first()).toContainText('Primary recording changed');
 });
 
@@ -93,7 +129,8 @@ test('speaks German and works in feet, including typing a decimal comma', { tag:
   await page.goto(`/#/dives/${diveId}`);
   await expect(page.getByRole('heading', { name: /Tauchgang 42/ })).toBeVisible();
   await expect(page.locator('dl.facts').first()).toContainText('60,7 ft');
-  await expect(page.locator('dl.facts-small')).toContainText('Wassereinstellung am ComputerSalzwasser (1.025 kg/m³)');
+  await page.getByText('Alle Werte der Aufzeichnung').click();
+  await expect(page.getByText('Salzwasser (1.025 kg/m³)')).toBeVisible();
 
   await page.getByRole('button', { name: 'Tauchgang bearbeiten' }).click();
   await page.getByRole('textbox', { name: 'Maximaltiefe' }).fill('65,6');

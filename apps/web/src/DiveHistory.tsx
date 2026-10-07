@@ -7,7 +7,7 @@ import { deviceName } from './lib/devices.ts';
 import { useFormatValue, type HistoryField } from './lib/dive-values.ts';
 import { mergeEdits } from './lib/history.ts';
 import { useProviders } from './lib/providers.ts';
-import { Button, Muted, Notice, Panel } from './ui/index.ts';
+import { Button, Disclosure, Muted, Notice } from './ui/index.ts';
 
 /** Values a Revision can change, with the water type that old Revisions mention (a Dive value before ADR 0025). */
 const VALUES: HistoryField[] = ['number', 'startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM', 'waterTemperatureC', 'waterType'];
@@ -19,26 +19,34 @@ const LATEST = 3;
 /**
  * Who or what changed the Dive, when, and from what to what (Revisions, newest first). Edits one
  * person makes in a row are one entry, and only the latest few show at first (UI review C2).
+ * On the dive page it is one line that says the latest change and when, until it is opened (UI redesign, slice A).
  */
 export function DiveHistory({ dive }: { dive: DiveView }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
+  const display = useDisplay();
   const revisions = useQuery(revisionsQuery(dive.id));
   const [showAll, setShowAll] = useState(false);
   const entries = revisions.data ? mergeEdits(revisions.data) : [];
+  const latest = entries[0];
   return (
-    <Panel title={t('history.title')}>
-      {revisions.error && <Notice tone="danger">{errorText(revisions.error)}</Notice>}
-      {revisions.data?.length === 0 && <Muted>{t('history.empty')}</Muted>}
-      {entries.length > 0 && (
-        <ol className="history">
-          {(showAll ? entries : entries.slice(0, LATEST)).map((r) => <Entry key={r.id} revision={r} count={r.count} dive={dive} />)}
-        </ol>
-      )}
-      {entries.length > LATEST && (
-        <Button variant="quiet" onPress={() => setShowAll(!showAll)}>{showAll ? t('history.showFewer') : t('history.showAll')}</Button>
-      )}
-    </Panel>
+    <section className="dive-line">
+      <Disclosure
+        level={2} title={t('history.title')}
+        summary={latest && <span className="meta">{t('history.state', { cause: t(`history.cause.${latest.cause}`), date: display.date(latest.at) })}</span>}
+      >
+        {revisions.error && <Notice tone="danger">{errorText(revisions.error)}</Notice>}
+        {revisions.data?.length === 0 && <Muted>{t('history.empty')}</Muted>}
+        {entries.length > 0 && (
+          <ol className="history">
+            {(showAll ? entries : entries.slice(0, LATEST)).map((r) => <Entry key={r.id} revision={r} count={r.count} dive={dive} />)}
+          </ol>
+        )}
+        {entries.length > LATEST && (
+          <Button variant="quiet" onPress={() => setShowAll(!showAll)}>{showAll ? t('history.showFewer') : t('history.showAll')}</Button>
+        )}
+      </Disclosure>
+    </section>
   );
 }
 

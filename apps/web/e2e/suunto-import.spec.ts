@@ -21,7 +21,7 @@ test('imports a Suunto JSON export and shows its computer\'s data', { tag: ['@di
 
   await page.goto(`/#/dives/${outcome!.diveId}`);
   await expect(page.getByText('Suunto D5').first()).toBeVisible();
-  await expect(page.getByText('Suunto Fused RGBM 2')).toBeVisible();
+  await expect(page.getByRole('listitem').filter({ hasText: /^Suunto Fused RGBM 2$/ })).toBeVisible();
   await expect(page.getByText('EAN32').first()).toBeVisible();
 
   // What the computer itself noted, in our words, beside the findings.

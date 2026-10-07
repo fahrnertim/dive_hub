@@ -78,6 +78,9 @@ export function formatDiveTime(isoUtc: string, offsetSeconds: number | null, loc
   return `${text} (UTC${offset})`;
 }
 
+/** The day of a moment in the browser's time zone, where the time of day says nothing more. */
+export const formatDate = (iso: string, locale: string) => new Date(iso).toLocaleDateString(locale, { dateStyle: 'medium' });
+
 /** A moment in the browser's time zone, e.g. when a session was created. */
 export const formatDateTime = (iso: string, locale: string) =>
   new Date(iso).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' });

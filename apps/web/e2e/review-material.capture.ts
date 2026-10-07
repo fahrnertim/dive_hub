@@ -9,7 +9,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import {
   E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, forgetDivers, mergePair, mergeablePair,
-  leaveLena, leaveSsi, lenaReady, readyForSsi, sendToSsi, setBuddies, setPreferences,
+  leaveLena, leaveSsi, lenaReady, openLine, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
 const out = process.env.REVIEW_OUT ?? 'review-output/';
@@ -97,6 +97,9 @@ test('review material', async ({ page, request, browser }) => {
     await page.goto(`/#/dives/${assessed}`); await page.getByRole('heading', { name: 'Assessment' }).waitFor();
     await page.getByRole('group', { name: 'Findings along the dive' }).getByRole('button', { name: /^Fast ascent/ }).click();
     await capture(page, '03b-dive-assessment');
+    await page.getByRole('button', { name: /^What the assessment can/ }).click(); await page.getByRole('dialog').waitFor();
+    await capture(page, '03c-dive-assessment-about', { full: false });
+    await page.keyboard.press('Escape');
     await page.goto('/#/?q=77'); await page.getByText('2 findings').waitFor();
     await capture(page, '03c-logbook-finding-mark', { aria: false });
   }
@@ -300,7 +303,7 @@ test('review material', async ({ page, request, browser }) => {
     }
     if (want('dives')) {
       await readyForSsi(request, dive42);
-      await page.goto(`/#/dives/${dive42}`); await page.reload(); await page.getByRole('button', { name: 'Choose the SSI site' }).waitFor();
+      await page.goto(`/#/dives/${dive42}`); await page.reload(); await openLine(page, 'SSI'); await page.getByRole('button', { name: 'Choose the SSI site' }).waitFor();
       await capture(page, '26-dive-ssi-ready');
       await page.getByRole('button', { name: 'Choose the SSI site' }).click();
       await page.getByRole('dialog').getByRole('option').first().waitFor();
@@ -317,6 +320,9 @@ test('review material', async ({ page, request, browser }) => {
       await setBuddies(request, dive42, [await externalDiver(request, 'Kai Lund', '4989164'), await externalDiver(request, 'Ulla Berg')]);
       await page.reload(); await page.getByRole('button', { name: 'Find Ulla Berg in your SSI buddy list' }).waitFor();
       await capture(page, '29b-dive-buddies');
+      await page.getByRole('button', { name: 'Change: Buddies and guides' }).click(); await page.getByRole('dialog').getByRole('listitem').first().waitFor();
+      await capture(page, '29b2-dive-change-buddies', { full: false });
+      await page.keyboard.press('Escape');
       await page.getByRole('button', { name: 'Add someone' }).click();
       await page.getByRole('dialog').getByRole('searchbox').fill('u');
       await page.getByRole('dialog').getByRole('option').first().waitFor();
@@ -446,6 +452,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('dialog').getByRole('button', { name: 'Merge', exact: true }).waitFor();
     await capture(page, '71-dive-merge-dialog', { full: false });
     await page.getByRole('dialog').getByRole('button', { name: 'Merge', exact: true }).click();
+    await page.getByRole('tab').nth(1).waitFor(); await openLine(page, 'History');
     await page.getByText('Another dive of the same time was merged into this one').first().waitFor();
     await capture(page, '72-dive-merged');
     await page.goto('/'); await page.getByRole('button', { name: /^Show deleted dives/ }).click();

@@ -45,7 +45,24 @@
 .field-origin { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .field-origin .badge { margin-left: 0; }
 .notes { white-space: pre-wrap; overflow-wrap: anywhere; }
-.facts-small dd { font-size: var(--text-md); }
+/* Who dived along, as a fact: the names in a row, the ways to change them beside it. */
+.people-fact { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0 var(--space-4); }
+/* The Recordings share the panel of the facts: the profile follows them, set off by space. */
+.dive-recording { margin-top: var(--space-5); }
+.dive-recording:first-child { margin-top: 0; }
+/* Under the chart: what recorded it, in one line. */
+.recording-line { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0 var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); }
+/* The dot only separates: the second declaration keeps it from being read out where that is supported. */
+.recording-line > li:not(:last-child)::after { content: "·"; content: "·" / ""; margin-inline-start: var(--space-2); }
+/* What is looked at now and then (the Dive at a Provider, its history): one line each in one panel, until opened. */
+.dive-lines { display: grid; gap: var(--space-4); }
+.dive-lines:empty { display: none; }
+.dive-line { min-width: 0; }
+.dive-line > .disclosure > .disclosure-head > :not(.disclosure-title), .dive-line-plain > :not(h2) { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+.dive-line > .disclosure > .disclosure-panel { padding-top: var(--space-3); }
+/* Without an arrow, the name still starts where the names of the lines that open do. */
+.dive-line-plain { padding-inline-start: 1.5rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); }
+.dive-line-plain > h2 { margin: 0; font-size: inherit; line-height: inherit; }
 
 /* Dive sites (ADR 0020): the site with its "Change" button, positions with their map link. */
 @media (min-width: 30rem) { .fact-wide { grid-column: span 2; } }
@@ -59,6 +76,7 @@
 .extras dl { display: grid; grid-template-columns: max-content 1fr; gap: var(--space-1) var(--space-4); margin: var(--space-2) 0 0; }
 .extras dt { color: var(--color-text-muted); }
 .extras dd { margin: 0; }
+.extras dl > div { display: contents; }
 .history { list-style: none; margin: 0; padding: 0; }
 .history > li { padding: var(--space-3) 0; border-top: 1px solid var(--color-border); }
 .history > li:first-child { border-top: none; padding-top: 0; }
@@ -241,31 +259,49 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .ascent-swatch[data-band='1'] { height: 3px; background: var(--color-ascent-1); }
 .ascent-swatch[data-band='2'] { height: 4px; background: var(--color-ascent-2); }
 .ascent-swatch[data-band='3'] { height: 5px; background: var(--color-ascent-3); }
-/* The panel: findings as a list, each with what was measured, the guidance and where it comes from. */
+/* The panel (compact since the UI redesign, slice A): a finding is one row with its numbers; its guidance, sources and
+   actions open behind it. Rows are a tone, not boxes (ADR 0019). */
 .assessment { display: grid; gap: var(--space-4); }
 .assessment > * { min-width: 0; margin: 0; }
 .assessment-part { display: grid; gap: var(--space-2); }
 .assessment-part > * { margin: 0; }
-.findings { display: grid; gap: var(--space-3); padding: 0; list-style: none; }
-.finding { display: grid; gap: var(--space-2); padding: var(--space-4); background: var(--color-surface-sunken); border-radius: var(--radius-md); border-left: 3px solid transparent; }
-.finding[data-selected] { border-left-color: var(--color-accent); }
-.finding > * { margin: 0; min-width: 0; }
+.findings { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.finding { padding: var(--space-2) var(--space-3); background: var(--color-surface-sunken); border-radius: var(--radius-md); border-inline-start: 3px solid transparent; scroll-margin-block: var(--space-4); }
+.finding[data-selected] { border-inline-start-color: var(--color-accent); }
+/* The row: title and severity, then the sentence, and when it was at the trailing edge. On a narrow screen the
+   sentence takes a line of its own under them. */
+.finding-short { flex: 1 1 100%; order: 1; min-width: 0; }
+.finding-when { margin-inline-start: auto; color: var(--color-text-muted); font-size: var(--text-sm); font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (min-width: 48rem) {
+  .finding-short { flex: 1 1 12rem; order: 0; }
+}
+.finding-body { display: grid; gap: var(--space-3); padding-block: var(--space-3) var(--space-2); font-size: var(--text-sm); }
+.finding-body > * { margin: 0; min-width: 0; }
+.finding-facts { display: grid; gap: var(--space-2); margin: 0; }
+.finding-facts dt { font-weight: var(--weight-semibold); color: var(--color-text-muted); }
+.finding-facts dd { margin: 0; max-width: 75ch; }
+@media (min-width: 40rem) {
+  .finding-facts { grid-template-columns: max-content 1fr; column-gap: var(--space-4); }
+  .finding-facts > div { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; }
+}
+/* Sources on one line, as far as it goes; each link is 24 px tall to be hit (WCAG 2.5.8). */
+.finding-sources { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); margin: 0; padding: 0; list-style: none; }
+.finding-sources a { display: inline-block; min-height: 1.5rem; }
+/* Findings for information only, behind their line. */
+.findings-more > .disclosure-head .disclosure-trigger { font-weight: var(--weight-regular); color: var(--color-text-muted); }
+.findings-more > .disclosure-panel > .findings { margin-top: var(--space-2); }
+/* Put aside: what it said, and the way back. */
+.findings-aside { margin-top: var(--space-3); }
+.finding-aside { display: grid; gap: var(--space-2); padding-block: var(--space-3); }
+.finding-aside > * { margin: 0; min-width: 0; }
 .finding-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-3); }
 .finding-title { font-size: var(--text-md); margin: 0; }
-.finding-when { padding: 0; border: none; background: none; font: inherit; font-size: var(--text-sm); color: var(--color-accent); text-decoration: underline; cursor: pointer; min-height: 1.5rem; }
-.finding-when[aria-pressed='true'] { font-weight: var(--weight-semibold); }
-.finding-when:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
-.finding-facts { display: grid; gap: var(--space-2); margin: 0; font-size: var(--text-sm); }
-.finding-facts dt { font-weight: var(--weight-semibold); color: var(--color-text-muted); }
-.finding-facts dd { margin: 0; }
-.finding-sources { margin: 0; padding-left: var(--space-5); }
-.findings-aside { margin-top: var(--space-3); }
 .computer-events { margin: 0; padding-left: var(--space-5); }
+.assessment-line a { white-space: nowrap; }
 .assessment-note { font-size: var(--text-sm); color: var(--color-text-muted); }
+.assessment-about { display: grid; gap: var(--space-3); max-width: 65ch; }
+.assessment-about > * { margin: 0; }
 .finding-mark { margin-left: var(--space-2); }
-/* Links in a list need 24 px each to be hit (WCAG 2.5.8). */
-.finding-sources li { padding-block: var(--space-1); }
-.finding-sources a { display: inline-block; min-height: 1.5rem; }
 /* On the Divers page: rules of the dive assessment not shown for a Diver, each with the way back (ADR 0036). */
 .muted-rules { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); font-size: var(--text-sm); }
 .muted-rules ul { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin: 0; padding: 0; list-style: none; }

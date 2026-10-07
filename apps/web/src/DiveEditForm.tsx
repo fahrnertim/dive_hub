@@ -52,7 +52,7 @@ const FIELD_OF: Record<keyof Draft, OverridableField> = {
   maxDepth: 'maxDepthM', avgDepth: 'avgDepthM', waterTemperature: 'waterTemperatureC',
 };
 
-export function DiveEditForm({ dive: d, onDone }: { dive: DiveView; onDone: () => void }) {
+export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDone: () => void; focus?: 'notes' | undefined }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const display = useDisplay();
@@ -153,7 +153,7 @@ export function DiveEditForm({ dive: d, onDone }: { dive: DiveView; onDone: () =
     <Form className="form" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
       <div className="form-grid">
         <div className="field-block">
-          <NumberField autoFocus label={t('dive.number')} description={hint('number')} value={draft.number} onChange={(n) => change('number', n)} onInput={typing('number')} minValue={0} maxValue={100_000} step={1} />
+          <NumberField autoFocus={focus !== 'notes'} label={t('dive.number')} description={hint('number')} value={draft.number} onChange={(n) => change('number', n)} onInput={typing('number')} minValue={0} maxValue={100_000} step={1} />
           {origin('number')}
         </div>
         <div className="field-block">
@@ -184,7 +184,7 @@ export function DiveEditForm({ dive: d, onDone }: { dive: DiveView; onDone: () =
           {origin('waterTemperatureC')}
         </div>
       </div>
-      <TextArea label={t('dive.notes')} value={notes} onChange={setNotes} maxLength={20_000} />
+      <TextArea autoFocus={focus === 'notes'} label={t('dive.notes')} value={notes} onChange={setNotes} maxLength={20_000} />
       {save.error && (
         <Notice tone="danger">
           <p>{changedMeanwhile ? t('dive.changedMeanwhile') : errorText(save.error)}</p>

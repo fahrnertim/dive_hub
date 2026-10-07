@@ -1,29 +1,65 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
+import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { api, assessmentQuery, keys, unwrap, type AssessmentView, type DiveView } from './api.ts';
-import { clock, hidden, shown, stretch, summaryKey, summaryValues, type Finding, type Rule } from './lib/assessment.ts';
+import { clock, counts, differing, hidden, informing, shown, stretch, summaryKey, summaryValues, type Finding, type Rule } from './lib/assessment.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
-import { Badge, Button, ConfirmButton, Muted, Notice, Panel } from './ui/index.ts';
+import { refocusAfterRemoval } from './lib/focus.ts';
+import { Badge, Button, ConfirmButton, Dialog, Disclosure, Muted, Notice, Panel } from './ui/index.ts';
 
 /**
  * The Dive's assessment for everything on the dive page that shows it (ADR 0036): the panel with the findings, and
- * the Primary recording's profile, which is coloured by ascent speed and carries the findings' time lane. Selecting a
- * finding in one highlights it in the other.
+ * the Primary recording's profile, which is coloured by ascent speed and carries the findings' time lane. A finding
+ * is one row in the panel, with its details behind it. The one shown on the profile (`selected`) is the one opened
+ * last, or the one whose bar was chosen in the lane: that opens its row, and closes none.
  */
 interface AssessmentState {
   assessment: AssessmentView | undefined;
   selected: Rule | null;
+  /** From the lane: show this finding on the profile and open its row; null takes the highlight off. */
   select: (rule: Rule | null) => void;
+  /** Rows whose details are open. */
+  open: ReadonlySet<Rule>;
+  setOpen: (rule: Rule, open: boolean) => void;
+  /** Whether the line that holds the findings told for information only is open. */
+  moreOpen: boolean;
+  setMoreOpen: (open: boolean) => void;
 }
-const AssessmentContext = createContext<AssessmentState>({ assessment: undefined, selected: null, select: () => {} });
+const AssessmentContext = createContext<AssessmentState>({
+  assessment: undefined, selected: null, select: () => {}, open: new Set(), setOpen: () => {}, moreOpen: false, setMoreOpen: () => {},
+});
 export const useAssessment = () => useContext(AssessmentContext);
+
+const rowId = (rule: Rule) => `finding-${rule}`;
 
 export function AssessmentProvider({ diveId, children }: { diveId: string; children: ReactNode }) {
   const assessment = useQuery(assessmentQuery(diveId));
-  const [selected, select] = useState<Rule | null>(null);
-  const value = useMemo(() => ({ assessment: assessment.data, selected, select }), [assessment.data, selected]);
+  const [selected, setSelected] = useState<Rule | null>(null);
+  const [open, setOpenRules] = useState<ReadonlySet<Rule>>(new Set());
+  const [moreOpen, setMoreOpen] = useState(false);
+  const findings = assessment.data?.findings;
+  const setOpen = useCallback((rule: Rule, isOpen: boolean) => {
+    setOpenRules((rules) => {
+      const next = new Set(rules);
+      if (isOpen) next.add(rule); else next.delete(rule);
+      return next;
+    });
+    const onProfile = findings?.some((f) => f.rule === rule && f.startSeconds !== null);
+    setSelected((now) => (isOpen ? (onProfile ? rule : now) : now === rule ? null : now));
+  }, [findings]);
+  const select = useCallback((rule: Rule | null) => {
+    setSelected(rule);
+    if (!rule) return;
+    setOpenRules((rules) => new Set(rules).add(rule));
+    if (findings?.find((f) => f.rule === rule)?.severity === 'info') setMoreOpen(true);
+    // The row can be below the screen's edge: bring it in, moving the page as little as that takes.
+    requestAnimationFrame(() => document.getElementById(rowId(rule))?.scrollIntoView({ block: 'nearest' }));
+  }, [findings]);
+  const value = useMemo(
+    () => ({ assessment: assessment.data, selected, select, open, setOpen, moreOpen, setMoreOpen }),
+    [assessment.data, selected, select, open, setOpen, moreOpen],
+  );
   return <AssessmentContext value={value}>{children}</AssessmentContext>;
 }
 
@@ -35,17 +71,20 @@ function useWhen() {
       : t('assessment.at', { from: clock(f.startSeconds), to: clock(f.endSeconds) }));
 }
 
-/** The sentence that says what was found, in the User's units. */
-function useSummary() {
+/**
+ * What was found, in the User's units: the whole sentence (`summary`), or the short one a finding's row shows under
+ * its title (`short`), which leaves out what the title already says.
+ */
+function useSummary(length: 'summary' | 'short' = 'summary') {
   const { t } = useTranslation();
   const display = useDisplay();
-  return (f: Finding) => t(`assessment.summary.${summaryKey(f)}` as 'assessment.summary.sawtooth', summaryValues(f, display.units, display.locale));
+  return (f: Finding) => t(`assessment.${length}.${summaryKey(f)}` as 'assessment.summary.sawtooth', summaryValues(f, display.units, display.locale));
 }
 
 /**
  * Under the profile: one bar per finding at its place in the dive (ADR 0036's time lane). A bar is a button that
- * shows its stretch on the profile; the panel below has the words. `left` and `width` position the lane over the
- * chart's plot area, in pixels.
+ * shows its stretch on the profile and opens its row in the panel below, which has the words. `left` and `width`
+ * position the lane over the chart's plot area, in pixels.
  */
 export function FindingLane({ totalSeconds, plot }: { totalSeconds: number; plot: { left: number; width: number } | null }) {
   const { t } = useTranslation();
@@ -77,25 +116,47 @@ export function FindingLane({ totalSeconds, plot }: { totalSeconds: number; plot
   );
 }
 
-/** The Dive's assessment in words: the findings with their guidance and sources, what the computer noted, the fixed note. */
+/**
+ * The Dive's assessment in words. The head counts; each finding is a row with its numbers, and its guidance, sources
+ * and actions behind it; those told for information only wait behind one line that names them. Then the no-fly time,
+ * what the computer noted, and the fixed note.
+ */
 export function AssessmentPanel({ dive, diverName }: { dive: DiveView; diverName: string | undefined }) {
   const { t } = useTranslation();
   const display = useDisplay();
-  const { assessment: a } = useAssessment();
+  const { assessment: a, moreOpen, setMoreOpen } = useAssessment();
+  const main = useRef<HTMLUListElement>(null);
+  const more = useRef<HTMLUListElement>(null);
   if (!a) return null;
-  const visible = shown(a.findings);
+  const differ = differing(a.findings);
+  const info = informing(a.findings);
   const aside = hidden(a.findings);
+  const count = counts(a.findings);
+  const said = { differ: t('assessment.count.differ', { count: count.differ }), info: t('assessment.count.info', { count: count.info }) };
+  const head = !a.applies ? null
+    : count.differ > 0 && count.info > 0 ? t('assessment.count.both', said)
+    : count.differ > 0 ? said.differ : count.info > 0 ? said.info : null;
+  const names = new Intl.ListFormat(display.locale, { type: 'unit', style: 'short' }).format(info.map((f) => t(`assessment.title.${f.rule}`)));
+  const items = (list: Finding[], ref: RefObject<HTMLUListElement | null>) => (
+    <ul className="findings" ref={ref}>
+      {list.map((f, i) => <FindingItem key={f.rule} dive={dive} finding={f} diverName={diverName} list={ref} index={i} of={list.length} />)}
+    </ul>
+  );
   return (
-    <Panel title={t('assessment.panel')}>
+    <Panel title={t('assessment.panel')} actions={head && <span className="meta">{head}</span>}>
       <div className="assessment">
         {!a.applies ? <Muted>{t('assessment.notCovered')}</Muted> : (
           <>
-            <Muted>{t('assessment.lead')}</Muted>
             {!a.current && <Notice tone="info">{t('assessment.pending')}</Notice>}
-            {visible.length === 0 ? <p>{t('assessment.none')}</p> : (
-              <ul className="findings">
-                {visible.map((f) => <FindingItem key={f.rule} dive={dive} finding={f} diverName={diverName} />)}
-              </ul>
+            {differ.length === 0 && info.length === 0 && <p>{t('assessment.none')}</p>}
+            {differ.length > 0 && items(differ, main)}
+            {info.length > 0 && (
+              <Disclosure
+                className="findings-more" isExpanded={moreOpen} onExpandedChange={setMoreOpen}
+                title={t(differ.length > 0 ? 'assessment.more' : 'assessment.moreOnly', { count: info.length, names })}
+              >
+                {items(info, more)}
+              </Disclosure>
             )}
             {a.sampleIntervalSeconds !== null && a.sampleIntervalSeconds >= 5 && (
               <Muted>{t('assessment.sampling', { seconds: new Intl.NumberFormat().format(a.sampleIntervalSeconds) })}</Muted>
@@ -112,11 +173,13 @@ export function AssessmentPanel({ dive, diverName }: { dive: DiveView; diverName
         )}
         {/* DAN's no-fly time: good to know after a day's last dive, and nothing the diver did, so not a finding. */}
         {a.noFly && (
-          <div className="assessment-part">
-            <h3 className="subheading">{t('assessment.noFly.title')}</h3>
-            <p>{t(`assessment.noFly.${a.noFly.reason}`, { hours: a.noFly.hours, until: display.dateTime(a.noFly.until) })}</p>
-            <Muted>{t('assessment.noFly.guidance')} <a href={a.noFly.source.url} target="_blank" rel="noopener noreferrer" lang="en">{a.noFly.source.title}</a></Muted>
-          </div>
+          <p className="assessment-line">
+            <Trans
+              i18nKey={`assessment.noFly.${a.noFly.reason}`} components={{ b: <strong /> }}
+              values={{ hours: a.noFly.hours, until: display.dateTime(a.noFly.until) }}
+            />
+            {' '}<a href={a.noFly.source.url} target="_blank" rel="noopener noreferrer" lang="en" className="meta">{a.noFly.source.title}</a>
+          </p>
         )}
         {a.computerEvents.length > 0 && (
           <div className="assessment-part">
@@ -129,9 +192,36 @@ export function AssessmentPanel({ dive, diverName }: { dive: DiveView; diverName
             </ul>
           </div>
         )}
-        <p className="assessment-note">{t('assessment.note')}</p>
+        <FixedNote noFly={a.noFly !== null} />
       </div>
     </Panel>
+  );
+}
+
+/**
+ * The note that stands under every assessment (ADR 0036, as amended 2026-10-07): two sentences in the panel, and the
+ * full text one step away, with what an assessment is and what the no-fly time rests on.
+ */
+function FixedNote({ noFly }: { noFly: boolean }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <p className="assessment-note">
+        {t('assessment.noteShort')}{' '}
+        <Button variant="quiet" size="small" onPress={() => setOpen(true)}>{t('assessment.aboutLink')}</Button>
+      </p>
+      <Dialog title={t('assessment.aboutLink')} isOpen={open} onOpenChange={setOpen}>
+        <div className="assessment-about">
+          <p>{t('assessment.aboutWhat')}</p>
+          <p>{t('assessment.note')}</p>
+          {noFly && <p><strong>{t('assessment.noFly.title')}</strong><br />{t('assessment.noFly.guidance')}</p>}
+          <div className="form-actions">
+            <Button onPress={() => setOpen(false)}>{t('common.done')}</Button>
+          </div>
+        </div>
+      </Dialog>
+    </>
   );
 }
 
@@ -162,60 +252,76 @@ function useFindingActions(dive: DiveView) {
   return { dismiss, mute };
 }
 
-function FindingItem({ dive, finding: f, diverName }: { dive: DiveView; finding: Finding; diverName: string | undefined }) {
+/**
+ * One finding: a row with its title, severity, the short sentence with the numbers and when it was. Behind it the
+ * guidance with how well founded it is, what to do next time, the sources, and the two ways to put it aside.
+ * `list`, `index` and `of` say where it is in its list, for where focus goes once it is put aside.
+ */
+function FindingItem({ dive, finding: f, diverName, list, index, of }: {
+  dive: DiveView; finding: Finding; diverName: string | undefined; list: RefObject<HTMLUListElement | null>; index: number; of: number;
+}) {
   const { t } = useTranslation();
+  const display = useDisplay();
   const errorText = useErrorText();
-  const { selected, select } = useAssessment();
+  const { selected, open, setOpen } = useAssessment();
   const when = useWhen();
   const summary = useSummary();
+  const short = useSummary('short');
   const { dismiss, mute } = useFindingActions(dive);
   const title = t(`assessment.title.${f.rule}`);
   const diver = diverName ?? t('dive.diver');
-  const onProfile = f.startSeconds !== null;
+  const evidence = new Intl.ListFormat(display.locale, { type: 'conjunction' }).format(f.evidence.map((e) => t(`assessment.evidence.${e}`)));
+  const gone = (said: string) => {
+    setOpen(f.rule, false);
+    announce(said);
+    refocusAfterRemoval(list.current, index, of);
+  };
   return (
-    <li className="finding" data-selected={selected === f.rule || undefined}>
-      <div className="finding-head">
-        <h3 className="finding-title">{title}</h3>
-        <Badge>{t(`assessment.severity.${f.severity}`)}</Badge>
-        {onProfile
-          ? (
-            <button type="button" className="finding-when" aria-pressed={selected === f.rule} onClick={() => select(selected === f.rule ? null : f.rule)}>
-              {when(f)}<span className="visually-hidden">: {title}{selected === f.rule && `, ${t('assessment.selected')}`}</span>
-            </button>
-          )
-          : <span className="meta">{when(f)}</span>}
-      </div>
-      <p>{summary(f)}</p>
-      <dl className="finding-facts">
-        <div><dt>{t('assessment.guidanceLabel')}</dt><dd>{t(`assessment.guidance.${f.rule}`)}</dd></div>
-        <div><dt>{t('assessment.evidenceLabel')}</dt><dd>{f.evidence.map((e) => t(`assessment.evidence.${e}`)).join(', ')}</dd></div>
-        <div><dt>{t('assessment.recommendationLabel')}</dt><dd>{t(`assessment.recommendation.${f.rule}`)}</dd></div>
-        <div>
-          <dt>{t('assessment.sourcesLabel')}</dt>
-          <dd>
-            <ul className="finding-sources">
-              {f.sources.map((s) => <li key={s.url}><a href={s.url} target="_blank" rel="noopener noreferrer" lang="en">{s.title}</a></li>)}
-            </ul>
-          </dd>
+    <li id={rowId(f.rule)} className="finding" data-selected={selected === f.rule || undefined}>
+      <Disclosure
+        level={3} title={title} isExpanded={open.has(f.rule)} onExpandedChange={(isOpen) => setOpen(f.rule, isOpen)}
+        summary={(
+          <>
+            <Badge>{t(`assessment.severity.${f.severity}`)}</Badge>
+            {/* The short sentence for the eye; a screen reader gets the whole one. */}
+            <span className="finding-short" aria-hidden="true">{short(f)}</span>
+            <span className="visually-hidden">{summary(f)}</span>
+            <span className="finding-when">{when(f)}{selected === f.rule && <span className="visually-hidden">, {t('assessment.selected')}</span>}</span>
+          </>
+        )}
+      >
+        <div className="finding-body">
+          <dl className="finding-facts">
+            <div><dt>{t('assessment.guidanceLabel')}</dt><dd>{t(`assessment.guidance.${f.rule}`)} <span className="muted">{t('assessment.basedOn', { evidence })}</span></dd></div>
+            <div><dt>{t('assessment.recommendationLabel')}</dt><dd>{t(`assessment.recommendation.${f.rule}`)}</dd></div>
+            <div>
+              <dt>{t('assessment.sourcesLabel')}</dt>
+              <dd>
+                <ul className="finding-sources">
+                  {f.sources.map((s) => <li key={s.url}><a href={s.url} target="_blank" rel="noopener noreferrer" lang="en">{s.title}</a></li>)}
+                </ul>
+              </dd>
+            </div>
+          </dl>
+          {(dismiss.error ?? mute.error) && <Notice tone="danger">{errorText(dismiss.error ?? mute.error)}</Notice>}
+          <div className="form-actions">
+            <Button
+              size="small" aria-label={t('common.forItem', { action: t('assessment.dismiss'), item: title })}
+              isPending={dismiss.isPending}
+              onPress={() => dismiss.mutate({ rule: f.rule, dismissed: true }, { onSuccess: () => gone(t('assessment.dismissed', { title })) })}
+            >
+              {t('assessment.dismiss')}
+            </Button>
+            <ConfirmButton
+              variant="quiet" size="small" tone="primary" aria-label={t('common.forItem', { action: t('assessment.mute', { diver }), item: title })}
+              title={t('assessment.muteTitle', { title, diver })} body={t('assessment.muteBody', { diver })} confirmLabel={t('assessment.muteConfirm')}
+              onConfirm={() => mute.mutateAsync({ rule: f.rule, muted: true })} onDone={() => gone(t('assessment.muted', { title, diver }))}
+            >
+              {t('assessment.mute', { diver })}
+            </ConfirmButton>
+          </div>
         </div>
-      </dl>
-      {(dismiss.error ?? mute.error) && <Notice tone="danger">{errorText(dismiss.error ?? mute.error)}</Notice>}
-      <div className="form-actions">
-        <Button
-          size="small" aria-label={t('common.forItem', { action: t('assessment.dismiss'), item: title })}
-          isPending={dismiss.isPending}
-          onPress={() => dismiss.mutate({ rule: f.rule, dismissed: true }, { onSuccess: () => { select(null); announce(t('assessment.dismissed', { title })); } })}
-        >
-          {t('assessment.dismiss')}
-        </Button>
-        <ConfirmButton
-          variant="quiet" size="small" tone="primary" aria-label={t('common.forItem', { action: t('assessment.mute', { diver }), item: title })}
-          title={t('assessment.muteTitle', { title, diver })} body={t('assessment.muteBody', { diver })} confirmLabel={t('assessment.muteConfirm')}
-          onConfirm={() => mute.mutateAsync({ rule: f.rule, muted: true }).then(() => { select(null); announce(t('assessment.muted', { title, diver })); })}
-        >
-          {t('assessment.mute', { diver })}
-        </ConfirmButton>
-      </div>
+      </Disclosure>
     </li>
   );
 }
@@ -234,7 +340,7 @@ function AsideItem({ dive, finding: f, diverName }: { dive: DiveView; finding: F
     announce(t('assessment.restored', { title }));
   };
   return (
-    <li className="finding">
+    <li className="finding finding-aside">
       <div className="finding-head">
         <h3 className="finding-title">{title}</h3>
         <span className="meta">{f.muted ? t('assessment.mutedMark', { diver }) : t('assessment.dismissedMark')}</span>

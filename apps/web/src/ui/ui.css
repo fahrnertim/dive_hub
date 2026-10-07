@@ -43,6 +43,18 @@
 .panel > :last-child { margin-bottom: 0; }
 .panel .form + .muted, .panel .form + p { margin-top: var(--space-4); }
 
+/* A line that opens what is behind it (Disclosure): the title with its arrow is the button, and its hit area covers
+   the line. Only the arrow moves (a transform); the content appears at once, as layout changes aren't animated. */
+.disclosure-head { position: relative; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); }
+.disclosure-title { margin: 0; font-size: inherit; line-height: inherit; }
+.disclosure-trigger { display: inline-flex; align-items: baseline; gap: var(--space-1); min-height: 1.5rem; padding: 0; border: none; border-radius: var(--radius-sm);
+  background: none; color: inherit; font: inherit; font-weight: var(--weight-semibold); text-align: start; cursor: pointer; outline: none; }
+.disclosure-trigger::after { content: ''; position: absolute; inset: 0; }
+.disclosure-trigger[data-focus-visible] { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.disclosure-trigger > .icon { align-self: center; flex: none; color: var(--color-text-muted); transition: transform var(--duration-fast) var(--ease-out); }
+.disclosure[data-expanded] > .disclosure-head .disclosure-trigger > .icon { transform: rotate(90deg); }
+.disclosure-panel { min-width: 0; }
+
 /* Text roles: colour and size are separate (visual refresh 1). A lead or a sentence stays at body size. */
 .muted { color: var(--color-text-muted); }
 /* Small, secondary text: counts, dates of an entry, hints. */

@@ -2,7 +2,7 @@
 // merging, and afterwards one Dive is left while the other is among the deleted dives, saying where it went.
 // Fixtures: e2e/fixtures/mergeable-main.fit and mergeable-backup.fit, dive 31 (apps/server/test/fixtures/write-merge-fixture.ts).
 import { expect, test } from '@playwright/test';
-import { mergePair, mergeablePair, setPreferences } from './support.ts';
+import { mergePair, mergeablePair, openLine, setPreferences } from './support.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -36,6 +36,7 @@ test('says another dive was at the same time, merges the two after asking, and l
   await expect(dialog).toHaveCount(0);
   await expect(hint).toHaveCount(0);
   await expect(page.getByRole('tab')).toHaveCount(2);
+  await openLine(page, 'History');
   await expect(page.locator('#main').getByText('Another dive of the same time was merged into this one').first()).toBeVisible();
 
   await page.goto('/');

@@ -1,7 +1,7 @@
 // SSI as a Target in a real browser (ADR 0024), against the e2e server's fake SSI: connecting the account,
 // signing in again, disconnecting; picking the SSI site, sending a Dive, updating it and deleting it there.
 import { expect, test } from '@playwright/test';
-import { SSI_ACCOUNT, connectSsi, disconnectSsi, editElsewhere, leaveSsi, readyForSsi, resetDive } from './support.ts';
+import { SSI_ACCOUNT, connectSsi, disconnectSsi, editElsewhere, leaveSsi, openLine, readyForSsi, resetDive } from './support.ts';
 
 test('connects a Diver to SSI, signs in again with another choice, and disconnects', { tag: ['@account'] }, async ({ page, request }) => {
   await resetDive(request);
@@ -43,7 +43,12 @@ test('picks the SSI site, sends the dive, updates it after a change and deletes 
   await readyForSsi(request, dive.id);
   await page.goto(`/#/dives/${dive.id}`);
   const panel = page.locator('section', { has: page.getByRole('heading', { name: 'SSI', exact: true }) });
+  // One line says where the dive is at SSI; the rest opens from it.
+  const line = page.getByRole('button', { name: 'SSI', exact: true });
   await expect(panel.getByText('Not in SSI yet.')).toBeVisible();
+  await expect(line).toHaveAttribute('aria-expanded', 'false');
+  await expect(panel.getByRole('button', { name: 'Choose the SSI site' })).toBeHidden();
+  await openLine(page, 'SSI');
   await expect(panel.getByText('SSI shows dives sent from Dive Hub as unconfirmed')).toBeVisible();
 
   await panel.getByRole('button', { name: 'Choose the SSI site' }).click();
@@ -65,6 +70,8 @@ test('picks the SSI site, sends the dive, updates it after a change and deletes 
   await editElsewhere(request, dive.id, 'Saw a pike');
   await page.reload();
   await expect(panel.getByText('Changed since sent')).toBeVisible();
+  // A dive that changed since it was sent opens its line by itself.
+  await expect(line).toHaveAttribute('aria-expanded', 'true');
   await panel.getByRole('button', { name: 'Update in SSI' }).click();
   await expect(panel.getByText('Up to date')).toBeVisible();
   await panel.getByText('History of sending').click();

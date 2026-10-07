@@ -12,7 +12,8 @@
     "undo": "Rückgängig",
     "dismiss": "Schließen",
     "saving": "Wird gespeichert…",
-    "close": "Schließen"
+    "close": "Schließen",
+    "done": "Fertig"
   },
   "nav": {
     "main": "Hauptmenü",
@@ -266,7 +267,7 @@
     "utcOffset": "UTC-Abweichung (Stunden)",
     "waterTemperature": "Wassertemperatur",
     "notes": "Notizen",
-    "noNotes": "Noch keine Notizen.",
+    "addNotes": "Notizen hinzufügen",
     "edited": "bearbeitet",
     "fromRecording": "Aufzeichnung: {{value}}",
     "resetToRecording": "Wert der Aufzeichnung verwenden",
@@ -280,8 +281,8 @@
     "diveMode": "Tauchmodus",
     "decoModel": "Dekompressionsmodell",
     "gases": "Gase",
+    "allValues": "Alle Werte der Aufzeichnung",
     "temperatureRange": "Temperatur",
-    "otherValues": "Weitere Werte vom Gerät",
     "diver": "Taucher",
     "moveTo": "Zu einem anderen Taucher verschieben …",
     "moveTitle": "Tauchgang verschieben",
@@ -438,6 +439,7 @@
   "history": {
     "title": "Verlauf",
     "empty": "Noch keine Änderungen.",
+    "state": "{{cause}} am {{date}}",
     "by": {
       "user": "{{name}}",
       "import": "Import von {{name}}",
@@ -1158,7 +1160,6 @@
   },
   "participants": {
     "title": "Buddys und Guides",
-    "none": "Bei diesem Tauchgang ist noch niemand sonst eingetragen.",
     "role": {
       "buddy": "Buddy",
       "guide": "Guide",
@@ -1166,6 +1167,8 @@
     },
     "roleOf": "Rolle von {{name}}",
     "add": "Jemanden hinzufügen",
+    "change": "Ändern",
+    "withRole": "{{name}} ({{role}})",
     "addTitle": "Wer war mit dir tauchen?",
     "as": "Als",
     "who": "Taucher suchen",
@@ -1262,11 +1265,24 @@
   },
   "assessment": {
     "panel": "Auswertung",
-    "lead": "Was an diesem Tauchgang gegenüber veröffentlichten Empfehlungen auffällt, mit den Zahlen und der Quelle der Empfehlung.",
     "none": "An diesem Tauchgang fällt nichts auf.",
     "notCovered": "Die Auswertung deckt diese Art Tauchgang (Apnoe, Kreislaufgerät) noch nicht ab.",
     "pending": "Dieser Tauchgang wird gerade mit neueren Regeln erneut ausgewertet. Lade gleich neu.",
     "note": "Kein medizinischer Rat und kein Maß dafür, wie sicher ein Tauchgang war: Eine Dekompressionskrankheit kann innerhalb aller Grenzen auftreten, und die meisten Tauchgänge mit Hinweisen enden ohne Schaden. Bei Beschwerden nach einem Tauchgang (ungewöhnliche Müdigkeit, Gelenkschmerzen, Hautveränderungen, Taubheit, Schwindel) ruf DAN oder den Notruf an.",
+    "noteShort": "Kein medizinischer Rat und kein Maß dafür, wie sicher ein Tauchgang war. Bei Beschwerden nach einem Tauchgang ruf DAN oder den Notruf an.",
+    "aboutLink": "Was die Auswertung sagen kann und was nicht",
+    "aboutWhat": "Die Auswertung zeigt, was an einem Tauchgang gegenüber veröffentlichten Empfehlungen auffällt, mit den Zahlen und der Quelle der Empfehlung. Ihre Regeln und Schwellen sind für jeden Tauchgang dieselben.",
+    "count": {
+      "differ_one": "{{count}} Hinweis weicht von Empfehlungen ab",
+      "differ_other": "{{count}} Hinweise weichen von Empfehlungen ab",
+      "info_one": "{{count}} zur Information",
+      "info_other": "{{count}} zur Information",
+      "both": "{{differ}} · {{info}}"
+    },
+    "more_one": "{{count}} weiterer zur Information: {{names}}",
+    "more_other": "{{count}} weitere zur Information: {{names}}",
+    "moreOnly_one": "{{count}} zur Information: {{names}}",
+    "moreOnly_other": "{{count}} zur Information: {{names}}",
     "sampling": "Diese Aufzeichnung hat alle {{seconds}} s eine Tiefe, kurze schnelle Abschnitte können also fehlen.",
     "severity": {
       "info": "Info",
@@ -1281,7 +1297,7 @@
       "rule": "Regel eines Verbands oder Herstellers",
       "opinion": "Expertenmeinung"
     },
-    "evidenceLabel": "Grundlage",
+    "basedOn": "Grundlage: {{evidence}}.",
     "sourcesLabel": "Quellen",
     "guidanceLabel": "Empfehlung in der Literatur",
     "recommendationLabel": "Beim nächsten Mal",
@@ -1350,6 +1366,29 @@
       "dives_per_day": "Das war Tauchgang {{diveOfDay}} des Tages.",
       "deep_days": "Tag {{days}} in Folge mit einem Tauchgang tiefer als {{deeperThan}}."
     },
+    "short": {
+      "ascent_rate": "{{seconds}} s lang bis zu {{rate}}, von {{from}} auf {{to}}.",
+      "ascent_rate_several": "{{seconds}} s lang bis zu {{rate}}, von {{from}} auf {{to}}; der schnellste von {{count}} Abschnitten.",
+      "last_metres": "Die letzten {{metres}} in {{seconds}} s ({{lastRate}}).",
+      "safety_stop": "{{time}} zwischen 3 und 6 m; empfohlen sind 3 Minuten.",
+      "safety_stop_long": "{{time}} zwischen 3 und 6 m nach {{maxDepth}}; so tief oder so nah an der Grenze sind 5 Minuten empfohlen.",
+      "safety_stop_none": "Kein Stopp zwischen 3 und 6 m nach {{maxDepth}}.",
+      "descent_rate": "Bis zu {{rate}} auf den ersten 10 m.",
+      "stop_stability": "Zwischen {{shallowest}} und {{deepest}} beim Sicherheitsstopp.",
+      "ndl": "Nullzeit bis auf {{ndl}} min gefallen.",
+      "ndl_deco": "Nullzeit bei null: dekompressionspflichtig.",
+      "ceiling": "Bis zu {{above}} über der Dekostufe, insgesamt {{time}}.",
+      "ppo2": "Bis {{bar}} bar; {{working}} über 1,4 bar.",
+      "ppo2_contingency": "Bis {{bar}} bar; {{working}} über 1,4 bar, davon {{contingency}} über 1,6 bar.",
+      "cns": "Sauerstoffuhr (CNS) bei {{percent}} %.",
+      "sawtooth": "{{count}}-mal um {{excursion}} oder mehr auf und ab.",
+      "reverse_profile_difference": "{{maxDepth}}, {{deeperBy}} tiefer als der Tauchgang {{interval}} davor ({{previousDepth}}).",
+      "reverse_profile_depth": "{{maxDepth}} nach {{previousDepth}} {{interval}} davor, und tiefer als 40 m.",
+      "reverse_profile_decompression": "{{maxDepth}} nach {{previousDepth}} {{interval}} davor; einer der beiden hatte Dekostopps.",
+      "surface_interval": "Auf {{maxDepth}}, {{interval}} nach dem Tauchgang davor.",
+      "dives_per_day": "Tauchgang {{diveOfDay}} des Tages.",
+      "deep_days": "Tag {{days}} in Folge tiefer als {{deeperThan}}."
+    },
     "guidance": {
       "ascent_rate": "Tabellen und Tauchcomputer rechnen mit etwa 9 bis 10 m/min. In Experimenten gab es bei schnelleren Aufstiegen mehr Blasen, bei 10 m/min mit Stopp die wenigsten.",
       "last_metres": "Nahe der Oberfläche ändert sich der Druck am schnellsten, deshalb zählen die letzten Meter am meisten. BSAC verlangt eine Minute für die letzten 6 m; viele Taucher sind nach einem Stopp schneller, deshalb merkt Dive Hub sie erst über 18 m/min an, dem Doppelten dessen, woran der übrige Aufstieg gemessen wird.",
@@ -1407,9 +1446,9 @@
     },
     "noFly": {
       "title": "Fliegen nach diesem Tauchgang",
-      "single": "DANs Empfehlung nach einem einzelnen Tauchgang ohne Dekostopps: {{hours}} Stunden nicht fliegen, bis {{until}}.",
-      "several": "DANs Empfehlung nach mehreren Tauchgängen oder Tauchtagen: {{hours}} Stunden nicht fliegen, bis {{until}}.",
-      "decompression": "DANs Empfehlung nach einem Tauchgang mit Dekostopps: deutlich länger als 18 Stunden nicht fliegen. Dive Hub zeigt {{hours}}, bis {{until}}.",
+      "single": "<b>Fliegen nach diesem Tauchgang:</b> nicht vor {{until}} ({{hours}} Stunden nach einem einzelnen Tauchgang ohne Dekostopps).",
+      "several": "<b>Fliegen nach diesem Tauchgang:</b> nicht vor {{until}} ({{hours}} Stunden nach mehreren Tauchgängen oder Tauchtagen).",
+      "decompression": "<b>Fliegen nach diesem Tauchgang:</b> nicht vor {{until}} ({{hours}} Stunden; nach Dekostopps nennt DAN deutlich mehr als 18).",
       "guidance": "Aus DANs Konsens von 2002; gilt auch für Fahrten über hohe Pässe. Wird nach dem letzten Tauchgang eines Tauchtags gezeigt."
     }
   }

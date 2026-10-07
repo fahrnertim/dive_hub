@@ -54,6 +54,11 @@ export function summaryValues(f: Pick<Finding, 'values'>, units: UnitSystem, loc
 /** Findings the User sees first: neither put aside on this Dive nor muted for its Diver. */
 export const shown = (findings: Finding[]) => findings.filter((f) => !f.dismissed && !f.muted);
 export const hidden = (findings: Finding[]) => findings.filter((f) => f.dismissed || f.muted);
+/** Of the findings shown: those that differ from guidance (note, caution), and those told for information only. */
+export const differing = (findings: Finding[]) => shown(findings).filter((f) => f.severity !== 'info');
+export const informing = (findings: Finding[]) => shown(findings).filter((f) => f.severity === 'info');
+/** What the panel's head counts. */
+export const counts = (findings: Finding[]) => ({ differ: differing(findings).length, info: informing(findings).length });
 
 /** Where a stretch sits on a time axis of `totalSeconds`, in percent; at least `minPercent` wide so it can be hit. */
 export function stretch(startSeconds: number, endSeconds: number, totalSeconds: number, minPercent = 0) {

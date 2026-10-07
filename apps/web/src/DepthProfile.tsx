@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
@@ -36,9 +36,10 @@ function useColorScheme() {
 
 /**
  * Depth over time (depth axis pointing down) with water temperature, drawn with uPlot. The area under
- * the profile darkens with depth, like the water column (docs/spec/design-system.md).
+ * the profile darkens with depth, like the water column (docs/spec/design-system.md). `children` sit under the
+ * chart, before the profile as a table: what recorded it.
  */
-export function DepthProfile({ recordingId }: { recordingId: string }) {
+export function DepthProfile({ recordingId, children }: { recordingId: string; children?: ReactNode }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const display = useDisplay();
@@ -185,7 +186,7 @@ export function DepthProfile({ recordingId }: { recordingId: string }) {
   // display.duration is recreated each render; units and locale capture what it depends on.
   }, [samples.data, units, locale, depthUnit, temperatureUnit, t, dark]);
 
-  if (samples.error) return <Notice tone="danger">{errorText(samples.error)}</Notice>;
+  if (samples.error) return <><Notice tone="danger">{errorText(samples.error)}</Notice>{children}</>;
   const depth = samples.data?.series.find((s) => s.channel === 'depth');
   const temperature = samples.data?.series.find((s) => s.channel === 'temperature');
   const summary = depth && summarize(depth, temperature);
@@ -205,6 +206,7 @@ export function DepthProfile({ recordingId }: { recordingId: string }) {
           ))}
         </ul>
       )}
+      {children}
       {summary && depth && (
         <>
           <p id={summaryId} className="visually-hidden">

@@ -329,8 +329,14 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 Dive Hub comments on a diver's practice here, so the wording is part of the contract (ADR 0036). `GET /api/dives/{id}/assessment`
 returns findings from fixed rules; the client words them.
 
-- **Must show the fixed note with every assessment:** not medical advice; no measure of how safe a dive was;
-  decompression sickness can happen within every limit; with symptoms, call DAN or the emergency services.
+- **Must show the fixed note with every assessment.** In sight, always: not medical advice; no measure of how safe a
+  dive was; with symptoms, call DAN or the emergency services. One step away from it (a dialog, a sheet, a page), the
+  full text: that decompression sickness can happen within every limit, and which symptoms to watch for. A client
+  without "one step away" (a script, the MCP tool) gives the full text every time
+  ([ADR 0036, amendment of 2026-10-07](../decisions/0036-dive-assessment.md#amendment-2026-10-07-compact-presentation-ui-redesign-slice-a)).
+  *Web:* `Assessment.tsx` (`FixedNote`).
+- **May show a finding as one row and its details on demand,** and findings of severity `info` behind one line that
+  counts and names them. Then the row says what was measured, and nothing a finding has is left out of its details.
 - **Must not show or compute a score,** a grade, a colour for the whole dive, or a ranking of dives by findings. At most
   a count ("2 findings").
 - **Must word a finding as facts:** what was measured (from `values`, in the User's units), the guidance it is held

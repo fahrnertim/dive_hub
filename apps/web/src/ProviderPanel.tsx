@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   api, ApiError, buddiesQuery, keys, providerSitesQuery, providerStatusQuery, unwrap,
@@ -7,8 +7,8 @@ import {
 } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
-import { exporting, typedSiteId, useNames, useProviders, useProviderText } from './lib/providers.ts';
-import { Badge, Button, ConfirmButton, Dialog, Muted, Notice, Panel, SearchList, type SearchListItem } from './ui/index.ts';
+import { exporting, typedSiteId, useNames, useProviders, useProviderText, waitsForUser } from './lib/providers.ts';
+import { Badge, Button, ConfirmButton, Dialog, Disclosure, Muted, Notice, SearchList, type SearchListItem } from './ui/index.ts';
 
 type Existing = { remoteId: string; number: number | null; startsAt: string | null; maxDepthM: number | null; durationMinutes: number | null };
 
@@ -16,7 +16,7 @@ type Existing = { remoteId: string; number: number | null; startsAt: string | nu
 const requirementOf = (p: ProviderView, u: UnmetView): RequirementView | undefined =>
   p.data.dives?.export?.requirements.find((r) => r.type === u.type && r.source === u.source);
 
-/** The Dive at every Provider that takes dives (ADR 0027): one panel each, rendered from what the Provider offers. */
+/** The Dive at every Provider that takes dives (ADR 0027): one line each, rendered from what the Provider offers. */
 export function ProviderPanels({ dive, diverName }: { dive: DiveView; diverName: string | undefined }) {
   const providers = useProviders();
   return <>{exporting(providers.data).map((p) => <ProviderPanel key={p.id} provider={p} dive={dive} diverName={diverName} />)}</>;
@@ -26,6 +26,8 @@ export function ProviderPanels({ dive, diverName }: { dive: DiveView; diverName:
  * The Dive at one Provider (ADR 0024, 0027): send it, update it when it changed, delete it there, as far as the
  * Provider offers. What it needs first comes from its requirements (ADR 0029), each with its own way to fix it.
  * Shown only when the Dive's Diver is connected; otherwise it says where to connect.
+ * One line that says where the Dive is at the Provider, and opens for the rest (UI redesign, slice A). It opens by
+ * itself when something waits for the User: the Dive changed since it was sent, or the last sending failed.
  */
 function ProviderPanel({ provider: p, dive: d, diverName }: { provider: ProviderView; dive: DiveView; diverName: string | undefined }) {
   const { t } = useTranslation();
@@ -63,14 +65,19 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
   });
 
   const s = status.data;
-  if (!s) return status.error ? <Panel title={p.name}><Notice tone="danger">{errorText(status.error)}</Notice></Panel> : null;
+  const waiting = !!s && waitsForUser(s);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (waiting) setOpen(true);
+  }, [waiting]);
+  if (!s) return status.error ? <Line title={p.name}><Notice tone="danger">{errorText(status.error)}</Notice></Line> : null;
   if (!s.connection) {
     // Nothing sent and nothing to send with: one line pointing to where to connect.
     return (
-      <Panel title={p.name}>
-        <Muted>{pt('notConnected', { diver: diverName ?? '' })} <a href="#/account">{pt('goConnect')}</a></Muted>
+      <Line title={p.name}>
+        <p className="muted">{pt('notConnected', { diver: diverName ?? '' })} <a href="#/account">{pt('goConnect')}</a></p>
         {s.current && <SentState provider={p} status={s} />}
-      </Panel>
+      </Line>
     );
   }
   const last = s.pushes[0];
@@ -80,12 +87,14 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
   const ready = !s.unmet.some((u) => u.severity === 'blocking');
   const failure = (x: PushView) => problemText(x.failureCode ?? 'internal_error', p);
 
+  const state = s.current ? <SentState provider={p} status={s} />
+    : handedOver && !can('update') ? <p className="provider-state">{pt('handedOver', { date: display.dateTime(handedOver.createdAt) })}</p>
+    : <p className="provider-state">{pt('notSent')}</p>;
+
   return (
-    <Panel title={p.name}>
+    <section className="dive-line">
+      <Disclosure level={2} title={p.name} summary={state} isExpanded={open} onExpandedChange={setOpen}>
       <div className="provider-body">
-      {s.current ? <SentState provider={p} status={s} />
-        : handedOver && !can('update') ? <p className="provider-state">{pt('handedOver', { date: display.dateTime(handedOver.createdAt) })}</p>
-        : <p className="provider-state">{pt('notSent')}</p>}
 
       {signInNeeded && (
         <Notice tone="danger">{pt('signInNeeded')} <a href="#/account">{pt('goSignIn')}</a></Notice>
@@ -130,6 +139,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
         </details>
       )}
       </div>
+      </Disclosure>
 
       <Dialog title={pt('existsTitle')} isOpen={existing !== null} onOpenChange={(open) => !open && setExisting(null)}>
         {existing && (
@@ -150,7 +160,19 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
           </>
         )}
       </Dialog>
-    </Panel>
+    </section>
+  );
+}
+
+/** A Provider's line when there is nothing to open: its name, and what there is to say beside it. */
+function Line({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="dive-line">
+      <div className="dive-line-plain">
+        <h2>{title}</h2>
+        {children}
+      </div>
+    </section>
   );
 }
 

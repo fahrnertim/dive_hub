@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ApiError, meQuery, type ProblemCode } from '../api.ts';
 import { countryName, formatDistance, formatPosition, type Position } from './geo.ts';
 import {
-  formatDateTime, formatDepth, formatDiveTime, formatDuration, formatTemperature, pickUnits, unitLabel,
+  formatDate, formatDateTime, formatDepth, formatDiveTime, formatDuration, formatTemperature, pickUnits, unitLabel,
 } from './units.ts';
 
 /** Formatting in the UI language and the User's unit system (ADR 0014). */
@@ -21,6 +21,7 @@ export function useDisplay() {
     /** `source` unknown: the time as it was logged, without a time zone (ADR 0030). */
     diveTime: (iso: string, offsetSeconds: number | null, source?: string) => formatDiveTime(iso, offsetSeconds, locale, source === 'unknown'),
     dateTime: (iso: string) => formatDateTime(iso, locale),
+    date: (iso: string) => formatDate(iso, locale),
     /** "28.4950° N, 34.5160° E" (ADR 0020). */
     position: (p: Position) => formatPosition(p, locale, {
       north: t('geo.north'), south: t('geo.south'), east: t('geo.east'), west: t('geo.west'),

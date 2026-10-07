@@ -45,7 +45,7 @@ export function NumberField({ label, description, unit, onInput, ...props }: Fie
 
 /** Multi-line text, e.g. notes. */
 export function TextArea({ label, description, ...props }: FieldChrome & {
-  name?: string; value?: string; onChange?: (value: string) => void; maxLength?: number;
+  name?: string; value?: string; onChange?: (value: string) => void; maxLength?: number; autoFocus?: boolean;
 }) {
   return (
     <AriaTextField {...props} className="field">

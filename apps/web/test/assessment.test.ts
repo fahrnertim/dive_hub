@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bandSeconds, clock, formatRate, hidden, shown, stretch, summaryKey, summaryValues, type Finding } from '../src/lib/assessment.ts';
+import { bandSeconds, clock, counts, formatRate, hidden, shown, stretch, summaryKey, summaryValues, type Finding } from '../src/lib/assessment.ts';
 import en from '../src/i18n/locales/en.json' with { type: 'json' };
 import de from '../src/i18n/locales/de.json' with { type: 'json' };
 
@@ -29,8 +29,17 @@ describe('a finding\'s sentence', () => {
       const a = locale.assessment as unknown as Record<string, Record<string, string>>;
       for (const rule of rules) for (const part of ['title', 'guidance', 'recommendation']) expect(a[part]![rule], `${part}.${rule}`).toBeTruthy();
       for (const key of summaries) expect(a.summary![key], `summary.${key}`).toBeTruthy();
+      // The finding's row shows a short sentence under its title; it never addresses the diver, the title said what.
+      for (const key of summaries) {
+        expect(a.short![key], `short.${key}`).toBeTruthy();
+        expect(a.short![key], `short.${key}`).not.toMatch(/^(You|Du|Your|Dein)/);
+        expect(a.short![key]!.length, `short.${key}`).toBeLessThan(a.summary![key]!.length);
+      }
       // The no-fly time is not a finding: it has texts of its own, one per reason.
       for (const reason of ['title', 'single', 'several', 'decompression', 'guidance']) expect(a.noFly![reason], `noFly.${reason}`).toBeTruthy();
+      // The short note stands under every assessment; the full one is a step away and still says all of it.
+      expect(a.noteShort, 'noteShort').toBeTruthy();
+      expect((a.noteShort as unknown as string).length).toBeLessThan((a.note as unknown as string).length / 2);
     }
   });
 
@@ -48,6 +57,15 @@ describe('what is shown', () => {
     const all = [finding('ascent_rate', {}), finding('ppo2', {}, { dismissed: true }), finding('sawtooth', {}, { muted: true })];
     expect(shown(all).map((f) => f.rule)).toEqual(['ascent_rate']);
     expect(hidden(all).map((f) => f.rule)).toEqual(['ppo2', 'sawtooth']);
+  });
+
+  it('counts what differs from guidance apart from what is for information, without what was put aside', () => {
+    const all = [
+      finding('ascent_rate', {}), finding('ceiling', {}, { severity: 'caution' }), finding('descent_rate', {}, { severity: 'info' }),
+      finding('ppo2', {}, { dismissed: true }), finding('last_metres', {}, { severity: 'info', muted: true }),
+    ];
+    expect(counts(all)).toEqual({ differ: 2, info: 1 });
+    expect(counts([])).toEqual({ differ: 0, info: 0 });
   });
 });
 

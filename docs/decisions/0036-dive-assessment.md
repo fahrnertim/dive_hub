@@ -1,6 +1,6 @@
 ---
 title: "ADR 0036: Dive assessment - findings with their evidence, no score"
-summary: Every Dive gets findings computed from its Primary recording (and later its Cylinders and the Diver's other dives) by fixed, versioned rules - ascent rate, the last metres, safety stop, descent, depth stability on the stop, lowest NDL, ceilings, ppO2 and CNS, surfacing GF (slice 21), gas left (slice 19), sawtooth, reverse profiles outside the 1999 envelope, surface intervals, dives per day and days in a row, no-fly time as information - each with the measured value, the threshold, its source, how strong the evidence is and a recommendation. No score. Shown under the profile on a time lane, marked in the dive list, the profile coloured by ascent rate; the computer's own events beside them; findings stored with the engine version, dismissals and muted rules per Diver; an MCP tool. Trends later. Slice 18, built 2026-10-06 (engine version 1; see the amendment for what the build settled: one finding per rule and Dive, the last metres only above 18 m/min, the no-fly time beside the findings, three ascent bands, computed after every change and at start). The planned slices move to 19-23.
+summary: Every Dive gets findings computed from its Primary recording (and later its Cylinders and the Diver's other dives) by fixed, versioned rules - ascent rate, the last metres, safety stop, descent, depth stability on the stop, lowest NDL, ceilings, ppO2 and CNS, surfacing GF (slice 21), gas left (slice 19), sawtooth, reverse profiles outside the 1999 envelope, surface intervals, dives per day and days in a row, no-fly time as information - each with the measured value, the threshold, its source, how strong the evidence is and a recommendation. No score. Shown under the profile on a time lane, marked in the dive list, the profile coloured by ascent rate; the computer's own events beside them; findings stored with the engine version, dismissals and muted rules per Diver; an MCP tool. Trends later. Slice 18, built 2026-10-06 (engine version 1; see the amendment for what the build settled: one finding per rule and Dive, the last metres only above 18 m/min, the no-fly time beside the findings, three ascent bands, computed after every change and at start). The planned slices move to 19-23. Amended 2026-10-07 (UI redesign, slice A): in the web client each finding is one row with details on demand, findings for information wait behind one line, and the fixed note is short with its full text one step away.
 status: accepted
 date: 2026-10-06
 ---
@@ -9,7 +9,8 @@ date: 2026-10-06
 
 ## Status
 Accepted – 2026-10-06. Built as slice 18 on 2026-10-06 with engine version 1; what the build settled or changed is in the
-[amendment](#amendment-2026-10-06-as-built-slice-18-engine-version-1). Designed in [Dive assessment](../research/2026-10-06-dive-assessment.md). Moves the
+[amendment](#amendment-2026-10-06-as-built-slice-18-engine-version-1); how the web client shows it since the UI redesign is in the
+[second amendment](#amendment-2026-10-07-compact-presentation-ui-redesign-slice-a). Designed in [Dive assessment](../research/2026-10-06-dive-assessment.md). Moves the
 planned slices of ADR 0031–0034 once more (to 19–23).
 
 ## Context
@@ -163,3 +164,33 @@ The decisions above stand where this says nothing. The thresholds are `LIMITS` i
 - **MCP:** `logbook_get_dive_assessment` reads the stored assessment (the tool's transaction is read-only), with each
   finding in English sentences (`texts.ts`), its guidance, evidence, sources, and the fixed note in every result.
 - **Slices 19 and 21** add `gas_left` and the surfacing GF as rules here and raise the engine version.
+
+## Amendment 2026-10-07: compact presentation (UI redesign, slice A)
+The owner chose the compact assessment of the [UI redesign proposal](../research/2026-10-07-ui-redesign-proposal.md)
+(its Outcome). The rules, thresholds, severities and the texts of guidance are unchanged; this changes how the web
+client shows them, and one sentence of the Decision.
+
+- **The fixed note is short, with its full text one step away.** Under every assessment: "Not medical advice, and no
+  measure of how safe a dive was. With symptoms after a dive, call DAN or the emergency services." Beside it a button,
+  "What the assessment can and can't tell", opens a dialog with what the assessment is, the full note as before
+  (decompression sickness can happen within every limit; the symptoms to watch for) and the no-fly guidance. This
+  replaces "a fixed note with every assessment: ... decompression sickness can happen within limits" of the Decision
+  for clients with a screen: the short note must stay in sight, the full text must be one step away. The MCP tool
+  keeps the full note in every result (a model has no "one step away"). The [client contract](../spec/clients.md#the-dive-assessment)
+  says so.
+  A dialog, not a help page: there is no help area yet, and the text belongs to the assessment the User is looking at.
+- **One row per finding:** title, severity, a short sentence with the numbers, and when. The short sentences are
+  texts of their own (`assessment.short.*`): the numbers without "You ...". The long sentence stays for the MCP tool
+  and is what screen readers get (the short one is hidden from them).
+- **Guidance, evidence, next time, sources and the two actions open from the row.** The evidence is one sentence
+  after the guidance ("Based on experiments and an agency or maker rule.") instead of labels.
+- **Findings for information wait behind one line** that counts and names them ("2 more for information: Fast
+  descent, Short safety stop"). They are no less findings: the lane shows their bars, and the dive list's mark is
+  unchanged.
+- **The panel's head counts:** "2 findings differ from guidance · 2 for information". A count, not a score.
+- **The no-fly time is one line** with its source as a link; its guidance is in the dialog of the note.
+- **Lane and list still select each other,** and more: selecting a bar opens its finding (and the line of the
+  findings for information, if it is one of them) and closes none; opening a finding with a stretch shows it on the
+  profile, closing it takes it off.
+- **Not changed:** no score, no alarm colour, the assessment under the profile, dismissing and muting (now with the
+  finding's details).

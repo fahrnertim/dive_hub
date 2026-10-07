@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { dataFile, type PreparedData } from './prepare.ts';
 import {
-  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveWithoutRecording, expectGoodPage, externalDiver,
+  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveWithoutRecording, expectGoodPage, externalDiver, openLine,
   forgetDivers, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
@@ -67,9 +67,16 @@ for (const v of variants) {
       const id = await assessedDive(request);
       await page.goto(`/#/dives/${id}`);
       const lane = page.getByRole('group', { name: v.english ? 'Findings along the dive' : 'Hinweise im Verlauf des Tauchgangs' });
+      // Selecting a bar opens its finding: the page is checked with one finding open and the others one row each.
       await lane.getByRole('button', { name: v.english ? /^Fast ascent/ : /^Schneller Aufstieg/ }).click();
       await expect(page.getByText(v.english ? /Not medical advice/ : /Kein medizinischer Rat/)).toBeVisible();
+      await expect(page.getByRole('button', { name: v.english ? /^Put aside on this dive: Fast ascent/ : /: Schneller Aufstieg$/ }).first()).toBeVisible();
       await expectGoodPage(page, title('Dive 77'), v);
+      // The fixed note's full text, one step away.
+      await page.getByRole('button', { name: v.english ? /^What the assessment can/ : /^Was die Auswertung sagen kann/ }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await expectGoodPage(page, title('Dive 77'), v);
+      await page.keyboard.press('Escape');
       // The lane stays inside the page on a phone.
       const box = await lane.boundingBox();
       expect(box!.x + box!.width).toBeLessThanOrEqual(v.viewport.width);
@@ -277,6 +284,8 @@ for (const v of variants) {
       await connectSsi(request);
       await readyForSsi(request, diveId);
       await page.goto(`/#/dives/${diveId}`);
+      // Closed, the dive at SSI is one line; that page is checked by the other dive cases. Here it is open.
+      await openLine(page, 'SSI');
       const choose = page.getByRole('button', { name: v.english ? 'Choose the SSI site' : 'SSI-Tauchplatz wählen' });
       await expect(choose).toBeVisible();
       await expectGoodPage(page, title('Dive 42'), v);
@@ -294,9 +303,16 @@ for (const v of variants) {
       await forgetDivers(request, 'Mia');
       await setBuddies(request, diveId, [await externalDiver(request, 'Kai Lund', '4989164'), await externalDiver(request, 'Ulla Berg')]);
       await page.goto(`/#/dives/${diveId}`);
+      await openLine(page, 'SSI');
+      await openLine(page, v.english ? 'History' : 'Verlauf');
       const find = page.getByRole('button', { name: v.english ? 'Find Ulla Berg in your SSI buddy list' : 'Ulla Berg in deiner SSI-Buddyliste suchen' });
       await expect(find).toBeVisible();
       await expectGoodPage(page, title('Dive 42'), v);
+      // Roles and taking someone off, in the dialog from the fact.
+      await page.getByRole('button', { name: v.english ? 'Change: Buddies and guides' : 'Ändern: Buddys und Guides' }).click();
+      await expect(page.getByRole('dialog').getByRole('listitem').first()).toBeVisible();
+      await expectGoodPage(page, title('Dive 42'), v);
+      await page.keyboard.press('Escape');
       await page.getByRole('button', { name: v.english ? 'Add someone' : 'Jemanden hinzufügen' }).click();
       await expect(page.getByRole('dialog').getByRole('radio').first()).toBeVisible();
       await expectGoodPage(page, title('Dive 42'), v);

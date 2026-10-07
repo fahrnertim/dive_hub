@@ -12,7 +12,8 @@
     "undo": "Undo",
     "dismiss": "Dismiss",
     "saving": "Saving…",
-    "close": "Close"
+    "close": "Close",
+    "done": "Done"
   },
   "nav": {
     "main": "Main",
@@ -266,7 +267,7 @@
     "utcOffset": "UTC offset (hours)",
     "waterTemperature": "Water temperature",
     "notes": "Notes",
-    "noNotes": "No notes yet.",
+    "addNotes": "Add notes",
     "edited": "edited",
     "fromRecording": "Recording: {{value}}",
     "resetToRecording": "Use the recording’s value",
@@ -280,8 +281,8 @@
     "diveMode": "Dive mode",
     "decoModel": "Deco model",
     "gases": "Gases",
+    "allValues": "All values of the recording",
     "temperatureRange": "Temperature",
-    "otherValues": "Other values from the device",
     "diver": "Diver",
     "moveTo": "Move to another Diver…",
     "moveTitle": "Move this dive",
@@ -438,6 +439,7 @@
   "history": {
     "title": "History",
     "empty": "No changes yet.",
+    "state": "{{cause}} on {{date}}",
     "by": {
       "user": "{{name}}",
       "import": "Import of {{name}}",
@@ -1158,7 +1160,6 @@
   },
   "participants": {
     "title": "Buddies and guides",
-    "none": "Nobody else is on this dive yet.",
     "role": {
       "buddy": "Buddy",
       "guide": "Guide",
@@ -1166,6 +1167,8 @@
     },
     "roleOf": "Role of {{name}}",
     "add": "Add someone",
+    "change": "Change",
+    "withRole": "{{name}} ({{role}})",
     "addTitle": "Who dived with you?",
     "as": "As",
     "who": "Find a diver",
@@ -1262,11 +1265,24 @@
   },
   "assessment": {
     "panel": "Assessment",
-    "lead": "What stands out on this dive against published guidance, with the numbers and where the guidance comes from.",
     "none": "Nothing stands out on this dive.",
     "notCovered": "The assessment doesn’t cover this kind of dive (freediving, rebreathers) yet.",
     "pending": "This dive is being assessed again with newer rules. Reload in a moment.",
     "note": "Not medical advice, and no measure of how safe a dive was: decompression sickness can happen within every limit, and most dives with findings end without harm. With symptoms after a dive (unusual tiredness, joint pain, skin changes, numbness, dizziness), call DAN or the emergency services.",
+    "noteShort": "Not medical advice, and no measure of how safe a dive was. With symptoms after a dive, call DAN or the emergency services.",
+    "aboutLink": "What the assessment can and can’t tell",
+    "aboutWhat": "The assessment shows what stands out on a dive against published guidance, with the numbers and where the guidance comes from. Its rules and thresholds are the same for every dive.",
+    "count": {
+      "differ_one": "{{count}} finding differs from guidance",
+      "differ_other": "{{count}} findings differ from guidance",
+      "info_one": "{{count}} for information",
+      "info_other": "{{count}} for information",
+      "both": "{{differ}} · {{info}}"
+    },
+    "more_one": "{{count}} more for information: {{names}}",
+    "more_other": "{{count}} more for information: {{names}}",
+    "moreOnly_one": "{{count}} for information: {{names}}",
+    "moreOnly_other": "{{count}} for information: {{names}}",
     "sampling": "This recording has a depth every {{seconds}} s, so short fast stretches can be missing.",
     "severity": {
       "info": "Info",
@@ -1278,10 +1294,10 @@
       "observational": "observational data",
       "case_series": "case reports",
       "consensus": "expert consensus",
-      "rule": "agency or maker rule",
+      "rule": "an agency or maker rule",
       "opinion": "expert opinion"
     },
-    "evidenceLabel": "Based on",
+    "basedOn": "Based on {{evidence}}.",
     "sourcesLabel": "Sources",
     "guidanceLabel": "Guidance",
     "recommendationLabel": "Next time",
@@ -1350,6 +1366,29 @@
       "dives_per_day": "This was dive {{diveOfDay}} of the day.",
       "deep_days": "Day {{days}} in a row with a dive deeper than {{deeperThan}}."
     },
+    "short": {
+      "ascent_rate": "Up to {{rate}} for {{seconds}} s, from {{from}} to {{to}}.",
+      "ascent_rate_several": "Up to {{rate}} for {{seconds}} s, from {{from}} to {{to}}; the fastest of {{count}} stretches.",
+      "last_metres": "The last {{metres}} in {{seconds}} s ({{lastRate}}).",
+      "safety_stop": "{{time}} between 3 and 6 m (10–20 ft); 3 minutes are recommended.",
+      "safety_stop_long": "{{time}} between 3 and 6 m (10–20 ft) after {{maxDepth}}; 5 minutes are recommended this deep or this close to the limit.",
+      "safety_stop_none": "No stop between 3 and 6 m (10–20 ft) after {{maxDepth}}.",
+      "descent_rate": "Up to {{rate}} through the first 10 m (33 ft).",
+      "stop_stability": "Between {{shallowest}} and {{deepest}} on the safety stop.",
+      "ndl": "No-decompression limit down to {{ndl}} min.",
+      "ndl_deco": "No-decompression limit at zero: into decompression.",
+      "ceiling": "Up to {{above}} above the ceiling, for {{time}} in all.",
+      "ppo2": "Reached {{bar}} bar; above 1.4 bar for {{working}}.",
+      "ppo2_contingency": "Reached {{bar}} bar; above 1.4 bar for {{working}}, {{contingency}} of it above 1.6 bar.",
+      "cns": "Oxygen clock (CNS) at {{percent}} %.",
+      "sawtooth": "Up and down {{count}} times by {{excursion}} or more.",
+      "reverse_profile_difference": "{{maxDepth}}, {{deeperBy}} deeper than the dive {{interval}} before ({{previousDepth}}).",
+      "reverse_profile_depth": "{{maxDepth}} after {{previousDepth}} {{interval}} before, and deeper than 40 m (130 ft).",
+      "reverse_profile_decompression": "{{maxDepth}} after {{previousDepth}} {{interval}} before; one of the two had decompression stops.",
+      "surface_interval": "To {{maxDepth}}, {{interval}} after the dive before.",
+      "dives_per_day": "Dive {{diveOfDay}} of the day.",
+      "deep_days": "Day {{days}} in a row deeper than {{deeperThan}}."
+    },
     "guidance": {
       "ascent_rate": "Tables and dive computers assume about 9 to 10 m/min (30 ft/min). In experiments faster ascents gave more bubbles, and 10 m/min with a stop the fewest.",
       "last_metres": "Pressure changes fastest near the surface, so the last metres matter most. BSAC asks for a minute for the last 6 m (20 ft); many divers are faster after a stop, so Dive Hub remarks on them only above 18 m/min (60 ft/min), twice what the rest of the ascent is held to.",
@@ -1407,9 +1446,9 @@
     },
     "noFly": {
       "title": "Flying after this dive",
-      "single": "DAN’s guideline after a single dive without decompression stops: no flying for {{hours}} hours, until {{until}}.",
-      "several": "DAN’s guideline after several dives or days of diving: no flying for {{hours}} hours, until {{until}}.",
-      "decompression": "DAN’s guideline after a dive with decompression stops: no flying for well over 18 hours. Dive Hub shows {{hours}}, until {{until}}.",
+      "single": "<b>Flying after this dive:</b> not before {{until}} ({{hours}} hours after a single dive without decompression stops).",
+      "several": "<b>Flying after this dive:</b> not before {{until}} ({{hours}} hours after several dives or days of diving).",
+      "decompression": "<b>Flying after this dive:</b> not before {{until}} ({{hours}} hours; after decompression stops DAN says well over 18).",
       "guidance": "From DAN’s 2002 consensus; it also applies to drives over high passes. Shown after the last dive of a diving day."
     }
   }

@@ -226,6 +226,16 @@ The owner's answers to the choices above.
 Not yet an ADR: these are answers to a proposal. Slices C and D need one each (list filters and summary fields; the
 stored profile sketch).
 
+## Built
+
+- **Slice A (2026-10-07):** the compact assessment (1.1 to 1.7) and the dive page order (2.1 to 2.3).
+  [ADR 0036](../decisions/0036-dive-assessment.md#amendment-2026-10-07-compact-presentation-ui-redesign-slice-a) is
+  amended for the note and the rows. Different from the mock: the note's full text is a dialog; buddies are a fact
+  with their roles as text ("Kai Lund (Buddy)"), changed in a dialog (avatars come with slice C); the device is named
+  in the line under the chart only when no tab names it; SSI opens by itself when the Dive changed since it was sent,
+  the last sending failed, or the connection needs a new sign-in. Checked in the browser tests in English and German,
+  light and dark, at 320 px, at 200 % text and with axe (`e2e/ui-quality.spec.ts`), which the mock was not.
+
 ## Not verified
 
 - The mock was looked at in Edge at 1280 and 390 px, light, and the logbook in dark. Not in German, not at 320 px,
