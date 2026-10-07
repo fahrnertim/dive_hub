@@ -147,3 +147,23 @@ and read links as the Pushes do (per Dive and Provider, `currentRemote`), never 
 - **Which Dive is kept is said three times:** on the dive page's hint, on each pair in "Needs your decision" ("stays
   when merged"), and in the dialog, where the two are listed as "Stays" and "Goes to deleted dives" with what tells them
   apart. "This dive is kept" said nothing on the logbook, where both are listed.
+
+## Amendment 2026-10-07: a third rule, `entry_apart_from_recording` (planned, rule version 2)
+Why: a Recording's start and the same dive typed into a Provider's logbook can lie hours apart (the Suunto and SSI
+mismatch, [research note](../research/2026-10-07-suunto-ssi-mismatch.md)). Matching (ADR 0030) cannot see them as one
+dive and must not guess; a check can offer the pair and let the User decide.
+- **A new rule, not a changed one.** `recording_beside_entry` keeps its five minutes, because a check there has to agree
+  with what a fresh Import would do. The new rule is added after it and `LOGBOOK_CHECKS_VERSION` becomes 2.
+- **A pair is found when:** same Diver; exactly one of the two has a Recording; the same local day (each Dive's own
+  offset, or its wall-clock time where the offset is unknown); depths within max(0.2 m, 3 %); durations within 3 minutes;
+  and the pair does not overlap (that is `recording_beside_entry`). A neighbouring day is not looked at: a night dive
+  across midnight can be missed.
+- **One to one, nearest start wins.** A Dive is in at most one pair of this rule; a tie gives no suggestion.
+- **Never obvious.** The pair is not part of "Merge the clear pairs"; each one needs the User's own click.
+- **Fixed numbers, no setting.** To be revisited once there is more than one Provider's data to learn from.
+- **Reused as they are:** merge (the Dive with the Recording is kept and the Push links move), the per-pair answer
+  ("two dives", Undo) and muting.
+- **After the merge** the kept Dive is outdated at the Provider; "Send update" pushes its start time. At SSI this removes
+  the dive centre's QR verification of that entry, so the card says so before the User sends.
+- **Clients** get a duty: showing the rule's text and both local times with their difference
+  ([client contract](../spec/clients.md), updated in the same change).
