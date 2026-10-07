@@ -2,8 +2,11 @@
 // findings. Thresholds are fixed here with their sources; changing one raises ENGINE_VERSION, which recomputes every
 // Dive. No score, and nothing here calls a dive safe or unsafe: findings state what was measured against which guidance.
 
-/** Raised with every change to a threshold or a rule's logic; stored with each finding. */
-export const ENGINE_VERSION = 1;
+/**
+ * Raised with every change to a threshold or a rule's logic; stored with each finding. Also raised when the
+ * assessment row gains something to fill for existing Dives (2: the logbook's profile sketch, ADR 0041).
+ */
+export const ENGINE_VERSION = 2;
 
 export const SEVERITIES = ['info', 'note', 'caution'] as const;
 export type Severity = (typeof SEVERITIES)[number];

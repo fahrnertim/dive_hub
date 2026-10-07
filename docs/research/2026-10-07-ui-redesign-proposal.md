@@ -280,6 +280,12 @@ stored profile sketch).
   and dark, 320 px, 200 % text, axe) and in the review screenshots at 1280, 390 and 320 px. Not checked: 320 px together
   with 200 % text and a full stack of circles; real names and a full page of 25 real Dives; a screen reader's reading of
   a row (the names and roles are in the accessibility tree, how it sounds was not listened to).
+- **Slice D (2026-10-07):** the profile sketch in the logbook rows (3.1), [ADR 0041](../decisions/0041-logbook-profile-sketch.md):
+  stored with the assessment, sent as `profile`, drawn by `ProfileSketch`. Different from the mock: the dashed box is
+  empty (the row's facts already say "No recording"); on a phone the sketch is a third column, and a line of its own
+  under 26 rem. **Left out: the sketch on the Review page (4.5)**, because its candidates have no profile in their views.
+  Checked in the browser tests (the sweeps at 320 px, 200 % text and axe) and in the review screenshots at 1280 and 320 px;
+  not looked at: dark mode and German of the sketch, 25 real Dives.
 
 ## Not verified
 

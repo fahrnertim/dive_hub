@@ -10,6 +10,8 @@ import {
 import { useAddressSearch } from './lib/address-search.ts';
 import { usePageTitle } from './lib/page.ts';
 import { useNames, useProviders } from './lib/providers.ts';
+import { ProfileSketch } from './ProfileSketch.tsx';
+import { sketchScale } from './lib/sketch.ts';
 import { Avatar, Button, DiverAvatar, Icon, Muted, Notice, PageHeader, Panel, Select, TextField, ToggleChip } from './ui/index.ts';
 
 const ALL = 'all';
@@ -146,7 +148,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
                 <ul className="dive-rows">
                   {group.dives.map((d) => (
                     <DiveRow
-                      key={d.id} dive={d} year={!byDate}
+                      key={d.id} dive={d} year={!byDate} scaleM={sketchScale(dives.data.totals.deepestM)}
                       diver={several ? nameOf.get(d.diverId) : undefined}
                       from={d.fromProvider ? providerName(d.fromProvider) : undefined}
                     />
@@ -247,8 +249,10 @@ function MonthHead({ month, figures }: { month: string; figures: MonthFigures | 
  * One Dive: the site as its title (the date while it has none), then what makes it this dive, who was there, and the
  * two numbers in columns. The title is the link (keyboard and screen readers); the whole row is a larger click target.
  */
-function DiveRow({ dive: d, diver, from, year }: {
+function DiveRow({ dive: d, diver, from, year, scaleM }: {
   dive: DiveSummary;
+  /** The metres a sketch's height stands for, the same in every row. */
+  scaleM: number;
   /** The Diver's name, with several Divers. */
   diver: string | undefined;
   /** The Provider whose entry the Dive was made from, by name. */
@@ -285,6 +289,7 @@ function DiveRow({ dive: d, diver, from, year }: {
           {d.findings > 0 && <span className="badge">{t('logbook.findings', { count: d.findings })}</span>}
         </p>
       </div>
+      <ProfileSketch profile={d.profile} hasRecording={d.recordings > 0} scaleM={scaleM} />
       <Buddies people={d.participants} />
       <span className="dive-figures">
         <span className="num">{display.depth(d.maxDepthM)}</span>

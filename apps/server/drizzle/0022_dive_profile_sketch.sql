@@ -1,0 +1,1 @@
+ALTER TABLE "dive_assessment" ADD COLUMN "profile" jsonb;

@@ -154,7 +154,7 @@
 /* Dive rows: one grid for the whole page of rows, so the circles and the two numbers line up down the list like
    columns. The room the list has decides the layout, not the screen. */
 .dive-list { container: dives / inline-size; margin-inline: calc(-1 * var(--space-3)); }
-.dive-grid { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; column-gap: var(--space-4); }
+.dive-grid { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto auto; column-gap: var(--space-4); }
 .dive-group, .dive-rows, .dive-row { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; }
 .dive-rows { list-style: none; margin: 0; padding: 0; }
 .month-head { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-1) var(--space-3);
@@ -172,6 +172,18 @@
 .dive-facts > span:not(.badge):not(:last-child):not(:has(+ .badge))::after { content: '·' / ''; margin: 0 var(--space-2); }
 .dive-facts > .badge { margin-inline-start: var(--space-2); }
 .dive-buddies { display: inline-flex; }
+/* The profile sketch (UI redesign 3.1): the same box in every row, so rows line up; the box is empty while there is
+   nothing to draw, and dashed for a Dive without a Recording. */
+.sketch { display: block; box-sizing: border-box; width: 7rem; height: 2.5rem; border-radius: var(--radius-sm); overflow: hidden; }
+.sketch-empty { border: 1px dashed var(--color-border-strong, var(--color-border)); }
+.sketch-shallow { stop-color: var(--color-depth-shallow); }
+.sketch-deep { stop-color: var(--color-depth-deep); }
+.sketch-line { fill: none; stroke: var(--color-text-muted); stroke-width: 1; stroke-linejoin: round; }
+.sketch-ascent { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+/* Faster is also thicker, as in the profile chart: the bands don't rest on colour alone. */
+.sketch-ascent[data-band='1'] { stroke: var(--color-ascent-1); stroke-width: 3; }
+.sketch-ascent[data-band='2'] { stroke: var(--color-ascent-2); stroke-width: 4; }
+.sketch-ascent[data-band='3'] { stroke: var(--color-ascent-3); stroke-width: 5; }
 /* Each number is a column of the grid. */
 .dive-figures { display: contents; }
 .dive-figures > .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -182,13 +194,21 @@
      column: its width is every row's, so rows without circles lost it too). The numbers and the circles share one
      cell, and the numbers keep clear of the widest stack (three circles and "+N"). The number column stays one
      column down the list, as wide as the longest number. */
-  .dive-grid { grid-template-columns: auto minmax(0, 1fr); column-gap: var(--space-3); }
+  .dive-grid { grid-template-columns: auto minmax(0, 1fr) auto; column-gap: var(--space-3); }
   .dive-row { align-items: start; row-gap: 2px; }
+  /* The sketch is the third column, beside the title and the line under it. Every row has its box, so no row loses
+     width to another's. */
+  .sketch { grid-area: 1 / 3 / 3 / 3; align-self: center; width: 5.25rem; height: 2rem; }
   .dive-main { grid-column: 2; }
   .dive-figures { grid-area: 2 / 2; align-self: center; justify-self: start; display: flex; flex-wrap: wrap; font-size: var(--text-sm); color: var(--color-text-muted); }
   .dive-figures > .num + .num::before { content: '·' / ''; margin: 0 var(--space-2); }
   .dive-buddies { grid-area: 2 / 2; align-self: center; justify-self: end; }
   .dive-row:has(.dive-buddies) .dive-figures { margin-inline-end: 6.75rem; }
+}
+@container dives (max-width: 26rem) {
+  /* Too narrow for a column beside the text (a 320 px phone, or larger text): the sketch gets a line of its own. */
+  .dive-grid { grid-template-columns: auto minmax(0, 1fr); }
+  .sketch { grid-area: 3 / 2; justify-self: start; align-self: start; width: min(100%, 7rem); height: 1.75rem; margin-top: var(--space-1); }
 }
 .sort-button { font: inherit; color: inherit; background: none; border: none; padding: var(--space-1) 0; cursor: pointer;
   display: inline-flex; align-items: center; gap: var(--space-1); min-height: 1.5rem; }

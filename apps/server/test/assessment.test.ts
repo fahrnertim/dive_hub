@@ -172,6 +172,27 @@ describe.skipIf(!(await databaseReachable()))('the dive assessment', () => {
     await call('PUT', `/api/dives/${deep}/findings/ascent_rate/dismissal`, tim, { dismissed: false });
   });
 
+  it('sends the logbook a sketch of the Primary recording, with the fast ascent in it, and none for a Dive without a Recording', async () => {
+    type Row = { id: string; profile: { depthsM: number[]; spanSeconds: number; ascentBands: [number, number, number][] } | null };
+    const rows = async () => (await json<{ dives: Row[] }>('GET', '/api/dives', tim)).dives;
+    const sketch = (await rows()).find((d) => d.id === deep)!.profile!;
+    expect(sketch.depthsM).toHaveLength(48);
+    expect(Math.max(...sketch.depthsM)).toBeGreaterThan(30);
+    expect(sketch.spanSeconds).toBeGreaterThan(0);
+    expect(sketch.ascentBands.some(([, , band]) => band === 2)).toBe(true);
+    const [typed] = await t.db.insert(dive).values({
+      diverId: timDiver, startsAt: new Date('2026-03-15T13:00:00Z'), durationSeconds: 2400, maxDepthM: 22, fromProvider: 'ssi',
+    }).returning({ id: dive.id });
+    await assessment(typed!.id);
+    expect((await rows()).find((d) => d.id === typed!.id)!.profile).toBeNull();
+    // Not yet assessed with the stored Primary recording: nothing rather than another recording's sketch.
+    await t.db.update(diveAssessment).set({ recordingId: typed!.id }).where(eq(diveAssessment.diveId, deep));
+    expect((await rows()).find((d) => d.id === deep)!.profile).toBeNull();
+    await ctx.assessments.refreshAll();
+    expect((await rows()).find((d) => d.id === deep)!.profile).not.toBeNull();
+    await t.db.delete(dive).where(eq(dive.id, typed!.id));
+  });
+
   it('gives a Dive without a Recording only what the dives around it say', async () => {
     const [typed] = await t.db.insert(dive).values({
       diverId: timDiver, startsAt: new Date('2026-03-14T13:00:00Z'), utcOffsetSeconds: 7200, durationSeconds: 2400, maxDepthM: 22, fromProvider: 'ssi',
@@ -190,6 +211,8 @@ describe.skipIf(!(await databaseReachable()))('the dive assessment', () => {
     await t.db.update(recording).set({ summary: { ...rec!.summary, diveMode: 'apnea' }, updatedAt: new Date() }).where(eq(recording.id, rec!.id));
     const a = await assessment(deep);
     expect(a).toMatchObject({ applies: false, findings: [] });
+    // The sketch is for every dive with a profile, also those the rules don't cover.
+    expect((await json<{ dives: { id: string; profile: unknown }[] }>('GET', '/api/dives', tim)).dives.find((d) => d.id === deep)!.profile).not.toBeNull();
     // It no longer counts for the dives around it either.
     expect((await assessment(morning)).noFly).toMatchObject({ hours: 12, reason: 'single' });
     expect(a.noFly).toBeNull();

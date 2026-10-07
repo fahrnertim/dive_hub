@@ -9,6 +9,7 @@ import {
 } from '../db/schema.js';
 import { computerEventOf } from '../imports/computer-events.js';
 import type { ComputerEvent } from '../vocabulary.js';
+import { sketchOf } from './sketch.js';
 import { ENGINE_VERSION, RULES, RULE_IDS, assessProfile, assessSeries, noFlyAfter, type Finding, type RuleId, type SeriesDive } from './rules.js';
 
 export class AssessmentError extends Error {
@@ -67,12 +68,16 @@ export function createAssessmentService(db: Db) {
           enteredDeco.set(d.id, was.enteredDeco);
           continue;
         }
-        const assessed = applies && d.recordingId ? await assessRecording(tx, d.recordingId) : null;
+        const rows = d.recordingId ? await readSeries(tx, d.recordingId) : [];
+        const assessed = applies ? assessRows(rows) : null;
+        // The sketch is for every Dive with a depth profile, also those the rules don't cover.
+        const depth = rows.find((r) => r.channel === 'depth');
+        const profile = depth ? sketchOf(depth) : null;
         await replaceFindings(tx, d.id, 'profile', assessed?.findings ?? [], d.recordingId);
         const row = {
           engineVersion: ENGINE_VERSION, recordingId: d.recordingId, recordingStamp: d.stamp, applies,
           enteredDeco: assessed?.enteredDeco ?? false, sampleIntervalS: assessed?.sampleIntervalS ?? null,
-          ascentBands: assessed?.ascentBands ?? [], computedAt: new Date(),
+          ascentBands: assessed?.ascentBands ?? [], profile, computedAt: new Date(),
         };
         await tx.insert(diveAssessment).values({ diveId: d.id, ...row }).onConflictDoUpdate({ target: diveAssessment.diveId, set: row });
         enteredDeco.set(d.id, row.enteredDeco);
@@ -93,8 +98,11 @@ export function createAssessmentService(db: Db) {
     });
   }
 
-  async function assessRecording(tx: Tx, recordingId: string) {
-    const rows = await tx.select().from(sampleSeries).where(and(eq(sampleSeries.recordingId, recordingId), inArray(sampleSeries.channel, [...CHANNELS])));
+  async function readSeries(tx: Tx, recordingId: string) {
+    return tx.select().from(sampleSeries).where(and(eq(sampleSeries.recordingId, recordingId), inArray(sampleSeries.channel, [...CHANNELS])));
+  }
+
+  function assessRows(rows: Awaited<ReturnType<typeof readSeries>>) {
     const series = (channel: (typeof CHANNELS)[number]) => {
       const found = rows.find((r) => r.channel === channel);
       return found && { offsetsMs: found.offsetsMs, values: found.values };
@@ -194,6 +202,7 @@ export async function read(tx: Tx | Db, d: { id: string; diverId: string; primar
     recordingId: assessment?.recordingId ?? null,
     sampleIntervalS: assessment?.sampleIntervalS ?? null,
     ascentBands: assessment?.ascentBands ?? [],
+    profile: assessment?.profile ?? null,
     findings: findings.filter((f) => isRule(f.rule)).map((f) => ({
       rule: f.rule as RuleId, severity: f.severity, startS: f.startS, endS: f.endS, values: f.values,
       dismissed: dismissed.has(f.rule), muted: muted.has(f.rule),

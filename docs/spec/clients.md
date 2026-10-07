@@ -144,7 +144,10 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   and, while sorted by date, `months` as headings with their dives and time. A row says the Recordings (`recordings: 0`:
   "no recording"), the source (`fromProvider`), gas, the computer's surface interval and `participants`: buddies as
   initials in circles **plus their names and roles as text** for assistive technology; the circle alone never carries the
-  meaning. *Web:* `DiveList.tsx`.
+  meaning. A Dive's `profile` (depths, `spanSeconds`, `ascentBands`; [ADR 0041](../decisions/0041-logbook-profile-sketch.md))
+  is a sketch of its shape on **one depth scale for all rows**, fast ascent drawn thicker as well as coloured; it is
+  decoration, so depth and duration stay text. `null` is drawn as nothing (an empty dashed box when `recordings` is 0).
+  *Web:* `DiveList.tsx`, `ProfileSketch.tsx`, `lib/sketch.ts`.
 - **Follow merged sites:** a site with `mergedInto` is gone. Open the kept site instead (ADR 0022).
 - **Render Providers from `GET /api/providers`** ([ADR 0027](../decisions/0027-providers-as-adapters.md)): its list is
   the instance's, and it changes only with the server (cache it for the session). Offer a Connection panel per Provider

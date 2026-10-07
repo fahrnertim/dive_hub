@@ -6,7 +6,7 @@ import type { Auth } from './auth/auth.js';
 import { requireUser } from './auth/fastify.js';
 import type { Db } from './db/client.js';
 import {
-  IMPORT_ERROR_CODES, OUTCOME_REASONS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive, diveSite, diver, diverManagement, duplicateCandidate,
+  IMPORT_ERROR_CODES, OUTCOME_REASONS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive, diveAssessment, diveSite, diver, diverManagement, duplicateCandidate,
   importJob, participant, recording, sampleSeries,
 } from './db/schema.js';
 import { downsampleMinMax } from './dives/downsample.js';
@@ -96,6 +96,13 @@ const DiveSummaryView = Type.Object({
   participants: Type.Array(Type.Object({
     diverId: Type.String(), name: Type.String(), role: Type.Enum([...PARTICIPANT_ROLES]),
   }), { description: 'The Divers on the Dive besides its own Diver: buddies first, then guides and instructors, each by name (ADR 0028)' }),
+  profile: Nullable(Type.Object({
+    depthsM: Type.Array(Type.Number(), { description: 'Depth in metres, evenly spread over `spanSeconds`; the deepest sample of each stretch' }),
+    spanSeconds: Type.Number({ description: 'Seconds from the first to the last depth sample of the Primary recording' }),
+    ascentBands: Type.Array(Type.Tuple([Type.Number(), Type.Number(), Type.Integer({ minimum: 1, maximum: 3 })]), {
+      description: 'Stretches of the ascent that were fast, [start s, end s, band 1–3 for brisk, quick, very quick], in seconds from the first sample (ADR 0036)',
+    }),
+  }, { description: 'The Primary recording’s depth, reduced to draw a sketch of the dive (ADR 0041); null without a Recording or while the Dive waits to be assessed' })),
 });
 
 const DiveListView = Type.Object({
@@ -187,7 +194,15 @@ interface RowExtras {
   gases: { o2: number; he: number }[];
   surfaceIntervalSeconds: number | null;
   participants: Static<typeof DiveSummaryView>['participants'];
+  profile: Static<typeof DiveSummaryView>['profile'];
 }
+
+/** The stored sketch, only while it is of the Dive's current Primary recording (a change is assessed again shortly). */
+const sketchOfDive = (
+  d: typeof dive.$inferSelect,
+  a: { recordingId: string | null; profile: { depthsM: number[]; spanSeconds: number } | null; ascentBands: [number, number, 1 | 2 | 3][] } | undefined,
+): RowExtras['profile'] =>
+  a?.profile && a.recordingId === d.primaryRecordingId ? { ...a.profile, ascentBands: a.ascentBands } : null;
 
 const toDiveSummary = (d: typeof dive.$inferSelect, siteName: string | null, findings: number, extras: RowExtras): Static<typeof DiveSummaryView> => ({
   findings, ...extras, fromProvider: d.fromProvider,
@@ -298,16 +313,19 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
 
     const pageIds = rows.map((r) => r.d.id);
     const primaryIds = rows.flatMap((r) => (r.d.primaryRecordingId ? [r.d.primaryRecordingId] : []));
-    const [recordingCounts, primaries, people] = pageIds.length === 0 ? [[], [], []] : await Promise.all([
+    const [recordingCounts, primaries, people, assessments] = pageIds.length === 0 ? [[], [], [], []] : await Promise.all([
       db.select({ diveId: recording.diveId, n: count() }).from(recording)
         .where(and(inArray(recording.diveId, pageIds), isNull(recording.deletedAt))).groupBy(recording.diveId),
       primaryIds.length === 0 ? [] : db.select({ id: recording.id, summary: recording.summary }).from(recording).where(inArray(recording.id, primaryIds)),
       db.select({ diveId: participant.diveId, diverId: participant.diverId, name: diver.name, role: participant.role }).from(participant)
         .innerJoin(diver, eq(diver.id, participant.diverId)).where(and(inArray(participant.diveId, pageIds), isNull(diver.deletedAt))),
+      db.select({ diveId: diveAssessment.diveId, recordingId: diveAssessment.recordingId, profile: diveAssessment.profile, ascentBands: diveAssessment.ascentBands })
+        .from(diveAssessment).where(inArray(diveAssessment.diveId, pageIds)),
     ]);
     const recordingsOf = new Map(recordingCounts.map((c) => [c.diveId, c.n]));
     const summaryOf = new Map(primaries.map((p) => [p.id, p.summary]));
     const primary = (d: typeof dive.$inferSelect) => (d.primaryRecordingId ? summaryOf.get(d.primaryRecordingId) : undefined);
+    const assessmentOf = new Map(assessments.map((a) => [a.diveId, a]));
     const peopleOf = new Map<string, typeof people>();
     for (const p of people.toSorted((a, b) => ROLE_ORDER[a.role]! - ROLE_ORDER[b.role]! || a.name.localeCompare(b.name))) {
       peopleOf.set(p.diveId, [...(peopleOf.get(p.diveId) ?? []), p]);
@@ -330,6 +348,7 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
         gases: (primary(r.d)?.gases ?? []).map(({ o2, he }) => ({ o2, he })),
         surfaceIntervalSeconds: primary(r.d)?.surfaceIntervalSeconds ?? null,
         participants: (peopleOf.get(r.d.id) ?? []).map(({ diverId, name, role }) => ({ diverId, name, role })),
+        profile: sketchOfDive(r.d, assessmentOf.get(r.d.id)),
       })),
       total: counted?.n ?? 0,
       counts: counts!,

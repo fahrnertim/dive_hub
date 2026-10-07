@@ -1833,6 +1833,18 @@ export interface paths {
                                     /** @enum {unknown} */
                                     role: "buddy" | "guide" | "instructor";
                                 }[];
+                                profile: {
+                                    /** @description Depth in metres, evenly spread over `spanSeconds`; the deepest sample of each stretch */
+                                    depthsM: number[];
+                                    /** @description Seconds from the first to the last depth sample of the Primary recording */
+                                    spanSeconds: number;
+                                    /** @description Stretches of the ascent that were fast, [start s, end s, band 1–3 for brisk, quick, very quick], in seconds from the first sample (ADR 0036) */
+                                    ascentBands: [
+                                        number,
+                                        number,
+                                        number
+                                    ][];
+                                } | null;
                             }[];
                             total: number;
                             /** @description How many Dives each filter would show for the Diver and the search, whatever filters are applied (ADR 0040) */

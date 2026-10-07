@@ -815,6 +815,8 @@ export const diveAssessment = pgTable('dive_assessment', {
   sampleIntervalS: real('sample_interval_s'),
   /** Stretches of the ascent by speed, for colouring the profile: [start s, end s, band 1–3]. */
   ascentBands: jsonb('ascent_bands').$type<[number, number, 1 | 2 | 3][]>().notNull().default([]),
+  /** The depth profile reduced for the logbook's rows (ADR 0041); null without a Recording or a profile to draw. */
+  profile: jsonb('profile').$type<{ depthsM: number[]; spanSeconds: number }>(),
   computedAt: timestamp('computed_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

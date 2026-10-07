@@ -43,6 +43,27 @@ test('a row says its number, when and with whom; a month heading and the logbook
   }
 });
 
+test('a row sketches its dive from the recorded profile; a dive without a recording has an empty dashed box instead', { tag: ['@dives'] }, async ({ page, request }) => {
+  const id = await seededDiveId(request);
+  const without = await diveWithoutRecording(request);
+  const { dives } = await (await request.get('/api/dives?limit=200')).json() as { dives: { id: string; profile: { depthsM: number[] } | null }[] };
+  expect(dives.find((d) => d.id === id)!.profile!.depthsM.length).toBe(48);
+  expect(dives.find((d) => d.id === without)!.profile).toBeNull();
+
+  await page.goto('/#/?q=42');
+  const row = diveRows(page).filter({ hasText: 'Number 42' });
+  await expect(row.locator('svg.sketch path.sketch-line')).toHaveCount(1);
+  // The sketch is decoration: nothing for a screen reader to stop at, and it stays inside its box.
+  await expect(row.locator('.sketch')).toHaveAttribute('aria-hidden', 'true');
+  expect((await row.locator('.sketch').boundingBox())!.width).toBeGreaterThan(60);
+
+  await page.goto('/#/?only=no-recording');
+  const empty = diveRows(page).first();
+  await expect(empty.locator('.sketch-empty')).toHaveCount(1);
+  await expect(empty.locator('svg.sketch')).toHaveCount(0);
+  await expect(empty).toContainText('No recording');
+});
+
 test('"Show only" narrows the logbook: the chips keep their counts, live in the address, and no result offers all dives', { tag: ['@dives'] }, async ({ page, request }) => {
   await diveWithoutRecording(request);
   const { counts, total } = await (await request.get('/api/dives')).json() as {

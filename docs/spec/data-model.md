@@ -222,7 +222,8 @@ and nothing reaches that User.
 the engine version. At most one per rule and Dive. Text is rendered from the values, by each client in its language.
 **Dive assessment** (`dive_assessment`, one row per Dive): the engine version and the Primary recording (id and its
 `updated_at`) it was computed from, whether the rules cover the dive (not apnea or rebreathers), whether it entered
-decompression, the sample interval, and the ascent's stretches by speed for colouring the profile. A Dive is assessed
+decompression, the sample interval, the ascent's stretches by speed for colouring the profile, and the profile reduced to 48 depths for the
+logbook's sketch ([ADR 0041](../decisions/0041-logbook-profile-sketch.md)). A Dive is assessed
 again when the engine version or that Recording differ; the findings across dives whenever the Diver's dives change.
 A User **dismisses** a finding on a Dive (`finding_dismissal`: Dive, rule, by whom; it goes when the finding does) or
 **mutes** a rule for a Diver (`muted_rule`: Diver, rule, by whom; listed with the Diver). No score. DAN's no-fly time is

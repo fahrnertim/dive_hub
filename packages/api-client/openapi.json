@@ -5601,7 +5601,8 @@
                           "fromProvider",
                           "gases",
                           "surfaceIntervalSeconds",
-                          "participants"
+                          "participants",
+                          "profile"
                         ],
                         "properties": {
                           "id": {
@@ -5763,6 +5764,57 @@
                               }
                             },
                             "description": "The Divers on the Dive besides its own Diver: buddies first, then guides and instructors, each by name (ADR 0028)"
+                          },
+                          "profile": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "required": [
+                                  "depthsM",
+                                  "spanSeconds",
+                                  "ascentBands"
+                                ],
+                                "properties": {
+                                  "depthsM": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "number"
+                                    },
+                                    "description": "Depth in metres, evenly spread over `spanSeconds`; the deepest sample of each stretch"
+                                  },
+                                  "spanSeconds": {
+                                    "type": "number",
+                                    "description": "Seconds from the first to the last depth sample of the Primary recording"
+                                  },
+                                  "ascentBands": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "array",
+                                      "additionalItems": false,
+                                      "items": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "integer",
+                                          "minimum": 1,
+                                          "maximum": 3
+                                        }
+                                      ],
+                                      "minItems": 3
+                                    },
+                                    "description": "Stretches of the ascent that were fast, [start s, end s, band 1–3 for brisk, quick, very quick], in seconds from the first sample (ADR 0036)"
+                                  }
+                                },
+                                "description": "The Primary recording’s depth, reduced to draw a sketch of the dive (ADR 0041); null without a Recording or while the Dive waits to be assessed"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           }
                         }
                       }
