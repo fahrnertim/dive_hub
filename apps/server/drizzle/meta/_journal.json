@@ -162,6 +162,13 @@
       "when": 1791365416454,
       "tag": "0022_dive_profile_sketch",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791388956422,
+      "tag": "0023_logbook_check_dive_answer",
+      "breakpoints": true
     }
   ]
 }

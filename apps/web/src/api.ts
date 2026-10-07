@@ -51,7 +51,13 @@ export type RecordingSummary = DiveView['recordings'][number]['summary'];
 export type DiverView = Awaited<ReturnType<typeof fetchDivers>>[number];
 export type DeviceView = Awaited<ReturnType<typeof fetchDevices>>[number];
 export type CandidateView = Awaited<ReturnType<typeof fetchCandidates>>[number];
-export type LogbookCheckView = Awaited<ReturnType<typeof fetchLogbookChecks>>[number];
+type AnyLogbookCheck = Awaited<ReturnType<typeof fetchLogbookChecks>>[number];
+/** A logbook check about two Dives (ADR 0038). */
+export type LogbookCheckView = AnyLogbookCheck & { rule: Exclude<AnyLogbookCheck['rule'], 'short_shallow_dive'>; other: NonNullable<AnyLogbookCheck['other']> };
+/** A logbook check about one Dive: probably no dive, to delete or to keep. */
+export type DiveCheckView = AnyLogbookCheck & { rule: 'short_shallow_dive'; other: null };
+export const isPairCheck = (c: AnyLogbookCheck): c is LogbookCheckView => c.other !== null;
+export const isDiveCheck = (c: AnyLogbookCheck): c is DiveCheckView => c.other === null;
 export type MergeCandidateView = Awaited<ReturnType<typeof fetchMergeCandidates>>[number];
 export type DeletedDiveView = Awaited<ReturnType<typeof fetchDeletedDives>>['dives'][number];
 export type SiteView = Awaited<ReturnType<typeof fetchSite>>;

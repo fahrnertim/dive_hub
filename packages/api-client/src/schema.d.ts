@@ -3370,7 +3370,7 @@ export interface paths {
                              * @description recording_beside_entry: a Dive without a Recording and one with a Recording at the same time, as an import would have attached them; overlapping_dives: two Dives of one Diver that overlap in time; entry_apart_from_recording: a Dive without a Recording and one with one on the same local day, not overlapping, with depth (0.2 m or 3 %) and duration (3 minutes) agreeing: probably one dive typed with another start (never `obvious`; show both local start times and their difference)
                              * @enum {unknown}
                              */
-                            rule: "recording_beside_entry" | "overlapping_dives" | "entry_apart_from_recording";
+                            rule: "recording_beside_entry" | "overlapping_dives" | "entry_apart_from_recording" | "short_shallow_dive";
                             /** @description The User said these are two dives: don't hint at the pair again (it can still be merged) */
                             answered: boolean;
                             /** @description Which of the two Dives a merge keeps: the one with a Recording when only one has, else the Dive asked about */
@@ -3419,8 +3419,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Logbook checks: pairs of Dives in the User's logbooks that can't both be right as they stand
-         * @description Computed from the logbook each time by fixed rules (ADR 0038): a Dive without a Recording beside a Dive with one (at the same time, or on the same day with the same depth and duration), or two Dives of one Diver that overlap. `status=answered` lists the pairs the User said are two dives, to ask again. Resolve one by merging (POST /dives/{id}/merge), answering (PUT /logbook-checks/answer), correcting a time, moving or deleting one of the Dives. Never merge unasked (docs/spec/clients.md).
+         * Logbook checks: pairs of Dives in the User's logbooks that can't both be right as they stand, and Dives that are probably no dive
+         * @description Computed from the logbook each time by fixed rules (ADR 0038): a Dive without a Recording beside a Dive with one (at the same time, or on the same day with the same depth and duration), or two Dives of one Diver that overlap; and, about one Dive (`other: null`), a Recording under 2 minutes that stayed above 3 m, at no Provider: offer deleting it (DELETE /dives/{id}) or keeping it. `status=answered` lists the pairs the User said are two dives and the Dives they said to keep, to ask again. Resolve one by merging (POST /dives/{id}/merge), answering (PUT /logbook-checks/answer), correcting a time, moving or deleting one of the Dives. Never merge unasked (docs/spec/clients.md).
          */
         get: {
             parameters: {
@@ -3444,11 +3444,11 @@ export interface paths {
                              * @description recording_beside_entry: a Dive without a Recording and one with a Recording at the same time, as an import would have attached them; overlapping_dives: two Dives of one Diver that overlap in time; entry_apart_from_recording: a Dive without a Recording and one with one on the same local day, not overlapping, with depth (0.2 m or 3 %) and duration (3 minutes) agreeing: probably one dive typed with another start (never `obvious`; show both local start times and their difference)
                              * @enum {unknown}
                              */
-                            rule: "recording_beside_entry" | "overlapping_dives" | "entry_apart_from_recording";
+                            rule: "recording_beside_entry" | "overlapping_dives" | "entry_apart_from_recording" | "short_shallow_dive";
                             /** @description An import would have put the two together by itself, and no dive is left over at a Provider: may be merged with others in one go */
                             obvious: boolean;
                             diverId: string;
-                            /** @description The earlier of the two Dives */
+                            /** @description The earlier of the two Dives; the Dive, when the check is about one (short_shallow_dive: `other` is null) */
                             dive: {
                                 id: string;
                                 /** @description Send it when merging */
@@ -3473,7 +3473,7 @@ export interface paths {
                                     remoteNumber: null | number;
                                 }[];
                             };
-                            other: {
+                            other: null | {
                                 id: string;
                                 /** @description Send it when merging */
                                 version: number;
@@ -3523,8 +3523,8 @@ export interface paths {
         };
         get?: never;
         /**
-         * Answer a logbook check: these two Dives are two dives (or take the answer back)
-         * @description The answer holds until one of the two Dives changes its start; then the pair is asked about again. `answer: null` takes it back. 404 dive_not_found for a Dive not in the User's logbooks, check_not_found when the two break no rule together.
+         * Answer a logbook check: these two Dives are two dives, or keep this Dive (or take the answer back)
+         * @description Two ids with `two_dives`: the answer holds until one of the two Dives changes its start; then the pair is asked about again. One id with `keep` (a check about one Dive): it holds until the Dive's duration or depth changes. `answer: null` takes either back. 404 dive_not_found for a Dive not in the User's logbooks, check_not_found when the Dives break no rule. 400 for an answer that doesn't fit the number of Dives.
          */
         put: {
             parameters: {
@@ -3541,6 +3541,11 @@ export interface paths {
                             string
                         ];
                         answer: null | "two_dives";
+                    } | {
+                        diveIds: [
+                            string
+                        ];
+                        answer: null | "keep";
                     };
                 };
             };
@@ -3551,6 +3556,27 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content?: never;
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "dive_not_found" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_unsupported" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_data_not_confirmed";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                            /** @description The Provider a provider_* code is about (ADR 0027) */
+                            provider?: string;
+                            /** @description Its name, to put into the translated text */
+                            providerName?: string;
+                        };
+                    };
                 };
                 /** @description Default Response */
                 404: {

@@ -8,7 +8,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import {
-  E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, forgetDivers, mergePair, mergeablePair,
+  E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, falseStart, forgetDivers, keepFalseStart, mergePair, mergeablePair,
   leaveLena, leaveSsi, lenaReady, openLine, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
@@ -500,6 +500,40 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('button', { name: /^Es sind zwei Tauchgänge: / }).waitFor();
     await capture(page, '76-review-check-de-dark-390', { aria: false });
     await mergePair(request);
+    await setPreferences(request, { language: null });
+    await page.emulateMedia({ colorScheme: 'light' });
+  }
+
+  // A Dive that is probably no dive (ADR 0038, `short_shallow_dive`): the logbook's line, the check on the Review page, the
+  // delete dialog it opens, the kept ones under "Decided"; the check in German on a dark phone.
+  if (want('dives')) {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await setPreferences(request, { language: 'en' });
+    await falseStart(request);
+    await page.goto('/'); await page.reload();
+    await page.getByRole('link', { name: 'Review them' }).waitFor();
+    await capture(page, '77-logbook-short-dive-line', { full: false, aria: false });
+    await page.getByRole('link', { name: 'Review them' }).click();
+    await page.getByRole('button', { name: /^Keep it: / }).waitFor();
+    await capture(page, '77b-review-short-dive');
+    await page.getByRole('button', { name: /^Delete…: / }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Delete dive' }).waitFor();
+    await capture(page, '77c-review-short-dive-delete-dialog', { full: false });
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: /^Keep it: / }).click();
+    await page.getByRole('button', { name: 'Undo' }).waitFor();
+    await capture(page, '77d-review-short-dive-kept');
+    await page.goto('/#/review?tab=decided');
+    await page.getByRole('button', { name: /^Ask again: / }).waitFor();
+    await capture(page, '77e-review-short-dive-decided');
+    await falseStart(request);
+    await setPreferences(request, { language: 'de' });
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/#/review'); await page.reload();
+    await page.getByRole('button', { name: /^Behalten: / }).waitFor();
+    await capture(page, '78-review-short-dive-de-dark-390', { aria: false });
+    await keepFalseStart(request);
     await setPreferences(request, { language: null });
     await page.emulateMedia({ colorScheme: 'light' });
   }

@@ -17,7 +17,7 @@ function CopySentence({ provider: p, copy, canDelete }: { provider: ProviderView
  * Providers (ADR 0027), the same dialog asks whether to delete it there too. Afterwards the logbook shows it with
  * "Undo"; if deleting at a Provider fails, nothing is deleted and the dialog says why.
  */
-export function DeleteDiveDialog({ dive: d, name, onClose }: { dive: DiveView; name: string; onClose: () => void }) {
+export function DeleteDiveDialog({ dive: d, name, onClose }: { dive: Pick<DiveView, 'id' | 'version'>; name: string; onClose: () => void }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const names = useNames();

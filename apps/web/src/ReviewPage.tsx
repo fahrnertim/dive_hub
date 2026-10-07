@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { DeletedDives } from './DeletedDives.tsx';
 import { DiscardedRecordings, RecordingDecisions } from './Decisions.tsx';
 import { ImportHistory } from './ImportPanel.tsx';
-import { AnsweredChecks, PairDecisions } from './LogbookChecks.tsx';
+import { AnsweredChecks, KeptDives, PairDecisions, ShortDiveDecisions } from './LogbookChecks.tsx';
 import { usePageTitle } from './lib/page.ts';
 import { reviewHref, REVIEW_TABS, useReviewCounts, useWaiting, type ReviewTab } from './lib/review.ts';
 import { Muted, PageHeader } from './ui/index.ts';
@@ -41,6 +41,7 @@ function ToDecide() {
   return (
     <>
       <PairDecisions />
+      <ShortDiveDecisions />
       <RecordingDecisions />
       {total === 0 && <Muted>{t('review.nothingWaits')}</Muted>}
     </>
@@ -54,6 +55,7 @@ function Decided() {
     <>
       <DiscardedRecordings />
       <AnsweredChecks />
+      <KeptDives />
       {decided === 0 && <Muted>{t('review.nothingDecided')}</Muted>}
     </>
   );

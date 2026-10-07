@@ -577,7 +577,8 @@
     "rule": {
       "recording_beside_entry": "A dive without a recording and a dive with one are at the same time",
       "overlapping_dives": "Two dives overlap in time",
-      "entry_apart_from_recording": "Probably the same dive with another start time: the starts are {{difference}} apart, depth and duration agree"
+      "entry_apart_from_recording": "Probably the same dive with another start time: the starts are {{difference}} apart, depth and duration agree",
+      "short_shallow_dive": "A recording so short and shallow that it is probably no dive"
     },
     "how": "If they are the same dive, merge them. If a time is wrong or one belongs to another Diver, open that dive and correct it there.",
     "pair": "{{first}} and {{second}}",
@@ -592,7 +593,16 @@
     "mergedAll": "{{count}} pairs merged.",
     "answered": "Pairs kept as two dives",
     "answeredIntro": "Dives at the same time that you said are two dives.",
-    "askAgain": "Ask again"
+    "askAgain": "Ask again",
+    "short": {
+      "title": "Probably not dives",
+      "how": "A recording shorter than {{duration}} that stayed above {{depth}} is usually a dive computer that got wet, or a false start. If it was no dive, delete it: it goes to “Deleted dives” and can be restored.",
+      "delete": "Delete…",
+      "keep": "Keep it",
+      "kept": "Kept. You are asked again if its duration or depth changes.",
+      "answered": "Short dives you kept",
+      "answeredIntro": "Short, shallow recordings that you said to keep."
+    }
   },
   "merge": {
     "hint": "Another dive in this logbook was at the same time: {{facts}}. If both are the same dive, you can merge them into one.",
@@ -625,7 +635,7 @@
       "deleted": "Deleted dives"
     },
     "nothingWaits": "Nothing waits for your decision.",
-    "nothingDecided": "Nothing decided yet: recordings you discarded and pairs you kept as two dives show here.",
+    "nothingDecided": "Nothing decided yet: recordings you discarded, pairs you kept as two dives and short dives you kept show here.",
     "nothingDeleted": "No deleted dives.",
     "strip": {
       "things_one": "One thing needs your decision: {{parts}}.",
@@ -634,6 +644,8 @@
       "recordings_other": "{{count}} recordings",
       "pairs_one": "{{count}} pair of dives at the same time",
       "pairs_other": "{{count}} pairs of dives at the same time",
+      "shortDives_one": "{{count}} dive that is probably no dive",
+      "shortDives_other": "{{count}} dives that are probably no dives",
       "go": "Review them"
     }
   },

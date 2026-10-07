@@ -1,18 +1,22 @@
-// The rules of the logbook checks (ADR 0038), pure: which pairs of Dives can't both be right as they stand. They use the
-// import's own matching, so a check never disagrees with what a fresh import would have done.
+// The rules of the logbook checks (ADR 0038), pure: which pairs of Dives can't both be right as they stand, and which
+// Dive is probably no dive. The pair rules use the import's own matching, so a check never disagrees with what a fresh
+// import would have done.
 import { OVERLAP_TOLERANCE_SECONDS, alignedForMatching, depthsDisagree, localStartMs, overlaps } from '../imports/matching.js';
 
 /** Changes when a rule changes what it finds. */
-export const LOGBOOK_CHECKS_VERSION = 2;
+export const LOGBOOK_CHECKS_VERSION = 3;
 
 /**
  * `recording_beside_entry`: a Dive without a Recording and a Dive with one at the same time, as an import would have
  * attached them (its tolerance). `overlapping_dives`: two Dives of one Diver that really overlap in time.
  * `entry_apart_from_recording` (version 2): an entry and a Recording's Dive on the same local day that don't overlap but
- * agree in depth and duration: the same dive typed with another start.
+ * agree in depth and duration: the same dive typed with another start. `short_shallow_dive` (version 3), about one Dive:
+ * a Recording so short and shallow that it is probably no dive (a computer that got wet, a false start).
  */
-export const LOGBOOK_CHECK_RULES = ['recording_beside_entry', 'overlapping_dives', 'entry_apart_from_recording'] as const;
+export const LOGBOOK_CHECK_RULES = ['recording_beside_entry', 'overlapping_dives', 'entry_apart_from_recording', 'short_shallow_dive'] as const;
 export type LogbookCheckRule = (typeof LOGBOOK_CHECK_RULES)[number];
+/** The rules about two Dives. */
+export type PairRule = Exclude<LogbookCheckRule, 'short_shallow_dive'>;
 
 /** A Dive as the rules see it. */
 export interface CheckedDive {
@@ -31,6 +35,9 @@ const APART_DEPTH_M = 0.2;
 const APART_DEPTH_RATIO = 0.03;
 const APART_DURATION_SECONDS = 3 * 60;
 const DAY_MS = 86_400_000;
+/** Fixed and conservative (ADR 0038, amendment): ninety seconds to 12 m is an aborted descent, a real dive. */
+const NO_DIVE_BELOW_SECONDS = 2 * 60;
+const NO_DIVE_ABOVE_M = 3;
 
 const sameLocalDay = (a: CheckedDive, b: CheckedDive) => Math.floor(localStartMs(a) / DAY_MS) === Math.floor(localStartMs(b) / DAY_MS);
 
@@ -45,7 +52,7 @@ function agreeInDepthAndDuration(a: CheckedDive, b: CheckedDive): boolean {
  * The rule two Dives of one Diver break together, if any. Pure. `entry_apart_from_recording` is only whether the pair
  * qualifies; that each Dive is in one pair at most is decided over the whole logbook (`findChecks`).
  */
-export function ruleFor(a: CheckedDive, b: CheckedDive): LogbookCheckRule | null {
+export function ruleFor(a: CheckedDive, b: CheckedDive): PairRule | null {
   if (a.id === b.id || a.diverId !== b.diverId) return null;
   const mixed = (a.recordings === 0) !== (b.recordings === 0);
   // Where either offset is unknown, the two compare in local time (ADR 0030).
@@ -84,7 +91,7 @@ function oneToOne(pairs: { a: CheckedDive; b: CheckedDive }[]): { a: CheckedDive
 }
 
 export interface LogbookCheck {
-  rule: LogbookCheckRule;
+  rule: PairRule;
   /** The two Dives, the earlier first. */
   dives: [CheckedDive, CheckedDive];
   /** An import would have put the two together by itself: one Recording's Dive, one entry's, no other in reach, depths agreeing. */
@@ -96,7 +103,7 @@ export function findChecks(dives: CheckedDive[]): LogbookCheck[] {
   const sorted = [...dives].sort((x, y) => x.startsAt.getTime() - y.startsAt.getTime() || x.id.localeCompare(y.id));
   // A Dive whose offset is unknown keeps a wall-clock time up to 14 hours from its instant: looked that much further.
   const reach = (d: CheckedDive) => d.startsAt.getTime() + (d.durationSeconds + OVERLAP_TOLERANCE_SECONDS) * 1000 + 2 * 14 * 3600_000;
-  const found: { rule: LogbookCheckRule; a: CheckedDive; b: CheckedDive }[] = [];
+  const found: { rule: PairRule; a: CheckedDive; b: CheckedDive }[] = [];
   sorted.forEach((a, i) => {
     for (let k = i + 1; k < sorted.length && sorted[k]!.startsAt.getTime() <= reach(a); k++) {
       const rule = ruleFor(a, sorted[k]!);
@@ -130,3 +137,24 @@ export function findChecks(dives: CheckedDive[]): LogbookCheck[] {
 
 /** The pair as an answer is kept: the two ids in order. */
 export const ordered = (a: string, b: string): [string, string] => (a < b ? [a, b] : [b, a]);
+
+/**
+ * Whether a Dive is probably no dive: it has a Recording, lasted under 2 minutes and stayed above 3 m. Needs the depth;
+ * a Dive without a Recording was typed by someone, and a short one is a typo.
+ */
+export function probablyNoDive(d: Pick<CheckedDive, 'recordings' | 'durationSeconds' | 'maxDepthM'>): boolean {
+  return d.recordings > 0 && d.durationSeconds < NO_DIVE_BELOW_SECONDS && d.maxDepthM !== null && d.maxDepthM < NO_DIVE_ABOVE_M;
+}
+
+/** A Dive as `short_shallow_dive` sees it. */
+export interface DeletableDive extends CheckedDive {
+  fromProvider: string | null;
+}
+
+/**
+ * `short_shallow_dive`: whether to suggest deleting the Dive. Not one at a Provider or made from a Provider's entry: that
+ * is more likely a wrong link than clutter, and a delete there can't be undone.
+ */
+export function suggestsDeleting(d: DeletableDive, atProvider: boolean): boolean {
+  return probablyNoDive(d) && !atProvider && d.fromProvider === null;
+}

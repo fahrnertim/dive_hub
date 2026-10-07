@@ -874,6 +874,23 @@ export const logbookCheckAnswer = pgTable(
   (t) => [primaryKey({ columns: [t.diveA, t.diveB] }), index('logbook_check_answer_b_idx').on(t.diveB)],
 );
 
+/**
+ * The User's answer to a logbook check about one Dive (ADR 0038, `short_shallow_dive`): "keep it". It holds while the
+ * Dive has the duration and depth it was given for.
+ */
+export const logbookCheckDiveAnswer = pgTable(
+  'logbook_check_dive_answer',
+  {
+    diveId: uuid('dive_id').notNull().references(() => dive.id, { onDelete: 'cascade' }),
+    rule: text('rule').notNull(),
+    durationSeconds: real('duration_seconds').notNull(),
+    maxDepthM: real('max_depth_m'),
+    answeredBy: uuid('answered_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.diveId, t.rule] })],
+);
+
 /** A rule a Diver's Users don't want to see on any of the Diver's Dives (ADR 0036). The findings stay as computed. */
 export const mutedRule = pgTable(
   'muted_rule',

@@ -472,6 +472,14 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
   Such a pair is never `obvious`: it is merged only by the User's own click on that pair. After a merge the kept Dive may be
   outdated at the Provider: sending its start time there can remove the Provider's verification of the entry (SSI's dive
   centre QR), so say so before sending.
+- **A check can be about one Dive** (`other: null`, `rule: short_shallow_dive`, rule version 3): a Dive with a Recording
+  under 2 minutes that stayed above 3 m, at no Provider and not made from a Provider's entry, so probably no dive (a
+  computer that got wet, a false start). Show the Dive like one of a pair and say why it is listed, with the two limits
+  in the User's units. Offer two things: deleting it, through the delete flow of [Dives](#dives) with its question and
+  its Undo, and "keep it" (`PUT /api/logbook-checks/answer` with the one id and `keep`; 400 for `keep` with two ids or
+  `two_dives` with one). **Never delete it unasked, and never several in one go:** such a check is never `obvious`.
+  "Keep it" is taken back like a pair's answer (Undo, and "Ask again" from `status=answered`); the server asks again once
+  the Dive's duration or depth changes, and takes restoring such a Dive as "keep it".
 - **Never merge unasked.** Offer per pair: merge (the merge dialog of [Dives](#dives), with `other.keeps` and
   `other.bothAt`), and "they are two dives" (`PUT /api/logbook-checks/answer` with both ids and `two_dives`). Say that a
   wrong time or a Dive of another Diver is corrected on the Dive itself (edit, move, delete).
@@ -483,7 +491,7 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
   dives: such a pair is not listed until it is asked about again.
 - The dive page's hint (`merge-candidates`) leaves out pairs with `answered`.
 - The checks change with every import, edit, merge, move and delete: read them again then. *Web:* `LogbookChecks.tsx`,
-  `Decisions.tsx` (their query sits under the dives').
+  `Decisions.tsx` (their query sits under the dives'). Count both kinds where the client says how much waits.
 
 ### Duplicate candidates
 - **Show them where the User decides,** on a page of their own ("Review", reached from one line on the logbook and a count

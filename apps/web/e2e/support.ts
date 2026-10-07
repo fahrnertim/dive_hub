@@ -336,6 +336,51 @@ export async function mergePair(api: APIRequestContext): Promise<void> {
   await api.post(`/api/dives/${ids[0]}/merge`, { data: { version: await version(ids[0]!), otherId: ids[1], otherVersion: await version(ids[1]!) }, headers });
 }
 
+const FALSE_START_DAY = '2019-02-03';
+type DatedDive = { id: string; version: number; startsAt: string };
+
+async function findFalseStart(api: APIRequestContext): Promise<{ live?: string; deleted?: DatedDive }> {
+  for (const status of ['open', 'answered']) {
+    const checks = await (await api.get(`/api/logbook-checks?status=${status}`)).json() as { rule: string; dive: DatedDive }[];
+    const found = checks.find((c) => c.rule === 'short_shallow_dive' && c.dive.startsAt.startsWith(FALSE_START_DAY));
+    if (found) return { live: found.dive.id };
+  }
+  const { dives } = await (await api.get('/api/dives/deleted')).json() as { dives: DatedDive[] };
+  const deleted = dives.find((d) => d.startsAt.startsWith(FALSE_START_DAY));
+  return deleted ? { deleted } : {};
+}
+
+/**
+ * A Dive that is probably no dive (ADR 0038): 50 seconds at 1.8 m (e2e/fixtures/false-start.json), waiting as a logbook
+ * check. Made once; later it is asked about again, restored first if a test deleted it.
+ */
+export async function falseStart(api: APIRequestContext): Promise<string> {
+  const { live, deleted } = await findFalseStart(api);
+  let id = live;
+  if (deleted) {
+    await api.post(`/api/dives/${deleted.id}/restore`, { data: { version: deleted.version }, headers });
+    id = deleted.id;
+  }
+  if (!id) {
+    const upload = await api.post('/api/imports', {
+      headers, multipart: { file: { name: 'false-start.json', mimeType: 'application/json', buffer: readFileSync('e2e/fixtures/false-start.json') } },
+    });
+    const url = `/api/imports/${(await upload.json() as { id: string }).id}`;
+    await expect.poll(async () => (await (await api.get(url)).json()).status).toBe('done');
+    id = ((await (await api.get(url)).json()) as { outcome: { diveId?: string }[] }).outcome[0]!.diveId!;
+  }
+  // Restoring it, or an earlier test, answered "keep it": asked about again.
+  await api.put('/api/logbook-checks/answer', { data: { diveIds: [id], answer: null }, headers });
+  return id;
+}
+
+/** Keeps the false start (restoring it does), so nothing waits and no dive is deleted for the tests that follow. */
+export async function keepFalseStart(api: APIRequestContext): Promise<void> {
+  const { live, deleted } = await findFalseStart(api);
+  if (deleted) await api.post(`/api/dives/${deleted.id}/restore`, { data: { version: deleted.version }, headers });
+  else if (live) await api.put('/api/logbook-checks/answer', { data: { diveIds: [live], answer: 'keep' }, headers });
+}
+
 /** Sends the Dive to the fake SSI, at a site of its own whose SSI ID no other spec uses. */
 export async function sendToSsi(api: APIRequestContext, diveId: string) {
   await connectSsi(api);

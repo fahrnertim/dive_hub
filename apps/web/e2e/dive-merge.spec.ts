@@ -2,7 +2,7 @@
 // merging, and afterwards one Dive is left while the other is among the deleted dives, saying where it went.
 // Fixtures: e2e/fixtures/mergeable-main.fit and mergeable-backup.fit, dive 31 (apps/server/test/fixtures/write-merge-fixture.ts).
 import { expect, test } from '@playwright/test';
-import { diveRows, mergePair, mergeablePair, openLine, setPreferences } from './support.ts';
+import { diveRows, falseStart, keepFalseStart, mergePair, mergeablePair, openLine, setPreferences } from './support.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -87,5 +87,49 @@ test('lists two dives at the same time on the logbook, keeps them apart when tol
     await expect(diveRows(page).filter({ hasText: /Number 31(?!\d)/ })).toHaveCount(1);
   } finally {
     await mergePair(request);
+  }
+});
+
+// A logbook check about one Dive (ADR 0038, `short_shallow_dive`): a recording of 50 seconds at 1.8 m is offered for
+// deleting, kept when told so, and deleted only through the delete dialog, with its Undo.
+test('offers a short and shallow dive for deleting, keeps it when told so, and deletes it only after asking', { tag: ['@dives'] }, async ({ page, request }) => {
+  await falseStart(request);
+  try {
+    await page.goto('/');
+    const main = page.locator('#main');
+    await expect(main.getByText('One thing needs your decision: 1 dive that is probably no dive.')).toBeVisible();
+    await page.getByRole('link', { name: 'Review them' }).click();
+    await expect(main.getByRole('heading', { name: 'Probably not dives', level: 2 })).toBeVisible();
+    await expect(main.getByText('A recording shorter than 2 min that stayed above 3 m is usually a dive computer that got wet, or a false start.')).toBeVisible();
+
+    // "Keep it": the dive leaves the list, with a way back that has the focus.
+    await main.getByRole('button', { name: /^Keep it: / }).click();
+    await expect(main.getByText('Kept. You are asked again if its duration or depth changes.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Undo' })).toBeFocused();
+    await expect(page.getByText('Nothing waits for your decision.')).toBeVisible();
+    await page.getByRole('button', { name: 'Undo' }).click();
+    await expect(main.getByRole('button', { name: /^Keep it: / })).toBeVisible();
+
+    // Kept again, it waits under "Decided" to be asked about again.
+    await main.getByRole('button', { name: /^Keep it: / }).click();
+    await page.getByRole('link', { name: 'Decided' }).click();
+    await expect(main.getByRole('heading', { name: 'Short dives you kept', level: 2 })).toBeVisible();
+    await main.getByRole('button', { name: /^Ask again: / }).click();
+    await page.getByRole('link', { name: /^To decide/ }).click();
+
+    // Deleting asks first, in the delete dialog; nothing is deleted by the button on the row.
+    await main.getByRole('button', { name: /^Delete…: / }).click();
+    const dialog = page.getByRole('dialog', { name: /^Delete .+\?$/ });
+    await expect(dialog.getByText('You can restore it', { exact: false })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(main.getByRole('button', { name: /^Delete…: / })).toBeVisible();
+    await main.getByRole('button', { name: /^Delete…: / }).click();
+    await dialog.getByRole('button', { name: 'Delete dive' }).click();
+    // The logbook, with the delete flow's own Undo; restored, the dive is kept and not asked about again.
+    await page.getByRole('button', { name: 'Undo' }).click();
+    await expect(page.getByRole('button', { name: 'Undo' })).toHaveCount(0);
+    await expect(main.getByText('needs your decision', { exact: false })).toHaveCount(0);
+  } finally {
+    await keepFalseStart(request);
   }
 });

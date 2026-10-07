@@ -10,7 +10,7 @@ import {
 } from './dive-values.js';
 import { writeRevision, type Actor, type Changes, type RevisionCause } from './revisions.js';
 import { liveSite, siteRef } from '../sites/dive-site-link.js';
-import { keepApart } from './logbook-check-answers.js';
+import { keepApart, keepRestored } from './logbook-check-answers.js';
 
 export class DiveError extends Error {
   constructor(readonly code:
@@ -312,6 +312,7 @@ export function createDiveService(db: Db) {
           .where(and(eq(recording.diveId, diveId), eq(recording.deletedAt, current.deletedAt!)));
         await tx.update(dive).set({ deletedAt: null, siteId, version: sql`${dive.version} + 1`, updatedAt: at }).where(eq(dive.id, diveId));
         await writeRevision(tx, 'dive', diveId, { type: 'user', id: userId }, 'restore', changes);
+        await keepRestored(tx, userId, diveId);
       });
     },
   };

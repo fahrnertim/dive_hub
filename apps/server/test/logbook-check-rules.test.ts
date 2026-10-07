@@ -1,7 +1,7 @@
 // The rules of the logbook checks (ADR 0038), pure: which pairs of Dives can't both be right as they stand, and which
 // of them an import would have put together by itself.
 import { describe, expect, it } from 'vitest';
-import { findChecks, ruleFor, type CheckedDive } from '../src/dives/logbook-check-rules.js';
+import { findChecks, probablyNoDive, ruleFor, suggestsDeleting, type CheckedDive, type DeletableDive } from '../src/dives/logbook-check-rules.js';
 
 const at = (time: string) => new Date(`2026-03-12T${time}Z`);
 const dive = (id: string, time: string, minutes: number, more: Partial<CheckedDive> = {}): CheckedDive => ({
@@ -133,5 +133,33 @@ describe('the checks of a logbook', () => {
 
   it('keeps Divers apart', () => {
     expect(findChecks([dive('mine', '11:13:00', 44), dive('hers', '11:13:00', 44, { diverId: 'lena' })])).toEqual([]);
+  });
+});
+
+describe('a short and shallow Dive (rule version 3)', () => {
+  // The owner's false start: 50 seconds at 1.8 m, the real dive starting five minutes later.
+  const falseStart = (more: Partial<DeletableDive> = {}): DeletableDive => ({ ...file('short', '10:58:07', 0, { durationSeconds: 50, maxDepthM: 1.8 }), fromProvider: null, ...more });
+
+  it('is probably no dive: a Recording under 2 minutes that stayed above 3 m', () => {
+    expect(probablyNoDive(falseStart())).toBe(true);
+    expect(probablyNoDive(falseStart({ durationSeconds: 119, maxDepthM: 2.9 }))).toBe(true);
+    expect(probablyNoDive(falseStart({ durationSeconds: 120 }))).toBe(false);
+  });
+
+  it('is a real dive when it went deeper, however short: an aborted descent', () => {
+    expect(probablyNoDive(falseStart({ durationSeconds: 90, maxDepthM: 12 }))).toBe(false);
+    expect(probablyNoDive(falseStart({ maxDepthM: 3 }))).toBe(false);
+  });
+
+  it('says nothing without a depth, or about a Dive without a Recording (a typed entry is a typo, not clutter)', () => {
+    expect(probablyNoDive(falseStart({ maxDepthM: null }))).toBe(false);
+    expect(probablyNoDive(falseStart({ recordings: 0 }))).toBe(false);
+  });
+
+  it('suggests deleting it only when it is at no Provider and was not made from an entry', () => {
+    expect(suggestsDeleting(falseStart(), false)).toBe(true);
+    expect(suggestsDeleting(falseStart(), true)).toBe(false);
+    expect(suggestsDeleting(falseStart({ fromProvider: 'ssi' }), false)).toBe(false);
+    expect(suggestsDeleting({ ...file('real', '11:04:21', 36, { maxDepthM: 14.5 }), fromProvider: null }, false)).toBe(false);
   });
 });

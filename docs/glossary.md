@@ -107,7 +107,7 @@ _Avoid_: Conflict, possible duplicate
 _German_: Duplikat-Kandidat
 
 **Logbook check**:
-Something in a logbook that can't be right as it stands, found by fixed rules: a Dive without a Recording overlapping a Dive with one, or two Dives of one Diver overlapping in time. It waits in "Needs your decision" with ways to resolve it (merge, two dives, correct a time, move to another Diver, delete); nothing is merged unasked ([ADR 0038](decisions/0038-logbook-checks-and-merging-dives.md)).
+Something in a logbook that can't be right as it stands, found by fixed rules: a Dive without a Recording overlapping a Dive with one, or two Dives of one Diver overlapping in time; and, about one Dive, a Recording so short and shallow that it is probably no dive (to delete or to keep). It waits in "Needs your decision" with ways to resolve it (merge, two dives, correct a time, move to another Diver, delete); nothing is merged unasked ([ADR 0038](decisions/0038-logbook-checks-and-merging-dives.md)).
 _Avoid_: Duplicate candidate (a Recording waiting for its Dive), Finding, Conflict, housekeeping (in the UI)
 _German_: Logbuch-Prüfung (on screen: "Etwas aufzuräumen")
 

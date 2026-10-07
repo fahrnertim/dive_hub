@@ -8,11 +8,12 @@ import { LinkButton } from './ui/index.ts';
  */
 export function ReviewStrip() {
   const { t, i18n } = useTranslation();
-  const { recordings, pairs, total } = useWaiting();
+  const { recordings, pairs, shortDives, total } = useWaiting();
   if (total === 0) return null;
   const parts = [
     ...(recordings > 0 ? [t('review.strip.recordings', { count: recordings })] : []),
     ...(pairs > 0 ? [t('review.strip.pairs', { count: pairs })] : []),
+    ...(shortDives > 0 ? [t('review.strip.shortDives', { count: shortDives })] : []),
   ];
   const list = new Intl.ListFormat(i18n.language, { style: 'long', type: 'conjunction' }).format(parts);
   return (

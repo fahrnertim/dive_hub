@@ -840,6 +840,10 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   becomes a Dive of its own.
 - Table `logbook_check_answer` (migration 0021): the rule, the two Dives (smaller id first), their starts when answered
   (the answer holds while both are unchanged), who answered. Nothing else is stored: checks are computed on every read.
+- A check about one Dive (`short_shallow_dive`, rule version 3): `probablyNoDive` and `suggestsDeleting` in the rules,
+  `shortDives` and `keep` in `createLogbookChecks` (the route tells them which Dives are at a Provider, from the Pushes),
+  `keepRestored` in `logbook-check-answers.ts` (called by `restore`). Table `logbook_check_dive_answer` (migration 0023):
+  the Dive, the rule, the duration and depth the answer was given for. Web: `ShortDiveDecisions` and `KeptDives`.
 - Routes: `GET /api/logbook-checks?status=open|answered`, `PUT /api/logbook-checks/answer`; `merge-candidates` gains
   `rule` and `answered`. Problem `check_not_found`.
 - Web: `LogbookChecks.tsx` on the Review page (`ReviewPage.tsx`, since UI redesign slice B; first inside "Needs your decision"): the pairs with "Merge the two…" (the merge

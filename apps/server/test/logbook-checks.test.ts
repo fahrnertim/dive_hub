@@ -18,6 +18,7 @@ type Check = {
   dive: { id: string; version: number; recordings: number };
   other: { id: string; version: number; recordings: number; keeps: string; bothAt: string[] };
 };
+type DiveCheck = Omit<Check, 'other'> & { other: null };
 
 describe.skipIf(!(await databaseReachable()))('logbook checks', () => {
   let t: TestDatabase;
@@ -34,6 +35,9 @@ describe.skipIf(!(await databaseReachable()))('logbook checks', () => {
     ctx.app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload && { payload }) });
   const checks = async (status = 'open', cookie = tim) => (await call('GET', `/api/logbook-checks?status=${status}`, undefined, cookie)).json() as Check[];
   const pairOf = (c: Check) => [c.dive.id, c.other.id].sort();
+  const shortDives = async (status = 'open') => ((await checks(status)) as unknown as DiveCheck[]).filter((c) => c.rule === 'short_shallow_dive');
+  const keep = (id: string, value: 'keep' | null, cookie = tim) => call('PUT', '/api/logbook-checks/answer', { diveIds: [id], answer: value }, cookie);
+  const versionOf = async (id: string) => ((await call('GET', `/api/dives/${id}`)).json() as { version: number }).version;
   const answer = (a: string, b: string, value: 'two_dives' | null, cookie = tim) => call('PUT', '/api/logbook-checks/answer', { diveIds: [a, b], answer: value }, cookie);
   const runImport = async () => {
     ctx.ssiClock.advance(5 * 60_000);
@@ -184,5 +188,63 @@ describe.skipIf(!(await databaseReachable()))('logbook checks', () => {
     const link = (await call('GET', `/api/dives/${fileDive}/providers/ssi`)).json() as { current: { remoteId: string } | null };
     expect(link.current?.remoteId).toBe(remoteId);
     expect((await checks()).filter((c) => c.rule === 'entry_apart_from_recording')).toEqual([]);
+  });
+
+  describe('a short and shallow Dive', () => {
+    let falseStart: string;
+
+    it('is offered for deleting, about one Dive and never as obvious; the real dive after it is not', async () => {
+      // A false start: 50 seconds at 1.8 m, and the real dive five and a half minutes after it.
+      for (const [start, durationSeconds, maxDepthM] of [['2026-06-01T08:58:07.000Z', 50, 1.8], ['2026-06-01T09:04:21.000Z', 2141, 14.5]] as const) {
+        const { payload, headers } = multipartFile('dive.json', makeSuuntoJson({ start: new Date(start), durationSeconds, maxDepthM, serialNumber: '900000000001' }));
+        const created = await ctx.app.inject({ method: 'POST', url: '/api/imports', payload, headers: { ...headers, cookie: tim } });
+        await ctx.imports.processImport(created.json().id);
+        const made = ((await call('GET', `/api/imports/${created.json().id}`)).json() as { outcome: Outcome[] }).outcome[0]!;
+        expect(made.result).toBe('created');
+        if (durationSeconds === 50) falseStart = made.diveId!;
+      }
+      const found = await shortDives();
+      expect(found).toHaveLength(1);
+      expect(found[0]).toMatchObject({ rule: 'short_shallow_dive', obvious: false, dive: { id: falseStart, recordings: 1, durationSeconds: 50, at: [] }, other: null });
+      expect(await checks('open', bob)).toEqual([]);
+    });
+
+    it('keeps the answer "keep it", lists it to ask again, and takes it back', async () => {
+      expect((await keep(falseStart, 'keep', bob)).json()).toMatchObject({ code: 'dive_not_found' });
+      expect((await keep(falseStart, 'keep')).statusCode).toBe(204);
+      expect(await shortDives()).toEqual([]);
+      expect((await shortDives('answered')).map((c) => c.dive.id)).toEqual([falseStart]);
+      expect((await keep(falseStart, null)).statusCode).toBe(204);
+      expect((await shortDives()).map((c) => c.dive.id)).toEqual([falseStart]);
+    });
+
+    it('asks again once the kept Dive changes its duration, and no longer once it is a dive by the rule', async () => {
+      await keep(falseStart, 'keep');
+      await call('PATCH', `/api/dives/${falseStart}`, { version: await versionOf(falseStart), set: { durationSeconds: 70 } });
+      expect((await shortDives()).map((c) => c.dive.id)).toEqual([falseStart]);
+      expect(await shortDives('answered')).toEqual([]);
+      await call('PATCH', `/api/dives/${falseStart}`, { version: await versionOf(falseStart), set: { durationSeconds: 600 } });
+      expect(await shortDives()).toEqual([]);
+      expect((await keep(falseStart, 'keep')).json()).toMatchObject({ code: 'check_not_found' });
+      await call('PATCH', `/api/dives/${falseStart}`, { version: await versionOf(falseStart), reset: ['durationSeconds'] });
+    });
+
+    it('refuses an answer that does not fit the check: "two dives" about one Dive, "keep it" about two', async () => {
+      expect((await call('PUT', '/api/logbook-checks/answer', { diveIds: [falseStart], answer: 'two_dives' })).statusCode).toBe(400);
+      expect((await call('PUT', '/api/logbook-checks/answer', { diveIds: [first, second], answer: 'keep' })).statusCode).toBe(400);
+    });
+
+    it('is resolved by deleting it, and restoring it is the answer "keep it"', async () => {
+      // Back at 50 seconds, the answer given for 50 seconds holds again: taken back first.
+      await keep(falseStart, null);
+      expect((await shortDives()).map((c) => c.dive.id)).toEqual([falseStart]);
+      const gone = await ctx.app.inject({ method: 'DELETE', url: `/api/dives/${falseStart}`, headers: { cookie: tim, origin: BASE_URL }, payload: { version: await versionOf(falseStart) } });
+      expect(gone.statusCode).toBe(200);
+      expect(await shortDives()).toEqual([]);
+      const deleted = ((await call('GET', '/api/dives/deleted')).json() as { dives: { id: string; version: number }[] }).dives.find((d) => d.id === falseStart)!;
+      expect((await call('POST', `/api/dives/${falseStart}/restore`, { version: deleted.version })).statusCode).toBe(200);
+      expect(await shortDives()).toEqual([]);
+      expect((await shortDives('answered')).map((c) => c.dive.id)).toEqual([falseStart]);
+    });
   });
 });

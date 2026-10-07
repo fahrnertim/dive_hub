@@ -1,6 +1,6 @@
 ---
 title: "ADR 0038: Logbook checks, and merging two Dives"
-summary: Built (slices 18b, 18c) - a scan of the logbook for contradictions (a Dive without a Recording overlapping one with a Recording; two Dives of one Diver overlapping) by pure rules and the import's own matching, computed each time, shown in "Needs your decision" with resolutions (merge, two dives, correct a time, move to another Diver, delete); nothing merges unasked. Merging two Dives is fill the kept one, move the Provider link, delete the other the normal way. A Dive linked to a Provider moves to another Diver as a copy, the old one deleted with its link so the import doesn't bring it back. Amends 0016, 0030.
+summary: Built (slices 18b, 18c) - a scan of the logbook for contradictions (a Dive without a Recording overlapping one with a Recording; two Dives of one Diver overlapping) by pure rules and the import's own matching, computed each time, shown in "Needs your decision" with resolutions (merge, two dives, correct a time, move to another Diver, delete); nothing merges unasked. Merging two Dives is fill the kept one, move the Provider link, delete the other the normal way. A Dive linked to a Provider moves to another Diver as a copy, the old one deleted with its link so the import doesn't bring it back. Amends 0016, 0030. Amended 2026-10-07: a fourth rule about one Dive, short_shallow_dive (a Recording under 2 minutes above 3 m, at no Provider: delete or keep, rule version 3); the same test in matching is open for the next slice.
 status: accepted
 date: 2026-10-07
 ---
@@ -172,3 +172,51 @@ dive and must not guess; a check can offer the pair and let the User decide.
   both values. The dive page's merge candidates use the pairwise test only (no one-to-one), so they may hint at a pair
   the panel left out for a tie. Not built: the warning about the Provider's verification on the "Send update" card
   (the panel's rule text and the client contract do not cover it yet).
+
+## Amendment 2026-10-07: a fourth rule about one Dive, `short_shallow_dive` (rule version 3)
+Why: a dive computer that gets wet for a moment records a "dive": switched on at the surface, a test, or a false start
+(down a metre or two, something with the buddy, up again; the computer ends the dive and the real one starts as a new
+Recording). Such a Dive is clutter in the logbook and in its counts, and it can get in the way of matching (below).
+Decided with the owner on 2026-10-07.
+
+- **A check about one Dive.** "Contradictions only" of the Decision is widened by this one rule: a Dive that is probably
+  no dive. It lives with the logbook checks, not the dive assessment (ADR 0036): it is something to tidy that ends in a
+  delete, not a remark on diving practice.
+- **A Dive is found when** it has a Recording, lasts under 2 minutes, its maximum depth is known and under 3 m, it is at no
+  Provider, and it was not made from a Provider's entry (`fromProvider`).
+  - **Depth is part of it:** ninety seconds to 12 m is an aborted descent, a real dive.
+  - **Entry-only Dives are left out:** a typed entry of two minutes is a typo; its fix is the duration, not a delete.
+  - **Dives linked at a Provider are left out:** a short Dive carrying a Provider's entry is more likely a wrong link than
+    clutter, and deleting at a Provider can't be undone. It gets no suggestion; the User sees it on the dive page.
+- **Fixed numbers, no setting,** conservative on purpose. The evidence is thin and said so: the owner's logbook (136 Dives,
+  read-only on 2026-10-07) has one Dive under 14 minutes, 50 s at 1.8 m, a false start whose real dive began 5 min 24 s
+  after it, and one unattached Recording of 20 s at 2.1 m. Any limit between 51 s and 14 minutes finds the same Dive there.
+- **Resolutions:** delete, through the existing delete dialog (ADR 0026; it can be restored), or "keep it". The panel
+  never deletes by itself.
+- **"Keep it" is kept per Dive** with the duration and depth it was given for; a change of either asks again. Undo and
+  "Ask again" as for pairs. **Restoring such a Dive is an answer** ("keep it"), as a deliberate split is "two dives".
+- **Never obvious,** and part of no action that handles several checks at once.
+- **Clients** get a duty: a check can be about one Dive (`other: null`), with delete and "keep it"
+  ([client contract](../spec/clients.md), updated in the same change).
+- **As built:** `probablyNoDive` (Recording, duration, depth) and `suggestsDeleting` (also: at no Provider, not from an
+  entry) in `logbook-check-rules.ts`; the answer in `logbook_check_dive_answer` (Dive, rule, the duration and depth it was
+  given for). `GET /api/logbook-checks` lists such a Dive with `other: null`; `PUT /api/logbook-checks/answer` takes one
+  id with `keep`. An answer is compared, not dropped: a Dive that returns to the duration and depth it was kept with is
+  kept again. Restoring records "keep it" whenever the Dive is probably no dive, linked or not. In the web client the
+  Review page has a group of its own ("Probably not dives"), the logbook's line counts it, "Delete…" opens the delete
+  dialog and lands on the logbook with its Undo. Not tested through the API: a short Dive at a Provider getting no
+  suggestion (the pure rule's test covers it).
+
+### Open, for the next slice: the same test in matching (ADR 0030, not changed here)
+What the owner's question about false starts found, read from `imports/matching.ts` and `providers/dive-import.ts`:
+- **An entry links to a single Dive in its window without a depth check.** When the false start and the real Recording
+  lie within the import's 5 minutes, the real Recording waits as a Duplicate candidate (depths disagree), the false
+  start is the only Dive, and the Provider's entry of the real dive links to it by itself.
+- **A false start attaches by itself to an entry that has no depth** and becomes its Primary recording: the Dive then
+  shows 50 seconds.
+- **Planned:** a Dive or Recording this rule's test calls a probable non-dive is never linked or attached automatically;
+  the import asks, with "new dive" as a choice. One shared predicate (`probablyNoDive` in `logbook-check-rules.ts`), so
+  check and import can't disagree. It needs ADR 0030 read in full and an amendment there; `decideMatch` also decides
+  `recording_beside_entry`, so the two are decided together. Not verified yet: whether the import's "decide" step takes a
+  single candidate, and whether the preview shows an automatic link before it runs.
+- Until then, deleting a false start takes it out of every matching (ADR 0026), so the check already lowers the risk.

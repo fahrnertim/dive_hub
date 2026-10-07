@@ -577,7 +577,8 @@
     "rule": {
       "recording_beside_entry": "Ein Tauchgang ohne Aufzeichnung und einer mit Aufzeichnung liegen zur selben Zeit",
       "overlapping_dives": "Zwei Tauchgänge überschneiden sich zeitlich",
-      "entry_apart_from_recording": "Wahrscheinlich derselbe Tauchgang mit anderer Startzeit: die Starts liegen {{difference}} auseinander, Tiefe und Dauer stimmen überein"
+      "entry_apart_from_recording": "Wahrscheinlich derselbe Tauchgang mit anderer Startzeit: die Starts liegen {{difference}} auseinander, Tiefe und Dauer stimmen überein",
+      "short_shallow_dive": "Eine Aufzeichnung, so kurz und flach, dass sie wahrscheinlich kein Tauchgang ist"
     },
     "how": "Wenn es derselbe Tauchgang ist, führe sie zusammen. Wenn eine Zeit falsch ist oder einer zu einem anderen Taucher gehört, öffne diesen Tauchgang und korrigiere es dort.",
     "pair": "{{first}} und {{second}}",
@@ -592,7 +593,16 @@
     "mergedAll": "{{count}} Paare zusammengeführt.",
     "answered": "Paare, die zwei Tauchgänge bleiben",
     "answeredIntro": "Tauchgänge zur selben Zeit, von denen du gesagt hast, dass es zwei sind.",
-    "askAgain": "Wieder fragen"
+    "askAgain": "Wieder fragen",
+    "short": {
+      "title": "Wahrscheinlich keine Tauchgänge",
+      "how": "Eine Aufzeichnung kürzer als {{duration}}, die über {{depth}} geblieben ist, ist meist ein nass gewordener Tauchcomputer oder ein Fehlstart. War es kein Tauchgang, lösche ihn: er kommt zu den „Gelöschten Tauchgängen“ und lässt sich wiederherstellen.",
+      "delete": "Löschen …",
+      "keep": "Behalten",
+      "kept": "Bleibt. Du wirst wieder gefragt, wenn sich seine Dauer oder Tiefe ändert.",
+      "answered": "Kurze Tauchgänge, die bleiben",
+      "answeredIntro": "Kurze, flache Aufzeichnungen, von denen du gesagt hast, dass sie bleiben."
+    }
   },
   "merge": {
     "hint": "In diesem Logbuch gibt es einen weiteren Tauchgang zur selben Zeit: {{facts}}. Wenn beide derselbe Tauchgang sind, kannst du sie zusammenführen.",
@@ -625,7 +635,7 @@
       "deleted": "Gelöschte Tauchgänge"
     },
     "nothingWaits": "Nichts wartet auf deine Entscheidung.",
-    "nothingDecided": "Noch nichts entschieden: verworfene Aufzeichnungen und Paare, die zwei Tauchgänge bleiben, erscheinen hier.",
+    "nothingDecided": "Noch nichts entschieden: verworfene Aufzeichnungen, Paare, die zwei Tauchgänge bleiben, und kurze Tauchgänge, die bleiben, erscheinen hier.",
     "nothingDeleted": "Keine gelöschten Tauchgänge.",
     "strip": {
       "things_one": "Eine Sache braucht deine Entscheidung: {{parts}}.",
@@ -634,6 +644,8 @@
       "recordings_other": "{{count}} Aufzeichnungen",
       "pairs_one": "{{count}} Paar Tauchgänge zur selben Zeit",
       "pairs_other": "{{count}} Paare Tauchgänge zur selben Zeit",
+      "shortDives_one": "{{count}} Tauchgang, der wahrscheinlich keiner ist",
+      "shortDives_other": "{{count}} Tauchgänge, die wahrscheinlich keine sind",
       "go": "Durchsehen"
     }
   },

@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, diversQuery, keys, logbookChecksQuery, unwrap, type LogbookCheckView } from './api.ts';
+import { api, diversQuery, isDiveCheck, isPairCheck, keys, logbookChecksQuery, unwrap, type DiveCheckView, type LogbookCheckView } from './api.ts';
+import { DeleteDiveDialog } from './DeleteDive.tsx';
 import { MergeDialog } from './MergeDive.tsx';
 import { differingFacts } from './lib/review.ts';
 import { Candidates, CandidateRow, type Fact } from './ReviewRows.tsx';
@@ -87,8 +88,8 @@ export function PairDecisions() {
   // The pair just kept as two dives, offered back with "Undo".
   const [undo, setUndo] = useState<LogbookCheckView>();
   const list = useRef<HTMLUListElement>(null);
-  const checks = open.data ?? [];
-  const undoable = undo && answered.data?.some((c) => keyOf(c) === keyOf(undo)) ? undo : undefined;
+  const checks = (open.data ?? []).filter(isPairCheck);
+  const undoable = undo && answered.data?.filter(isPairCheck).some((c) => keyOf(c) === keyOf(undo)) ? undo : undefined;
   return (
     <>
       {undoable && <UndoAnswer key={keyOf(undoable)} check={undoable} onDone={() => setUndo(undefined)} />}
@@ -195,7 +196,7 @@ export function AnsweredChecks() {
   const answered = useQuery(logbookChecksQuery('answered'));
   const nameOf = useDiveName();
   const answer = useAnswer();
-  const pairs = answered.data ?? [];
+  const pairs = (answered.data ?? []).filter(isPairCheck);
   if (pairs.length === 0) return null;
   return (
     <Panel title={t('checks.answered')}>
@@ -217,6 +218,134 @@ export function AnsweredChecks() {
             </li>
           );
         })}
+      </ul>
+    </Panel>
+  );
+}
+
+/** Answers a check about one Dive: "keep it", or `null` to be asked again. `onAnswered` as in `useAnswer`. */
+function useKeep(onAnswered?: () => void) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ check: c, answer }: { check: DiveCheckView; answer: 'keep' | null }) =>
+      unwrap(await api.PUT('/api/logbook-checks/answer', { body: { diveIds: [c.dive.id], answer } })),
+    onSuccess: () => onAnswered?.(),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.dives }),
+  });
+}
+
+/** The Dive of a check about one Dive, as the pairs' rows show theirs. */
+function DiveRow({ check: c }: { check: DiveCheckView }) {
+  const { t } = useTranslation();
+  const divers = useQuery(diversQuery());
+  const diver = (divers.data?.length ?? 0) > 1 ? divers.data?.find((v) => v.id === c.diverId)?.name : undefined;
+  const { facts } = useDiveFacts()(c.dive, diver);
+  return (
+    <Candidates>
+      <CandidateRow
+        facts={facts} marked={new Set()}
+        title={<a className="candidate-title" href={`#/dives/${c.dive.id}`}>{c.dive.number !== null ? t('dive.title', { number: c.dive.number }) : t('dive.titleNoNumber')}</a>}
+      />
+    </Candidates>
+  );
+}
+
+/**
+ * Dives that are probably no dive (ADR 0038, `short_shallow_dive`): a short, shallow Recording, each to delete through the
+ * delete dialog or to keep. Never deleted unasked, and never several at once.
+ */
+export function ShortDiveDecisions() {
+  const { t } = useTranslation();
+  const display = useDisplay();
+  const open = useQuery(logbookChecksQuery('open'));
+  const answered = useQuery(logbookChecksQuery('answered'));
+  // The Dive just kept, offered back with "Undo".
+  const [undo, setUndo] = useState<DiveCheckView>();
+  const checks = (open.data ?? []).filter(isDiveCheck);
+  const undoable = undo && answered.data?.some((c) => isDiveCheck(c) && c.dive.id === undo.dive.id) ? undo : undefined;
+  return (
+    <>
+      {undoable && <UndoKeep key={undoable.dive.id} check={undoable} onDone={() => setUndo(undefined)} />}
+      {checks.length > 0 && (
+        <Panel title={t('checks.short.title')} attention>
+          {/* The rule's limits are the server's (rule version 3), shown in the User's units. */}
+          <p className="muted">{t('checks.short.how', { duration: display.duration(120), depth: display.depth(3) })}</p>
+          <ul className="decisions">
+            {checks.map((c) => <ShortDive key={c.dive.id} check={c} onKept={() => setUndo(c)} />)}
+          </ul>
+        </Panel>
+      )}
+    </>
+  );
+}
+
+function ShortDive({ check: c, onKept }: { check: DiveCheckView; onKept: () => void }) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const name = useDiveName()(c.dive);
+  const [deleting, setDeleting] = useState(false);
+  const keep = useKeep(onKept);
+  return (
+    <li className="decision">
+      <DiveRow check={c} />
+      <div className="form-actions">
+        <Button icon="delete" aria-label={t('common.forItem', { action: t('checks.short.delete'), item: name })} isDisabled={keep.isPending} onPress={() => setDeleting(true)}>
+          {t('checks.short.delete')}
+        </Button>
+        <Button
+          variant="quiet" aria-label={t('common.forItem', { action: t('checks.short.keep'), item: name })} isPending={keep.isPending}
+          onPress={() => keep.mutate({ check: c, answer: 'keep' })}
+        >
+          {t('checks.short.keep')}
+        </Button>
+      </div>
+      {keep.error && <Notice tone="danger">{errorText(keep.error)}</Notice>}
+      {deleting && <DeleteDiveDialog dive={c.dive} name={name} onClose={() => setDeleting(false)} />}
+    </li>
+  );
+}
+
+/** "Kept" with a way back. Takes focus: the button pressed is gone with its Dive. */
+function UndoKeep({ check: c, onDone }: { check: DiveCheckView; onDone: () => void }) {
+  const { t } = useTranslation();
+  const keep = useKeep(onDone);
+  const button = useRef<HTMLButtonElement>(null);
+  useEffect(() => button.current?.focus(), []);
+  return (
+    <Notice tone="success">
+      <p>{t('checks.short.kept')}</p>
+      <Button ref={button} icon="undo" isPending={keep.isPending} onPress={() => keep.mutate({ check: c, answer: null })}>
+        {t('common.undo')}
+      </Button>
+    </Notice>
+  );
+}
+
+/** The short Dives the User said to keep, to be asked about again (the Review page's "Decided"). Nothing while there are none. */
+export function KeptDives() {
+  const { t } = useTranslation();
+  const answered = useQuery(logbookChecksQuery('answered'));
+  const nameOf = useDiveName();
+  const keep = useKeep();
+  const kept = (answered.data ?? []).filter(isDiveCheck);
+  if (kept.length === 0) return null;
+  return (
+    <Panel title={t('checks.short.answered')}>
+      <Muted>{t('checks.short.answeredIntro')}</Muted>
+      <ul className="decisions">
+        {kept.map((c) => (
+          <li key={c.dive.id} className="decision">
+            <DiveRow check={c} />
+            <div className="form-actions">
+              <Button
+                variant="quiet" aria-label={t('common.forItem', { action: t('checks.askAgain'), item: nameOf(c.dive) })}
+                isPending={keep.isPending && keep.variables.check === c} onPress={() => keep.mutate({ check: c, answer: null })}
+              >
+                {t('checks.askAgain')}
+              </Button>
+            </div>
+          </li>
+        ))}
       </ul>
     </Panel>
   );

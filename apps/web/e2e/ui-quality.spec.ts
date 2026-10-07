@@ -8,7 +8,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { dataFile, type PreparedData } from './prepare.ts';
 import {
   E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectGoodPage, externalDiver, openLine,
-  forgetDivers, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences,
+  forgetDivers, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences, falseStart, keepFalseStart
 } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
@@ -517,6 +517,20 @@ for (const v of variants) {
         await expectGoodPage(page, title('Logbook'), v);
       } finally {
         await mergePair(request);
+      }
+    });
+
+    test('a dive that is probably no dive, offered for deleting on the Review page', { tag: ['@dives'] }, async ({ page, request }) => {
+      await falseStart(request);
+      try {
+        await page.goto('/#/review');
+        await expect(page.getByRole('heading', { name: v.english ? 'Probably not dives' : 'Wahrscheinlich keine Tauchgänge', level: 2 })).toBeVisible();
+        await expectGoodPage(page, title('Review'), v);
+        await page.getByRole('button', { name: v.english ? /^Delete…: / : /^Löschen.…: / }).click();
+        await expect(page.getByRole('dialog').getByRole('button', { name: v.english ? 'Cancel' : 'Abbrechen' })).toBeVisible();
+        await expectGoodPage(page, title('Review'), v);
+      } finally {
+        await keepFalseStart(request);
       }
     });
 
