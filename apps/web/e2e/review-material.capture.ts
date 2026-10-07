@@ -108,6 +108,22 @@ test('review material', async ({ page, request, browser }) => {
     await page.keyboard.press('Escape');
     await page.goto('/#/?q=77'); await page.getByText('2 findings').waitFor();
     await capture(page, '03c-logbook-finding-mark', { aria: false });
+    // The logbook's rows (ADR 0040): buddies as circles (more than fit), then a "Show only" filter pressed.
+    await setBuddies(request, dive42, [
+      await externalDiver(request, 'Kai Lund'), await externalDiver(request, 'Ulla Berg'), await externalDiver(request, 'Lena Meier'), await externalDiver(request, 'Tom Keller'),
+    ]);
+    await page.goto('/'); await page.getByText('with Kai Lund').waitFor({ state: 'attached' });
+    await capture(page, '03d-logbook-rows-buddies');
+    await page.setViewportSize({ width: 320, height: 640 });
+    await capture(page, '03e-logbook-rows-buddies-320', { aria: false, axe: false });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.getByRole('group', { name: 'Show only' }).getByRole('button').first().click();
+    await page.getByRole('group', { name: 'Show only' }).getByRole('button', { pressed: true }).waitFor();
+    await capture(page, '03f-logbook-show-only');
+    await page.goto('/#/?sort=maxDepth&q=nothing+like+this&only=no-site,with-findings'); await page.getByRole('button', { name: 'Show all dives' }).waitFor();
+    await capture(page, '03g-logbook-show-only-nothing', { aria: false });
+    await clearParticipants(request, dive42);
+    for (const name of ['Lena Meier', 'Tom Keller']) await forgetDivers(request, name);
   }
   if (want('divers')) {
     await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Devices' }).waitFor(); await page.locator('table').waitFor();
@@ -151,6 +167,11 @@ test('review material', async ({ page, request, browser }) => {
     await page.goto('/'); await page.getByRole('heading', { name: 'Logbuch' }).waitFor();
     if (want('dives')) {
       await capture(page, '08-logbook-de-phone', { aria: false });
+      await setBuddies(request, dive42, [await externalDiver(request, 'Kai Lund'), await externalDiver(request, 'Ulla Berg'), await externalDiver(request, 'Lena Meier')]);
+      await page.goto('/#/?only=no-site'); await page.getByText('mit Kai Lund').waitFor({ state: 'attached' });
+      await capture(page, '08b-logbook-de-phone-buddies-show-only', { aria: false });
+      await clearParticipants(request, dive42);
+      await forgetDivers(request, 'Lena Meier');
       await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: /Tauchgang 42/ }).waitFor();
       await capture(page, '09-dive-de-phone', { aria: false });
       await page.goto(`/#/dives/${await assessedDive(request)}`); await page.getByRole('heading', { name: 'Auswertung' }).waitFor();
@@ -279,7 +300,7 @@ test('review material', async ({ page, request, browser }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await sitePages('22-de-light-320', true);
   if (want('sites')) {
-    await page.goto(`/#/?site=${site.id}`); await page.locator('table').waitFor();
+    await page.goto(`/#/?site=${site.id}`); await page.getByRole('region', { name: 'Tauchgänge' }).waitFor();
     await capture(page, '23-de-light-320-logbook-at-site', { aria: false });
   }
   await setPreferences(request, { language: null });

@@ -217,13 +217,13 @@
   "logbook": {
     "title": "Logbook",
     "empty": "No dives yet. Import your files above to fill the logbook.",
-    "number": "#",
-    "date": "Date",
-    "maxDepth": "Max depth",
-    "duration": "Duration",
+    "dives": "Dives",
     "search": "Search",
     "searchHint": "A dive number, or words from the notes or the dive site",
     "noMatch": "No dives match “{{q}}”.",
+    "noMatchOnly": "No dives match these filters: {{filters}}.",
+    "noMatchBoth": "No dives match “{{q}}” and these filters: {{filters}}.",
+    "showAll": "Show all dives",
     "pages": "Pages",
     "previous": "Previous page",
     "next": "Next page",
@@ -232,7 +232,41 @@
     "atSite": "Dives at {{name}}",
     "allSites": "Show all dives",
     "findings_one": "{{count}} finding",
-    "findings_other": "{{count}} findings"
+    "findings_other": "{{count}} findings",
+    "totals": {
+      "label": "In total",
+      "dives": "Dives",
+      "underWater": "Under water",
+      "deepest": "Deepest",
+      "lastDive": "Last dive"
+    },
+    "sortBy": "Sort by",
+    "sort": {
+      "newest": "Newest first",
+      "oldest": "Oldest first",
+      "deepest": "Deepest first",
+      "shallowest": "Shallowest first",
+      "longest": "Longest first",
+      "shortest": "Shortest first",
+      "highestNumber": "Highest number first",
+      "lowestNumber": "Lowest number first"
+    },
+    "showOnly": "Show only",
+    "only": {
+      "noRecording": "No recording",
+      "noSite": "No dive site",
+      "withFindings": "With findings",
+      "notAtProvider": "Not in {{names}}"
+    },
+    "monthFigures_one": "{{count}} dive · {{time}}",
+    "monthFigures_other": "{{count}} dives · {{time}}",
+    "numberLabel": "Number",
+    "noSite": "No dive site",
+    "noRecording": "No recording",
+    "fromProvider": "from {{name}}",
+    "surfaceInterval": "{{time}} after the dive before",
+    "with": "with {{people}}",
+    "morePeople": "+{{count}}"
   },
   "dive": {
     "back": "Logbook",

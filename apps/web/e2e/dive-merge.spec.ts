@@ -2,7 +2,7 @@
 // merging, and afterwards one Dive is left while the other is among the deleted dives, saying where it went.
 // Fixtures: e2e/fixtures/mergeable-main.fit and mergeable-backup.fit, dive 31 (apps/server/test/fixtures/write-merge-fixture.ts).
 import { expect, test } from '@playwright/test';
-import { mergePair, mergeablePair, openLine, setPreferences } from './support.ts';
+import { diveRows, mergePair, mergeablePair, openLine, setPreferences } from './support.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -84,7 +84,7 @@ test('lists two dives at the same time on the logbook, keeps them apart when tol
     await expect(main.getByRole('button', { name: 'They are two dives: Dive 31 and Dive 31' })).toHaveCount(0);
     await expect(page.getByText('Nothing waits for your decision.')).toBeVisible();
     await page.getByRole('link', { name: '‹ Logbook' }).click();
-    await expect(page.getByRole('cell', { name: '31', exact: true })).toHaveCount(1);
+    await expect(diveRows(page).filter({ hasText: /Number 31(?!\d)/ })).toHaveCount(1);
   } finally {
     await mergePair(request);
   }

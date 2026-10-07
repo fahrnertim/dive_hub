@@ -114,7 +114,7 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 | `PageHeader` | The page's h1 with optional meta (a dive's date and Diver), a lead sentence and the page's actions. |
 | `Panel` | A titled area of a page; `narrow` for single forms; `attention` for something waiting for the User. |
 | `Notice` | What just happened: `info`, `success`, `danger` (announced at once). |
-| `Table` | Data tables; numeric columns are right-aligned, header included. The first and last columns line up with the panel's text. A table switches layout by its own width (container query), not the window's: `cards` (tables with an actions column) below 48rem become blocks of label–value lines separated by dividers, and below 22rem the label sits above its value; `stacked` (the logbook) below 40rem becomes two lines per row (`cell-lead` and `cell-main`, then the `cell-sub` cells). Date cells (`date`) don't wrap; e-mail cells (`email`) may break anywhere. |
+| `Table` | Data tables; numeric columns are right-aligned, header included. The first and last columns line up with the panel's text. A table switches layout by its own width (container query), not the window's: `cards` (tables with an actions column) below 48rem become blocks of label–value lines separated by dividers, and below 22rem the label sits above its value; `stacked` (the Dive sites list) below 40rem becomes two lines per row (`cell-lead` and `cell-main`, then the `cell-sub` cells). Date cells (`date`) don't wrap; e-mail cells (`email`) may break anywhere. |
 | `Dialog` | Modal with focus kept inside, for confirmations that need input (deleting a User). |
 | `Disclosure` | One line that opens what is behind it (a finding's details, the Dive at a Provider, a Dive's history): the title is the button, with an arrow as the cue; a `summary` stays in sight beside it; the whole line can be pressed. Only the arrow moves. For what most Users need now and then; what waits for the User opens by itself. |
 | `ConfirmButton`, `ConfirmDialog` | An action that is hard to undo asks first, in a dialog that says what will happen. The dialog alone serves menu items. |
@@ -126,6 +126,9 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 | `TextArea` | Multi-line text (notes). |
 | `DateTimeField` | Date and time typed by segment, in the UI language's order. |
 | `Badge` | A short state: `neutral` ("edited", "open", "processing"), `success` ("done", "accepted"), `danger` ("failed"). States never use the accent colour, which means "you can click this". |
+| `ToggleChip` | A filter that is on or off (the logbook's "Show only"): a pill with its count, pressed with a check mark and `aria-pressed`, never by colour alone. Chips stand in a labelled group (`chips`) that wraps; a chip whose count is 0 is not offered unless it is pressed. |
+| `Avatar` | A person as a circle with two letters (`initials` in `lib/logbook.ts`), in one of three tones that tell people apart and mean nothing. Always `aria-hidden`: the name stands beside it as text, visible or for screen readers only. Several overlap as an `avatar-stack`, at most three and then "+N". Used in the logbook's rows so far. |
+| Dive rows (`DiveList`) | The logbook is a list, not a table: one row per Dive under month headings, on one grid so numbers, depth and duration line up down the page. The title is the row's link and the whole row can be pressed. Below 38rem of its own width the title keeps the row, and depth, duration and the circles share the line under the facts. |
 | `ErrorBoundary` | Keeps a failing part (e.g. the chart) from blanking the page. |
 | `BrandMark` | The diver-down flag. |
 | `Icon` | A Lucide icon by meaning (`edit`, `import`, `move`, …); the set lives in `ui/Icon.tsx`. |
@@ -220,9 +223,11 @@ pointers, no `transition: all`, "…" instead of "...", no line break before "�
 - **Buttons beside a field line up with its input** (`form-inline`), not with the bottom of its hint.
 - **States are badges, dead ends lead somewhere**: an empty or not-found page says why and offers the way
   on ("Back to logbook"); a search field only shows when there is something to search.
-- **What the User picks is in the address**: the logbook's Diver filter, search, sort and page
-  (`lib/logbook.ts`, [ADR 0017](../decisions/0017-logbook-list-paging.md)), the dive page's Recording
-  tab (`?recording=`). Sortable table headers are buttons with `aria-sort` (`Table` column `sort`).
+- **What the User picks is in the address**: the logbook's Diver filter, search, sort, "Show only" filters
+  (`?only=no-recording,no-site`) and page (`lib/logbook.ts`, [ADR 0017](../decisions/0017-logbook-list-paging.md),
+  [ADR 0040](../decisions/0040-logbook-rows-and-filters.md)), the dive page's Recording tab (`?recording=`).
+  Sortable table headers are buttons with `aria-sort` (`Table` column `sort`); the logbook's rows have no
+  headers, so it sorts by a "Sort by" choice.
 - **Pictures have text.** The depth profile has a text summary (`aria-describedby`) and its samples
   as a table under "Profile as a table".
 

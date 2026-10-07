@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ApiError, meQuery, type ProblemCode } from '../api.ts';
 import { countryName, formatDistance, formatPosition, type Position } from './geo.ts';
 import {
-  formatDate, formatDateTime, formatDepth, formatDiveTime, formatDuration, formatTemperature, pickUnits, unitLabel,
+  formatDate, formatDateTime, formatDepth, formatDiveDay, formatDiveTime, formatDuration, formatMonth, formatTemperature, pickUnits, unitLabel,
 } from './units.ts';
 
 /** Formatting in the UI language and the User's unit system (ADR 0014). */
@@ -20,6 +20,11 @@ export function useDisplay() {
     duration: (seconds: number) => formatDuration(seconds, locale),
     /** `source` unknown: the time as it was logged, without a time zone (ADR 0030). */
     diveTime: (iso: string, offsetSeconds: number | null, source?: string) => formatDiveTime(iso, offsetSeconds, locale, source === 'unknown'),
+    /** A logbook row's day, "Thu 2 Apr, 10:00"; `year` where no month heading says it. */
+    diveDay: (iso: string, offsetSeconds: number | null, source: string | undefined, year: boolean) =>
+      formatDiveDay(iso, offsetSeconds, locale, source === 'unknown', year),
+    /** "April 2026" for "2026-04". */
+    month: (month: string) => formatMonth(month, locale),
     dateTime: (iso: string) => formatDateTime(iso, locale),
     date: (iso: string) => formatDate(iso, locale),
     /** "28.4950° N, 34.5160° E" (ADR 0020). */

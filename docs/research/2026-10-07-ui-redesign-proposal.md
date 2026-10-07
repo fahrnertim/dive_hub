@@ -249,7 +249,38 @@ stored profile sketch).
 - **Slice C, part 1 (2026-10-07):** the API for the rows and the "Show only" filters, [ADR 0040](../decisions/0040-logbook-rows-and-filters.md)
   (amends ADR 0017): page size 25, `only`, `counts`, `totals`, `months`, and per Dive the Recordings, gas, surface interval,
   source and Participants. The filter for Not in SSI is `not-at-provider`; "same time as another dive" is left to the strip and
-  the Review page. The web client (part 2) is not changed yet.
+  the Review page.
+
+- **Slice C, part 2 (2026-10-07):** the web client's logbook (3.1 to 3.7, without the sketch): dive rows under month
+  headings, the totals above, "Show only" chips with counts (`?only=` in the address), "Sort by" as a choice, buddies as
+  stacked circles with two letters (`ToggleChip`, `Avatar`, `lib/logbook.ts`). Different from the mock:
+  - No profile sketch and no column head (slice D). Depth and duration are right-aligned numbers.
+  - "No recording" and "from SSI" are text in the row's facts, not an empty sketch.
+  - The range ("1–25 of 214 dives") stands above the list; the pager has only its buttons, and only with more than a page.
+  - "Sort by" has eight choices, every way the API sorts in both directions.
+  - The day is in the facts without the UTC offset; with its year only when not sorted by date (no month headings then).
+    A Dive without a site has its date and time as the title and says "No dive site".
+  - The surface interval is shown only under 24 hours.
+  - Month headings are `h2`; each counts all its Dives, not the page's share.
+  - A chip released at count 0 stays until focus leaves it, so the focus doesn't jump.
+  - The Diver choice moved from the page header into the toolbar, beside the search.
+  - With no result, the message names the search and the filters, and "Show all dives" clears both and focuses the search.
+  - Circles are in the logbook only. Open, as a small slice before D (owner, 2026-10-07): a circle beside each name
+    on the dive page's Participants and on the Divers page, so the circle seen in a row is learned where the name is.
+    Proposed to leave out: the account menu (it shows one person, so a circle tells nothing apart) and the Diver of a
+    row (beside the buddies' circles, "whose dive" and "with whom" would look the same). The owner asked whether the
+    dive page should show only the stack, without names; proposed against it: the dive page is where "TK" stops being
+    a guess, the roles (Guide, Instructor) would be hidden too, and the names would be reached only through the
+    dialog that changes them. Not decided yet.
+
+  Tried on the phone: the chips wrap (two lines at 390 and 320 px in English and German), because a pressed chip must stay
+  in sight, which a row that scrolls sideways doesn't promise. The circles were tried at the end of the title's line (at
+  320 px the title broke into three lines) and as a third column (its width is every row's, so rows without buddies wrapped
+  their numbers too). Kept: depth, duration and the circles share the line under the facts, the numbers keeping clear of
+  the widest stack. Checked in the browser tests (`e2e/logbook.spec.ts`, `e2e/ui-quality.spec.ts`: English and German, light
+  and dark, 320 px, 200 % text, axe) and in the review screenshots at 1280, 390 and 320 px. Not checked: 320 px together
+  with 200 % text and a full stack of circles; real names and a full page of 25 real Dives; a screen reader's reading of
+  a row (the names and roles are in the accessibility tree, how it sounds was not listened to).
 
 ## Not verified
 

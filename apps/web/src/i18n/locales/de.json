@@ -217,13 +217,13 @@
   "logbook": {
     "title": "Logbuch",
     "empty": "Noch keine Tauchgänge. Importiere oben deine Dateien, um das Logbuch zu füllen.",
-    "number": "Nr.",
-    "date": "Datum",
-    "maxDepth": "Maximaltiefe",
-    "duration": "Dauer",
+    "dives": "Tauchgänge",
     "search": "Suchen",
     "searchHint": "Eine Tauchgangsnummer oder Wörter aus den Notizen oder dem Tauchplatz",
     "noMatch": "Keine Tauchgänge passen zu „{{q}}“.",
+    "noMatchOnly": "Keine Tauchgänge passen zu diesen Filtern: {{filters}}.",
+    "noMatchBoth": "Keine Tauchgänge passen zu „{{q}}“ und diesen Filtern: {{filters}}.",
+    "showAll": "Alle Tauchgänge zeigen",
     "pages": "Seiten",
     "previous": "Vorige Seite",
     "next": "Nächste Seite",
@@ -232,7 +232,41 @@
     "atSite": "Tauchgänge am Tauchplatz {{name}}",
     "allSites": "Alle Tauchgänge zeigen",
     "findings_one": "{{count}} Hinweis",
-    "findings_other": "{{count}} Hinweise"
+    "findings_other": "{{count}} Hinweise",
+    "totals": {
+      "label": "Insgesamt",
+      "dives": "Tauchgänge",
+      "underWater": "Unter Wasser",
+      "deepest": "Größte Tiefe",
+      "lastDive": "Letzter Tauchgang"
+    },
+    "sortBy": "Sortieren nach",
+    "sort": {
+      "newest": "Neueste zuerst",
+      "oldest": "Älteste zuerst",
+      "deepest": "Tiefste zuerst",
+      "shallowest": "Flachste zuerst",
+      "longest": "Längste zuerst",
+      "shortest": "Kürzeste zuerst",
+      "highestNumber": "Höchste Nummer zuerst",
+      "lowestNumber": "Niedrigste Nummer zuerst"
+    },
+    "showOnly": "Nur anzeigen",
+    "only": {
+      "noRecording": "Keine Aufzeichnung",
+      "noSite": "Kein Tauchplatz",
+      "withFindings": "Mit Hinweisen",
+      "notAtProvider": "Nicht in {{names}}"
+    },
+    "monthFigures_one": "{{count}} Tauchgang · {{time}}",
+    "monthFigures_other": "{{count}} Tauchgänge · {{time}}",
+    "numberLabel": "Nummer",
+    "noSite": "Kein Tauchplatz",
+    "noRecording": "Keine Aufzeichnung",
+    "fromProvider": "aus {{name}}",
+    "surfaceInterval": "{{time}} nach dem Tauchgang davor",
+    "with": "mit {{people}}",
+    "morePeople": "+{{count}}"
   },
   "dive": {
     "back": "Logbuch",

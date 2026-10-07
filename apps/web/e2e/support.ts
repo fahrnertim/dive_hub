@@ -48,6 +48,9 @@ export async function resetDive(api: APIRequestContext): Promise<Dive> {
   return dive;
 }
 
+/** The logbook's rows, one per Dive (ADR 0040); English or German. */
+export const diveRows = (page: Page) => page.getByRole('region', { name: /^(Dives|Tauchgänge)$/ }).getByRole('listitem');
+
 /**
  * Opens a line of the dive page that is closed until asked for (History, the Dive at a Provider), by its title. Leaves
  * it alone when it is open already: a line that has something to say opens by itself.

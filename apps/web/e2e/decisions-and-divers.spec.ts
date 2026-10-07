@@ -3,7 +3,7 @@
 // added to dive 42, then split off into its own dive; a second Diver gets that dive and a Device.
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
-import { E2E_BASE_URL, expectGoodPage, setPreferences } from './support.ts';
+import { E2E_BASE_URL, diveRows, expectGoodPage, setPreferences } from './support.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -99,8 +99,8 @@ test('a second Diver gets a dive and a device; the logbook can show one Diver', 
   await page.goto('/');
   await page.getByRole('button', { name: /Diver$/ }).click(); // the filter: value, then its label
   await page.getByRole('option', { name: 'Mia' }).click();
-  await expect(page.getByRole('row')).toHaveCount(2); // header + one dive
-  await expect(page.getByRole('cell', { name: 'Mia' })).toBeVisible();
+  await expect(diveRows(page)).toHaveCount(1);
+  await expect(diveRows(page).getByText('Mia', { exact: true })).toBeVisible();
 });
 
 test('the Divers page speaks German', { tag: ['@divers'] }, async ({ page, request }) => {

@@ -15,6 +15,7 @@ import { deviceName } from './lib/devices.ts';
 import { useFormatValue } from './lib/dive-values.ts';
 import { focusFirstIn, focusHeading } from './lib/focus.ts';
 import { mapsUrl } from './lib/geo.ts';
+import { mixName } from './lib/logbook.ts';
 import { usePageTitle } from './lib/page.ts';
 import { useNames, useProviders } from './lib/providers.ts';
 import { SitePicker } from './SitePicker.tsx';
@@ -244,14 +245,11 @@ function WaterFact({ dive: d }: { dive: DiveView }) {
   );
 }
 
-const gasName = (g: NonNullable<RecordingSummary['gases']>[number], air: string) =>
-  g.he > 0 ? `${g.o2}/${g.he}` : g.o2 === 21 ? air : `EAN${g.o2}`;
-
 /** The gases of a Recording by name: "Air", "EAN32", "18/45 (diluent)". */
 function useGasNames() {
   const { t } = useTranslation();
   return (gases: RecordingSummary['gases']) =>
-    (gases ?? []).map((g) => gasName(g, t('dive.air')) + (g.circuit === 'diluent' ? ` (${t('vocabulary.circuit.diluent')})` : '')).join(', ');
+    (gases ?? []).map((g) => mixName(g, t('dive.air')) + (g.circuit === 'diluent' ? ` (${t('vocabulary.circuit.diluent')})` : '')).join(', ');
 }
 
 /**

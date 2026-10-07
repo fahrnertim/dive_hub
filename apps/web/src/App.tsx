@@ -158,7 +158,7 @@ function Logbook({ params }: { params: LogbookParams }) {
   const returning = (all.data?.total ?? 0) > 0;
   return (
     <ImportProvider>
-      <LogbookHeader params={params} importAction={returning && <ImportFilesButton />} />
+      <LogbookHeader importAction={returning && <ImportFilesButton />} />
       <DeletedNotices />
       <ReviewStrip />
       {returning ? (

@@ -2,7 +2,7 @@
 // deleted dives; and a Dive in SSI, kept there with a reminder and deleted there later, or deleted in both at once.
 // Fixture: e2e/fixtures/deletable-computer.fit, dive 9 (apps/server/test/fixtures/write-deletion-fixture.ts).
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_BASE_URL, deletableDive, sendToSsi, setPreferences } from './support.ts';
+import { E2E_BASE_URL, deletableDive, diveRows, sendToSsi, setPreferences } from './support.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -17,7 +17,7 @@ async function openDeleteDialog(page: Page, diveId: string) {
   return page.getByRole('dialog', { name: 'Delete Dive 9?' });
 }
 const logbookHeading = (page: Page) => page.getByRole('heading', { name: 'Logbook', level: 1 });
-const diveNine = (page: Page) => page.getByRole('cell', { name: '9', exact: true });
+const diveNine = (page: Page) => diveRows(page).filter({ hasText: /Number 9(?!\d)/ });
 
 test('deletes a dive after asking, offers Undo, and restores it from the deleted dives', { tag: ['@dives'] }, async ({ page, request }) => {
   const id = await deletableDive(request);

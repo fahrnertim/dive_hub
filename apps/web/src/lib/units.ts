@@ -78,6 +78,25 @@ export function formatDiveTime(isoUtc: string, offsetSeconds: number | null, loc
   return `${text} (UTC${offset})`;
 }
 
+/**
+ * A dive's day in a logbook row: weekday, day and the local time at the dive site, as formatDiveTime reads them. The
+ * year only where no month heading says it; the offset is left to the dive page.
+ */
+export function formatDiveDay(isoUtc: string, offsetSeconds: number | null, locale: string, wallClock: boolean, year: boolean): string {
+  // "08:00" where the day has 24 hours, "8:00 AM" where it has twelve.
+  const twelve = new Intl.DateTimeFormat(locale, { hour: 'numeric' }).resolvedOptions().hour12;
+  const style = {
+    weekday: 'short', day: 'numeric', month: 'short', ...(year && { year: 'numeric' as const }), hour: twelve ? 'numeric' : '2-digit', minute: '2-digit',
+  } as const;
+  const utc = new Date(isoUtc);
+  if (offsetSeconds === null && !wallClock) return utc.toLocaleString(locale, style);
+  return new Date(utc.getTime() + (offsetSeconds ?? 0) * 1000).toLocaleString(locale, { ...style, timeZone: 'UTC' });
+}
+
+/** "April 2026" for a local month "2026-04". */
+export const formatMonth = (month: string, locale: string) =>
+  new Date(`${month}-01T00:00:00Z`).toLocaleDateString(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' });
+
 /** The day of a moment in the browser's time zone, where the time of day says nothing more. */
 export const formatDate = (iso: string, locale: string) => new Date(iso).toLocaleDateString(locale, { dateStyle: 'medium' });
 

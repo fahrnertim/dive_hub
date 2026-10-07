@@ -2,7 +2,7 @@
 // guidance, evidence and sources on demand; the time lane; the ascent's colours in words; putting a finding aside and
 // muting a rule; the list's mark.
 import { expect, test } from '@playwright/test';
-import { assessedDive, setPreferences } from './support.ts';
+import { assessedDive, diveRows, setPreferences } from './support.ts';
 
 test.beforeEach(async ({ request }) => {
   await setPreferences(request, { language: null, units: null });
@@ -92,7 +92,7 @@ test('shows each finding as one row with its numbers; guidance, sources and acti
 test('puts a finding aside on the dive and mutes a rule for the Diver; the logbook\'s mark follows', { tag: ['@dives'] }, async ({ page, request }) => {
   const id = await assessedDive(request);
   await page.goto('/#/?q=77');
-  const row = page.getByRole('row', { name: /77/ });
+  const row = diveRows(page).filter({ hasText: 'Number 77' });
   await expect(row).toContainText('2 findings');
 
   await page.goto(`/#/dives/${id}`);

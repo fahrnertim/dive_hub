@@ -2,6 +2,7 @@ import { createApiClient, type paths } from '@dive-hub/api-client';
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import { createAuthClient } from 'better-auth/client';
 import { SITES_PAGE, type SitesParams } from './lib/sites-list.ts';
+import type { LogbookFilter } from './lib/logbook.ts';
 
 export const api = createApiClient();
 /** Better Auth's own endpoints (sign-in, sign-out) at /api/auth on this origin; the session is a cookie. */
@@ -35,7 +36,9 @@ export const shouldRetry = (failures: number, error: unknown) =>
   failures < 1 && !(error instanceof ApiError && error.status >= 400 && error.status < 500);
 
 export type ImportView = Awaited<ReturnType<typeof fetchImports>>[number];
-export type DiveSummary = Awaited<ReturnType<typeof fetchDives>>['dives'][number];
+/** A page of the logbook with its counts, totals and months (ADR 0040). */
+export type LogbookPage = Awaited<ReturnType<typeof fetchDives>>;
+export type DiveSummary = LogbookPage['dives'][number];
 export type Me = NonNullable<Awaited<ReturnType<typeof fetchMe>>>;
 export type InvitationView = Awaited<ReturnType<typeof fetchInvitations>>[number];
 export type UserView = Awaited<ReturnType<typeof fetchUsers>>[number];
@@ -189,9 +192,11 @@ export interface LogbookParams {
   q?: string | undefined;
   sort?: 'startsAt' | 'number' | 'maxDepth' | 'duration' | undefined;
   order?: 'asc' | 'desc' | undefined;
+  /** "Show only" (ADR 0040): all of them must fit. */
+  only?: LogbookFilter[] | undefined;
   page?: number | undefined;
 }
-export const PAGE_SIZE = 50;
+export const PAGE_SIZE = 25;
 
 /** One page of the logbook. The previous page stays on screen while the next one loads. */
 export const divesQuery = (p: LogbookParams = {}) => queryOptions({
@@ -200,6 +205,7 @@ export const divesQuery = (p: LogbookParams = {}) => queryOptions({
     params: {
       query: {
         ...(p.diverId && { diverId: p.diverId }), ...(p.siteId && { siteId: p.siteId }), ...(p.q && { q: p.q }), ...(p.sort && { sort: p.sort }), ...(p.order && { order: p.order }),
+        ...(p.only?.length && { only: p.only.join(',') }),
         limit: PAGE_SIZE, offset: ((p.page ?? 1) - 1) * PAGE_SIZE,
       },
     },

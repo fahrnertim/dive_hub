@@ -51,6 +51,8 @@ const ICONS = {
   send: CloudUpload,
   signIn: LogIn,
   disconnect: Unlink,
+  // A pressed chip: a filter that is applied.
+  pressed: Check,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

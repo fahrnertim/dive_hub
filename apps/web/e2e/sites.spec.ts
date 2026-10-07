@@ -4,7 +4,7 @@
 // Fixture: e2e/fixtures/sited-computer.fit (apps/server/test/fixtures/write-sited-fixture.ts).
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
-import { E2E_BASE_URL, activeResultShown, expectGoodPage, resetDive, seededDiveId, setPreferences } from './support.ts';
+import { E2E_BASE_URL, activeResultShown, diveRows, expectGoodPage, resetDive, seededDiveId, setPreferences } from './support.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -63,8 +63,8 @@ test('a dive with a position: a new dive site is made from it and chosen', { tag
   await expectGoodPage(page, 'Lighthouse');
   await page.getByRole('link', { name: '1 dive', exact: true }).click();
   await expect(page.getByText('Dives at Lighthouse')).toBeVisible();
-  await expect(page.getByRole('row')).toHaveCount(2); // header + dive 7
-  await expect(page.getByRole('row').nth(1)).toContainText('Lighthouse');
+  await expect(diveRows(page)).toHaveCount(1); // dive 7
+  await expect(diveRows(page).getByRole('link', { name: 'Lighthouse' })).toBeVisible();
   await page.getByRole('link', { name: 'Show all dives' }).click();
   await expect(page).toHaveURL(/#\/$/);
 });

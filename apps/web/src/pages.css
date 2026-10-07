@@ -137,9 +137,58 @@
 .participant-row { align-items: center; }
 .participant-row .diver-name { flex: 1 1 12rem; }
 .participant-role .field { gap: 0; }
-.logbook-actions { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); }
-.logbook-filter { min-width: 12rem; }
-.logbook-search { max-width: 24rem; margin-bottom: var(--space-4); }
+/* ---------- Logbook (UI redesign 3, ADR 0040) ---------- */
+/* The four numbers every logbook has: small names over tabular figures. */
+.logbook-totals { margin-bottom: var(--space-5); }
+.logbook-totals dl { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-6); margin: 0; }
+.logbook-totals dt { font-size: var(--text-sm); color: var(--color-text-muted); }
+.logbook-totals dd { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
+/* One toolbar for what narrows and orders the list: the search takes the room, the choices keep their width. */
+.logbook-toolbar { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-3) var(--space-4); margin-bottom: var(--space-4); }
+.logbook-search { flex: 1 1 16rem; max-width: 24rem; }
+.logbook-choice { flex: 0 1 14rem; min-width: min(100%, 11rem); }
+.logbook-range { margin: 0 0 var(--space-2); }
+.logbook-nothing { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
+.logbook-nothing > p { margin: 0; }
+/* Dive rows: one grid for the whole page of rows, so the circles and the two numbers line up down the list like
+   columns. The room the list has decides the layout, not the screen. */
+.dive-list { container: dives / inline-size; margin-inline: calc(-1 * var(--space-3)); }
+.dive-grid { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; column-gap: var(--space-4); }
+.dive-group, .dive-rows, .dive-row { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; }
+.dive-rows { list-style: none; margin: 0; padding: 0; }
+.month-head { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-1) var(--space-3);
+  padding: var(--space-5) var(--space-3) var(--space-2); border-bottom: 1px solid var(--color-border); }
+.dive-group:first-child .month-head { padding-top: var(--space-2); }
+.month-head h2 { margin: 0; font-size: var(--text-md); letter-spacing: 0; }
+.month-head p { margin: 0; }
+.dive-row { align-items: center; padding: var(--space-3); border-bottom: 1px solid var(--color-border); cursor: pointer; }
+.dive-group:last-child .dive-row:last-child { border-bottom: none; }
+.dive-no { min-width: 2ch; text-align: right; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+.dive-main { display: grid; gap: 2px; min-width: 0; }
+.dive-title { justify-self: start; font-weight: var(--weight-semibold); overflow-wrap: anywhere; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+.dive-facts { display: flex; flex-wrap: wrap; align-items: center; row-gap: 2px; margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }
+/* The dot is decoration, and it ends a line rather than starting the next one. */
+.dive-facts > span:not(.badge):not(:last-child):not(:has(+ .badge))::after { content: '·' / ''; margin: 0 var(--space-2); }
+.dive-facts > .badge { margin-inline-start: var(--space-2); }
+.dive-buddies { display: inline-flex; }
+/* Each number is a column of the grid. */
+.dive-figures { display: contents; }
+.dive-figures > .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (hover: hover) { .dive-row:hover { background: color-mix(in srgb, var(--color-accent-soft) 55%, transparent); } }
+@container dives (max-width: 38rem) {
+  /* On a phone the title keeps the row's width: the two numbers go under the facts, and the circles end that line
+     (tried at the end of the title's line: at 320 px they squeezed the title into three lines; tried as a third
+     column: its width is every row's, so rows without circles lost it too). The numbers and the circles share one
+     cell, and the numbers keep clear of the widest stack (three circles and "+N"). The number column stays one
+     column down the list, as wide as the longest number. */
+  .dive-grid { grid-template-columns: auto minmax(0, 1fr); column-gap: var(--space-3); }
+  .dive-row { align-items: start; row-gap: 2px; }
+  .dive-main { grid-column: 2; }
+  .dive-figures { grid-area: 2 / 2; align-self: center; justify-self: start; display: flex; flex-wrap: wrap; font-size: var(--text-sm); color: var(--color-text-muted); }
+  .dive-figures > .num + .num::before { content: '·' / ''; margin: 0 var(--space-2); }
+  .dive-buddies { grid-area: 2 / 2; align-self: center; justify-self: end; }
+  .dive-row:has(.dive-buddies) .dive-figures { margin-inline-end: 6.75rem; }
+}
 .sort-button { font: inherit; color: inherit; background: none; border: none; padding: var(--space-1) 0; cursor: pointer;
   display: inline-flex; align-items: center; gap: var(--space-1); min-height: 1.5rem; }
 .sort-button[data-hovered] { color: var(--color-text); }
@@ -147,9 +196,7 @@
 .sort-mark { display: inline-flex; min-width: 0.9em; }
 .sort-mark .icon { width: 0.9em; height: 0.9em; }
 th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text); }
-.pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-3); }
-.pager .muted { margin: 0; }
-.pager-buttons { display: flex; gap: var(--space-2); }
+.pager { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-3); }
 /* Shown while files are dragged over the logbook page; dropping anywhere imports them. */
 .page-drop { position: fixed; inset: var(--space-3); z-index: 30; pointer-events: none; display: grid; place-items: center;
   border: 3px dashed var(--color-accent); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--color-accent-soft) 85%, transparent);
@@ -187,7 +234,7 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .empty-state > p { margin: 0; }
 
 @container table (max-width: 40rem) {
-  /* The logbook on a phone (or in any column this narrow): number and date link on the first line, Diver, depth and duration under the
+  /* A stacked table on a phone (or in any column this narrow): the main cell on the first line, the others under the
      date, so nothing is cut off at the side (visual refresh 6). */
   .table-stacked thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
   .table-stacked, .table-stacked tbody { display: block; }
@@ -301,7 +348,6 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .assessment-note { font-size: var(--text-sm); color: var(--color-text-muted); }
 .assessment-about { display: grid; gap: var(--space-3); max-width: 65ch; }
 .assessment-about > * { margin: 0; }
-.finding-mark { margin-left: var(--space-2); }
 /* On the Divers page: rules of the dive assessment not shown for a Diver, each with the way back (ADR 0036). */
 .muted-rules { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); font-size: var(--text-sm); }
 .muted-rules ul { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin: 0; padding: 0; list-style: none; }

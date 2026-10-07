@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { dataFile, type PreparedData } from './prepare.ts';
 import {
-  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveWithoutRecording, expectGoodPage, externalDiver, openLine,
+  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectGoodPage, externalDiver, openLine,
   forgetDivers, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
@@ -49,9 +49,33 @@ for (const v of variants) {
 
     test('logbook', { tag: ['@dives'] }, async ({ page, request }) => {
       await resetDive(request);
-      await page.goto('/');
-      await expect(page.getByRole('table')).toBeVisible();
-      await expectGoodPage(page, title('Logbook'), v);
+      // Rows with everything a row can say (ADR 0040): buddies as circles, a dive without a recording from SSI.
+      // More people than circles fit, one of them with a long name (e2e/prepare.ts).
+      const own = (await (await request.get(`/api/dives/${diveId}`)).json() as { diverId: string }).diverId;
+      const divers = await (await request.get('/api/divers')).json() as { id: string; name: string }[];
+      await setBuddies(request, diveId, [
+        await externalDiver(request, 'Kai Lund'), await externalDiver(request, 'Ulla Berg'), await externalDiver(request, 'Mia Stone'),
+        ...divers.filter((d) => d.id !== own && d.name.startsWith('Konstantin')).map((d) => d.id),
+      ]);
+      await diveWithoutRecording(request);
+      try {
+        await page.goto('/');
+        await expect(diveRows(page).first()).toBeVisible();
+        await expect(page.getByRole('group', { name: v.english ? 'Show only' : 'Nur anzeigen' })).toBeVisible();
+        await expectGoodPage(page, title('Logbook'), v);
+        // A filter pressed, and sorted by depth: no month headings, the day with its year.
+        await page.goto('/#/?sort=maxDepth&only=no-recording');
+        await expect(page.getByRole('button', { name: v.english ? /^No recording \d+$/ : /^Keine Aufzeichnung \d+$/ })).toHaveAttribute('aria-pressed', 'true');
+        await expect(diveRows(page).first()).toBeVisible();
+        await expectGoodPage(page, title('Logbook'), v);
+        // Nothing fits: the filters are named, and all dives are one press away.
+        await page.goto('/#/?q=zzzz&only=no-recording,with-findings');
+        await expect(page.getByRole('button', { name: v.english ? 'Show all dives' : 'Alle Tauchgänge zeigen' })).toBeVisible();
+        await expectGoodPage(page, title('Logbook'), v);
+      } finally {
+        await clearParticipants(request, diveId);
+        await leaveLena(request);
+      }
     });
 
     test('dive, reading and editing', { tag: ['@dives'] }, async ({ page }) => {
@@ -573,7 +597,7 @@ test.describe('behaviour', () => {
 
   test('moving to another page puts focus on its heading', { tag: ['@layout'] }, async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('table')).toBeVisible();
+    await expect(diveRows(page).first()).toBeVisible();
     await page.getByRole('navigation').getByRole('link', { name: 'Divers' }).click();
     await expect(page.getByRole('heading', { name: 'Divers', level: 1 })).toBeFocused();
     await expect(page).toHaveTitle('Divers – Dive Hub');
@@ -582,12 +606,14 @@ test.describe('behaviour', () => {
   for (const [where, url] of [['Dive sites', '/#/sites'], ['logbook', '/']] as const) {
     test(`searching the ${where} keeps the field focused and the page in place while the results update`, { tag: ['@layout', '@sites', '@dives'] }, async ({ page }) => {
       await page.goto(url);
-      await expect(page.getByRole('table')).toBeVisible();
+      await expect(where === 'logbook' ? diveRows(page).first() : page.getByRole('table')).toBeVisible();
       // Marks the page as it is now: a rebuilt page would lose the mark.
       await page.locator('#main h1').evaluate((h) => { (h as HTMLElement).dataset.before = 'search'; });
-      // Sorting changes the address too: the pressed header keeps the focus, the page stays.
-      const sort = page.getByRole('columnheader').getByRole('button').first();
+      // Sorting changes the address too: the control used keeps the focus, the page stays. The logbook's rows have no
+      // column headers, so it sorts by a choice.
+      const sort = where === 'logbook' ? page.getByRole('button', { name: /Sort by$/ }) : page.getByRole('columnheader').getByRole('button').first();
       await sort.click();
+      if (where === 'logbook') await page.getByRole('option', { name: 'Oldest first' }).click();
       await expect(page).toHaveURL(/sort=|order=/);
       await expect(sort).toBeFocused();
       const search = page.getByRole('searchbox', { name: 'Search' });
@@ -609,7 +635,7 @@ test.describe('behaviour', () => {
 
   test('an unknown dive says so at once, without retrying first', { tag: ['@dives'] }, async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('table')).toBeVisible();
+    await expect(diveRows(page).first()).toBeVisible();
     // Counted, not timed: a retry would ask a second time before saying so (a time limit failed on a busy machine).
     const asked: string[] = [];
     page.on('request', (r) => { if (/\/api\/dives\/00000000-0000-7000-8000-000000000000$/.test(r.url())) asked.push(r.url()); });
@@ -738,20 +764,31 @@ test.describe('behaviour', () => {
     await field.fill('');
   });
 
-  test('the logbook sorts by a column and searches; the address keeps both', { tag: ['@dives'] }, async ({ page }) => {
+  test('the logbook sorts by a choice and searches; the address keeps both', { tag: ['@dives'] }, async ({ page, request }) => {
     await page.goto('/');
-    const depthHeader = page.getByRole('columnheader', { name: 'Max depth' });
-    await depthHeader.getByRole('button').click();
-    await expect(page).toHaveURL(/sort=maxDepth/);
-    await expect(depthHeader).toHaveAttribute('aria-sort', 'descending');
-    await depthHeader.getByRole('button').click();
-    await expect(depthHeader).toHaveAttribute('aria-sort', 'ascending');
-    await expect(page.getByRole('columnheader', { name: 'Date' })).toHaveAttribute('aria-sort', 'none');
+    const list = page.getByRole('region', { name: 'Dives' });
+    // Newest first: the rows stand under their months.
+    await expect(list.getByRole('heading', { level: 2 }).first()).toBeVisible();
+    const sort = page.getByRole('button', { name: /Sort by$/ });
+    await expect(sort).toContainText('Newest first');
+    await sort.click();
+    await page.getByRole('option', { name: 'Deepest first' }).click();
+    await expect(page).toHaveURL(/sort=maxDepth$/);
+    await expect(sort).toContainText('Deepest first');
+    // Months say nothing about a list sorted by depth; the deepest dive leads it.
+    await expect(list.getByRole('heading')).toHaveCount(0);
+    const { dives } = await (await request.get('/api/dives?sort=maxDepth&limit=1')).json() as { dives: { id: string }[] };
+    await expect(diveRows(page).first().getByRole('link')).toHaveAttribute('href', `#/dives/${dives[0]!.id}`);
+    await sort.click();
+    await page.getByRole('option', { name: 'Shallowest first' }).click();
+    await expect(page).toHaveURL(/sort=maxDepth&order=asc$/);
+    await page.reload();
+    await expect(sort).toContainText('Shallowest first');
 
     const search = page.getByRole('searchbox', { name: 'Search' });
     await search.fill('42');
     await expect(page).toHaveURL(/q=42/);
-    await expect(page.getByRole('row')).toHaveCount(2); // header + dive 42
+    await expect(diveRows(page)).toHaveCount(1); // dive 42
     await page.reload();
     await expect(search).toHaveValue('42');
     await search.fill('no such words');
@@ -760,7 +797,7 @@ test.describe('behaviour', () => {
 
   test('menus grow from their trigger; with reduced motion nothing moves (ADR 0018)', { tag: ['@layout'] }, async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('table')).toBeVisible();
+    await expect(diveRows(page).first()).toBeVisible();
     const menu = page.getByRole('button', { name: /^Erika\s*, account$/ });
     // Opens the menu and lists the animations running a frame later, with their durations.
     const open = () => menu.evaluate(async (button) => {
