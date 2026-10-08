@@ -1,6 +1,6 @@
 ---
 title: "ADR 0023: Checks by what changed, and a faster full check"
-summary: pnpm check runs typecheck, the unit tests whose imports changed and the browser tests of the areas touched (tags); pnpm check:full runs everything before a commit. Browser tests run on 2 workers with a server and database each, prepared once; no trace recording by default; axe in 2 of 4 ui-quality variants; server tests share modules. Full check 10.5 → 3 min.
+summary: pnpm check runs typecheck, the unit tests whose imports changed and the browser tests of the areas touched (tags); pnpm check:full runs everything, before a commit as decided, since the amendment of 2026-10-08 before a push or a release. Browser tests run on 2 workers with a server and database each, prepared once; no trace recording by default; axe in 2 of 4 ui-quality variants; server tests share modules. Full check 10.5 → 3 min.
 status: accepted
 date: 2026-10-04
 ---
@@ -113,3 +113,31 @@ Decided with the owner on 2026-10-08.
   keeps the full check.
 - **One other file in the commit and the full check runs**, as before.
 - The message that hands over the commit says that no check ran and why, and which commit the last full check passed on.
+
+## Amendment 2026-10-08: the check by what changed before a commit, the full check before a push or a release
+Why: the suite grew. The full check, 3 minutes when this was decided, took about 10 minutes on 2026-10-08 (typecheck
+8 s, server tests 79 s, web unit tests 4 s, browser tests 516 s), and it ran before every commit. For a slice that
+touches the schema, the texts or several pages, `pnpm check` had already run exactly the same tests, so the full check
+repeated them. Asked by the owner and decided with them on 2026-10-08.
+
+- **Before a commit: `pnpm check`, green on the commit's final state.** "It runs before every commit" above no longer
+  holds for `pnpm check:full`. The rule for a commit of documentation only stays.
+- **`pnpm check:full` runs before a push and before a release.** Nothing else runs the whole suite: there is no CI.
+  Once something runs it unattended (CI on push, or a nightly run), the full check by hand can go to releases only.
+- **What made the full check necessary, and what stands in for it now:**
+  - *A path the map gets wrong.* Unknown paths and shared code already run everything (texts, `api.ts`, `ui/`, the
+    schema, migrations, packages, configuration). The map was read through for this amendment; one entry was too
+    narrow and is widened: `apps/server/src/divers/` now also runs `@dives` and `@account` (a Dive shows its
+    Participants and their codes, the account page imports buddies).
+  - *Browser tests without an area tag* ran only in the full check. Now `pnpm check` fails when one exists: a step
+    "browser test tags" lists the tests that have none of the tags (`TAGS` in `scripts/check.mjs`) whenever browser
+    tests run. A new area's tag is added there.
+- **What is given up:** a break in another area through a path the map gets wrong is found at the next push, not at
+  the commit. It is then at most a few commits old.
+- **Still quiet in `pnpm check`, so covered only by the full check:** `.claude/`, `samples/`, the compose files, the
+  Dockerfile and the fixture scripts. A commit with one of them and nothing else runs no test; the push does.
+- The message that hands over a commit says which check ran and what it ran (by area, or everything).
+- *Considered:* the full check only before releases (with no CI a break could be many commits old and slow to trace);
+  a git pre-push hook that runs the full check (it needs a setting in every clone and makes every push wait ten
+  minutes; not installed, the rule is in AGENTS.md); keeping the rule and making the suite faster (worth doing
+  anyway: `ui-quality.spec.ts` is most of the time).

@@ -43,7 +43,7 @@ _German_: deaktiviert
 **Diver**:
 A person who dives and whose dives, certifications and equipment can be recorded.
 A Diver may be managed by a User (their own Diver, or someone they log for, such as a child) or exist without one.
-Every User sees every Diver of the instance by name, and nothing else of Divers they don't manage ([ADR 0028](decisions/0028-shared-divers-and-participants.md)).
+Every User sees every Diver of the instance by name, and of Divers they don't manage nothing else but the Diver's details ([ADR 0028](decisions/0028-shared-divers-and-participants.md)).
 _Avoid_: Person, profile, owner (in the UDDF sense)
 _German_: Taucher
 
@@ -51,6 +51,21 @@ _German_: Taucher
 A Diver no User manages: someone Users dived with, such as a buddy taken from an SSI buddy list. Shared like a Dive site: any User adds and renames one; whoever added it, or an admin, deletes it while no Dive lists it. When its person becomes a User, they claim it by connecting the account it holds (or an admin merges it): it merges into their own Diver ([ADR 0028](decisions/0028-shared-divers-and-participants.md)).
 _Avoid_: Contact, guest, buddy (that is a role)
 _German_: anderer Taucher
+
+**Details (of a Diver)**:
+What an SSI buddy code says about a person, kept with their Diver: first name and last name as SSI spells them, e-mail, and the SSI leader number of a dive professional. All optional. Every User sees them, with the Diver's SSI account; any User changes them for an External diver, a managed Diver's Users for theirs ([ADR 0043](decisions/0043-dive-centres-and-ssi-verification-codes.md)).
+_Avoid_: Profile, contact data, personal data (too wide: nothing else about the person is kept)
+_German_: Angaben
+
+**Buddy code**:
+The QR code SSI gives every diver, which another diver scans in SSI's app to add them to their buddy list. Dive Hub builds it from a Diver's SSI account and details, never stores it, and shows it to every User. A code scanned or pasted into Dive Hub is taken for the Diver that has its SSI account.
+_Avoid_: Buddy QR, contact code
+_German_: Buddy-Code
+
+**Professional's code**:
+A dive professional's SSI verification code: their buddy code with their leader number. A diver scans it in SSI's app on a logbook entry, and SSI shows that dive as verified, as with a Dive centre's code. A Diver with a leader number has one; it shows with the Diver and on every Dive they are a Participant of.
+_Avoid_: Pro code, instructor code (a guide has one too), leader code
+_German_: Code als Tauchprofi
 
 **Participant**:
 A Diver listed on someone else's Dive with a role: buddy, guide (led the dive) or instructor (taught on it). Student and team member come when needed. Whether a Dive was a training dive is the Dive's purpose, not a role.

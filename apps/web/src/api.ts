@@ -65,6 +65,10 @@ export type Position = NonNullable<SiteView['position']>;
 export type ExternalIdView = SiteView['externalIds'][number];
 export type CentreView = Awaited<ReturnType<typeof fetchCentre>>;
 export type VerificationCodeView = NonNullable<CentreView['verificationCode']>;
+/** A Diver's details and codes as every User sees them (ADR 0043). */
+export type DiverDetailsView = Awaited<ReturnType<typeof fetchDiverDetails>>;
+/** What the server says a scanned or pasted code is. */
+export type ReadCodeView = paths['/api/verification-codes/read']['post']['responses'][200]['content']['application/json'];
 export type SiteRevisionView = Awaited<ReturnType<typeof fetchSiteRevisions>>[number];
 export type SiteImportView = Awaited<ReturnType<typeof fetchSiteImport>>;
 export type SiteImportArea = SiteImportView['area'];
@@ -124,6 +128,8 @@ export const keys = {
   /** Every Diver of the instance by name (ADR 0028); under ['divers'], so changing a Diver refreshes searches. */
   diverSearch: (q: string) => ['divers', 'search', q] as const,
   externalDivers: (q: string) => ['divers', 'external', q] as const,
+  /** A Diver's details and codes (ADR 0043); under ['divers']. */
+  diverDetails: (id: string) => ['divers', id, 'details'] as const,
   /** The account's list of people at a Provider; under ['connections']. */
   buddies: (connectionId: string) => ['connections', connectionId, 'buddies'] as const,
   /** What importing the account's dives would do (ADR 0030); under ['connections']. */
@@ -393,6 +399,11 @@ async function fetchExternalDivers(q: string) {
 /** People Users dived with who keep no logbook here (ADR 0028). */
 export const externalDiversQuery = (q = '') =>
   queryOptions({ queryKey: keys.externalDivers(q), queryFn: () => fetchExternalDivers(q), placeholderData: keepPreviousData });
+
+async function fetchDiverDetails(id: string) {
+  return unwrap(await api.GET('/api/divers/{id}/details', { params: { path: { id } } }));
+}
+export const diverDetailsQuery = (id: string) => queryOptions({ queryKey: keys.diverDetails(id), queryFn: () => fetchDiverDetails(id) });
 
 async function fetchBuddies(connectionId: string) {
   return unwrap(await api.GET('/api/connections/{id}/buddies', { params: { path: { id: connectionId } } })).buddies;

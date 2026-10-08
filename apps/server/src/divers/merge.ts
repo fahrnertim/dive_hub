@@ -9,7 +9,9 @@ import { DiverError } from './diver-service.js';
 
 /** An external Diver: live, and no User keeps it. Null otherwise. */
 export async function externalDiver(tx: Tx, id: string) {
-  const [row] = await tx.select({ id: diver.id, name: diver.name }).from(diver)
+  const [row] = await tx.select({
+    id: diver.id, name: diver.name, firstName: diver.firstName, lastName: diver.lastName, email: diver.email, leaderNumber: diver.leaderNumber,
+  }).from(diver)
     .where(and(eq(diver.id, id), isNull(diver.deletedAt),
       sql`not exists (select 1 from ${diverManagement} m where m.diver_id = ${diver.id})`));
   return row ?? null;
@@ -26,13 +28,14 @@ export async function participations(tx: Tx, diverId: string): Promise<number> {
 /**
  * Merges the external Diver `fromId` into `intoId`, in the caller's transaction: its places as a Participant (not on the
  * Dives of `intoId` itself, nor twice on one Dive), its accounts at services (refused when `intoId` has another account
- * at the same service: `diver_external_id_taken`), then it is deleted with `merged_into` set. A Revision on both.
+ * at the same service: `diver_external_id_taken`), what its code says where `intoId` lacks it (ADR 0043), then it is
+ * deleted with `merged_into` set and without those details. A Revision on both.
  */
 export async function mergeExternalDiver(tx: Tx, fromId: string, intoId: string, actor: Actor): Promise<{ dives: number }> {
   if (fromId === intoId) throw new DiverError('invalid_input');
   const from = await externalDiver(tx, fromId);
   if (!from) throw new DiverError('diver_not_external');
-  const [into] = await tx.select({ id: diver.id, name: diver.name }).from(diver).where(and(eq(diver.id, intoId), isNull(diver.deletedAt)));
+  const [into] = await tx.select().from(diver).where(and(eq(diver.id, intoId), isNull(diver.deletedAt)));
   if (!into) throw new DiverError('diver_not_found');
   // An external Diver keeps no logbook; one that has Dives or Devices isn't what this merges.
   const [owns] = await tx.select({ n: sql<number>`(select count(*)::int from ${dive} where ${dive.diverId} = ${fromId}) + (select count(*)::int from ${device} where ${device.diverId} = ${fromId})` }).from(diver).where(eq(diver.id, fromId));
@@ -41,7 +44,7 @@ export async function mergeExternalDiver(tx: Tx, fromId: string, intoId: string,
   const accounts = await tx.select().from(diverExternalId).where(eq(diverExternalId.diverId, fromId));
   for (const a of accounts) {
     const [other] = await tx.select().from(diverExternalId).where(and(eq(diverExternalId.diverId, intoId), eq(diverExternalId.source, a.source)));
-    if (other && other.externalId !== a.externalId) throw new DiverError('diver_external_id_taken', into);
+    if (other && other.externalId !== a.externalId) throw new DiverError('diver_external_id_taken', { id: into.id, name: into.name });
     if (other) await tx.delete(diverExternalId).where(eq(diverExternalId.id, a.id));
     else await tx.update(diverExternalId).set({ diverId: intoId }).where(eq(diverExternalId.id, a.id));
   }
@@ -54,7 +57,12 @@ export async function mergeExternalDiver(tx: Tx, fromId: string, intoId: string,
   await tx.update(participant).set({ diverId: intoId }).where(eq(participant.diverId, fromId));
 
   const at = new Date();
-  await tx.update(diver).set({ deletedAt: at, mergedInto: intoId, updatedAt: at }).where(eq(diver.id, fromId));
+  // What the merged Diver's code said fills the gaps of the kept one; the deleted row keeps no personal data.
+  await tx.update(diver).set({
+    firstName: into.firstName ?? from.firstName, lastName: into.lastName ?? from.lastName,
+    email: into.email ?? from.email, leaderNumber: into.leaderNumber ?? from.leaderNumber, updatedAt: at,
+  }).where(eq(diver.id, intoId));
+  await tx.update(diver).set({ deletedAt: at, mergedInto: intoId, updatedAt: at, firstName: null, lastName: null, email: null, leaderNumber: null }).where(eq(diver.id, fromId));
   await writeRevision(tx, 'diver', fromId, actor, 'merge', { mergedInto: { from: null, to: { id: into.id, name: into.name } } });
   await writeRevision(tx, 'diver', intoId, actor, 'merge', { merged: { from: { id: from.id, name: from.name }, to: null }, dives: { from: null, to: dives } });
   return { dives };

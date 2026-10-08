@@ -451,7 +451,10 @@
     "centre_changed": "Someone renamed the dive centre meanwhile. Reload the page and try again.",
     "centre_not_deletable": "Only whoever created the dive centre, or an admin, can delete it.",
     "centre_external_id_taken": "Another dive centre already has this number.",
-    "code_not_recognised": "This isn’t a code Dive Hub knows. Paste the whole text of the dive centre’s QR code."
+    "code_not_recognised": "This isn’t a code Dive Hub knows. Paste the whole text of the QR code.",
+    "code_not_a_person": "This is a dive centre’s code, not a buddy’s or a dive professional’s.",
+    "diver_choice_needed": "No diver has this account yet. Choose who it is, or add a new diver.",
+    "diver_has_other_account": "This diver has another SSI account, so the code is someone else’s."
   },
   "vocabulary": {
     "waterType": {
@@ -708,7 +711,7 @@
     "added": "{{name}} added.",
     "sameName": "You already have a Diver called {{name}}. That works, but the two will be hard to tell apart.",
     "others": "Other divers",
-    "othersIntro": "People you or other users dived with who keep no logbook here. Every user sees their names; whoever added someone, or an admin, can delete them while no dive lists them.",
+    "othersIntro": "People you or other users dived with who keep no logbook here. Every user sees their names and what their SSI code says; whoever added someone, or an admin, can delete them while no dive lists them.",
     "findOther": "Find by name",
     "noOthers": "No other divers yet. Add them here, from a dive, or from your SSI buddy list on your account page.",
     "noOtherMatch": "No other diver called “{{q}}”.",
@@ -1032,7 +1035,7 @@
     "showBuddies": "Show your {{name}} list of people",
     "hideBuddies": "Hide the list",
     "buddiesIntro": "The people in your {{name}} account. Add them to Dive Hub to put them on your dives.",
-    "buddiesKept": "Dive Hub keeps only each person’s name and {{name}} account, nothing else {{name}} knows about them.",
+    "buddiesKept": "Dive Hub keeps each person’s name and {{name}} account and what their code there says: first and last name, e-mail and, for a dive professional, the leader number. Everyone on this Dive Hub sees these. Nothing else {{name}} knows about them is kept.",
     "buddyName": "Name at {{name}}",
     "buddyHere": "In Dive Hub",
     "notHereYet": "Not yet",
@@ -1230,7 +1233,11 @@
     "claimExplain": "Connecting makes {{diver}} {{mine}}: the dives that list {{diver}} then list {{mine}}. Nothing of those dives becomes yours.",
     "claimConfirm": "Yes, I am {{diver}}: connect",
     "removesVerification": "This update changes the dive’s start time in {{name}}. {{name}} then removes the dive centre’s verification of this dive.",
-    "removedVerification": "The start time changed in {{name}}, so a dive centre’s verification of this dive is gone there."
+    "removedVerification": "The start time changed in {{name}}, so a dive centre’s verification of this dive is gone there.",
+    "fillDetails": "Fill in details of divers already here",
+    "detailsFilled_one": "Details filled in for {{count}} diver.",
+    "detailsFilled_other": "Details filled in for {{count}} divers.",
+    "nothingToFill": "Nothing to fill in: these divers already have what {{name}} says."
   },
   "providers": {
     "ssi": {
@@ -1272,7 +1279,7 @@
     "addTitle": "Who dived with you?",
     "as": "As",
     "who": "Find a diver",
-    "sharedHint": "Every user of this Dive Hub sees the names of all divers, nothing else about them.",
+    "sharedHint": "Every user of this Dive Hub sees the names of all divers and what their SSI code says: name, e-mail and leader number. Nothing else about them.",
     "divers": "Divers",
     "yours": "Your logbook",
     "external": "No logbook here",
@@ -1636,11 +1643,69 @@
     "removeCentre": "Remove",
     "centreAdded": "{{name}} added.",
     "centreRemoved": "{{name}} removed.",
-    "diveCodes": "Verification code",
-    "diveCodesHint": "From the dive centres of this dive’s site. Scan one in SSI’s app on this dive’s logbook entry, or show it to the others who were on the dive.",
+    "diveCodes_one": "Verification code",
+    "diveCodes_other": "Verification codes",
+    "diveCodesHint": "From the dive centres of this dive’s site and the dive professionals who were on it. Scan one in SSI’s app on this dive’s logbook entry, or show it to the others who were on the dive.",
     "toCentre": "To the dive centre",
-    "showCode_one": "Show the centre’s code",
-    "showCode_other": "Show the centres’ codes",
+    "showCode_one": "Show the verification code",
+    "showCode_other": "Show the verification codes",
     "fullName": "Full name"
+  },
+  "diverCodes": {
+    "open": "Codes",
+    "title": "{{name}}: codes and details",
+    "caption": {
+      "buddy": "SSI buddy code",
+      "professional": "SSI professional’s code"
+    },
+    "use": {
+      "buddy": "Another diver scans it in SSI’s app to add {{name}} to their buddy list.",
+      "professional": "A diver scans it in SSI’s app on a logbook entry, and SSI shows that dive as verified."
+    },
+    "noCode": "No code yet. It needs the SSI account, first name, last name and e-mail.",
+    "ssiAccount": "SSI account",
+    "notSet": "Not set",
+    "field": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "E-mail",
+      "leaderNumber": "SSI leader number"
+    },
+    "seenByAll": "Everyone on this Dive Hub sees these details and codes.",
+    "seenByAllShort": "Everyone on this Dive Hub then sees these details.",
+    "readOnly": "Only the users who keep {{name}}’s logbook can change these details.",
+    "edit": "Edit details",
+    "done": "Done",
+    "formIntro": "What {{name}}’s SSI buddy code says. Everyone on this Dive Hub sees it.",
+    "emailHint": "The address of the SSI account.",
+    "leaderNumberHint": "Only for dive professionals. With it, their code shows on the dives they were on.",
+    "save": "Save",
+    "saved": "Details saved.",
+    "scan": "Add from a code",
+    "scanTitle": "Add a diver from an SSI code",
+    "scanIntro": "Scan a diver’s SSI buddy code or a dive professional’s code, or paste its text. Dive Hub takes the name, e-mail and SSI account from it.",
+    "pasteCode": "Text of the code (optional)",
+    "readCode": "Read code",
+    "centreCode": "This is a dive centre’s code, not a diver’s.",
+    "toCentres": "To the dive centres",
+    "isCodeOf": {
+      "buddy": "This is the buddy code of {{name}}.",
+      "professional": "This is the professional’s code of {{name}}."
+    },
+    "nothingNew": "Dive Hub already has everything it says.",
+    "changes": "Taking it changes:",
+    "notYours": "Only the users who keep {{name}}’s logbook can take this code.",
+    "unknown": {
+      "buddy": "The buddy code of {{name}}. No diver here has this SSI account yet.",
+      "professional": "The professional’s code of {{name}}. No diver here has this SSI account yet."
+    },
+    "whose": "Who is it?",
+    "giveTo": "{{name}}, who is already here",
+    "newDiver": "A new diver: {{name}}",
+    "take": "Take over",
+    "addDiver": "Add as a new diver",
+    "showCodes": "Show codes",
+    "taken": "Code taken for {{name}}.",
+    "diveCaption": "SSI verification code of a dive professional"
   }
 }

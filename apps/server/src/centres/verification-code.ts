@@ -20,6 +20,33 @@ export type VerificationCode =
   | { kind: 'buddy'; accountId: string; firstName: string; lastName: string; email: string }
   | { kind: 'professional'; accountId: string; firstName: string; lastName: string; email: string; leaderNumber: string };
 
+/** What a person's codes are built from: their SSI account and what SSI's own code says about them (a Diver's fields). */
+export interface CodePerson {
+  accountId: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  leaderNumber: string | null;
+}
+
+/** What a part of a person's code may be: one line without the semicolon that ends a part. */
+export const CODE_PART_PATTERN = /^[^;\r\n]+$/;
+
+/**
+ * A person's codes: the buddy code, by which another diver adds them to their SSI buddy list, and with a leader number
+ * also the professional's code, which verifies a dive. Nothing while account, a name or the e-mail is missing: the code
+ * is always the one SSI itself would show (ADR 0043).
+ */
+export function personCodes(person: CodePerson): { kind: 'buddy' | 'professional'; provider: 'ssi'; text: string }[] {
+  const { accountId, firstName, lastName, email, leaderNumber } = person;
+  if (!accountId || !firstName || !lastName || !email) return [];
+  const buddy = `buddy;${accountId};firstName:${firstName};lastName:${lastName};email:${email}`;
+  return [
+    { kind: 'buddy', provider: 'ssi', text: buddy },
+    ...(leaderNumber ? [{ kind: 'professional' as const, provider: 'ssi' as const, text: `${buddy};leaderNr:${leaderNumber}` }] : []),
+  ];
+}
+
 const BUDDY = /^buddy;([1-9]\d{0,9});firstName:([^;]*);lastName:([^;]*);email:([^;]*)(?:;leaderNr:([^;]+))?$/;
 
 /** What a code's text is, with its fields; null for a text that is none of the known codes. */

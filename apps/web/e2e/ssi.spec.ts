@@ -96,7 +96,7 @@ test('picks the SSI site, sends the dive, updates it after a change and deletes 
   await panel.getByRole('button', { name: 'Update in SSI' }).click();
   await expect(panel.getByText('Up to date')).toBeVisible();
   await expect(panel.getByText('The start time changed in SSI, so a dive centre’s verification of this dive is gone there.')).toBeVisible();
-  await panel.getByRole('button', { name: 'Show the centre’s code' }).click();
+  await panel.getByRole('button', { name: 'Show the verification code' }).click();
   await expect(page.getByRole('img', { name: 'SSI verification code of Example Divers Send e.K.' })).toBeVisible();
   await request.delete(`/api/dive-centres/${centre.id}`, { headers });
   await page.reload();

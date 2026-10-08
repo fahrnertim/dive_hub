@@ -1,12 +1,41 @@
 // SSI's verification codes as text (ADR 0043): a Dive centre's is built from number and name; a pasted text is read
 // as a centre's, a buddy's or a professional's. Placeholders only, never a real code.
 import { describe, expect, it } from 'vitest';
-import { centreCodeText, readVerificationCode } from '../src/centres/verification-code.js';
+import { centreCodeText, personCodes, readVerificationCode } from '../src/centres/verification-code.js';
 import { ssiCentreDisplayName } from '../src/providers/ssi/ssi-centre.js';
 
 describe('a Dive centre\'s SSI verification code', () => {
   it('is "center;<number>;name:<name>", the name exactly as given', () => {
     expect(centreCodeText('700001', 'Example Divers GmbH, Musterstadt')).toBe('center;700001;name:Example Divers GmbH, Musterstadt');
+  });
+});
+
+describe('a person\'s SSI codes', () => {
+  const erika = { accountId: '1234567', firstName: 'Erika', lastName: 'Mustermann', email: 'erika@example.com', leaderNumber: null };
+
+  it('is the buddy code once account, both names and e-mail are there', () => {
+    expect(personCodes(erika)).toEqual([
+      { kind: 'buddy', provider: 'ssi', text: 'buddy;1234567;firstName:Erika;lastName:Mustermann;email:erika@example.com' },
+    ]);
+  });
+
+  it('adds the professional\'s code, the buddy code with the leader number at its end', () => {
+    expect(personCodes({ ...erika, leaderNumber: '54321' })).toEqual([
+      { kind: 'buddy', provider: 'ssi', text: 'buddy;1234567;firstName:Erika;lastName:Mustermann;email:erika@example.com' },
+      { kind: 'professional', provider: 'ssi', text: 'buddy;1234567;firstName:Erika;lastName:Mustermann;email:erika@example.com;leaderNr:54321' },
+    ]);
+  });
+
+  it('is nothing while a part is missing: no half code', () => {
+    for (const missing of ['accountId', 'firstName', 'lastName', 'email'] as const) {
+      expect(personCodes({ ...erika, leaderNumber: '54321', [missing]: null }), missing).toEqual([]);
+    }
+  });
+
+  it('is read back as what it was built from', () => {
+    const [buddy, professional] = personCodes({ ...erika, firstName: 'Zoë', lastName: 'van der Berg', leaderNumber: '54321' });
+    expect(readVerificationCode(buddy!.text)).toEqual({ kind: 'buddy', accountId: '1234567', firstName: 'Zoë', lastName: 'van der Berg', email: 'erika@example.com' });
+    expect(readVerificationCode(professional!.text)).toMatchObject({ kind: 'professional', leaderNumber: '54321' });
   });
 });
 

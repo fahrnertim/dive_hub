@@ -13,7 +13,9 @@ const person = (id: number, account: number, firstname: string, lastname: string
   owner: ERIKA, id, buddy_master_id: account, firstname, lastname,
   email: `${firstname.toLowerCase()}@example.com`, dob: '1980-01-02', phone: '+49 170 000000', city: 'Kiel',
 });
-const KAI = person(3_786_888, 4_989_164, 'Kai', 'Lund');
+/** A professional: SSI keeps a leader number for him. */
+const KAI = { ...person(3_786_888, 4_989_164, 'Kai', 'Lund'), leader_nr: '54321' };
+const ZOE = person(2_555_555, 4_700_000, 'Zoe', 'Zett');
 const MIA = person(2_826_964, 4_512_484, 'Mia', 'Stone');
 /** Typed in lower case at SSI, as some entries are. */
 const SAM = person(2_271_970, 4_109_908, 'samuel', 'dreier');
@@ -43,11 +45,13 @@ describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
     version: ((await call('GET', `/api/dives/${diveId}`)).json() as { version: number }).version,
     participants: ids.map((diverId) => ({ diverId, role: 'buddy' })),
   });
+  /** Not through `call`: a Diver's details hold the e-mail, which no other answer may. */
+  const details = async (id: string) => (await ctx.app.inject({ method: 'GET', url: `/api/divers/${id}/details`, headers: { cookie: tim } })).json() as Record<string, unknown>;
   const ssiDive = (remoteId: string) => ctx.fakeSsi.dives.get(Number(remoteId))!;
 
   beforeAll(async () => {
     t = await createTestDatabase();
-    ctx = await createTestApp(t, { fakeSsi: createFakeSsi({ buddies: [KAI, MIA, SAM, { ...person(1_111_111, 7_777_777, 'Other', 'List'), owner: 42 }] }) });
+    ctx = await createTestApp(t, { fakeSsi: createFakeSsi({ buddies: [KAI, MIA, SAM, ZOE, { ...person(1_111_111, 7_777_777, 'Other', 'List'), owner: 42 }] }) });
     await createUser(ctx.auth, 'tim@example.com');
     tim = await signIn(ctx.app, 'tim@example.com');
     const timDiver = ((await call('GET', '/api/divers')).json() as { id: string; isOwn: boolean }[]).find((d) => d.isOwn)!.id;
@@ -78,12 +82,13 @@ describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
         { name: 'Kai Lund', account: '4989164', diver: null },
         { name: 'Mia Stone', account: '4512484', diver: null },
         { name: 'samuel dreier', account: '4109908', diver: null },
+        { name: 'Zoe Zett', account: '4700000', diver: null },
       ]);
     });
 
     it('imports chosen entries as external Divers with their SSI account, and skips those already here', async () => {
       const answer = await call('POST', `/api/connections/${connectionId}/buddies/import`, { accounts: ['4989164'] });
-      expect(answer.json()).toMatchObject({ created: 1, buddies: [{ name: 'Kai Lund', diver: { name: 'Kai Lund' } }, { name: 'Mia Stone', diver: null }, { diver: null }] });
+      expect(answer.json()).toMatchObject({ created: 1, buddies: [{ name: 'Kai Lund', diver: { name: 'Kai Lund' } }, { name: 'Mia Stone', diver: null }, { diver: null }, { diver: null }] });
       kai = (answer.json() as { buddies: Buddy[] }).buddies[0]!.diver!.id;
       expect((await call('POST', `/api/connections/${connectionId}/buddies/import`, { accounts: ['4989164'] })).json()).toMatchObject({ created: 0 });
       const found = (await call('GET', '/api/external-divers?q=kai')).json() as { divers: { id: string; accounts: string[] }[] };
@@ -93,6 +98,25 @@ describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
     it('capitalizes a name SSI has all in lower case when importing it', async () => {
       const answer = await call('POST', `/api/connections/${connectionId}/buddies/import`, { accounts: ['4109908'] });
       expect((answer.json() as { buddies: Buddy[] }).buddies[2]).toMatchObject({ name: 'samuel dreier', diver: { name: 'Samuel Dreier' } });
+    });
+
+    it('brings along what the buddy code says: first and last name as SSI spells them, the e-mail and a leader number (ADR 0043)', async () => {
+      expect(await details(kai)).toMatchObject({
+        firstName: 'Kai', lastName: 'Lund', email: 'kai@example.com', leaderNumber: '54321',
+        codes: [{ kind: 'buddy' }, { kind: 'professional', text: 'buddy;4989164;firstName:Kai;lastName:Lund;email:kai@example.com;leaderNr:54321' }],
+      });
+      const sam = (await buddies())[2]!.diver!.id;
+      expect(await details(sam)).toMatchObject({ name: 'Samuel Dreier', firstName: 'samuel', lastName: 'dreier', leaderNumber: null });
+    });
+
+    it('fills what a Diver already here lacks when their entry is imported, and overwrites nothing', async () => {
+      const zoe = ((await call('POST', '/api/external-divers', { name: 'Zoe' })).json() as { id: string }).id;
+      await ctx.app.inject({ method: 'PUT', url: `/api/divers/${zoe}/external-ids/ssi`, headers: { cookie: tim, origin: BASE_URL }, payload: { externalId: '4700000' } });
+      await ctx.app.inject({ method: 'PATCH', url: `/api/divers/${zoe}/details`, headers: { cookie: tim, origin: BASE_URL }, payload: { firstName: 'Zoë' } });
+      const answer = (await call('POST', `/api/connections/${connectionId}/buddies/import`, { accounts: ['4700000'] })).json() as { created: number; updated: number };
+      expect(answer).toMatchObject({ created: 0, updated: 1 });
+      expect(await details(zoe)).toMatchObject({ name: 'Zoe', firstName: 'Zoë', lastName: 'Zett', email: 'zoe@example.com' });
+      expect((await call('POST', `/api/connections/${connectionId}/buddies/import`, { accounts: ['4700000'] })).json()).toMatchObject({ created: 0, updated: 0 });
     });
 
     it('links an entry to a Diver already here by setting the Diver\'s SSI account', async () => {
@@ -128,10 +152,15 @@ describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
       expect((await status()).current!.upToDate).toBe(true);
     });
 
-    it('never stores or answers more of a buddy than name and SSI account', async () => {
+    it('never answers more of a buddy than the name and what their code says: no birth date, phone or town, and the e-mail only inside a code', async () => {
       for (const body of bodies) {
-        for (const b of [KAI, MIA]) for (const secret of [b.email, b.dob, b.phone, b.city, 'Other']) expect(body).not.toContain(secret);
+        for (const b of [KAI, MIA]) for (const secret of [b.dob, b.phone, b.city, 'Other']) expect(body).not.toContain(secret);
+        // The e-mail is in a Diver's details and in a professional's code on a Dive (ADR 0043), nowhere else.
+        if (!body.includes('"verificationCodes"')) expect(body).not.toContain(KAI.email);
+        expect(body).not.toContain(MIA.email);
       }
+      const stored = JSON.stringify((await ctx.app.inject({ method: 'GET', url: `/api/divers/${kai}/details`, headers: { cookie: tim } })).json());
+      for (const secret of [KAI.dob, KAI.phone, KAI.city]) expect(stored).not.toContain(secret);
     });
   });
 });

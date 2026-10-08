@@ -204,6 +204,14 @@ export interface RemoteBuddy {
   name: string;
   /** The person's own account at the Provider, as a Diver External ID at `accountSource`; null without one. */
   account: string | null;
+  /**
+   * What the person's code at the Provider says about them (ADR 0043), where the list has it: an import stores these
+   * on the Diver. Nothing else the Provider keeps about a person is passed on.
+   */
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
+  leaderNumber?: string | null;
 }
 
 /** What Dive Hub sends to find a dive again when an answer is lost: `divehub-<Dive id>`. */

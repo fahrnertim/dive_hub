@@ -11,8 +11,8 @@ import { Button, Dialog, Muted, Notice, SearchList, Table, type SearchListItem }
 
 /**
  * The account's own list of people at a Provider (ADR 0029; SSI's buddy list), read only when asked: who is a Diver
- * here already, and adding the others, one by one or all at once, with only their name and account. An entry can also
- * be linked to a Diver here by hand.
+ * here already, and adding the others, one by one or all at once, with their name, account and what their code says
+ * (ADR 0043). An entry can also be linked to a Diver here by hand, and Divers already here get what they lack.
  */
 export function ProviderBuddies({ provider: p, connection: c }: { provider: ProviderView; connection: ConnectionView }) {
   const pt = useProviderText(p);
@@ -32,6 +32,17 @@ export function ProviderBuddies({ provider: p, connection: c }: { provider: Prov
       announce(pt('buddiesAdded' as 'buddiesAdded_one', { count: answer.created }));
     },
   });
+  // Divers already here: the same call fills what they lack of what the list says about them, and overwrites nothing.
+  const fill = useMutation({
+    mutationFn: async (accounts: string[]) => unwrap(await api.POST('/api/connections/{id}/buddies/import', {
+      params: { path: { id: c.id } }, body: { accounts },
+    })),
+    onSuccess: async (answer) => {
+      await queryClient.invalidateQueries({ queryKey: keys.divers });
+      void queryClient.invalidateQueries({ queryKey: keys.dives });
+      announce(answer.updated > 0 ? pt('detailsFilled' as 'detailsFilled_one', { count: answer.updated }) : pt('nothingToFill'));
+    },
+  });
   if (!p.data.buddies?.import?.operations.includes('find') || c.state !== 'active') return null;
   if (!open) {
     return (
@@ -44,6 +55,7 @@ export function ProviderBuddies({ provider: p, connection: c }: { provider: Prov
   }
   const list = buddies.data ?? [];
   const addable = list.filter((b) => b.account && !b.diver);
+  const here = list.filter((b) => b.account && b.diver);
 
   return (
     <section className="provider-buddies">
@@ -77,13 +89,17 @@ export function ProviderBuddies({ provider: p, connection: c }: { provider: Prov
           ))}
         </Table>
       )}
-      {add.error && <Notice tone="danger">{errorText(add.error)}</Notice>}
+      {(add.error ?? fill.error) && <Notice tone="danger">{errorText(add.error ?? fill.error)}</Notice>}
+      {fill.data && <Notice tone="info">{fill.data.updated > 0 ? pt('detailsFilled' as 'detailsFilled_one', { count: fill.data.updated }) : pt('nothingToFill')}</Notice>}
       <div className="form-actions">
         {addable.length > 1 && (
           <Button variant="primary" icon="add" isPending={add.isPending && (add.variables?.length ?? 0) > 1} isDisabled={add.isPending}
             onPress={() => add.mutate(addable.map((b) => b.account!))}>
             {pt('addAllBuddies' as 'addAllBuddies_one', { count: addable.length })}
           </Button>
+        )}
+        {here.length > 0 && (
+          <Button isPending={fill.isPending} isDisabled={add.isPending} onPress={() => fill.mutate(here.map((b) => b.account!))}>{pt('fillDetails')}</Button>
         )}
         <Button onPress={() => setOpen(false)}>{pt('hideBuddies')}</Button>
       </div>

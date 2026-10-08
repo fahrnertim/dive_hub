@@ -23,6 +23,7 @@ import { waterMismatch } from './water.js';
 import { recordingPosition } from '../sites/dive-site-link.js';
 import { PositionSchema } from '../sites/routes.js';
 import { createCentreService } from '../centres/centre-service.js';
+import { createDiverService } from '../divers/diver-service.js';
 import { VerificationCodeView } from '../centres/routes.js';
 import type { PushService } from '../providers/push-service.js';
 import type { AssessmentService } from '../assessment/assessment-service.js';
@@ -146,11 +147,14 @@ const DiveView = Type.Object({
   recordings: Type.Array(RecordingView),
   participants: Type.Array(Participant, { description: 'Buddies first, then guides and instructors (ADR 0028)' }),
   verificationCodes: Type.Array(Type.Object({
-    centre: Type.Object({ id: Type.String(), name: Type.String(), displayName: Type.String({ description: 'The name to show' }) }, { description: 'The Dive centre the code belongs to; name it beside the code' }),
+    kind: Type.Enum(['centre', 'professional'], { description: 'Whose code it is: a Dive centre\'s (centre is set) or a professional\'s (diver is set)' }),
+    centre: Nullable(Type.Object({ id: Type.String(), name: Type.String(), displayName: Type.String({ description: 'The name to show' }) }, { description: 'The Dive centre the code belongs to; name it beside the code' })),
+    diver: Nullable(Type.Object({ id: Type.String(), name: Type.String() }, { description: 'The professional the code belongs to, a Participant of the Dive; name them beside the code' })),
     ...VerificationCodeView.properties,
   }), {
-    description: 'The verification codes of the Dive centres responsible for the Dive\'s site, by centre name (ADR 0043). No other condition: '
-      + 'not a Push, not the Diver. Draw each text as a QR code (docs/spec/clients.md)',
+    description: 'The codes that verify the Dive at a Provider (ADR 0043): those of the Dive centres responsible for its site, by centre name, '
+      + 'then those of its Participants with a leader number, whatever their role, by name. No other condition: not a Push, not the Diver. '
+      + 'Draw each text as a QR code (docs/spec/clients.md)',
   }),
 });
 
@@ -293,6 +297,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   });
 
   const centres = createCentreService(db);
+  const divers = createDiverService(db);
 
   /** The Dive if the signed-in User manages its Diver. */
   const findDive = async (request: FastifyRequest, id: string) => {
@@ -338,7 +343,10 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
         summary: r.summary as RecordingSummary, channels,
       })),
       participants: await participantsOf(db, row.id),
-      verificationCodes: await centres.codesOfDive(row.id),
+      verificationCodes: [
+        ...(await centres.codesOfDive(row.id)).map((c) => ({ kind: 'centre' as const, diver: null, ...c })),
+        ...(await divers.professionalCodesOfDive(row.id)).map((c) => ({ kind: 'professional' as const, centre: null, ...c })),
+      ],
     };
   };
 

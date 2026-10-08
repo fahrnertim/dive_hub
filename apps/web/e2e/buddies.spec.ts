@@ -21,10 +21,10 @@ test('adds a buddy from the SSI buddy list on the account page', { tag: ['@accou
   const panel = page.locator('section', { has: page.getByRole('heading', { name: 'SSI', exact: true }) });
   await panel.getByRole('button', { name: /^Show your SSI buddy list/ }).click();
   const list = panel.locator('section', { has: page.getByRole('heading', { name: 'Your SSI buddy list' }) });
-  await expect(list.getByText('Dive Hub keeps only each person’s name and SSI account')).toBeVisible();
+  await expect(list.getByText('Dive Hub keeps each person’s name and SSI account and what their code there says')).toBeVisible();
   const kai = list.getByRole('row', { name: /Kai Lund/ });
   await expect(kai.getByRole('cell', { name: 'Not yet' })).toBeVisible();
-  // Nothing SSI keeps about them besides the name is shown.
+  // The list shows only the name; what the code says is kept with the Diver (ADR 0043).
   await expect(list.getByText('kai@example.com')).toHaveCount(0);
 
   await kai.getByRole('button', { name: 'Add to Dive Hub: Kai Lund' }).click();

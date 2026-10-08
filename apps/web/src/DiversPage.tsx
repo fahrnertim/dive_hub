@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   api, devicesQuery, diverSearchQuery, diversQuery, externalDiversQuery, keys, meQuery, unwrap, type DeviceView, type DiverView, type ExternalDiverView,
 } from './api.ts';
+import { DiverCodesDialog, TakeCodeDialog } from './DiverCodes.tsx';
 import { deviceName } from './lib/devices.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
@@ -79,6 +80,7 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
   const errorText = useErrorText();
   const queryClient = useQueryClient();
   const [renaming, setRenaming] = useState(false);
+  const [codes, setCodes] = useState(false);
   const [newName, setNewName] = useState(d.name);
   const all = useQuery(diversQuery());
   const sameName = useSameName();
@@ -123,6 +125,9 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
           <span className="diver-name">{d.name}{d.isOwn && ` (${t('divers.own')})`}</span>
           <a href={`#/?diver=${d.id}`} className="meta">{t('divers.dives', { count: d.diveCount })}</a>
           <span className="actions">
+            <Button variant="quiet" aria-label={t('common.forItem', { action: t('diverCodes.open'), item: d.name })} onPress={() => setCodes(true)}>
+              {t('diverCodes.open')}
+            </Button>
             <Button ref={renameButton} variant="quiet" aria-label={t('common.forItem', { action: t('divers.rename'), item: d.name })} onPress={() => { setNewName(d.name); setRenaming(true); }}>
               {t('divers.rename')}
             </Button>
@@ -136,6 +141,7 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
       )}
       {(rename.error ?? remove.error) && <Notice tone="danger">{errorText(rename.error ?? remove.error)}</Notice>}
       <MutedRules diver={d} />
+      {codes && <DiverCodesDialog diverId={d.id} name={d.name} onClose={() => setCodes(false)} />}
     </li>
   );
 }
@@ -242,9 +248,12 @@ function OtherDivers() {
     },
   });
   const rows = others.data?.divers ?? [];
+  const [scanning, setScanning] = useState(false);
+  // The Diver a code was just taken for: its codes open, whichever list it is in.
+  const [taken, setTaken] = useState<{ id: string; name: string } | null>(null);
 
   return (
-    <Panel title={t('divers.others')}>
+    <Panel title={t('divers.others')} actions={<Button icon="code" onPress={() => setScanning(true)}>{t('diverCodes.scan')}</Button>}>
       <Muted>{t('divers.othersIntro')}</Muted>
       <TextField label={t('divers.findOther')} name="q" type="search" autoComplete="off" value={q} onChange={setQ} />
       {others.isPending && <Muted>{t('common.loading')}</Muted>}
@@ -260,6 +269,8 @@ function OtherDivers() {
         <Button type="submit" icon="add" isPending={create.isPending}>{t('divers.createOther')}</Button>
       </Form>
       {create.error && <Notice tone="danger">{errorText(create.error)}</Notice>}
+      {scanning && <TakeCodeDialog onClose={() => setScanning(false)} onTaken={(diver) => { setScanning(false); setTaken(diver); }} />}
+      {taken && <DiverCodesDialog diverId={taken.id} name={taken.name} onClose={() => setTaken(null)} />}
     </Panel>
   );
 }
@@ -270,6 +281,7 @@ function OtherDiverRow({ diver: d, list, index, count }: { diver: ExternalDiverV
   const queryClient = useQueryClient();
   const [renaming, setRenaming] = useState(false);
   const [merging, setMerging] = useState(false);
+  const [codes, setCodes] = useState(false);
   const admin = useQuery(meQuery()).data?.user.role === 'admin';
   const [newName, setNewName] = useState(d.name);
   const renameButton = useRef<HTMLButtonElement>(null);
@@ -309,6 +321,9 @@ function OtherDiverRow({ diver: d, list, index, count }: { diver: ExternalDiverV
             d.inUse ? t('divers.onDives') : t('divers.onNoDive'),
           ].join(' · ')}</span>
           <span className="actions">
+            <Button variant="quiet" aria-label={t('common.forItem', { action: t('diverCodes.open'), item: d.name })} onPress={() => setCodes(true)}>
+              {t('diverCodes.open')}
+            </Button>
             <Button ref={renameButton} variant="quiet" aria-label={t('common.forItem', { action: t('divers.rename'), item: d.name })} onPress={() => { setNewName(d.name); setRenaming(true); }}>
               {t('divers.rename')}
             </Button>
@@ -327,6 +342,7 @@ function OtherDiverRow({ diver: d, list, index, count }: { diver: ExternalDiverV
       )}
       {(rename.error ?? remove.error) && <Notice tone="danger">{errorText(rename.error ?? remove.error)}</Notice>}
       {merging && <MergeDialog diver={d} onClose={() => setMerging(false)} />}
+      {codes && <DiverCodesDialog diverId={d.id} name={d.name} onClose={() => setCodes(false)} />}
     </li>
   );
 }

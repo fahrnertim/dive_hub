@@ -100,9 +100,10 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
   await app.register(diveRoutes, { prefix: '/api', ...deps, dives: createDiveService(deps.db), merging: createMerging(deps.db), checks: createLogbookChecks(deps.db), pushes: deps.providers.pushes });
   await app.register(candidateRoutes, { prefix: '/api', ...deps, candidates: createCandidates(deps.db) });
   await app.register(assessmentRoutes, { prefix: '/api', auth: deps.auth, assessments: deps.assessments });
-  await app.register(diverRoutes, { prefix: '/api', ...deps, divers: createDiverService(deps.db) });
+  const divers = createDiverService(deps.db);
+  await app.register(diverRoutes, { prefix: '/api', ...deps, divers });
   await app.register(siteRoutes, { prefix: '/api', ...deps, sites: createSiteService(deps.db) });
-  await app.register(centreRoutes, { prefix: '/api', ...deps, centres: createCentreService(deps.db) });
+  await app.register(centreRoutes, { prefix: '/api', ...deps, centres: createCentreService(deps.db), divers });
   await app.register(siteImportRoutes, { prefix: '/api', ...deps });
   await app.register(providerRoutes, { prefix: '/api', auth: deps.auth, ...deps.providers });
   await app.register(aiAccessRoutes, { prefix: '/api', auth: deps.auth, accesses: deps.aiAccesses, baseUrl: deps.baseUrl });

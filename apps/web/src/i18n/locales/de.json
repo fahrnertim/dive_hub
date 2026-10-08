@@ -451,7 +451,10 @@
     "centre_changed": "Jemand hat die Tauchbasis inzwischen umbenannt. Lade die Seite neu und versuche es noch einmal.",
     "centre_not_deletable": "Nur wer die Tauchbasis angelegt hat oder ein Admin kann sie löschen.",
     "centre_external_id_taken": "Eine andere Tauchbasis hat diese Nummer schon.",
-    "code_not_recognised": "Diesen Code kennt Dive Hub nicht. Füge den ganzen Text des QR-Codes der Tauchbasis ein."
+    "code_not_recognised": "Diesen Code kennt Dive Hub nicht. Füge den ganzen Text des QR-Codes ein.",
+    "code_not_a_person": "Das ist der Code einer Tauchbasis, nicht der eines Buddys oder Tauchprofis.",
+    "diver_choice_needed": "Dieses Konto hat noch kein Taucher. Wähle, wer es ist, oder füge einen neuen Taucher hinzu.",
+    "diver_has_other_account": "Dieser Taucher hat ein anderes SSI-Konto, der Code gehört also jemand anderem."
   },
   "vocabulary": {
     "waterType": {
@@ -708,7 +711,7 @@
     "added": "{{name}} hinzugefügt.",
     "sameName": "Du hast schon einen Taucher namens {{name}}. Das geht, aber die beiden sind dann schwer auseinanderzuhalten.",
     "others": "Andere Taucher",
-    "othersIntro": "Leute, mit denen du oder andere Benutzer getaucht sind und die hier kein Logbuch führen. Alle Benutzer sehen ihre Namen; wer jemanden hinzugefügt hat, oder ein Admin, kann ihn löschen, solange kein Tauchgang ihn nennt.",
+    "othersIntro": "Leute, mit denen du oder andere Benutzer getaucht sind und die hier kein Logbuch führen. Alle Benutzer sehen ihre Namen und was in ihrem SSI-Code steht; wer jemanden hinzugefügt hat, oder ein Admin, kann ihn löschen, solange kein Tauchgang ihn nennt.",
     "findOther": "Nach Namen suchen",
     "noOthers": "Noch keine anderen Taucher. Füge sie hier hinzu, bei einem Tauchgang oder aus deiner SSI-Buddyliste auf deiner Kontoseite.",
     "noOtherMatch": "Kein anderer Taucher namens „{{q}}“.",
@@ -1032,7 +1035,7 @@
     "showBuddies": "Deine {{name}}-Personenliste zeigen",
     "hideBuddies": "Liste ausblenden",
     "buddiesIntro": "Die Leute in deinem {{name}}-Konto. Füge sie Dive Hub hinzu, um sie bei deinen Tauchgängen einzutragen.",
-    "buddiesKept": "Dive Hub merkt sich nur Name und {{name}}-Konto jeder Person, sonst nichts, was {{name}} über sie weiß.",
+    "buddiesKept": "Dive Hub merkt sich von jeder Person Name, {{name}}-Konto und was in ihrem Code dort steht: Vor- und Nachname, E-Mail und bei Tauchprofis die Leader-Nummer. Alle auf diesem Dive Hub sehen das. Sonst wird nichts gespeichert, was {{name}} über sie weiß.",
     "buddyName": "Name bei {{name}}",
     "buddyHere": "In Dive Hub",
     "notHereYet": "Noch nicht",
@@ -1230,7 +1233,11 @@
     "claimExplain": "Beim Verbinden wird {{diver}} zu {{mine}}: die Tauchgänge, die {{diver}} nennen, nennen dann {{mine}}. Nichts von diesen Tauchgängen wird deins.",
     "claimConfirm": "Ja, ich bin {{diver}}: verbinden",
     "removesVerification": "Diese Aktualisierung ändert die Startzeit des Tauchgangs in {{name}}. {{name}} entfernt dann die Verifizierung der Tauchbasis für diesen Tauchgang.",
-    "removedVerification": "Die Startzeit hat sich in {{name}} geändert; eine Verifizierung der Tauchbasis für diesen Tauchgang ist dort damit weg."
+    "removedVerification": "Die Startzeit hat sich in {{name}} geändert; eine Verifizierung der Tauchbasis für diesen Tauchgang ist dort damit weg.",
+    "fillDetails": "Angaben bei Tauchern ergänzen, die schon hier sind",
+    "detailsFilled_one": "Angaben bei {{count}} Taucher ergänzt.",
+    "detailsFilled_other": "Angaben bei {{count}} Tauchern ergänzt.",
+    "nothingToFill": "Nichts zu ergänzen: Diese Taucher haben schon, was bei {{name}} steht."
   },
   "providers": {
     "ssi": {
@@ -1272,7 +1279,7 @@
     "addTitle": "Wer war mit dir tauchen?",
     "as": "Als",
     "who": "Taucher suchen",
-    "sharedHint": "Alle Benutzer dieses Dive Hub sehen die Namen aller Taucher, sonst nichts über sie.",
+    "sharedHint": "Alle Benutzer dieses Dive Hub sehen die Namen aller Taucher und was in ihrem SSI-Code steht: Name, E-Mail und Leader-Nummer. Sonst nichts über sie.",
     "divers": "Taucher",
     "yours": "Dein Logbuch",
     "external": "Kein Logbuch hier",
@@ -1636,11 +1643,69 @@
     "removeCentre": "Entfernen",
     "centreAdded": "{{name}} hinzugefügt.",
     "centreRemoved": "{{name}} entfernt.",
-    "diveCodes": "Verifizierungscode",
-    "diveCodesHint": "Von den Tauchbasen des Tauchplatzes. Scanne einen in der SSI-App am Logbucheintrag dieses Tauchgangs, oder zeige ihn den anderen, die dabei waren.",
+    "diveCodes_one": "Verifizierungscode",
+    "diveCodes_other": "Verifizierungscodes",
+    "diveCodesHint": "Von den Tauchbasen des Tauchplatzes und den Tauchprofis, die dabei waren. Scanne einen in der SSI-App am Logbucheintrag dieses Tauchgangs, oder zeige ihn den anderen, die dabei waren.",
     "toCentre": "Zur Tauchbasis",
-    "showCode_one": "Code der Basis zeigen",
-    "showCode_other": "Codes der Basen zeigen",
+    "showCode_one": "Verifizierungscode zeigen",
+    "showCode_other": "Verifizierungscodes zeigen",
     "fullName": "Voller Name"
+  },
+  "diverCodes": {
+    "open": "Codes",
+    "title": "{{name}}: Codes und Angaben",
+    "caption": {
+      "buddy": "SSI-Buddy-Code",
+      "professional": "SSI-Code als Tauchprofi"
+    },
+    "use": {
+      "buddy": "Andere scannen ihn in der SSI-App, um {{name}} in ihre Buddy-Liste aufzunehmen.",
+      "professional": "Wer ihn in der SSI-App an einem Logbucheintrag scannt, bekommt den Tauchgang von SSI als verifiziert angezeigt."
+    },
+    "noCode": "Noch kein Code. Er braucht SSI-Konto, Vornamen, Nachnamen und E-Mail.",
+    "ssiAccount": "SSI-Konto",
+    "notSet": "Nicht gesetzt",
+    "field": {
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "email": "E-Mail",
+      "leaderNumber": "SSI-Leader-Nummer"
+    },
+    "seenByAll": "Alle auf diesem Dive Hub sehen diese Angaben und Codes.",
+    "seenByAllShort": "Alle auf diesem Dive Hub sehen diese Angaben dann.",
+    "readOnly": "Nur die Benutzer, die das Logbuch von {{name}} führen, können diese Angaben ändern.",
+    "edit": "Angaben bearbeiten",
+    "done": "Fertig",
+    "formIntro": "Was im SSI-Buddy-Code von {{name}} steht. Alle auf diesem Dive Hub sehen es.",
+    "emailHint": "Die Adresse des SSI-Kontos.",
+    "leaderNumberHint": "Nur für Tauchprofis. Mit ihr erscheint ihr Code bei den Tauchgängen, bei denen sie dabei waren.",
+    "save": "Speichern",
+    "saved": "Angaben gespeichert.",
+    "scan": "Aus Code hinzufügen",
+    "scanTitle": "Taucher aus einem SSI-Code hinzufügen",
+    "scanIntro": "Scanne den SSI-Buddy-Code eines Tauchers oder den Code eines Tauchprofis, oder füge seinen Text ein. Dive Hub übernimmt daraus Name, E-Mail und SSI-Konto.",
+    "pasteCode": "Text des Codes (optional)",
+    "readCode": "Code lesen",
+    "centreCode": "Das ist der Code einer Tauchbasis, nicht der eines Tauchers.",
+    "toCentres": "Zu den Tauchbasen",
+    "isCodeOf": {
+      "buddy": "Das ist der Buddy-Code von {{name}}.",
+      "professional": "Das ist der Tauchprofi-Code von {{name}}."
+    },
+    "nothingNew": "Dive Hub hat schon alles, was darin steht.",
+    "changes": "Beim Übernehmen ändert sich:",
+    "notYours": "Nur die Benutzer, die das Logbuch von {{name}} führen, können diesen Code übernehmen.",
+    "unknown": {
+      "buddy": "Der Buddy-Code von {{name}}. Dieses SSI-Konto hat hier noch kein Taucher.",
+      "professional": "Der Tauchprofi-Code von {{name}}. Dieses SSI-Konto hat hier noch kein Taucher."
+    },
+    "whose": "Wer ist das?",
+    "giveTo": "{{name}}, schon hier",
+    "newDiver": "Ein neuer Taucher: {{name}}",
+    "take": "Übernehmen",
+    "addDiver": "Als neuen Taucher hinzufügen",
+    "showCodes": "Codes zeigen",
+    "taken": "Code für {{name}} übernommen.",
+    "diveCaption": "SSI-Verifizierungscode eines Tauchprofis"
   }
 }

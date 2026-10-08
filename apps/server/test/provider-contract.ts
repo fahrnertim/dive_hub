@@ -233,12 +233,14 @@ export function providerContract(name: string, make: () => ContractHarness) {
       expect(parsed.find((d) => d!.evidence === 'ours')!.reference).toBe('divehub-0190a3f2-0000-7000-8000-000000000001');
     });
 
-    it.runIf(declares('buddies.import.find'))('offers the account\'s own list of people: an ID, a name and their account, nothing else', async () => {
+    it.runIf(declares('buddies.import.find'))('offers the account\'s own list of people: an ID, a name, their account and what their code says, nothing else', async () => {
       const h = make();
       const buddies = await h.adapter.buddies!.find(await connect(h));
       expect(buddies.length).toBeGreaterThan(0);
       for (const b of buddies) {
-        expect(Object.keys(b).sort()).toEqual(['account', 'name', 'remoteId']);
+        const allowed = ['account', 'email', 'firstName', 'lastName', 'leaderNumber', 'name', 'remoteId'];
+        expect(Object.keys(b).filter((k) => !allowed.includes(k))).toEqual([]);
+        for (const k of ['email', 'firstName', 'lastName', 'leaderNumber'] as const) expect(b[k] == null || typeof b[k] === 'string').toBe(true);
         expect([typeof b.remoteId, typeof b.name]).toEqual(['string', 'string']);
         expect(b.account === null || typeof b.account === 'string').toBe(true);
       }

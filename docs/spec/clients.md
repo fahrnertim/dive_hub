@@ -527,7 +527,8 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
   - *Web:* `DiversPage.tsx`.
 - **Other divers** (external, ADR 0028; `GET /api/external-divers`): anyone renames them; offer deleting only with
   `canDelete` and not `inUse` (`diver_not_deletable`, `diver_in_use`). Say which services an account is known at
-  (`accounts`), never the account itself. *Web:* `DiversPage.tsx` (`OtherDivers`).
+  (`accounts`); the account itself shows only with the Diver's details
+  ([Buddy and professional codes](#buddy-and-professional-codes)). *Web:* `DiversPage.tsx` (`OtherDivers`).
 - **Admins merge an external Diver into another** (`POST /api/admin/divers/{id}/merge` with `into`), the same person, e.g.
   a buddy without an account who became a User: pick the other Diver by name, say it can't be undone. `diver_not_external`
   for a Diver a User keeps; `diver_external_id_taken` when both have different accounts at one service. *Web:*
@@ -535,7 +536,10 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
 - **A Provider's list of people** (`buddies` `find`; SSI's buddy list) under its Connection, read only on request
   (`GET /api/connections/{id}/buddies`): who is a Diver here already, adding entries as external Divers one by one or
   all at once (`POST …/buddies/import` with `accounts`), and linking an entry to a Diver here instead
-  (`PUT /api/divers/{id}/external-ids/{source}`). An entry without `account` can't be added. *Web:* `ProviderBuddies.tsx`.
+  (`PUT /api/divers/{id}/external-ids/{source}`). An entry without `account` can't be added.
+  **Must say what is kept** before adding: name, account, and first name, last name, e-mail and leader number, seen
+  by everyone on the instance (ADR 0043). Importing an entry whose Diver is here fills what that Diver lacks; say how
+  many were filled (`updated`). *Web:* `ProviderBuddies.tsx`.
 - **Devices from a Provider:** importing a Provider's dives from a computer creates its Device for the Connection's
   Diver, the same Device the computer's own files find later (ADR 0030); list it like any other.
 - **Devices:** assigning one to another Diver affects only Imports from then on (ADR 0016). Say so where it is
@@ -587,8 +591,10 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
 - **Must draw a verification code from its `text`, unchanged**, as a QR code: the text as UTF-8 bytes, dark on white
   with the quiet zone in every colour scheme, large enough to scan from another phone (the web client: 15 rem), with
   the centre's display name beside it. Never build or parse the text in the client; the format is the server's.
-- **On a Dive, show every entry of `verificationCodes`**, each with its centre's name. No other condition: don't hide
-  them by Push state, Diver or who is looking. An empty list shows nothing.
+- **On a Dive, show every entry of `verificationCodes`**, each with whose it is: by its `kind`, the `centre`'s
+  display name or, for a `professional`, the `diver`'s name, and say which of the two it is. No other condition:
+  don't hide them by Push state, Diver or who is looking. An empty list shows nothing. A `kind` the client doesn't
+  know is still drawn, with whichever name is there.
 - **Never say a Dive is verified.** Dive Hub doesn't know: scanning happens in the Provider's app.
 - **A code is not a secret**, but it is only for this purpose: don't offer sharing it elsewhere.
 - **Creating a centre:** name and, optionally, the SSI centre number (digits; `invalid_input` otherwise). Offer
@@ -610,6 +616,33 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
 - **Renaming** sends `version` (`centre_changed` on a conflict: reload and ask again).
 
 *Web:* `CentresPage.tsx`, `ui/QrCode.tsx`.
+
+### Buddy and professional codes
+[ADR 0043](../decisions/0043-dive-centres-and-ssi-verification-codes.md#as-built-slice-3). A Diver's details (first
+name, last name, e-mail, SSI leader number) and the codes built from them.
+- **Should show a Diver's codes** (`GET /api/divers/{id}/details`, `codes`): each drawn from its `text` by the rules
+  above, with the Diver's name and what the `kind` is for (`buddy`: another diver scans it to add them to their SSI
+  buddy list; `professional`: scanned on a logbook entry, it verifies that dive). With no code, say what one needs:
+  SSI account, first name, last name and e-mail.
+- **Must say that everyone on the instance sees the details**: where they are shown, and before anything saves them
+  (the form, and taking a code). The e-mail is a person's, often of someone who never signed up.
+- **Editing** (`PATCH /api/divers/{id}/details`, only the fields sent; `null` or an empty text clears one) is offered
+  when `canEdit`; otherwise say who can (`diver_not_editable`). Keep first and last name as SSI spells them. A part
+  with a semicolon or a line break is `invalid_input`.
+- **Should offer taking a code**, scanned or pasted as for centres. Send its text to
+  `POST /api/verification-codes/read` first and act on the answer:
+  - `existing`: the Diver that has the code's SSI account. **Must show `changes` before taking it** (each with its
+    field, what is there and what the code says); with none, say that nothing is new. Without `canEdit`, say so and
+    don't offer taking it.
+  - no `existing`: **ask who it is**, never choose: one of `candidates` (Divers of that name without an SSI account)
+    or a new Diver. Preselecting the first candidate is fine; taking it unasked is not.
+  - a `centre`: say it is a centre's code and lead to the centres.
+  Then `POST /api/divers/from-code` with the same `text` and, when there was no `existing`, `diverId` or
+  `create: true` (`diver_choice_needed` without one; 201 for a new Diver). `diver_has_other_account` and
+  `diver_external_id_taken` (it names the Diver) are said as they are. Don't keep the scanned text beyond that.
+- **Never show a Diver's e-mail or leader number in a list or a picker.** They belong to the Diver's own view.
+
+*Web:* `DiverCodes.tsx`, `DiversPage.tsx`, `CentresPage.tsx` (`DiveCodes`).
 
 ## The MCP endpoint
 

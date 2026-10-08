@@ -89,7 +89,8 @@ them reads it (amendment of 2026-10-08 to ADR 0023). Say so when handing over th
 
 ## Never saved on
 
-- `pnpm check:full` before proposing a commit that changes more than documentation.
+- A green `pnpm check` before proposing a commit that changes more than documentation, and `pnpm check:full` before a
+  push or a release ([ADR 0023](../decisions/0023-faster-checks.md), amended 2026-10-08).
 - Tests first.
 - Reading an ADR in full before changing what it decided.
 - The review of the screenshots when UI changed.

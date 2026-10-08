@@ -201,6 +201,10 @@ initials only; 8 buddy-list entries, 5 dives with buddies) [R]:
   the account whose list it is in [R].
 - Every entry in the owner's list had an SSI account; whether the list can hold people without one is [?].
 - `odin_user_log_leader_nr` was `""` on every dive with buddies [R].
+- **What Dive Hub keeps of an entry** (since [ADR 0043](../decisions/0043-dive-centres-and-ssi-verification-codes.md#as-built-slice-3)):
+  `buddy_master_id`, `firstname`, `lastname`, `email` and `leader_nr`, the parts of the person's buddy code. An empty
+  `leader_nr` or `0` is read as "no leader number"; what SSI writes for someone who is not a professional was not
+  looked at [?]. `leader_active` is not read: whether it says that a professional may still verify dives is [?].
 - **Adding an entry** in the app works by scanning the other person's buddy QR code, and the other person is **not
   notified** (owner, 2026-10-05). The call the app makes for it is unknown [?].
 - **The buddy QR code** is plain text [R] (owner, 2026-10-05, a real code, anonymized here):
@@ -370,6 +374,8 @@ From the research note. Record the result here with date and app version, and tu
   SSI's site data, the dive import makes them shared sites like any other, which the owner wants (2026-10-06).
   Entries also carry `odin_dive_sites_comment` (9 of 26 non-empty), SSI's statistics (`myloggedDives`, …), aliases and
   wildlife IDs; Dive Hub keeps only ID, name, position and country.
+- [ ] A buddy code and a professional's code drawn by Dive Hub: does SSI's app take them (add the buddy; verify a
+  dive)? And what do `leader_nr` and `leader_active` hold for a professional and for someone who is none?
 - [ ] Surface interval: seconds or minutes. Log a dive in the app with a known surface interval (e.g. 1 h 30 min),
   run `round-trip.ts read`, and look at the dive's surface interval key in `samples/private/ssi/` (90 = minutes,
   5400 = seconds).

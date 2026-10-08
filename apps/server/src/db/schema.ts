@@ -40,6 +40,16 @@ const deletedAt = () => timestamp('deleted_at', { withTimezone: true });
 export const diver = pgTable('diver', {
   id: id(),
   name: text('name').notNull(),
+  /**
+   * What the person's SSI buddy code says about them besides the account (ADR 0043): first and last name as SSI spells
+   * them, the e-mail, and the leader number of a professional. Personal data that every User sees, inside the code.
+   * Each is one line without a semicolon, so it can stand in the code's text (the check writes the semicolon as \x3B:
+   * drizzle-kit cuts a generated statement at a literal one).
+   */
+  firstName: text('first_name'),
+  lastName: text('last_name'),
+  email: text('email'),
+  leaderNumber: text('leader_number'),
   createdBy: uuid('created_by').references(() => user.id, { onDelete: 'set null' }),
   /**
    * Set when this external Diver was merged into another (ADR 0028, amended): claimed by its person's User through their
@@ -49,7 +59,9 @@ export const diver = pgTable('diver', {
   createdAt: createdAt(),
   updatedAt: updatedAt(),
   deletedAt: deletedAt(),
-});
+}, (t) => [
+  check('diver_code_parts_ck', sql`${t.firstName} ~ '^[^\\x3B\\r\\n]{1,100}$' and ${t.lastName} ~ '^[^\\x3B\\r\\n]{1,100}$' and ${t.email} ~ '^[^\\x3B\\s]{3,254}$' and ${t.leaderNumber} ~ '^[^\\x3B\\s]{1,20}$'`),
+]);
 
 /** Which User manages which Diver; `isOwn` marks the User's own Diver. */
 export const diverManagement = pgTable(

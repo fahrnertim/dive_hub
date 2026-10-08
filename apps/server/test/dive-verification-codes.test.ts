@@ -68,8 +68,8 @@ describe.skipIf(!(await databaseReachable()))('a Dive and SSI\'s verification', 
     const a = await centre({ name: 'Beispiel Eins', externalIds: [{ source: 'ssi', externalId: '700001' }], siteIds: [siteId] });
     await centre({ name: 'Anderswo', externalIds: [{ source: 'ssi', externalId: '700003' }] });
     expect((await dive()).verificationCodes).toEqual([
-      { centre: { id: a.id, name: 'Beispiel Eins', displayName: 'Beispiel Eins' }, provider: 'ssi', text: 'center;700001;name:Beispiel Eins' },
-      { centre: { id: b.id, name: 'Beispiel Zwei, Musterstadt', displayName: 'Beispiel Zwei' }, provider: 'ssi', text: 'center;700002;name:Beispiel Zwei, Musterstadt' },
+      { kind: 'centre', diver: null, centre: { id: a.id, name: 'Beispiel Eins', displayName: 'Beispiel Eins' }, provider: 'ssi', text: 'center;700001;name:Beispiel Eins' },
+      { kind: 'centre', diver: null, centre: { id: b.id, name: 'Beispiel Zwei, Musterstadt', displayName: 'Beispiel Zwei' }, provider: 'ssi', text: 'center;700002;name:Beispiel Zwei, Musterstadt' },
     ]);
   });
 

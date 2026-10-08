@@ -126,8 +126,26 @@ test('review material', async ({ page, request, browser }) => {
     for (const name of ['Lena Meier', 'Tom Keller']) await forgetDivers(request, name);
   }
   if (want('divers')) {
+    // A dive professional taken from a code (ADR 0043); person, account, e-mail and leader number are made up.
+    await request.post('/api/divers/from-code', { headers, data: { text: 'buddy;4600002;firstName:Pia;lastName:Probe;email:pia@example.com;leaderNr:70001', create: true } });
     await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Devices' }).waitFor(); await page.locator('table').waitFor();
     await capture(page, '04-divers');
+    await page.getByRole('button', { name: 'Codes: Pia Probe' }).click();
+    await page.getByRole('dialog').getByRole('img').nth(1).waitFor();
+    await capture(page, '04a-divers-codes', { full: false, aria: false });
+    await page.getByRole('button', { name: 'Edit details' }).click();
+    await capture(page, '04b-divers-codes-edit', { full: false, aria: false });
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Add from a code' }).click();
+    await page.getByRole('textbox', { name: 'Text of the code (optional)' }).fill('buddy;4600003;firstName:Jonas;lastName:Muster;email:jonas@example.com');
+    await page.getByRole('button', { name: 'Read code' }).click();
+    await page.getByRole('radiogroup').waitFor();
+    await capture(page, '04c-divers-code-unknown', { full: false, aria: false });
+    await page.getByRole('textbox', { name: 'Text of the code (optional)' }).fill('buddy;4600002;firstName:Pia;lastName:Probst;email:pia@example.com');
+    await page.getByRole('button', { name: 'Read code' }).click();
+    await page.getByRole('button', { name: 'Take over' }).waitFor();
+    await capture(page, '04d-divers-code-changes', { full: false, aria: false });
+    await page.keyboard.press('Escape');
   }
   if (want('account')) {
     // AI access (ADR 0035): one access that read something, then a new one with its key on screen.
@@ -180,6 +198,16 @@ test('review material', async ({ page, request, browser }) => {
     if (want('divers')) {
       await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Geräte' }).waitFor();
       await capture(page, '10-divers-de-phone', { aria: false });
+      await page.getByRole('button', { name: 'Codes: Pia Probe' }).click();
+      await page.getByRole('dialog').getByRole('img').nth(1).waitFor();
+      await capture(page, '10a-divers-codes-de-phone', { aria: false });
+      await page.keyboard.press('Escape');
+      await page.getByRole('button', { name: 'Aus Code hinzufügen' }).click();
+      await page.getByRole('textbox', { name: 'Text des Codes (optional)' }).fill('buddy;4600003;firstName:Jonas;lastName:Muster;email:jonas@example.com');
+      await page.getByRole('button', { name: 'Code lesen' }).click();
+      await page.getByRole('radiogroup').waitFor();
+      await capture(page, '10b-divers-code-unknown-de-phone', { aria: false });
+      await page.keyboard.press('Escape');
     }
     if (want('admin')) {
       await page.goto('/#/admin'); await page.getByRole('heading', { name: 'Benutzer' }).waitFor();

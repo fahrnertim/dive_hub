@@ -32,6 +32,8 @@ export interface FakeSsiBuddy {
   dob: string;
   phone: string;
   city: string;
+  /** Set for a professional. */
+  leader_nr?: string;
 }
 
 export interface FakeSsi {

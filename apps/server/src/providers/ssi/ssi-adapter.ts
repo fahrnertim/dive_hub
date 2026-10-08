@@ -234,7 +234,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         .map(({ id, name, latitude, longitude, country }) => ({ id, name, latitude, longitude, country })),
     },
     buddies: {
-      find: async (ctx) => (await logbookOf(ctx).recent()).buddies.map((b) => ({ remoteId: String(b.id), name: b.name, account: b.account })),
+      find: async (ctx) => (await logbookOf(ctx).recent()).buddies.map(({ id, ...b }) => ({ remoteId: String(id), ...b })),
     },
   };
 }

@@ -1,6 +1,6 @@
 ---
 title: "ADR 0029: Push requirements, and buddies sent to SSI"
-summary: A Provider declares what an export needs (a Dive site's External ID, a way to tell who a Participant is), blocking or advisory; the generic layer checks it against Dive Hub's own data, shows what is unmet and refuses only blocking ones. Fixed through Dive Hub's records - a site's External ID by its own route (the site API loses ssiSiteId), a Diver's account by the Diver. SSI sends Participants as buddies by translating the Diver's SSI account to the entry in the User's SSI buddy list at send time; the buddy list can be imported. Connection Diver mappings wait until a buddy entry without an SSI account is seen. Amends 0027, 0024, 0021.
+summary: A Provider declares what an export needs (a Dive site's External ID, a way to tell who a Participant is), blocking or advisory; the generic layer checks it against Dive Hub's own data, shows what is unmet and refuses only blocking ones. Fixed through Dive Hub's records - a site's External ID by its own route (the site API loses ssiSiteId), a Diver's account by the Diver. SSI sends Participants as buddies by translating the Diver's SSI account to the entry in the User's SSI buddy list at send time; the buddy list can be imported. Connection Diver mappings wait until a buddy entry without an SSI account is seen. Amends 0027, 0024, 0021. Amended by ADR 0043: the buddy list import also stores first and last name, e-mail and leader number, and a buddy's code is shown.
 status: accepted
 date: 2026-10-05
 ---
@@ -96,6 +96,23 @@ compatibility with Pushes sent before (no Users yet).
   `PUT /api/connections/{id}/divers/{diverId}`, when such an entry is seen.
 - **Adding a buddy to the User's SSI list:** showing the buddy's SSI QR code (format in the SSI reference), or the
   adapter adding the entry once the app's call is known (`buddies` would declare `create`).
+
+## Amended: the import keeps what the buddy code says (owner, 2026-10-08, ADR 0043 slice 3)
+"Importing the SSI buddy list" said the e-mail and the pro number are never stored nor passed on.
+[ADR 0043](0043-dive-centres-and-ssi-verification-codes.md#as-built-slice-3) changes that for the parts of a buddy
+code:
+- **Stored now:** the name, the SSI account, and the entry's **first name, last name, e-mail and leader number**
+  (`firstname`, `lastname`, `email`, `leader_nr`; an empty one or `0` is no leader number). First and last name are
+  kept as SSI spells them, since they go into the code; the capitals rule still makes the Diver's name.
+- **Still never stored nor passed on:** birth date, phone, address, city, country, picture, comments.
+- **An entry whose Diver is already here** was skipped; importing it now fills what that Diver lacks of the four and
+  overwrites nothing. The answer has `updated` beside `created`.
+- **The list as read** (`GET /api/connections/{id}/buddies`) is unchanged: name, account and the Diver here. The
+  details show with the Diver, which every User sees ([ADR 0028](0028-shared-divers-and-participants.md), amended).
+- **What an adapter gives:** `buddies.find` may add `firstName`, `lastName`, `email` and `leaderNumber` to an
+  entry. `OutgoingDive.participants` is unchanged: an adapter still gets a Participant's name, role and IDs only.
+- **"Adding a buddy to the User's SSI list"** under Later is built in its first form: Dive Hub shows the buddy's SSI
+  code, which the User scans in SSI's app. SSI's leader number on a sent dive stays empty.
 
 ## Considered options
 - **Keeping `ssiSiteId` beside the route:** two ways to do one thing; a mobile client would keep the old one alive.

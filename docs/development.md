@@ -63,7 +63,8 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 | Task | Command |
 |---|---|
 | **Checks while working** | `pnpm check` (`npx pnpm@12.8.1 check`): typecheck, the unit tests whose imports changed, and the browser tests of the areas touched, picked from git's changed files ([ADR 0023](decisions/0023-faster-checks.md)). `--dry` shows the plan; `--files a,b` plans for given paths; `--base <ref>` compares with another commit. A Dive sites change takes about 1½ min. |
-| **Checks before a commit** | `pnpm check:full`: everything (about 3 min). |
+| **Checks before a commit** | `pnpm check` again, green on the commit's final state. It runs everything by itself when the change touches shared code. |
+| **Checks before a push or a release** | `pnpm check:full`: everything (about 10 min in October 2026). Nothing else runs the whole suite: there is no CI yet. |
 | All tests | `pnpm test` (DB tests create and drop their own database; skipped if PostgreSQL is unreachable). Web tests (`apps/web/test`) cover units/formatting and translation completeness. |
 | New UI text | Add the key to `en.json` and `de.json` (tests fail otherwise); use `t('…')`, `<Trans>` for markup |
 | New API error | Add a code to `PROBLEMS` in `problems.ts`, regenerate the API client, add `errors.<code>` to both translations |

@@ -135,7 +135,7 @@
 .diver-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-4); padding: var(--space-3) 0; border-top: 1px solid var(--color-border); }
 .diver-row:first-child { border-top: none; }
 .diver-name { font-weight: var(--weight-semibold); }
-.diver-row .actions { margin-left: auto; display: flex; gap: var(--space-3); }
+.diver-row .actions { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-1) var(--space-3); }
 .diver-row .form-inline { flex: 1; }
 /* A Participant: the name first (its own line on a phone), then the role and Remove together. Centred, because the
    role's field has a hidden label that baseline alignment would count. */
@@ -403,10 +403,18 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .code-figure { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-4); margin: 0 0 var(--space-4); }
 .code-figures .code-figure { margin-bottom: 0; }
 .code-figure figcaption { display: flex; flex-direction: column; gap: var(--space-1); min-width: 12rem; flex: 1; color: var(--color-text-muted); font-size: var(--text-sm); }
-.code-figure figcaption strong { color: var(--color-text); font-size: var(--text-base); }
+.code-figure figcaption strong { color: var(--color-text); font-size: var(--text-md); }
 .qr-code { display: block; width: min(100%, 15rem); height: auto; flex: none; border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
 .qr-code-paper { fill: #fff; }
 .qr-code-ink { fill: #000; }
+/* A Diver's codes and details, and what a scanned code says (ADR 0043). */
+.diver-codes { display: grid; gap: var(--space-3); }
+.diver-codes > p, .diver-codes .muted, .diver-codes .notice { margin: 0; }
+/* An e-mail is longer than a fact's column: two wider columns, and a long address breaks inside its own. */
+.diver-codes .facts { margin: 0; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); }
+.diver-codes .facts dd { font-size: var(--text-base); overflow-wrap: anywhere; }
+.code-result { display: grid; gap: var(--space-2); }
+.code-result p, .code-result ul { margin: 0; }
 /* The scanner (ADR 0043): the camera's picture fills the dialog's width and never grows past the screen. */
 .scanner { display: grid; gap: var(--space-3); margin-bottom: var(--space-4); }
 .scanner-video { display: block; width: 100%; max-height: 60vh; object-fit: contain; background: #000; border-radius: var(--radius-sm); }

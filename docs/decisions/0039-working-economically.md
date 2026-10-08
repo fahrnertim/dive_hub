@@ -35,7 +35,8 @@ instructions, the checks and the screenshots were small.
    and the hand-over prompt names them for the slice. Loading a skill costs its text for the rest of the session;
    that is accepted, since a skill that is never loaded shapes nothing.
 7. **`scripts/token-report.mjs`** measures again from the local transcripts and prints aggregates only.
-8. **Not saved on**: `pnpm check:full` before a commit, tests first, reading an ADR in full before changing what
+8. **Not saved on**: the check before a commit (`pnpm check:full` when this was decided; since the amendment of
+   [ADR 0023](0023-faster-checks.md) on 2026-10-08 `pnpm check`, with the full check before a push), tests first, reading an ADR in full before changing what
    it decided, the review of screenshots when UI changed, reading the code around an edit, vetting skills.
 
 The rules are in [docs/agents/working-economically.md](../agents/working-economically.md), tool-neutral, with a

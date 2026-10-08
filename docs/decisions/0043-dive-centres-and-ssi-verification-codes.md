@@ -1,6 +1,6 @@
 ---
 title: "ADR 0043: Dive centres and SSI verification codes"
-summary: A shared Dive centre with an SSI centre number, linked to the Dive sites it is responsible for; its SSI verification code is built from number and name, never stored, and shown on the centre and on every Dive at one of its sites. A scanner reads a centre's code by camera or from an image. Planned - buddy and professional codes with the Diver's e-mail shared.
+summary: A shared Dive centre with an SSI centre number, linked to the Dive sites it is responsible for; its SSI verification code is built from number and name, never stored, and shown on the centre and on every Dive at one of its sites. A scanner reads a code by camera or from an image. A Diver has first name, last name, e-mail and leader number; with the SSI account they make the buddy code and the professional's code, which every User sees, and a scanned code of either kind is taken for a Diver. Amends 0028 and 0029.
 status: accepted
 date: 2026-10-08
 ---
@@ -8,8 +8,10 @@ date: 2026-10-08
 # ADR 0043: Dive centres and SSI verification codes
 
 ## Status
-Accepted – 2026-10-08 (decided with the owner). Slice 1 (the Dive centre) and slice 2 (the scanner) are built, see
-[As built (slice 1)](#as-built-slice-1) and [Scanner](#scanner-slice-2-as-built); slice 3 is not.
+Accepted – 2026-10-08 (decided with the owner). All three slices are built: the Dive centre
+([As built (slice 1)](#as-built-slice-1)), the [scanner](#scanner-slice-2-as-built), and buddy and professional codes
+([As built (slice 3)](#as-built-slice-3)). Slice 3 amends [ADR 0028](0028-shared-divers-and-participants.md) and
+[ADR 0029](0029-push-requirements-and-buddies.md).
 
 ## Context
 SSI shows a dive as verified once the diver scans a dive centre's or a professional's QR code on that logbook entry.
@@ -114,8 +116,9 @@ A client reads a code by camera or from an image file and sends its text to the 
 - **Tested** with a camera drawn on a canvas in the page: the scanner's own steps, not the browser's permission
   question or a real camera. **Not checked on a real phone**; that needs the owner's.
 
-### Buddy and professional codes (slice 3, planned)
-Decided by the owner in outline; the slice's own change amends ADR 0028 and ADR 0029 where they say otherwise.
+### Buddy and professional codes (slice 3)
+Decided by the owner in outline before the slice; what was open then is answered in
+[As built (slice 3)](#as-built-slice-3). The slice's change amends ADR 0028 and ADR 0029 where they said otherwise.
 
 - **A Diver gets what a buddy code needs**: the SSI account (there already), the e-mail, and a leader number that
   marks them as a professional. From these Dive Hub builds the buddy code, and the professional's code from the same
@@ -127,9 +130,54 @@ Decided by the owner in outline; the slice's own change amends ADR 0028 and ADR 
   always the one SSI itself would show, and nobody has to find out what the app checks.
 - **Hiding the e-mail can come later** and is not built now: a Diver's e-mail could be made hideable, and their code
   would then not be shown, unless it has been confirmed by then that SSI's app takes a code without the e-mail.
-- **Open for that slice:**
-  - how a scanned code finds a Diver that is already here, so that it doesn't make a second one;
-  - where a professional's code shows on a Dive (a Participant with a leader number is the obvious rule).
+
+### As built (slice 3)
+Decided with the owner on 2026-10-08 while building:
+
+- **A Diver's details** are four optional fields beside its name: **first name** and **last name** as SSI spells
+  them, **e-mail**, and **SSI leader number**. The code needs the name in two parts, and a Diver's name can't be cut
+  reliably ("Anna Maria Berg"), so both parts are stored; the Diver's name stays what is shown everywhere else. A part
+  is one line without a semicolon, the e-mail and the leader number without a space (checked by the API and by a
+  constraint in the database), because a semicolon would break the code.
+- **The codes are built, never stored** (`centres/verification-code.ts`, `personCodes`): the **buddy code** when
+  the Diver has an SSI account, first name, last name and e-mail; the **professional's code** when it also has a
+  leader number. One missing part, no code, and the client says what is missing. Dive Hub doesn't check that a leader
+  number is real or active.
+- **Every User sees** a Diver's details, its accounts with their IDs, and its codes (`GET /api/divers/{id}/details`).
+  **Who changes them** (`PATCH …/details`, only the fields sent): any User for an external Diver, its Users for a
+  Diver someone keeps the logbook of, as for a Diver's name and account (ADR 0028). The answer says so (`canEdit`).
+- **A scanned or pasted code is taken** (`POST /api/divers/from-code`), found by **the SSI account in it**:
+  - the Diver that has the account gets what the code says: first name, last name, e-mail, and the leader number of a
+    professional's code. A buddy code leaves a leader number that is there. The Diver's name is not changed. Before
+    that, `POST /api/verification-codes/read` answers who it is and what would change (`existing.changes`), so the
+    User sees it first; someone who may not change that Diver is told so;
+  - when no Diver has the account, the User chooses: one of the Divers of that name that have no SSI account and that
+    they may change (`candidates`, at most ten; it then gets the account too), or a new external Diver, named by the
+    code's first and last name. Nothing is chosen for them: a namesake is not the same person.
+  - Refused: a Diver that has another SSI account (`diver_has_other_account`), an account another Diver has
+    (`diver_external_id_taken`), a centre's code (`code_not_a_person`).
+- **On a Dive**, the professional's code of **every Participant with one** shows beside the centres' codes, with the
+  person's name, whatever their role: a guide, an instructor, or a professional who dived along as a buddy. As for
+  centres there is no other condition, and the Dive's own Diver is not a Participant, so their own code doesn't show
+  on their own Dive. A Dive's `verificationCodes` entries have a `kind` (`centre` or `professional`), centres
+  first.
+- **The SSI buddy list brings the details along**: importing an entry stores first name, last name, e-mail and leader
+  number with the new Diver, and **fills what a Diver already here lacks**, overwriting nothing (the answer counts
+  them, `updated`). The list as it is read still shows only name and account. See the amendment to ADR 0029.
+- **What a Revision says:** which details changed; for the e-mail only that it was set or removed, never the address,
+  so a removed address is gone from the history too.
+- **Forgetting:** deleting an external Diver empties its details. Merging two Divers moves the details to the kept
+  Diver where it has none and empties them on the merged one.
+- **The scanner** of slice 2 is used as it is (`CodeScanner.tsx`): the web client's "Add from a code" on the divers
+  page takes a camera picture, an image file or pasted text. On the centre forms a person's code is still told apart
+  and nothing of it kept.
+- **In the web client** every Diver row has "Codes": the codes, the details, and their form. The form and the scan
+  say, before saving, that everyone on the instance sees the details.
+- **Not built:** hiding the e-mail (above); showing who changed a Diver's details (Revisions are written, no client
+  shows a Diver's history); a way from "not in your SSI buddy list" on the dive page straight to that buddy's code
+  (the code is on the divers page).
+- **Not checked:** whether SSI's app takes a buddy code or a professional's code drawn by Dive Hub. The text is the
+  same as SSI's own; the drawing is the one used for centres. That needs the owner's phone.
 
 ## Considered options
 - **The code on the Dive site:** what the first note said. Two centres dive the same reef, and one centre dives twenty
@@ -148,5 +196,7 @@ Decided by the owner in outline; the slice's own change amends ADR 0028 and ADR 
   External IDs.
 - The code also shows on Dives the centre had no part in. The User decides whether to use it.
 - With slice 3, every User of an instance sees the e-mail and SSI account of every Diver that has them. That suits an
-  instance of people who dive together; it is the reason the slice has to amend ADR 0028 in the open.
+  instance of people who dive together; it is the reason the slice amends ADR 0028 in the open.
+- A Diver's row holds personal data of people who may never have signed up: their e-mail and leader number. Deleting
+  the Diver, or merging it, removes them; nothing else keeps a copy.
 - SSI's dive centre field stays empty in a Push.

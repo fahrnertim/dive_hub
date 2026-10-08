@@ -484,6 +484,38 @@ for (const v of variants) {
       }
     });
 
+    test('Divers, a diver’s codes and a code being taken', { tag: ['@divers'] }, async ({ page, request }) => {
+      // Made up: no real person's code is in this repository (ADR 0043).
+      const account = String(4_610_000 + variants.indexOf(v));
+      const name = `Annabelle-Sophie Probe ${account}`;
+      const code = (to: string) => `buddy;${to};firstName:Annabelle-Sophie;lastName:Probe ${to};email:annabelle-sophie.probe@example.com;leaderNr:70002`;
+      await forgetDivers(request, name);
+      await request.post('/api/divers/from-code', { data: { text: code(account), create: true }, headers });
+      try {
+        await page.goto('/#/divers');
+        await page.getByRole('button', { name: `Codes: ${name}` }).click();
+        await expect(page.getByRole('dialog').getByRole('img')).toHaveCount(2);
+        await expectGoodPage(page, title('Divers'), v);
+        await page.getByRole('button', { name: v.english ? 'Edit details' : 'Angaben bearbeiten' }).click();
+        await expect(page.getByRole('textbox', { name: v.english ? 'First name' : 'Vorname' })).toBeFocused();
+        await expectGoodPage(page, title('Divers'), v);
+        await page.keyboard.press('Escape');
+        // A code nobody here has the account of: the question who it is.
+        await page.getByRole('button', { name: v.english ? 'Add from a code' : 'Aus Code hinzufügen' }).click();
+        await page.getByRole('textbox', { name: v.english ? 'Text of the code (optional)' : 'Text des Codes (optional)' }).fill(code(`9${account}`));
+        await page.getByRole('button', { name: v.english ? 'Read code' : 'Code lesen' }).click();
+        await expect(page.getByRole('radiogroup')).toBeVisible();
+        await expectGoodPage(page, title('Divers'), v);
+        // And the code of someone already here, with nothing new in it.
+        await page.getByRole('textbox', { name: v.english ? 'Text of the code (optional)' : 'Text des Codes (optional)' }).fill(code(account));
+        await page.getByRole('button', { name: v.english ? 'Read code' : 'Code lesen' }).click();
+        await expect(page.getByRole('button', { name: v.english ? 'Show codes' : 'Codes zeigen' })).toBeVisible();
+        await expectGoodPage(page, title('Divers'), v);
+      } finally {
+        await forgetDivers(request, name);
+      }
+    });
+
     test('Divers, an admin merging an external diver', { tag: ['@divers'] }, async ({ page, request }) => {
       const name = `Merge me ${v.locale} ${Date.now()}`;
       const id = await externalDiver(request, name);

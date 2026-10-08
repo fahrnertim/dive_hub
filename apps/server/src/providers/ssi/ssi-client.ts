@@ -39,14 +39,19 @@ export interface SsiLogbookSite {
 
 /**
  * An entry in the account's own buddy list (checked 2026-10-05, docs/references/ssi-app-api.md): a dive lists these
- * entry IDs. Only the name and the buddy's SSI account are read; the rest of what SSI keeps (birth date, e-mail, phone,
- * address, picture) is dropped here.
+ * entry IDs. Read are the name, the buddy's SSI account and what their buddy code says (first and last name, e-mail,
+ * leader number: ADR 0043); the rest of what SSI keeps (birth date, phone, address, picture, comment) is dropped here.
  */
 export interface SsiBuddy {
   id: number;
   name: string;
   /** The buddy's SSI account (`buddy_master_id`); null without one. */
   account: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
+  /** `leader_nr`; null when empty or 0. Whether `leader_active` matters for the code is unknown, so it isn't read. */
+  leaderNumber?: string | null;
 }
 
 export interface SsiLogbook {
@@ -154,7 +159,12 @@ export function createSsiClient(options: SsiClientOptions): SsiClient {
         if (!id || b.deleted === 1 || b.deleted === '1') return [];
         const text = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
         const name = [text(b.firstname), text(b.lastname)].filter(Boolean).join(' ') || text(b.nickname);
-        return name ? [{ id: Number(id), name, account: idText(b.buddy_master_id) }] : [];
+        const leader = typeof b.leader_nr === 'number' ? String(b.leader_nr) : text(b.leader_nr);
+        return name ? [{
+          id: Number(id), name, account: idText(b.buddy_master_id),
+          firstName: text(b.firstname) || null, lastName: text(b.lastname) || null, email: text(b.email) || null,
+          leaderNumber: leader && leader !== '0' ? leader : null,
+        }] : [];
       });
       return { dives, sites, buddies };
     },

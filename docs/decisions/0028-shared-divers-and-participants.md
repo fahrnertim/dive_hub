@@ -1,6 +1,6 @@
 ---
 title: "ADR 0028: Divers seen by every User by name; Participants on Dives"
-summary: Every User sees every Diver of the instance by name (nothing else) and can put any of them on a Dive as buddy, guide or instructor; external Divers (no managing User) are shared like Dive sites - anyone adds and renames them, their creator or an admin deletes unused ones; Participants are set as one list per Dive, with the Dive's version and a Revision. Buddy suggestions and Joint dives stay later. Amends 0016. Amended: a buddy who becomes a User claims their external Diver by connecting their account at a Provider; admins merge external Divers by hand.
+summary: Every User sees every Diver of the instance by name (nothing else) and can put any of them on a Dive as buddy, guide or instructor; external Divers (no managing User) are shared like Dive sites - anyone adds and renames them, their creator or an admin deletes unused ones; Participants are set as one list per Dive, with the Dive's version and a Revision. Buddy suggestions and Joint dives stay later. Amends 0016. Amended: a buddy who becomes a User claims their external Diver by connecting their account at a Provider; admins merge external Divers by hand. Amended by ADR 0043: every User also sees a Diver's first and last name, e-mail, leader number, accounts and SSI codes.
 status: accepted
 date: 2026-10-05
 ---
@@ -78,6 +78,23 @@ Diver's. Two Divers stood for one person, and "merging two Divers" was left for 
 - *Considered:* only an admin merging (the person would wait for an admin though their account already proves it),
   asking the User who added the buddy (the account decides; they see the change on their Dives), and keeping the
   external Diver and linking the two (two Divers for one person stay in every list).
+
+## Amended: every User sees what a Diver's SSI codes say (owner, 2026-10-08, ADR 0043 slice 3)
+"Who sees what" said: a Diver's name and nothing else, "no … External ID values or personal data".
+[ADR 0043](0043-dive-centres-and-ssi-verification-codes.md#as-built-slice-3) changes that for what an SSI buddy code
+holds, because the code is shown to others and can't be shown without it:
+- **Every User now also sees** of every Diver: first name and last name as SSI spells them, the e-mail, the SSI leader
+  number, the accounts with their IDs (the SSI account), and the codes built from them
+  (`GET /api/divers/{id}/details`). The lists and pickers still give the name and which services an account is known
+  at, not the account.
+- **Still seen by nobody but the Diver's Users:** its Dives, Devices and Connections. Nothing else about a person is
+  stored: no birth date, phone, address or picture.
+- **Who changes the details** follows the rule for the name: any User for an external Diver, its Users for a managed
+  one. A scanned code changes them by the same rule.
+- **Merging** moves the details to the kept Diver where it lacks them; **deleting** an external Diver empties them.
+- The owner decided this knowing that it reaches people who never signed up; hiding a Diver's e-mail may come later
+  (ADR 0043). "Divers shared with all their data" under Considered options stays rejected: this is the code's content
+  only.
 
 ## Considered options
 - **Private Divers (ADR 0016 as it was):** each User their own "Bob"; duplicates per User, and the unique External ID

@@ -5,11 +5,13 @@ import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import { Problem, problem } from '../http/problems.js';
+import type { DiverService } from '../divers/diver-service.js';
 import { CENTRE_SOURCE_NAME, CENTRE_SOURCES, CentreError, type CentreActor, type CentreService } from './centre-service.js';
 
 export interface CentreRouteDeps {
   auth: Auth;
   centres: CentreService;
+  divers: DiverService;
 }
 
 const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
@@ -58,7 +60,18 @@ const CentreProblem = Type.Object({
 });
 
 const Person = {
-  accountId: Type.String(), firstName: Type.String(), lastName: Type.String(), email: Type.String(),
+  accountId: Type.String({ description: 'The person\'s SSI account' }), firstName: Type.String(), lastName: Type.String(), email: Type.String(),
+  existing: Nullable(Type.Object({
+    id: Type.String(), name: Type.String(),
+    canEdit: Type.Boolean({ description: 'Whether the signed-in User may take the code for this Diver: an external Diver, or one whose logbook they keep' }),
+    changes: Type.Array(Type.Object({
+      field: Type.Enum(['firstName', 'lastName', 'email', 'leaderNumber']),
+      from: Nullable(Type.String()), to: Type.String(),
+    }), { description: 'What taking the code would change on the Diver; show it before taking the code' }),
+  }, { description: 'The Diver here that has the code\'s SSI account: the code is theirs, never make a second Diver' })),
+  candidates: Type.Array(Type.Object({ id: Type.String(), name: Type.String() }), {
+    description: 'When no Diver has the account: Divers of the code\'s name without an SSI account that the User may change. Offer them before a new Diver',
+  }),
 };
 const ReadCode = Type.Union([
   Type.Object({
@@ -83,7 +96,7 @@ const errors = { 400: CentreProblem, 403: CentreProblem, 404: CentreProblem, 409
 
 const actorOf = (request: FastifyRequest): CentreActor => ({ userId: request.user!.id, isAdmin: request.user!.role === 'admin' });
 
-export const centreRoutes: FastifyPluginAsyncTypebox<CentreRouteDeps> = async (app, { auth, centres }) => {
+export const centreRoutes: FastifyPluginAsyncTypebox<CentreRouteDeps> = async (app, { auth, centres, divers }) => {
   app.addHook('onRequest', requireUser(auth));
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof CentreError) {
@@ -183,12 +196,15 @@ export const centreRoutes: FastifyPluginAsyncTypebox<CentreRouteDeps> = async (a
     schema: {
       summary: 'Read a verification code\'s text, pasted or scanned: what it is and its fields',
       description: 'A centre\'s code gives number and name to create a Dive centre from, and the centre here that already has the number. '
-        + 'A buddy\'s or a professional\'s is only told apart for now. Nothing of the text is kept. 400 code_not_recognised for any other text (ADR 0043).',
+        + 'A buddy\'s or a professional\'s gives the person\'s fields, the Diver here that has their SSI account and what the code would change on it, '
+        + 'or the Divers of that name to choose from; take it with POST /api/divers/from-code. Reading keeps nothing of the text. '
+        + '400 code_not_recognised for any other text (ADR 0043).',
       body: Type.Object({ text: Type.String({ minLength: 1, maxLength: 1000 }) }, { additionalProperties: false }),
       response: { 200: ReadCode, 400: Problem },
     },
   }, async (request, reply) => {
     const read = await centres.readCode(request.body.text);
-    return read ?? reply.code(400).send(problem('code_not_recognised'));
+    if (!read) return reply.code(400).send(problem('code_not_recognised'));
+    return read.kind === 'centre' ? read : { ...read, ...(await divers.readPersonCode(actorOf(request), read)) };
   });
 };

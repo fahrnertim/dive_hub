@@ -54,7 +54,34 @@ const DiverProblem = Type.Object({
   diver: Type.Optional(Type.Object({ id: Type.String(), name: Type.String() }, { description: 'The Diver that already has the account' })),
 });
 
+const CodePart = (description: string, maxLength: number) => Nullable(Type.String({ maxLength, description }));
+const DetailsBody = Type.Object({
+  firstName: Type.Optional(CodePart('As SSI spells it; one line without a semicolon', 100)),
+  lastName: Type.Optional(CodePart('As SSI spells it; one line without a semicolon', 100)),
+  email: Type.Optional(CodePart('The address the person\'s SSI account has. Every User sees it, inside the code', 254)),
+  leaderNumber: Type.Optional(CodePart('The person\'s SSI leader number: what makes them a professional whose code verifies a dive', 20)),
+}, { additionalProperties: false, description: 'Only the fields sent change; null or an empty text clears one' });
+
+const DiverDetailsView = Type.Object({
+  id: Type.String(),
+  name: Type.String(),
+  external: Type.Boolean({ description: 'No User keeps its logbook' }),
+  canEdit: Type.Boolean({ description: 'Whether the signed-in User may change the details: an external Diver, or one whose logbook they keep' }),
+  firstName: Nullable(Type.String()), lastName: Nullable(Type.String()),
+  email: Nullable(Type.String({ description: 'Personal data every User of the instance sees (ADR 0043)' })),
+  leaderNumber: Nullable(Type.String()),
+  accounts: Type.Array(Type.Object({ source: DiverSource, externalId: Type.String({ description: 'e.g. the SSI account, as the code holds it' }) })),
+  codes: Type.Array(Type.Object({
+    kind: Type.Enum(['buddy', 'professional'], {
+      description: 'buddy: another diver scans it in the Provider\'s app to add the person to their buddy list. professional: a diver scans it on a logbook entry to verify the dive',
+    }),
+    provider: Type.Enum(['ssi']),
+    text: Type.String({ description: 'Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md)' }),
+  }), { description: 'Empty while the account, a name or the e-mail is missing; the professional\'s only with a leader number' }),
+}, { description: 'What a Diver\'s SSI buddy code says about the person, and the codes built from it. Seen by every User (ADR 0043, amending ADR 0028)' });
+
 const STATUS: Record<DiverError['code'], number> = {
+  diver_choice_needed: 409, diver_has_other_account: 409, code_not_recognised: 400, code_not_a_person: 400,
   diver_not_found: 404, own_diver: 409, diver_not_empty: 409, device_not_found: 404, diver_in_use: 409,
   diver_not_deletable: 403, diver_not_editable: 403, diver_external_id_taken: 409, diver_external_id_connected: 409, diver_not_external: 409,
   invalid_input: 400,
@@ -123,6 +150,43 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
   }, async (request, reply) => {
     await divers.setExternalId(actorOf(request), request.params.id, request.params.source, request.body.externalId?.trim() ?? null);
     return reply.code(204).send(null);
+  });
+
+  app.get('/divers/:id/details', {
+    schema: {
+      summary: 'A Diver\'s details (first and last name, e-mail, leader number), accounts and the codes built from them, as every User sees them',
+      description: 'ADR 0043: any Diver of the instance, also one whose logbook another User keeps. Nothing else of that Diver is shown.',
+      params: IdParams, response: { 200: DiverDetailsView, ...errors },
+    },
+  }, async (request) => divers.details(actorOf(request), request.params.id));
+
+  app.patch('/divers/:id/details', {
+    schema: {
+      summary: 'Set a Diver\'s details (an external Diver\'s: any User; one with a logbook: its Users)',
+      description: '400 invalid_input for a value that couldn\'t stand in a code (a semicolon, a line break, no e-mail address). '
+        + 'The account is set by PUT /api/divers/{id}/external-ids/{source}.',
+      params: IdParams, body: DetailsBody, response: { 200: DiverDetailsView, ...errors },
+    },
+  }, async (request) => divers.setDetails(actorOf(request), request.params.id, request.body));
+
+  app.post('/divers/from-code', {
+    schema: {
+      summary: 'Take a buddy\'s or a professional\'s code: the Diver that has its SSI account gets what the code says',
+      description: 'Read the text first (POST /api/verification-codes/read) and show what it answers. The Diver that has the account is filled, '
+        + 'whatever diverId says otherwise (409 diver_external_id_taken names it). When no Diver has it: diverId gives account and details to that '
+        + 'Diver (409 diver_has_other_account when it has another SSI account), create makes a new external Diver named after the code (201), '
+        + 'neither is 409 diver_choice_needed. A buddy code leaves a leader number that is there. 400 code_not_a_person for a centre\'s code.',
+      body: Type.Object({
+        text: Type.String({ minLength: 1, maxLength: 1000, description: 'The code\'s text as scanned or pasted, unchanged' }),
+        diverId: Type.Optional(Type.String({ format: 'uuid', description: 'The Diver the User chose for a code whose account no Diver has' })),
+        create: Type.Optional(Type.Boolean({ description: 'Make a new external Diver when no Diver has the account' })),
+      }, { additionalProperties: false }),
+      response: { 200: DiverDetailsView, 201: DiverDetailsView, 400: DiverProblem, 403: DiverProblem, 404: DiverProblem, 409: DiverProblem },
+    },
+  }, async (request, reply) => {
+    const { text, diverId, create } = request.body;
+    const taken = await divers.takeCode(actorOf(request), text, { diverId, create });
+    return reply.code(taken.created ? 201 : 200).send(taken.diver);
   });
 
   app.get('/external-divers', {

@@ -178,6 +178,7 @@ describe.skipIf(!(await databaseReachable()))('Dive centres', () => {
     expect((await read('center;700051;name:Schon da e.K.')).json()).toMatchObject({ kind: 'centre', existing: { id: known.id, name: 'Schon da' } });
     expect((await read('buddy;1234567;firstName:Erika;lastName:Mustermann;email:erika@example.com;leaderNr:54321')).json()).toEqual({
       kind: 'professional', accountId: '1234567', firstName: 'Erika', lastName: 'Mustermann', email: 'erika@example.com', leaderNumber: '54321',
+      existing: null, candidates: [],
     });
     const unknown = await read('https://example.com');
     expect(unknown.statusCode).toBe(400);

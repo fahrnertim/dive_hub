@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // The checks for what changed (ADR 0023): typecheck, the unit tests whose imports changed, and the
-// browser tests of the areas touched. `pnpm check` while working; `pnpm check:full` before a commit.
+// browser tests of the areas touched. `pnpm check` while working and before a commit; `pnpm check:full` before a
+// push or a release (ADR 0023, amendment of 2026-10-08).
 //   pnpm check                 changes since the last commit (staged, unstaged and new files)
 //   pnpm check --base main     changes since another commit or branch
 //   pnpm check:full            everything
@@ -25,8 +26,8 @@ const AREAS = [
   [/^apps\/web\/src\/SitePicker\.tsx$/, ['@sites', '@dives']],
   // Dive centres and their verification codes (ADR 0043): their own pages, a panel on a Dive site, a line on a Dive.
   [/^apps\/web\/src\/CentresPage\.tsx$|^apps\/web\/src\/ui\/QrCode\.tsx$/, ['@sites', '@dives']],
-  // The scanner for verification codes (ADR 0043): on the new centre form and where a centre's number is set.
-  [/^apps\/web\/src\/CodeScanner\.tsx$|^apps\/web\/src\/lib\/qr-reader\.ts$/, ['@sites']],
+  // The scanner for verification codes (ADR 0043): on the new centre form, where a centre's number is set, and where a diver's code is taken.
+  [/^apps\/web\/src\/CodeScanner\.tsx$|^apps\/web\/src\/lib\/qr-reader\.ts$/, ['@sites', '@divers']],
   [/^apps\/web\/src\/lib\/address-search\.ts$/, ['@sites', '@dives']],
   [/^apps\/web\/src\/(DiveDetail|DiveEditForm|DiveHistory|DiveList|ProfileSketch|DepthProfile|Decisions|ReviewPage|ReviewStrip|ReviewRows|ImportPanel|DeleteDive|DeletedDives|MergeDive|LogbookChecks|Participants|Assessment)\.tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|sketch|logbook|review|devices|importable|deletion|assessment)\.ts$/, ['@dives']],
   // The Dive the deletion browser tests delete and restore (ADR 0026).
@@ -37,6 +38,8 @@ const AREAS = [
   [/^apps\/web\/e2e\/fixtures\/assessed-computer\.fit$/, ['@dives']],
   // The Suunto dive a browser test imports (ADR 0037).
   [/^apps\/web\/e2e\/fixtures\/suunto-d5\.json$/, ['@dives']],
+  // A Diver's codes and details, and taking a scanned code (ADR 0043): on the divers page; the codes also show on a Dive.
+  [/^apps\/web\/src\/DiverCodes\.tsx$/, ['@divers', '@dives']],
   [/^apps\/web\/src\/DiversPage\.tsx$/, ['@divers']],
   [/^apps\/web\/src\/(Account|AccountPage|Connections|ProviderBuddies)\.tsx$/, ['@account']],
   // Importing a Provider's dives (ADR 0030): on the Connection, and the dives it makes.
@@ -52,7 +55,8 @@ const AREAS = [
   [/^apps\/server\/src\/sites\//, ['@sites', '@dives']],
   [/^apps\/server\/src\/centres\//, ['@sites', '@dives']],
   [/^apps\/server\/src\/(dives|imports|fit|suunto|assessment)\/|^apps\/server\/src\/(routes|vocabulary)\.ts$/, ['@dives']],
-  [/^apps\/server\/src\/divers\//, ['@divers']],
+  // Divers reach further than their page: a Dive shows its Participants and their codes, the account page imports buddies.
+  [/^apps\/server\/src\/divers\//, ['@divers', '@dives', '@account']],
   [/^apps\/server\/src\/(users|auth)\//, ['@account', '@admin']],
   [/^apps\/server\/src\/(providers|secrets)\//, ['@dives', '@account']],
   [/^apps\/server\/test\/fixtures\/site-sources\//, ['@admin', '@sites']],
@@ -96,12 +100,25 @@ for (const path of changed) {
   console.log(`check: ${path} is shared or unknown, so everything runs`);
 }
 
+/** The area tags a browser test can have; a test with none of them would run only in the full check. */
+const TAGS = ['@dives', '@divers', '@sites', '@account', '@admin', '@layout'];
+/** Fails when a browser test has no area tag (ADR 0023): the checks by area would never run it. */
+function untaggedBrowserTests() {
+  const { stdout, stderr } = spawnSync(`pnpm --filter @dive-hub/web exec playwright test --project=e2e --list --grep-invert "${TAGS.join('|')}"`, { encoding: 'utf8', shell: true });
+  const total = /Total: (\d+) tests?/.exec(stdout ?? '');
+  if (!total) { console.log(`${stdout}${stderr}\nthe browser tests could not be listed`); return 1; }
+  if (total[1] === '0') return 0;
+  console.log(`${stdout}\nThese browser tests have no area tag (${TAGS.join(', ')}): give each one, or the checks by area never run them.`);
+  return 1;
+}
+
 const steps = [];
 const pnpm = (cmd) => `pnpm ${cmd}`;
 if (plan.typecheck) steps.push(['typecheck', pnpm('typecheck')]);
 if (plan.server !== 'none') steps.push([`server tests (${plan.server})`, pnpm(`--filter @dive-hub/server exec vitest run --passWithNoTests${plan.server === 'changed' ? ` --changed ${base}` : ''}`)]);
 if (plan.web !== 'none') steps.push([`web unit tests (${plan.web})`, pnpm(`--filter @dive-hub/web exec vitest run --passWithNoTests${plan.web === 'changed' ? ` --changed ${base}` : ''}`)]);
 if (plan.e2e !== 'none') {
+  steps.push(['browser test tags', untaggedBrowserTests]);
   const grep = [...plan.areas, ...[...plan.specs].map((s) => s.replace(/\./g, '\\.'))].join('|');
   const which = plan.e2e === 'all' ? 'all' : grep;
   steps.push([`browser tests (${which})`, pnpm(`--filter @dive-hub/web test:e2e${plan.e2e === 'all' ? '' : ` --grep "${grep}"`}`)]);
@@ -116,9 +133,9 @@ console.log(`check: ${full ? 'everything' : `${changed.length} changed file(s) s
 if (dry) process.exit(0);
 const times = [];
 for (const [name, cmd] of steps) {
-  console.log(`\n▶ ${name}: ${cmd}`);
+  console.log(`\n▶ ${name}${typeof cmd === 'string' ? `: ${cmd}` : ''}`);
   const started = Date.now();
-  const { status } = spawnSync(cmd, { stdio: 'inherit', shell: true });
+  const status = typeof cmd === 'string' ? spawnSync(cmd, { stdio: 'inherit', shell: true }).status : cmd();
   times.push(`${name}: ${Math.round((Date.now() - started) / 1000)} s`);
   if (status !== 0) {
     console.log(`\n✗ ${name} failed\n${times.join('\n')}`);

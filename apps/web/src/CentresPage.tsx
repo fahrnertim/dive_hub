@@ -49,15 +49,15 @@ function TakenNotice({ error }: { error: unknown }) {
   );
 }
 
-/** A code drawn for scanning, with the centre it belongs to named beside it. */
-function CodeFigure({ name, text, children }: { name: string; text: string; children?: ReactNode }) {
+/** A code drawn for scanning, with whose it is named beside it: a centre's, or with `caption` a person's. */
+export function CodeFigure({ name, text, caption, children }: { name: string; text: string; caption?: string; children?: ReactNode }) {
   const { t } = useTranslation();
   return (
     <figure className="code-figure">
-      <QrCode text={text} label={t('centres.codeOf', { name })} />
+      <QrCode text={text} label={caption ? `${caption}: ${name}` : t('centres.codeOf', { name })} />
       <figcaption>
         <strong translate="no">{name}</strong>
-        <span>{t('centres.codeCaption')}</span>
+        <span>{caption ?? t('centres.codeCaption')}</span>
         {children}
       </figcaption>
     </figure>
@@ -463,8 +463,8 @@ function AddCentreDialog({ site, linked, onClose }: { site: SiteView; linked: Ce
 export const DIVE_CODES_ID = 'verification-codes';
 
 /**
- * On a Dive: the verification codes of the centres of its site (ADR 0043), one line until opened. Shown whenever the
- * API gives any: to verify the dive at SSI, or to show to the others who were on it.
+ * On a Dive: the verification codes of the centres of its site and of the professionals on it (ADR 0043), one line
+ * until opened. Shown whenever the API gives any: to verify the dive at SSI, or to show to the others who were on it.
  */
 export function DiveCodes({ dive: d }: { dive: DiveView }) {
   const { t } = useTranslation();
@@ -481,15 +481,17 @@ export function DiveCodes({ dive: d }: { dive: DiveView }) {
   return (
     <section className="dive-line" id={DIVE_CODES_ID} ref={section}>
       <Disclosure
-        level={2} title={t('centres.diveCodes')} isExpanded={open} onExpandedChange={setOpen}
-        summary={<p className="provider-state" translate="no">{d.verificationCodes.map((v) => v.centre.displayName).join(', ')}</p>}
+        level={2} title={t('centres.diveCodes', { count: d.verificationCodes.length })} isExpanded={open} onExpandedChange={setOpen}
+        summary={<p className="provider-state" translate="no">{d.verificationCodes.map((v) => v.centre?.displayName ?? v.diver?.name ?? '').join(', ')}</p>}
       >
         <div className="code-figures">
-          {d.verificationCodes.map((v) => (
+          {d.verificationCodes.map((v) => (v.centre ? (
             <CodeFigure key={v.centre.id} name={v.centre.displayName} text={v.text}>
               <a href={`#/centres/${v.centre.id}`}>{t('centres.toCentre')}</a>
             </CodeFigure>
-          ))}
+          ) : v.diver && (
+            <CodeFigure key={v.diver.id} name={v.diver.name} text={v.text} caption={t('diverCodes.diveCaption')} />
+          )))}
         </div>
         <Muted>{t('centres.diveCodesHint')}</Muted>
       </Disclosure>

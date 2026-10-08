@@ -322,19 +322,20 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
   app.get('/connections/:id/buddies', {
     schema: {
       summary: 'The account\'s own list of people at the Provider (SSI: the buddy list), read live, each with the Diver here who has their account',
-      description: 'Only names and accounts; nothing else the Provider keeps about them is passed on or stored (ADR 0029).',
+      description: 'Only names and accounts are answered. An import also stores what the person\'s code says (ADR 0043); nothing else the Provider keeps about them.',
       params: IdParams, response: { 200: Type.Object({ buddies: Type.Array(BuddyView) }), ...errors },
     },
   }, async (request) => ({ buddies: await buddies.list(request.user!.id, request.params.id) }));
 
   app.post('/connections/:id/buddies/import', {
     schema: {
-      summary: 'Add the chosen people from the account\'s list as external Divers, with their name and account',
-      description: 'Entries whose account a Diver already has, or without an account, are skipped. To link an entry to a Diver here '
+      summary: 'Add the chosen people from the account\'s list as external Divers, with their name, account and what their code says',
+      description: 'First and last name, e-mail and leader number come along (ADR 0043). A chosen entry whose account a Diver already has '
+        + 'fills what that Diver lacks of these and overwrites nothing; entries without an account are skipped. To link an entry to a Diver here '
         + 'instead, set that Diver\'s account (PUT /api/divers/{id}/external-ids/{source}).',
       params: IdParams,
       body: Type.Object({ accounts: Type.Array(Type.String({ maxLength: 40 }), { maxItems: 500 }) }, { additionalProperties: false }),
-      response: { 200: Type.Object({ created: Type.Integer(), buddies: Type.Array(BuddyView) }), ...errors },
+      response: { 200: Type.Object({ created: Type.Integer(), updated: Type.Integer({ description: 'Divers already here that got details they lacked' }), buddies: Type.Array(BuddyView) }), ...errors },
     },
   }, async (request) => buddies.import(
     { userId: request.user!.id, isAdmin: request.user!.role === 'admin' }, request.params.id, request.body.accounts,
