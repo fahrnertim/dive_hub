@@ -20,16 +20,18 @@ export function summarize(depth: Series, temperature?: Series) {
   };
 }
 
+/** The value of the sample nearest to a moment; `null` for a series without samples. */
+export function nearest(s: Series | undefined, ms: number): number | null {
+  if (!s || s.offsetsMs.length === 0) return null;
+  let best = 0;
+  for (let i = 1; i < s.offsetsMs.length; i++) {
+    if (Math.abs(s.offsetsMs[i]! - ms) < Math.abs(s.offsetsMs[best]! - ms)) best = i;
+  }
+  return s.values[best] ?? null;
+}
+
 /** One row per whole minute: the sample nearest to it (depth, and temperature when recorded). */
 export function perMinute(depth: Series, temperature?: Series) {
-  const nearest = (s: Series | undefined, ms: number) => {
-    if (!s || s.offsetsMs.length === 0) return null;
-    let best = 0;
-    for (let i = 1; i < s.offsetsMs.length; i++) {
-      if (Math.abs(s.offsetsMs[i]! - ms) < Math.abs(s.offsetsMs[best]! - ms)) best = i;
-    }
-    return s.values[best] ?? null;
-  };
   const minutes = Math.floor((depth.offsetsMs.at(-1) ?? 0) / 60_000);
   return Array.from({ length: minutes + 1 }, (_, minute) => ({
     minute,

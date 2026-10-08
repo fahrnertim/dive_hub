@@ -9,7 +9,7 @@ import { dataFile, type PreparedData } from './prepare.ts';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectGoodPage, externalDiver, openLine,
-  forgetDivers, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences, falseStart, keepFalseStart
+  forgetDivers, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences, falseStart, keepFalseStart, tankPodDive
 } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
@@ -847,6 +847,26 @@ test.describe('behaviour', () => {
     await expect(chart).toHaveAccessibleDescription(/^Deepest point 18\.5 m after \d+ min; 30 min in total\. Water 25°C – 26°C\.$/);
     await page.getByText('Profile as a table').click();
     await expect(page.getByRole('region', { name: 'Profile as a table' }).getByRole('row')).toHaveCount(32); // header + minutes 0–30
+    // No tank pod: no strip and no column for it.
+    await expect(page.getByRole('img', { name: 'Tank pressure' })).toHaveCount(0);
+    await expect(page.getByRole('columnheader', { name: 'Tank pressure' })).toHaveCount(0);
+  });
+
+  test('a tank pod\'s pressure has its own strip, said in words and in the profile\'s table', { tag: ['@dives'] }, async ({ page, request }) => {
+    await page.goto(`/#/dives/${await tankPodDive(request)}`);
+    const strip = page.getByRole('img', { name: 'Tank pressure' });
+    await expect(strip).toHaveAccessibleDescription('EAN32, 12 L: 200 bar at the start, 50 bar at the end, 150 bar used. Surface consumption (SAC) as the tank pod measured it: 17.5 L/min.');
+    await expect(page.getByText('200 bar at the start, 50 bar at the end, 150 bar used.')).toBeVisible();
+    await page.getByText('Profile as a table').click();
+    const table = page.getByRole('region', { name: 'Profile as a table' });
+    await expect(table.getByRole('columnheader', { name: 'Tank pressure' })).toBeVisible();
+    await expect(table.getByRole('row').nth(1).getByRole('cell').last()).toHaveText('200 bar');
+    await expectGoodPage(page);
+
+    await setPreferences(request, { units: 'imperial' });
+    await page.reload();
+    await expect(page.getByText('2,907 psi at the start, 727 psi at the end, 2,180 psi used.')).toBeVisible();
+    await setPreferences(request, { units: null });
   });
 
   test('the logbook comes first; files dropped anywhere on the page are imported', { tag: ['@dives'] }, async ({ page }) => {

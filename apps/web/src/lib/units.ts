@@ -14,9 +14,12 @@ export function pickUnits(preferred: UnitSystem | null | undefined, browser: rea
 }
 
 const FEET_PER_METRE = 1 / 0.3048;
+const PSI_PER_BAR = 14.5038;
 
 export const depthIn = (metres: number, units: UnitSystem) => (units === 'imperial' ? metres * FEET_PER_METRE : metres);
 export const temperatureIn = (celsius: number, units: UnitSystem) => (units === 'imperial' ? celsius * 9 / 5 + 32 : celsius);
+export const pressureIn = (bar: number, units: UnitSystem) => (units === 'imperial' ? bar * PSI_PER_BAR : bar);
+const pressureUnit = (units: UnitSystem) => (units === 'imperial' ? 'psi' : 'bar');
 
 /** A depth or temperature typed in the User's units, back in metres or °C for storage. */
 export const depthFromDisplay = (value: number, units: UnitSystem) => (units === 'imperial' ? value / FEET_PER_METRE : value);
@@ -36,8 +39,19 @@ export function formatTemperature(celsius: number | null, units: UnitSystem, loc
   return unitFormat(locale, units === 'imperial' ? 'fahrenheit' : 'celsius', 0).format(temperatureIn(celsius, units));
 }
 
-/** Just the unit symbol, e.g. for a chart axis: "m", "ft", "°C", "°F". */
-export function unitLabel(quantity: 'depth' | 'temperature' | 'minutes', units: UnitSystem, locale: string): string {
+/** "200 bar", "2,901 psi": whole numbers, as a gauge is read. Intl has no unit for either, and both symbols are the same in every language. */
+export function formatPressure(bar: number | null, units: UnitSystem, locale: string): string {
+  if (bar === null) return '–';
+  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(pressureIn(bar, units))} ${pressureUnit(units)}`;
+}
+
+/** A tank's size, "12 L", and a gas consumption at the surface, "17.5 L/min": litres in both unit systems for now (ADR 0045). */
+export const formatVolume = (litres: number, locale: string) => unitFormat(locale, 'liter', 1).format(litres);
+export const formatGasRate = (litresPerMinute: number, locale: string) => unitFormat(locale, 'liter-per-minute', 1).format(litresPerMinute);
+
+/** Just the unit symbol, e.g. for a chart axis: "m", "ft", "°C", "°F", "bar", "psi". */
+export function unitLabel(quantity: 'depth' | 'temperature' | 'minutes' | 'pressure', units: UnitSystem, locale: string): string {
+  if (quantity === 'pressure') return pressureUnit(units);
   const unit = quantity === 'minutes' ? 'minute'
     : quantity === 'depth' ? (units === 'imperial' ? 'foot' : 'meter')
     : (units === 'imperial' ? 'fahrenheit' : 'celsius');

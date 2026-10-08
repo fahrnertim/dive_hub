@@ -30,8 +30,14 @@ test('imports a Suunto JSON export and shows its computer\'s data', { tag: ['@di
     await expect(panel.getByRole('listitem').filter({ hasText: noted })).toBeVisible();
   }
 
+  // The tank pod's pressure in words under its strip (ADR 0045).
+  await expect(page.getByRole('img', { name: 'Tank pressure' })).toBeVisible();
+  await expect(page.getByText('EAN32, 12 L: 200 bar at the start, 50 bar at the end, 150 bar used.')).toBeVisible();
+
   await setPreferences(request, { language: 'de' });
   await page.reload();
+  await expect(page.getByText('EAN32, 12 l: 200 bar am Anfang, 50 bar am Ende, 150 bar verbraucht.')).toBeVisible();
+  await expect(page.getByText('Verbrauch an der Oberfläche (AMV) laut Flaschensender: 17,5 l/min.')).toBeVisible();
   await expect(page.getByRole('listitem').filter({ hasText: 'Tiefenstopp vorzeitig verlassen' })).toBeVisible();
   await expect(page.getByRole('listitem').filter({ hasText: 'Flaschendruck niedrig' })).toBeVisible();
 });

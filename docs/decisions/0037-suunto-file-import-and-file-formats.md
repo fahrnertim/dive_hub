@@ -97,3 +97,7 @@ on two real D5 dives. Amends [ADR 0015](0015-overrides-vocabulary-and-browser-te
   samples without a change to its rules (findings on the deep dive that agree with the computer's own alarms, none on the
   shallow one).
 - **Not read:** an Ocean's positions and its gases from gas switches (no file to check against), a pod as a Device.
+
+## Amendment 2026-10-08: the pod's pressure is shown
+Decision 5's "nothing is shown" no longer holds: the pressure is drawn under the depth profile and said in words
+([ADR 0045](0045-tank-pressure-cylinders-and-sac-on-a-dive.md)). Nothing is computed from it yet.

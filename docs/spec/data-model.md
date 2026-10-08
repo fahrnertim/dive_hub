@@ -203,7 +203,8 @@ and nothing reaches that User.
   delivered (UDDF, Subsurface). They're kept as the baseline for 3-way merges on re-import.
 - *From Suunto (ADR 0037, implemented):* the summary also keeps `otuStart`/`otuEnd`, `sacLpm` (a tank pod's average),
   `conservatism`, `surfacePressureBar` and per gas `tankVolumeL`, `startPressureBar`, `endPressureBar`; channels
-  `ceiling` and `tankPressure` (bar). Nothing is computed from the pressures yet (slices 19, 22).
+  `ceiling` and `tankPressure` (bar; further pods `tankPressure:<n>`). The pressures are shown under the profile
+  ([ADR 0045](../decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md)); nothing is computed from them yet.
 - *Positions (B6, implemented in ADR 0020):* entry and exit position from the Device, both optional.
   The Dive shows its Primary recording's (exit, else entry); they stay as private as the Dive.
 - Detaching a Recording from its Dive is always possible. The Recording then gets its
@@ -260,7 +261,8 @@ catalogue (ADR 0031) and the planned site's water type. See the [gas and NDL not
 request for levels and a group of Divers, each with a Cylinder and a SAC; the gas rule's turn and ascent pressures per
 Diver (rock bottom at every level by default, never below 50 bar), the controlling Diver, real gas above 200 bar. Only
 Divers the User manages bring their logbook SAC; others a typed one (ADR 0028). Amends ADR 0032's gas limit and SAC.
-**SAC per Dive** is computed from its Cylinder (one or identical cylinders, both pressures, a volume, at least 15 minutes)
+**SAC per Dive** is computed from its Cylinders (the litres summed over all of them, each with both pressures and a volume; at least
+15 minutes; [ADR 0045](../decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md))
 or a tank pod's SAC, not stored; a Diver's **planning SAC** is the 85th percentile of their last 20 such Dives (at least
 5, else 20 L/min). See the [gas consumption note](../research/2026-10-06-gas-consumption-planning.md).
 
@@ -627,7 +629,7 @@ the others an AL80 at 200 bar). Rule: rock bottom, never below 50 bar.
 Edge cases:
 - *Thirds chosen for a wreck penetration:* the turn is by litres of the smallest supply relative to its consumer; the page
   says thirds need overhead training.
-- *Tim's Dives with two different cylinders* don't give a SAC; with fewer than 5 usable Dives his planning SAC is 20,
+- *Tim's Dives where one of two cylinders lacks a pressure or its volume* don't give a SAC (ADR 0045); with fewer than 5 usable Dives his planning SAC is 20,
   "default".
 - *A 300 bar fill:* about 10 % less gas than ideal; the pressures account for it.
 - *30 m instead of 18 m:* rock bottom rises well above 50 bar, and the page shows why the fixed reserve isn't enough there.

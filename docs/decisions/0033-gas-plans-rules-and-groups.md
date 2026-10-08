@@ -88,3 +88,8 @@ Slice 22, after slice 21 (which builds MOD, NDL and oxygen with ADR 0032's simpl
 - Suunto import with tank pods (later) feeds measured SAC into the same planning value.
 - The client contract gains the gas plan's duties: rules explained, rock bottom always shown, the controlling Diver and
   each Diver's own pressures, defaults marked, the disclaimer.
+
+## Amendment 2026-10-08: a Dive with several Cylinders has a SAC
+"One cylinder (or identical ones)" is replaced: the litres used are summed over all Cylinders of the Dive, each with both
+pressures and a volume; bar/min is shown beside L/min for a single Cylinder. "SAC on this dive" is built with the
+Cylinders, ahead of the gas plan ([ADR 0045](0045-tank-pressure-cylinders-and-sac-on-a-dive.md)).

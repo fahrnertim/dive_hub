@@ -99,3 +99,7 @@ history exists.
 - UDDF import and export can map `leadquantity`, `suittype` and `tankmaterial`/`tankvolume`; feedback and placement stay here.
 - Gas planning (a later tool) can use the same Cylinders and the SAC values Recordings already carry.
 - SSI's tank type IDs (19 and 20 seen) must be looked up (`get_divelog_vars`) before the material is taken.
+
+## Amendment 2026-10-08: Cylinders come first
+Cylinders on a Dive are built before lead, suit and weighting feedback, as their own slice
+([ADR 0045](0045-tank-pressure-cylinders-and-sac-on-a-dive.md)); slice A keeps the rest.

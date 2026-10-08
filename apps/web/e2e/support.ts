@@ -374,6 +374,20 @@ export async function falseStart(api: APIRequestContext): Promise<string> {
   return id;
 }
 
+/**
+ * A Dive recorded with a tank pod (e2e/fixtures/suunto-d5.json; ADR 0037, 0045): 200 → 50 bar in a 12 L tank of EAN32.
+ * The same file again is "already imported" and still names its Dive, so it can be asked for any number of times.
+ */
+export async function tankPodDive(api: APIRequestContext): Promise<string> {
+  const upload = await api.post('/api/imports', {
+    headers,
+    multipart: { file: { name: 'ScubaDiving_2025-11-08T09_30_00.json', mimeType: 'application/json', buffer: readFileSync('e2e/fixtures/suunto-d5.json') } },
+  });
+  const url = `/api/imports/${(await upload.json() as { id: string }).id}`;
+  await expect.poll(async () => (await (await api.get(url)).json()).status).toBe('done');
+  return ((await (await api.get(url)).json()) as { outcome: { diveId?: string }[] }).outcome[0]!.diveId!;
+}
+
 /** Keeps the false start (restoring it does), so nothing waits and no dive is deleted for the tests that follow. */
 export async function keepFalseStart(api: APIRequestContext): Promise<void> {
   const { live, deleted } = await findFalseStart(api);

@@ -298,7 +298,7 @@ export const samplesQuery = (recordingId: string) =>
     queryKey: keys.samples(recordingId),
     queryFn: async () =>
       unwrap(await api.GET('/api/recordings/{id}/samples', {
-        params: { path: { id: recordingId }, query: { channels: 'depth,temperature', maxPoints: 2000 } },
+        params: { path: { id: recordingId }, query: { channels: 'depth,temperature,tankPressure', maxPoints: 2000 } },
       })),
     staleTime: Infinity,
   });

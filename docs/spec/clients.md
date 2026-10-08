@@ -347,6 +347,12 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   minutes into one entry, and shows three entries before "Show the whole history". *Web:* `DiveHistory.tsx`, `lib/history.ts`.
 - **The depth profile needs a text alternative:** a summary (deepest point and when, duration, temperature range)
   and the samples per minute as a table (WCAG 1.1.1). *Web:* `DepthProfile.tsx`, `lib/profile.ts`.
+- **Tank pressure** ([ADR 0045](../decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md)): a Recording with a
+  tank pod has a series `tankPressure` (bar; further pods `tankPressure:<n>`) and, in its summary, per gas
+  `tankVolumeL`, `startPressureBar` and `endPressureBar`, and the pod's `sacLpm`. Show the pressure over time on the
+  profile's time axis, not as a third scale in the depth profile; tell several tanks apart by more than colour. Say
+  the same in words (per tank: start, end, used; the pod's SAC) and in the profile's table. The series in their order
+  belong to the gases that carry pressures, in theirs. *Web:* `DepthProfile.tsx`, `lib/tanks.ts`.
 - **A Dive's position is private.** Show it only to the Users who manage the Diver, as the API does.
 - **Participants** (ADR 0028, `participants` on the Dive): buddies, guides and instructors (`role`), any Diver of the
   instance but the Dive's own. Add them from a live search over every Diver by name (`GET /api/divers/search`, saying
@@ -707,7 +713,8 @@ An LLM client is an API client Dive Hub can't make follow this contract, so the 
 ## 4. Showing values
 - **Units:** values come in SI (metres, seconds, °C, WGS84 degrees). Show them in the User's units
   (`preferences.units`, else the device's region) and language (`preferences.language`, else the device's).
-  *Web:* `lib/display.ts` (`useDisplay`), `lib/units.ts`.
+  *Web:* `lib/display.ts` (`useDisplay`), `lib/units.ts`. Pressures are in bar: show bar, or psi for imperial, as
+  whole numbers. A tank's size and a SAC stay in litres and L/min for now.
 - **Accept input in the User's units and number format** ("18,5" in German), and send SI.
 - **Positions** look like "28.4950° N, 34.5160° E": four decimals, with the hemisphere letters in the UI language.
   **Countries** are ISO codes, named in the UI language. **Distances** are in m or km (ft or mi for imperial).

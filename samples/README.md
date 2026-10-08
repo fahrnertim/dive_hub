@@ -24,6 +24,7 @@ date: 2026-10-02
 | Garmin Descent apnea session | have: two, in the account export |
 | Garmin Descent multi-gas dive | have only the mode (five dives with one gas); a dive with a gas switch is wanted |
 | Garmin Descent with tank transmitter (tank pod) | later (no file yet) |
+| A dive with two tank pods (any maker), ideally also two tanks of the same gas | later (no file yet); a second pod's pressure is unverified ([ADR 0045](../docs/decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md)) |
 | Suunto D5 with a tank pod, the Suunto app's FIT and JSON export of the same dive | have: two dives in `samples/private/suunto/`, see [probe](../docs/research/2026-10-07-suunto-import.md); feeds the gas tools too ([note](../docs/research/2026-10-06-gas-consumption-planning.md)) |
 | One Suunto dive exported twice in each format (do the bytes repeat?) | wanted |
 | One dive recorded by both the Garmin and the Suunto (both files) | wanted: clock drift, scenario 1 |

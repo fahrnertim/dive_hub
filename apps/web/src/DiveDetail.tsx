@@ -497,7 +497,7 @@ function RecordingDetails({ recording, named }: { recording: DiveView['recording
   );
   return (
     <ErrorBoundary key={recording.id} fallback={<><Notice tone="danger">{t('dive.profileFailed')}</Notice>{about}</>}>
-      <DepthProfile recordingId={recording.id}>{about}</DepthProfile>
+      <DepthProfile recordingId={recording.id} gases={s.gases} sacLpm={s.sacLpm}>{about}</DepthProfile>
     </ErrorBoundary>
   );
 }

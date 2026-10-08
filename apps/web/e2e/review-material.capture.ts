@@ -9,7 +9,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import {
   cancelWaitingImports, waitingImport,
-  E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, falseStart, forgetDivers, keepFalseStart, mergePair, mergeablePair,
+  E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, falseStart, forgetDivers, keepFalseStart, mergePair, mergeablePair, tankPodDive,
   leaveLena, leaveSsi, lenaReady, openLine, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
@@ -136,6 +136,12 @@ test('review material', async ({ page, request, browser }) => {
     await capture(page, '03g-logbook-show-only-nothing', { aria: false });
     await clearParticipants(request, dive42);
     for (const name of ['Lena Meier', 'Tom Keller']) await forgetDivers(request, name);
+    // A tank pod's pressure under the profile (ADR 0045). Last, so the logbook above doesn't gain this dive.
+    await page.goto(`/#/dives/${await tankPodDive(request)}`); await page.getByRole('img', { name: 'Tank pressure' }).waitFor();
+    await capture(page, '03h-dive-tank-pressure');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await capture(page, '03h-dive-tank-pressure-phone', { aria: false });
+    await page.setViewportSize({ width: 1280, height: 900 });
   }
   if (want('divers')) {
     // A dive professional taken from a code (ADR 0043); person, account, e-mail and leader number are made up.

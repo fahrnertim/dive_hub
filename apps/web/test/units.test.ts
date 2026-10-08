@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { pickLanguage } from '../src/i18n/languages.ts';
 import {
   depthFromDisplay, temperatureFromDisplay,
-  formatDepth, formatDiveTime, formatDuration, formatTemperature, pickUnits, unitLabel,
+  formatDepth, formatDiveTime, formatDuration, formatGasRate, formatPressure, formatTemperature, formatVolume, pickUnits, unitLabel,
 } from '../src/lib/units.ts';
 
 // Intl output uses narrow no-break spaces in places; compare with plain spaces.
@@ -36,6 +36,22 @@ describe('temperature', () => {
     expect(unitLabel('depth', 'imperial', 'en')).toBe('ft');
     expect(unitLabel('temperature', 'imperial', 'en')).toBe('°F');
     expect(unitLabel('minutes', 'metric', 'de')).toBe('Min.');
+    expect(unitLabel('pressure', 'metric', 'de')).toBe('bar');
+    expect(unitLabel('pressure', 'imperial', 'en')).toBe('psi');
+  });
+});
+
+describe('pressure', () => {
+  it('rounds to whole bar and converts to psi for imperial', () => {
+    expect(plain(formatPressure(200.4, 'metric', 'en'))).toBe('200 bar');
+    expect(plain(formatPressure(200, 'imperial', 'en'))).toBe('2,901 psi');
+    expect(plain(formatPressure(200, 'imperial', 'de'))).toBe('2.901 psi');
+  });
+
+  it('gives the size of a tank and a consumption at the surface in litres', () => {
+    expect(plain(formatVolume(12, 'en'))).toBe('12 L');
+    expect(plain(formatGasRate(17.46, 'en'))).toBe('17.5 L/min');
+    expect(plain(formatGasRate(17.46, 'de'))).toBe('17,5 l/min');
   });
 });
 

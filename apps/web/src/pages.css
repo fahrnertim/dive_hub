@@ -42,6 +42,9 @@
 .profile:not(:hover) .u-legend .u-series:first-child { display: none; }
 .profile:not(:hover) .u-inline.u-live th::after { content: none; }
 .profile-figure .extras { margin: var(--space-3) 0 0; }
+/* Tank pressure: a lower strip under the depth profile, and the same in words (ADR 0045). */
+.profile-tanks { min-height: 12.5rem; margin-top: var(--space-4); }
+.tank-lines { margin: var(--space-2) 0 0; padding: 0; list-style: none; font-size: var(--text-sm); color: var(--color-text-muted); }
 
 /* Dive: edit form, notes, device data, history (ADR 0015) */
 .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: var(--space-5) var(--space-4); }
