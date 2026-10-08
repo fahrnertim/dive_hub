@@ -389,7 +389,10 @@ by its ID or matched by name and position (and then gets the ID as a reference).
 
 **Import** — User, Connection (optional for manual upload), Originals, started/finished, status,
 outcome per dive (`created`, `attached`, `updated`, `unchanged`, `duplicate candidate`, `skipped`, `failed`; skipped
-with `deleted_earlier` for a Recording of a deleted Dive, ADR 0026).
+with `deleted_earlier` for a Recording of a deleted Dive, ADR 0026). An upload also has `found` (what the analysis
+counted: scuba dives, apnea sessions, other files) and `kinds` (the User's choice, when asked); status
+`awaiting_choice` while it waits for that choice, `cancelled` when the User ended it or nobody answered for 7 days
+([ADR 0044](../decisions/0044-account-export-import-and-kinds.md)).
 *From a Provider ([ADR 0030](../decisions/0030-importing-dives-from-providers.md), implemented):* `provider`, `connection_id` and a `plan`: the records' context (entry of the
 buddy list → SSI account, SSI site → name and position; no names of people), the choice per computer, the decisions for
 ambiguous entries, the choices for fields changed both there and here (`conflicts`), the mode, window and Diver it ran

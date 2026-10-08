@@ -1,7 +1,7 @@
 import { run, type Runner } from 'graphile-worker';
 import type pg from 'pg';
 import type { FastifyBaseLogger } from 'fastify';
-import { BACKFILL_POSITIONS_TASK, PROCESS_IMPORT_TASK, type ImportService } from './imports/import-service.js';
+import { BACKFILL_POSITIONS_TASK, EXPIRE_WAITING_IMPORTS_TASK, PROCESS_IMPORT_TASK, type ImportService } from './imports/import-service.js';
 import { IMPORT_SITES_TASK, type SiteImportService } from './sites/import/site-import-service.js';
 import type { AiAccessService } from './mcp/access-service.js';
 import type { AssessmentService } from './assessment/assessment-service.js';
@@ -21,8 +21,8 @@ export async function startWorker(
     pgPool: pool,
     concurrency: 2,
     noHandleSignals: true,
-    // Every night at 03:17 (UTC).
-    crontab: `17 3 * * * ${PURGE_AI_ACCESS_LOG_TASK}`,
+    // Every night at 03:17 (UTC), and the waiting Imports every hour.
+    crontab: `17 3 * * * ${PURGE_AI_ACCESS_LOG_TASK}\n47 * * * * ${EXPIRE_WAITING_IMPORTS_TASK}`,
     taskList: {
       [PROCESS_IMPORT_TASK]: async (payload) => {
         const { importId } = payload as { importId: string };
@@ -36,6 +36,10 @@ export async function startWorker(
         log.info({ siteImportId }, 'importing dive sites');
         await siteImports.run(siteImportId);
         log.info({ siteImportId }, 'dive site import finished');
+      },
+      [EXPIRE_WAITING_IMPORTS_TASK]: async () => {
+        const ended = await imports.expireWaiting();
+        if (ended > 0) log.info({ ended }, 'ended Imports nobody answered, and removed their uploads');
       },
       [PURGE_AI_ACCESS_LOG_TASK]: async () => {
         const purged = await aiAccesses.purgeLog();

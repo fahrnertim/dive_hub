@@ -17,16 +17,23 @@ export interface ArchiveLimits {
 }
 
 export const DEFAULT_LIMITS: ArchiveLimits = {
-  maxEntries: 50_000,
+  // An account export holds every file a watch ever synced, about 6,000 a year (ADR 0044). They are read one at a time.
+  maxEntries: 500_000,
   maxEntryBytes: 64 * 1024 * 1024, // a single dive file is far smaller
   maxTotalBytes: 8 * 1024 * 1024 * 1024,
   maxDepth: 3,
   maxCompressionRatio: 200,
 };
 
-export interface ExtractedFile {
+/** One file inside an archive, handed over while the archive is open. */
+export interface ArchiveEntry {
+  /** Its place among the archive's files, the same on every walk of the same archive. */
+  index: number;
+  /** For display only, never a path: the base name, after the names of the nested zips it lies in. */
   name: string;
-  data: Buffer;
+  sizeBytes: number;
+  /** Its bytes; only while the visit of this entry runs. */
+  read(): Promise<Buffer>;
 }
 
 export class ArchiveLimitError extends Error {}
@@ -35,12 +42,15 @@ export function looksLikeZip(data: Uint8Array): boolean {
   return data.length >= 4 && data[0] === 0x50 && data[1] === 0x4b && data[2] === 0x03 && data[3] === 0x04;
 }
 
-/** Returns every file inside the archive at `path` that `accepts` recognises by its content, descending into nested zips. */
-export async function extractFiles(path: string, accepts: (data: Uint8Array) => boolean, limits = DEFAULT_LIMITS): Promise<ExtractedFile[]> {
-  const state = { entries: 0, totalBytes: 0 };
+/**
+ * Visits every file inside the archive at `path`, one after the other, descending into nested zips. Nothing is kept:
+ * a visit that wants a file's bytes reads them and lets them go (ADR 0044).
+ */
+export async function eachFile(path: string, visit: (entry: ArchiveEntry) => Promise<void>, limits = DEFAULT_LIMITS): Promise<void> {
+  const state = { entries: 0, totalBytes: 0, index: 0 };
   const tempDir = await mkdtemp(join(tmpdir(), 'divehub-zip-'));
   try {
-    return await walk(path, '', 1, accepts, limits, state, tempDir);
+    await walk(path, '', 1, visit, limits, state, tempDir);
   } finally {
     await rm(tempDir, { recursive: true, force: true });
   }
@@ -50,41 +60,46 @@ async function walk(
   path: string,
   prefix: string,
   depth: number,
-  accepts: (data: Uint8Array) => boolean,
+  visit: (entry: ArchiveEntry) => Promise<void>,
   limits: ArchiveLimits,
-  state: { entries: number; totalBytes: number },
+  state: { entries: number; totalBytes: number; index: number },
   tempDir: string,
-): Promise<ExtractedFile[]> {
+): Promise<void> {
   if (depth > limits.maxDepth) throw new ArchiveLimitError('Archive nesting too deep');
   const zip = await yauzl.openPromise(path, { decodeStrings: true, validateEntrySizes: true, strictFileNames: false });
-  const found: ExtractedFile[] = [];
   try {
     for await (const entry of zip.eachEntry()) {
       if (entry.fileName.endsWith('/')) continue;
       state.entries++;
       if (state.entries > limits.maxEntries) throw new ArchiveLimitError('Too many files in archive');
-      if (entry.uncompressedSize > limits.maxEntryBytes && !/\.zip$/i.test(entry.fileName)) continue;
+      const nestedZip = /\.zip$/i.test(entry.fileName);
+      if (entry.uncompressedSize > limits.maxEntryBytes && !nestedZip) continue;
       const ratio = entry.compressedSize > 0 ? entry.uncompressedSize / entry.compressedSize : 0;
       if (ratio > limits.maxCompressionRatio) throw new ArchiveLimitError('Suspicious compression ratio');
       state.totalBytes += entry.uncompressedSize;
       if (state.totalBytes > limits.maxTotalBytes) throw new ArchiveLimitError('Archive too large when unpacked');
 
-      const name = prefix + entry.fileName.split('/').pop();
-      if (/\.zip$/i.test(entry.fileName)) {
+      // Never a path: what the zip calls its entries decides nothing about where anything is written.
+      const name = prefix + entry.fileName.split(/[\/]/).pop();
+      if (nestedZip) {
         // Nested archives can be large: stream them to disk instead of memory.
         const nested = join(tempDir, `${randomUUID()}.zip`);
         await pipeline(await zip.openReadStreamPromise(entry), createWriteStream(nested));
-        found.push(...(await walk(nested, `${name}/`, depth + 1, accepts, limits, state, tempDir)));
-        await rm(nested, { force: true });
+        try {
+          await walk(nested, `${name}/`, depth + 1, visit, limits, state, tempDir);
+        } finally {
+          await rm(nested, { force: true });
+        }
         continue;
       }
-      const data = await readEntry(await zip.openReadStreamPromise(entry));
-      if (accepts(data)) found.push({ name, data });
+      await visit({
+        index: state.index++, name, sizeBytes: entry.uncompressedSize,
+        read: async () => readEntry(await zip.openReadStreamPromise(entry)),
+      });
     }
   } finally {
     zip.close();
   }
-  return found;
 }
 
 async function readEntry(stream: NodeJS.ReadableStream): Promise<Buffer> {

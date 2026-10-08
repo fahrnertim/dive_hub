@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
-import { mkdir, readFile, rename, rm, stat } from 'node:fs/promises';
+import { mkdir, open, readFile, rename, rm, stat } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import type { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -26,6 +26,9 @@ export interface BlobStore {
   putIncoming(stream: Readable, maxBytes: number): Promise<StoredBlob>;
   putOriginal(data: Uint8Array): Promise<StoredBlob>;
   read(key: string): Promise<Buffer>;
+  /** The first bytes, at most `bytes` of them: enough to tell what a file is without reading it whole. */
+  head(key: string, bytes: number): Promise<Buffer>;
+  sizeOf(key: string): Promise<number>;
   pathOf(key: string): string;
   delete(key: string): Promise<void>;
 }
@@ -74,6 +77,16 @@ export function createLocalBlobStore(root: string): BlobStore {
     },
 
     read: (key) => readFile(pathOf(key)),
+    async head(key, bytes) {
+      const file = await open(pathOf(key), 'r');
+      try {
+        const { buffer, bytesRead } = await file.read(Buffer.alloc(bytes), 0, bytes, 0);
+        return buffer.subarray(0, bytesRead);
+      } finally {
+        await file.close();
+      }
+    },
+    sizeOf: async (key) => (await stat(pathOf(key))).size,
     delete: (key) => rm(pathOf(key), { force: true }),
   };
 }

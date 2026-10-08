@@ -235,6 +235,22 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   link to); deco models `suunto_fused_rgbm`, `suunto_fused2_rgbm` (proper names); computer events
   `safety_stop_mandatory`, `deep_stop_started`, `deep_stop_broken`, `tank_pressure_low`. A Dive from a Suunto file has no
   number until the User gives it one.
+- **An upload that waits for a choice** ([ADR 0044](../decisions/0044-account-export-import-and-kinds.md)): the server
+  analyses an upload before it writes anything. When it holds both scuba dives and apnea sessions, the Import stops
+  with status `awaiting_choice` and `found` (`scuba`, `apnea`, `otherFiles`: how many of each).
+  - **Must ask which kinds to import, with the counts**, offering only the kinds found, all checked; no start without
+    at least one. `POST /api/imports/{id}/start` with `kinds` (202, the Import runs on: poll it), or
+    `POST /api/imports/{id}/cancel` (the upload is removed). 409 `import_not_waiting` when it no longer waits.
+  - **Must say that nothing is imported until the User answers**, and that the upload is removed after 7 days without
+    an answer. Such an Import ends as `cancelled` with `errorCode: choice_expired`: say so and ask for the file again.
+  - **Keep a waiting Import in sight** until it is answered (it is not "running": stop the fast polling), also after a
+    reload and on another device.
+  - Stop polling on `awaiting_choice` and `cancelled` as on `done` and `failed`.
+- **What an upload held besides its outcome:** `found` is set on a finished Import too, and `kinds` when the User
+  chose. Say how many dives of a kind were left out (`found[kind]` for the kinds not in `kinds`) and how many files
+  were no dives (`found.otherFiles`; they are not kept and not listed in `outcome`). An outcome can have dozens of
+  lines (an account export): count them by result instead of listing each.
+  *Web:* `ImportPanel.tsx` (`ImportChoice`, `LeftOut`).
 - **Name the files that weren't sent** (a dropped `.gpx`), so the User learns why they didn't arrive.
 - **Each file's outcome:** created, attached, updated, unchanged ("already imported": the same User sent the same
   content before), Duplicate candidate, skipped (for example a Device of another User's Diver, or `deleted_earlier`: the

@@ -12,6 +12,11 @@
 .imports li:first-child { border-top: none; }
 .import-name { font-weight: var(--weight-semibold); overflow-wrap: anywhere; }
 .import-error { color: var(--color-danger); }
+/* An upload that waits for the User's choice of kinds (ADR 0044): the question, the kinds, the two actions. */
+.import-choice { flex-basis: 100%; display: grid; gap: var(--space-3); justify-items: start; }
+.import-choice > * { min-width: 0; margin: 0; }
+.import-choice-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.imports li > .muted { flex-basis: 100%; }
 
 /* A heading inside a panel, one level below the panel's title. */
 .subheading { font-size: var(--text-lg); }

@@ -360,6 +360,7 @@ export async function uploadFile(file: File) {
     const problem = (await response.json().catch(() => ({}))) as { code?: ProblemCode; error?: string };
     throw new ApiError(problem.error ?? `Upload failed (${response.status})`, response.status, problem.code);
   }
+  return (await response.json()) as ImportView;
 }
 
 async function fetchProviders() {

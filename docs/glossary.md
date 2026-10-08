@@ -397,13 +397,18 @@ _German_: Verbindung
 
 **Original**:
 A file or payload exactly as received from a Source, kept unchanged and belonging to one User.
-An archive that only bundles files (such as a zip) is not an Original; the files inside it are.
+An archive that only bundles files (such as a zip) is not an Original; the files inside it are, and only those a dive was read from: a file that is no dive is not kept ([ADR 0044](decisions/0044-account-export-import-and-kinds.md)).
 Two Originals can hold the same dive (Suunto's FIT and JSON): both are kept, and the Recording is read from the fuller one.
 _Avoid_: Raw file, upload, dump
 _German_: Originaldatei
 
 **Import**:
-One ingestion of what a User delivered at once (one or more Originals, possibly unpacked from an archive), producing or updating Recordings and Dives. An import from a Provider reads the account's dives and keeps one Original per dive ([ADR 0030](decisions/0030-importing-dives-from-providers.md)).
+One ingestion of what a User delivered at once (one or more Originals, possibly unpacked from an archive), producing or updating Recordings and Dives. An import from a Provider reads the account's dives and keeps one Original per dive ([ADR 0030](decisions/0030-importing-dives-from-providers.md)). An upload is analysed before anything is written; one that holds several Kinds of dive waits for the User's choice ([ADR 0044](decisions/0044-account-export-import-and-kinds.md)).
+
+**Kind of dive**:
+What a User chooses by when an upload holds more than one: `scuba` (every dive with a gas: open circuit, rebreather, gauge) or `apnea` (an apnea session). Broader than the dive mode a computer records.
+_Avoid_: Type, sport, category
+_German_: Art des Tauchgangs
 
 **Logbook entry (at a Provider)**:
 A dive at a Provider that was typed in by hand: rough values, no profile, no dive computer. An import matches it to a Dive here by its local start time within the matching window and fills what that Dive lacks (site, Participants, notes), or makes a Dive without a Recording from it; what changes at the Provider later comes back unless it was changed here too. A dive the Provider got from a dive computer becomes a Recording instead, unless the User chose otherwise for that computer ([ADR 0030](decisions/0030-importing-dives-from-providers.md)).

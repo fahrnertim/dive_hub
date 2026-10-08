@@ -8,6 +8,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import {
+  cancelWaitingImports, waitingImport,
   E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, falseStart, forgetDivers, keepFalseStart, mergePair, mergeablePair,
   leaveLena, leaveSsi, lenaReady, openLine, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
@@ -91,8 +92,19 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('link', { name: 'Review them' }).click(); await page.getByRole('heading', { name: 'Review', level: 1 }).waitFor();
     await capture(page, '01a-review');
     await tabOrder(page, '01a-review');
+    // An upload with several kinds of dive (ADR 0044): one answered with the scuba dives only, one still waiting.
+    const answered = await waitingImport(request);
+    await request.post(`/api/imports/${answered}/start`, { data: { kinds: ['scuba'] }, headers: { origin: E2E_BASE_URL } });
+    await expect.poll(async () => (await (await request.get(`/api/imports/${answered}`)).json()).status).toBe('done');
+    await waitingImport(request);
+    await page.goto('/'); await page.getByRole('group', { name: /account-export\.zip/ }).waitFor();
+    await capture(page, '01c-logbook-import-choice');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await capture(page, '01c-logbook-import-choice-phone');
+    await page.setViewportSize({ width: 1280, height: 900 });
     await page.getByRole('link', { name: 'Imports', exact: true }).click(); await page.getByRole('heading', { name: 'Imports', level: 2 }).waitFor();
     await capture(page, '01b-review-imports');
+    await cancelWaitingImports(request);
     await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: /Dive 42/ }).waitFor();
     await capture(page, '02-dive');
     await tabOrder(page, '02-dive', 30);

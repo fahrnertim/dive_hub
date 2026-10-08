@@ -14,6 +14,8 @@ export interface SyntheticDiveOptions {
   /** Where the dive started and ended (session start/end position), in degrees. */
   entry?: { latitude: number; longitude: number };
   exit?: { latitude: number; longitude: number };
+  /** The watch's activity profile: an apnea session is `apneaDiving` and has no gas (ADR 0044). */
+  subSport?: 'singleGasDiving' | 'multiGasDiving' | 'apneaDiving';
 }
 
 const FIT_EPOCH_MS = Date.UTC(1989, 11, 31);
@@ -38,6 +40,7 @@ export function makeSyntheticDive(options: SyntheticDiveOptions = {}): Uint8Arra
     return Math.max(0, 5 - (5 * (f - 0.9)) / 0.1);
   };
 
+  const subSport = options.subSport ?? 'singleGasDiving';
   const encoder = new Encoder();
   const write = (mesgNum: number | undefined, fields: Record<string, unknown>) => encoder.onMesg(mesgNum!, fields as Mesg);
 
@@ -45,9 +48,9 @@ export function makeSyntheticDive(options: SyntheticDiveOptions = {}): Uint8Arra
   write(Profile.MesgNum.DEVICE_INFO, {
     timestamp: start, deviceIndex: 'creator', manufacturer: 'garmin', product: 4222, serialNumber, softwareVersion: 27.19,
   });
-  write(Profile.MesgNum.SPORT, { sport: 'diving', subSport: 'singleGasDiving', name: 'Single-Gas' });
+  write(Profile.MesgNum.SPORT, { sport: 'diving', subSport, name: subSport === 'apneaDiving' ? 'Apnea' : 'Single-Gas' });
   write(Profile.MesgNum.DIVE_SETTINGS, { messageIndex: 0, model: 'zhl16c', gfLow: 40, gfHigh: 85, waterType: 'salt', waterDensity: 1025 });
-  write(Profile.MesgNum.DIVE_GAS, { messageIndex: 0, oxygenContent: 32, heliumContent: 0, status: 'enabled', mode: 'openCircuit' });
+  if (subSport !== 'apneaDiving') write(Profile.MesgNum.DIVE_GAS, { messageIndex: 0, oxygenContent: 32, heliumContent: 0, status: 'enabled', mode: 'openCircuit' });
   write(Profile.MesgNum.EVENT, { timestamp: start, event: 'timer', eventType: 'start' });
 
   let maxDepth = 0;
@@ -73,7 +76,7 @@ export function makeSyntheticDive(options: SyntheticDiveOptions = {}): Uint8Arra
   write(Profile.MesgNum.DIVE_SUMMARY, { ...summary, referenceMesg: 'lap', referenceIndex: 0 });
   write(Profile.MesgNum.SESSION, {
     timestamp: at(duration), startTime: start, totalElapsedTime: duration, totalTimerTime: duration,
-    sport: 'diving', subSport: 'singleGasDiving', minTemperature: 25, maxTemperature: 26, avgHeartRate: 80,
+    sport: 'diving', subSport, minTemperature: 25, maxTemperature: 26, avgHeartRate: 80,
     messageIndex: 0, firstLapIndex: 0, numLaps: 1, event: 'session', eventType: 'stop',
     ...(options.entry && { startPositionLat: semicircles(options.entry.latitude), startPositionLong: semicircles(options.entry.longitude) }),
     ...(options.exit && { endPositionLat: semicircles(options.exit.latitude), endPositionLong: semicircles(options.exit.longitude) }),
@@ -82,6 +85,22 @@ export function makeSyntheticDive(options: SyntheticDiveOptions = {}): Uint8Arra
     timestamp: at(duration), totalTimerTime: duration, numSessions: 1, type: 'manual', event: 'activity', eventType: 'stop',
     localTimestamp: Math.round((at(duration).getTime() - FIT_EPOCH_MS) / 1000) + UTC_OFFSET_SECONDS,
   });
+  return encoder.close();
+}
+
+/** An activity file that is no dive, as an account export holds hundreds of: a short run (ADR 0044). */
+export function makeSyntheticRun(start = new Date('2026-01-16T17:00:00Z')): Uint8Array {
+  const encoder = new Encoder();
+  const write = (mesgNum: number | undefined, fields: Record<string, unknown>) => encoder.onMesg(mesgNum!, fields as Mesg);
+  const end = new Date(start.getTime() + 600_000);
+  write(Profile.MesgNum.FILE_ID, { type: 'activity', manufacturer: 'garmin', product: 4222, serialNumber: 1234567890, timeCreated: start });
+  write(Profile.MesgNum.SPORT, { sport: 'running', subSport: 'generic', name: 'Run' });
+  for (let t = 0; t <= 600; t += 60) write(Profile.MesgNum.RECORD, { timestamp: new Date(start.getTime() + t * 1000), heartRate: 140, distance: t * 3 });
+  write(Profile.MesgNum.SESSION, {
+    timestamp: end, startTime: start, totalElapsedTime: 600, totalTimerTime: 600, sport: 'running', subSport: 'generic',
+    messageIndex: 0, firstLapIndex: 0, numLaps: 1, event: 'session', eventType: 'stop',
+  });
+  write(Profile.MesgNum.ACTIVITY, { timestamp: end, totalTimerTime: 600, numSessions: 1, type: 'manual', event: 'activity', eventType: 'stop' });
   return encoder.close();
 }
 

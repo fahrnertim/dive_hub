@@ -24,6 +24,7 @@ export const PROBLEMS = {
   confirmation_mismatch: "The confirmation does not match the User's e-mail",
   session_not_found: 'No such session',
   import_not_found: 'Import not found',
+  import_not_waiting: 'This Import does not wait for a choice of kinds, or it found none of the kinds named',
   dive_not_found: 'Dive not found',
   dive_changed: 'The dive was changed meanwhile; reload it and apply your changes again',
   dive_values_inconsistent: 'The average depth is deeper than the max depth',

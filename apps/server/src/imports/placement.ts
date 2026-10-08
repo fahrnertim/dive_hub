@@ -121,11 +121,14 @@ export async function placeRecording(tx: Tx, c: Placement, rec: ParsedRecording)
     ));
   const candidates = alignedForMatching({ utcOffsetSeconds: values.utcOffsetSeconds, utcOffsetSource: values.utcOffsetSource }, found);
   // A probable non-dive, as the logbook check sees it (ADR 0038), is matched by the User, not by itself (ADR 0030, amended).
-  const withRecording = new Set(found.length === 0 ? [] : (await tx.selectDistinct({ diveId: recording.diveId }).from(recording)
-    .where(and(inArray(recording.diveId, found.map((d) => d.id)), isNull(recording.deletedAt)))).map((r) => r.diveId));
+  const onFound = found.length === 0 ? [] : await tx.selectDistinct({ diveId: recording.diveId, deviceId: recording.deviceId }).from(recording)
+    .where(and(inArray(recording.diveId, found.map((d) => d.id)), isNull(recording.deletedAt)));
+  const withRecording = new Set(onFound.map((r) => r.diveId));
+  // One Device doesn't record a dive twice: its next Recording is in reach of such a Dive only when they overlap (ADR 0044).
+  const ofThisDevice = new Set(onFound.filter((r) => deviceId !== null && r.deviceId === deviceId).map((r) => r.diveId));
   const decision = decideMatch(
     { ...rec, probablyNoDive: probablyNoDive({ recordings: 1, durationSeconds: rec.durationSeconds, maxDepthM: rec.maxDepthM ?? null }) },
-    candidates.map((d) => ({ ...d, maxDepthM: d.maxDepthM ?? undefined, probablyNoDive: probablyNoDive({ ...d, recordings: withRecording.has(d.id) ? 1 : 0 }) })),
+    candidates.map((d) => ({ ...d, maxDepthM: d.maxDepthM ?? undefined, sameDevice: ofThisDevice.has(d.id), probablyNoDive: probablyNoDive({ ...d, recordings: withRecording.has(d.id) ? 1 : 0 }) })),
   );
 
   if (decision.kind === 'create') {

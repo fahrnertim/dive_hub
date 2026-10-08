@@ -493,3 +493,23 @@ export async function putAside(api: APIRequestContext, diveId: string, options: 
   for (const rule of dismiss) await api.put(`/api/dives/${diveId}/findings/${rule}/dismissal`, { data: { dismissed: true }, headers });
   for (const rule of options.mute ?? []) await api.put(`/api/divers/${diverId}/muted-rules/${rule}`, { data: { muted: true }, headers });
 }
+
+/**
+ * An upload with a scuba dive, an apnea session and a run (e2e/fixtures/account-export.zip), waiting for the User's
+ * choice of what to import (ADR 0044). The scuba dive is the seeded one, so importing it adds nothing.
+ */
+export async function waitingImport(api: APIRequestContext): Promise<string> {
+  await cancelWaitingImports(api);
+  const upload = await api.post('/api/imports', {
+    headers, multipart: { file: { name: 'account-export.zip', mimeType: 'application/zip', buffer: readFileSync('e2e/fixtures/account-export.zip') } },
+  });
+  const { id } = await upload.json() as { id: string };
+  await expect.poll(async () => (await (await api.get(`/api/imports/${id}`)).json()).status).toBe('awaiting_choice');
+  return id;
+}
+
+/** Ends every Import that waits for a choice, so none stays on the logbook for the next test. */
+export async function cancelWaitingImports(api: APIRequestContext) {
+  const imports = await (await api.get('/api/imports')).json() as { id: string; status: string }[];
+  for (const i of imports.filter((x) => x.status === 'awaiting_choice')) await api.post(`/api/imports/${i.id}/cancel`, { headers });
+}

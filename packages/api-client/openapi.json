@@ -264,6 +264,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -383,6 +384,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -552,6 +554,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -764,6 +767,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -883,6 +887,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -1458,6 +1463,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -1598,6 +1604,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -1762,6 +1769,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -1968,6 +1976,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -2194,6 +2203,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -2478,6 +2488,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -2597,6 +2608,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -2716,6 +2728,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -2874,6 +2887,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -2993,6 +3007,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -3112,6 +3127,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -3302,6 +3318,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -3421,6 +3438,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -3540,6 +3558,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -3730,6 +3749,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -3849,6 +3869,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -3968,6 +3989,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -4108,6 +4130,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -4227,6 +4250,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -4346,6 +4370,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -4507,6 +4532,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -4626,6 +4652,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -4745,6 +4772,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -4852,6 +4880,8 @@
                     "createdAt",
                     "finishedAt",
                     "errorCode",
+                    "found",
+                    "kinds",
                     "outcome"
                   ],
                   "properties": {
@@ -4859,32 +4889,15 @@
                       "type": "string"
                     },
                     "status": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "pending"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "processing"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "done"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "failed"
-                          ]
-                        }
-                      ]
+                      "enum": [
+                        "pending",
+                        "processing",
+                        "done",
+                        "failed",
+                        "awaiting_choice",
+                        "cancelled"
+                      ],
+                      "description": "awaiting_choice: the upload holds several kinds of dive and nothing is imported until the User starts it with the kinds to import (ADR 0044); cancelled: the User ended that wait, or nobody answered for seven days (errorCode choice_expired)"
                     },
                     "uploadName": {
                       "type": "string",
@@ -4921,9 +4934,57 @@
                         {
                           "enum": [
                             "unsupported_file",
-                            "processing_failed"
+                            "processing_failed",
+                            "choice_expired"
                           ],
-                          "description": "Why the Import failed; clients translate it. The detail stays in the server log"
+                          "description": "Why the Import failed or ended; clients translate it. The detail stays in the server log"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "found": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "scuba",
+                            "apnea",
+                            "otherFiles"
+                          ],
+                          "properties": {
+                            "scuba": {
+                              "type": "integer",
+                              "description": "Dives with a gas: open circuit, rebreather, gauge"
+                            },
+                            "apnea": {
+                              "type": "integer",
+                              "description": "Apnea sessions"
+                            },
+                            "otherFiles": {
+                              "type": "integer",
+                              "description": "Files that are no dive (other sports, health data, anything else); they are not kept"
+                            }
+                          },
+                          "description": "What an upload holds, once it is analysed (ADR 0044); null before, and for an import from a Provider"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "kinds": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "enum": [
+                              "scuba",
+                              "apnea"
+                            ]
+                          },
+                          "description": "The kinds of dive the User chose to import; null when nobody was asked (all were imported)"
                         },
                         {
                           "type": "null"
@@ -5038,6 +5099,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -5157,6 +5219,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -5264,6 +5327,8 @@
                       "createdAt",
                       "finishedAt",
                       "errorCode",
+                      "found",
+                      "kinds",
                       "outcome"
                     ],
                     "properties": {
@@ -5271,32 +5336,15 @@
                         "type": "string"
                       },
                       "status": {
-                        "anyOf": [
-                          {
-                            "type": "string",
-                            "enum": [
-                              "pending"
-                            ]
-                          },
-                          {
-                            "type": "string",
-                            "enum": [
-                              "processing"
-                            ]
-                          },
-                          {
-                            "type": "string",
-                            "enum": [
-                              "done"
-                            ]
-                          },
-                          {
-                            "type": "string",
-                            "enum": [
-                              "failed"
-                            ]
-                          }
-                        ]
+                        "enum": [
+                          "pending",
+                          "processing",
+                          "done",
+                          "failed",
+                          "awaiting_choice",
+                          "cancelled"
+                        ],
+                        "description": "awaiting_choice: the upload holds several kinds of dive and nothing is imported until the User starts it with the kinds to import (ADR 0044); cancelled: the User ended that wait, or nobody answered for seven days (errorCode choice_expired)"
                       },
                       "uploadName": {
                         "type": "string",
@@ -5333,9 +5381,57 @@
                           {
                             "enum": [
                               "unsupported_file",
-                              "processing_failed"
+                              "processing_failed",
+                              "choice_expired"
                             ],
-                            "description": "Why the Import failed; clients translate it. The detail stays in the server log"
+                            "description": "Why the Import failed or ended; clients translate it. The detail stays in the server log"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "found": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "required": [
+                              "scuba",
+                              "apnea",
+                              "otherFiles"
+                            ],
+                            "properties": {
+                              "scuba": {
+                                "type": "integer",
+                                "description": "Dives with a gas: open circuit, rebreather, gauge"
+                              },
+                              "apnea": {
+                                "type": "integer",
+                                "description": "Apnea sessions"
+                              },
+                              "otherFiles": {
+                                "type": "integer",
+                                "description": "Files that are no dive (other sports, health data, anything else); they are not kept"
+                              }
+                            },
+                            "description": "What an upload holds, once it is analysed (ADR 0044); null before, and for an import from a Provider"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "kinds": {
+                        "anyOf": [
+                          {
+                            "type": "array",
+                            "items": {
+                              "enum": [
+                                "scuba",
+                                "apnea"
+                              ]
+                            },
+                            "description": "The kinds of dive the User chose to import; null when nobody was asked (all were imported)"
                           },
                           {
                             "type": "null"
@@ -5450,6 +5546,8 @@
                     "createdAt",
                     "finishedAt",
                     "errorCode",
+                    "found",
+                    "kinds",
                     "outcome"
                   ],
                   "properties": {
@@ -5457,32 +5555,15 @@
                       "type": "string"
                     },
                     "status": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "pending"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "processing"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "done"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "failed"
-                          ]
-                        }
-                      ]
+                      "enum": [
+                        "pending",
+                        "processing",
+                        "done",
+                        "failed",
+                        "awaiting_choice",
+                        "cancelled"
+                      ],
+                      "description": "awaiting_choice: the upload holds several kinds of dive and nothing is imported until the User starts it with the kinds to import (ADR 0044); cancelled: the User ended that wait, or nobody answered for seven days (errorCode choice_expired)"
                     },
                     "uploadName": {
                       "type": "string",
@@ -5519,9 +5600,57 @@
                         {
                           "enum": [
                             "unsupported_file",
-                            "processing_failed"
+                            "processing_failed",
+                            "choice_expired"
                           ],
-                          "description": "Why the Import failed; clients translate it. The detail stays in the server log"
+                          "description": "Why the Import failed or ended; clients translate it. The detail stays in the server log"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "found": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "scuba",
+                            "apnea",
+                            "otherFiles"
+                          ],
+                          "properties": {
+                            "scuba": {
+                              "type": "integer",
+                              "description": "Dives with a gas: open circuit, rebreather, gauge"
+                            },
+                            "apnea": {
+                              "type": "integer",
+                              "description": "Apnea sessions"
+                            },
+                            "otherFiles": {
+                              "type": "integer",
+                              "description": "Files that are no dive (other sports, health data, anything else); they are not kept"
+                            }
+                          },
+                          "description": "What an upload holds, once it is analysed (ADR 0044); null before, and for an import from a Provider"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "kinds": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "enum": [
+                              "scuba",
+                              "apnea"
+                            ]
+                          },
+                          "description": "The kinds of dive the User chose to import; null when nobody was asked (all were imported)"
                         },
                         {
                           "type": "null"
@@ -5636,6 +5765,710 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "check_not_found",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "centre_not_found",
+                        "centre_changed",
+                        "centre_not_deletable",
+                        "centre_external_id_taken",
+                        "code_not_recognised",
+                        "code_not_a_person",
+                        "diver_choice_needed",
+                        "diver_has_other_account",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/imports/{id}/start": {
+      "post": {
+        "summary": "Start an Import that waits for a choice: import these kinds of dive, leave the others out (ADR 0044)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "kinds"
+                ],
+                "properties": {
+                  "kinds": {
+                    "type": "array",
+                    "items": {
+                      "enum": [
+                        "scuba",
+                        "apnea"
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 2,
+                    "uniqueItems": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "status",
+                    "uploadName",
+                    "provider",
+                    "createdAt",
+                    "finishedAt",
+                    "errorCode",
+                    "found",
+                    "kinds",
+                    "outcome"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": [
+                        "pending",
+                        "processing",
+                        "done",
+                        "failed",
+                        "awaiting_choice",
+                        "cancelled"
+                      ],
+                      "description": "awaiting_choice: the upload holds several kinds of dive and nothing is imported until the User starts it with the kinds to import (ADR 0044); cancelled: the User ended that wait, or nobody answered for seven days (errorCode choice_expired)"
+                    },
+                    "uploadName": {
+                      "type": "string",
+                      "description": "The uploaded file's name; for an import from a Provider, the Provider's name"
+                    },
+                    "provider": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "description": "An import of this Provider's dives (ADR 0030); null for an upload"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "finishedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "errorCode": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "unsupported_file",
+                            "processing_failed",
+                            "choice_expired"
+                          ],
+                          "description": "Why the Import failed or ended; clients translate it. The detail stays in the server log"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "found": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "scuba",
+                            "apnea",
+                            "otherFiles"
+                          ],
+                          "properties": {
+                            "scuba": {
+                              "type": "integer",
+                              "description": "Dives with a gas: open circuit, rebreather, gauge"
+                            },
+                            "apnea": {
+                              "type": "integer",
+                              "description": "Apnea sessions"
+                            },
+                            "otherFiles": {
+                              "type": "integer",
+                              "description": "Files that are no dive (other sports, health data, anything else); they are not kept"
+                            }
+                          },
+                          "description": "What an upload holds, once it is analysed (ADR 0044); null before, and for an import from a Provider"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "kinds": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "enum": [
+                              "scuba",
+                              "apnea"
+                            ]
+                          },
+                          "description": "The kinds of dive the User chose to import; null when nobody was asked (all were imported)"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "outcome": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "fileName",
+                          "result"
+                        ],
+                        "properties": {
+                          "fileName": {
+                            "type": "string"
+                          },
+                          "result": {
+                            "enum": [
+                              "created",
+                              "attached",
+                              "linked",
+                              "updated",
+                              "unchanged",
+                              "duplicate-candidate",
+                              "skipped",
+                              "failed"
+                            ],
+                            "description": "linked: a Provider's logbook entry tied to a Dive here and filled where it was empty (ADR 0030)"
+                          },
+                          "diveId": {
+                            "type": "string"
+                          },
+                          "recordingId": {
+                            "type": "string"
+                          },
+                          "remoteId": {
+                            "type": "string",
+                            "description": "A Provider's dive: its ID there"
+                          },
+                          "remoteNumber": {
+                            "type": "integer",
+                            "description": "A Provider's dive: its own number there"
+                          },
+                          "reason": {
+                            "enum": [
+                              "no_dive_file",
+                              "no_fit_file",
+                              "not_a_dive",
+                              "not_your_diver",
+                              "overlaps_several_dives",
+                              "max_depth_differs",
+                              "file_failed",
+                              "probably_no_dive",
+                              "deleted_earlier",
+                              "fuller_copy_here",
+                              "sent_by_dive_hub",
+                              "no_match",
+                              "ambiguous",
+                              "left_out"
+                            ],
+                            "description": "Why; clients translate it. A failure’s detail stays in the server log"
+                          },
+                          "decision": {
+                            "enum": [
+                              "open",
+                              "attached",
+                              "new_dive",
+                              "discarded"
+                            ],
+                            "description": "For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "import_not_waiting",
+                        "dive_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "check_not_found",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "centre_not_found",
+                        "centre_changed",
+                        "centre_not_deletable",
+                        "centre_external_id_taken",
+                        "code_not_recognised",
+                        "code_not_a_person",
+                        "diver_choice_needed",
+                        "diver_has_other_account",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/imports/{id}/cancel": {
+      "post": {
+        "summary": "Cancel an Import that waits for a choice: its upload is removed, nothing was imported (ADR 0044)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "status",
+                    "uploadName",
+                    "provider",
+                    "createdAt",
+                    "finishedAt",
+                    "errorCode",
+                    "found",
+                    "kinds",
+                    "outcome"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": [
+                        "pending",
+                        "processing",
+                        "done",
+                        "failed",
+                        "awaiting_choice",
+                        "cancelled"
+                      ],
+                      "description": "awaiting_choice: the upload holds several kinds of dive and nothing is imported until the User starts it with the kinds to import (ADR 0044); cancelled: the User ended that wait, or nobody answered for seven days (errorCode choice_expired)"
+                    },
+                    "uploadName": {
+                      "type": "string",
+                      "description": "The uploaded file's name; for an import from a Provider, the Provider's name"
+                    },
+                    "provider": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "description": "An import of this Provider's dives (ADR 0030); null for an upload"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "finishedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "errorCode": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "unsupported_file",
+                            "processing_failed",
+                            "choice_expired"
+                          ],
+                          "description": "Why the Import failed or ended; clients translate it. The detail stays in the server log"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "found": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "scuba",
+                            "apnea",
+                            "otherFiles"
+                          ],
+                          "properties": {
+                            "scuba": {
+                              "type": "integer",
+                              "description": "Dives with a gas: open circuit, rebreather, gauge"
+                            },
+                            "apnea": {
+                              "type": "integer",
+                              "description": "Apnea sessions"
+                            },
+                            "otherFiles": {
+                              "type": "integer",
+                              "description": "Files that are no dive (other sports, health data, anything else); they are not kept"
+                            }
+                          },
+                          "description": "What an upload holds, once it is analysed (ADR 0044); null before, and for an import from a Provider"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "kinds": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "enum": [
+                              "scuba",
+                              "apnea"
+                            ]
+                          },
+                          "description": "The kinds of dive the User chose to import; null when nobody was asked (all were imported)"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "outcome": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "fileName",
+                          "result"
+                        ],
+                        "properties": {
+                          "fileName": {
+                            "type": "string"
+                          },
+                          "result": {
+                            "enum": [
+                              "created",
+                              "attached",
+                              "linked",
+                              "updated",
+                              "unchanged",
+                              "duplicate-candidate",
+                              "skipped",
+                              "failed"
+                            ],
+                            "description": "linked: a Provider's logbook entry tied to a Dive here and filled where it was empty (ADR 0030)"
+                          },
+                          "diveId": {
+                            "type": "string"
+                          },
+                          "recordingId": {
+                            "type": "string"
+                          },
+                          "remoteId": {
+                            "type": "string",
+                            "description": "A Provider's dive: its ID there"
+                          },
+                          "remoteNumber": {
+                            "type": "integer",
+                            "description": "A Provider's dive: its own number there"
+                          },
+                          "reason": {
+                            "enum": [
+                              "no_dive_file",
+                              "no_fit_file",
+                              "not_a_dive",
+                              "not_your_diver",
+                              "overlaps_several_dives",
+                              "max_depth_differs",
+                              "file_failed",
+                              "probably_no_dive",
+                              "deleted_earlier",
+                              "fuller_copy_here",
+                              "sent_by_dive_hub",
+                              "no_match",
+                              "ambiguous",
+                              "left_out"
+                            ],
+                            "description": "Why; clients translate it. A failure’s detail stays in the server log"
+                          },
+                          "decision": {
+                            "enum": [
+                              "open",
+                              "attached",
+                              "new_dive",
+                              "discarded"
+                            ],
+                            "description": "For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -6353,6 +7186,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -6557,6 +7391,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -7399,6 +8234,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -8379,6 +9215,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -8498,6 +9335,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -8617,6 +9455,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -8816,6 +9655,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -8958,6 +9798,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -9077,6 +9918,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -9219,6 +10061,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -10131,6 +10974,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -10250,6 +11094,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -10369,6 +11214,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -11234,6 +12080,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -11353,6 +12200,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -11472,6 +12320,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -12338,6 +13187,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -12457,6 +13307,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -12785,6 +13636,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -13343,6 +14195,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -13462,6 +14315,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -14340,6 +15194,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -14482,6 +15337,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -14601,6 +15457,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -14743,6 +15600,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -14941,6 +15799,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -15060,6 +15919,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -16097,6 +16957,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -16216,6 +17077,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -16452,6 +17314,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -16849,6 +17712,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -16968,6 +17832,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -17087,6 +17952,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -17250,6 +18116,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -17369,6 +18236,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -17488,6 +18356,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -17651,6 +18520,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -17770,6 +18640,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -17889,6 +18760,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -18052,6 +18924,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -18171,6 +19044,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -18290,6 +19164,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -18727,6 +19602,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -19206,6 +20082,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -19389,6 +20266,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -19630,6 +20508,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -19749,6 +20628,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -19868,6 +20748,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -19987,6 +20868,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -20263,6 +21145,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -20382,6 +21265,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -20501,6 +21385,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -20620,6 +21505,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -20758,6 +21644,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -20877,6 +21764,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -20996,6 +21884,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -21115,6 +22004,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -21296,6 +22186,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -21431,6 +22322,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -21566,6 +22458,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -21701,6 +22594,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -21988,6 +22882,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -22107,6 +23002,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -22226,6 +23122,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -22345,6 +23242,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -22677,6 +23575,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -22796,6 +23695,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -22915,6 +23815,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -23034,6 +23935,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -23458,6 +24360,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -23593,6 +24496,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -23728,6 +24632,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -23863,6 +24768,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -24167,6 +25073,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -24286,6 +25193,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -24405,6 +25313,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -24524,6 +25433,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -24727,6 +25637,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -24846,6 +25757,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -24965,6 +25877,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -25084,6 +25997,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -25222,6 +26136,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -25341,6 +26256,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -25460,6 +26376,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -25579,6 +26496,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -25756,6 +26674,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -25875,6 +26794,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -25994,6 +26914,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -26113,6 +27034,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -26350,6 +27272,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -26469,6 +27392,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -26588,6 +27512,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -26707,6 +27632,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -27294,6 +28220,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -27865,6 +28792,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -27984,6 +28912,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -28103,6 +29032,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -28222,6 +29152,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -28693,6 +29624,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -29280,6 +30212,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -29399,6 +30332,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -29518,6 +30452,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -29637,6 +30572,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -29775,6 +30711,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -29894,6 +30831,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -30013,6 +30951,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -30132,6 +31071,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -30645,6 +31585,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -30764,6 +31705,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -30883,6 +31825,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -31002,6 +31945,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -31505,6 +32449,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -31624,6 +32569,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -31743,6 +32689,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -31862,6 +32809,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -32363,6 +33311,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -32482,6 +33431,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -32601,6 +33551,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -32720,6 +33671,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -32953,6 +33905,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -33250,6 +34203,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -33544,6 +34498,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -33679,6 +34634,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -33814,6 +34770,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -33949,6 +34906,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -34214,6 +35172,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -34489,6 +35448,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -34624,6 +35584,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -34759,6 +35720,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -34894,6 +35856,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -35049,6 +36012,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -35184,6 +36148,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -35319,6 +36284,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -35454,6 +36420,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -35759,6 +36726,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -35894,6 +36862,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -36029,6 +36998,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -36164,6 +37134,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -36439,6 +37410,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -36574,6 +37546,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -36709,6 +37682,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -36844,6 +37818,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -37116,6 +38091,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -37251,6 +38227,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -37386,6 +38363,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -37521,6 +38499,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -37979,6 +38958,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -38562,6 +39542,7 @@
                             "confirmation_mismatch",
                             "session_not_found",
                             "import_not_found",
+                            "import_not_waiting",
                             "dive_not_found",
                             "dive_changed",
                             "dive_values_inconsistent",
@@ -38686,6 +39667,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -38805,6 +39787,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -38924,6 +39907,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -39382,6 +40366,7 @@
                                   "confirmation_mismatch",
                                   "session_not_found",
                                   "import_not_found",
+                                  "import_not_waiting",
                                   "dive_not_found",
                                   "dive_changed",
                                   "dive_values_inconsistent",
@@ -39509,6 +40494,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -39972,6 +40958,7 @@
                             "confirmation_mismatch",
                             "session_not_found",
                             "import_not_found",
+                            "import_not_waiting",
                             "dive_not_found",
                             "dive_changed",
                             "dive_values_inconsistent",
@@ -40096,6 +41083,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -40215,6 +41203,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -41034,6 +42023,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -41153,6 +42143,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -41272,6 +42263,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -41472,6 +42464,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -41740,6 +42733,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -41859,6 +42853,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -41978,6 +42973,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -42178,6 +43174,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -42382,6 +43379,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -42501,6 +43499,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -42620,6 +43619,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -42820,6 +43820,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -43057,6 +44058,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -43176,6 +44178,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -43295,6 +44298,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -43495,6 +44499,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -43817,6 +44822,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -43936,6 +44942,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -44055,6 +45062,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -44255,6 +45263,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -44393,6 +45402,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -44624,6 +45634,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -44743,6 +45754,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -44862,6 +45874,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -45062,6 +46075,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -45661,6 +46675,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -45780,6 +46795,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -45899,6 +46915,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -46099,6 +47116,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -46320,6 +47338,8 @@
                     "createdAt",
                     "finishedAt",
                     "errorCode",
+                    "found",
+                    "kinds",
                     "outcome"
                   ],
                   "properties": {
@@ -46327,32 +47347,15 @@
                       "type": "string"
                     },
                     "status": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "pending"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "processing"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "done"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "failed"
-                          ]
-                        }
-                      ]
+                      "enum": [
+                        "pending",
+                        "processing",
+                        "done",
+                        "failed",
+                        "awaiting_choice",
+                        "cancelled"
+                      ],
+                      "description": "awaiting_choice: the upload holds several kinds of dive and nothing is imported until the User starts it with the kinds to import (ADR 0044); cancelled: the User ended that wait, or nobody answered for seven days (errorCode choice_expired)"
                     },
                     "uploadName": {
                       "type": "string",
@@ -46389,9 +47392,57 @@
                         {
                           "enum": [
                             "unsupported_file",
-                            "processing_failed"
+                            "processing_failed",
+                            "choice_expired"
                           ],
-                          "description": "Why the Import failed; clients translate it. The detail stays in the server log"
+                          "description": "Why the Import failed or ended; clients translate it. The detail stays in the server log"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "found": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "scuba",
+                            "apnea",
+                            "otherFiles"
+                          ],
+                          "properties": {
+                            "scuba": {
+                              "type": "integer",
+                              "description": "Dives with a gas: open circuit, rebreather, gauge"
+                            },
+                            "apnea": {
+                              "type": "integer",
+                              "description": "Apnea sessions"
+                            },
+                            "otherFiles": {
+                              "type": "integer",
+                              "description": "Files that are no dive (other sports, health data, anything else); they are not kept"
+                            }
+                          },
+                          "description": "What an upload holds, once it is analysed (ADR 0044); null before, and for an import from a Provider"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "kinds": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "enum": [
+                              "scuba",
+                              "apnea"
+                            ]
+                          },
+                          "description": "The kinds of dive the User chose to import; null when nobody was asked (all were imported)"
                         },
                         {
                           "type": "null"
@@ -46506,6 +47557,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -46625,6 +47677,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -46744,6 +47797,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -46944,6 +47998,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -47127,6 +48182,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -47345,6 +48401,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -47464,6 +48521,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -47825,6 +48883,7 @@
                                     "confirmation_mismatch",
                                     "session_not_found",
                                     "import_not_found",
+                                    "import_not_waiting",
                                     "dive_not_found",
                                     "dive_changed",
                                     "dive_values_inconsistent",
@@ -48035,6 +49094,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -48404,6 +49464,7 @@
                                   "confirmation_mismatch",
                                   "session_not_found",
                                   "import_not_found",
+                                  "import_not_waiting",
                                   "dive_not_found",
                                   "dive_changed",
                                   "dive_values_inconsistent",
@@ -48613,6 +49674,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -48732,6 +49794,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -49200,6 +50263,7 @@
                                       "confirmation_mismatch",
                                       "session_not_found",
                                       "import_not_found",
+                                      "import_not_waiting",
                                       "dive_not_found",
                                       "dive_changed",
                                       "dive_values_inconsistent",
@@ -49411,6 +50475,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -49530,6 +50595,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -49649,6 +50715,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -49849,6 +50916,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -50216,6 +51284,7 @@
                                   "confirmation_mismatch",
                                   "session_not_found",
                                   "import_not_found",
+                                  "import_not_waiting",
                                   "dive_not_found",
                                   "dive_changed",
                                   "dive_values_inconsistent",
@@ -50425,6 +51494,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -50544,6 +51614,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -50663,6 +51734,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -50863,6 +51935,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -51082,6 +52155,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -51201,6 +52275,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -51320,6 +52395,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -51520,6 +52596,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -51826,6 +52903,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -51945,6 +53023,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -52085,6 +53164,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -52385,6 +53465,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -52576,6 +53657,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
@@ -52720,6 +53802,7 @@
                         "confirmation_mismatch",
                         "session_not_found",
                         "import_not_found",
+                        "import_not_waiting",
                         "dive_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",

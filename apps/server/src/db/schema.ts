@@ -175,7 +175,17 @@ export const original = pgTable(
   (t) => [uniqueIndex('original_user_sha_uq').on(t.userId, t.sha256)],
 );
 
-export const importStatus = pgEnum('import_status', ['pending', 'processing', 'done', 'failed']);
+/**
+ * `awaiting_choice`: the upload is analysed and holds several kinds of dive; nothing is written until the User says which
+ * to import. `cancelled`: the User, or seven days without an answer, ended that wait (ADR 0044).
+ */
+export const importStatus = pgEnum('import_status', ['pending', 'processing', 'done', 'failed', 'awaiting_choice', 'cancelled']);
+
+/** The kinds of dive a User chooses between when an upload holds several (ADR 0044): everything with a gas, and apnea sessions. */
+export const DIVE_KINDS = ['scuba', 'apnea'] as const;
+export type DiveKind = (typeof DIVE_KINDS)[number];
+/** What an upload was found to hold: dives per kind, and the files that are no dive (they are not kept). */
+export type ImportFound = Record<DiveKind, number> & { otherFiles: number };
 
 /**
  * Where a start time's UTC offset came from (ADR 0030): the device recorded it, the time zone at the dive's position, the
@@ -202,8 +212,11 @@ export const OUTCOME_REASONS = [
 ] as const;
 export type OutcomeReason = (typeof OUTCOME_REASONS)[number];
 
-/** Why a whole Import failed; anything unexpected is 'processing_failed', with details in `error`. */
-export const IMPORT_ERROR_CODES = ['unsupported_file', 'processing_failed'] as const;
+/**
+ * Why a whole Import failed; anything unexpected is 'processing_failed', with details in `error`. `choice_expired`: it
+ * waited seven days for the User's choice and its upload was removed (ADR 0044).
+ */
+export const IMPORT_ERROR_CODES = ['unsupported_file', 'processing_failed', 'choice_expired'] as const;
 export type ImportErrorCode = (typeof IMPORT_ERROR_CODES)[number];
 
 export type ImportOutcome = {
@@ -270,6 +283,10 @@ export const importJob = pgTable(
     provider: text('provider'),
     connectionId: uuid('connection_id').references((): AnyPgColumn => connection.id, { onDelete: 'set null' }),
     plan: jsonb('plan').$type<ProviderImportPlan>(),
+    /** An upload, once analysed (ADR 0044): what it holds. */
+    found: jsonb('found').$type<ImportFound>(),
+    /** The kinds of dive the User chose to import; null while nobody was asked (then all of them). */
+    kinds: jsonb('kinds').$type<DiveKind[]>(),
     outcome: jsonb('outcome').$type<ImportOutcome>().notNull().default([]),
     error: text('error'),
     createdAt: createdAt(),

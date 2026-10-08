@@ -2,17 +2,24 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createContext, use, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FileTrigger } from 'react-aria-components';
-import { importsQuery, keys, uploadFile, type ImportView } from './api.ts';
+import { api, importsQuery, keys, unwrap, uploadFile, type ImportView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useErrorText } from './lib/display.ts';
 import { IMPORTABLE, splitImportable } from './lib/importable.ts';
-import { Badge, Button, Muted, Notice, Panel } from './ui/index.ts';
+import { Badge, Button, Checkbox, Muted, Notice, Panel } from './ui/index.ts';
 
 const isRunning = (i: ImportView) => i.status === 'pending' || i.status === 'processing';
+/** Waits for the User to say which kinds of dive to import (ADR 0044). */
+const isWaiting = (i: ImportView) => i.status === 'awaiting_choice';
 const statusTone = (i: ImportView) => {
   if (i.status === 'done') return 'success';
   return i.status === 'failed' ? 'danger' : 'neutral';
 };
+/** The kinds of dive an upload can hold, in the order they are offered. */
+const KINDS = ['scuba', 'apnea'] as const;
+type Kind = (typeof KINDS)[number];
+/** From this many results on, an upload's outcome is counted instead of listed: an account export holds dozens of dives. */
+const LISTED = 5;
 /** Imports shown without "Show all imports". */
 const RECENT = 3;
 
@@ -46,9 +53,11 @@ export function ImportProvider({ children }: { children: ReactNode }) {
   const [skipped, setSkipped] = useState<string[]>([]);
   const [dragging, setDragging] = useState(false);
 
+  // The Imports whose end is announced: those seen running, and those uploaded here (a small one is through before the list is read again).
+  const seenRunning = useRef(new Set<string>());
   const upload = useMutation({
     mutationFn: async (files: File[]) => {
-      for (const file of files) await uploadFile(file);
+      for (const file of files) seenRunning.current.add((await uploadFile(file)).id);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: keys.imports }),
   });
@@ -67,7 +76,6 @@ export function ImportProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!running) void queryClient.invalidateQueries({ queryKey: keys.dives });
   }, [running, queryClient]);
-  const seenRunning = useRef(new Set<string>());
   const describe = useDescribeOutcome();
   useEffect(() => {
     for (const i of imports.data ?? []) {
@@ -166,7 +174,8 @@ export function ImportPanel() {
 export function RecentImports() {
   const { t } = useTranslation();
   const { uploading, uploadingCount, error, skipped } = useImport();
-  const running = (useQuery(importsQuery()).data ?? []).filter(isRunning);
+  // Also an Import that waits for an answer: nothing happens until the User gives it.
+  const running = (useQuery(importsQuery()).data ?? []).filter((i) => isRunning(i) || isWaiting(i));
   if (running.length === 0 && !uploading && !error && skipped.length === 0) return null;
   return (
     <Panel title={t('import.recent')}>
@@ -226,6 +235,8 @@ function useDescribeOutcome() {
   return useCallback((i: ImportView) => {
     if (i.errorCode) return t(`import.errorCode.${i.errorCode}`);
     if (i.provider) return grouped(i).join(', ') || t(`import.status.${i.status}`);
+    if (isWaiting(i)) return t('import.choice.announce');
+    if (i.outcome.length > LISTED) return grouped(i).join(', ');
     return i.outcome.map((o) => t(`import.result.${o.result}`)).join(', ') || t(`import.status.${i.status}`);
   }, [t, grouped]);
 }
@@ -243,8 +254,67 @@ export function ProviderImportSummary({ item }: { item: ImportView }) {
   );
 }
 
+/** What an upload held besides what was imported (ADR 0044): the kinds the User left out, and the files that are no dives. */
+function LeftOut({ item }: { item: ImportView }) {
+  const { t } = useTranslation();
+  const { found, kinds } = item;
+  if (!found || item.status !== 'done') return null;
+  const notChosen = KINDS.filter((k) => kinds && !kinds.includes(k) && found[k] > 0);
+  // One file that is no dive already says so in its own line.
+  const others = item.outcome.some((o) => o.reason === 'not_a_dive') ? 0 : found.otherFiles;
+  if (notChosen.length === 0 && others === 0) return null;
+  return (
+    <Muted>
+      {[...notChosen.map((k) => t(`import.leftOut.${k}`, { count: found[k] })), ...(others > 0 ? [t('import.leftOut.otherFiles', { count: others })] : [])].join(' ')}
+    </Muted>
+  );
+}
+
+/** An upload with several kinds of dive: what it holds, and the User's choice of what to import (ADR 0044). */
+function ImportChoice({ item }: { item: ImportView }) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const queryClient = useQueryClient();
+  const found = item.found!;
+  const offered = KINDS.filter((k) => found[k] > 0);
+  const [chosen, setChosen] = useState<readonly Kind[]>(offered);
+  const onSettled = () => queryClient.invalidateQueries({ queryKey: keys.imports });
+  const start = useMutation({
+    mutationFn: async () => unwrap(await api.POST('/api/imports/{id}/start', { params: { path: { id: item.id } }, body: { kinds: [...chosen] } })),
+    onSettled,
+  });
+  const cancel = useMutation({
+    mutationFn: async () => unwrap(await api.POST('/api/imports/{id}/cancel', { params: { path: { id: item.id } } })),
+    onSuccess: () => announce(t('import.choice.cancelled', { name: item.uploadName })),
+    onSettled,
+  });
+  const error = start.error ?? cancel.error;
+  return (
+    <div className="import-choice" role="group" aria-label={t('import.choice.title', { name: item.uploadName })}>
+      <p>{t('import.choice.question')}</p>
+      {offered.map((k) => (
+        <Checkbox
+          key={k} isSelected={chosen.includes(k)}
+          onChange={(on) => setChosen(KINDS.filter((x) => (x === k ? on : chosen.includes(x))))}
+        >
+          {t(`import.choice.${k}`, { count: found[k] })}
+        </Checkbox>
+      ))}
+      <Muted>{[...(found.otherFiles > 0 ? [t('import.leftOut.otherFiles', { count: found.otherFiles })] : []), t('import.choice.expires')].join(' ')}</Muted>
+      {error !== null && <Notice tone="danger">{errorText(error)}</Notice>}
+      <div className="import-choice-actions">
+        <Button variant="primary" isPending={start.isPending} isDisabled={chosen.length === 0 || cancel.isPending} onPress={() => start.mutate()}>
+          {t('import.choice.start')}
+        </Button>
+        <Button variant="quiet" isPending={cancel.isPending} isDisabled={start.isPending} onPress={() => cancel.mutate()}>{t('import.choice.cancel')}</Button>
+      </div>
+    </div>
+  );
+}
+
 function ImportRow({ item }: { item: ImportView }) {
   const { t } = useTranslation();
+  const grouped = useGroupedOutcome();
   if (item.provider) {
     return (
       <li>
@@ -263,7 +333,9 @@ function ImportRow({ item }: { item: ImportView }) {
           {t(`import.errorCode.${item.errorCode}`)}
         </span>
       )}
-      {item.outcome.map((o, n) => {
+      {isWaiting(item) && item.found && <ImportChoice item={item} />}
+      {item.outcome.length > LISTED && <ul className="import-groups">{grouped(item).map((line) => <li key={line}>{line}</li>)}</ul>}
+      {item.outcome.length <= LISTED && item.outcome.map((o, n) => {
         // A Duplicate candidate decided since the Import says what became of it (UI review A9).
         const decision = o.result === 'duplicate-candidate' && o.decision && o.decision !== 'open' ? o.decision : undefined;
         const result = decision ? t(`import.decision.${decision}`) : t(`import.result.${o.result}`);
@@ -276,6 +348,7 @@ function ImportRow({ item }: { item: ImportView }) {
           </span>
         );
       })}
+      <LeftOut item={item} />
     </li>
   );
 }

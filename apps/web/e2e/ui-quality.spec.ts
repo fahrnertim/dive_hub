@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { dataFile, type PreparedData } from './prepare.ts';
 import {
+  cancelWaitingImports, waitingImport,
   E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectGoodPage, externalDiver, openLine,
   forgetDivers, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences, falseStart, keepFalseStart
 } from './support.ts';
@@ -604,6 +605,25 @@ for (const v of variants) {
       }
     });
 
+    test('an upload that waits for the choice of what to import', { tag: ['@dives'] }, async ({ page, request }) => {
+      await waitingImport(request);
+      try {
+        await page.goto('/');
+        const choice = page.getByRole('group', { name: /account-export\.zip/ });
+        await expect(choice.getByRole('checkbox', { name: v.english ? 'Apnea sessions (1)' : 'Apnoe-Sessions (1)' })).toBeChecked();
+        await expectGoodPage(page, title('Logbook'), v);
+        // Nothing chosen: nothing to import.
+        for (const box of await choice.getByRole('checkbox').all()) await box.uncheck({ force: true });
+        await expect(choice.getByRole('button', { name: v.english ? 'Import' : 'Importieren', exact: true })).toBeDisabled();
+        await expectGoodPage(page, title('Logbook'), v);
+        await page.goto('/#/review?tab=imports');
+        await expect(page.getByRole('group', { name: /account-export\.zip/ })).toBeVisible();
+        await expectGoodPage(page, title('Review'), v);
+      } finally {
+        await cancelWaitingImports(request);
+      }
+    });
+
     test('a dive that is probably no dive, offered for deleting on the Review page', { tag: ['@dives'] }, async ({ page, request }) => {
       await falseStart(request);
       try {
@@ -846,6 +866,38 @@ test.describe('behaviour', () => {
     const imports = page.locator('section.panel').filter({ has: page.getByRole('heading', { name: 'Imports' }) });
     await expect(imports.getByText('main-computer.fit').first()).toBeVisible();
     await expect(imports.getByText('already imported').first()).toBeVisible();
+  });
+
+  test('an upload with several kinds of dive says how many of each it holds and imports the chosen ones', { tag: ['@dives'] }, async ({ page, request }) => {
+    await cancelWaitingImports(request);
+    try {
+      await page.goto('/');
+      await dropFiles(page, [{ name: 'account-export.zip', bytes: [...readFileSync('e2e/fixtures/account-export.zip')] }]);
+      const choice = page.getByRole('group', { name: 'What to import from account-export.zip' });
+      await expect(choice.getByRole('checkbox', { name: 'Scuba dives (1)' })).toBeChecked();
+      await expect(choice.getByRole('checkbox', { name: 'Apnea sessions (1)' })).toBeChecked();
+      await expect(choice.getByText('2 other files are no dives and are not kept.')).toBeVisible();
+      await expect(page.locator('[data-announcer]')).toHaveText('account-export.zip: choose what to import');
+      // It waits: a reload later it still asks.
+      await page.reload();
+      await choice.getByRole('checkbox', { name: 'Apnea sessions (1)' }).uncheck({ force: true });
+      await choice.getByRole('button', { name: 'Import', exact: true }).click();
+      await expect(choice).toHaveCount(0);
+      // The scuba dive is the seeded one, so it is recognised; the rest is named as left out.
+      await page.getByRole('link', { name: 'Imports', exact: true }).click();
+      const row = page.getByRole('listitem').filter({ hasText: 'account-export.zip' }).first();
+      await expect(row.getByText('already imported')).toBeVisible();
+      await expect(row.getByText('1 apnea session was left out by you. 2 other files are no dives and are not kept.')).toBeVisible();
+
+      // Cancelling removes the upload; nothing was imported.
+      await page.goto('/');
+      await dropFiles(page, [{ name: 'account-export.zip', bytes: [...readFileSync('e2e/fixtures/account-export.zip')] }]);
+      await choice.getByRole('button', { name: 'Cancel the import' }).click();
+      await expect(choice).toHaveCount(0);
+      await expect(page.locator('[data-announcer]')).toHaveText('account-export.zip: import cancelled, the upload is removed.');
+    } finally {
+      await cancelWaitingImports(request);
+    }
   });
 
   test('the chosen recording is in the address, so a reload keeps it', { tag: ['@dives'] }, async ({ page, request }) => {

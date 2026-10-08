@@ -34,3 +34,7 @@ in `record`/`session` and `dive_alert` events. Source: SDK profile 21.217.0.
 - A real Descent Mk3 file: USB copy and Export Original are byte-identical; two `dive_summary`
   messages (session and lap); variable 1–3 s sample interval; only an end position. See
   [sample probe](../research/2026-10-02-garmin-descent-sample-probe.md).
+- The account export ("Export Your Data") holds every synced FIT file in a nested zip, dives among sport and health
+  files (`file_id.type` activity vs monitoring and others), byte-identical to the watch's copies; start positions,
+  heart rate and NDL are each optional; an apnea session is one file with a lap and a `dive_summary` per dive. See
+  [full export](../research/2026-10-08-garmin-full-export.md).

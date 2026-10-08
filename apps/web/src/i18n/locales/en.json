@@ -161,7 +161,30 @@
       "pending": "waiting",
       "processing": "processing",
       "done": "done",
-      "failed": "failed"
+      "failed": "failed",
+      "awaiting_choice": "waiting for you",
+      "cancelled": "cancelled"
+    },
+    "choice": {
+      "title": "What to import from {{name}}",
+      "question": "This file holds several kinds of dive. Which do you want to import?",
+      "scuba_one": "Scuba dives ({{count}})",
+      "scuba_other": "Scuba dives ({{count}})",
+      "apnea_one": "Apnea sessions ({{count}})",
+      "apnea_other": "Apnea sessions ({{count}})",
+      "expires": "Nothing is imported until you choose. Without an answer, the upload is removed after 7 days.",
+      "start": "Import",
+      "cancel": "Cancel the import",
+      "announce": "choose what to import",
+      "cancelled": "{{name}}: import cancelled, the upload is removed."
+    },
+    "leftOut": {
+      "scuba_one": "{{count}} scuba dive was left out by you.",
+      "scuba_other": "{{count}} scuba dives were left out by you.",
+      "apnea_one": "{{count}} apnea session was left out by you.",
+      "apnea_other": "{{count}} apnea sessions were left out by you.",
+      "otherFiles_one": "{{count}} other file is no dive and is not kept.",
+      "otherFiles_other": "{{count}} other files are no dives and are not kept."
     },
     "result": {
       "created": "new dive",
@@ -191,7 +214,8 @@
     },
     "errorCode": {
       "unsupported_file": "This is neither a dive file (FIT, Suunto JSON) nor a zip archive.",
-      "processing_failed": "Processing failed."
+      "processing_failed": "Processing failed.",
+      "choice_expired": "Nobody chose what to import within 7 days, so the upload was removed. Upload the file again."
     },
     "skipped": "Skipped {{names}}: only FIT files, Suunto JSON files and zip archives can be imported.",
     "decision": {
@@ -389,6 +413,7 @@
     "confirmation_mismatch": "The e-mail address doesn’t match.",
     "session_not_found": "This session has already ended.",
     "import_not_found": "This Import doesn’t exist.",
+    "import_not_waiting": "This import no longer waits for your choice.",
     "dive_not_found": "This dive doesn’t exist or isn’t yours.",
     "recording_not_found": "This recording doesn’t exist or isn’t yours.",
     "dive_changed": "This dive was changed meanwhile. Reload it and make your changes again.",

@@ -11,6 +11,11 @@ export interface TimeSpan {
 
 export interface CandidateDive extends TimeSpan {
   id: string;
+  /**
+   * The Dive has a Recording from the Device this one comes from. The tolerance is for the clocks of two computers on
+   * one dive; one Device doesn't record a dive twice, so only a real overlap counts (ADR 0044).
+   */
+  sameDevice?: boolean;
 }
 
 export type MatchDecision =
@@ -50,7 +55,7 @@ export function decideMatch(
   dives: CandidateDive[],
   tolerance = OVERLAP_TOLERANCE_SECONDS,
 ): MatchDecision {
-  const inReach = dives.filter((d) => overlaps(recording, d, tolerance));
+  const inReach = dives.filter((d) => overlaps(recording, d, d.sameDevice ? 0 : tolerance));
   // A probable non-dive never attaches by itself (ADR 0030, amended): the User decides beside every Dive in reach.
   if (recording.probablyNoDive && inReach.length > 0) {
     return { kind: 'duplicate-candidate', diveIds: inReach.map((d) => d.id), reason: 'probably_no_dive' };

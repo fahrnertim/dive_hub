@@ -161,7 +161,30 @@
       "pending": "wartet",
       "processing": "wird verarbeitet",
       "done": "fertig",
-      "failed": "fehlgeschlagen"
+      "failed": "fehlgeschlagen",
+      "awaiting_choice": "wartet auf dich",
+      "cancelled": "abgebrochen"
+    },
+    "choice": {
+      "title": "Was aus {{name}} importiert wird",
+      "question": "Diese Datei enthält mehrere Arten von Tauchgängen. Welche möchtest du importieren?",
+      "scuba_one": "Gerätetauchgänge ({{count}})",
+      "scuba_other": "Gerätetauchgänge ({{count}})",
+      "apnea_one": "Apnoe-Sessions ({{count}})",
+      "apnea_other": "Apnoe-Sessions ({{count}})",
+      "expires": "Importiert wird erst, wenn du gewählt hast. Ohne Antwort wird der Upload nach 7 Tagen entfernt.",
+      "start": "Importieren",
+      "cancel": "Import abbrechen",
+      "announce": "wähle aus, was importiert wird",
+      "cancelled": "{{name}}: Import abgebrochen, der Upload ist entfernt."
+    },
+    "leftOut": {
+      "scuba_one": "{{count}} Gerätetauchgang hast du ausgelassen.",
+      "scuba_other": "{{count}} Gerätetauchgänge hast du ausgelassen.",
+      "apnea_one": "{{count}} Apnoe-Session hast du ausgelassen.",
+      "apnea_other": "{{count}} Apnoe-Sessions hast du ausgelassen.",
+      "otherFiles_one": "{{count}} weitere Datei ist kein Tauchgang und wird nicht aufbewahrt.",
+      "otherFiles_other": "{{count}} weitere Dateien sind keine Tauchgänge und werden nicht aufbewahrt."
     },
     "result": {
       "created": "neuer Tauchgang",
@@ -191,7 +214,8 @@
     },
     "errorCode": {
       "unsupported_file": "Das ist weder eine Tauchgangsdatei (FIT, Suunto-JSON) noch ein ZIP-Archiv.",
-      "processing_failed": "Die Verarbeitung ist fehlgeschlagen."
+      "processing_failed": "Die Verarbeitung ist fehlgeschlagen.",
+      "choice_expired": "Innerhalb von 7 Tagen hat niemand ausgewählt, was importiert werden soll. Der Upload wurde deshalb entfernt. Lade die Datei noch einmal hoch."
     },
     "skipped": "Übersprungen: {{names}}. Nur FIT-Dateien, Suunto-JSON-Dateien und ZIP-Archive lassen sich importieren.",
     "decision": {
@@ -389,6 +413,7 @@
     "confirmation_mismatch": "Die E-Mail-Adresse stimmt nicht überein.",
     "session_not_found": "Diese Sitzung ist bereits beendet.",
     "import_not_found": "Diesen Import gibt es nicht.",
+    "import_not_waiting": "Dieser Import wartet nicht mehr auf deine Auswahl.",
     "dive_not_found": "Diesen Tauchgang gibt es nicht oder er gehört nicht dir.",
     "recording_not_found": "Diese Aufzeichnung gibt es nicht oder sie gehört nicht dir.",
     "dive_changed": "Dieser Tauchgang wurde inzwischen geändert. Lade ihn neu und mach deine Änderungen noch einmal.",

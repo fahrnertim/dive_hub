@@ -16,6 +16,15 @@ describe('decideMatch', () => {
     expect(decideMatch(span(3, 40, 18.4), [{ id: 'a', ...span(0, 41, 18) }])).toEqual({ kind: 'attach', diveId: 'a' });
   });
 
+  it('makes a Dive of a Recording that follows another of the same Device within the tolerance', () => {
+    // Seven minutes down, three at the surface, down again: one Device can't have recorded one dive twice.
+    expect(decideMatch(span(10, 4, 6.2), [{ id: 'a', ...span(0, 7, 5.8), sameDevice: true }])).toEqual({ kind: 'create' });
+  });
+
+  it('attaches a Recording to a Dive of the same Device when the two really overlap', () => {
+    expect(decideMatch(span(5, 4, 6.2), [{ id: 'a', ...span(0, 7, 5.8), sameDevice: true }])).toEqual({ kind: 'attach', diveId: 'a' });
+  });
+
   it('asks the User when a Recording spans two Dives (split dive)', () => {
     const decision = decideMatch(span(0, 60, 18), [
       { id: 'a', ...span(0, 25, 18) },

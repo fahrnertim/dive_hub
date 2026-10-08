@@ -6,7 +6,7 @@ import type { Auth } from './auth/auth.js';
 import { requireUser } from './auth/fastify.js';
 import type { Db } from './db/client.js';
 import {
-  IMPORT_ERROR_CODES, OUTCOME_REASONS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive, diveAssessment, diveSite, diver, diverManagement, duplicateCandidate,
+  DIVE_KINDS, IMPORT_ERROR_CODES, OUTCOME_REASONS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive, diveAssessment, diveSite, diver, diverManagement, duplicateCandidate,
   importJob, participant, recording, sampleSeries,
 } from './db/schema.js';
 import { downsampleMinMax } from './dives/downsample.js';
@@ -27,12 +27,21 @@ const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => T
 
 export const ImportView = Type.Object({
   id: Type.String(),
-  status: Type.Union([Type.Literal('pending'), Type.Literal('processing'), Type.Literal('done'), Type.Literal('failed')]),
+  status: Type.Enum(['pending', 'processing', 'done', 'failed', 'awaiting_choice', 'cancelled'], {
+    description: 'awaiting_choice: the upload holds several kinds of dive and nothing is imported until the User starts it with the kinds '
+      + 'to import (ADR 0044); cancelled: the User ended that wait, or nobody answered for seven days (errorCode choice_expired)',
+  }),
   uploadName: Type.String({ description: 'The uploaded file\'s name; for an import from a Provider, the Provider\'s name' }),
   provider: Nullable(Type.String({ description: 'An import of this Provider\'s dives (ADR 0030); null for an upload' })),
   createdAt: DateTime,
   finishedAt: Nullable(DateTime),
-  errorCode: Nullable(Type.Enum([...IMPORT_ERROR_CODES], { description: 'Why the Import failed; clients translate it. The detail stays in the server log' })),
+  errorCode: Nullable(Type.Enum([...IMPORT_ERROR_CODES], { description: 'Why the Import failed or ended; clients translate it. The detail stays in the server log' })),
+  found: Nullable(Type.Object({
+    scuba: Type.Integer({ description: 'Dives with a gas: open circuit, rebreather, gauge' }),
+    apnea: Type.Integer({ description: 'Apnea sessions' }),
+    otherFiles: Type.Integer({ description: 'Files that are no dive (other sports, health data, anything else); they are not kept' }),
+  }, { description: 'What an upload holds, once it is analysed (ADR 0044); null before, and for an import from a Provider' })),
+  kinds: Nullable(Type.Array(Type.Enum([...DIVE_KINDS]), { description: 'The kinds of dive the User chose to import; null when nobody was asked (all were imported)' })),
   outcome: Type.Array(Type.Object({
     fileName: Type.String(),
     result: Type.Enum(['created', 'attached', 'linked', 'updated', 'unchanged', 'duplicate-candidate', 'skipped', 'failed'], {
@@ -144,7 +153,8 @@ export const toImportView = (j: typeof importJob.$inferSelect): Static<typeof Im
   id: j.id, status: j.status, uploadName: j.uploadName, provider: j.provider, createdAt: j.createdAt.toISOString(),
   // A parser's own words (English, internals) stay in the database and the server log (client contract §6).
   finishedAt: iso(j.finishedAt), outcome: j.outcome.map(({ message: _detail, ...o }) => o),
-  errorCode: j.error === null ? null : j.error === 'unsupported_file' ? 'unsupported_file' : 'processing_failed',
+  errorCode: j.error === null ? null : j.error === 'unsupported_file' || j.error === 'choice_expired' ? j.error : 'processing_failed',
+  found: j.found, kinds: j.kinds,
 });
 /**
  * An Import's outcome is stored once; a Duplicate candidate is decided later. Adds the current
@@ -262,6 +272,28 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
     const [row] = await db.select().from(importJob)
       .where(and(eq(importJob.id, request.params.id), eq(importJob.userId, userId(request))));
     return row ? (await withDecisions(db, [row]))[0]! : reply.code(404).send(problem('import_not_found'));
+  });
+
+  app.post('/imports/:id/start', {
+    schema: {
+      summary: 'Start an Import that waits for a choice: import these kinds of dive, leave the others out (ADR 0044)',
+      params: IdParams,
+      body: Type.Object({ kinds: Type.Array(Type.Enum([...DIVE_KINDS]), { minItems: 1, maxItems: DIVE_KINDS.length, uniqueItems: true }) }),
+      response: { 202: ImportView, 409: Problem },
+    },
+  }, async (request, reply) => {
+    const started = await imports.startImport(userId(request), request.params.id, request.body.kinds);
+    return started ? reply.code(202).send(toImportView(started)) : reply.code(409).send(problem('import_not_waiting'));
+  });
+
+  app.post('/imports/:id/cancel', {
+    schema: {
+      summary: 'Cancel an Import that waits for a choice: its upload is removed, nothing was imported (ADR 0044)',
+      params: IdParams, response: { 200: ImportView, 409: Problem },
+    },
+  }, async (request, reply) => {
+    const cancelled = await imports.cancelImport(userId(request), request.params.id);
+    return cancelled ? toImportView(cancelled) : reply.code(409).send(problem('import_not_waiting'));
   });
 
   /** What the list shows and in which order: the Diver, search and filters, shared by the page and a Dive's neighbours (ADR 0042). */
