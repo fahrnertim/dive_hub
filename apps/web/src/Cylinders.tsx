@@ -1,15 +1,15 @@
 // A Dive's Cylinders (ADR 0045): on the dive page as lines of text, and in the Dive's form as a group of fields each,
-// typed, filled from the cylinder catalogue or copied from the last dive.
-import { useMutation, useQuery } from '@tanstack/react-query';
+// typed, filled from the cylinder catalogue or copied from the last dive (the Dive's form does that, with suit and lead).
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { api, cylinderCatalogueQuery, unwrap, type DiveView } from './api.ts';
+import { cylinderCatalogueQuery, type DiveView } from './api.ts';
 import {
-  emptyDraft, fromCatalogue, fromLastDive, isBlank, type CatalogueCylinder, type CylinderDraft, type CylinderMaterial, type CylinderView,
+  emptyDraft, fromCatalogue, type CatalogueCylinder, type CylinderDraft, type CylinderMaterial, type CylinderView,
 } from './lib/cylinders.ts';
 import { deviceName } from './lib/devices.ts';
-import { useDisplay, useErrorText } from './lib/display.ts';
+import { useDisplay } from './lib/display.ts';
 import { mixName } from './lib/logbook.ts';
-import { Badge, Button, Muted, Notice, NumberField, Select } from './ui/index.ts';
+import { Badge, Button, Muted, NumberField, Select } from './ui/index.ts';
 
 const MATERIALS: CylinderMaterial[] = ['aluminium', 'steel', 'carbon'];
 const PRESSURE_CHANNEL = /^tankPressure(?::(\d+))?$/;
@@ -79,14 +79,9 @@ export function CylinderFields({ dive: d, drafts, onChange, autoFocus }: {
 }) {
   const { t } = useTranslation();
   const display = useDisplay();
-  const errorText = useErrorText();
   const problem = useCylinderProblem();
   const { units } = display;
   const catalogue = useQuery(cylinderCatalogueQuery());
-  const last = useMutation({
-    mutationFn: async () => unwrap(await api.GET('/api/dives/{id}/same-as-last', { params: { path: { id: d.id } } })),
-    onSuccess: (found) => { if (found.cylinders.length > 0) onChange(fromLastDive(found.cylinders, units)); },
-  });
 
   const entryName = (c: CatalogueCylinder) => {
     const pressure = display.pressure(c.workingPressureBar);
@@ -104,7 +99,6 @@ export function CylinderFields({ dive: d, drafts, onChange, autoFocus }: {
       label: channels.length > 1 ? t('cylinders.podN', { n: i + 1, device }) : t('cylinders.pod', { device }),
     }));
   });
-  const untyped = drafts.every(isBlank);
   const set = (key: string, change: Partial<CylinderDraft>) => onChange(drafts.map((c) => (c.key === key ? { ...c, ...change } : c)));
 
   return (
@@ -161,11 +155,7 @@ export function CylinderFields({ dive: d, drafts, onChange, autoFocus }: {
       })}
       <div className="form-actions">
         <Button icon="add" onPress={() => onChange([...drafts, emptyDraft()])}>{t('cylinders.add')}</Button>
-        {/* Copies into the form only: nothing is saved until the User saves (ADR 0031). Offered while there is nothing to lose. */}
-        {untyped && <Button isPending={last.isPending} onPress={() => last.mutate()}>{t('cylinders.sameAsLast')}</Button>}
       </div>
-      {untyped && last.data?.cylinders.length === 0 && <Muted>{t('cylinders.lastHasNone')}</Muted>}
-      {last.error && <Notice tone="danger">{errorText(last.error)}</Notice>}
     </div>
   );
 }

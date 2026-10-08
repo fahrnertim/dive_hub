@@ -366,6 +366,19 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   until the User saves. A tank under the profile whose series a Cylinder is tied to takes the Cylinder's gas, size and
   pressures. The history's change `cylinders` carries the list before and after.
   *Web:* `Cylinders.tsx`, `lib/cylinders.ts`, `lib/tanks.ts`.
+- **Lead, weighting feedback and exposure suit** ([ADR 0031](../decisions/0031-lead-suit-cylinders-and-lead-estimate.md#slice-a-as-built-the-dives-values)):
+  show a Dive's `lead` (its entries with where each was carried, and `leadTotalKg`; **no entries is unknown, a total of 0
+  is "no lead"**: say the two apart), its `weightingFeedback` (`felt`, with `amountKg` where given) and its `suit`
+  (type, thickness, hood, undergarment; the type `none` is a dive without a suit, `null` is unknown). Lead and the
+  feedback's amount in kg, or lb for imperial (one decimal); a suit's thickness in mm in both systems. Editing sends
+  them with the Dive's edit (`lead` as the whole list, `weightingFeedback` and `suit` as an object or `null`); send back
+  an amount the User didn't touch as it came, not as the form rounded it. Offer a thickness only for a wetsuit or a
+  semidry suit, an undergarment only for a drysuit, and "by how much" only for weighting that was too heavy or too
+  light: the API refuses the others (`suit_invalid`, `weighting_feedback_invalid`). Nothing is required and nothing is
+  prefilled. "Same as last dive" (`GET /dives/{id}/same-as-last`) also answers `lead` and `suit`, never the feedback:
+  fill only what the form has none of, and save nothing until the User saves. The history's changes `lead`,
+  `weightingFeedback` and `suit` carry the value before and after.
+  *Web:* `Weighting.tsx`, `lib/weighting.ts`.
 - **SAC on this dive** ([ADR 0045](../decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md)): show the Dive's
   `sac.litresPerMinute` (L/min, one decimal, in both unit systems) with its Cylinders, and `sac.barPerMinute` beside it
   when it is not `null` (bar/min with one decimal, or psi/min whole). Don't compute it yourself: the server counts

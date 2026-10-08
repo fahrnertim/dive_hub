@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { diversQuery, revisionsQuery, type DiveView, type RevisionView } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { useCylinderText } from './Cylinders.tsx';
+import { useWeightingText } from './Weighting.tsx';
+import type { LeadEntry, Suit, WeightingFeedback } from './lib/weighting.ts';
 import type { CylinderView } from './lib/cylinders.ts';
 import { deviceName } from './lib/devices.ts';
 import { useFormatValue, type HistoryField } from './lib/dive-values.ts';
@@ -63,6 +65,7 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
   const who = r.actor.type === 'system' ? t('history.by.system')
     : r.actor.name ? t(`history.by.${r.actor.type}`, { name: r.actor.name }) : t('history.by.unknown');
   const cylinderText = useCylinderText();
+  const weightingText = useWeightingText();
   const overrides = r.changes.overrides as { from: HistoryField[]; to: HistoryField[] } | undefined;
   const recordingName = (id: unknown) => {
     const n = dive.recordings.findIndex((rec) => rec.id === id);
@@ -97,6 +100,13 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
       const list = (to ?? []) as CylinderView[];
       return [list.length > 0 ? t('history.cylindersSet', { list: list.map(cylinderText).join('; ') }) : t('history.cylindersRemoved')];
     }
+    // Lead, how the weighting felt and the suit as they were set (ADR 0031).
+    if (key === 'lead') {
+      const entries = (to ?? []) as LeadEntry[];
+      return [entries.length > 0 ? t('history.leadSet', { value: weightingText.lead(entries) }) : t('history.leadRemoved')];
+    }
+    if (key === 'weightingFeedback') return [to ? t('history.weightingSet', { value: weightingText.feedback(to as WeightingFeedback) }) : t('history.weightingRemoved')];
+    if (key === 'suit') return [to ? t('history.suitSet', { value: weightingText.suit(to as Suit) }) : t('history.suitRemoved')];
     if (key === 'participants') {
       // Who came onto the Dive, who left it, and whose role changed (ADR 0028); names as they were then.
       type P = { diverId: string; name: string; role: 'buddy' | 'guide' | 'instructor' };

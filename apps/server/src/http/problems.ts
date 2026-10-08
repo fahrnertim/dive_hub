@@ -28,6 +28,8 @@ export const PROBLEMS = {
   dive_not_found: 'Dive not found',
   cylinder_invalid: 'A cylinder’s values don’t fit: an end pressure above the start, a gas over 100 %, or one pressure series on two cylinders',
   cylinder_series_not_found: 'The dive’s recordings have no such tank pressure series',
+  weighting_feedback_invalid: 'Weighting that felt right has no amount; an amount says by how much it was too heavy or too light',
+  suit_invalid: 'The suit’s values don’t fit: a thickness is for a wetsuit or a semidry suit, an undergarment for a drysuit',
   dive_changed: 'The dive was changed meanwhile; reload it and apply your changes again',
   dive_values_inconsistent: 'The average depth is deeper than the max depth',
   recording_not_on_dive: 'This recording does not belong to the dive',

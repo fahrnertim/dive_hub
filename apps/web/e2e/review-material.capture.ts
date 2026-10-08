@@ -148,6 +148,29 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('button', { name: 'Edit dive' }).click(); await page.getByRole('group', { name: /Cylinder 1/ }).waitFor();
     await capture(page, '03i-dive-cylinders-form-phone', { aria: false });
     await page.getByRole('button', { name: 'Cancel' }).click();
+    // Suit, lead and how the weighting felt (ADR 0031): as facts and in the Dive's form, phone first, then desktop.
+    {
+      const id = await tankPodDive(request);
+      const { version } = (await (await request.get(`/api/dives/${id}`)).json()) as { version: number };
+      await request.patch(`/api/dives/${id}`, {
+        data: {
+          version, lead: [{ amountKg: 6, placement: 'belt' }, { amountKg: 2, placement: 'trim' }], weightingFeedback: { felt: 'too_heavy', amountKg: 1 },
+          suit: { type: 'wetsuit', thicknessMm: 7, hood: true },
+        },
+        headers,
+      });
+      await page.reload(); await page.getByRole('definition').filter({ hasText: '8 kg (6 kg on a belt, 2 kg trim)' }).waitFor();
+      await capture(page, '03j-dive-suit-and-lead-phone', { aria: false });
+      await page.getByRole('button', { name: 'Edit dive' }).click(); await page.getByRole('textbox', { name: 'Lead 1' }).scrollIntoViewIfNeeded();
+      await capture(page, '03k-dive-suit-and-lead-form-phone', { aria: false });
+      await page.getByRole('button', { name: 'Cancel' }).click();
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await capture(page, '03j-dive-suit-and-lead');
+      await page.getByRole('button', { name: 'Edit dive' }).click(); await page.getByRole('textbox', { name: 'Lead 1' }).scrollIntoViewIfNeeded();
+      await capture(page, '03k-dive-suit-and-lead-form');
+      await page.getByRole('button', { name: 'Cancel' }).click();
+      await page.setViewportSize({ width: 390, height: 844 });
+    }
     await page.setViewportSize({ width: 1280, height: 900 });
   }
   if (want('divers')) {

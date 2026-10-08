@@ -268,6 +268,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -390,6 +392,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -562,6 +566,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -777,6 +783,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -899,6 +907,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -1477,6 +1487,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -1620,6 +1632,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -1787,6 +1801,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -1996,6 +2012,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -2225,6 +2243,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -2512,6 +2532,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -2634,6 +2656,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -2756,6 +2780,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -2917,6 +2943,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -3039,6 +3067,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -3161,6 +3191,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -3354,6 +3386,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -3476,6 +3510,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -3598,6 +3634,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -3791,6 +3829,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -3913,6 +3953,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -4035,6 +4077,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -4178,6 +4222,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -4300,6 +4346,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -4422,6 +4470,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -4586,6 +4636,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -4708,6 +4760,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -4830,6 +4884,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -5159,6 +5215,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -5281,6 +5339,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -5829,6 +5889,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -6196,6 +6258,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -6536,6 +6600,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -7256,6 +7322,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -7463,6 +7531,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -7588,6 +7658,10 @@
                     "position",
                     "recordings",
                     "cylinders",
+                    "lead",
+                    "leadTotalKg",
+                    "weightingFeedback",
+                    "suit",
                     "sac",
                     "sacMissing",
                     "participants",
@@ -8299,6 +8373,156 @@
                       },
                       "description": "The Dive's Cylinders in their order (ADR 0045)"
                     },
+                    "lead": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "amountKg",
+                          "placement"
+                        ],
+                        "properties": {
+                          "amountKg": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 60,
+                            "description": "In kilograms; 0 as the only entry means no lead"
+                          },
+                          "placement": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "enum": [
+                                  "belt",
+                                  "integrated",
+                                  "trim",
+                                  "ankle",
+                                  "backplate",
+                                  "other"
+                                ],
+                                "description": "Where it was carried; null when not given"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "The Lead the Dive was dived with, as placed entries in their order (ADR 0031); none means unknown"
+                    },
+                    "leadTotalKg": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number",
+                          "description": "The sum of the Lead entries; null when there are none (unknown), 0 for a Dive without lead"
+                        }
+                      ]
+                    },
+                    "weightingFeedback": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "felt",
+                            "amountKg"
+                          ],
+                          "properties": {
+                            "felt": {
+                              "enum": [
+                                "right",
+                                "too_heavy",
+                                "too_light"
+                              ],
+                              "description": "How the weighting felt"
+                            },
+                            "amountKg": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 30,
+                                  "description": "By how many kilograms it was too heavy or too light, where the User said"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "How the weighting felt on this Dive (ADR 0031); null when nothing was said"
+                        }
+                      ]
+                    },
+                    "suit": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "type",
+                            "thicknessMm",
+                            "hood",
+                            "undergarment"
+                          ],
+                          "properties": {
+                            "type": {
+                              "enum": [
+                                "none",
+                                "skin",
+                                "wetsuit",
+                                "semidry",
+                                "drysuit"
+                              ],
+                              "description": "`none` is a dive without a suit"
+                            },
+                            "thicknessMm": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 20,
+                                  "description": "For a wetsuit or a semidry suit"
+                                }
+                              ]
+                            },
+                            "hood": {
+                              "type": [
+                                "boolean",
+                                "null"
+                              ],
+                              "description": "Whether a hood was worn; null when not said"
+                            },
+                            "undergarment": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "enum": [
+                                    "light",
+                                    "medium",
+                                    "heavy"
+                                  ],
+                                  "description": "Under a drysuit"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "The exposure suit (ADR 0031); null when unknown"
+                        }
+                      ]
+                    },
                     "sac": {
                       "anyOf": [
                         {
@@ -8500,6 +8724,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -8853,6 +9079,144 @@
                     },
                     "maxItems": 12,
                     "description": "The Dive's Cylinders as one list, replacing the ones it has; a value left out is unknown. 400 cylinder_invalid for an end pressure above the start, a gas over 100 % or a series twice; 400 cylinder_series_not_found for a series the Dive's Recordings don't have"
+                  },
+                  "lead": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "amountKg"
+                      ],
+                      "properties": {
+                        "amountKg": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 60,
+                          "description": "In kilograms; 0 as the only entry means no lead"
+                        },
+                        "placement": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "enum": [
+                                "belt",
+                                "integrated",
+                                "trim",
+                                "ankle",
+                                "backplate",
+                                "other"
+                              ],
+                              "description": "Where it was carried; null when not given"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "maxItems": 8,
+                    "description": "The Dive's Lead as one list of entries, replacing the ones it has; an empty list means unknown, one entry of 0 no lead"
+                  },
+                  "weightingFeedback": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "felt"
+                        ],
+                        "properties": {
+                          "felt": {
+                            "enum": [
+                              "right",
+                              "too_heavy",
+                              "too_light"
+                            ],
+                            "description": "How the weighting felt"
+                          },
+                          "amountKg": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "maximum": 30,
+                                "description": "By how many kilograms it was too heavy or too light, where the User said"
+                              }
+                            ]
+                          }
+                        },
+                        "additionalProperties": false,
+                        "description": "How the weighting felt, or null for nothing said. 400 weighting_feedback_invalid for an amount with `right`"
+                      }
+                    ]
+                  },
+                  "suit": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "type"
+                        ],
+                        "properties": {
+                          "type": {
+                            "enum": [
+                              "none",
+                              "skin",
+                              "wetsuit",
+                              "semidry",
+                              "drysuit"
+                            ],
+                            "description": "`none` is a dive without a suit"
+                          },
+                          "thicknessMm": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "maximum": 20,
+                                "description": "For a wetsuit or a semidry suit"
+                              }
+                            ]
+                          },
+                          "hood": {
+                            "type": [
+                              "boolean",
+                              "null"
+                            ],
+                            "description": "Whether a hood was worn; null when not said"
+                          },
+                          "undergarment": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "enum": [
+                                  "light",
+                                  "medium",
+                                  "heavy"
+                                ],
+                                "description": "Under a drysuit"
+                              }
+                            ]
+                          }
+                        },
+                        "additionalProperties": false,
+                        "description": "The exposure suit, or null for unknown; a value left out is unknown. 400 suit_invalid for a thickness on anything but a wetsuit or a semidry suit, or an undergarment under anything but a drysuit"
+                      }
+                    ]
                   }
                 }
               }
@@ -8893,6 +9257,10 @@
                     "position",
                     "recordings",
                     "cylinders",
+                    "lead",
+                    "leadTotalKg",
+                    "weightingFeedback",
+                    "suit",
                     "sac",
                     "sacMissing",
                     "participants",
@@ -9604,6 +9972,156 @@
                       },
                       "description": "The Dive's Cylinders in their order (ADR 0045)"
                     },
+                    "lead": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "amountKg",
+                          "placement"
+                        ],
+                        "properties": {
+                          "amountKg": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 60,
+                            "description": "In kilograms; 0 as the only entry means no lead"
+                          },
+                          "placement": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "enum": [
+                                  "belt",
+                                  "integrated",
+                                  "trim",
+                                  "ankle",
+                                  "backplate",
+                                  "other"
+                                ],
+                                "description": "Where it was carried; null when not given"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "The Lead the Dive was dived with, as placed entries in their order (ADR 0031); none means unknown"
+                    },
+                    "leadTotalKg": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number",
+                          "description": "The sum of the Lead entries; null when there are none (unknown), 0 for a Dive without lead"
+                        }
+                      ]
+                    },
+                    "weightingFeedback": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "felt",
+                            "amountKg"
+                          ],
+                          "properties": {
+                            "felt": {
+                              "enum": [
+                                "right",
+                                "too_heavy",
+                                "too_light"
+                              ],
+                              "description": "How the weighting felt"
+                            },
+                            "amountKg": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 30,
+                                  "description": "By how many kilograms it was too heavy or too light, where the User said"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "How the weighting felt on this Dive (ADR 0031); null when nothing was said"
+                        }
+                      ]
+                    },
+                    "suit": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "type",
+                            "thicknessMm",
+                            "hood",
+                            "undergarment"
+                          ],
+                          "properties": {
+                            "type": {
+                              "enum": [
+                                "none",
+                                "skin",
+                                "wetsuit",
+                                "semidry",
+                                "drysuit"
+                              ],
+                              "description": "`none` is a dive without a suit"
+                            },
+                            "thicknessMm": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 20,
+                                  "description": "For a wetsuit or a semidry suit"
+                                }
+                              ]
+                            },
+                            "hood": {
+                              "type": [
+                                "boolean",
+                                "null"
+                              ],
+                              "description": "Whether a hood was worn; null when not said"
+                            },
+                            "undergarment": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "enum": [
+                                    "light",
+                                    "medium",
+                                    "heavy"
+                                  ],
+                                  "description": "Under a drysuit"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "The exposure suit (ADR 0031); null when unknown"
+                        }
+                      ]
+                    },
                     "sac": {
                       "anyOf": [
                         {
@@ -9805,6 +10323,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -9927,6 +10447,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -10049,6 +10571,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -10251,6 +10775,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -10396,6 +10922,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -10518,6 +11046,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -10663,6 +11193,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -10839,7 +11371,7 @@
     "/api/dives/{id}/same-as-last": {
       "get": {
         "summary": "\"Same as last dive\": what the Diver's previous Dive had, to put into this Dive's form",
-        "description": "The Cylinders of the Diver's Dive before this one by start time, without their pressures and their series (ADR 0031, 0045). Nothing is changed: the client fills its form and the User saves (docs/spec/clients.md). `diveId` is null for a Diver's first Dive.",
+        "description": "What the Diver's Dive before this one by start time had: its Cylinders without their pressures and their series, its Lead and its exposure suit; not how the weighting felt (ADR 0031, 0045). Nothing is changed: the client fills its form and the User saves (docs/spec/clients.md). `diveId` is null for a Diver's first Dive.",
         "parameters": [
           {
             "schema": {
@@ -10860,7 +11392,9 @@
                   "type": "object",
                   "required": [
                     "diveId",
-                    "cylinders"
+                    "cylinders",
+                    "lead",
+                    "suit"
                   ],
                   "properties": {
                     "diveId": {
@@ -10954,6 +11488,105 @@
                           }
                         }
                       }
+                    },
+                    "lead": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "amountKg",
+                          "placement"
+                        ],
+                        "properties": {
+                          "amountKg": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 60,
+                            "description": "In kilograms; 0 as the only entry means no lead"
+                          },
+                          "placement": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "enum": [
+                                  "belt",
+                                  "integrated",
+                                  "trim",
+                                  "ankle",
+                                  "backplate",
+                                  "other"
+                                ],
+                                "description": "Where it was carried; null when not given"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "suit": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "type",
+                            "thicknessMm",
+                            "hood",
+                            "undergarment"
+                          ],
+                          "properties": {
+                            "type": {
+                              "enum": [
+                                "none",
+                                "skin",
+                                "wetsuit",
+                                "semidry",
+                                "drysuit"
+                              ],
+                              "description": "`none` is a dive without a suit"
+                            },
+                            "thicknessMm": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 20,
+                                  "description": "For a wetsuit or a semidry suit"
+                                }
+                              ]
+                            },
+                            "hood": {
+                              "type": [
+                                "boolean",
+                                "null"
+                              ],
+                              "description": "Whether a hood was worn; null when not said"
+                            },
+                            "undergarment": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "enum": [
+                                    "light",
+                                    "medium",
+                                    "heavy"
+                                  ],
+                                  "description": "Under a drysuit"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
                     }
                   }
                 }
@@ -10997,6 +11630,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -11169,6 +11804,10 @@
                     "position",
                     "recordings",
                     "cylinders",
+                    "lead",
+                    "leadTotalKg",
+                    "weightingFeedback",
+                    "suit",
                     "sac",
                     "sacMissing",
                     "participants",
@@ -11880,6 +12519,156 @@
                       },
                       "description": "The Dive's Cylinders in their order (ADR 0045)"
                     },
+                    "lead": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "amountKg",
+                          "placement"
+                        ],
+                        "properties": {
+                          "amountKg": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 60,
+                            "description": "In kilograms; 0 as the only entry means no lead"
+                          },
+                          "placement": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "enum": [
+                                  "belt",
+                                  "integrated",
+                                  "trim",
+                                  "ankle",
+                                  "backplate",
+                                  "other"
+                                ],
+                                "description": "Where it was carried; null when not given"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "The Lead the Dive was dived with, as placed entries in their order (ADR 0031); none means unknown"
+                    },
+                    "leadTotalKg": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number",
+                          "description": "The sum of the Lead entries; null when there are none (unknown), 0 for a Dive without lead"
+                        }
+                      ]
+                    },
+                    "weightingFeedback": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "felt",
+                            "amountKg"
+                          ],
+                          "properties": {
+                            "felt": {
+                              "enum": [
+                                "right",
+                                "too_heavy",
+                                "too_light"
+                              ],
+                              "description": "How the weighting felt"
+                            },
+                            "amountKg": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 30,
+                                  "description": "By how many kilograms it was too heavy or too light, where the User said"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "How the weighting felt on this Dive (ADR 0031); null when nothing was said"
+                        }
+                      ]
+                    },
+                    "suit": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "type",
+                            "thicknessMm",
+                            "hood",
+                            "undergarment"
+                          ],
+                          "properties": {
+                            "type": {
+                              "enum": [
+                                "none",
+                                "skin",
+                                "wetsuit",
+                                "semidry",
+                                "drysuit"
+                              ],
+                              "description": "`none` is a dive without a suit"
+                            },
+                            "thicknessMm": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 20,
+                                  "description": "For a wetsuit or a semidry suit"
+                                }
+                              ]
+                            },
+                            "hood": {
+                              "type": [
+                                "boolean",
+                                "null"
+                              ],
+                              "description": "Whether a hood was worn; null when not said"
+                            },
+                            "undergarment": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "enum": [
+                                    "light",
+                                    "medium",
+                                    "heavy"
+                                  ],
+                                  "description": "Under a drysuit"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "The exposure suit (ADR 0031); null when unknown"
+                        }
+                      ]
+                    },
                     "sac": {
                       "anyOf": [
                         {
@@ -12081,6 +12870,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -12203,6 +12994,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -12325,6 +13118,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -12473,6 +13268,10 @@
                     "position",
                     "recordings",
                     "cylinders",
+                    "lead",
+                    "leadTotalKg",
+                    "weightingFeedback",
+                    "suit",
                     "sac",
                     "sacMissing",
                     "participants",
@@ -13184,6 +13983,156 @@
                       },
                       "description": "The Dive's Cylinders in their order (ADR 0045)"
                     },
+                    "lead": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "amountKg",
+                          "placement"
+                        ],
+                        "properties": {
+                          "amountKg": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 60,
+                            "description": "In kilograms; 0 as the only entry means no lead"
+                          },
+                          "placement": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "enum": [
+                                  "belt",
+                                  "integrated",
+                                  "trim",
+                                  "ankle",
+                                  "backplate",
+                                  "other"
+                                ],
+                                "description": "Where it was carried; null when not given"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "The Lead the Dive was dived with, as placed entries in their order (ADR 0031); none means unknown"
+                    },
+                    "leadTotalKg": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number",
+                          "description": "The sum of the Lead entries; null when there are none (unknown), 0 for a Dive without lead"
+                        }
+                      ]
+                    },
+                    "weightingFeedback": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "felt",
+                            "amountKg"
+                          ],
+                          "properties": {
+                            "felt": {
+                              "enum": [
+                                "right",
+                                "too_heavy",
+                                "too_light"
+                              ],
+                              "description": "How the weighting felt"
+                            },
+                            "amountKg": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 30,
+                                  "description": "By how many kilograms it was too heavy or too light, where the User said"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "How the weighting felt on this Dive (ADR 0031); null when nothing was said"
+                        }
+                      ]
+                    },
+                    "suit": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "type",
+                            "thicknessMm",
+                            "hood",
+                            "undergarment"
+                          ],
+                          "properties": {
+                            "type": {
+                              "enum": [
+                                "none",
+                                "skin",
+                                "wetsuit",
+                                "semidry",
+                                "drysuit"
+                              ],
+                              "description": "`none` is a dive without a suit"
+                            },
+                            "thicknessMm": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 20,
+                                  "description": "For a wetsuit or a semidry suit"
+                                }
+                              ]
+                            },
+                            "hood": {
+                              "type": [
+                                "boolean",
+                                "null"
+                              ],
+                              "description": "Whether a hood was worn; null when not said"
+                            },
+                            "undergarment": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "enum": [
+                                    "light",
+                                    "medium",
+                                    "heavy"
+                                  ],
+                                  "description": "Under a drysuit"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "The exposure suit (ADR 0031); null when unknown"
+                        }
+                      ]
+                    },
                     "sac": {
                       "anyOf": [
                         {
@@ -13385,6 +14334,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -13507,6 +14458,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -13629,6 +14582,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -13778,6 +14733,10 @@
                     "position",
                     "recordings",
                     "cylinders",
+                    "lead",
+                    "leadTotalKg",
+                    "weightingFeedback",
+                    "suit",
                     "sac",
                     "sacMissing",
                     "participants",
@@ -14489,6 +15448,156 @@
                       },
                       "description": "The Dive's Cylinders in their order (ADR 0045)"
                     },
+                    "lead": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "amountKg",
+                          "placement"
+                        ],
+                        "properties": {
+                          "amountKg": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 60,
+                            "description": "In kilograms; 0 as the only entry means no lead"
+                          },
+                          "placement": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "enum": [
+                                  "belt",
+                                  "integrated",
+                                  "trim",
+                                  "ankle",
+                                  "backplate",
+                                  "other"
+                                ],
+                                "description": "Where it was carried; null when not given"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "The Lead the Dive was dived with, as placed entries in their order (ADR 0031); none means unknown"
+                    },
+                    "leadTotalKg": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number",
+                          "description": "The sum of the Lead entries; null when there are none (unknown), 0 for a Dive without lead"
+                        }
+                      ]
+                    },
+                    "weightingFeedback": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "felt",
+                            "amountKg"
+                          ],
+                          "properties": {
+                            "felt": {
+                              "enum": [
+                                "right",
+                                "too_heavy",
+                                "too_light"
+                              ],
+                              "description": "How the weighting felt"
+                            },
+                            "amountKg": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 30,
+                                  "description": "By how many kilograms it was too heavy or too light, where the User said"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "How the weighting felt on this Dive (ADR 0031); null when nothing was said"
+                        }
+                      ]
+                    },
+                    "suit": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "type",
+                            "thicknessMm",
+                            "hood",
+                            "undergarment"
+                          ],
+                          "properties": {
+                            "type": {
+                              "enum": [
+                                "none",
+                                "skin",
+                                "wetsuit",
+                                "semidry",
+                                "drysuit"
+                              ],
+                              "description": "`none` is a dive without a suit"
+                            },
+                            "thicknessMm": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 20,
+                                  "description": "For a wetsuit or a semidry suit"
+                                }
+                              ]
+                            },
+                            "hood": {
+                              "type": [
+                                "boolean",
+                                "null"
+                              ],
+                              "description": "Whether a hood was worn; null when not said"
+                            },
+                            "undergarment": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "enum": [
+                                    "light",
+                                    "medium",
+                                    "heavy"
+                                  ],
+                                  "description": "Under a drysuit"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "The exposure suit (ADR 0031); null when unknown"
+                        }
+                      ]
+                    },
                     "sac": {
                       "anyOf": [
                         {
@@ -14690,6 +15799,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -14812,6 +15923,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -15143,6 +16256,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -15704,6 +16819,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -15826,6 +16943,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -15987,6 +17106,10 @@
                     "position",
                     "recordings",
                     "cylinders",
+                    "lead",
+                    "leadTotalKg",
+                    "weightingFeedback",
+                    "suit",
                     "sac",
                     "sacMissing",
                     "participants",
@@ -16698,6 +17821,156 @@
                       },
                       "description": "The Dive's Cylinders in their order (ADR 0045)"
                     },
+                    "lead": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "amountKg",
+                          "placement"
+                        ],
+                        "properties": {
+                          "amountKg": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 60,
+                            "description": "In kilograms; 0 as the only entry means no lead"
+                          },
+                          "placement": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "enum": [
+                                  "belt",
+                                  "integrated",
+                                  "trim",
+                                  "ankle",
+                                  "backplate",
+                                  "other"
+                                ],
+                                "description": "Where it was carried; null when not given"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "The Lead the Dive was dived with, as placed entries in their order (ADR 0031); none means unknown"
+                    },
+                    "leadTotalKg": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number",
+                          "description": "The sum of the Lead entries; null when there are none (unknown), 0 for a Dive without lead"
+                        }
+                      ]
+                    },
+                    "weightingFeedback": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "felt",
+                            "amountKg"
+                          ],
+                          "properties": {
+                            "felt": {
+                              "enum": [
+                                "right",
+                                "too_heavy",
+                                "too_light"
+                              ],
+                              "description": "How the weighting felt"
+                            },
+                            "amountKg": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 30,
+                                  "description": "By how many kilograms it was too heavy or too light, where the User said"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "How the weighting felt on this Dive (ADR 0031); null when nothing was said"
+                        }
+                      ]
+                    },
+                    "suit": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "type",
+                            "thicknessMm",
+                            "hood",
+                            "undergarment"
+                          ],
+                          "properties": {
+                            "type": {
+                              "enum": [
+                                "none",
+                                "skin",
+                                "wetsuit",
+                                "semidry",
+                                "drysuit"
+                              ],
+                              "description": "`none` is a dive without a suit"
+                            },
+                            "thicknessMm": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 20,
+                                  "description": "For a wetsuit or a semidry suit"
+                                }
+                              ]
+                            },
+                            "hood": {
+                              "type": [
+                                "boolean",
+                                "null"
+                              ],
+                              "description": "Whether a hood was worn; null when not said"
+                            },
+                            "undergarment": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "enum": [
+                                    "light",
+                                    "medium",
+                                    "heavy"
+                                  ],
+                                  "description": "Under a drysuit"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "The exposure suit (ADR 0031); null when unknown"
+                        }
+                      ]
+                    },
                     "sac": {
                       "anyOf": [
                         {
@@ -16899,6 +18172,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -17044,6 +18319,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -17166,6 +18443,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -17311,6 +18590,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -17512,6 +18793,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -17634,6 +18917,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -17954,6 +19239,10 @@
                     "position",
                     "recordings",
                     "cylinders",
+                    "lead",
+                    "leadTotalKg",
+                    "weightingFeedback",
+                    "suit",
                     "sac",
                     "sacMissing",
                     "participants",
@@ -18665,6 +19954,156 @@
                       },
                       "description": "The Dive's Cylinders in their order (ADR 0045)"
                     },
+                    "lead": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "amountKg",
+                          "placement"
+                        ],
+                        "properties": {
+                          "amountKg": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 60,
+                            "description": "In kilograms; 0 as the only entry means no lead"
+                          },
+                          "placement": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "enum": [
+                                  "belt",
+                                  "integrated",
+                                  "trim",
+                                  "ankle",
+                                  "backplate",
+                                  "other"
+                                ],
+                                "description": "Where it was carried; null when not given"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "The Lead the Dive was dived with, as placed entries in their order (ADR 0031); none means unknown"
+                    },
+                    "leadTotalKg": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number",
+                          "description": "The sum of the Lead entries; null when there are none (unknown), 0 for a Dive without lead"
+                        }
+                      ]
+                    },
+                    "weightingFeedback": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "felt",
+                            "amountKg"
+                          ],
+                          "properties": {
+                            "felt": {
+                              "enum": [
+                                "right",
+                                "too_heavy",
+                                "too_light"
+                              ],
+                              "description": "How the weighting felt"
+                            },
+                            "amountKg": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 30,
+                                  "description": "By how many kilograms it was too heavy or too light, where the User said"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "How the weighting felt on this Dive (ADR 0031); null when nothing was said"
+                        }
+                      ]
+                    },
+                    "suit": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "type",
+                            "thicknessMm",
+                            "hood",
+                            "undergarment"
+                          ],
+                          "properties": {
+                            "type": {
+                              "enum": [
+                                "none",
+                                "skin",
+                                "wetsuit",
+                                "semidry",
+                                "drysuit"
+                              ],
+                              "description": "`none` is a dive without a suit"
+                            },
+                            "thicknessMm": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 20,
+                                  "description": "For a wetsuit or a semidry suit"
+                                }
+                              ]
+                            },
+                            "hood": {
+                              "type": [
+                                "boolean",
+                                "null"
+                              ],
+                              "description": "Whether a hood was worn; null when not said"
+                            },
+                            "undergarment": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "enum": [
+                                    "light",
+                                    "medium",
+                                    "heavy"
+                                  ],
+                                  "description": "Under a drysuit"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "The exposure suit (ADR 0031); null when unknown"
+                        }
+                      ]
+                    },
                     "sac": {
                       "anyOf": [
                         {
@@ -18866,6 +20305,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -18988,6 +20429,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -19227,6 +20670,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -19627,6 +21072,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -19749,6 +21196,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -19871,6 +21320,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -20037,6 +21488,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -20159,6 +21612,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -20281,6 +21736,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -20447,6 +21904,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -20569,6 +22028,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -20691,6 +22152,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -20857,6 +22320,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -20979,6 +22444,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -21101,6 +22568,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -21541,6 +23010,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -22023,6 +23494,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -22209,6 +23682,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -22453,6 +23928,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -22575,6 +24052,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -22697,6 +24176,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -22819,6 +24300,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -23098,6 +24581,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -23220,6 +24705,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -23342,6 +24829,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -23464,6 +24953,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -23605,6 +25096,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -23727,6 +25220,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -23849,6 +25344,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -23971,6 +25468,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -24155,6 +25654,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -24293,6 +25794,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -24431,6 +25934,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -24569,6 +26074,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -24859,6 +26366,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -24981,6 +26490,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -25103,6 +26614,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -25225,6 +26738,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -25560,6 +27075,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -25682,6 +27199,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -25804,6 +27323,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -25926,6 +27447,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -26353,6 +27876,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -26491,6 +28016,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -26629,6 +28156,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -26767,6 +28296,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -27074,6 +28605,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -27196,6 +28729,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -27318,6 +28853,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -27440,6 +28977,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -27646,6 +29185,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -27768,6 +29309,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -27890,6 +29433,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -28012,6 +29557,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -28153,6 +29700,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -28275,6 +29824,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -28397,6 +29948,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -28519,6 +30072,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -28699,6 +30254,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -28821,6 +30378,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -28943,6 +30502,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -29065,6 +30626,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -29305,6 +30868,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -29427,6 +30992,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -29549,6 +31116,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -29671,6 +31240,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -30261,6 +31832,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -30835,6 +32408,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -30957,6 +32532,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -31079,6 +32656,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -31201,6 +32780,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -31675,6 +33256,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -32265,6 +33848,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -32387,6 +33972,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -32509,6 +34096,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -32631,6 +34220,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -32772,6 +34363,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -32894,6 +34487,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -33016,6 +34611,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -33138,6 +34735,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -33654,6 +35253,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -33776,6 +35377,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -33898,6 +35501,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -34020,6 +35625,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -34526,6 +36133,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -34648,6 +36257,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -34770,6 +36381,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -34892,6 +36505,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -35396,6 +37011,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -35518,6 +37135,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -35640,6 +37259,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -35762,6 +37383,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -35998,6 +37621,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -36298,6 +37923,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -36595,6 +38222,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -36733,6 +38362,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -36871,6 +38502,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -37009,6 +38642,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -37277,6 +38912,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -37555,6 +39192,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -37693,6 +39332,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -37831,6 +39472,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -37969,6 +39612,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -38127,6 +39772,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -38265,6 +39912,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -38403,6 +40052,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -38541,6 +40192,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -38849,6 +40502,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -38987,6 +40642,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -39125,6 +40782,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -39263,6 +40922,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -39541,6 +41202,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -39679,6 +41342,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -39817,6 +41482,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -39955,6 +41622,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -40230,6 +41899,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -40368,6 +42039,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -40506,6 +42179,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -40644,6 +42319,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -41105,6 +42782,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -41691,6 +43370,8 @@
                             "dive_not_found",
                             "cylinder_invalid",
                             "cylinder_series_not_found",
+                            "weighting_feedback_invalid",
+                            "suit_invalid",
                             "dive_changed",
                             "dive_values_inconsistent",
                             "recording_not_on_dive",
@@ -41818,6 +43499,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -41940,6 +43623,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -42062,6 +43747,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -42523,6 +44210,8 @@
                                   "dive_not_found",
                                   "cylinder_invalid",
                                   "cylinder_series_not_found",
+                                  "weighting_feedback_invalid",
+                                  "suit_invalid",
                                   "dive_changed",
                                   "dive_values_inconsistent",
                                   "recording_not_on_dive",
@@ -42653,6 +44342,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -43119,6 +44810,8 @@
                             "dive_not_found",
                             "cylinder_invalid",
                             "cylinder_series_not_found",
+                            "weighting_feedback_invalid",
+                            "suit_invalid",
                             "dive_changed",
                             "dive_values_inconsistent",
                             "recording_not_on_dive",
@@ -43246,6 +44939,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -43368,6 +45063,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -44190,6 +45887,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -44312,6 +46011,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -44434,6 +46135,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -44637,6 +46340,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -44908,6 +46613,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -45030,6 +46737,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -45152,6 +46861,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -45355,6 +47066,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -45562,6 +47275,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -45684,6 +47399,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -45806,6 +47523,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -46009,6 +47728,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -46249,6 +47970,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -46371,6 +48094,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -46493,6 +48218,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -46696,6 +48423,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -47021,6 +48750,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -47143,6 +48874,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -47265,6 +48998,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -47468,6 +49203,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -47609,6 +49346,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -47843,6 +49582,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -47965,6 +49706,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -48087,6 +49830,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -48290,6 +50035,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -49051,6 +50798,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -49173,6 +50922,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -49295,6 +51046,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -49498,6 +51251,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -49942,6 +51697,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -50064,6 +51821,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -50186,6 +51945,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -50389,6 +52150,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -50575,6 +52338,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -50796,6 +52561,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -50918,6 +52685,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -51282,6 +53051,8 @@
                                     "dive_not_found",
                                     "cylinder_invalid",
                                     "cylinder_series_not_found",
+                                    "weighting_feedback_invalid",
+                                    "suit_invalid",
                                     "dive_changed",
                                     "dive_values_inconsistent",
                                     "recording_not_on_dive",
@@ -51495,6 +53266,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -51867,6 +53640,8 @@
                                   "dive_not_found",
                                   "cylinder_invalid",
                                   "cylinder_series_not_found",
+                                  "weighting_feedback_invalid",
+                                  "suit_invalid",
                                   "dive_changed",
                                   "dive_values_inconsistent",
                                   "recording_not_on_dive",
@@ -52079,6 +53854,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -52201,6 +53978,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -52672,6 +54451,8 @@
                                       "dive_not_found",
                                       "cylinder_invalid",
                                       "cylinder_series_not_found",
+                                      "weighting_feedback_invalid",
+                                      "suit_invalid",
                                       "dive_changed",
                                       "dive_values_inconsistent",
                                       "recording_not_on_dive",
@@ -52886,6 +54667,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -53008,6 +54791,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -53130,6 +54915,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -53333,6 +55120,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -53703,6 +55492,8 @@
                                   "dive_not_found",
                                   "cylinder_invalid",
                                   "cylinder_series_not_found",
+                                  "weighting_feedback_invalid",
+                                  "suit_invalid",
                                   "dive_changed",
                                   "dive_values_inconsistent",
                                   "recording_not_on_dive",
@@ -53915,6 +55706,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -54037,6 +55830,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -54159,6 +55954,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -54362,6 +56159,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -54584,6 +56383,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -54706,6 +56507,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -54828,6 +56631,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -55031,6 +56836,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -55340,6 +57147,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -55462,6 +57271,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -55605,6 +57416,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -55908,6 +57721,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -56102,6 +57917,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -56249,6 +58066,8 @@
                         "dive_not_found",
                         "cylinder_invalid",
                         "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",

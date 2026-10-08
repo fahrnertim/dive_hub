@@ -487,7 +487,9 @@
     "diver_choice_needed": "Dieses Konto hat noch kein Taucher. Wähle, wer es ist, oder füge einen neuen Taucher hinzu.",
     "diver_has_other_account": "Dieser Taucher hat ein anderes SSI-Konto, der Code gehört also jemand anderem.",
     "cylinder_invalid": "Die Werte einer Flasche passen nicht: Der Druck am Ende liegt über dem am Anfang, das Gas hat mehr als 100 %, oder ein Flaschensender hängt an zwei Flaschen.",
-    "cylinder_series_not_found": "Dieser Tauchgang hat keinen solchen Flaschensender. Lade ihn neu und versuch es noch einmal."
+    "cylinder_series_not_found": "Dieser Tauchgang hat keinen solchen Flaschensender. Lade ihn neu und versuch es noch einmal.",
+    "weighting_feedback_invalid": "Zu passendem Blei gehört keine Angabe, um wie viel. Lass „Um wie viel“ leer.",
+    "suit_invalid": "Die Angaben zum Anzug passen nicht: Eine Dicke gehört zu einem Nass- oder Halbtrockenanzug, ein Unterzieher zu einem Trockenanzug."
   },
   "vocabulary": {
     "waterType": {
@@ -524,6 +526,31 @@
       "aluminium": "Aluminium",
       "steel": "Stahl",
       "carbon": "Carbon"
+    },
+    "leadPlacement": {
+      "belt": "Bleigurt",
+      "integrated": "Integriert",
+      "trim": "Trimmblei",
+      "ankle": "Fußblei",
+      "backplate": "Backplate",
+      "other": "Anderes"
+    },
+    "weightingFelt": {
+      "right": "Passend",
+      "too_heavy": "Zu viel",
+      "too_light": "Zu wenig"
+    },
+    "suitType": {
+      "none": "Ohne Anzug",
+      "skin": "Skin",
+      "wetsuit": "Nassanzug",
+      "semidry": "Halbtrockenanzug",
+      "drysuit": "Trockenanzug"
+    },
+    "suitUndergarment": {
+      "light": "Leicht",
+      "medium": "Mittel",
+      "heavy": "Dick"
     }
   },
   "history": {
@@ -604,7 +631,13 @@
       "unknown": "unbekannt"
     },
     "cylindersSet": "Flaschen: {{list}}",
-    "cylindersRemoved": "Flaschen entfernt"
+    "cylindersRemoved": "Flaschen entfernt",
+    "leadSet": "Blei: {{value}}",
+    "leadRemoved": "Blei entfernt",
+    "weightingSet": "Gefühl mit dem Blei: {{value}}",
+    "weightingRemoved": "Gefühl mit dem Blei entfernt",
+    "suitSet": "Anzug: {{value}}",
+    "suitRemoved": "Anzug entfernt"
   },
   "decisions": {
     "title": "Aufzeichnungen ohne Tauchgang",
@@ -1313,7 +1346,7 @@
     "remove": "Flasche {{n}} entfernen",
     "n": "Flasche {{n}}",
     "sameAsLast": "Wie beim letzten Tauchgang",
-    "lastHasNone": "Der letzte Tauchgang hat keine Flaschen.",
+    "lastHasNone": "Der letzte Tauchgang hat weder Flaschen noch Anzug oder Blei.",
     "catalogue": "Aus gängigen Flaschen ausfüllen",
     "catalogueEntry": "{{material}} {{volume}}, {{pressure}}",
     "catalogueNamed": "{{name}} ({{volume}}, {{pressure}})",
@@ -1344,6 +1377,52 @@
       "no_average_depth": "Noch kein AMV für diesen Tauchgang: dafür fehlt die mittlere Tiefe.",
       "too_short": "Kein AMV für diesen Tauchgang: er ist kürzer als 15 Minuten."
     }
+  },
+  "weighting": {
+    "title": "Anzug und Blei",
+    "addFirst": "Anzug und Blei eintragen",
+    "suit": "Anzug",
+    "notKnown": "Nicht bekannt",
+    "notSaid": "Keine Angabe",
+    "thickness": "Dicke",
+    "hood": "Kopfhaube",
+    "hoodYes": "Mit Kopfhaube",
+    "hoodNo": "Ohne Kopfhaube",
+    "undergarment": "Unterzieher",
+    "lead": "Blei",
+    "leadN": "Blei {{n}}",
+    "leadHelp": "0 für einen Tauchgang ohne Blei.",
+    "placementN": "Wo Blei {{n}} getragen wurde",
+    "addLead": "Blei hinzufügen",
+    "removeLead": "Blei {{n}} entfernen",
+    "total": "Gesamt: {{total}}",
+    "noLead": "Ohne Blei",
+    "felt": "Wie passte das Blei?",
+    "feltAmount": "Um wie viel (optional)",
+    "leadAt": {
+      "belt": "{{amount}} am Bleigurt",
+      "integrated": "{{amount}} integriert",
+      "trim": "{{amount}} Trimmblei",
+      "ankle": "{{amount}} Fußblei",
+      "backplate": "{{amount}} an der Backplate",
+      "other": "{{amount}} anderswo"
+    },
+    "undergarmentText": {
+      "light": "leichter Unterzieher",
+      "medium": "mittlerer Unterzieher",
+      "heavy": "dicker Unterzieher"
+    },
+    "withHood": "mit Kopfhaube",
+    "withoutHood": "ohne Kopfhaube",
+    "leadWithParts": "{{total}} ({{parts}})",
+    "feltText": {
+      "right": "Passend",
+      "too_heavy": "Zu viel",
+      "too_light": "Zu wenig",
+      "too_heavyBy": "{{amount}} zu viel",
+      "too_lightBy": "{{amount}} zu wenig"
+    },
+    "weighting": "Gefühl mit dem Blei"
   },
   "participants": {
     "title": "Buddys und Guides",

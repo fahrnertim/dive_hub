@@ -487,7 +487,9 @@
     "diver_choice_needed": "No diver has this account yet. Choose who it is, or add a new diver.",
     "diver_has_other_account": "This diver has another SSI account, so the code is someone else’s.",
     "cylinder_invalid": "A cylinder’s values don’t fit: the pressure at the end is above the start, the gas is over 100 %, or one tank pod is on two cylinders.",
-    "cylinder_series_not_found": "This dive has no such tank pod. Reload it and try again."
+    "cylinder_series_not_found": "This dive has no such tank pod. Reload it and try again.",
+    "weighting_feedback_invalid": "Weighting that felt right has no amount. Leave “By how much” empty.",
+    "suit_invalid": "The suit’s values don’t fit: a thickness is for a wetsuit or a semidry suit, an undergarment for a drysuit."
   },
   "vocabulary": {
     "waterType": {
@@ -524,6 +526,31 @@
       "aluminium": "Aluminium",
       "steel": "Steel",
       "carbon": "Carbon"
+    },
+    "leadPlacement": {
+      "belt": "Belt",
+      "integrated": "Integrated",
+      "trim": "Trim",
+      "ankle": "Ankle",
+      "backplate": "Backplate",
+      "other": "Other"
+    },
+    "weightingFelt": {
+      "right": "Right",
+      "too_heavy": "Too heavy",
+      "too_light": "Too light"
+    },
+    "suitType": {
+      "none": "No suit",
+      "skin": "Skin",
+      "wetsuit": "Wetsuit",
+      "semidry": "Semidry suit",
+      "drysuit": "Drysuit"
+    },
+    "suitUndergarment": {
+      "light": "Light",
+      "medium": "Medium",
+      "heavy": "Heavy"
     }
   },
   "history": {
@@ -604,7 +631,13 @@
       "unknown": "unknown"
     },
     "cylindersSet": "Cylinders: {{list}}",
-    "cylindersRemoved": "Cylinders removed"
+    "cylindersRemoved": "Cylinders removed",
+    "leadSet": "Lead: {{value}}",
+    "leadRemoved": "Lead removed",
+    "weightingSet": "Weighting: {{value}}",
+    "weightingRemoved": "Weighting feedback removed",
+    "suitSet": "Suit: {{value}}",
+    "suitRemoved": "Suit removed"
   },
   "decisions": {
     "title": "Recordings without a dive",
@@ -1313,7 +1346,7 @@
     "remove": "Remove cylinder {{n}}",
     "n": "Cylinder {{n}}",
     "sameAsLast": "Same as last dive",
-    "lastHasNone": "The last dive has no cylinders.",
+    "lastHasNone": "The last dive has no cylinders, suit or lead.",
     "catalogue": "Fill in from a common cylinder",
     "catalogueEntry": "{{material}} {{volume}}, {{pressure}}",
     "catalogueNamed": "{{name}} ({{volume}}, {{pressure}})",
@@ -1344,6 +1377,52 @@
       "no_average_depth": "No SAC for this dive yet: it needs the dive's average depth.",
       "too_short": "No SAC for this dive: it is shorter than 15 minutes."
     }
+  },
+  "weighting": {
+    "title": "Suit and lead",
+    "addFirst": "Add suit and lead",
+    "suit": "Suit",
+    "notKnown": "Not known",
+    "notSaid": "Not said",
+    "thickness": "Thickness",
+    "hood": "Hood",
+    "hoodYes": "With hood",
+    "hoodNo": "Without hood",
+    "undergarment": "Undergarment",
+    "lead": "Lead",
+    "leadN": "Lead {{n}}",
+    "leadHelp": "0 for a dive without lead.",
+    "placementN": "Where lead {{n}} was carried",
+    "addLead": "Add lead",
+    "removeLead": "Remove lead {{n}}",
+    "total": "Total: {{total}}",
+    "noLead": "No lead",
+    "felt": "The weighting felt",
+    "feltAmount": "By how much (optional)",
+    "leadAt": {
+      "belt": "{{amount}} on a belt",
+      "integrated": "{{amount}} integrated",
+      "trim": "{{amount}} trim",
+      "ankle": "{{amount}} on the ankles",
+      "backplate": "{{amount}} on the backplate",
+      "other": "{{amount}} elsewhere"
+    },
+    "undergarmentText": {
+      "light": "light undergarment",
+      "medium": "medium undergarment",
+      "heavy": "heavy undergarment"
+    },
+    "withHood": "with hood",
+    "withoutHood": "without hood",
+    "leadWithParts": "{{total}} ({{parts}})",
+    "feltText": {
+      "right": "Felt right",
+      "too_heavy": "Too heavy",
+      "too_light": "Too light",
+      "too_heavyBy": "Too heavy by {{amount}}",
+      "too_lightBy": "Too light by {{amount}}"
+    },
+    "weighting": "Weighting"
   },
   "participants": {
     "title": "Buddies and guides",

@@ -1,10 +1,11 @@
 // MCP tools over the User's Dives (ADR 0035): search, one Dive with its profile, statistics. Read-only; every query
 // is limited to the Divers the User manages; a Dive's own position only with the logbook:positions scope.
-import { sql, type SQL } from 'drizzle-orm';
+import { eq, sql, type SQL } from 'drizzle-orm';
 import { Type, type Static } from 'typebox';
-import { PARTICIPANT_ROLES, type RecordingSummary } from '../db/schema.js';
+import { LEAD_PLACEMENTS, PARTICIPANT_ROLES, SUIT_TYPES, SUIT_UNDERGARMENTS, WEIGHTING_FELT, dive, type RecordingSummary } from '../db/schema.js';
 import { cylindersOf } from '../dives/cylinders.js';
 import { SAC_MISSING, sacOfDive } from '../dives/sac.js';
+import { leadOf, leadTotalKg, suitOf, weightingFeedbackOf } from '../dives/weighting.js';
 import { downsampleMinMax } from '../dives/downsample.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
 import { ProfileSummary, summariseProfile } from './profile.js';
@@ -282,6 +283,23 @@ const DiveDetail = (positions: boolean) => Type.Object({
     bar_per_minute: Type.Optional(Type.Number({ description: 'The pressure drop per minute at the surface; only with exactly one Cylinder' })),
     missing: Type.Optional(Type.Enum([...SAC_MISSING], { description: 'Why there is no figure: too_short (under 15 minutes), no_average_depth, or cylinder_incomplete (a Cylinder without both pressures and a volume)' })),
   }, { description: 'Surface air consumption (SAC) on this Dive, computed from its Cylinders, its average depth and its duration. Left out when no Cylinders are logged' })),
+  lead: Type.Optional(Type.Object({
+    total_kg: Type.Number({ description: 'The sum of the entries; 0 means the Dive was dived without lead' }),
+    entries: Type.Array(Type.Object({
+      amount_kg: Type.Number(),
+      placement: Type.Optional(Type.Enum([...LEAD_PLACEMENTS], { description: 'Where it was carried; left out when not said' })),
+    })),
+  }, { description: 'The lead (dive weights) the Dive was dived with, as the user logged it. Left out when unknown' })),
+  weighting_feedback: Type.Optional(Type.Object({
+    felt: Type.Enum([...WEIGHTING_FELT]),
+    amount_kg: Type.Optional(Type.Number({ description: 'By how much it was too heavy or too light, where the user said' })),
+  }, { description: 'How the weighting felt to the user on this Dive. Left out when they said nothing' })),
+  suit: Type.Optional(Type.Object({
+    type: Type.Enum([...SUIT_TYPES], { description: 'none: dived without an exposure suit' }),
+    thickness_mm: Type.Optional(Type.Number({ description: 'Of a wetsuit or a semidry suit' })),
+    hood: Type.Optional(Type.Boolean()),
+    undergarment: Type.Optional(Type.Enum([...SUIT_UNDERGARMENTS], { description: 'Under a drysuit' })),
+  }, { description: 'The exposure suit worn. Left out when unknown' })),
   // detailed only
   overridden_fields: Type.Optional(Type.Array(Type.String(), { description: 'Values the user set by hand; the others come from the Primary recording' })),
   from_provider: Type.Optional(Nullable(Type.String({ description: 'Set when the Dive was made from a logbook entry at a service such as SSI, without a dive computer\'s file' }))),
@@ -307,7 +325,7 @@ const computerOf = (s: RecordingSummary): Static<typeof Computer> => ({
 export const getDive = defineTool({
   name: 'logbook_get_dive',
   title: 'Get one Dive',
-  description: `Returns one of the user's Dives: its values, Dive site, notes, who else was on it, its Cylinders (size, gas, start and end pressure), the gas consumption at the surface computed from them (sac, in L/min; or what is missing for it), and a summary of the depth profile (deepest point and when, time-weighted average, minutes per 10 m band, temperature range). Use it after logbook_search_dives gave the id.
+  description: `Returns one of the user's Dives: its values, Dive site, notes, who else was on it, its Cylinders (size, gas, start and end pressure), the gas consumption at the surface computed from them (sac, in L/min; or what is missing for it), the lead it was dived with, how the weighting felt and the exposure suit where the user logged them, and a summary of the depth profile (deepest point and when, time-weighted average, minutes per 10 m band, temperature range). Use it after logbook_search_dives gave the id.
 
 detail=detailed adds the Recordings (each dive computer's own data: gases, gradient factors, deco model, CNS, surface interval), which values the user set by hand, and longer notes. include_samples=true adds the profile itself, downsampled to about sample_points points per series (default: depth only); ask for it only when the shape of the dive matters, such as describing the ascent.
 
@@ -346,6 +364,10 @@ Error "dive not found": the id is wrong, the Dive was deleted, or it is not the 
     const depth = seriesOf('depth');
     const cylinders = await cylindersOf(ctx.tx, d.id);
     const { sac, missing } = sacOfDive({ durationSeconds: d.duration_seconds, avgDepthM: d.avg_depth_m }, cylinders);
+    const lead = await leadOf(ctx.tx, d.id);
+    const [own] = await ctx.tx.select().from(dive).where(eq(dive.id, d.id));
+    const feedback = own && weightingFeedbackOf(own);
+    const suit = own && suitOf(own);
     if (a.include_samples && wanted.every((c) => !seriesOf(c))) {
       throw new ToolError('no_samples', primary
         ? `This Dive's Primary recording has none of the series asked for. It has: ${primary.channels.join(', ') || 'none'}. Call again with sample_channels from that list, or without include_samples.`
@@ -360,6 +382,16 @@ Error "dive not found": the id is wrong, the Dive was deleted, or it is not the 
       profile_channels: primary?.channels ?? [],
       ...(sac && { sac: { litres_per_minute: sac.litresPerMinute, ...(sac.barPerMinute !== null && { bar_per_minute: sac.barPerMinute }) } }),
       ...(missing && { sac: { missing } }),
+      ...(lead.length > 0 && {
+        lead: { total_kg: leadTotalKg(lead)!, entries: lead.map((e) => ({ amount_kg: e.amountKg, ...(e.placement && { placement: e.placement }) })) },
+      }),
+      ...(feedback && { weighting_feedback: { felt: feedback.felt, ...(feedback.amountKg !== null && { amount_kg: feedback.amountKg }) } }),
+      ...(suit && {
+        suit: {
+          type: suit.type, ...(suit.thicknessMm !== null && { thickness_mm: suit.thicknessMm }), ...(suit.hood !== null && { hood: suit.hood }),
+          ...(suit.undergarment && { undergarment: suit.undergarment }),
+        },
+      }),
       cylinders: cylinders.map((c) => ({
         ...(c.volumeL !== null && { volume_l: c.volumeL }),
         ...(c.workingPressureBar !== null && { working_pressure_bar: c.workingPressureBar }),

@@ -9,7 +9,8 @@ date: 2026-10-06
 
 ## Status
 Accepted – 2026-10-06. Amends [ADR 0030](0030-importing-dives-from-providers.md) (the fields an import fills and takes
-back gain lead and the cylinder). Not built yet. Designed in the [weight calculator note](../research/2026-10-06-weight-calculator.md).
+back gain lead and the cylinder). Built so far: Cylinders (ADR 0045) and the Dive's lead, feedback and suit
+([as built](#slice-a-as-built-the-dives-values)); SSI's lead, body weight and the estimate are not. Designed in the [weight calculator note](../research/2026-10-06-weight-calculator.md).
 
 ## Context
 The owner wants tools that may later form a **dive planner**, starting with a weight calculator fed by a rule of thumb,
@@ -108,3 +109,38 @@ Cylinders on a Dive are built before lead, suit and weighting feedback, as their
 The Provider part for the Cylinder is built ([ADR 0045](0045-tank-pressure-cylinders-and-sac-on-a-dive.md#ssis-tank-as-built)).
 SSI's tank types are known (19 steel, 20 aluminium), so the material is taken. Beyond "where the Dive has none": the
 Dive's only Cylinder takes from SSI the values it lacks. Lead from SSI stays with slice A.
+
+## Slice A as built: the Dive's values
+Built on 2026-10-08, the test seams agreed with the owner (the Dive's edit and view, "same as last dive", the MCP
+tool, the dive page and its form in a browser). Slice A is cut in three: these values first, then SSI's lead, then
+body weight.
+
+- **With the Dive's edit:** `PATCH /dives/{id}` takes `lead` (the whole list, replacing the entries; at most 8, each
+  0 to 60 kg, a placement or none), `weightingFeedback` (`{ felt, amountKg }` or `null`) and `suit`
+  (`{ type, thicknessMm, hood, undergarment }` or `null`). One Revision and one step of the version for all of an
+  edit; the changes are `lead`, `weightingFeedback` and `suit`, each with the value before and after.
+- **The view** has `lead`, `leadTotalKg` (the sum, `null` without entries), `weightingFeedback` and `suit`.
+- **Refused:** an amount with weighting that felt right (`weighting_feedback_invalid`); a thickness on anything but a
+  wetsuit or a semidry suit, an undergarment under anything but a drysuit (`suit_invalid`). A hood goes with any suit
+  that is worn; whether one was worn may stay unsaid.
+- **Feedback stands alone:** it may be logged without lead (a Diver may remember "too heavy" and not the amount).
+- **"Same as last dive"** answers the previous Dive's `lead` and `suit` beside its Cylinders, never its feedback: how
+  the weighting felt is this dive's own. The web form has one button for all three and fills only the parts that are
+  still empty.
+- **Merging two Dives** (ADR 0038): the kept Dive takes the other's lead, feedback and suit, each where it has none.
+- **Units:** kg, or lb for imperial with one decimal; an amount nobody touched is saved as it was. Thickness in mm
+  in both systems.
+- **AI access (MCP):** `logbook_get_dive` returns `lead` (`total_kg`, `entries`), `weighting_feedback` and `suit`,
+  each left out while unknown.
+- **Storage:** a table `lead` (dive, position, amount, placement); columns on `dive` for the feedback and the suit
+  (migration 0028).
+- **SSI has no scuba suit** (checked 2026-10-08): in the 127 records of the development logbook the only suit key is
+  the freediving one (`x_odin_user_log_frd_suit`, empty on all), so `get_divelog_vars`' suit list (85 to 89) is
+  freediving's. The suit is not imported.
+- **Decided for SSI's lead** (owner, 2026-10-08; not built): a weight of 0 at SSI counts as not typed; lead changed
+  only at SSI changes a Dive with at most one entry (which keeps its placement) and nothing on a Dive with several.
+
+### Open
+- A request's `0` for a value that may be `null` arrives as `null` (the validator coerces, `Nullable` in
+  `dives/routes.ts`): a feedback amount of 0 is "no amount", which is meant, but a Cylinder's end pressure of 0 bar
+  is saved as unknown. The suit's `hood` avoids it with one `type` of both names.

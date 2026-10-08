@@ -15,11 +15,15 @@ export function pickUnits(preferred: UnitSystem | null | undefined, browser: rea
 
 const FEET_PER_METRE = 1 / 0.3048;
 const PSI_PER_BAR = 14.5038;
+const POUNDS_PER_KG = 1 / 0.45359237;
 
 export const depthIn = (metres: number, units: UnitSystem) => (units === 'imperial' ? metres * FEET_PER_METRE : metres);
 export const temperatureIn = (celsius: number, units: UnitSystem) => (units === 'imperial' ? celsius * 9 / 5 + 32 : celsius);
 export const pressureIn = (bar: number, units: UnitSystem) => (units === 'imperial' ? bar * PSI_PER_BAR : bar);
 const pressureUnit = (units: UnitSystem) => (units === 'imperial' ? 'psi' : 'bar');
+/** Lead, and by how much the weighting was off: kilograms or pounds. */
+export const massIn = (kg: number, units: UnitSystem) => (units === 'imperial' ? kg * POUNDS_PER_KG : kg);
+export const massFromDisplay = (value: number, units: UnitSystem) => (units === 'imperial' ? value / POUNDS_PER_KG : value);
 
 /** A depth, pressure or temperature typed in the User's units, back in metres, bar or °C for storage. */
 export const depthFromDisplay = (value: number, units: UnitSystem) => (units === 'imperial' ? value / FEET_PER_METRE : value);
@@ -46,6 +50,12 @@ export function formatPressure(bar: number | null, units: UnitSystem, locale: st
   return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(pressureIn(bar, units))} ${pressureUnit(units)}`;
 }
 
+/** Lead: "8 kg", "17.6 lb", one decimal at most. */
+export const formatMass = (kg: number, units: UnitSystem, locale: string) =>
+  unitFormat(locale, units === 'imperial' ? 'pound' : 'kilogram', 1).format(massIn(kg, units));
+/** A suit's thickness: "7 mm", millimetres in both unit systems, as suits are sold. */
+export const formatThickness = (mm: number, locale: string) => unitFormat(locale, 'millimeter', 1).format(mm);
+
 /** A tank's size, "12 L", and a gas consumption at the surface, "17.5 L/min": litres in both unit systems for now (ADR 0045). */
 export const formatVolume = (litres: number, locale: string) => unitFormat(locale, 'liter', 1).format(litres);
 export const formatGasRate = (litresPerMinute: number, locale: string) => unitFormat(locale, 'liter-per-minute', 1).format(litresPerMinute);
@@ -54,8 +64,9 @@ export const formatPressureRate = (barPerMinute: number, units: UnitSystem, loca
   `${new Intl.NumberFormat(locale, { maximumFractionDigits: units === 'imperial' ? 0 : 1 }).format(pressureIn(barPerMinute, units))} ${pressureUnit(units)}/min`;
 
 /** Just the unit symbol, e.g. for a chart axis: "m", "ft", "°C", "°F", "bar", "psi". */
-export function unitLabel(quantity: 'depth' | 'temperature' | 'minutes' | 'pressure', units: UnitSystem, locale: string): string {
+export function unitLabel(quantity: 'depth' | 'temperature' | 'minutes' | 'pressure' | 'mass', units: UnitSystem, locale: string): string {
   if (quantity === 'pressure') return pressureUnit(units);
+  if (quantity === 'mass') return units === 'imperial' ? 'lb' : 'kg';
   const unit = quantity === 'minutes' ? 'minute'
     : quantity === 'depth' ? (units === 'imperial' ? 'foot' : 'meter')
     : (units === 'imperial' ? 'fahrenheit' : 'celsius');

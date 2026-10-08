@@ -9,6 +9,7 @@ import {
   columnsOf, plain, sameValue, valuesFromRecording, valuesOfDive, type DiveValues,
 } from './dive-values.js';
 import { fillCylindersFromRecording, setCylinders, untieRecording, type CylinderInput } from './cylinders.js';
+import { setLead, setSuit, setWeightingFeedback, type LeadInput, type SuitInput, type WeightingFeedbackInput } from './weighting.js';
 import { writeRevision, type Actor, type Changes, type RevisionCause } from './revisions.js';
 import { liveSite, siteRef } from '../sites/dive-site-link.js';
 import { keepApart, keepRestored } from './logbook-check-answers.js';
@@ -34,6 +35,12 @@ export interface DiveEdit {
   siteId?: string | null;
   /** The Dive's Cylinders as one list, in their order (the Dive's own values, ADR 0045). */
   cylinders?: CylinderInput[];
+  /** The Dive's Lead as one list of entries, in their order (the Dive's own values, ADR 0031); empty for unknown. */
+  lead?: LeadInput[];
+  /** How the weighting felt, or null for nothing said (ADR 0031). */
+  weightingFeedback?: WeightingFeedbackInput | null;
+  /** The exposure suit, or null for unknown (ADR 0031). */
+  suit?: SuitInput | null;
 }
 
 type DiveRow = typeof dive.$inferSelect;
@@ -203,7 +210,12 @@ export function createDiveService(db: Db) {
           values, overrides, notes: edit.notes === undefined ? current.notes : edit.notes,
           primaryRecordingId: current.primaryRecordingId, ...(edit.siteId !== undefined && { siteId: edit.siteId }),
           ...(primary && { offsetSource: primary.offsetSource }),
-        }, { type: 'user', id: userId }, 'edit', edit.cylinders ? await setCylinders(tx, diveId, edit.cylinders) : {});
+        }, { type: 'user', id: userId }, 'edit', {
+          ...(edit.cylinders && (await setCylinders(tx, diveId, edit.cylinders))),
+          ...(edit.lead && (await setLead(tx, diveId, edit.lead))),
+          ...(edit.weightingFeedback !== undefined && (await setWeightingFeedback(tx, current, edit.weightingFeedback))),
+          ...(edit.suit !== undefined && (await setSuit(tx, current, edit.suit))),
+        });
       });
     },
 

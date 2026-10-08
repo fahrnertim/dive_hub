@@ -487,6 +487,19 @@ export const OVERRIDABLE_FIELDS = [
 ] as const;
 export type OverridableField = (typeof OVERRIDABLE_FIELDS)[number];
 
+/** How the weighting felt on a Dive (ADR 0031). */
+export const WEIGHTING_FELT = ['right', 'too_heavy', 'too_light'] as const;
+export type WeightingFelt = (typeof WEIGHTING_FELT)[number];
+export const weightingFelt = pgEnum('weighting_felt', [...WEIGHTING_FELT]);
+
+/** The exposure suit of a Dive (ADR 0031); `none` is a dive without one. */
+export const SUIT_TYPES = ['none', 'skin', 'wetsuit', 'semidry', 'drysuit'] as const;
+export type SuitType = (typeof SUIT_TYPES)[number];
+export const suitType = pgEnum('suit_type', [...SUIT_TYPES]);
+export const SUIT_UNDERGARMENTS = ['light', 'medium', 'heavy'] as const;
+export type SuitUndergarment = (typeof SUIT_UNDERGARMENTS)[number];
+export const suitUndergarment = pgEnum('suit_undergarment', [...SUIT_UNDERGARMENTS]);
+
 /**
  * One Diver's logbook entry. The recording-derived columns hold the value in effect: the User's
  * Override for the fields listed in `overrides`, the Primary recording's value for all others.
@@ -511,6 +524,14 @@ export const dive = pgTable(
     notes: text('notes'),
     /** Where the Dive was (ADR 0020); the Dive's own value, not an Override. */
     siteId: uuid('site_id').references(() => diveSite.id),
+    /** How the weighting felt (ADR 0031), with by how much where the User said; the Dive's own values. */
+    weightingFelt: weightingFelt('weighting_felt'),
+    weightingAmountKg: real('weighting_amount_kg'),
+    /** The exposure suit (ADR 0031), the Dive's own values: no type means unknown, `none` means dived without one. */
+    suitType: suitType('suit_type'),
+    suitThicknessMm: real('suit_thickness_mm'),
+    suitHood: boolean('suit_hood'),
+    suitUndergarment: suitUndergarment('suit_undergarment'),
     /** Fields whose value the User set by hand; they win over the Primary recording. */
     overrides: text('overrides').array().$type<OverridableField[]>().notNull().default(sql`'{}'`),
     primaryRecordingId: uuid('primary_recording_id'),
@@ -666,6 +687,26 @@ export const cylinder = pgTable(
     check('cylinder_series_ck', sql`(${t.recordingId} is null) = (${t.channel} is null)`),
     check('cylinder_gas_ck', sql`(${t.o2} is null) = (${t.he} is null)`),
   ],
+);
+
+export const LEAD_PLACEMENTS = ['belt', 'integrated', 'trim', 'ankle', 'backplate', 'other'] as const;
+export type LeadPlacement = (typeof LEAD_PLACEMENTS)[number];
+export const leadPlacement = pgEnum('lead_placement', [...LEAD_PLACEMENTS]);
+
+/**
+ * One entry of the Lead a Dive was dived with (ADR 0031): the Dive's own values, set as one list, part of its version
+ * and its history. No entries means unknown; one entry of 0 means no lead.
+ */
+export const lead = pgTable(
+  'lead',
+  {
+    diveId: uuid('dive_id').notNull().references(() => dive.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    amountKg: real('amount_kg').notNull(),
+    /** Where it was carried; null when not given. */
+    placement: leadPlacement('placement'),
+  },
+  (t) => [primaryKey({ columns: [t.diveId, t.position] }), check('lead_amount_ck', sql`${t.amountKg} >= 0`)],
 );
 
 export const recordingEvent = pgTable(

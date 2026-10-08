@@ -151,7 +151,8 @@ coverage, validity; B5), **Medical exam** (date, result, valid until, examiner),
   dive" copies suit, Cylinders (without pressures) and lead from the Diver's previous Dive into the form; nothing is
   filled without the User. An import from a Provider fills lead and the cylinder where empty and takes them back
   three-way (amends ADR 0030); the tank typed at SSI also fills the gaps of a Dive's only Cylinder (ADR 0045, built;
-  lead: planned).
+  lead: planned). *Built (2026-10-08):* Lead, weighting feedback and suit on a Dive, with its edit, and in "same as
+  last dive" ([ADR 0031, as built](../decisions/0031-lead-suit-cylinders-and-lead-estimate.md#slice-a-as-built-the-dives-values)).
 - *Experience:* dive type/purpose, rating, notes, tags, problems.
 - *Social:* Participants, Joint dive, Visibility, Signatures.
 - *Hub state:* Pushes, Conflicts, Revisions.
@@ -251,7 +252,7 @@ and a type ID (material once the IDs are looked up); FIT gives pressures (volume
 `tankmaterial`, `tankvolume`, `tankdata`. **Sensor mapping** links a
 Recording's pressure sensor (e.g. transmitter serial) to a Cylinder (Subsurface idea, B11).
 
-**Lead** (was *Weight*; planned, ADR 0031, slice 19) — per Dive: one or more entries `(amount kg, placement)`, placement
+**Lead** (was *Weight*; built 2026-10-08, ADR 0031, slice 19; table `lead`) — per Dive: one or more entries `(amount kg, placement)`, placement
 `belt`, `integrated`, `trim`, `ankle`, `backplate`, `other` or none given. The total is their sum; **no entries = unknown,
 one entry of 0 = no lead.** Exports and Providers get the total (UDDF `leadquantity`, SSI `weight_kg`); placement and the
 weighting feedback stay here (no exchange format has them).
@@ -603,7 +604,7 @@ Edge cases:
   cylinder (Revision `fill`); the estimate uses it only once the suit is filled in.
 - *0 kg logged* (a drysuit diver with a steel twin set) counts as "no lead"; a Dive with no lead entries is unknown and
   left out.
-- *The suit changed in SSI's app* isn't possible (SSI has no suit field); lead changed there comes back three-way.
+- *The suit changed in SSI's app* isn't possible (SSI has no scuba suit field, checked 2026-10-08); lead changed there comes back three-way.
 
 ### 6. A nitrox dive at 30 m (planned, ADR 0032)
 

@@ -14,6 +14,7 @@ import {
 import { valuesOfDive, type DiveValues } from './dive-values.js';
 import { createLogbookChecks } from './logbook-checks.js';
 import { takeCylinders } from './cylinders.js';
+import { takeWeighting } from './weighting.js';
 import { writeRevision, type Actor, type Changes } from './revisions.js';
 
 type DiveRow = typeof dive.$inferSelect;
@@ -131,6 +132,7 @@ export function createMerging(db: Db) {
         if (moved.length > 0) extra.providers = { from: [], to: moved };
 
         const [current] = await tx.select().from(dive).where(eq(dive.id, kept.id));
+        Object.assign(extra, await takeWeighting(tx, current!, other));
         const values: DiveValues = valuesOfDive(current!);
         const theirs = valuesOfDive(other);
         const overrides = new Set(current!.overrides);

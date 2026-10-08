@@ -334,10 +334,10 @@ describe.skipIf(!(await databaseReachable()))('Cylinders on a Dive', () => {
       await setCylinders(previous, [steel12, stage]);
       const { startPressureBar: _s, endPressureBar: _e, ...steelOnly } = steel12;
       const { startPressureBar: _s2, endPressureBar: _e2, ...stageOnly } = stage;
-      expect((await sameAsLast(pod.diveId)).json()).toEqual({ diveId: previous, cylinders: [steelOnly, stageOnly] });
+      expect((await sameAsLast(pod.diveId)).json()).toEqual({ diveId: previous, cylinders: [steelOnly, stageOnly], lead: [], suit: null });
       // The Dive before is the one with the pod: its Cylinder comes as a plain one.
       expect((await sameAsLast(next)).json()).toEqual({
-        diveId: pod.diveId, cylinders: [{ volumeL: 12, workingPressureBar: null, material: null, gas: { o2: 32, he: 0 } }],
+        diveId: pod.diveId, cylinders: [{ volumeL: 12, workingPressureBar: null, material: null, gas: { o2: 32, he: 0 } }], lead: [], suit: null,
       });
       // Nothing was filled: the Dive asked about still has what it had.
       expect((await getDive(next)).cylinders).toEqual([]);
@@ -345,7 +345,7 @@ describe.skipIf(!(await databaseReachable()))('Cylinders on a Dive', () => {
 
     it('gives none for a Diver\'s first Dive, and nothing to a User who doesn\'t manage the Diver', async () => {
       const first = await upload('theirs.fit', makeSyntheticDive({ serialNumber: 333, start: day(20) }), other);
-      expect((await sameAsLast(first.diveId, other)).json()).toEqual({ diveId: null, cylinders: [] });
+      expect((await sameAsLast(first.diveId, other)).json()).toEqual({ diveId: null, cylinders: [], lead: [], suit: null });
       expect((await sameAsLast(first.diveId)).statusCode).toBe(404);
     });
   });

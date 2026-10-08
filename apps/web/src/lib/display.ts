@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ApiError, meQuery, type ProblemCode } from '../api.ts';
 import { countryName, formatDistance, formatPosition, type Position } from './geo.ts';
 import {
-  formatDate, formatDateTime, formatDepth, formatDiveDay, formatDiveTime, formatDuration, formatGasRate, formatMonth, formatPressure, formatPressureRate, formatTemperature, formatVolume, pickUnits, unitLabel,
+  formatDate, formatDateTime, formatDepth, formatDiveDay, formatDiveTime, formatDuration, formatGasRate, formatMonth, formatPressure, formatPressureRate, formatTemperature, formatMass, formatThickness, formatVolume, pickUnits, unitLabel,
 } from './units.ts';
 
 /** Formatting in the UI language and the User's unit system (ADR 0014). */
@@ -36,10 +36,13 @@ export function useDisplay() {
     /** A tank's pressure: "200 bar", "2,901 psi". */
     pressure: (bar: number | null) => formatPressure(bar, units, locale),
     volume: (litres: number) => formatVolume(litres, locale),
+    /** Lead: "8 kg", "17.6 lb". */
+    mass: (kg: number) => formatMass(kg, units, locale),
+    thickness: (mm: number) => formatThickness(mm, locale),
     /** Gas consumption at the surface: "17.5 L/min". */
     gasRate: (litresPerMinute: number) => formatGasRate(litresPerMinute, locale),
     pressureRate: (barPerMinute: number) => formatPressureRate(barPerMinute, units, locale),
-    unit: (quantity: 'depth' | 'temperature' | 'minutes' | 'pressure') => unitLabel(quantity, units, locale),
+    unit: (quantity: 'depth' | 'temperature' | 'minutes' | 'pressure' | 'mass') => unitLabel(quantity, units, locale),
   };
 }
 

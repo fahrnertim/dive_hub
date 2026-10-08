@@ -7,6 +7,7 @@ import { AssessmentPanel, AssessmentProvider } from './Assessment.tsx';
 import { DeleteDiveDialog } from './DeleteDive.tsx';
 import { DepthProfile } from './DepthProfile.tsx';
 import { CylinderList } from './Cylinders.tsx';
+import { useWeightingText } from './Weighting.tsx';
 import { DiveEditForm } from './DiveEditForm.tsx';
 import { DiveHistory } from './DiveHistory.tsx';
 import { MergeHint, MergePicker } from './MergeDive.tsx';
@@ -37,7 +38,7 @@ export function DiveDetail({ id, recordingId, list = '' }: { id: string; recordi
   const position = neighbours.data?.position;
   const logbook = logbookHrefOf(position ? listQuery({ ...logbookParams(new URLSearchParams(list)), page: Math.ceil(position / PAGE_SIZE) }) : list);
   // Editing opens at the dive number, or at the notes when asked for from there.
-  const [editing, setEditing] = useState<false | 'values' | 'notes' | 'cylinders'>(false);
+  const [editing, setEditing] = useState<false | 'values' | 'notes' | 'cylinders' | 'weighting'>(false);
   const [moving, setMoving] = useState(false);
   const [merging, setMerging] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -122,7 +123,7 @@ export function DiveDetail({ id, recordingId, list = '' }: { id: string; recordi
         <Panel>
           {editing
             ? <DiveEditForm key={d.version} dive={d} focus={editing === 'values' ? undefined : editing} onDone={() => setEditing(false)} />
-            : <DiveFacts dive={d} onAddNotes={() => setEditing('notes')} onAddCylinders={() => setEditing('cylinders')} />}
+            : <DiveFacts dive={d} onAddNotes={() => setEditing('notes')} onAddCylinders={() => setEditing('cylinders')} onAddWeighting={() => setEditing('weighting')} />}
           <Recordings dive={d} initial={recordingId} list={list} />
         </Panel>
         <AssessmentPanel dive={d} diverName={diverName} />
@@ -292,11 +293,14 @@ function useGasNames() {
  * What the Dive was: its values, the gas of the Primary recording, where, with whom, and the notes. Who dived along
  * and the notes are facts too; empty, each is the way to add them.
  */
-function DiveFacts({ dive: d, onAddNotes, onAddCylinders }: { dive: DiveView; onAddNotes: () => void; onAddCylinders: () => void }) {
+function DiveFacts({ dive: d, onAddNotes, onAddCylinders, onAddWeighting }: {
+  dive: DiveView; onAddNotes: () => void; onAddCylinders: () => void; onAddWeighting: () => void;
+}) {
   const { t } = useTranslation();
   const format = useFormatValue();
   const display = useDisplay();
   const [picking, setPicking] = useState(false);
+  const weighting = useWeightingText();
   const gases = useGasNames()(d.recordings.find((r) => r.isPrimary)?.summary.gases);
   const fact = (field: OverridableField, label: string) => (
     <Fact label={label} mark={<EditedMark dive={d} field={field} />}>{format(field, d.values[field])}</Fact>
@@ -330,6 +334,14 @@ function DiveFacts({ dive: d, onAddNotes, onAddCylinders }: { dive: DiveView; on
         {d.cylinders.length === 0 && (
           <Fact label={t('cylinders.title')}>
             <Button variant="quiet" size="small" icon="add" onPress={onAddCylinders}>{t('cylinders.addFirst')}</Button>
+          </Fact>
+        )}
+        {d.suit && <Fact label={t('weighting.suit')}>{weighting.suit(d.suit)}</Fact>}
+        {d.lead.length > 0 && <Fact label={t('weighting.lead')} wide={d.lead.length > 1}>{weighting.lead(d.lead)}</Fact>}
+        {d.weightingFeedback && <Fact label={t('weighting.weighting')}>{weighting.feedback(d.weightingFeedback)}</Fact>}
+        {!d.suit && d.lead.length === 0 && !d.weightingFeedback && (
+          <Fact label={t('weighting.title')}>
+            <Button variant="quiet" size="small" icon="add" onPress={onAddWeighting}>{t('weighting.addFirst')}</Button>
           </Fact>
         )}
         {!d.notes && (

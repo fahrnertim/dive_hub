@@ -5,12 +5,14 @@ import { useTranslation } from 'react-i18next';
 import { api, ApiError, keys, unwrap, type DiveValues, type DiveView, type OverridableField } from './api.ts';
 import { CylinderFields, useCylinderProblem } from './Cylinders.tsx';
 import { announce } from './lib/announce.ts';
-import { cylindersOfDrafts, draftOfCylinder, emptyDraft, isBlank, sameDrafts } from './lib/cylinders.ts';
+import { cylindersOfDrafts, draftOfCylinder, emptyDraft, fromLastDive as cylindersFromLastDive, isBlank, sameDrafts } from './lib/cylinders.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { useLeaveGuard } from './lib/leave-guard.ts';
 import { useFormatValue } from './lib/dive-values.ts';
+import { draftOfWeighting, emptyLead, fromLastDive as weightingFromLastDive, lacks, sameWeighting, weightingOfDraft } from './lib/weighting.ts';
 import { depthFromDisplay, depthIn, temperatureFromDisplay, temperatureIn } from './lib/units.ts';
-import { Badge, Button, DateTimeField, Form, Notice, NumberField, TextArea } from './ui/index.ts';
+import { WeightingFields } from './Weighting.tsx';
+import { Badge, Button, DateTimeField, Form, Muted, Notice, NumberField, TextArea } from './ui/index.ts';
 
 /** The form's values, in the User's display units (feet, °F, minutes, local time at the site). */
 interface Draft {
@@ -54,7 +56,7 @@ const FIELD_OF: Record<keyof Draft, OverridableField> = {
   maxDepth: 'maxDepthM', avgDepth: 'avgDepthM', waterTemperature: 'waterTemperatureC',
 };
 
-export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDone: () => void; focus?: 'notes' | 'cylinders' | undefined }) {
+export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDone: () => void; focus?: 'notes' | 'cylinders' | 'weighting' | undefined }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const display = useDisplay();
@@ -72,6 +74,24 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
   const cylindersChanged = !sameDrafts(typedCylinders, loadedCylinders, units);
   const cylinderProblem = useCylinderProblem();
   const cylindersFit = typedCylinders.every((c) => cylinderProblem(c) === null);
+  const [loadedWeighting] = useState(() => draftOfWeighting(d, units));
+  // One lead entry's fields are always there; left empty, it is not saved.
+  const [weighting, setWeighting] = useState(() => (loadedWeighting.lead.length === 0 ? { ...loadedWeighting, lead: [emptyLead()] } : loadedWeighting));
+  const weightingChanged = !sameWeighting(weighting, loadedWeighting, units);
+  // "Same as last dive" copies into the form only: nothing is saved until the User saves (ADR 0031). Offered while a
+  // part is still empty, and it fills only those: there is nothing to lose.
+  const empty = { cylinders: typedCylinders.length === 0, ...lacks(weighting) };
+  const anyEmpty = empty.cylinders || empty.lead || empty.suit;
+  const last = useMutation({
+    mutationFn: async () => unwrap(await api.GET('/api/dives/{id}/same-as-last', { params: { path: { id: d.id } } })),
+    onSuccess: (found) => {
+      if (empty.cylinders && found.cylinders.length > 0) setCylinders(cylindersFromLastDive(found.cylinders, units));
+      setWeighting((old) => weightingFromLastDive(old, found, units));
+    },
+  });
+  const lastHasNone = !!last.data && !(
+    (empty.cylinders && last.data.cylinders.length > 0) || (empty.lead && last.data.lead.length > 0) || (empty.suit && last.data.suit !== null)
+  );
 
   const change = <K extends keyof Draft>(key: K, value: Draft[K]) => {
     const field = FIELD_OF[key];
@@ -114,6 +134,7 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
         body: {
           version: d.version, set, reset: [...reset], notes: notes.trim() === '' ? null : notes,
           ...(cylindersChanged && { cylinders: cylindersOfDrafts(typedCylinders, units) }),
+          ...(weightingChanged && weightingOfDraft(weighting, units)),
         },
       }));
     },
@@ -126,7 +147,7 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
     },
   });
   // Unsaved changes: leaving the page or cancelling asks first (UI review B3).
-  const dirty = touched.size > 0 || reset.size > 0 || notes !== (d.notes ?? '') || cylindersChanged;
+  const dirty = touched.size > 0 || reset.size > 0 || notes !== (d.notes ?? '') || cylindersChanged || weightingChanged;
   useLeaveGuard(dirty && !save.isSuccess, t('dive.unsavedQuestion'));
   const cancel = () => {
     if (!dirty || confirm(t('dive.unsavedQuestion'))) onDone();
@@ -196,7 +217,15 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
           {origin('waterTemperatureC')}
         </div>
       </div>
+      {anyEmpty && (
+        <div className="form-actions">
+          <Button isPending={last.isPending} onPress={() => last.mutate()}>{t('cylinders.sameAsLast')}</Button>
+          {lastHasNone && <Muted>{t('cylinders.lastHasNone')}</Muted>}
+        </div>
+      )}
+      {last.error && <Notice tone="danger">{errorText(last.error)}</Notice>}
       <CylinderFields dive={d} drafts={cylinders} onChange={setCylinders} autoFocus={focus === 'cylinders'} />
+      <WeightingFields draft={weighting} onChange={setWeighting} autoFocus={focus === 'weighting'} />
       <TextArea autoFocus={focus === 'notes'} label={t('dive.notes')} value={notes} onChange={setNotes} maxLength={20_000} />
       {save.error && (
         <Notice tone="danger">

@@ -874,6 +874,31 @@ test.describe('behaviour', () => {
     await setPreferences(request, { units: null });
   });
 
+  test('suit, lead and how the weighting felt are facts of a dive, and fields with their units in its form', { tag: ['@dives'] }, async ({ page, request }) => {
+    const id = await tankPodDive(request);
+    const set = async (values: object) => {
+      const { version } = (await (await request.get(`/api/dives/${id}`)).json()) as { version: number };
+      expect((await request.patch(`/api/dives/${id}`, { data: { version, ...values }, headers: { origin: E2E_BASE_URL } })).status()).toBe(200);
+    };
+    await set({
+      lead: [{ amountKg: 6, placement: 'belt' }, { amountKg: 2, placement: 'trim' }], weightingFeedback: { felt: 'too_heavy', amountKg: 1 },
+      suit: { type: 'wetsuit', thicknessMm: 7, hood: true },
+    });
+    try {
+      await page.goto(`/#/dives/${id}`);
+      await expect(page.getByRole('definition').filter({ hasText: '8 kg (6 kg on a belt, 2 kg trim)' })).toBeVisible();
+      await expectGoodPage(page);
+      await page.getByRole('button', { name: 'Edit dive' }).click();
+      await expect(page.getByRole('textbox', { name: 'Lead 1 (kg)' })).toHaveValue('6');
+      await expect(page.getByRole('textbox', { name: 'Thickness (mm)' })).toHaveValue('7');
+      await expect(page.getByRole('textbox', { name: 'By how much (optional) (kg)' })).toHaveValue('1');
+      await expectGoodPage(page);
+      await page.getByRole('button', { name: 'Cancel' }).click();
+    } finally {
+      await set({ lead: [], weightingFeedback: null, suit: null });
+    }
+  });
+
   test('the logbook comes first; files dropped anywhere on the page are imported', { tag: ['@dives'] }, async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Logbook', level: 1 })).toBeVisible();

@@ -172,9 +172,9 @@ One Diver's journey that groups their Dives, such as a liveaboard week. Trips of
 _Avoid_: Tour, vacation, expedition
 _German_: Tauchreise
 
-## Gear and planning (planned)
+## Gear and planning (partly built)
 
-Planned in [ADR 0031](decisions/0031-lead-suit-cylinders-and-lead-estimate.md) and [ADR 0032](decisions/0032-mod-and-no-decompression-limits.md) and [ADR 0033](decisions/0033-gas-plans-rules-and-groups.md); not built yet.
+Planned in [ADR 0031](decisions/0031-lead-suit-cylinders-and-lead-estimate.md) and [ADR 0032](decisions/0032-mod-and-no-decompression-limits.md) and [ADR 0033](decisions/0033-gas-plans-rules-and-groups.md). Built: Cylinder and SAC (ADR 0045), Lead, Weighting feedback and Exposure suit (ADR 0031); the rest not yet.
 
 **Lead**:
 The ballast a Diver carried on a Dive: one or more amounts with where they sat (belt, integrated, trim, ankle, backplate), and their total. No lead logged means unknown; 0 means none was carried.

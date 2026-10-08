@@ -294,6 +294,34 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
       }
     });
 
+    it('returns a Dive\'s Lead with its total, how the weighting felt and the exposure suit, each left out while unknown', async () => {
+      const client = await connect(key);
+      const got = async () => (await tool(client, 'logbook_get_dive', { dive_id: timsDive })).structuredContent!;
+      const edit = async (body: object) => {
+        const { version } = await json<{ version: number }>('GET', `/api/dives/${timsDive}`, tim);
+        expect((await call('PATCH', `/api/dives/${timsDive}`, tim, { version, ...body })).statusCode).toBe(200);
+      };
+      expect(await got()).not.toHaveProperty('lead');
+      expect(await got()).not.toHaveProperty('weighting_feedback');
+      expect(await got()).not.toHaveProperty('suit');
+      try {
+        await edit({
+          lead: [{ amountKg: 6, placement: 'belt' }, { amountKg: 1.5 }], weightingFeedback: { felt: 'too_heavy', amountKg: 1 },
+          suit: { type: 'wetsuit', thicknessMm: 7, hood: false },
+        });
+        expect(await got()).toMatchObject({
+          lead: { total_kg: 7.5, entries: [{ amount_kg: 6, placement: 'belt' }, { amount_kg: 1.5 }] },
+          weighting_feedback: { felt: 'too_heavy', amount_kg: 1 },
+          suit: { type: 'wetsuit', thickness_mm: 7, hood: false },
+        });
+        await edit({ lead: [{ amountKg: 0 }], weightingFeedback: { felt: 'right' }, suit: { type: 'none' } });
+        const dive = await got();
+        expect([dive.lead, dive.weighting_feedback, dive.suit]).toEqual([{ total_kg: 0, entries: [{ amount_kg: 0 }] }, { felt: 'right' }, { type: 'none' }]);
+      } finally {
+        await edit({ lead: [], weightingFeedback: null, suit: null });
+      }
+    });
+
     it('returns the SAC on a Dive, or why it has none', async () => {
       const client = await connect(key);
       const got = async () => (await tool(client, 'logbook_get_dive', { dive_id: timsDive })).structuredContent!;

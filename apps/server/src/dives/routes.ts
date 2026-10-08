@@ -8,7 +8,7 @@ import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import type { Db } from '../db/client.js';
 import {
-  CYLINDER_MATERIALS, OVERRIDABLE_FIELDS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, device, dive, diveSite, diverManagement, importJob, recording, revision, sampleSeries, user,
+  CYLINDER_MATERIALS, LEAD_PLACEMENTS, OVERRIDABLE_FIELDS, SUIT_TYPES, SUIT_UNDERGARMENTS, WEIGHTING_FELT, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, device, dive, diveSite, diverManagement, importJob, recording, revision, sampleSeries, user,
   type RecordingSummary,
 } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
@@ -16,6 +16,7 @@ import { DECO_MODELS, DIVE_MODES, GAS_CIRCUITS, SITE_WATER_TYPES, WATER_TYPES } 
 import { CYLINDER_CATALOGUE } from './cylinder-catalogue.js';
 import { CylinderError, cylindersOf, withoutPressures } from './cylinders.js';
 import { DiveError, participantsOf, type DiveService } from './dive-service.js';
+import { WeightingError, leadOf, leadTotalKg, suitOf, weightingFeedbackOf } from './weighting.js';
 import type { Merging } from './merging.js';
 import { LOGBOOK_CHECK_RULES } from './logbook-check-rules.js';
 import type { LogbookChecks } from './logbook-checks.js';
@@ -131,6 +132,39 @@ const CylinderInput = Type.Object({
   series: Type.Optional(Nullable(SeriesRef)),
 }, { additionalProperties: false });
 
+const LeadEntry = Type.Object({
+  amountKg: Type.Number({ minimum: 0, maximum: 60, description: 'In kilograms; 0 as the only entry means no lead' }),
+  placement: Nullable(Type.Enum([...LEAD_PLACEMENTS], { description: 'Where it was carried; null when not given' })),
+});
+const LeadInput = Type.Object({
+  amountKg: LeadEntry.properties.amountKg, placement: Type.Optional(LeadEntry.properties.placement),
+}, { additionalProperties: false });
+const WeightingFeedbackValues = {
+  felt: Type.Enum([...WEIGHTING_FELT], { description: 'How the weighting felt' }),
+  amountKg: Nullable(Type.Number({ exclusiveMinimum: 0, maximum: 30, description: 'By how many kilograms it was too heavy or too light, where the User said' })),
+};
+const SuitValues = {
+  type: Type.Enum([...SUIT_TYPES], { description: '`none` is a dive without a suit' }),
+  thicknessMm: Nullable(Type.Number({ exclusiveMinimum: 0, maximum: 20, description: 'For a wetsuit or a semidry suit' })),
+  // One `type` with both names, not Nullable: null first would turn a request's `false` into null (the validator coerces).
+  hood: Type.Unsafe<boolean | null>({ type: ['boolean', 'null'], description: 'Whether a hood was worn; null when not said' }),
+  undergarment: Nullable(Type.Enum([...SUIT_UNDERGARMENTS], { description: 'Under a drysuit' })),
+};
+const WeightingFeedbackInput = Type.Object({
+  felt: WeightingFeedbackValues.felt, amountKg: Type.Optional(WeightingFeedbackValues.amountKg),
+}, {
+  additionalProperties: false,
+  description: 'How the weighting felt, or null for nothing said. 400 weighting_feedback_invalid for an amount with `right`',
+});
+const SuitInput = Type.Object({
+  type: SuitValues.type, thicknessMm: Type.Optional(SuitValues.thicknessMm), hood: Type.Optional(SuitValues.hood),
+  undergarment: Type.Optional(SuitValues.undergarment),
+}, {
+  additionalProperties: false,
+  description: 'The exposure suit, or null for unknown; a value left out is unknown. 400 suit_invalid for a thickness on anything but a wetsuit '
+    + 'or a semidry suit, or an undergarment under anything but a drysuit',
+});
+
 const RecordingView = Type.Object({
   id: Type.String(),
   isPrimary: Type.Boolean(),
@@ -173,6 +207,10 @@ const DiveView = Type.Object({
   })),
   recordings: Type.Array(RecordingView),
   cylinders: Type.Array(CylinderView, { description: 'The Dive\'s Cylinders in their order (ADR 0045)' }),
+  lead: Type.Array(LeadEntry, { description: 'The Lead the Dive was dived with, as placed entries in their order (ADR 0031); none means unknown' }),
+  leadTotalKg: Nullable(Type.Number({ description: 'The sum of the Lead entries; null when there are none (unknown), 0 for a Dive without lead' })),
+  weightingFeedback: Nullable(Type.Object(WeightingFeedbackValues, { description: 'How the weighting felt on this Dive (ADR 0031); null when nothing was said' })),
+  suit: Nullable(Type.Object(SuitValues, { description: 'The exposure suit (ADR 0031); null when unknown' })),
   sac: Nullable(Type.Object({
     litresPerMinute: Type.Number({ description: 'Litres per minute at the surface, summed over all the Dive\'s Cylinders, with real gas' }),
     barPerMinute: Nullable(Type.Number({ description: 'The pressure drop per minute at the surface; only for a Dive with exactly one Cylinder' })),
@@ -204,6 +242,12 @@ const EditBody = Type.Object({
     description: 'The Dive\'s Cylinders as one list, replacing the ones it has; a value left out is unknown. 400 cylinder_invalid for an end '
       + 'pressure above the start, a gas over 100 % or a series twice; 400 cylinder_series_not_found for a series the Dive\'s Recordings don\'t have',
   })),
+  lead: Type.Optional(Type.Array(LeadInput, {
+    maxItems: 8,
+    description: 'The Dive\'s Lead as one list of entries, replacing the ones it has; an empty list means unknown, one entry of 0 no lead',
+  })),
+  weightingFeedback: Type.Optional(Nullable(WeightingFeedbackInput)),
+  suit: Type.Optional(Nullable(SuitInput)),
 });
 
 const RevisionView = Type.Object({
@@ -332,7 +376,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
 
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof DiveError) return reply.code(STATUS[error.code]).send(problem(error.code));
-    if (error instanceof CylinderError) return reply.code(400).send(problem(error.code));
+    if (error instanceof CylinderError || error instanceof WeightingError) return reply.code(400).send(problem(error.code));
     if (error instanceof ProviderServiceError) return replyProviderError(error, reply);
     throw error;
   });
@@ -361,6 +405,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       : [];
     const cylinders = await cylindersOf(db, row.id);
     const { sac, missing: sacMissing } = sacOfDive(row, cylinders);
+    const lead = await leadOf(db, row.id);
     return {
       id: row.id,
       diverId: row.diverId,
@@ -386,6 +431,10 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
         summary: r.summary as RecordingSummary, channels,
       })),
       cylinders,
+      lead,
+      leadTotalKg: leadTotalKg(lead),
+      weightingFeedback: weightingFeedbackOf(row),
+      suit: suitOf(row),
       sac,
       sacMissing,
       participants: await participantsOf(db, row.id),
@@ -413,10 +462,11 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       params: IdParams, body: EditBody, response: { 200: DiveView, 400: Problem, 404: Problem, 409: Problem },
     },
   }, async (request) => {
-    const { version, set, reset, notes, siteId, cylinders } = request.body;
+    const { version, set, reset, notes, siteId, cylinders, lead, weightingFeedback, suit } = request.body;
     await dives.edit(request.user!.id, request.params.id, {
       version, ...(set && { set: fromValues(set) }), ...(reset && { reset }), ...(notes !== undefined && { notes }),
-      ...(siteId !== undefined && { siteId }), ...(cylinders && { cylinders }),
+      ...(siteId !== undefined && { siteId }), ...(cylinders && { cylinders }), ...(lead && { lead }),
+      ...(weightingFeedback !== undefined && { weightingFeedback }), ...(suit !== undefined && { suit }),
     });
     return view((await findDive(request, request.params.id))!);
   });
@@ -442,7 +492,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   app.get('/dives/:id/same-as-last', {
     schema: {
       summary: '"Same as last dive": what the Diver\'s previous Dive had, to put into this Dive\'s form',
-      description: 'The Cylinders of the Diver\'s Dive before this one by start time, without their pressures and their series (ADR 0031, 0045). '
+      description: 'What the Diver\'s Dive before this one by start time had: its Cylinders without their pressures and their series, its Lead '
+        + 'and its exposure suit; not how the weighting felt (ADR 0031, 0045). '
         + 'Nothing is changed: the client fills its form and the User saves (docs/spec/clients.md). `diveId` is null for a Diver\'s first Dive.',
       params: IdParams,
       response: {
@@ -451,6 +502,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
           cylinders: Type.Array(Type.Object({
             volumeL: CylinderValues.volumeL, workingPressureBar: CylinderValues.workingPressureBar, material: CylinderValues.material, gas: CylinderValues.gas,
           })),
+          lead: Type.Array(LeadEntry),
+          suit: Nullable(Type.Object(SuitValues)),
         }),
         404: Problem,
       },
@@ -458,10 +511,14 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   }, async (request, reply) => {
     const row = await findDive(request, request.params.id);
     if (!row) return reply.code(404).send(problem('dive_not_found'));
-    const [previous] = await db.select({ id: dive.id }).from(dive)
+    const [previous] = await db.select().from(dive)
       .where(and(eq(dive.diverId, row.diverId), isNull(dive.deletedAt), lt(dive.startsAt, row.startsAt)))
       .orderBy(desc(dive.startsAt), desc(dive.id)).limit(1);
-    return { diveId: previous?.id ?? null, cylinders: previous ? (await cylindersOf(db, previous.id)).map(withoutPressures) : [] };
+    if (!previous) return { diveId: null, cylinders: [], lead: [], suit: null };
+    return {
+      diveId: previous.id, cylinders: (await cylindersOf(db, previous.id)).map(withoutPressures),
+      lead: await leadOf(db, previous.id), suit: suitOf(previous),
+    };
   });
 
   app.put('/dives/:id/participants', {
