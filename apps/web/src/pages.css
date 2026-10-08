@@ -407,3 +407,8 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .qr-code { display: block; width: min(100%, 15rem); height: auto; flex: none; border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
 .qr-code-paper { fill: #fff; }
 .qr-code-ink { fill: #000; }
+/* The scanner (ADR 0043): the camera's picture fills the dialog's width and never grows past the screen. */
+.scanner { display: grid; gap: var(--space-3); margin-bottom: var(--space-4); }
+.scanner-video { display: block; width: 100%; max-height: 60vh; object-fit: contain; background: #000; border-radius: var(--radius-sm); }
+.scanner-video[hidden] { display: none; }
+.scanner .notice, .scanner .muted { margin: 0; }

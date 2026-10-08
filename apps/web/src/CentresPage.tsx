@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, ApiError, centreQuery, centresQuery, keys, sitesQuery, unwrap, type CentreView, type DiveView, type SiteView } from './api.ts';
+import { CodeScanner } from './CodeScanner.tsx';
 import { announce } from './lib/announce.ts';
 import { useErrorText } from './lib/display.ts';
 import { usePageTitle } from './lib/page.ts';
@@ -153,9 +154,10 @@ export function NewCentre({ siteId, onCreated, onCancel }: { siteId?: string; on
           label={t('centres.pasteCode')} description={t('centres.pasteCodeHint')} name="code" maxLength={1000} autoComplete="off" spellCheck="false"
           value={code} onChange={setCode}
         />
-        <div className="form-actions">
+        {/* A scanned text goes to the server and not into the field: a diver's code holds an e-mail. */}
+        <CodeScanner onText={(text) => read.mutate(text)}>
           <Button type="submit" icon="code" isPending={read.isPending} isDisabled={!code.trim()}>{t('centres.readCode')}</Button>
-        </div>
+        </CodeScanner>
         {read.error && <Notice tone="danger">{errorText(read.error)}</Notice>}
         {other && <Notice tone="danger">{t(`centres.otherCode.${other}`)}</Notice>}
         {existing && <Notice>{t('centres.alreadyHere', { name: existing.name })} <a href={`#/centres/${existing.id}`}>{t('centres.open', { name: existing.name })}</a></Notice>}
@@ -208,6 +210,11 @@ export function CentrePage({ id }: { id: string }) {
       params: { path: { id, source: 'ssi' } }, body: { externalId: number.trim() || null },
     })),
     onSuccess: async (updated) => { await refresh(updated); setEditing(null); announce(t('centres.saved')); },
+  });
+  // A scanned code gives the number; the server says whether it is a centre's code at all.
+  const scan = useMutation({
+    mutationFn: async (text: string) => unwrap(await api.POST('/api/verification-codes/read', { body: { text } })),
+    onSuccess: (found) => { if (found.kind === 'centre') setNumber(found.centreNumber); },
   });
   const unlink = useMutation({
     mutationFn: async (siteId: string) => unwrap(await api.DELETE('/api/dive-centres/{id}/sites/{siteId}', { params: { path: { id, siteId } } })),
@@ -278,10 +285,12 @@ export function CentrePage({ id }: { id: string }) {
               value={number} onChange={setNumber}
             />
             <TakenNotice error={setSsi.error} />
-            <div className="form-actions">
+            <CodeScanner onText={(text) => scan.mutate(text)}>
               <Button type="submit" variant="primary" icon="save" isPending={setSsi.isPending}>{t('centres.save')}</Button>
               <Button onPress={() => setEditing(null)}>{t('common.cancel')}</Button>
-            </div>
+            </CodeScanner>
+            {scan.error && <Notice tone="danger">{errorText(scan.error)}</Notice>}
+            {scan.data && scan.data.kind !== 'centre' && <Notice tone="danger">{t(`centres.otherCode.${scan.data.kind}`)}</Notice>}
           </Form>
         ) : (
           <dl className="facts">
@@ -297,7 +306,7 @@ export function CentrePage({ id }: { id: string }) {
               <dd>
                 <span translate="no">{ssi ?? t('centres.notSet')}</span>{' '}
                 <Button ref={numberButton} variant="quiet" size="small" aria-label={t('common.forItem', { action: ssi ? t('centres.change') : t('centres.add'), item: t('centres.ssiNumber') })}
-                  onPress={() => { setNumber(ssi ?? ''); setSsi.reset(); setEditing('number'); }}>
+                  onPress={() => { setNumber(ssi ?? ''); setSsi.reset(); scan.reset(); setEditing('number'); }}>
                   {ssi ? t('centres.change') : t('centres.add')}
                 </Button>
               </dd>

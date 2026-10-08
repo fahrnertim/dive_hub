@@ -1,0 +1,4 @@
+interface:
+  display_name: "Media Capture Device Contracts"
+  short_description: "Review camera and microphone session lifecycle."
+  default_prompt: "Use $media-capture-device-contracts to trace this browser camera or microphone request through error classification, recovery, device replacement, track ownership, and teardown, then verify it with a real-browser/device regression."

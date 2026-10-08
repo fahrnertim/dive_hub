@@ -18,6 +18,7 @@
     "better-auth": "^1.7.7",
     "i18next": "^26.4.2",
     "lucide-react": "^1.51.0",
+    "qr": "0.7.2",
     "react": "^19.3.0",
     "react-aria-components": "^1.21.1",
     "react-dom": "^19.3.0",

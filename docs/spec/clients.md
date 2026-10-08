@@ -596,6 +596,12 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
   `centre`, and say so when `existing` names a centre that already has the number; say that a `buddy` or
   `professional` code is not a centre's and keep nothing of it (it holds a person's e-mail); `code_not_recognised`
   for anything else.
+- **Should offer scanning a code**, by camera and from an image file, wherever a code's text can be pasted. Send the
+  text that was read to `POST /api/verification-codes/read`, unchanged, and take only what it answers; don't put the
+  scanned text into a field. Ask for the camera only when the User starts scanning, release it as soon as a code is
+  read or the scanner closes, and say which failure it is (blocked, no camera, camera busy). Where the platform gives
+  no camera (a web page over plain HTTP), say so and offer the image. A picture without a code is said as that, not
+  as an error of the code. *Web:* `CodeScanner.tsx`, `lib/qr-reader.ts`.
 - **The number** is set on its own (`PUT /api/dive-centres/{id}/external-ids/ssi`, `null` removes it; the whole text of
   a centre's code is accepted too). `centre_external_id_taken` names the centre that has it: say so and lead there.
 - **Links to Dive sites** are set from the centre and from the site (`PUT`/`DELETE /api/dive-centres/{id}/sites/{siteId}`;

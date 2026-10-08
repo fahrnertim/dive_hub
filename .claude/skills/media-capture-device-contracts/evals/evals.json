@@ -1,0 +1,79 @@
+{
+  "skill_name": "media-capture-device-contracts",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Our browser camera setup maps every getUserMedia rejection to 'permission denied' and retries automatically. A user who denied once sees an endless spinner that says the camera will reopen. Review the recovery contract.",
+      "expected_output": "Classifies the captured getUserMedia exception instead of assuming denial, checks secure-context and policy evidence for NotAllowedError, distinguishes no-device, unreadable-device, and overconstrained failures, and replaces automatic retry with truthful user-initiated retry or settings guidance.",
+      "expectations": [
+        "The response requires the actual getUserMedia exception name and context evidence before labeling the failure as user denial.",
+        "The response distinguishes NotAllowedError from NotFoundError, NotReadableError, and OverconstrainedError.",
+        "The response rejects automatic retry or a promise that JavaScript can force the permission prompt to reopen.",
+        "The response requires a browser denial-and-retry regression whose UI remains truthful until a live track exists."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "A call is live on an external USB camera. When the camera is unplugged, the video freezes but the UI still shows 'Camera on' and keeps the removed device selected. Review the smallest recovery fix.",
+      "expected_output": "Confirms a live-device interruption defect, observes the current video track ending, reconciles the device list on devicechange or explicit retry, moves the UI out of live state, and verifies selection or recovery with a real browser and removable or controlled device.",
+      "expectations": [
+        "The response checks the active track's ended or readyState transition instead of relying only on the frozen video element.",
+        "The response moves the UI out of live state when the required video track is no longer live.",
+        "The response reconciles available devices on devicechange where supported and on an explicit retry path.",
+        "The response proposes a real-browser/device regression covering removal and recovery without duplicate listeners or streams."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Our camera request can resolve after the user has already navigated away. The resolved stream is still assigned to the old video ref, and the laptop camera light remains on. Review this teardown bug.",
+      "expected_output": "Confirms a superseded-request ownership defect, invalidates the pending request on teardown, stops every track in a late-resolving owned stream, avoids attaching it to the disposed media element, and adds a delayed-resolution browser regression.",
+      "expectations": [
+        "The response identifies the late-resolving stream as owned by a disposed or superseded request.",
+        "The response stops every track in that late stream and does not attach it to the disposed media element.",
+        "The response requires a delayed getUserMedia resolution regression that asserts no live owned tracks remain after teardown."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Before permission is granted, enumerateDevices returns a camera entry with an empty label. File a privacy bug because the device label is missing.",
+      "expected_output": "Rejects the empty-label source-only finding because device-label disclosure depends on capture permission, and requires an actual getUserMedia failure, wrong UI state, or leaked resource before proposing a code change.",
+      "expectations": [
+        "The response does not treat an empty pre-permission device label as proof of a defect.",
+        "The response explains that label disclosure is permission-dependent.",
+        "The response requires runtime capture or lifecycle evidence before proposing a code change."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Camera capture inside a cross-origin iframe rejects with NotAllowedError because the parent does not delegate camera capability. Should the page keep retrying getUserMedia with looser video constraints?",
+      "expected_output": "Routes the defect to iframe-embed-contracts because parent-to-guest capability delegation, not top-level media-session recovery or video constraints, determines whether the iframe can request camera access.",
+      "expectations": [
+        "The response routes the cross-origin iframe capability policy to iframe-embed-contracts.",
+        "The response rejects looser media constraints or repeated getUserMedia calls as a fix for missing iframe delegation.",
+        "The response does not classify the policy denial as a top-level user permission or device failure."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "getUserMedia succeeds and its audio track stays live, but MediaRecorder sometimes omits the final encoded chunk when the user presses Stop. Review whether media-capture-device-contracts owns this bug.",
+      "expected_output": "Routes the report outside the current pack to a recording-specific workflow because encoded chunk delivery and MediaRecorder stop/data ordering are distinct from input-track acquisition, device recovery, and track ownership.",
+      "expectations": [
+        "The response states that MediaRecorder final-chunk semantics are outside media-capture-device-contracts.",
+        "The response does not name or imply that an installed sibling skill exists for the recording workflow.",
+        "The response preserves the distinction between a live input track and missing encoded recorder output."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "During a browser video call, the current camera track fires mute and its muted property becomes true, but readyState remains live. Video resumes on unmute a few seconds later. Our UI keeps saying 'Camera on' throughout, and each interruption adds another pair of listeners. Review this without treating it as an unplugged camera.",
+      "expected_output": "Confirms a temporary source-interruption and listener-ownership defect, represents the live-but-muted track as interrupted rather than healthy or ended, restores live state only when the same current track un-mutes, and cleans up mute/unmute/ended listeners idempotently.",
+      "expectations": [
+        "The response distinguishes a live-but-muted temporary interruption from an ended track or removed device.",
+        "The response moves the UI out of healthy live state on mute without declaring the track permanently stopped.",
+        "The response restores live state on unmute only when the same current owned track is still live and unmuted.",
+        "The response requires idempotent registration and cleanup of mute, unmute, and ended listeners across replacement and teardown.",
+        "The response proposes a focused regression covering mute, unmute, truthful UI state, and listener counts without reacquiring the device."
+      ]
+    }
+  ]
+}

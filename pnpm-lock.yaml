@@ -280,6 +280,9 @@ importers:
       lucide-react:
         specifier: ^1.51.0
         version: 1.51.0(@types/react@19.3.0)(react@19.3.0)
+      qr:
+        specifier: 0.7.2
+        version: 0.7.2
       react:
         specifier: ^19.3.0
         version: 19.3.0
@@ -3015,6 +3018,10 @@ packages:
   protocol-buffers-schema@3.6.1:
     resolution: {integrity: sha512-VG2K63Igkiv9p76tk1lilczEK1cT+kCjKtkdhw1dQZV3k3IXJbd3o6Ho8b9zJZaHSnT2hKe4I+ObmX9w6m5SmQ==}
 
+  qr@0.7.2:
+    resolution: {integrity: sha512-yovYRuacJBJkG9fWSwcB2bKZhr58c04DpOXguDU+rAAoJZdi6/J3DtlomkKqdd1MutIptIK+kigWmT7LKz8y7A==}
+    engines: {node: '>= 20.19.0'}
+
   quick-format-unescaped@4.0.4:
     resolution: {integrity: sha512-tYC1Q1hgyRuHgloV/YXs2w15unPVh8qfu/qCTfhTYamaw7fyhumKa2yGpdSo87vY32rIclj+4fWYQXUMs9EHvg==}
 
@@ -5719,6 +5726,8 @@ snapshots:
       sisteransi: 1.0.5
 
   protocol-buffers-schema@3.6.1: {}
+
+  qr@0.7.2: {}
 
   quick-format-unescaped@4.0.4: {}
 

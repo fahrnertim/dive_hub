@@ -168,6 +168,19 @@ for (const v of variants) {
       await expectGoodPage(page, title('Dive centres'), v);
     });
 
+    test('the code scanner, without a camera', { tag: ['@sites'] }, async ({ page }) => {
+      // The same answer in every browser the tests run in: no camera.
+      await page.addInitScript(() => {
+        Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => { throw new DOMException('', 'NotFoundError'); } } });
+      });
+      await page.goto('/#/centres');
+      await page.getByRole('button', { name: v.english ? 'New dive centre' : 'Neue Tauchbasis' }).click();
+      await page.getByRole('button', { name: v.english ? 'Scan with camera' : 'Mit Kamera scannen' }).click();
+      const dialog = page.getByRole('dialog', { name: v.english ? 'Scan code' : 'Code scannen' });
+      await expect(dialog.getByRole('button', { name: v.english ? 'Try again' : 'Erneut versuchen' })).toBeVisible();
+      await expectGoodPage(page, title('Dive centres'), v);
+    });
+
     test('a dive centre with its code, changing its number and adding a dive site', { tag: ['@sites'] }, async ({ page }) => {
       await page.goto(`/#/centres/${centreId}`);
       const code = page.getByRole('img', { name: /Tauchsportzentrum Beispielhausen/ });

@@ -2,7 +2,7 @@
 title: Agent skills
 summary: Which agent skills the project uses, which were considered and rejected, and why.
 status: living
-date: 2026-10-07
+date: 2026-10-08
 ---
 
 # Agent skills
@@ -54,6 +54,7 @@ that fit it, also for familiar tools (14 of them were never loaded in the first 
 | mobile-native | emilkowalski/skills | platform fixes so the web app feels native on a phone (input zoom, long-press, `theme-color`, safe areas) | 2026-10-04 |
 | ux-search, ux-selection-controls | uxcel-lab/product-skills | live search results, choosing the right selection control (the site picker) | 2026-10-05 |
 | ux-navigation | uxcel-lab/product-skills | choosing the navigation pattern (top bar, tabs, bottom bar on phones), "where am I" signals, pagination | 2026-10-07 |
+| media-capture-device-contracts | voidmatcha/frontend-niche-skills | the camera's life cycle in a page: telling failures apart, honest recovery, stopping every track | 2026-10-08 |
 
 Install with telemetry off: `DISABLE_TELEMETRY=1 npx skills add <owner/repo> -s <skill> -a claude-code --copy -y`.
 
@@ -109,6 +110,11 @@ Where a skill and this project disagree, these rules win. They lived in AGENTS.m
   [ADR 0035](decisions/0035-mcp-connector.md) (TypeBox if the SDK takes JSON Schema, else Zod only in `src/mcp/`). Its
   evaluation scripts (Python, Anthropic API) run only when the owner asks, with their own key, against fake data, never a
   real logbook. Read-only tools; write tools need a new ADR.
+- **media-capture-device-contracts** (voidmatcha): we use the camera only, never the microphone. Its hand-offs to sibling
+  skills (`iframe-embed-contracts`, `webview-bridge-pages`, `user-activation-contracts`) go nowhere: we don't have them.
+  Don't run its bundled tests (`tests/`: bats, Python, a Playwright CLI); our browser tests are in `apps/web/e2e`
+  (playwright-cli override), with a camera drawn on a canvas. Its "real device" protocol needs the owner's phone: say
+  what was only checked with the drawn camera. Findings go in our review documents' format, not its "disposition" form.
 - **better-layout**, **better-typography**, **better-colors** (jakubkrehel): our tokens and hex notation stay (no oklch rewrite).
   Their hand-offs to `better-accessibility`, `better-ui` and `better-writing` go to our `accessibility` skill, `emil-design-eng`
   and the writing rules in [docs/spec/design-system.md](spec/design-system.md#writing). Surfaces follow
@@ -209,3 +215,6 @@ Details and commands: [skills vetting](research/2026-10-02-agent-skills-vetting.
 | 2026-10-07 | `npx skills find` for "token usage", "context management", "claude code cost", "prompt caching", "context engineering", "agents md" (token usage, [research note](research/2026-10-07-token-usage.md)) | nothing installed | Only the registry pages were read, not the skill files. mattpocock/skills `writing-for-agents` (pointers instead of inline material, every always-loaded word costs each turn) is a candidate for rewriting AGENTS.md, pending the owner. anthropics/claude-plugins-official `claude-md-improver` not needed: it also targets `CLAUDE.local.md` (against ADR 0001), and Claude Code's built-in `/doctor prompt-audit` covers the audit. juliusbrussee/caveman `verify-and-stop` (fewer verification steps) not pursued: it would work against our checks rule. The rest: Lark, marketing, unrelated vendor skills |
 | 2026-10-07 | uxcel-lab/product-skills `ux-navigation` (commit 5007cd0, the commit of our eight uxcel skills) | installed (owner approved 2026-10-07) | For the navigation part of the [UI redesign proposal](research/2026-10-07-ui-redesign-proposal.md#5-navigation); `ux-menus` hands off to it. MIT, one SKILL.md (143 lines, read in full), no scripts, no fetches, only links to Uxcel lessons. Pattern choice by structure (top bar, sidebar, tabs, bottom bar, breadcrumbs), "where am I" signals, pagination. Overrides needed: 44 px targets (we use WCAG 2.2 AA's 24 px), truncate-plus-tooltip on breadcrumbs (no tooltips), hand-offs to `ux-*-audit` skipped as for the others; its footer, mega-menu and language-picker parts don't apply. `cards` from the same repository not looked at |
 | 2026-10-08 | `npx skills find` for drawing a QR code (a verification code, [ADR 0043](decisions/0043-dive-centres-and-ssi-verification-codes.md)) | nothing installed | Nothing fitting for drawing a given text as a QR code in a React client. The code is drawn with the library `uqr` (MIT, no dependencies, owner approved 2026-10-08) in `apps/web/src/ui/QrCode.tsx`. Slice 2 (the scanner) searches again, for reading codes from the camera. |
+| 2026-10-08 | voidmatcha/frontend-niche-skills `media-capture-device-contracts` (commit 0207619) | installed (owner approved 2026-10-08) | For the scanner's camera ([ADR 0043](decisions/0043-dive-centres-and-ssi-verification-codes.md), slice 2). Apache-2.0. One SKILL.md and a reference for checks on real devices, both read in full: `getUserMedia` as a session (which failure is which, recovery that doesn't promise a new permission question, a late stream stopped, every owned track stopped), sourced from MDN. Little used (2 installs, 1 star, one author with 41 such skills). Bundled: evals (JSON), a display-name `agents/openai.yaml`, and tests of the skill itself (a bats file, a Node script that starts Playwright with Chromium's fake camera, a Python server on 127.0.0.1 that serves one fixture page). The bats file, the Node script and the server's handler were read in full, the fixture page's script was searched for network and process calls (none); nothing runs on install. The installed SKILL.md matches the commit. Overrides above |
+| 2026-10-08 | caffeinelabs/skills `extension-qr-code`, tippyentertainment/skills `qr-code-scanner-tracking` | rejected | The first (24.7k installs) is for the Caffeine AI platform: a fixed hook from the vendor's own npm package that loads jsQR from a CDN at run time. The second designs scan tracking for marketing (tracking URLs, who scanned where) for a vendor's agent platform, no licence |
+| 2026-10-08 | `npx skills find` for "qr code scanner", "qr code", "barcode scanner", "barcode detection", "camera getusermedia", "webcam capture", "media devices camera", "image upload decode" (the scanner) | see above | The rest: native apps (iOS Vision, Tauri, Salesforce and Power Platform mobile), video and screen recording, vendor skills (Zoho, Syncfusion), bug hunting; davidcastagnetoa `webrtc_media_devices` (5 installs) and derushio `mediapipe-camera-input` (3) not read. The decoder is the library `qr` (ADR 0043) |

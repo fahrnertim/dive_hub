@@ -1552,6 +1552,24 @@
       "guidance": "Aus DANs Konsens von 2002; gilt auch für Fahrten über hohe Pässe. Wird nach dem letzten Tauchgang eines Tauchtags gezeigt."
     }
   },
+  "scan": {
+    "camera": "Mit Kamera scannen",
+    "image": "Aus Bild lesen",
+    "title": "Code scannen",
+    "picture": "Bild der Kamera",
+    "requesting": "Warte auf die Kamera …",
+    "live": "Halte den QR-Code vor die Kamera.",
+    "insecure": "Der Browser gibt einer Seite die Kamera nur über HTTPS. Lies den Code stattdessen aus einem Bild.",
+    "unsupported": "Dieser Browser gibt der Seite keine Kamera. Lies den Code stattdessen aus einem Bild.",
+    "denied": "Die Kamera ist für diese Seite gesperrt. Erlaube sie in den Einstellungen des Browsers für diese Seite und versuche es erneut, oder lies den Code aus einem Bild.",
+    "noDevice": "Es wurde keine Kamera gefunden. Lies den Code stattdessen aus einem Bild.",
+    "unreadable": "Die Kamera konnte nicht gestartet werden. Vielleicht benutzt sie gerade eine andere App.",
+    "stopped": "Die Kamera wurde beendet.",
+    "failed": "Die Kamera konnte nicht gestartet werden.",
+    "retry": "Erneut versuchen",
+    "close": "Scanner schließen",
+    "noCodeInImage": "In diesem Bild wurde kein QR-Code gefunden."
+  },
   "centres": {
     "title": "Tauchbasen",
     "intro": "Betriebe, die Tauchgänge durchführen, gemeinsam für alle in diesem Dive Hub. Der SSI-Code einer Basis steht bei jedem Tauchgang an ihren Tauchplätzen.",

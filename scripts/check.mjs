@@ -25,6 +25,8 @@ const AREAS = [
   [/^apps\/web\/src\/SitePicker\.tsx$/, ['@sites', '@dives']],
   // Dive centres and their verification codes (ADR 0043): their own pages, a panel on a Dive site, a line on a Dive.
   [/^apps\/web\/src\/CentresPage\.tsx$|^apps\/web\/src\/ui\/QrCode\.tsx$/, ['@sites', '@dives']],
+  // The scanner for verification codes (ADR 0043): on the new centre form and where a centre's number is set.
+  [/^apps\/web\/src\/CodeScanner\.tsx$|^apps\/web\/src\/lib\/qr-reader\.ts$/, ['@sites']],
   [/^apps\/web\/src\/lib\/address-search\.ts$/, ['@sites', '@dives']],
   [/^apps\/web\/src\/(DiveDetail|DiveEditForm|DiveHistory|DiveList|ProfileSketch|DepthProfile|Decisions|ReviewPage|ReviewStrip|ReviewRows|ImportPanel|DeleteDive|DeletedDives|MergeDive|LogbookChecks|Participants|Assessment)\.tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|sketch|logbook|review|devices|importable|deletion|assessment)\.ts$/, ['@dives']],
   // The Dive the deletion browser tests delete and restore (ADR 0026).

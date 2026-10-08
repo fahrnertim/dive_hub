@@ -1552,6 +1552,24 @@
       "guidance": "From DAN’s 2002 consensus; it also applies to drives over high passes. Shown after the last dive of a diving day."
     }
   },
+  "scan": {
+    "camera": "Scan with camera",
+    "image": "Read from image",
+    "title": "Scan code",
+    "picture": "The camera’s picture",
+    "requesting": "Waiting for the camera…",
+    "live": "Hold the QR code in front of the camera.",
+    "insecure": "The browser only gives a page the camera over HTTPS. Read the code from an image instead.",
+    "unsupported": "This browser gives the page no camera. Read the code from an image instead.",
+    "denied": "The camera is blocked for this page. Allow it in the browser’s settings for this page and try again, or read the code from an image.",
+    "noDevice": "No camera was found. Read the code from an image instead.",
+    "unreadable": "The camera could not be started. Another app may be using it.",
+    "stopped": "The camera has stopped.",
+    "failed": "The camera could not be started.",
+    "retry": "Try again",
+    "close": "Close scanner",
+    "noCodeInImage": "No QR code was found in this image."
+  },
   "centres": {
     "title": "Dive centres",
     "intro": "Businesses that run dives, shared by everyone on this Dive Hub. A centre’s SSI code shows on every dive at its dive sites.",

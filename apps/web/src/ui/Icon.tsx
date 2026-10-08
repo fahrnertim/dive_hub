@@ -2,8 +2,8 @@
 // imports lucide-react, so the set stays small and consistent; names here say what the icon means.
 // Names were checked with the suggest-lucide-icons skill against the installed version.
 import {
-  ArrowDown, ArrowRightLeft, ArrowUp, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert,
-  CircleCheck, CircleUser, CloudDownload, CloudUpload, Copy, Ellipsis, ExternalLink, Info, KeyRound, Link, LogIn, LogOut, MapPin, Merge, Pencil, Plus, QrCode, Scissors, Shield, ShieldOff,
+  ArrowDown, ArrowRightLeft, ArrowUp, BookOpen, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert,
+  CircleCheck, CircleUser, CloudDownload, CloudUpload, Copy, Ellipsis, ExternalLink, Image, Info, KeyRound, Link, LogIn, LogOut, MapPin, Merge, Pencil, Plus, QrCode, Scissors, Shield, ShieldOff,
   Star, Store, Trash, Undo2, Unlink, Upload, User, UserCheck, Users, UserX, type LucideIcon,
 } from 'lucide-react';
 
@@ -14,6 +14,9 @@ const ICONS = {
   /** A Dive centre, and its verification code (ADR 0043). */
   centre: Store,
   code: QrCode,
+  /** Reading a code by camera or from an image file (ADR 0043). */
+  camera: Camera,
+  image: Image,
   external: ExternalLink,
   admin: Shield,
   account: CircleUser,

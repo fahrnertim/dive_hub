@@ -1,6 +1,6 @@
 ---
 title: "ADR 0043: Dive centres and SSI verification codes"
-summary: A shared Dive centre with an SSI centre number, linked to the Dive sites it is responsible for; its SSI verification code is built from number and name, never stored, and shown on the centre and on every Dive at one of its sites. Planned - a scanner, and buddy and professional codes with the Diver's e-mail shared.
+summary: A shared Dive centre with an SSI centre number, linked to the Dive sites it is responsible for; its SSI verification code is built from number and name, never stored, and shown on the centre and on every Dive at one of its sites. A scanner reads a centre's code by camera or from an image. Planned - buddy and professional codes with the Diver's e-mail shared.
 status: accepted
 date: 2026-10-08
 ---
@@ -8,8 +8,8 @@ date: 2026-10-08
 # ADR 0043: Dive centres and SSI verification codes
 
 ## Status
-Accepted – 2026-10-08 (decided with the owner). Slice 1 (the Dive centre) is built, see [As built](#as-built-slice-1);
-slices 2 and 3 are not.
+Accepted – 2026-10-08 (decided with the owner). Slice 1 (the Dive centre) and slice 2 (the scanner) are built, see
+[As built (slice 1)](#as-built-slice-1) and [Scanner](#scanner-slice-2-as-built); slice 3 is not.
 
 ## Context
 SSI shows a dive as verified once the diver scans a dive centre's or a professional's QR code on that logbook entry.
@@ -81,13 +81,38 @@ Decided with the owner on 2026-10-08 while building:
 - **The "Send update" warning** comes from the Push status (`current.updateRemovesVerification`): the SSI adapter
   compares the start time (to the minute) it would send with the one in the last Push's stored payload. When that
   payload is unknown (the Dive was linked to an entry that was already at SSI, so nothing was sent), **it warns
-  anyway**: a warning too many costs a glance, a missing one costs a verification. The web client also says after the
-  update that the verification is gone, and both notices lead to the Dive's code when its site has one.
+  anyway**: a warning too many costs a glance, a missing one costs a verification (confirmed by the owner on
+  2026-10-08, after slice 1). The web client also says after the update that the verification is gone, and both
+  notices lead to the Dive's code when its site has one.
 - **Navigation:** Dive centres are a fourth main entry in the web client.
 
-### Scanner (slice 2, planned)
-A client reads a code by camera or from an image file and sends its text to the same route. New technology for the
-project: the slice starts with the search for skills (AGENTS.md).
+### Scanner (slice 2, as built)
+A client reads a code by camera or from an image file and sends its text to the same route
+(`POST /api/verification-codes/read`). Nothing changed on the server. Decided with the owner on 2026-10-08:
+
+- **Where:** on the "new centre" form, next to the pasted text, and where a centre's SSI centre number is set. In
+  both, the scanned text goes to the server and only what it answers is taken: name and number, or the number. A
+  buddy's or a professional's code is told apart and nothing of it is kept, not in a field either (it holds an
+  e-mail).
+- **Reading the picture** (`apps/web/src/lib/qr-reader.ts`): the browser's own `BarcodeDetector` where it reads QR
+  codes (Chrome on Android and macOS), and the library [`qr`](https://github.com/paulmillr/qr) 0.7.2 (MIT or
+  Apache-2.0, no dependencies, pinned exactly) everywhere else and whenever the detector finds nothing. Considered:
+  jsQR (unchanged since 2021) and zxing-wasm (the strongest decoder, but about 1 MB of WebAssembly that its default
+  loads from a CDN). `qr` is young: its author gives 57.5 % on BoofCV's set of hard photos. Our own drawn codes, also
+  with umlauts and at one pixel per module, are read in the tests. **How well it reads a code photographed from
+  another phone's screen or a printed sign is not measured**: if scanning disappoints, look here first; zxing-wasm,
+  served by ourselves, is the next step. With the decoder, the centres' part of the web client is 59 kB (22 kB
+  compressed).
+- **The camera** (`apps/web/src/CodeScanner.tsx`, built with the skill `media-capture-device-contracts`): asked for
+  only when the User presses "Scan with camera", the back camera preferred, no sound. The scanner stops every track
+  when the code is read, when the dialog closes and when the camera ends by itself; a camera that answers after the
+  dialog closed is stopped unseen. Each failure has its own sentence: blocked (no script can open the browser's
+  question again, so the text names the browser's settings), no camera, camera busy, stopped.
+- **Plain HTTP gives no camera.** A browser only offers `navigator.mediaDevices` to a page over HTTPS (or on
+  `localhost`), so a Dive Hub opened as `http://nas.local` has none. The scanner says so and points to the image
+  file, which on a phone also offers taking a photo.
+- **Tested** with a camera drawn on a canvas in the page: the scanner's own steps, not the browser's permission
+  question or a real camera. **Not checked on a real phone**; that needs the owner's.
 
 ### Buddy and professional codes (slice 3, planned)
 Decided by the owner in outline; the slice's own change amends ADR 0028 and ADR 0029 where they say otherwise.

@@ -279,6 +279,30 @@ test('review material', async ({ page, request, browser }) => {
     await capture(page, `${prefix}-centres`, { aria: false, axe });
     await page.getByRole('button', { name: de ? 'Neue Tauchbasis' : 'New dive centre' }).click();
     await capture(page, `${prefix}-centre-new`, { aria: false, axe });
+    // The scanner (ADR 0043): with a camera that shows a white wall, and with a camera the browser has blocked.
+    await page.evaluate(() => {
+      const getUserMedia = async () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 640; canvas.height = 480;
+        const context = canvas.getContext('2d')!;
+        const draw = () => { context.fillStyle = '#ddd'; context.fillRect(0, 0, 640, 480); };
+        draw();
+        setInterval(draw, 100);
+        return canvas.captureStream(10);
+      };
+      Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } });
+    });
+    await page.getByRole('button', { name: de ? 'Mit Kamera scannen' : 'Scan with camera' }).click();
+    await page.getByText(de ? 'Halte den QR-Code vor die Kamera.' : 'Hold the QR code in front of the camera.').waitFor();
+    await capture(page, `${prefix}-centre-scan`, { full: false, aria: false, axe });
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => {
+      Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => { throw new DOMException('', 'NotAllowedError'); } } });
+    });
+    await page.getByRole('button', { name: de ? 'Mit Kamera scannen' : 'Scan with camera' }).click();
+    await page.getByRole('button', { name: de ? 'Erneut versuchen' : 'Try again' }).waitFor();
+    await capture(page, `${prefix}-centre-scan-blocked`, { full: false, aria: false, axe });
+    await page.keyboard.press('Escape');
     await page.goto(`/#/centres/${centre.id}`); await page.getByRole('img', { name: /Example Divers Red Sea GmbH/ }).waitFor();
     await capture(page, `${prefix}-centre`, { aria: false, axe });
     await page.getByRole('button', { name: de ? 'Ändern: SSI-Centernummer' : 'Change: SSI centre number' }).click();
