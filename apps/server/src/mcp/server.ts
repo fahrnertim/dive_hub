@@ -8,12 +8,13 @@ import { getDiveAssessment } from './tools-assessment.js';
 import { buddies, listDivers } from './tools-divers.js';
 import { getDive, searchDives, stats } from './tools-logbook.js';
 import { planGasAndBottomTime } from './tools-planning.js';
+import { planGasPlanTool } from './tools-planning-gas-plan.js';
 import { getSite, searchSites } from './tools-sites.js';
 
 export const MCP_SERVER_INFO = { name: 'dive-hub', title: 'Dive Hub', version: '0.1.0' };
 
 /** Every tool of the endpoint. Each later slice adds its own here (ADR 0035). */
-export const TOOLS = [searchDives, getDive, getDiveAssessment, stats, searchSites, getSite, buddies, listDivers, planGasAndBottomTime] as unknown as ToolDefinition[];
+export const TOOLS = [searchDives, getDive, getDiveAssessment, stats, searchSites, getSite, buddies, listDivers, planGasAndBottomTime, planGasPlanTool] as unknown as ToolDefinition[];
 
 /** What a client's model is told about the server before it uses a tool. */
 export const INSTRUCTIONS = `Dive Hub is the user's dive logbook. These tools read it; none of them changes anything.

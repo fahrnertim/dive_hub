@@ -267,10 +267,11 @@ SAC, the shortest of the no-decompression limit (ZHL-16C with the Diver's GF, cl
 gas, and which binds. Reads the Diver's Recordings (GF, SAC) and recent Dives (the 48-hour warning), the Cylinder
 catalogue (ADR 0031) and the planned site's water type. See the [gas and NDL note](../research/2026-10-06-gas-and-ndl-tools.md).
 
-**Gas plan** (planned, [ADR 0033](../decisions/0033-gas-plans-rules-and-groups.md), slice 22) — not stored: computed on
+**Gas plan** (built, [ADR 0033](../decisions/0033-gas-plans-rules-and-groups.md), slice 22) — not stored: computed on
 request for levels and a group of Divers, each with a Cylinder and a SAC; the gas rule's turn and ascent pressures per
 Diver (rock bottom at every level by default, never below 50 bar), the controlling Diver, real gas above 200 bar. Only
-Divers the User manages bring their logbook SAC; others a typed one (ADR 0028). Amends ADR 0032's gas limit and SAC.
+Divers the User manages bring their logbook SAC; any other Diver of the instance, or a guest by a typed name, a typed one (ADR 0028).
+Descent and ascent rates are inputs (18 and 9 m/min). It does not check the no-decompression limit over its levels. Amends ADR 0032's gas limit and SAC.
 **SAC per Dive** is computed from its Cylinders (the litres summed over all of them, each with both pressures and a volume; at least
 15 minutes; real gas at every pressure; built, `sac` on the Dive's view; [ADR 0045](../decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md))
 or a tank pod's SAC, not stored; a Diver's **planning SAC** is the 85th percentile of their last 20 such Dives (at least
@@ -627,7 +628,7 @@ Edge cases:
 - *EAN40 at 30 m:* ppO2 1.6, the oxygen limit (45 min) is shown beside the NDL, and the page says 1.6 is the contingency
   limit.
 
-### 7. A guided group's gas (planned, ADR 0033)
+### 7. A guided group's gas (built, ADR 0033)
 
 A guide plans 18 m for 30 min, then 10 m for 10 min, with Tim (his own Diver; planning SAC 19 L/min from 12 Dives), Anna
 (another User's Diver; SAC typed 16), Bob (an external Diver; default 25) and Lena (SAC typed 18, a 12 L steel at 220 bar;
@@ -635,7 +636,7 @@ the others an AL80 at 200 bar). Rule: rock bottom, never below 50 bar.
 
 1. Rock bottom at 18 m: Tim and Bob about 52 bar (their SAC + the highest other, ×2); Anna and Lena under 50, so 50.
 2. Bob reaches his ascent pressure at about minute 24, Tim at about 32: the group leaves 18 m at minute 24; Bob is the
-   controlling Diver; the page shows everyone's pressures then and suggests a larger cylinder for Bob.
+   controlling Diver; the page shows everyone's pressures then (a larger cylinder for Bob is not suggested; the margin shows the shortfall).
 3. Nothing is stored; Anna's and Lena's typed values stay in the address, and nothing of Anna's logbook was read.
 
 Edge cases:

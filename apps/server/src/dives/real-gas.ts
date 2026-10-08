@@ -24,3 +24,16 @@ export function compressibility(bar: number, gas: { o2: number; he: number } | n
 /** The litres at the surface's pressure that a cylinder of `volumeL` holds at `bar`. */
 export const surfaceLitres = (volumeL: number, bar: number, gas: { o2: number; he: number } | null) =>
   (volumeL * bar) / compressibility(bar, gas);
+
+/** The pressure at which a cylinder of `volumeL` holds `litres` (the inverse of `surfaceLitres`, found by bisection). */
+export function pressureForLitres(volumeL: number, litres: number, gas: { o2: number; he: number } | null): number {
+  if (litres <= 0) return 0;
+  if (litres >= surfaceLitres(volumeL, MAX_BAR, gas)) return MAX_BAR;
+  let low = 0;
+  let high = MAX_BAR;
+  for (let i = 0; i < 60; i++) {
+    const mid = (low + high) / 2;
+    if (surfaceLitres(volumeL, mid, gas) < litres) low = mid; else high = mid;
+  }
+  return (low + high) / 2;
+}

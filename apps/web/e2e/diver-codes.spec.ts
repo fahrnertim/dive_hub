@@ -19,7 +19,8 @@ const forget = async (request: Parameters<typeof forgetDivers>[0]) => {
 test.beforeAll(async ({ request }) => forget(request));
 test.afterAll(async ({ request }) => forget(request));
 
-test('a diver is added from the text of a professional’s code, and shows both codes', { tag: ['@divers'] }, async ({ page }) => {
+// The first three also carry @dives: the last one does, and a run by tag must keep the serial story together.
+test('a diver is added from the text of a professional’s code, and shows both codes', { tag: ['@divers', '@dives'] }, async ({ page }) => {
   await page.goto('/#/divers');
   const others = page.locator('section', { has: page.getByRole('heading', { name: 'Other divers' }) });
   await others.getByRole('button', { name: 'Add from a code' }).click();
@@ -48,7 +49,7 @@ test('a diver is added from the text of a professional’s code, and shows both 
   await expect(others.getByRole('listitem').filter({ hasText: NAME })).toContainText('SSI account known');
 });
 
-test('the details are edited where the codes are shown; without a leader number there is no professional’s code', { tag: ['@divers'] }, async ({ page }) => {
+test('the details are edited where the codes are shown; without a leader number there is no professional’s code', { tag: ['@divers', '@dives'] }, async ({ page }) => {
   await page.goto('/#/divers');
   await page.getByRole('button', { name: `Codes: ${NAME}` }).click();
   const codes = page.getByRole('dialog', { name: `${NAME}: codes and details` });
@@ -65,7 +66,7 @@ test('the details are edited where the codes are shown; without a leader number 
   await expect(codes.getByText('No code yet. It needs the SSI account, first name, last name and e-mail.')).toBeVisible();
 });
 
-test('the code of a diver already here shows what taking it changes', { tag: ['@divers'] }, async ({ page }) => {
+test('the code of a diver already here shows what taking it changes', { tag: ['@divers', '@dives'] }, async ({ page }) => {
   await page.goto('/#/divers');
   await page.getByRole('button', { name: 'Add from a code' }).click();
   const scan = page.getByRole('dialog', { name: 'Add a diver from an SSI code' });

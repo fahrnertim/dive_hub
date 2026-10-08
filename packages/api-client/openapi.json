@@ -33634,14 +33634,27 @@
           },
           {
             "schema": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 200
+              "enum": [
+                "rock_bottom",
+                "reserve",
+                "ascent_pressure"
+              ]
             },
             "in": "query",
-            "name": "reserve",
+            "name": "rule",
             "required": false,
-            "description": "Bar left in the Cylinder"
+            "description": "Where the gas ends (ADR 0033). Default rock_bottom: ascend at rock bottom, never below 50 bar"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 350
+            },
+            "in": "query",
+            "name": "bar",
+            "required": false,
+            "description": "Bar for rule reserve (left at the end) or ascent_pressure (where the ascent starts)"
           },
           {
             "schema": {
@@ -33821,6 +33834,17 @@
                     "ppO2AboveWorking": {
                       "type": "boolean"
                     },
+                    "ascentPressureBar": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ],
+                      "description": "The pressure the gas limit ends at; null without a Cylinder"
+                    },
                     "used": {
                       "type": "object",
                       "required": [
@@ -33828,7 +33852,7 @@
                         "sacLpm",
                         "water",
                         "altitudeM",
-                        "reserveBar"
+                        "gasRule"
                       ],
                       "properties": {
                         "gfHigh": {
@@ -33845,7 +33869,7 @@
                               "enum": [
                                 "request",
                                 "recording",
-                                "recordings",
+                                "logbook",
                                 "site",
                                 "default"
                               ],
@@ -33854,26 +33878,39 @@
                           }
                         },
                         "sacLpm": {
-                          "type": "object",
-                          "required": [
-                            "value",
-                            "source"
-                          ],
-                          "properties": {
-                            "value": {
-                              "type": "number"
-                            },
-                            "source": {
-                              "enum": [
-                                "request",
-                                "recording",
-                                "recordings",
-                                "site",
-                                "default"
+                          "allOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "value",
+                                "source"
                               ],
-                              "description": "Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default"
+                              "properties": {
+                                "value": {
+                                  "type": "number"
+                                },
+                                "source": {
+                                  "enum": [
+                                    "request",
+                                    "recording",
+                                    "logbook",
+                                    "site",
+                                    "default"
+                                  ],
+                                  "description": "Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default"
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "basedOn": {
+                                  "type": "integer",
+                                  "description": "How many Dives the planning SAC rests on"
+                                }
+                              }
                             }
-                          }
+                          ]
                         },
                         "water": {
                           "type": "object",
@@ -33893,7 +33930,7 @@
                               "enum": [
                                 "request",
                                 "recording",
-                                "recordings",
+                                "logbook",
                                 "site",
                                 "default"
                               ],
@@ -33915,7 +33952,7 @@
                               "enum": [
                                 "request",
                                 "recording",
-                                "recordings",
+                                "logbook",
                                 "site",
                                 "default"
                               ],
@@ -33923,7 +33960,7 @@
                             }
                           }
                         },
-                        "reserveBar": {
+                        "gasRule": {
                           "type": "object",
                           "required": [
                             "value",
@@ -33931,13 +33968,36 @@
                           ],
                           "properties": {
                             "value": {
-                              "type": "number"
+                              "type": "object",
+                              "required": [
+                                "kind",
+                                "bar"
+                              ],
+                              "properties": {
+                                "kind": {
+                                  "enum": [
+                                    "rock_bottom",
+                                    "reserve",
+                                    "ascent_pressure"
+                                  ]
+                                },
+                                "bar": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "number"
+                                    }
+                                  ]
+                                }
+                              }
                             },
                             "source": {
                               "enum": [
                                 "request",
                                 "recording",
-                                "recordings",
+                                "logbook",
                                 "site",
                                 "default"
                               ],
@@ -33977,6 +34037,419 @@
                       "description": "When the Diver's Dive within the last 48 hours ended; the real limit is then shorter than shown"
                     }
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "import_not_waiting",
+                        "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "gas_not_breathable",
+                        "body_weight_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "check_not_found",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "centre_not_found",
+                        "centre_changed",
+                        "centre_not_deletable",
+                        "centre_external_id_taken",
+                        "code_not_recognised",
+                        "code_not_a_person",
+                        "diver_choice_needed",
+                        "diver_has_other_account",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "import_not_waiting",
+                        "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "gas_not_breathable",
+                        "body_weight_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "check_not_found",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "centre_not_found",
+                        "centre_changed",
+                        "centre_not_deletable",
+                        "centre_external_id_taken",
+                        "code_not_recognised",
+                        "code_not_a_person",
+                        "diver_choice_needed",
+                        "diver_has_other_account",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tools/gas-plan": {
+      "get": {
+        "summary": "A gas plan for one Diver or a group: litres, pressures, rock bottom and the ascent pressure of a gas rule (ADR 0033)",
+        "description": "An estimate from the Diver's own input and settings, not advice; the dive computer and training govern. Air and nitrox 21-40 % only, no-stop only, at most 40 m and within the MOD at the contingency ppO2; otherwise status `outside_limits` with the level. Rock bottom is always in the answer. Any Diver can be named by `diverId`; only of one the User manages the planning SAC and the last Dive are read.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "in": "query",
+            "name": "o2",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "in": "query",
+            "name": "he",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "levels",
+            "required": true,
+            "description": "JSON: [{\"depth\": metres, \"minutes\": at that depth after arriving}], 1 to 8 levels"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "divers",
+            "required": true,
+            "description": "JSON: [{\"name\", \"volume\" litres, \"pressure\" bar, \"sac\" L/min (optional), \"diverId\" (optional: any Diver; one you manage brings their planning SAC)}], 1 to 8 Divers"
+          },
+          {
+            "schema": {
+              "enum": [
+                "rock_bottom",
+                "reserve",
+                "ascent_pressure",
+                "halves",
+                "thirds",
+                "sixths"
+              ]
+            },
+            "in": "query",
+            "name": "rule",
+            "required": false,
+            "description": "Default rock_bottom: ascend at rock bottom, never below 50 bar"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 350
+            },
+            "in": "query",
+            "name": "bar",
+            "required": false,
+            "description": "Bar for rule reserve (left at the end) or ascent_pressure (where the ascent starts)"
+          },
+          {
+            "schema": {
+              "enum": [
+                "fresh",
+                "salt",
+                "en13319"
+              ]
+            },
+            "in": "query",
+            "name": "water",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 5000
+            },
+            "in": "query",
+            "name": "altitude",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 2
+            },
+            "in": "query",
+            "name": "ppo2Contingency",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "query",
+            "name": "siteId",
+            "required": false,
+            "description": "Plan at this site: its water type"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 3,
+              "maximum": 30
+            },
+            "in": "query",
+            "name": "descentRate",
+            "required": false,
+            "description": "Metres a minute, default 18"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 3,
+              "maximum": 18
+            },
+            "in": "query",
+            "name": "ascentRate",
+            "required": false,
+            "description": "Metres a minute, default 9; rock bottom follows a slower one"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "enum": [
+                        "ok",
+                        "outside_limits"
+                      ]
+                    }
+                  },
+                  "additionalProperties": true
                 }
               }
             }

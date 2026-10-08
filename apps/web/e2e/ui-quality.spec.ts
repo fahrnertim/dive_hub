@@ -179,10 +179,17 @@ for (const v of variants) {
       await expect(page.getByTestId('bottom-time')).toBeVisible();
       await expectGoodPage(page, title('Tools'), v);
       // With the settings open (a setting in the address keeps them open).
-      await page.goto('/#/tools?o2=32&depth=30&volume=11.1&pressure=200&reserve=60');
+      await page.goto('/#/tools?o2=32&depth=30&volume=11.1&pressure=200&rule=reserve&bar=60');
       await page.reload();
-      await expect(page.getByRole('textbox', { name: /^Reserve/ })).toBeVisible();
+      await expect(page.getByRole('textbox', { name: /^(Reserve at the end|Reserve am Ende)/ })).toBeVisible();
       await expect(page.getByTestId('bottom-time')).toBeVisible();
+      await expectGoodPage(page, title('Tools'), v);
+      // A gas plan of two Divers with a turn rule, and one that does not fit.
+      await page.goto('/#/tools?o2=21&water=fresh&rule=thirds&lv=20x20&dv=Tim~12~200~20~&dv=Ann~10~200~15~');
+      await expect(page.getByTestId('plan-briefing')).toBeVisible();
+      await expectGoodPage(page, title('Tools'), v);
+      await page.goto('/#/tools?o2=21&water=fresh&lv=20x40&dv=Tim~12~200~20~');
+      await expect(page.getByTestId('plan-briefing')).toBeVisible();
       await expectGoodPage(page, title('Tools'), v);
       // Beyond the MOD: the reason, no number.
       await page.goto('/#/tools?o2=40&depth=36&he=0');

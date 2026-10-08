@@ -8479,8 +8479,10 @@ export interface paths {
                     pressure?: number;
                     /** @description L/min at the surface */
                     sac?: number;
-                    /** @description Bar left in the Cylinder */
-                    reserve?: number;
+                    /** @description Where the gas ends (ADR 0033). Default rock_bottom: ascend at rock bottom, never below 50 bar */
+                    rule?: "rock_bottom" | "reserve" | "ascent_pressure";
+                    /** @description Bar for rule reserve (left at the end) or ascent_pressure (where the ascent starts) */
+                    bar?: number;
                     gfHigh?: number;
                     water?: "fresh" | "salt" | "en13319";
                     altitude?: number;
@@ -8526,6 +8528,8 @@ export interface paths {
                             otu?: number;
                             ppO2AtDepth?: number;
                             ppO2AboveWorking?: boolean;
+                            /** @description The pressure the gas limit ends at; null without a Cylinder */
+                            ascentPressureBar?: null | number;
                             used: {
                                 gfHigh: {
                                     value: number;
@@ -8533,7 +8537,7 @@ export interface paths {
                                      * @description Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default
                                      * @enum {unknown}
                                      */
-                                    source: "request" | "recording" | "recordings" | "site" | "default";
+                                    source: "request" | "recording" | "logbook" | "site" | "default";
                                 };
                                 sacLpm: {
                                     value: number;
@@ -8541,7 +8545,10 @@ export interface paths {
                                      * @description Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default
                                      * @enum {unknown}
                                      */
-                                    source: "request" | "recording" | "recordings" | "site" | "default";
+                                    source: "request" | "recording" | "logbook" | "site" | "default";
+                                } & {
+                                    /** @description How many Dives the planning SAC rests on */
+                                    basedOn?: number;
                                 };
                                 water: {
                                     /** @enum {unknown} */
@@ -8550,7 +8557,7 @@ export interface paths {
                                      * @description Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default
                                      * @enum {unknown}
                                      */
-                                    source: "request" | "recording" | "recordings" | "site" | "default";
+                                    source: "request" | "recording" | "logbook" | "site" | "default";
                                 };
                                 altitudeM: {
                                     value: number;
@@ -8558,15 +8565,19 @@ export interface paths {
                                      * @description Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default
                                      * @enum {unknown}
                                      */
-                                    source: "request" | "recording" | "recordings" | "site" | "default";
+                                    source: "request" | "recording" | "logbook" | "site" | "default";
                                 };
-                                reserveBar: {
-                                    value: number;
+                                gasRule: {
+                                    value: {
+                                        /** @enum {unknown} */
+                                        kind: "rock_bottom" | "reserve" | "ascent_pressure";
+                                        bar: null | number;
+                                    };
                                     /**
                                      * @description Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default
                                      * @enum {unknown}
                                      */
-                                    source: "request" | "recording" | "recordings" | "site" | "default";
+                                    source: "request" | "recording" | "logbook" | "site" | "default";
                                 };
                             };
                             gas: {
@@ -8576,6 +8587,112 @@ export interface paths {
                             depthM: number;
                             /** @description When the Diver's Dive within the last 48 hours ended; the real limit is then shorter than shown */
                             recentDiveEndedAt: null | string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_unsupported" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_data_not_confirmed";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                            /** @description The Provider a provider_* code is about (ADR 0027) */
+                            provider?: string;
+                            /** @description Its name, to put into the translated text */
+                            providerName?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_unsupported" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_data_not_confirmed";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                            /** @description The Provider a provider_* code is about (ADR 0027) */
+                            provider?: string;
+                            /** @description Its name, to put into the translated text */
+                            providerName?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tools/gas-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A gas plan for one Diver or a group: litres, pressures, rock bottom and the ascent pressure of a gas rule (ADR 0033)
+         * @description An estimate from the Diver's own input and settings, not advice; the dive computer and training govern. Air and nitrox 21-40 % only, no-stop only, at most 40 m and within the MOD at the contingency ppO2; otherwise status `outside_limits` with the level. Rock bottom is always in the answer. Any Diver can be named by `diverId`; only of one the User manages the planning SAC and the last Dive are read.
+         */
+        get: {
+            parameters: {
+                query: {
+                    o2: number;
+                    he?: number;
+                    /** @description JSON: [{"depth": metres, "minutes": at that depth after arriving}], 1 to 8 levels */
+                    levels: string;
+                    /** @description JSON: [{"name", "volume" litres, "pressure" bar, "sac" L/min (optional), "diverId" (optional: any Diver; one you manage brings their planning SAC)}], 1 to 8 Divers */
+                    divers: string;
+                    /** @description Default rock_bottom: ascend at rock bottom, never below 50 bar */
+                    rule?: "rock_bottom" | "reserve" | "ascent_pressure" | "halves" | "thirds" | "sixths";
+                    /** @description Bar for rule reserve (left at the end) or ascent_pressure (where the ascent starts) */
+                    bar?: number;
+                    water?: "fresh" | "salt" | "en13319";
+                    altitude?: number;
+                    ppo2Contingency?: number;
+                    /** @description Plan at this site: its water type */
+                    siteId?: string;
+                    /** @description Metres a minute, default 18 */
+                    descentRate?: number;
+                    /** @description Metres a minute, default 9; rock bottom follows a slower one */
+                    ascentRate?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {unknown} */
+                            status: "ok" | "outside_limits";
+                        } & {
+                            [key: string]: unknown;
                         };
                     };
                 };

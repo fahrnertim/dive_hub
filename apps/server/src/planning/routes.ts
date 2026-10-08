@@ -3,12 +3,14 @@
 import { eq } from 'drizzle-orm';
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
+import { Value } from 'typebox/value';
 import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import type { Db } from '../db/client.js';
 import { diverManagement } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
-import { PLANNING_WATERS, gasNumbers, planBottomTime } from './service.js';
+import { PLAN_RULES, planGasPlan } from './plan-service.js';
+import { BOTTOM_TIME_RULES, PLANNING_WATERS, gasNumbers, planBottomTime } from './service.js';
 
 export interface PlanningRouteDeps {
   db: Db;
@@ -50,7 +52,8 @@ const BottomTimeQuery = Type.Object({
   volume: Type.Optional(Type.Number({ minimum: 1, maximum: 60, description: 'Cylinder volume, litres' })),
   pressure: Type.Optional(Type.Number({ minimum: 1, maximum: 350, description: 'Cylinder fill pressure, bar' })),
   sac: Type.Optional(Type.Number({ minimum: 1, maximum: 100, description: 'L/min at the surface' })),
-  reserve: Type.Optional(Type.Number({ minimum: 0, maximum: 200, description: 'Bar left in the Cylinder' })),
+  rule: Type.Optional(Type.Enum([...BOTTOM_TIME_RULES], { description: 'Where the gas ends (ADR 0033). Default rock_bottom: ascend at rock bottom, never below 50 bar' })),
+  bar: Type.Optional(Type.Number({ minimum: 0, maximum: 350, description: 'Bar for rule reserve (left at the end) or ascent_pressure (where the ascent starts)' })),
   gfHigh: Type.Optional(Type.Number({ minimum: 20, maximum: 100 })),
   water: Type.Optional(Water),
   altitude: Type.Optional(Type.Number({ minimum: 0, maximum: 5000 })),
@@ -60,9 +63,38 @@ const BottomTimeQuery = Type.Object({
   siteId: Type.Optional(Type.String({ format: 'uuid', description: 'Plan at this site: its water type' })),
 });
 
+const PlanLevels = Type.Array(Type.Object({
+  depth: Type.Number({ minimum: 1, maximum: 300 }), minutes: Type.Number({ minimum: 0, maximum: 600 }),
+}), { minItems: 1, maxItems: 8 });
+const PlanDivers = Type.Array(Type.Object({
+  name: Type.String({ maxLength: 80 }),
+  volume: Type.Number({ minimum: 1, maximum: 60 }),
+  pressure: Type.Number({ minimum: 1, maximum: 350 }),
+  sac: Type.Optional(Type.Number({ minimum: 1, maximum: 100 })),
+  diverId: Type.Optional(Type.String({ format: 'uuid' })),
+}), { minItems: 1, maxItems: 8 });
+
+const GasPlanQuery = Type.Object({
+  o2: Type.Number({ minimum: 1, maximum: 100 }),
+  he: Type.Optional(Fraction),
+  levels: Type.String({ description: 'JSON: [{"depth": metres, "minutes": at that depth after arriving}], 1 to 8 levels' }),
+  divers: Type.String({ description: 'JSON: [{"name", "volume" litres, "pressure" bar, "sac" L/min (optional), "diverId" (optional: any Diver; one you manage brings their planning SAC)}], 1 to 8 Divers' }),
+  rule: Type.Optional(Type.Enum([...PLAN_RULES], { description: 'Default rock_bottom: ascend at rock bottom, never below 50 bar' })),
+  bar: Type.Optional(Type.Number({ minimum: 0, maximum: 350, description: 'Bar for rule reserve (left at the end) or ascent_pressure (where the ascent starts)' })),
+  water: Type.Optional(Water),
+  altitude: Type.Optional(Type.Number({ minimum: 0, maximum: 5000 })),
+  ppo2Contingency: Type.Optional(Type.Number({ minimum: 1, maximum: 2 })),
+  siteId: Type.Optional(Type.String({ format: 'uuid', description: 'Plan at this site: its water type' })),
+  descentRate: Type.Optional(Type.Number({ minimum: 3, maximum: 30, description: 'Metres a minute, default 18' })),
+  ascentRate: Type.Optional(Type.Number({ minimum: 3, maximum: 18, description: 'Metres a minute, default 9; rock bottom follows a slower one' })),
+});
+
+// The plan is large and nested; clients read it as documented in docs/spec/clients.md.
+const GasPlanView = Type.Object({ status: Type.Enum(['ok', 'outside_limits']) }, { additionalProperties: true });
+
 const Used = <T extends Parameters<typeof Type.Union>[0][number]>(value: T) => Type.Object({
   value,
-  source: Type.Enum(['request', 'recording', 'recordings', 'site', 'default'], {
+  source: Type.Enum(['request', 'recording', 'logbook', 'site', 'default'], {
     description: 'Where the value came from: the request, the Diver\'s latest Recording with a GF, the median of their Recordings\' SAC, the site, or the stated default',
   }),
 });
@@ -81,9 +113,12 @@ const BottomTimeView = Type.Object({
   otu: Type.Optional(Type.Number()),
   ppO2AtDepth: Type.Optional(Type.Number()),
   ppO2AboveWorking: Type.Optional(Type.Boolean()),
+  ascentPressureBar: Type.Optional(Type.Union([Type.Null(), Type.Number()], { description: 'The pressure the gas limit ends at; null without a Cylinder' })),
   used: Type.Object({
-    gfHigh: Used(Type.Number()), sacLpm: Used(Type.Number()), water: Used(Water),
-    altitudeM: Used(Type.Number()), reserveBar: Used(Type.Number()),
+    gfHigh: Used(Type.Number()),
+    sacLpm: Type.Intersect([Used(Type.Number()), Type.Object({ basedOn: Type.Optional(Type.Integer({ description: 'How many Dives the planning SAC rests on' })) })]),
+    water: Used(Water), altitudeM: Used(Type.Number()),
+    gasRule: Used(Type.Object({ kind: Type.Enum([...BOTTOM_TIME_RULES]), bar: Type.Union([Type.Null(), Type.Number()]) })),
   }),
   gas: Type.Object({ o2: Type.Number(), he: Type.Number() }),
   depthM: Type.Number(),
@@ -116,6 +151,27 @@ export const planningRoutes: FastifyPluginAsyncTypebox<PlanningRouteDeps> = asyn
       .where(eq(diverManagement.userId, request.user!.id))).map((r) => r.id);
     const answer = await planBottomTime(db, managed, request.query);
     if (answer.ok) return answer.value;
+    return reply.code(answer.code === 'diver_not_found' || answer.code === 'site_not_found' ? 404 : 400).send(problem(answer.code));
+  });
+
+  app.get('/tools/gas-plan', {
+    schema: {
+      summary: 'A gas plan for one Diver or a group: litres, pressures, rock bottom and the ascent pressure of a gas rule (ADR 0033)',
+      description: 'An estimate from the Diver\'s own input and settings, not advice; the dive computer and training govern. '
+        + 'Air and nitrox 21-40 % only, no-stop only, at most 40 m and within the MOD at the contingency ppO2; otherwise status `outside_limits` with the level. '
+        + 'Rock bottom is always in the answer. Any Diver can be named by `diverId`; only of one the User manages the planning SAC and the last Dive are read.',
+      querystring: GasPlanQuery, response: { 200: GasPlanView, 400: Problem, 404: Problem },
+    },
+  }, async (request, reply) => {
+    const { levels, divers, ...rest } = request.query;
+    let parsedLevels: unknown;
+    let parsedDivers: unknown;
+    try { parsedLevels = JSON.parse(levels); parsedDivers = JSON.parse(divers); } catch { return reply.code(400).send(problem('invalid_input')); }
+    if (!Value.Check(PlanLevels, parsedLevels) || !Value.Check(PlanDivers, parsedDivers)) return reply.code(400).send(problem('invalid_input'));
+    const managed = (await db.select({ id: diverManagement.diverId }).from(diverManagement)
+      .where(eq(diverManagement.userId, request.user!.id))).map((r) => r.id);
+    const answer = await planGasPlan(db, managed, { ...rest, levels: parsedLevels, divers: parsedDivers });
+    if (answer.ok) return answer.value as { status: 'ok' | 'outside_limits' };
     return reply.code(answer.code === 'diver_not_found' || answer.code === 'site_not_found' ? 404 : 400).send(problem(answer.code));
   });
 };

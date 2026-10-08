@@ -40,7 +40,8 @@ test.afterAll(async ({ request }) => {
   await resetDive(request);
 });
 
-test('a dive centre is created from the text of its code, and shows the code', { tag: ['@sites'] }, async ({ page }) => {
+// Also @dives: the next two tests are, and a run by tag must keep the serial story together.
+test('a dive centre is created from the text of its code, and shows the code', { tag: ['@sites', '@dives'] }, async ({ page }) => {
   await page.goto('/');
   const nav = page.getByRole('navigation', { name: 'Main' });
   await nav.getByRole('link', { name: 'Dive centres' }).click();

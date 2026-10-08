@@ -1,8 +1,33 @@
 // The Tools page's inputs live in the address (ADR 0032, like the logbook's, ADR 0017). The address holds metres and bar
-// whatever the User's units are; the page converts. Nothing is stored.
+// whatever the User's units are; the page converts. Nothing is stored. A gas plan's levels and Divers live there too
+// (ADR 0033), never another Diver's logbook values: a Diver is named by id, and the server looks up the SAC of one the User manages.
 
 export const TOOLS_WATERS = ['salt', 'fresh', 'en13319'] as const;
 export type ToolsWater = (typeof TOOLS_WATERS)[number];
+
+/** Where the gas ends (ADR 0033); a single bottom time knows the first three only. */
+export const TOOLS_RULES = ['rock_bottom', 'reserve', 'ascent_pressure', 'halves', 'thirds', 'sixths'] as const;
+export type ToolsRule = (typeof TOOLS_RULES)[number];
+/** The rules that need a pressure. */
+export const RULES_WITH_BAR: readonly ToolsRule[] = ['reserve', 'ascent_pressure'];
+export const BOTTOM_TIME_RULES: readonly ToolsRule[] = ['rock_bottom', 'reserve', 'ascent_pressure'];
+
+export interface PlanLevel {
+  /** Metres, and the minutes spent there after arriving. */
+  depth: number;
+  minutes: number;
+}
+
+export interface PlanDiver {
+  name: string;
+  /** Litres and bar. */
+  volume: number;
+  pressure: number;
+  /** Litres a minute; empty: the planning SAC of a Diver the User manages, else 20. */
+  sac?: number | undefined;
+  /** A Diver of the instance (ADR 0028); without, a guest who is only in this address. */
+  diverId?: string | undefined;
+}
 
 export interface ToolsParams {
   /** Oxygen and helium in percent. */
@@ -18,8 +43,9 @@ export interface ToolsParams {
   pressure?: number | undefined;
   /** Litres a minute at the surface. */
   sac?: number | undefined;
-  /** Bar. */
-  reserve?: number | undefined;
+  /** The gas rule, and its bar for `reserve` and `ascent_pressure`. */
+  rule?: ToolsRule | undefined;
+  bar?: number | undefined;
   /** Gradient factor high, percent. */
   gf?: number | undefined;
   /** The ppO2 limits in bar. */
@@ -27,16 +53,46 @@ export interface ToolsParams {
   pc?: number | undefined;
   /** false: oxygen does not count as narcotic for END. */
   narcotic?: boolean | undefined;
+  /** A gas plan: metres a minute down and up, its levels and its Divers. */
+  dr?: number | undefined;
+  ar?: number | undefined;
+  levels?: PlanLevel[] | undefined;
+  divers?: PlanDiver[] | undefined;
 }
 
-const NUMBERS = ['o2', 'he', 'depth', 'altitude', 'volume', 'pressure', 'sac', 'reserve', 'gf', 'pw', 'pc'] as const;
+const NUMBERS = ['o2', 'he', 'depth', 'altitude', 'volume', 'pressure', 'sac', 'bar', 'gf', 'pw', 'pc', 'dr', 'ar'] as const;
+
+const finite = (raw: string | undefined): number | undefined => {
+  const n = raw === undefined || raw === '' ? Number.NaN : Number(raw);
+  return Number.isFinite(n) && n >= 0 ? n : undefined;
+};
+
+/** `20x20,30x10`: depth in metres, an x, the minutes there. */
+const levelsText = (levels: PlanLevel[]) => levels.map((l) => `${l.depth}x${l.minutes}`).join(',');
+const levelsOf = (text: string): PlanLevel[] => text.split(',').flatMap((part) => {
+  const [depth, minutes] = part.split('x').map(finite);
+  return depth !== undefined && depth > 0 && minutes !== undefined ? [{ depth, minutes }] : [];
+});
+
+/** `name~litres~bar~sac~diverId`; what is empty stays empty. */
+const diverText = (d: PlanDiver) => [d.name, d.volume, d.pressure, d.sac ?? '', d.diverId ?? ''].join('~');
+const diverOf = (text: string): PlanDiver[] => {
+  const [name = '', volume, pressure, sac, diverId] = text.split('~');
+  const v = finite(volume);
+  const p = finite(pressure);
+  if (v === undefined || p === undefined || v <= 0 || p <= 0) return [];
+  return [{ name, volume: v, pressure: p, sac: finite(sac), diverId: diverId || undefined }];
+};
 
 /** The page's address for these inputs; what is empty is left out. */
 export function toolsHref(p: ToolsParams): string {
   const query = new URLSearchParams();
   for (const key of NUMBERS) if (p[key] !== undefined && Number.isFinite(p[key])) query.set(key, String(p[key]));
   if (p.water && p.water !== 'salt') query.set('water', p.water);
+  if (p.rule && p.rule !== 'rock_bottom') query.set('rule', p.rule);
   if (p.narcotic === false) query.set('narcotic', '0');
+  if (p.levels?.length) query.set('lv', levelsText(p.levels));
+  for (const d of p.divers ?? []) query.append('dv', diverText(d));
   const text = query.toString();
   return text ? `#/tools?${text}` : '#/tools';
 }
@@ -44,14 +100,19 @@ export function toolsHref(p: ToolsParams): string {
 /** The inputs in the address (see toolsHref). */
 export function toolsParams(query: URLSearchParams): ToolsParams {
   const water = query.get('water');
+  const rule = query.get('rule');
   const result: ToolsParams = {};
   for (const key of NUMBERS) {
-    const raw = query.get(key);
-    const n = raw === null || raw === '' ? Number.NaN : Number(raw);
-    if (Number.isFinite(n) && n >= 0) result[key] = n;
+    const n = finite(query.get(key) ?? undefined);
+    if (n !== undefined) result[key] = n;
   }
   if (water && (TOOLS_WATERS as readonly string[]).includes(water)) result.water = water as ToolsWater;
+  if (rule && (TOOLS_RULES as readonly string[]).includes(rule)) result.rule = rule as ToolsRule;
   if (query.get('narcotic') === '0') result.narcotic = false;
+  const levels = levelsOf(query.get('lv') ?? '');
+  if (levels.length > 0) result.levels = levels;
+  const divers = query.getAll('dv').flatMap(diverOf);
+  if (divers.length > 0) result.divers = divers;
   return result;
 }
 

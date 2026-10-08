@@ -1,11 +1,11 @@
 // MCP tool for the Tools page's gas numbers and bottom time (ADR 0032, ADR 0035). The same answer as the routes
 // (planning/service.ts), with the assumptions and the notice in every result: never a bare number.
 import { Type } from 'typebox';
-import { PLANNING_WATERS, gasNumbers, planBottomTime } from '../planning/service.js';
+import { BOTTOM_TIME_RULES, PLANNING_WATERS, gasNumbers, planBottomTime } from '../planning/service.js';
 import { Id, Nullable, ToolError, defineTool } from './tool.js';
 
 /** Fixed text in every answer (ADR 0032: always visible; the limits are the Diver's own input, not advice). */
-const NOTICE = 'An estimate from the inputs and settings shown, not advice: limits computed from the Diver\'s own input and settings. '
+export const NOTICE = 'An estimate from the inputs and settings shown, not advice: limits computed from the Diver\'s own input and settings. '
   + 'The dive computer and the Diver\'s training govern, and no model guarantees safety. Say so when passing these numbers on.';
 
 const Input = Type.Object({
@@ -20,12 +20,13 @@ const Input = Type.Object({
   cylinder_volume_l: Type.Optional(Type.Number({ minimum: 1, maximum: 60, description: 'With cylinder_pressure_bar: adds the gas limit to the bottom time' })),
   cylinder_pressure_bar: Type.Optional(Type.Number({ minimum: 1, maximum: 350 })),
   sac_l_per_min: Type.Optional(Type.Number({ minimum: 1, maximum: 100, description: 'Gas use at the surface. Default: the median of the Diver\'s recent dives, else 20' })),
-  reserve_bar: Type.Optional(Type.Number({ minimum: 0, maximum: 200, description: 'Default 50' })),
+  gas_rule: Type.Optional(Type.Enum([...BOTTOM_TIME_RULES], { description: 'Where the gas limit ends. Default rock_bottom: ascend at rock bottom, never below 50 bar. reserve: finish with rule_bar left. ascent_pressure: start the ascent at rule_bar' })),
+  rule_bar: Type.Optional(Type.Number({ minimum: 0, maximum: 350, description: 'Bar for gas_rule reserve or ascent_pressure' })),
   gf_high: Type.Optional(Type.Number({ minimum: 20, maximum: 100, description: 'Gradient factor high. Default: from the Diver\'s latest Recording that has one, else 85' })),
   diver_id: Type.Optional(Id('Start from this Diver\'s computer GF, SAC and last Dive (from divers_list)')),
 }, { additionalProperties: false });
 
-const Used = (value: ReturnType<typeof Type.Number> | ReturnType<typeof Type.String>) => Type.Object({
+const Used = (value: ReturnType<typeof Type.Number> | ReturnType<typeof Type.String> | ReturnType<typeof Type.Object>) => Type.Object({
   value,
   source: Type.Enum(['request', 'recording', 'recordings', 'site', 'default'], { description: 'recording: the Diver\'s latest Recording with a GF; recordings: the median SAC of their Recordings' }),
 });
@@ -33,7 +34,7 @@ const Used = (value: ReturnType<typeof Type.Number> | ReturnType<typeof Type.Str
 export const planGasAndBottomTime = defineTool({
   name: 'planning_gas_and_bottom_time',
   title: 'Gas numbers and bottom time for a planned dive',
-  description: `Computes limits for a planned dive from the inputs and the Diver's own settings: MOD of a gas mix at the working and the contingency ppO2, and for a depth the ppO2, best mix, EAD and END. With a depth, air or nitrox 21-40 %, no more than 40 m and within the MOD, also a bottom time: the shortest of the no-decompression limit (Bühlmann ZHL-16C with the gradient factor, clean tissues), the oxygen limit and the gas above the reserve (when a cylinder is given), and which limit binds.
+  description: `Computes limits for a planned dive from the inputs and the Diver's own settings: MOD of a gas mix at the working and the contingency ppO2, and for a depth the ppO2, best mix, EAD and END. With a depth, air or nitrox 21-40 %, no more than 40 m and within the MOD, also a bottom time: the shortest of the no-decompression limit (Bühlmann ZHL-16C with the gradient factor, clean tissues), the oxygen limit and the gas down to the ascent pressure of the gas rule (when a cylinder is given; by default rock bottom, never below 50 bar), and which limit binds.
 
 Returns { gas, hypoxic, ppo2_limits, mod_working_m, mod_contingency_m, at_depth, conditions, oxygen_narcotic, bottom_time, notice }. bottom_time is null without a depth. Its status is "ok" (minutes, binding, limits, otu, assumptions with where each value came from) or "outside_recreational_limits" (reason: depth, mod or gas; no number). When recent_dive_ended_at is set the Diver dived within 48 hours and the real limit is shorter than shown.
 
@@ -63,9 +64,12 @@ Always pass on the notice and the assumptions with the numbers: this is an estim
       otu: Type.Optional(Type.Number()),
       ppo2_at_depth: Type.Optional(Type.Number()),
       ppo2_above_working: Type.Optional(Type.Boolean()),
+      ascent_pressure_bar: Type.Optional(Nullable(Type.Number({ description: 'The pressure the gas limit ends at; null without a cylinder' }))),
       assumptions: Type.Object({
-        gf_high: Used(Type.Number()), sac_l_per_min: Used(Type.Number()), water: Used(Type.String()),
-        altitude_m: Used(Type.Number()), reserve_bar: Used(Type.Number()),
+        gf_high: Used(Type.Number()),
+        sac_l_per_min: Type.Intersect([Used(Type.Number()), Type.Object({ based_on_dives: Type.Optional(Type.Integer({ description: 'How many dives the planning SAC rests on' })) })]),
+        water: Used(Type.String()), altitude_m: Used(Type.Number()),
+        gas_rule: Used(Type.Object({ kind: Type.Enum([...BOTTOM_TIME_RULES]), bar: Nullable(Type.Number()) })),
       }),
       recent_dive_ended_at: Nullable(Type.String({ description: 'The Diver dived within 48 hours: the real limit is shorter than shown' })),
     })),
@@ -85,7 +89,7 @@ Always pass on the notice and the assumptions with the numbers: this is an estim
     if (args.depth !== undefined) {
       const answer = await planBottomTime(ctx.tx, ctx.diverIds, {
         depth: args.depth, o2: args.o2, he: args.he, volume: args.cylinder_volume_l, pressure: args.cylinder_pressure_bar, sac: args.sac_l_per_min,
-        reserve: args.reserve_bar, gfHigh: args.gf_high, water: args.water, altitude: args.altitude_m,
+        rule: args.gas_rule, bar: args.rule_bar, gfHigh: args.gf_high, water: args.water, altitude: args.altitude_m,
         ppo2Working: args.ppo2_working, ppo2Contingency: args.ppo2_contingency, diverId: args.diver_id,
       });
       if (!answer.ok) {
@@ -95,13 +99,15 @@ Always pass on the notice and the assumptions with the numbers: this is an estim
       }
       const v = answer.value;
       const assumptions = {
-        gf_high: v.used.gfHigh, sac_l_per_min: v.used.sacLpm, water: v.used.water, altitude_m: v.used.altitudeM, reserve_bar: v.used.reserveBar,
+        gf_high: v.used.gfHigh,
+        sac_l_per_min: { value: v.used.sacLpm.value, source: v.used.sacLpm.source, ...(v.used.sacLpm.basedOn !== undefined && { based_on_dives: v.used.sacLpm.basedOn }) },
+        water: v.used.water, altitude_m: v.used.altitudeM, gas_rule: v.used.gasRule,
       };
       bottomTime = v.status === 'outside_limits'
         ? { status: 'outside_recreational_limits' as const, reason: v.reason, mod_m: v.modM, assumptions, recent_dive_ended_at: v.recentDiveEndedAt }
         : {
           status: 'ok' as const, minutes: v.minutes, binding: v.binding, limits: v.limits, otu: v.otu, ppo2_at_depth: v.ppO2AtDepth,
-          ppo2_above_working: v.ppO2AboveWorking, assumptions, recent_dive_ended_at: v.recentDiveEndedAt,
+          ppo2_above_working: v.ppO2AboveWorking, ascent_pressure_bar: v.ascentPressureBar, assumptions, recent_dive_ended_at: v.recentDiveEndedAt,
         };
     }
     const g = gas.value;

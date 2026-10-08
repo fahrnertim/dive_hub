@@ -42,10 +42,11 @@ test('gas numbers and a bottom time for 30 m on EAN32, with the assumptions and 
   // other tests have imported a Recording with a gradient factor, else the default).
   for (const limit of ['No-decompression limit', 'Oxygen', 'Gas']) await expect(bottom.getByRole('row', { name: new RegExp(`^${limit}`) })).toBeVisible();
   await expect(bottom.getByText(/^Gradient factor high: \d+ % \((default|from your computer)\)$/)).toBeVisible();
-  await expect(bottom.getByText(/^Gas use: [\d.]+ L\/min \((default|from your recent dives)\)$/)).toBeVisible();
+  await expect(bottom.getByText(/^Gas use: [\d.]+ L\/min \((default|from your recent dives)(, \d+ dives?)?\)$/)).toBeVisible();
   await expect(bottom.getByText('Water: salt (default)')).toBeVisible();
   await expect(bottom.getByText('No altitude given: sea level')).toBeVisible();
-  await expect(bottom.getByText('Reserve: 50 bar (default)')).toBeVisible();
+  await expect(bottom.getByText('Gas rule: Rock bottom (default)')).toBeVisible();
+  await expect(bottom.getByText(/^The gas limit ends at \d+ bar, where you start up\.$/)).toBeVisible();
   await expect(page.locator('#main').getByText(/estimate, not advice/i)).toBeVisible();
 
   // A reload brings the same page back from the address.
@@ -89,4 +90,109 @@ test('imperial units: feet and psi in the fields and the answers, metres and bar
   } finally {
     await setPreferences(request, { units: 'metric' });
   }
+});
+
+test('a gas plan for a group: levels and Divers as lists with one editor open, the profile, the controlling Diver, and the rule explained', { tag: ['@tools'] }, async ({ page }) => {
+  await page.goto('/#/tools?o2=21&water=fresh');
+  await expectGoodPage(page, 'Tools');
+  const plan = page.getByRole('region', { name: 'Gas plan' });
+  await expect(plan.getByText(/Enter the mix above, add a level and a Diver/)).toBeVisible();
+  const levels = plan.getByRole('list', { name: 'Levels' }).getByRole('listitem');
+  const divers = plan.getByRole('list', { name: 'Divers' }).getByRole('listitem');
+
+  // A new level opens its fields under its line; "Done" folds them away.
+  await plan.getByRole('button', { name: 'Add a level' }).click();
+  const level = plan.getByRole('group', { name: 'Level 1' });
+  await level.getByRole('textbox', { name: /^Depth/ }).fill('20');
+  await level.getByRole('textbox', { name: /^Time/ }).fill('20');
+  await level.getByRole('button', { name: 'Done' }).click();
+  await expect(level).toHaveCount(0);
+  await expect(plan.getByRole('button', { name: 'Edit level 1' })).toBeFocused();
+
+  // The first level brings the User's own Diver. Their fields open from the pencil: a 12 L cylinder at 200 bar, 20 L/min.
+  await expect(divers).toHaveText([/Erika/]);
+  await plan.getByRole('button', { name: 'Edit Erika' }).click();
+  const erika = plan.getByRole('group', { name: 'Erika' });
+  await expect(erika.getByRole('textbox', { name: /^Volume/ })).toHaveValue('12');
+  await erika.getByRole('textbox', { name: /^Gas use/ }).fill('20');
+  await erika.getByRole('textbox', { name: /^Gas use/ }).press('Tab');
+
+  // Someone who is no Diver here is a guest, by the name typed. Only one set of fields is open at a time.
+  await plan.getByRole('button', { name: 'Add a Diver' }).click();
+  await expect(erika).toHaveCount(0);
+  await plan.getByRole('searchbox', { name: 'Find a diver' }).fill('Ann');
+  await plan.getByRole('option', { name: /Add “Ann” as a guest/ }).click();
+  const ann = plan.getByRole('group', { name: 'Ann' });
+  await ann.getByRole('textbox', { name: /^Gas use/ }).fill('15');
+  await ann.getByRole('button', { name: 'Done' }).click();
+  await expect(divers).toHaveText([/Erika.*12 L.*200 bar.*20 L\/min/, /Ann.*12 L.*200 bar.*15 L\/min/]);
+
+  // planning-gas-plan.test.ts: 1413 and 1060 litres; the higher SAC runs out of margin first.
+  await expect(plan.getByTestId('plan-fits')).toContainText('The plan fits.');
+  await expect(plan.getByTestId('plan-briefing')).toHaveText(/^Everyone follows Erika: we go up when anyone reaches their ascent pressure\.$/);
+  const first = plan.getByRole('row', { name: /^Erika/ });
+  await expect(first.getByText('Controls the plan')).toBeVisible();
+  await expect(first.getByRole('cell').nth(1)).toHaveText('1413 L');
+  await expect(plan.getByRole('row', { name: /^Ann/ }).getByRole('cell').nth(1)).toHaveText('1060 L');
+  await expect(plan.getByText('Erika: gas use 20 L/min (entered)')).toBeVisible();
+  await expect(plan.getByText('Gas rule: Rock bottom (default)')).toBeVisible();
+  await expect(plan.getByText(/estimate, not advice/i)).toHaveCount(0);
+  await expect(page.locator('#main').getByText(/estimate, not advice/i)).toBeVisible();
+
+  // The way down, between and up is in the list with its minutes, and the whole plan is drawn like a dive's profile.
+  await expect(levels).toHaveText([/Descent.*20 m.*1\.1 min/, /Level 1.*20 m.*20 min/, /Ascent.*5 m.*1\.7 min/, /Safety stop.*5 m.*3 min/, /Ascent.*0 m/]);
+  await expect(plan.getByRole('img', { name: 'Planned profile' })).toBeVisible();
+  await expect(plan.getByRole('img', { name: 'Planned pressure' })).toBeVisible();
+  await expect(plan.getByText(/does not check the no-decompression limit/)).toBeVisible();
+
+  // Any Diver of the instance can be found by name; of one the User doesn't manage nothing is read.
+  await plan.getByRole('button', { name: 'Add a Diver' }).click();
+  await plan.getByRole('searchbox', { name: 'Find a diver' }).fill('Bartholom');
+  await plan.getByRole('option', { name: /Bartholomäus/ }).click();
+  await expect(plan.getByRole('group', { name: /Bartholomäus/ }).getByText(/only they see their logbook/i)).toBeVisible();
+  await expect(plan.getByText(/Bartholomäus.*: gas use 20 L\/min \(default\)/)).toBeVisible();
+  await plan.getByRole('button', { name: /^Remove Bartholomäus/ }).click();
+  await expect(divers).toHaveCount(2);
+
+  // The address keeps the levels and the Divers; a reload brings the plan back.
+  await expect(page).toHaveURL(/lv=20x20/);
+  await expect(page).toHaveURL(/dv=Erika(~|%7E)12(~|%7E)200(~|%7E)20(~|%7E)[0-9a-f-]{36}/);
+  await expect(page).toHaveURL(/dv=Ann(~|%7E)12(~|%7E)200(~|%7E)15/);
+  await page.reload();
+  await expect(plan.getByTestId('plan-briefing')).toBeVisible();
+
+  // Turn rules show a turn pressure and say who they are for.
+  // The water in the address keeps the settings open.
+  await page.getByRole('button', { name: /Gas rule/ }).click();
+  await page.getByRole('option', { name: 'Thirds' }).click();
+  await expect(page.getByTestId('rule-explanation')).toContainText('overhead diving with training');
+  await expect(plan.getByRole('columnheader', { name: 'Turn at' })).toBeVisible();
+  await expect(plan.getByTestId('plan-briefing')).toContainText('we turn when anyone reaches their turn pressure');
+
+  // A slower ascent is a setting: the way up takes longer, and the plan says what it assumed.
+  await page.getByRole('textbox', { name: /^Ascent rate/ }).fill('6');
+  await page.getByRole('textbox', { name: /^Ascent rate/ }).press('Tab');
+  await expect(levels.nth(2)).toHaveText(/Ascent.*5 m.*2\.5 min/);
+  await expect(plan.getByText('Descent 18 m/min (default), ascent 6 m/min (entered)')).toBeVisible();
+  await expect(page).toHaveURL(/ar=6/);
+  await expectGoodPage(page, 'Tools');
+});
+
+test('a gas plan that does not fit says when to leave, and one beyond the limits gives no numbers', { tag: ['@tools'] }, async ({ page }) => {
+  const plan = page.getByRole('region', { name: 'Gas plan' });
+  // 40 minutes at 20 m for one Diver in a 12 L cylinder is more than the cylinder holds.
+  await page.goto('/#/tools?o2=21&water=fresh&lv=20x40&dv=Tim~12~200~20~');
+  await expect(plan.getByText('The plan does not fit.')).toBeVisible();
+  await expect(plan.getByText(/Leave 20 m by minute \d+ at the latest/)).toBeVisible();
+  await expect(plan.getByText(/The dashed line is minute \d+/)).toBeVisible();
+
+  await page.goto('/#/tools?o2=21&lv=20x5,42x5&dv=Tim~12~200~20~');
+  await expect(plan.getByText('Outside recreational limits')).toBeVisible();
+  await expect(plan.getByText(/deeper than 40 m/)).toBeVisible();
+  await expect(plan.getByRole('table')).toHaveCount(0);
+  await expect(plan.getByRole('img')).toHaveCount(0);
+  // A level removed with its bin leaves the others.
+  await plan.getByRole('button', { name: 'Remove level 2' }).click();
+  await expect(plan.getByTestId('plan-fits')).toBeVisible();
+  await expect(page).toHaveURL(/lv=20x5&/);
 });

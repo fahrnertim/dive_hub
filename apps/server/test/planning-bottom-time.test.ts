@@ -7,12 +7,13 @@
 // The gas for the way up: a direct ascent at 9 m/min and 3 minutes at 5 m (1.5158 bar), at the dive's SAC. The way down at 18 m/min.
 import { describe, expect, it } from 'vitest';
 import { bottomTime } from '../src/planning/bottom-time.js';
+import type { GasRule } from '../src/planning/gas-plan.js';
 
 const SEA = { water: 'salt', altitudeM: 0 } as const;
 const al80 = { volumeL: 11.1, startPressureBar: 201 };
 const ean32 = { o2: 32, he: 0 };
 const plan = (over: Record<string, unknown> = {}) => ({
-  gas: ean32, depthM: 30, gfHigh: 85, conditions: SEA, cylinder: al80, sacLpm: 18, reserveBar: 51,
+  gas: ean32, depthM: 30, gfHigh: 85, conditions: SEA, cylinder: al80, sacLpm: 18, rule: { kind: 'reserve', bar: 51 } as GasRule,
   ppO2: { working: 1.4, contingency: 1.6 }, ...over,
 });
 
@@ -43,6 +44,26 @@ describe('bottom time', () => {
     expect(r.binding).toEqual(['gas']);
   });
 
+  it('ends the gas at the ascent pressure of the chosen rule: rock bottom by default (ADR 0033)', () => {
+    // 30 m, SAC 18 alone (a buddy of the same SAC): (18 + 18) × 2 = 72 L/min. One minute at 4.0288 bar: 290.1 L; a direct ascent
+    // of 3.3333 min at the mean 2.5210 bar: 605.0 L; 895.1 L, about 80 bar in an AL80, plus 10 bar: about 90 bar to start up at.
+    // The Diver leaves the depth when the Cylinder is at that pressure: 2195.4 L at 201 bar, about 1000 L at 89 bar, the way down
+    // takes 75.6 L: about 1120 L over 72.52 L/min is 15.4 min at depth, about 17 from leaving the surface (19.8 with the 51 bar reserve).
+    const r = bottomTime(plan({ rule: { kind: 'rock_bottom' } }));
+    if (r.status !== 'ok') throw new Error('expected a bottom time');
+    expect(r.ascentPressureBar).toBeGreaterThan(88);
+    expect(r.ascentPressureBar).toBeLessThan(92);
+    expect(r.limits.gas).toBeGreaterThan(16.5);
+    expect(r.limits.gas).toBeLessThan(17.5);
+    expect(r.binding).toEqual(['gas']);
+  });
+
+  it('never ascends below 50 bar with rock bottom, also when rock bottom is lower', () => {
+    const r = bottomTime(plan({ rule: { kind: 'rock_bottom' }, depthM: 8, sacLpm: 12 }));
+    if (r.status !== 'ok') throw new Error('expected a bottom time');
+    expect(r.ascentPressureBar).toBe(50);
+  });
+
   it('counts the OTU of the bottom time', () => {
     // 1.289 bar for 18 minutes: 18 × ((1.289 − 0.5) / 0.5)^0.83 = 18 × 1.578^0.83 = 18 × 1.4606 = 26.3
     const r = bottomTime(plan());
@@ -54,6 +75,7 @@ describe('bottom time', () => {
     const r = bottomTime(plan({ cylinder: null }));
     if (r.status !== 'ok') throw new Error('expected a bottom time');
     expect(r.limits.gas).toBeNull();
+    expect(r.ascentPressureBar).toBeNull();
   });
 
   it('warns when the ppO2 at depth is above the working limit but within the contingency limit', () => {

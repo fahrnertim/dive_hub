@@ -8,7 +8,7 @@ date: 2026-10-06
 # ADR 0033: Gas plans for a Diver or a group - levels, gas rules, rock bottom, SAC from the logbook
 
 ## Status
-Accepted – 2026-10-06. Not built yet. Amends [ADR 0032](0032-mod-and-no-decompression-limits.md): its bottom time's gas
+Accepted – 2026-10-06. Built in slice 22 (2026-10-09), see "Slice 22 as built". Amends [ADR 0032](0032-mod-and-no-decompression-limits.md): its bottom time's gas
 limit becomes this engine's ascent pressure, and its default SAC comes from the logbook. Designed in
 [Gas consumption and gas rules](../research/2026-10-06-gas-consumption-planning.md).
 
@@ -95,3 +95,46 @@ pressures and a volume; bar/min is shown beside L/min for a single Cylinder. "SA
 Cylinders, ahead of the gas plan ([ADR 0045](0045-tank-pressure-cylinders-and-sac-on-a-dive.md)). Built on 2026-10-08, with
 real gas at every pressure and the compressibility source this ADR left open
 ([research note](../research/2026-10-08-real-gas-compressibility.md)).
+
+## Slice 22 as built
+- **Engine** (`planning/gas-plan.ts`): segments (descent, levels, ascent, 3 min stop at 5 m when deeper than 5 m), litres per Diver by
+  their own SAC, pressures by real gas (`pressureForLitres` inverts `surfaceLitres`). A level's time is the time at it after arriving.
+  Alone, the buddy in rock bottom is taken to breathe as much. Rock bottom is shown per level; the ascent pressure of the default
+  rule is the highest of them, at least 50 bar.
+- **Rules:** `rock_bottom`; `reserve` (finish with N bar, ascent and stop counted on top); `ascent_pressure` (start up at N bar);
+  `halves`, `thirds`, `sixths` (the smaller supply sets the litres spent before turning; going out and back spends twice that, the rest
+  is the reserve, the ascent comes on top; no floor, rock bottom shown and `belowRockBottom` flags a rule that leaves less).
+- **Controlling Diver and fit:** each Diver's margin is the litres at the end of the last level above their ascent pressure, in
+  minutes at the last level; the smallest controls. `leaveLastLevelAtMinute` is the run time at which the controlling Diver reaches it.
+- **Planning SAC** (`planning/planning-sac.ts`): 85th percentile, linear between ranks, of the last 20 Dives with a SAC (from Cylinders,
+  else a tank pod's on a Recording), from 5; under that 20 L/min with the count. It replaces the median of Recordings as the bottom time's default.
+- **Bottom time amended:** its gas limit is the minute to leave the depth by in a one-Diver plan (`rule`, `bar` replace `reserve`;
+  default rock bottom). `used.gasRule` replaces `used.reserveBar`, `ascentPressureBar` is in the answer, `source` `recordings` became `logbook`.
+- **API/MCP:** `GET /tools/gas-plan` (levels and Divers as JSON in the query); MCP `planning_gas_plan` as a sibling of `planning_gas_and_bottom_time`.
+- **Page:** a Gas plan panel (levels, Divers, result table with the controlling Diver, assumptions); the gas rule and its explanation in Settings,
+  shared by Bottom time (turn rules fall back to rock bottom there). Address: `rule`, `bar`, `lv=20x20,30x10`, `dv=name~litres~bar~sac~diverId`.
+- **Open:** the rule wordings (en, de) are drafts for the owner; the NDL comparison with private Garmin samples and FIT's SAC units are
+  still unchecked.
+
+## The plan's page, reworked (owner's review, 2026-10-09)
+The first page was one long form: every level and every Diver with all their fields open. The owner asked for lists.
+- **Levels and Divers are lists of lines**, each with a pencil and a bin that stay in sight; the pencil opens that line's fields under
+  it, and only one set of fields is open on the page. Fields apply as they are typed (the plan lives in the address); "Done" folds them
+  away and focus returns to the pencil. "Add a level" is the last line; the first level brings the User's own Diver.
+- **The way between the levels is in the list:** with an answer, descent, ascents and the safety stop are quiet lines of their own with
+  their minutes and the run time, from the answer's `segments`. Segments are now in the order they are dived (up to 5 m, the stop, then
+  the surface) and carry `fromDepthM`; the litres are the same as before.
+- **Rates are settings of the plan:** `descentRate` and `ascentRate` (3 to 30 and 3 to 18 m/min; address `dr`, `ar`), default 18 and 9,
+  one pair for the whole plan, not per transition. **Rock bottom follows a slower ascent and never a faster one than 9 m/min:** a group
+  that plans to come up slowly won't come up faster while sharing gas. The bottom time keeps its fixed rates.
+- **The plan is drawn with the Dive page's chart** (`ProfilePlot.tsx`, taken out of `DepthProfile.tsx`: depth over time, and the pressure
+  strip under it), so a planned dive looks like a dived one: the profile with the minute to leave the last level by as a dashed line,
+  and each Diver's pressure falling over the same minutes (`pressuresBar`, at every segment's end).
+- **Any Diver of the instance can be in a plan** (ADR 0028: every User sees every Diver by name): a new Diver is found by name while
+  typing, or added as a guest by the name typed, who exists only in the address. Only of a Diver the User manages the planning SAC and
+  the last Dive are read; for another Diver `diverId` changes nothing (it was `diver_not_found`). Nothing is created from this page:
+  a guest is not an external Diver. When Visibility arrives, a Diver who shares their Dives could bring their SAC too.
+- **The plan says that it does not check the no-decompression limit** over several levels (a notice with every answer, the MCP tool's
+  description): it checks the gas, the MOD and 40 m.
+- **Later:** reordering levels by dragging (delete and add does it for the two to four levels of a plan); a Bühlmann check over the
+  whole profile, as a slice of its own; each Diver's ascent pressure marked in the pressure strip.

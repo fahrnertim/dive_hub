@@ -715,8 +715,9 @@ name, last name, e-mail, SSI leader number) and the codes built from them.
 What a client **must** do, because these are limits from the Diver's own input and settings, not advice:
 - **Show the notice before any input** and with every answer: an estimate, not advice; the dive computer and training govern;
   no model guarantees safety.
-- **Show the assumptions with the number:** `used` carries the gradient factor, SAC, water, altitude and reserve with their
-  `source` (`request`, `recording`, `recordings`, `site`, `default`); say which were defaults. With no altitude, say "sea level".
+- **Show the assumptions with the number:** `used` carries the gradient factor, SAC, water, altitude and gas rule with their
+  `source` (`request`, `recording`, `logbook`, `site`, `default`); say which were defaults, and for a SAC from the logbook or a default
+  with a Diver, how many Dives it rests on (`basedOn`; under 5 the default 20 L/min stands). With no altitude, say "sea level".
 - **Show which limit binds** (`binding`, several when they tie) and all three limits (`limits`; `null` is no limit, or no
   Cylinder for the gas).
 - **Never show a number when `status` is `outside_limits`:** show the `reason` (`depth` beyond 40 m, `mod` beyond the MOD at
@@ -724,7 +725,38 @@ What a client **must** do, because these are limits from the Diver's own input a
 - **Say when `recentDiveEndedAt` is set** (a Dive within 48 hours): the real limit is shorter than shown.
 - **Depths from the MOD are rounded down to 0.1 m:** a client must not round them up. A mix under 16 % oxygen answers
   `gas_not_breathable` (400); a client sends `volume` and `pressure` together or neither.
+- **The gas limit ends at the ascent pressure of the gas rule** (`rule`, `bar`; default `rock_bottom`, never below 50 bar;
+  also `reserve` and `ascent_pressure`): show `ascentPressureBar` ("the gas limit ends at …, where you start up").
 - Flying after diving only as DAN's text, no countdown.
+
+#### Gas plans
+
+([ADR 0033](../decisions/0033-gas-plans-rules-and-groups.md).) `GET /api/tools/gas-plan` takes `levels` and `divers` as JSON in
+the query (`[{depth, minutes}]`, `[{name, volume, pressure, sac?, diverId?}]`, 1 to 8 each) and the same mix, water, altitude and
+rule inputs, and optionally `descentRate` and `ascentRate` in metres a minute (default 18 and 9; rock bottom follows a slower
+ascent and never counts on a faster one); nothing is stored. Any Diver of the instance can be named by `diverId` (found with
+`GET /api/divers/search`, ADR 0028); only of a Diver the User manages the planning SAC and the last Dive are read, everyone
+else plans with the SAC sent or 20 L/min, and no logbook value of theirs is in the answer. A client **must**, besides the duties above:
+- **Explain the chosen gas rule** in words: what it is for, who teaches it, when it is not enough; the turn rules (`halves`,
+  `thirds`, `sixths`) say that they are for dives that come back the way they went, thirds and sixths for overhead diving with training.
+- **Always show rock bottom** (`rockBottom`, per level, per Diver) whichever rule is chosen, and say when `belowRockBottom` is set.
+- **Show each Diver's own figures** (`litres`, `endPressureBar`, `ascentPressureBar`, `turnPressureBar` under a turn rule, `marginBar`),
+  **mark the controlling Diver** (`controlling`, `controllingIndex`) and give the briefing: we go up (and turn) when anyone reaches their pressure.
+- **Say when the plan does not fit** (`fits` false): leave the last level by `leaveLastLevelAtMinute` (run time) at the latest.
+- **Show where each Diver's SAC came from** (`sacLpm.source`: `request`, `logbook`, `default`; `basedOn`). A typed Diver without a SAC is
+  marked 20 L/min (default). Keep the levels and Divers in the address, never another Diver's values.
+- **Say that the plan does not check the no-decompression limit** over its levels: it checks the gas, the MOD and 40 m, and
+  the dive computer governs. A drawn profile must not read as "safe to dive".
+- **Show the way between the levels** where it shows the plan's time: `segments` are every stretch in the order it is dived
+  (`descent`, `level`, `ascent`, `safety_stop`, each with `fromDepthM`, `depthM` and `minutes`; the ascent stops for 3 min at 5 m
+  when the last level is deeper), and a level's `minutes` count from arriving. `used.descentRateMPerMin` and
+  `used.ascentRateMPerMin` say which rates applied and where they came from.
+- A client **may** draw the plan: the profile from `segments`, and each Diver's pressure from `pressuresBar` (at the start and at
+  the end of every segment, one more value than there are segments). A picture needs the same in text.
+- **Say who a Diver is to the plan** where it lets the User pick one: a Diver the User manages brings their SAC, another Diver
+  of the instance only their name, and anyone else is a guest who exists only in the request.
+- `outside_limits` gives the `reason` and `levelIndex` and no numbers.
+The MCP tool `planning_gas_plan` returns the same with `assumptions`, `controlling_diver` and the notice.
 
 ## The MCP endpoint
 

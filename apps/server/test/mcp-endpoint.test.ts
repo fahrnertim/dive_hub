@@ -213,7 +213,7 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
       const { tools } = await client.listTools();
       expect(tools.map((x) => x.name)).toEqual([
         'logbook_search_dives', 'logbook_get_dive', 'logbook_get_dive_assessment', 'logbook_stats', 'sites_search', 'sites_get', 'divers_buddies', 'divers_list',
-        'planning_gas_and_bottom_time',
+        'planning_gas_and_bottom_time', 'planning_gas_plan',
       ]);
       for (const listed of tools) {
         expect(listed.annotations).toMatchObject({ readOnlyHint: true, destructiveHint: false });
@@ -349,10 +349,10 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
     it('plans: gas numbers and a bottom time that always carry their assumptions and the estimate notice', async () => {
       const client = await connect(key);
       // planning-gas.test.ts and planning-bottom-time.test.ts hold the figures: EAN32 at 30 m in salt water.
-      const planned = (await tool(client, 'planning_gas_and_bottom_time', { o2: 32, depth: 30, cylinder_volume_l: 11.1, cylinder_pressure_bar: 201, sac_l_per_min: 18, reserve_bar: 51, gf_high: 85 })).structuredContent!;
+      const planned = (await tool(client, 'planning_gas_and_bottom_time', { o2: 32, depth: 30, cylinder_volume_l: 11.1, cylinder_pressure_bar: 201, sac_l_per_min: 18, gas_rule: 'reserve', rule_bar: 51, gf_high: 85 })).structuredContent!;
       expect(planned).toMatchObject({
         mod_working_m: 33.4, mod_contingency_m: 39.6, at_depth: { depth_m: 30, ppo2: 1.29, best_mix_percent: 34 },
-        bottom_time: { status: 'ok', binding: ['ndl'], assumptions: { gf_high: { value: 85, source: 'request' }, water: { value: 'salt', source: 'default' } } },
+        bottom_time: { status: 'ok', binding: ['ndl'], assumptions: { gf_high: { value: 85, source: 'request' }, water: { value: 'salt', source: 'default' }, gas_rule: { value: { kind: 'reserve', bar: 51 }, source: 'request' } } },
       });
       expect(planned.bottom_time.minutes).toBeGreaterThan(15);
       expect(planned.notice).toMatch(/estimate/i);
@@ -367,6 +367,34 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
       expect((await tool(client, 'planning_gas_and_bottom_time', { o2: 32 })).structuredContent).toMatchObject({ at_depth: null, bottom_time: null });
       expect(text(await tool(client, 'planning_gas_and_bottom_time', { o2: 15 }))).toContain('16 %');
       expect(text(await tool(client, 'planning_gas_and_bottom_time', { o2: 32, depth: 30, diver_id: '00000000-0000-7000-8000-000000000000' }))).toContain('divers_list');
+    });
+
+    it('plans gas for a group, with the sources of each SAC, rock bottom, the controlling Diver and the notice', async () => {
+      const client = await connect(key);
+      // planning-gas-plan.test.ts holds the figures: 20 m for 20 minutes in fresh water, 12 L from 200 bar.
+      const cylinder = { cylinder_volume_l: 12, cylinder_pressure_bar: 200 };
+      const planned = (await tool(client, 'planning_gas_plan', {
+        o2: 21, water: 'fresh', levels: [{ depth_m: 20, minutes: 20 }],
+        divers: [{ name: 'Tim', sac_l_per_min: 20, ...cylinder }, { name: 'Ann', sac_l_per_min: 15, ...cylinder }],
+      })).structuredContent!;
+      expect(planned).toMatchObject({
+        status: 'ok', fits: true, controlling_diver: 'Tim',
+        assumptions: { water: { value: 'fresh', source: 'request' }, gas_rule: { value: { kind: 'rock_bottom', bar: null }, source: 'default' } },
+      });
+      expect(planned.divers[0]).toMatchObject({ name: 'Tim', sac_l_per_min: { value: 20, source: 'request' }, turn_pressure_bar: null });
+      expect(planned.divers[0].litres).toBeCloseTo(1413, 0);
+      expect(planned.divers[0].rock_bottom).toHaveLength(1);
+      expect(planned.notice).toMatch(/not advice/i);
+      // Beyond 40 m there is no number, only the reason and the level.
+      const beyond = (await tool(client, 'planning_gas_plan', { o2: 21, levels: [{ depth_m: 42, minutes: 5 }], divers: [{ name: 'Tim', ...cylinder }] })).structuredContent!;
+      expect(beyond).toMatchObject({ status: 'outside_recreational_limits', reason: 'depth', level_index: 0 });
+      expect(beyond).not.toHaveProperty('divers');
+      // A Diver this access can't read plans by what is typed or the default: nothing of their logbook.
+      const other = (await tool(client, 'planning_gas_plan', {
+        o2: 21, levels: [{ depth_m: 20, minutes: 5 }], divers: [{ name: 'X', diver_id: '00000000-0000-7000-8000-000000000000', ...cylinder }],
+      })).structuredContent as { divers: { sac_l_per_min: unknown; recent_dive_ended_at: unknown; pressures_bar: number[] }[]; segments: unknown[] };
+      expect(other.divers[0]).toMatchObject({ sac_l_per_min: { value: 20, source: 'default' }, recent_dive_ended_at: null });
+      expect(other.divers[0]!.pressures_bar).toHaveLength(other.segments.length + 1);
     });
 
     it('marks what other Users wrote: site texts and other Divers\' names', async () => {
@@ -403,6 +431,8 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
         ['divers_buddies', {}], ['divers_buddies', { role: 'guide', diver_id: timDiver }], ['divers_list', {}],
         ['planning_gas_and_bottom_time', { o2: 32 }], ['planning_gas_and_bottom_time', { o2: 32, depth: 30, cylinder_volume_l: 11.1, cylinder_pressure_bar: 201, diver_id: timDiver }],
         ['planning_gas_and_bottom_time', { o2: 40, depth: 36 }],
+        ['planning_gas_plan', { o2: 32, levels: [{ depth_m: 30, minutes: 15 }], divers: [{ name: 'Tim', cylinder_volume_l: 12, cylinder_pressure_bar: 200, diver_id: timDiver }, { name: 'Guest', cylinder_volume_l: 10, cylinder_pressure_bar: 200 }], gas_rule: 'thirds' }],
+        ['planning_gas_plan', { o2: 21, levels: [{ depth_m: 42, minutes: 5 }], divers: [{ name: 'Tim', cylinder_volume_l: 12, cylinder_pressure_bar: 200 }] }],
       ];
       for (const [name, args] of calls) {
         const result = await tool(client, name, args);

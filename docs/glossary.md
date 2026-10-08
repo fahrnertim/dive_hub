@@ -236,6 +236,11 @@ A diver's gas consumption at the surface in litres per minute; at depth it multi
 _Avoid_: RMV (fine as a synonym in UI text), air consumption, breathing rate
 _German_: Atemminutenvolumen (AMV)
 
+**Planning SAC**:
+A Diver's SAC for planning: the 85th percentile of their last 20 Dives with a SAC (at least 5, else 20 L/min), shown with how many Dives it rests on. Only for Divers the User manages ([ADR 0033](decisions/0033-gas-plans-rules-and-groups.md)).
+_Avoid_: Average SAC, default SAC
+_German_: Planungs-AMV
+
 **Bottom time**:
 How long a planned dive may stay at its depth: the shortest of the no-decompression limit, the oxygen limit and the gas above the reserve, said with which one binds. An estimate on the Tools page, never a substitute for the dive computer.
 _Avoid_: Dive time, NDL (one of its limits), runtime

@@ -462,6 +462,41 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .tools-assumptions { margin: 0; padding-left: var(--space-5); display: grid; gap: var(--space-1); }
 
 .tools-grid { align-items: start; }
+/* A gas plan's levels and Divers (ADR 0033): lines with a pencil and a bin, and one set of fields open under its line. */
+.plan-part { margin-top: var(--space-5); }
+.plan-part > .subheading { margin: 0 0 var(--space-2); }
+.plan-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--color-border); }
+.plan-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-3); min-height: 2.75rem; padding: var(--space-1) 0; border-bottom: 1px solid var(--color-border); }
+/* The levels' numbers stand in columns across the lines. */
+.plan-levels { display: grid; grid-template-columns: minmax(0, 1fr) repeat(4, auto); column-gap: var(--space-4); }
+.plan-levels > .plan-row { grid-column: 1 / -1; grid-template-columns: subgrid; }
+.plan-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.plan-head, .plan-quiet { min-height: 2rem; font-size: var(--text-sm); color: var(--color-text-muted); }
+.plan-name { font-weight: var(--weight-medium); }
+.plan-actions { display: flex; gap: var(--space-2); justify-content: end; }
+.plan-actions .btn { min-width: 2rem; justify-content: center; margin: 0; padding-inline: var(--space-1); }
+/* Its fields take the line's width and never set it. */
+.plan-editor { grid-column: 1 / -1; contain: inline-size; min-width: 0; display: grid; gap: var(--space-3); justify-items: start; margin: var(--space-1) 0 var(--space-2); padding: var(--space-3); background: var(--color-surface-sunken); border-radius: var(--radius-md); }
+.plan-editor .tools-grid, .plan-editor .search-list { width: 100%; margin-bottom: 0; }
+.plan-add, .plan-find { margin-top: var(--space-2); }
+.plan-diver-text { display: grid; gap: 2px; min-width: 0; }
+.plan-detail { font-size: var(--text-sm); color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+.plan-profile { margin-top: var(--space-4); }
+.plan-profile .muted { margin: var(--space-2) 0 0; }
+@media (max-width: 30rem) {
+  /* On a phone the run time stays in the profile above. */
+  .plan-until { display: none; }
+  .plan-levels { grid-template-columns: minmax(min-content, 1fr) repeat(3, auto); column-gap: var(--space-3); }
+  .plan-levels .plan-name { white-space: nowrap; }
+  /* The way between the levels reads as one line of text: its depths don't fit the levels' columns. */
+  .plan-levels > .plan-quiet { display: flex; flex-wrap: wrap; column-gap: var(--space-3); padding-block: var(--space-2); }
+}
+.tools-diver-table { width: 100%; }
+.tools-diver-table td, .tools-diver-table th.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tools-diver-table tr[data-controlling] th[scope='row'] { font-weight: var(--weight-semibold); }
+.tools-rule { display: grid; gap: var(--space-2); margin: var(--space-3) 0; }
+.tools-rule > p { margin: 0; }
+.tools-rule > p:last-child { color: var(--color-text-muted); }
 .tools-cylinder .tools-grid { margin-bottom: 0; }
 .tools-cylinder { margin-top: var(--space-5); }
 .input::placeholder { color: var(--color-text-muted); opacity: 1; }

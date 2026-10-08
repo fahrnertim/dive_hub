@@ -1920,7 +1920,6 @@
       "cylinder": "Cylinder",
       "volume": "Volume",
       "pressure": "Fill pressure",
-      "reserve": "Reserve",
       "sac": "Gas use",
       "gf": "Gradient factor high",
       "empty": "Enter the oxygen and the depth.",
@@ -1941,7 +1940,8 @@
       "aboveWorking": "At this depth the ppO₂ is {{ppo2}} bar, above your working limit.",
       "otu": "About {{otu}} OTU of oxygen exposure.",
       "recent": "You dived within the last 48 hours (the last dive ended {{when}}). The real limit is shorter than shown.",
-      "assumptions": "What this assumes"
+      "assumptions": "What this assumes",
+      "ascentAt": "The gas limit ends at {{pressure}}, where you start up."
     },
     "limit": {
       "ndl": "No-decompression limit",
@@ -1952,8 +1952,8 @@
       "default": "default",
       "request": "entered",
       "recording": "from your computer",
-      "recordings": "from your recent dives",
-      "site": "from the site"
+      "site": "from the site",
+      "logbook": "from your recent dives"
     },
     "assumed": {
       "gf": "Gradient factor high: {{value}} % ({{source}})",
@@ -1961,8 +1961,10 @@
       "water": "Water: {{value}} ({{source}})",
       "noAltitude": "No altitude given: sea level",
       "altitude": "Altitude: {{value}} ({{source}})",
-      "reserve": "Reserve: {{value}} ({{source}})",
-      "model": "Model: Bühlmann ZHL-16C, no stops, descent 18 m/min, ascent 9 m/min, a 3 min stop at 5 m, one minute of margin."
+      "model": "Model: Bühlmann ZHL-16C, no stops, descent 18 m/min, ascent 9 m/min, a 3 min stop at 5 m, one minute of margin.",
+      "rule": "Gas rule: {{rule}} ({{source}})",
+      "sacBased_one": "Gas use: {{value}} L/min ({{source}}, {{count}} dive)",
+      "sacBased_other": "Gas use: {{value}} L/min ({{source}}, {{count}} dives)"
     },
     "flying": "After diving, wait before flying: follow your dive computer and the guidance of DAN.",
     "dive": {
@@ -1970,7 +1972,130 @@
     },
     "settings": {
       "title": "Settings",
-      "hint": "Leave a field empty to use the value shown in grey. The list under the bottom time says where each value came from."
+      "hint": "Leave a field empty to use the value shown in grey. The list under the bottom time says where each value came from.",
+      "descentRate": "Descent rate",
+      "ascentRate": "Ascent rate",
+      "rateHint": "For the gas plan."
+    },
+    "rules": {
+      "label": "Gas rule",
+      "rock_bottom": {
+        "name": "Rock bottom",
+        "about": "You go up when the gas left is what two divers need to reach the surface from that depth: both breathing at twice their normal rate, one minute to sort out the problem, then a direct ascent at 9 m/min, plus 10 bar. Never below 50 bar here. Taught by UTD and GUE; Subsurface and GasPlanner calculate it too.",
+        "limits": "It needs your real SAC. It assumes the problem happens at that depth and says nothing about a long swim back."
+      },
+      "reserve": {
+        "name": "Fixed reserve",
+        "bar": "Reserve at the end",
+        "about": "You finish the dive with this much left in the cylinder, so the ascent and the safety stop are counted on top. Dive centres and agencies teach a fixed reserve, from about 30 to 50 bar.",
+        "limits": "A fixed number ignores depth: at 30 m it is well below rock bottom, at 12 m it is generous."
+      },
+      "ascent_pressure": {
+        "name": "Fixed ascent pressure",
+        "bar": "Start the ascent at",
+        "about": "You start going up when the gauge reaches this pressure. \"Up at 100 bar\" is a common dive-centre rule.",
+        "limits": "A fixed number ignores depth and group size; compare it with rock bottom, which is always shown."
+      },
+      "halves": {
+        "name": "Halves",
+        "about": "Half the gas for the way out, half for the way back. Taught for dives that return the way they went. In a group the smaller supply decides how many litres are spent before turning.",
+        "limits": "It leaves nothing in reserve: not enough for trouble on an open-water ascent."
+      },
+      "thirds": {
+        "name": "Thirds",
+        "about": "A third out, a third back, a third in reserve. Taught for cave and wreck diving. In a group the smaller supply decides how many litres are spent before turning.",
+        "limits": "For overhead diving with training; it is not a rule for open water."
+      },
+      "sixths": {
+        "name": "Sixths",
+        "about": "A sixth out, a sixth back, the rest kept. Used for demanding overhead dives where the way back is long or slow. In a group the smaller supply decides how many litres are spent before turning.",
+        "limits": "For overhead diving with training; it turns very early, which suits few open-water dives."
+      }
+    },
+    "plan": {
+      "title": "Gas plan",
+      "lead": "Plan the gas of one or more levels for yourself or a group. The plan follows the Diver who runs out of margin first.",
+      "empty": "Enter the mix above, add a level and a Diver to see the plan.",
+      "levels": "Levels",
+      "levelN": "Level {{n}}",
+      "removeLevel": "Remove level {{n}}",
+      "addLevel": "Add a level",
+      "divers": "Divers",
+      "diverN": "Diver {{n}}",
+      "name": "Name",
+      "sacFromLogbook": "from logbook",
+      "removeDiver": "Remove {{name}}",
+      "addDiver": "Add a Diver",
+      "resultCaption": "The gas of each Diver in this plan",
+      "col": {
+        "diver": "Diver",
+        "gas": "Gas used",
+        "end": "At the end",
+        "rockBottom": "Rock bottom",
+        "turn": "Turn at",
+        "ascend": "Ascend at",
+        "margin": "Margin",
+        "depth": "Depth",
+        "time": "Time",
+        "until": "Run time"
+      },
+      "controls": "Controls the plan",
+      "fits": "The plan fits.",
+      "fitsUntil": "The last level can last until minute {{minute}} of the dive.",
+      "doesNotFit": "The plan does not fit.",
+      "leaveBy": "Leave {{depth}} by minute {{minute}} at the latest, or bring more gas.",
+      "briefing": "Everyone follows {{name}}: we go up when anyone reaches their ascent pressure.",
+      "briefingTurn": "Everyone follows {{name}}: we turn when anyone reaches their turn pressure, and go up when anyone reaches their ascent pressure.",
+      "belowRockBottom": "For at least one Diver this rule leaves less than rock bottom.",
+      "recent": "A Diver dived within the last 48 hours; the real limit is shorter than shown.",
+      "rockBottomLevels": "Rock bottom at each level, for the Diver who controls the plan: {{levels}}.",
+      "assumedSac": "{{name}}: gas use {{value}} L/min ({{source}})",
+      "assumedSacBased_one": "{{name}}: gas use {{value}} L/min ({{source}}, {{count}} dive)",
+      "assumedSacBased_other": "{{name}}: gas use {{value}} L/min ({{source}}, {{count}} dives)",
+      "assumedModel": "Model: a 3 min stop at 5 m; rock bottom at twice the combined gas use for 1 minute, an ascent no faster than 9 m/min and 10 bar; air and nitrox 21 to 40 % to 40 m; real gas in the cylinder.",
+      "outsideReason": {
+        "depth": "A level ({{depth}}) is deeper than 40 m.",
+        "mod": "A level ({{depth}}) is beyond the MOD of this mix at the contingency ppO2.",
+        "gas": "Only air and nitrox 21 to 40 % are planned here."
+      },
+      "depth": "Depth",
+      "time": "Time at this depth",
+      "timeHint": "From arriving there; the way there comes on top.",
+      "minutes": "{{value}} min",
+      "fromTo": "{{from}} → {{to}}",
+      "editLevel": "Edit level {{n}}",
+      "editDiver": "Edit {{name}}",
+      "segment": {
+        "descent": "Descent",
+        "ascent": "Ascent",
+        "safety_stop": "Safety stop"
+      },
+      "sac": "{{value}} L/min",
+      "sacFromDives_one": "{{value}} from {{count}} dive",
+      "sacFromDives_other": "{{value}} from {{count}} dives",
+      "sacDefault": "{{value}} (default)",
+      "sacHint": {
+        "yours": "Leave empty to plan with the gas use of their recent dives.",
+        "other": "Only they see their logbook: type their gas use, or plan with 20 L/min.",
+        "guest": "A guest is only in this plan’s address. Type their gas use, or plan with 20 L/min."
+      },
+      "find": {
+        "label": "Find a diver",
+        "hint": "Every diver of this Dive Hub by name, or anyone else as a guest.",
+        "yours": "Your logbook: gas use from their recent dives",
+        "other": "Gas use typed, or 20 L/min",
+        "guest": "Add “{{name}}” as a guest",
+        "guestDetail": "Only in this plan, not saved",
+        "empty": "Type a name."
+      },
+      "profile": "Planned profile",
+      "profileSummary": "The planned dive: {{depth}} at its deepest, {{minutes}} minutes from the surface to the surface. The list of levels has every stretch.",
+      "pressure": "Planned pressure",
+      "pressureSummary": "Each Diver’s pressure falling over the plan. The table of the Divers has the numbers.",
+      "marker": "The dashed line is minute {{minute}}: leave the last level by then.",
+      "noNdl": "This plan checks the gas, the MOD and 40 m. It does not check the no-decompression limit over several levels: your dive computer does.",
+      "assumedRates": "Descent {{descent}}, ascent {{ascent}}",
+      "pressureAxis": "Pressure"
     }
   }
 }

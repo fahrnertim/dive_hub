@@ -1920,7 +1920,6 @@
       "cylinder": "Flasche",
       "volume": "Volumen",
       "pressure": "Fülldruck",
-      "reserve": "Reserve",
       "sac": "Gasverbrauch",
       "gf": "Gradient Factor High",
       "empty": "Gib Sauerstoff und Tiefe ein.",
@@ -1941,7 +1940,8 @@
       "aboveWorking": "In dieser Tiefe beträgt der ppO₂ {{ppo2}} bar, über deiner Arbeitsgrenze.",
       "otu": "Etwa {{otu}} OTU Sauerstoffbelastung.",
       "recent": "Du bist in den letzten 48 Stunden getaucht (der letzte Tauchgang endete {{when}}). Die wirkliche Grenze ist kürzer als gezeigt.",
-      "assumptions": "Was angenommen wird"
+      "assumptions": "Was angenommen wird",
+      "ascentAt": "Das Gaslimit endet bei {{pressure}}, wo du den Aufstieg beginnst."
     },
     "limit": {
       "ndl": "Nullzeitgrenze",
@@ -1952,8 +1952,8 @@
       "default": "Standard",
       "request": "eingegeben",
       "recording": "vom Computer",
-      "recordings": "aus den letzten Tauchgängen",
-      "site": "vom Tauchplatz"
+      "site": "vom Tauchplatz",
+      "logbook": "aus den letzten Tauchgängen"
     },
     "assumed": {
       "gf": "Gradient Factor High: {{value}} % ({{source}})",
@@ -1961,8 +1961,10 @@
       "water": "Wasser: {{value}} ({{source}})",
       "noAltitude": "Keine Höhe angegeben: Meereshöhe",
       "altitude": "Höhe: {{value}} ({{source}})",
-      "reserve": "Reserve: {{value}} ({{source}})",
-      "model": "Modell: Bühlmann ZHL-16C, ohne Stopps, Abstieg 18 m/min, Aufstieg 9 m/min, 3 Min. Stopp auf 5 m, eine Minute Reserve."
+      "model": "Modell: Bühlmann ZHL-16C, ohne Stopps, Abstieg 18 m/min, Aufstieg 9 m/min, 3 Min. Stopp auf 5 m, eine Minute Reserve.",
+      "rule": "Gasregel: {{rule}} ({{source}})",
+      "sacBased_one": "Gasverbrauch: {{value}} L/min ({{source}}, {{count}} Tauchgang)",
+      "sacBased_other": "Gasverbrauch: {{value}} L/min ({{source}}, {{count}} Tauchgänge)"
     },
     "flying": "Warte nach dem Tauchen vor dem Fliegen: folge deinem Tauchcomputer und den Empfehlungen von DAN.",
     "dive": {
@@ -1970,7 +1972,130 @@
     },
     "settings": {
       "title": "Einstellungen",
-      "hint": "Lass ein Feld leer, um den grau angezeigten Wert zu verwenden. Die Liste unter der Grundzeit sagt, woher jeder Wert kommt."
+      "hint": "Lass ein Feld leer, um den grau angezeigten Wert zu verwenden. Die Liste unter der Grundzeit sagt, woher jeder Wert kommt.",
+      "descentRate": "Abstiegsgeschwindigkeit",
+      "ascentRate": "Aufstiegsgeschwindigkeit",
+      "rateHint": "Für den Gasplan."
+    },
+    "rules": {
+      "label": "Gasregel",
+      "rock_bottom": {
+        "name": "Rock Bottom",
+        "about": "Du tauchst auf, wenn das restliche Gas reicht, damit zwei Taucher von dieser Tiefe an die Oberfläche kommen: beide atmen doppelt so schnell, eine Minute zum Lösen des Problems, dann ein direkter Aufstieg mit 9 m/min, dazu 10 bar. Hier nie unter 50 bar. Gelehrt von UTD und GUE; Subsurface und GasPlanner rechnen es ebenfalls.",
+        "limits": "Es braucht deinen echten Atemminutenverbrauch. Es nimmt an, dass das Problem in dieser Tiefe auftritt, und sagt nichts über einen langen Rückweg."
+      },
+      "reserve": {
+        "name": "Feste Reserve",
+        "bar": "Reserve am Ende",
+        "about": "Du beendest den Tauchgang mit so viel Rest in der Flasche; Aufstieg und Sicherheitsstopp werden obendrauf gezählt. Tauchbasen und Verbände lehren eine feste Reserve, etwa 30 bis 50 bar.",
+        "limits": "Eine feste Zahl ignoriert die Tiefe: bei 30 m liegt sie weit unter Rock Bottom, bei 12 m ist sie großzügig."
+      },
+      "ascent_pressure": {
+        "name": "Fester Aufstiegsdruck",
+        "bar": "Aufstieg beginnen bei",
+        "about": "Du beginnst den Aufstieg, wenn das Finimeter diesen Druck zeigt. „Hoch bei 100 bar“ ist eine übliche Regel von Tauchbasen.",
+        "limits": "Eine feste Zahl ignoriert Tiefe und Gruppengröße; vergleiche sie mit Rock Bottom, das immer angezeigt wird."
+      },
+      "halves": {
+        "name": "Halbe-Halbe",
+        "about": "Die Hälfte des Gases für den Hinweg, die Hälfte für den Rückweg. Gelehrt für Tauchgänge, die auf demselben Weg zurückkehren. In einer Gruppe bestimmt der kleinere Vorrat, wie viele Liter bis zum Umkehren verbraucht werden.",
+        "limits": "Es bleibt keine Reserve: zu wenig für Probleme bei einem Aufstieg im Freiwasser."
+      },
+      "thirds": {
+        "name": "Drittel",
+        "about": "Ein Drittel hin, ein Drittel zurück, ein Drittel Reserve. Gelehrt fürs Höhlen- und Wracktauchen. In einer Gruppe bestimmt der kleinere Vorrat, wie viele Liter bis zum Umkehren verbraucht werden.",
+        "limits": "Für Tauchen in überkopfgeschlossenen Umgebungen mit Ausbildung; keine Regel fürs Freiwasser."
+      },
+      "sixths": {
+        "name": "Sechstel",
+        "about": "Ein Sechstel hin, ein Sechstel zurück, der Rest bleibt. Für anspruchsvolle Tauchgänge in überkopfgeschlossenen Umgebungen mit langem oder langsamem Rückweg. In einer Gruppe bestimmt der kleinere Vorrat, wie viele Liter bis zum Umkehren verbraucht werden.",
+        "limits": "Für Tauchen in überkopfgeschlossenen Umgebungen mit Ausbildung; es kehrt sehr früh um und passt zu wenigen Freiwassertauchgängen."
+      }
+    },
+    "plan": {
+      "title": "Gasplan",
+      "lead": "Plane das Gas für eine oder mehrere Ebenen, für dich oder eine Gruppe. Der Plan folgt dem Taucher, dem zuerst die Reserve ausgeht.",
+      "empty": "Gib oben das Gemisch ein und füge eine Ebene und einen Taucher hinzu, um den Plan zu sehen.",
+      "levels": "Ebenen",
+      "levelN": "Ebene {{n}}",
+      "removeLevel": "Ebene {{n}} entfernen",
+      "addLevel": "Ebene hinzufügen",
+      "divers": "Taucher",
+      "diverN": "Taucher {{n}}",
+      "name": "Name",
+      "sacFromLogbook": "aus dem Logbuch",
+      "removeDiver": "{{name}} entfernen",
+      "addDiver": "Taucher hinzufügen",
+      "resultCaption": "Das Gas jedes Tauchers in diesem Plan",
+      "col": {
+        "diver": "Taucher",
+        "gas": "Gasverbrauch",
+        "end": "Am Ende",
+        "rockBottom": "Rock Bottom",
+        "turn": "Umkehren bei",
+        "ascend": "Aufstieg bei",
+        "margin": "Spielraum",
+        "depth": "Tiefe",
+        "time": "Zeit",
+        "until": "Laufzeit"
+      },
+      "controls": "Bestimmt den Plan",
+      "fits": "Der Plan passt.",
+      "fitsUntil": "Die letzte Ebene kann bis Minute {{minute}} des Tauchgangs dauern.",
+      "doesNotFit": "Der Plan passt nicht.",
+      "leaveBy": "Verlasse {{depth}} spätestens bei Minute {{minute}} oder nimm mehr Gas mit.",
+      "briefing": "Alle folgen {{name}}: Wir tauchen auf, wenn einer seinen Aufstiegsdruck erreicht.",
+      "briefingTurn": "Alle folgen {{name}}: Wir kehren um, wenn einer seinen Umkehrdruck erreicht, und tauchen auf, wenn einer seinen Aufstiegsdruck erreicht.",
+      "belowRockBottom": "Für mindestens einen Taucher lässt diese Regel weniger als Rock Bottom übrig.",
+      "recent": "Ein Taucher ist in den letzten 48 Stunden getaucht; das echte Limit ist kürzer als angezeigt.",
+      "rockBottomLevels": "Rock Bottom auf jeder Ebene, für den Taucher, der den Plan bestimmt: {{levels}}.",
+      "assumedSac": "{{name}}: Gasverbrauch {{value}} L/min ({{source}})",
+      "assumedSacBased_one": "{{name}}: Gasverbrauch {{value}} L/min ({{source}}, {{count}} Tauchgang)",
+      "assumedSacBased_other": "{{name}}: Gasverbrauch {{value}} L/min ({{source}}, {{count}} Tauchgänge)",
+      "assumedModel": "Modell: ein Stopp von 3 min auf 5 m; Rock Bottom bei doppeltem gemeinsamem Gasverbrauch für 1 Minute, Aufstieg nicht schneller als 9 m/min und 10 bar; Luft und Nitrox 21 bis 40 % bis 40 m; reales Gas in der Flasche.",
+      "outsideReason": {
+        "depth": "Eine Ebene ({{depth}}) liegt tiefer als 40 m.",
+        "mod": "Eine Ebene ({{depth}}) liegt jenseits der MOD dieses Gemischs beim Notfall-ppO2.",
+        "gas": "Hier werden nur Luft und Nitrox 21 bis 40 % geplant."
+      },
+      "depth": "Tiefe",
+      "time": "Zeit auf dieser Tiefe",
+      "timeHint": "Ab der Ankunft; der Weg dorthin kommt dazu.",
+      "minutes": "{{value}} min",
+      "fromTo": "{{from}} → {{to}}",
+      "editLevel": "Ebene {{n}} bearbeiten",
+      "editDiver": "{{name}} bearbeiten",
+      "segment": {
+        "descent": "Abstieg",
+        "ascent": "Aufstieg",
+        "safety_stop": "Sicherheitsstopp"
+      },
+      "sac": "{{value}} L/min",
+      "sacFromDives_one": "{{value}} aus {{count}} Tauchgang",
+      "sacFromDives_other": "{{value}} aus {{count}} Tauchgängen",
+      "sacDefault": "{{value}} (Standard)",
+      "sacHint": {
+        "yours": "Leer lassen, um mit dem Gasverbrauch der letzten Tauchgänge zu planen.",
+        "other": "Das Logbuch sieht nur der Taucher selbst: Gib den Gasverbrauch ein oder plane mit 20 L/min.",
+        "guest": "Ein Gast steht nur in der Adresse dieses Plans. Gib den Gasverbrauch ein oder plane mit 20 L/min."
+      },
+      "find": {
+        "label": "Taucher suchen",
+        "hint": "Alle Taucher dieses Dive Hub nach Namen, oder jemand anderes als Gast.",
+        "yours": "Dein Logbuch: Gasverbrauch aus den letzten Tauchgängen",
+        "other": "Gasverbrauch eingegeben oder 20 L/min",
+        "guest": "„{{name}}“ als Gast hinzufügen",
+        "guestDetail": "Nur in diesem Plan, nicht gespeichert",
+        "empty": "Gib einen Namen ein."
+      },
+      "profile": "Geplantes Profil",
+      "profileSummary": "Der geplante Tauchgang: {{depth}} an der tiefsten Stelle, {{minutes}} Minuten von der Oberfläche bis zur Oberfläche. Die Liste der Ebenen nennt jeden Abschnitt.",
+      "pressure": "Geplanter Druck",
+      "pressureSummary": "Der Druck jedes Tauchers, wie er über den Plan fällt. Die Tabelle der Taucher nennt die Zahlen.",
+      "marker": "Die gestrichelte Linie ist Minute {{minute}}: Bis dahin die letzte Ebene verlassen.",
+      "noNdl": "Dieser Plan prüft das Gas, die MOD und 40 m. Die Nullzeit über mehrere Ebenen prüft er nicht: Das macht dein Tauchcomputer.",
+      "assumedRates": "Abstieg {{descent}}, Aufstieg {{ascent}}",
+      "pressureAxis": "Druck"
     }
   }
 }

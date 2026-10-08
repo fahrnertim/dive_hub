@@ -3,7 +3,7 @@ import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import { createAuthClient } from 'better-auth/client';
 import { SITES_PAGE, type SitesParams } from './lib/sites-list.ts';
 import type { LogbookFilter, neighbourParams } from './lib/logbook.ts';
-import type { ToolsParams } from './lib/tools.ts';
+import { BOTTOM_TIME_RULES, type ToolsParams } from './lib/tools.ts';
 
 export const api = createApiClient();
 /** Better Auth's own endpoints (sign-in, sign-out) at /api/auth on this origin; the session is a cookie. */
@@ -499,10 +499,14 @@ export const toolsGasQuery = (p: ToolsInput) => {
   });
 };
 
+/** A single bottom time knows three rules; the turn rules are for a plan with a return (ADR 0033). */
+const bottomTimeRule = (p: ToolsInput) =>
+  p.rule !== undefined && (BOTTOM_TIME_RULES as readonly string[]).includes(p.rule) ? { rule: p.rule as 'rock_bottom' | 'reserve' | 'ascent_pressure', bar: p.bar } : {};
+
 async function fetchToolsBottomTime(p: ToolsInput, diverId: string | undefined) {
   return unwrap(await api.GET('/api/tools/bottom-time', {
     params: { query: defined({
-      depth: p.depth!, o2: p.o2!, he: p.he, volume: p.volume, pressure: p.pressure, sac: p.sac, reserve: p.reserve, gfHigh: p.gf,
+      depth: p.depth!, o2: p.o2!, he: p.he, volume: p.volume, pressure: p.pressure, sac: p.sac, ...bottomTimeRule(p), gfHigh: p.gf,
       water: p.water, altitude: p.altitude, ppo2Working: p.pw, ppo2Contingency: p.pc, diverId,
     }) },
   }));
@@ -511,6 +515,60 @@ export const toolsBottomTimeQuery = (p: ToolsInput, diverId: string | undefined,
   const enabled = ready && p.o2 !== undefined && p.o2 > 0 && p.depth !== undefined && p.depth > 0;
   return queryOptions({
     queryKey: ['tools', 'bottom-time', p, diverId] as const, queryFn: () => fetchToolsBottomTime(p, diverId), enabled, retry: false,
+    ...(enabled && { placeholderData: keepPreviousData }),
+  });
+};
+
+/** A gas plan (ADR 0033): the server's answer, read field by field. */
+export interface ToolsPlanDiver {
+  name: string;
+  diverId: string | null;
+  sacLpm: { value: number; source: 'request' | 'logbook' | 'default'; basedOn?: number };
+  litres: number;
+  endPressureBar: number;
+  rockBottom: { depthM: number; pressureBar: number }[];
+  ascentPressureBar: number;
+  turnPressureBar: number | null;
+  belowRockBottom: boolean;
+  atAscentStartBar: number;
+  marginBar: number;
+  marginMinutes: number;
+  controlling: boolean;
+  recentDiveEndedAt: string | null;
+  /** At the start and at the end of every segment. */
+  pressuresBar: number[];
+}
+export type ToolsPlan =
+  | { status: 'outside_limits'; reason: 'depth' | 'mod' | 'gas'; levelIndex: number | null }
+  | {
+    status: 'ok';
+    runtimeMinutes: number;
+    /** In the order they are dived; a level and the stop start and end at the same depth. */
+    segments: { kind: 'descent' | 'level' | 'ascent' | 'safety_stop'; fromDepthM: number; depthM: number; minutes: number }[];
+    divers: ToolsPlanDiver[];
+    controllingIndex: number;
+    fits: boolean;
+    leaveLastLevelAtMinute: number;
+    used: {
+      water: { value: string; source: string }; altitudeM: { value: number; source: string }; gasRule: { value: { kind: string; bar: number | null }; source: string };
+      descentRateMPerMin: { value: number; source: string }; ascentRateMPerMin: { value: number; source: string };
+    };
+  };
+
+async function fetchToolsPlan(p: ToolsInput) {
+  const answer = await unwrap(await api.GET('/api/tools/gas-plan', {
+    params: { query: defined({
+      o2: p.o2!, he: p.he, water: p.water, altitude: p.altitude, rule: p.rule, bar: p.bar, ppo2Contingency: p.pc, descentRate: p.dr, ascentRate: p.ar,
+      levels: JSON.stringify((p.levels ?? []).map((l) => ({ depth: l.depth, minutes: l.minutes }))),
+      divers: JSON.stringify((p.divers ?? []).map((d) => defined({ name: d.name, volume: d.volume, pressure: d.pressure, sac: d.sac, diverId: d.diverId }))),
+    }) },
+  }));
+  return answer as unknown as ToolsPlan;
+}
+export const toolsPlanQuery = (p: ToolsInput) => {
+  const enabled = p.o2 !== undefined && p.o2 > 0 && (p.levels?.length ?? 0) > 0 && (p.divers?.length ?? 0) > 0;
+  return queryOptions({
+    queryKey: ['tools', 'plan', p] as const, queryFn: () => fetchToolsPlan(p), enabled, retry: false,
     ...(enabled && { placeholderData: keepPreviousData }),
   });
 };
