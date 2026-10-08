@@ -427,6 +427,7 @@
     "recording_not_on_dive": "This recording doesn’t belong to the dive.",
     "last_recording": "This is the dive’s only recording, so it can’t be split off.",
     "diver_not_found": "This Diver doesn’t exist or isn’t yours.",
+    "body_weight_not_found": "Nothing is saved for that date.",
     "own_diver": "Your own Diver can’t be deleted.",
     "diver_not_empty": "This Diver still has dives or devices, or is on a dive.",
     "diver_in_use": "This diver is on a dive. Take them off it first.",
@@ -1810,6 +1811,18 @@
     "showCode_one": "Show the verification code",
     "showCode_other": "Show the verification codes",
     "fullName": "Full name"
+  },
+  "bodyWeight": {
+    "open": "Body weight",
+    "title": "Body weight of {{name}}",
+    "privacy": "Only you and the other Users who keep this Diver see it.",
+    "intro": "Dated values, used later for the lead estimate’s rule of thumb. They are kept with this Diver and deleted with it.",
+    "none": "No body weight yet.",
+    "date": "Date",
+    "weight": "Weight",
+    "add": "Add weight",
+    "addHelp": "A weight on a date that has one replaces it.",
+    "remove": "Remove"
   },
   "diverCodes": {
     "open": "Codes",

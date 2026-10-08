@@ -19,7 +19,7 @@ Every entity belongs to exactly one tier. This answers "who can see/change it" a
 |---|---|
 | **Instance** (shared by all Users) | User, Dive site (→ External IDs), Site import, Operator, Agency catalog |
 | **User** | Connection (→ Diver mappings), Import, Original, external Divers they created, AI accesses and their log |
-| **Diver** (via the Users who manage it) | External IDs, Body weights (planned), Equipment items with service schedules and records (planned), Dive (→ Recordings, Cylinders, Lead, Participants, Media, Signatures, Pushes), Trip, Certification, Membership, Insurance, Medical exam, Equipment (incl. Devices), Site note |
+| **Diver** (via the Users who manage it) | External IDs, Body weights, Equipment items with service schedules and records (planned), Dive (→ Recordings, Cylinders, Lead, Participants, Media, Signatures, Pushes), Trip, Certification, Membership, Insurance, Medical exam, Equipment (incl. Devices), Site note |
 
 ## Overview
 
@@ -106,9 +106,9 @@ Changes to external Divers and External IDs set by hand are Revisions on the Div
 by connecting the account it holds, or by an admin: its Participants and accounts move, it is deleted with
 `merged_into` set (migration 0018), and both get a Revision `merge`.
 
-*Body weight (planned, [ADR 0031](../decisions/0031-lead-suit-cylinders-and-lead-estimate.md)):* dated values
+*Body weight ([ADR 0031](../decisions/0031-lead-suit-cylinders-and-lead-estimate.md)):* dated values
 `(Diver, date, kg)` for the lead estimate's rule of thumb and water term. Seen and set only by the Users who manage the
-Diver, never by other Users (ADR 0028); deleted with the Diver. No height, sex or age.
+Diver, never by other Users (ADR 0028); deleted with the Diver. No height, sex or age. Table `diver_body_weight` (Diver, date, kg; one value per date, 20 to 400 kg; migration 0029); routes `/api/divers/{id}/body-weights`.
 
 **Diver management** — `(User, Diver, role)`. A User's *own* Diver is flagged. Several
 Users can manage one Diver (two parents; a dive center handing a guest's log over to

@@ -18,6 +18,9 @@ const Name = Type.String({ minLength: 1, maxLength: 100, pattern: '\\S' });
 const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
 const DiverSource = Type.Enum(['ssi', 'padi'], { description: 'A service a person has an account at' });
 
+const DateParam = Type.String({ pattern: '^\\d{4}-\\d{2}-\\d{2}$', description: 'YYYY-MM-DD' });
+const BodyWeightView = Type.Object({ date: Type.String({ description: 'YYYY-MM-DD' }), kg: Type.Number() });
+
 const DiverView = Type.Object({
   id: Type.String(), name: Type.String(),
   isOwn: Type.Boolean({ description: 'The User\'s own Diver' }),
@@ -84,7 +87,7 @@ const STATUS: Record<DiverError['code'], number> = {
   diver_choice_needed: 409, diver_has_other_account: 409, code_not_recognised: 400, code_not_a_person: 400,
   diver_not_found: 404, own_diver: 409, diver_not_empty: 409, device_not_found: 404, diver_in_use: 409,
   diver_not_deletable: 403, diver_not_editable: 403, diver_external_id_taken: 409, diver_external_id_connected: 409, diver_not_external: 409,
-  invalid_input: 400,
+  invalid_input: 400, body_weight_not_found: 404,
 };
 const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
 
@@ -149,6 +152,37 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
     },
   }, async (request, reply) => {
     await divers.setExternalId(actorOf(request), request.params.id, request.params.source, request.body.externalId?.trim() ?? null);
+    return reply.code(204).send(null);
+  });
+
+  app.get('/divers/:id/body-weights', {
+    schema: {
+      summary: 'A Diver\'s body weights, newest first (only the Users who keep the Diver; others get 404 diver_not_found)',
+      description: 'ADR 0031: the first health-like data on a Diver. Always kilograms; clients show lb for imperial (ADR 0014). Never part of another view.',
+      params: IdParams, response: { 200: Type.Array(BodyWeightView), ...errors },
+    },
+  }, async (request) => divers.bodyWeights(request.user!.id, request.params.id));
+
+  app.put('/divers/:id/body-weights/:date', {
+    schema: {
+      summary: 'Set the Diver\'s body weight on a date, replacing the one there',
+      description: '400 for a weight outside 20 to 400 kg or a date that does not exist.',
+      params: Type.Object({ id: Type.String({ format: 'uuid' }), date: DateParam }),
+      body: Type.Object({ kg: Type.Number({ minimum: 20, maximum: 400 }) }, { additionalProperties: false }),
+      response: { 204: Type.Null(), ...errors },
+    },
+  }, async (request, reply) => {
+    await divers.setBodyWeight(request.user!.id, request.params.id, request.params.date, request.body.kg);
+    return reply.code(204).send(null);
+  });
+
+  app.delete('/divers/:id/body-weights/:date', {
+    schema: {
+      summary: 'Remove the Diver\'s body weight on a date (404 body_weight_not_found when there is none)',
+      params: Type.Object({ id: Type.String({ format: 'uuid' }), date: DateParam }), response: { 204: Type.Null(), ...errors },
+    },
+  }, async (request, reply) => {
+    await divers.removeBodyWeight(request.user!.id, request.params.id, request.params.date);
     return reply.code(204).send(null);
   });
 

@@ -441,3 +441,8 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .scanner-video { display: block; width: 100%; max-height: 60vh; object-fit: contain; background: #000; border-radius: var(--radius-sm); }
 .scanner-video[hidden] { display: none; }
 .scanner .notice, .scanner .muted { margin: 0; }
+.body-weight { display: grid; gap: var(--space-3); }
+.body-weight > p, .body-weight .muted, .body-weight .notice { margin: 0; }
+.body-weight-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-1); }
+.body-weight-list li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-4); }
+.body-weight-list .date { min-width: 8rem; }

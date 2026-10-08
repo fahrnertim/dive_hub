@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   api, devicesQuery, diverSearchQuery, diversQuery, externalDiversQuery, keys, meQuery, unwrap, type DeviceView, type DiverView, type ExternalDiverView,
 } from './api.ts';
+import { BodyWeightDialog } from './BodyWeight.tsx';
 import { DiverCodesDialog, TakeCodeDialog } from './DiverCodes.tsx';
 import { deviceName } from './lib/devices.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
@@ -81,6 +82,7 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
   const queryClient = useQueryClient();
   const [renaming, setRenaming] = useState(false);
   const [codes, setCodes] = useState(false);
+  const [weight, setWeight] = useState(false);
   const [newName, setNewName] = useState(d.name);
   const all = useQuery(diversQuery());
   const sameName = useSameName();
@@ -128,6 +130,9 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
             <Button variant="quiet" aria-label={t('common.forItem', { action: t('diverCodes.open'), item: d.name })} onPress={() => setCodes(true)}>
               {t('diverCodes.open')}
             </Button>
+            <Button variant="quiet" aria-label={t('common.forItem', { action: t('bodyWeight.open'), item: d.name })} onPress={() => setWeight(true)}>
+              {t('bodyWeight.open')}
+            </Button>
             <Button ref={renameButton} variant="quiet" aria-label={t('common.forItem', { action: t('divers.rename'), item: d.name })} onPress={() => { setNewName(d.name); setRenaming(true); }}>
               {t('divers.rename')}
             </Button>
@@ -142,6 +147,7 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
       {(rename.error ?? remove.error) && <Notice tone="danger">{errorText(rename.error ?? remove.error)}</Notice>}
       <MutedRules diver={d} />
       {codes && <DiverCodesDialog diverId={d.id} name={d.name} onClose={() => setCodes(false)} />}
+      {weight && <BodyWeightDialog diverId={d.id} name={d.name} onClose={() => setWeight(false)} />}
     </li>
   );
 }

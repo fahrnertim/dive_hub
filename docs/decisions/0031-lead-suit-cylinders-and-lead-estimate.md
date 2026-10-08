@@ -10,7 +10,7 @@ date: 2026-10-06
 ## Status
 Accepted – 2026-10-06. Amends [ADR 0030](0030-importing-dives-from-providers.md) (the fields an import fills and takes
 back gain lead and the cylinder). Built so far: Cylinders (ADR 0045) and the Dive's lead, feedback and suit
-([as built](#slice-a-as-built-the-dives-values)); SSI's lead, body weight and the estimate are not. Designed in the [weight calculator note](../research/2026-10-06-weight-calculator.md).
+([as built](#slice-a-as-built-the-dives-values)); SSI's lead ([part 2](#slice-a-part-2-as-built-ssis-lead)) and the Diver's body weight ([part 3](#slice-a-part-3-as-built-body-weight-of-a-diver)); the estimate is not. Designed in the [weight calculator note](../research/2026-10-06-weight-calculator.md).
 
 ## Context
 The owner wants tools that may later form a **dive planner**, starting with a weight calculator fed by a rule of thumb,
@@ -151,8 +151,26 @@ counts as not typed (owner's decision). Tested at `parseSsiDive`, `threeWay` and
   lead here stays. A weight that appears at SSI where the Dive here has no Lead is taken.
 - **Not sent to SSI.**
 
+## Slice A part 3 as built: body weight of a Diver
+Built on 2026-10-09, the test seams agreed with the owner (the routes over HTTP, the Diver's page in a browser, and a
+case in ui-quality). Slice A is complete; the estimate (slice B) is not built.
+
+- **Routes:** `GET /divers/{id}/body-weights` (newest first, `{ date, kg }`), `PUT /divers/{id}/body-weights/{date}` with
+  `{ kg }` and `DELETE …/{date}`. One value per date: setting a date again replaces it. A weight below 20 or above 400 kg
+  and a date that doesn't exist (`2026-02-30`) are refused (400); deleting a date without a weight is
+  `body_weight_not_found` (404).
+- **Who sees it:** only the Users who manage the Diver. Any other User, and everyone for an external Diver, gets
+  `diver_not_found`; the Diver list, the details every User sees (ADR 0043) and the Dive's views carry nothing of it.
+- **Storage:** table `diver_body_weight` (diver, date, kg; primary key diver and date; kg checked 20 to 400), cascading
+  with the Diver (migration 0029). The server holds kilograms only.
+- **Web:** a "Body weight" button on each of the User's Diver rows opens a dialog (`BodyWeight.tsx`): the privacy sentence,
+  the values newest first in kg or lb (one decimal), "Remove" per value, and a form with a date (today) and a weight in the
+  User's unit. Divers nobody keeps have no such button.
+- **Not built:** the MCP Diver tool does not return body weight yet (ADR 0035 says it will; the AI access text in
+  [clients.md](../spec/clients.md) gains it in that change); no use of it until the estimate.
+
 ### Decided, not built
-- Body weight of a Diver (part 3).
+- Nothing of slice A is left.
 
 ### Open
 - A request's `0` for a value that may be `null` arrives as `null` (the validator coerces, `Nullable` in

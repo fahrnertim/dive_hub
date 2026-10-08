@@ -597,6 +597,13 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
   **Must say what is kept** before adding: name, account, and first name, last name, e-mail and leader number, seen
   by everyone on the instance (ADR 0043). Importing an entry whose Diver is here fills what that Diver lacks; say how
   many were filled (`updated`). *Web:* `ProviderBuddies.tsx`.
+- **Body weight of a Diver** (ADR 0031): `GET /api/divers/{id}/body-weights` (newest first, `{ date, kg }`),
+  `PUT …/body-weights/{date}` with `{ kg }` (20 to 400; setting a date again replaces it; `invalid_input` for a weight or a
+  date that doesn't fit) and `DELETE …/body-weights/{date}` (`body_weight_not_found`). Always kilograms: show lb for
+  imperial and send kg back (ADR 0014). **Must show it only to the Users who keep the Diver:** every other User, and
+  everyone for an external Diver, gets `diver_not_found`, and no other view of a Diver carries it. **Must say who sees it**
+  where it is set ("Only you and the other Users who keep this Diver see it"). *Web:* `BodyWeight.tsx`, a dialog opened from
+  the Diver's row on `DiversPage.tsx`.
 - **Devices from a Provider:** importing a Provider's dives from a computer creates its Device for the Connection's
   Diver, the same Device the computer's own files find later (ADR 0030); list it like any other.
 - **Devices:** assigning one to another Diver affects only Imports from then on (ADR 0016). Say so where it is

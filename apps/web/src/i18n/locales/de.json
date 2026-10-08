@@ -427,6 +427,7 @@
     "recording_not_on_dive": "Diese Aufzeichnung gehört nicht zu diesem Tauchgang.",
     "last_recording": "Das ist die einzige Aufzeichnung dieses Tauchgangs, sie lässt sich nicht abtrennen.",
     "diver_not_found": "Diesen Taucher gibt es nicht oder er gehört nicht zu dir.",
+    "body_weight_not_found": "Für dieses Datum ist nichts gespeichert.",
     "own_diver": "Deinen eigenen Taucher kannst du nicht löschen.",
     "diver_not_empty": "Dieser Taucher hat noch Tauchgänge oder Geräte, oder ist bei einem Tauchgang eingetragen.",
     "diver_in_use": "Dieser Taucher ist bei einem Tauchgang eingetragen. Entferne ihn zuerst dort.",
@@ -1810,6 +1811,18 @@
     "showCode_one": "Verifizierungscode zeigen",
     "showCode_other": "Verifizierungscodes zeigen",
     "fullName": "Voller Name"
+  },
+  "bodyWeight": {
+    "open": "Körpergewicht",
+    "title": "Körpergewicht von {{name}}",
+    "privacy": "Nur du und die anderen Benutzer, die diesen Taucher führen, sehen es.",
+    "intro": "Werte mit Datum, später für die Faustregel der Blei-Schätzung. Sie bleiben bei diesem Taucher und werden mit ihm gelöscht.",
+    "none": "Noch kein Körpergewicht.",
+    "date": "Datum",
+    "weight": "Gewicht",
+    "add": "Gewicht hinzufügen",
+    "addHelp": "Ein Gewicht an einem Datum, das schon eines hat, ersetzt es.",
+    "remove": "Entfernen"
   },
   "diverCodes": {
     "open": "Codes",

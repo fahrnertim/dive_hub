@@ -197,7 +197,7 @@ _Avoid_: Tank (in the code and docs; fine in English UI text), bottle
 _German_: Flasche
 
 **Body weight**:
-A Diver's weight on a date, seen only by the Users who manage the Diver. Used by the lead estimate's rule of thumb.
+A Diver's weight on a date (one value per date, in kilograms), seen and set only by the Users who manage the Diver; deleted with it. Used later by the lead estimate's rule of thumb.
 _Avoid_: Weight (alone), mass
 _German_: Körpergewicht
 

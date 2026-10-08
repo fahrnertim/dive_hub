@@ -519,7 +519,24 @@ for (const v of variants) {
       }
     });
 
-    test('Divers, an admin merging an external diver', { tag: ['@divers'] }, async ({ page, request }) => {
+    test('Divers, a diver’s body weight, empty and with a value', { tag: ['@divers'] }, async ({ page, request }) => {
+      const name = `Gewicht Probe ${v.locale} ${Date.now()}`;
+      const created = await (await request.post('/api/divers', { data: { name }, headers })).json() as { id: string };
+      try {
+        await page.goto('/#/divers');
+        await page.getByRole('button', { name: `${v.english ? 'Body weight' : 'Körpergewicht'}: ${name}` }).click();
+        await expect(page.getByRole('dialog')).toBeVisible();
+        await expectGoodPage(page, title('Divers'), v);
+        await page.getByRole('dialog').getByRole('textbox', { name: v.english ? /^Weight/ : /^Gewicht/ }).fill('78');
+        await page.getByRole('dialog').getByRole('button', { name: v.english ? 'Add weight' : 'Gewicht hinzufügen' }).click();
+        await expect(page.getByRole('dialog').getByRole('listitem')).toHaveCount(1);
+        await expectGoodPage(page, title('Divers'), v);
+      } finally {
+        await request.delete(`/api/divers/${created.id}`, { headers });
+      }
+    });
+
+    test('Divers, an admin merging an external diver',{ tag: ['@divers'] }, async ({ page, request }) => {
       const name = `Merge me ${v.locale} ${Date.now()}`;
       const id = await externalDiver(request, name);
       try {

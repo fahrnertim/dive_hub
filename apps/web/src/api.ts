@@ -130,6 +130,8 @@ export const keys = {
   externalDivers: (q: string) => ['divers', 'external', q] as const,
   /** A Diver's details and codes (ADR 0043); under ['divers']. */
   diverDetails: (id: string) => ['divers', id, 'details'] as const,
+  /** A Diver's body weights (ADR 0031); only for the Users who keep the Diver. */
+  bodyWeights: (id: string) => ['divers', id, 'body-weights'] as const,
   /** The account's list of people at a Provider; under ['connections']. */
   buddies: (connectionId: string) => ['connections', connectionId, 'buddies'] as const,
   /** What importing the account's dives would do (ADR 0030); under ['connections']. */
@@ -411,6 +413,10 @@ async function fetchDiverDetails(id: string) {
   return unwrap(await api.GET('/api/divers/{id}/details', { params: { path: { id } } }));
 }
 export const diverDetailsQuery = (id: string) => queryOptions({ queryKey: keys.diverDetails(id), queryFn: () => fetchDiverDetails(id) });
+async function fetchBodyWeights(id: string) {
+  return unwrap(await api.GET('/api/divers/{id}/body-weights', { params: { path: { id } } }));
+}
+export const bodyWeightsQuery = (id: string) => queryOptions({ queryKey: keys.bodyWeights(id), queryFn: () => fetchBodyWeights(id) });
 
 async function fetchBuddies(connectionId: string) {
   return unwrap(await api.GET('/api/connections/{id}/buddies', { params: { path: { id: connectionId } } })).buddies;

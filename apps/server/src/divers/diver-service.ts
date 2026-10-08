@@ -5,7 +5,7 @@ import { and, eq, ilike, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { personCodes, readVerificationCode, type VerificationCode } from '../centres/verification-code.js';
 import type { Db, Tx } from '../db/client.js';
 import {
-  connection, device, dive, diver, diverExternalId, diverManagement, participant, recording,
+  connection, device, dive, diver, diverBodyWeight, diverExternalId, diverManagement, participant, recording,
 } from '../db/schema.js';
 import { managedDiverIds } from '../dives/dive-service.js';
 import { writeRevision } from '../dives/revisions.js';
@@ -18,7 +18,7 @@ export class DiverError extends Error {
     readonly code:
       | 'diver_not_found' | 'own_diver' | 'diver_not_empty' | 'device_not_found' | 'diver_in_use' | 'diver_not_deletable'
       | 'diver_not_editable' | 'diver_external_id_taken' | 'diver_external_id_connected' | 'invalid_input' | 'diver_not_external'
-      | 'diver_choice_needed' | 'diver_has_other_account' | 'code_not_recognised' | 'code_not_a_person',
+      | 'diver_choice_needed' | 'diver_has_other_account' | 'code_not_recognised' | 'code_not_a_person' | 'body_weight_not_found',
     /** The Diver that already has an account (`diver_external_id_taken`), so a client can offer to use it instead. */
     readonly diver?: { id: string; name: string },
   ) {
@@ -68,6 +68,12 @@ function detailsInCode(code: Exclude<VerificationCode, { kind: 'centre' }>): Par
 
 /** The key an account has in a Diver's history: `ssiAccount`, `padiAccount`. */
 const accountKey = (source: DiverSource) => `${source}Account`;
+
+/** `2026-02-30` is no date, though it looks like one. */
+const isCalendarDate = (text: string) => {
+  const parsed = new Date(`${text}T00:00:00Z`);
+  return /^\d{4}-\d{2}-\d{2}$/.test(text) && !Number.isNaN(parsed.getTime()) && parsed.toISOString().startsWith(text);
+};
 
 const like = (q: string) => `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 
@@ -331,6 +337,28 @@ export function createDiverService(db: Db) {
     async rename(userId: string, diverId: string, name: string) {
       await managedOrThrow(userId, diverId);
       await db.update(diver).set({ name, updatedAt: new Date() }).where(eq(diver.id, diverId));
+    },
+
+    /** A Diver's body weights, newest first; only for a User who manages the Diver (ADR 0031). */
+    async bodyWeights(userId: string, diverId: string) {
+      await managedOrThrow(userId, diverId);
+      return db.select({ date: diverBodyWeight.date, kg: diverBodyWeight.kg }).from(diverBodyWeight)
+        .where(eq(diverBodyWeight.diverId, diverId)).orderBy(sql`${diverBodyWeight.date} desc`);
+    },
+
+    /** Sets the weight on a date, replacing the one there. */
+    async setBodyWeight(userId: string, diverId: string, date: string, kg: number) {
+      await managedOrThrow(userId, diverId);
+      if (!isCalendarDate(date)) throw new DiverError('invalid_input');
+      await db.insert(diverBodyWeight).values({ diverId, date, kg })
+        .onConflictDoUpdate({ target: [diverBodyWeight.diverId, diverBodyWeight.date], set: { kg } });
+    },
+
+    async removeBodyWeight(userId: string, diverId: string, date: string) {
+      await managedOrThrow(userId, diverId);
+      const gone = await db.delete(diverBodyWeight).where(and(eq(diverBodyWeight.diverId, diverId), eq(diverBodyWeight.date, date)))
+        .returning({ date: diverBodyWeight.date });
+      if (gone.length === 0) throw new DiverError('body_weight_not_found');
     },
 
     /** Only empty Divers go: no Dives, no Devices, on no Dive. The User's own Diver stays. */

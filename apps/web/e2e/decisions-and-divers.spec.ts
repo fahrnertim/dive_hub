@@ -1,6 +1,7 @@
 // Deciding about Recordings and keeping several Divers, in a real browser (ADR 0016).
 // One story in order: a third computer's recording needs a decision; it is discarded, brought back,
 // added to dive 42, then split off into its own dive; a second Diver gets that dive and a Device.
+// All three carry @divers: the third needs the first two, and a run by tag keeps serial tests together only if they are all selected.
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { E2E_BASE_URL, diveRows, expectGoodPage, setPreferences } from './support.ts';
@@ -18,7 +19,7 @@ test.beforeAll(async ({ request }) => {
   await expect.poll(async () => (await (await request.get(`/api/imports/${(await upload.json()).id}`)).json()).status).toBe('done');
 });
 
-test('a recording that doesn\'t clearly fit is put aside, brought back and added to a dive', { tag: ['@dives'] }, async ({ page }) => {
+test('a recording that doesn\'t clearly fit is put aside, brought back and added to a dive', { tag: ['@dives', '@divers'] }, async ({ page }) => {
   // The logbook says it in one line and counts it in the navigation; the decisions are on the Review page.
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Logbook', level: 1 })).toBeVisible();
@@ -57,7 +58,7 @@ test('a recording that doesn\'t clearly fit is put aside, brought back and added
   await expect(page.locator('.history > li').first()).toContainText('Recording added');
 });
 
-test('a recording that belongs elsewhere is split off into its own dive', { tag: ['@dives'] }, async ({ page }) => {
+test('a recording that belongs elsewhere is split off into its own dive', { tag: ['@dives', '@divers'] }, async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Jan 15, 2026, 11:00 AM (UTC+2)' }).click();
   await page.getByRole('tab', { name: /\(777\)/ }).click();

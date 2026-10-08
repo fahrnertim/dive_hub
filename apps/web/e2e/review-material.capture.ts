@@ -181,6 +181,16 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('button', { name: 'Codes: Pia Probe' }).click();
     await page.getByRole('dialog').getByRole('img').nth(1).waitFor();
     await capture(page, '04a-divers-codes', { full: false, aria: false });
+    // A Diver's body weight (ADR 0031): the dialog with one value, removed again.
+    await page.keyboard.press('Escape');
+    const [ownDiver] = (await (await request.get('/api/divers')).json()) as { id: string; name: string }[];
+    await request.put(`/api/divers/${ownDiver!.id}/body-weights/2026-03-01`, { headers, data: { kg: 82 } });
+    await page.getByRole('button', { name: `Body weight: ${ownDiver!.name}` }).click();
+    await page.getByRole('dialog').getByText('82 kg').waitFor();
+    await capture(page, '04e-divers-body-weight', { full: false, aria: false });
+    await page.keyboard.press('Escape');
+    await request.delete(`/api/divers/${ownDiver!.id}/body-weights/2026-03-01`, { headers });
+    await page.getByRole('button', { name: 'Codes: Pia Probe' }).click();
     await page.getByRole('button', { name: 'Edit details' }).click();
     await capture(page, '04b-divers-codes-edit', { full: false, aria: false });
     await page.keyboard.press('Escape');

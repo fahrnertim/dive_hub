@@ -6,6 +6,7 @@ import {
   bigint,
   boolean,
   check,
+  date,
   doublePrecision,
   type AnyPgColumn,
   index,
@@ -1058,4 +1059,15 @@ export const mutedRule = pgTable(
     createdAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.diverId, t.rule] })],
+);
+
+/** A Diver's body weight on a date (ADR 0031): seen and set only by the Users who manage the Diver; goes with the Diver. */
+export const diverBodyWeight = pgTable(
+  'diver_body_weight',
+  {
+    diverId: uuid('diver_id').notNull().references(() => diver.id, { onDelete: 'cascade' }),
+    date: date('date', { mode: 'string' }).notNull(),
+    kg: real('kg').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.diverId, t.date] }), check('diver_body_weight_kg_ck', sql`${t.kg} between 20 and 400`)],
 );
