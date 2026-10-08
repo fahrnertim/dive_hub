@@ -275,6 +275,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -400,6 +401,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -575,6 +577,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -793,6 +796,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -918,6 +922,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -1499,6 +1504,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -1645,6 +1651,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -1815,6 +1822,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -2027,6 +2035,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -2259,6 +2268,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -2549,6 +2559,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -2674,6 +2685,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -2799,6 +2811,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -2963,6 +2976,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -3088,6 +3102,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -3213,6 +3228,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -3409,6 +3425,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -3534,6 +3551,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -3659,6 +3677,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -3855,6 +3874,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -3980,6 +4000,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -4105,6 +4126,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -4251,6 +4273,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -4376,6 +4399,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -4501,6 +4525,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -4668,6 +4693,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -4793,6 +4819,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -4918,6 +4945,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -5250,6 +5278,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -5375,6 +5404,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -5926,6 +5956,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -6296,6 +6327,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -6639,6 +6671,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -7362,6 +7395,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -7572,6 +7606,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -8766,6 +8801,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -10366,6 +10402,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -10491,6 +10528,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -10616,6 +10654,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -10821,6 +10860,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -10969,6 +11009,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -11094,6 +11135,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -11242,6 +11284,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -11680,6 +11723,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -12921,6 +12965,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -13046,6 +13091,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -13171,6 +13217,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -14388,6 +14435,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -14513,6 +14561,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -14638,6 +14687,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -15856,6 +15906,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -15981,6 +16032,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -16315,6 +16367,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -16879,6 +16932,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -17004,6 +17058,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -18234,6 +18289,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -18382,6 +18438,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -18507,6 +18564,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -18655,6 +18713,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -18859,6 +18918,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -18984,6 +19044,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -20373,6 +20434,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -20498,6 +20560,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -20740,6 +20803,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -21143,6 +21207,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -21268,6 +21333,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -21393,6 +21459,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -21562,6 +21629,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -21687,6 +21755,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -21812,6 +21881,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -21981,6 +22051,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -22106,6 +22177,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -22231,6 +22303,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -22400,6 +22473,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -22525,6 +22599,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -22650,6 +22725,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -23093,6 +23169,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -23578,6 +23655,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -23767,6 +23845,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -24014,6 +24093,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -24139,6 +24219,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -24264,6 +24345,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -24389,6 +24471,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -24671,6 +24754,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -24796,6 +24880,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -24921,6 +25006,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -25046,6 +25132,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -25190,6 +25277,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -25315,6 +25403,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -25440,6 +25529,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -25565,6 +25655,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -25752,6 +25843,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -25893,6 +25985,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -26034,6 +26127,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -26175,6 +26269,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -26361,6 +26456,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -26486,6 +26582,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -26611,6 +26708,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -26736,6 +26834,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -26914,6 +27013,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -27039,6 +27139,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -27164,6 +27265,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -27289,6 +27391,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -27443,6 +27546,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -27568,6 +27672,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -27693,6 +27798,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -27818,6 +27924,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -28095,6 +28202,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -28220,6 +28328,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -28345,6 +28454,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -28470,6 +28580,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -28808,6 +28919,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -28933,6 +29045,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -29058,6 +29171,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -29183,6 +29297,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -29613,6 +29728,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -29754,6 +29870,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -29895,6 +30012,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -30036,6 +30154,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -30346,6 +30465,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -30471,6 +30591,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -30596,6 +30717,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -30721,6 +30843,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -30930,6 +31053,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -31055,6 +31179,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -31180,6 +31305,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -31305,6 +31431,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -31449,6 +31576,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -31574,6 +31702,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -31699,6 +31828,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -31824,6 +31954,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -32007,6 +32138,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -32132,6 +32264,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -32257,6 +32390,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -32382,6 +32516,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -32625,6 +32760,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -32750,6 +32886,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -32875,6 +33012,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -33000,6 +33138,1020 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
+                        "body_weight_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "check_not_found",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "centre_not_found",
+                        "centre_changed",
+                        "centre_not_deletable",
+                        "centre_external_id_taken",
+                        "code_not_recognised",
+                        "code_not_a_person",
+                        "diver_choice_needed",
+                        "diver_has_other_account",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tools/gas": {
+      "get": {
+        "summary": "MOD and gas numbers for a mix (ADR 0032): a limit from the inputs, not advice",
+        "parameters": [
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "in": "query",
+            "name": "o2",
+            "required": true,
+            "description": "Oxygen, percent"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "in": "query",
+            "name": "he",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 300
+            },
+            "in": "query",
+            "name": "depth",
+            "required": false,
+            "description": "Metres"
+          },
+          {
+            "schema": {
+              "enum": [
+                "fresh",
+                "salt",
+                "en13319"
+              ]
+            },
+            "in": "query",
+            "name": "water",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 5000
+            },
+            "in": "query",
+            "name": "altitude",
+            "required": false,
+            "description": "Metres above sea level"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 2
+            },
+            "in": "query",
+            "name": "ppo2Working",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 2
+            },
+            "in": "query",
+            "name": "ppo2Contingency",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "oxygenNarcotic",
+            "required": false,
+            "description": "Count oxygen as narcotic for END (default true)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "gas",
+                    "hypoxic",
+                    "ppO2Limits",
+                    "modWorkingM",
+                    "modContingencyM",
+                    "atDepth",
+                    "conditions",
+                    "oxygenNarcotic"
+                  ],
+                  "properties": {
+                    "gas": {
+                      "type": "object",
+                      "required": [
+                        "o2",
+                        "he"
+                      ],
+                      "properties": {
+                        "o2": {
+                          "type": "number"
+                        },
+                        "he": {
+                          "type": "number"
+                        }
+                      }
+                    },
+                    "hypoxic": {
+                      "type": "boolean",
+                      "description": "Under 18 % oxygen at the surface"
+                    },
+                    "ppO2Limits": {
+                      "type": "object",
+                      "required": [
+                        "working",
+                        "contingency"
+                      ],
+                      "properties": {
+                        "working": {
+                          "type": "number"
+                        },
+                        "contingency": {
+                          "type": "number"
+                        }
+                      }
+                    },
+                    "modWorkingM": {
+                      "type": "number",
+                      "description": "Rounded down to 0.1 m"
+                    },
+                    "modContingencyM": {
+                      "type": "number",
+                      "description": "Rounded down to 0.1 m"
+                    },
+                    "atDepth": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "depthM",
+                            "ppO2",
+                            "bestMixPercent",
+                            "eadM",
+                            "endM"
+                          ],
+                          "properties": {
+                            "depthM": {
+                              "type": "number"
+                            },
+                            "ppO2": {
+                              "type": "number"
+                            },
+                            "bestMixPercent": {
+                              "type": "integer"
+                            },
+                            "eadM": {
+                              "type": "number"
+                            },
+                            "endM": {
+                              "type": "number"
+                            }
+                          }
+                        }
+                      ],
+                      "description": "Null without a depth"
+                    },
+                    "conditions": {
+                      "type": "object",
+                      "required": [
+                        "water",
+                        "altitudeM"
+                      ],
+                      "properties": {
+                        "water": {
+                          "enum": [
+                            "fresh",
+                            "salt",
+                            "en13319"
+                          ]
+                        },
+                        "altitudeM": {
+                          "type": "number"
+                        }
+                      }
+                    },
+                    "oxygenNarcotic": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "import_not_waiting",
+                        "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "gas_not_breathable",
+                        "body_weight_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "check_not_found",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "centre_not_found",
+                        "centre_changed",
+                        "centre_not_deletable",
+                        "centre_external_id_taken",
+                        "code_not_recognised",
+                        "code_not_a_person",
+                        "diver_choice_needed",
+                        "diver_has_other_account",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tools/bottom-time": {
+      "get": {
+        "summary": "Bottom time for a planned dive: the shortest of the no-decompression, oxygen and gas limits, and which binds (ADR 0032)",
+        "description": "An estimate from the Diver's own input and settings, not advice; the dive computer and training govern. Air and nitrox 21-40 % only, no-stop only, at most 40 m; otherwise status `outside_limits`.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 300
+            },
+            "in": "query",
+            "name": "depth",
+            "required": true,
+            "description": "Metres"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "in": "query",
+            "name": "o2",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "in": "query",
+            "name": "he",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 60
+            },
+            "in": "query",
+            "name": "volume",
+            "required": false,
+            "description": "Cylinder volume, litres"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 350
+            },
+            "in": "query",
+            "name": "pressure",
+            "required": false,
+            "description": "Cylinder fill pressure, bar"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "in": "query",
+            "name": "sac",
+            "required": false,
+            "description": "L/min at the surface"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 200
+            },
+            "in": "query",
+            "name": "reserve",
+            "required": false,
+            "description": "Bar left in the Cylinder"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 20,
+              "maximum": 100
+            },
+            "in": "query",
+            "name": "gfHigh",
+            "required": false
+          },
+          {
+            "schema": {
+              "enum": [
+                "fresh",
+                "salt",
+                "en13319"
+              ]
+            },
+            "in": "query",
+            "name": "water",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 5000
+            },
+            "in": "query",
+            "name": "altitude",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 2
+            },
+            "in": "query",
+            "name": "ppo2Working",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 2
+            },
+            "in": "query",
+            "name": "ppo2Contingency",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "query",
+            "name": "diverId",
+            "required": false,
+            "description": "Start from this Diver's computer GF, SAC and last Dive"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "query",
+            "name": "siteId",
+            "required": false,
+            "description": "Plan at this site: its water type"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "used",
+                    "gas",
+                    "depthM",
+                    "recentDiveEndedAt"
+                  ],
+                  "properties": {
+                    "status": {
+                      "enum": [
+                        "ok",
+                        "outside_limits"
+                      ]
+                    },
+                    "reason": {
+                      "enum": [
+                        "depth",
+                        "mod",
+                        "gas"
+                      ],
+                      "description": "Why there is no number: deeper than 40 m, beyond the MOD at the contingency ppO2, or a mix other than air and nitrox 21-40 %"
+                    },
+                    "modM": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "minutes": {
+                      "type": "integer",
+                      "description": "Whole minutes from leaving the surface to leaving the depth"
+                    },
+                    "binding": {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "ndl",
+                          "oxygen",
+                          "gas"
+                        ]
+                      },
+                      "description": "The limits that decide; several when they bind together"
+                    },
+                    "limits": {
+                      "type": "object",
+                      "required": [
+                        "ndl",
+                        "oxygen",
+                        "gas"
+                      ],
+                      "properties": {
+                        "ndl": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ],
+                          "description": "Minutes; null when the depth does not limit"
+                        },
+                        "oxygen": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "gas": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ],
+                          "description": "Null without a Cylinder"
+                        }
+                      }
+                    },
+                    "otu": {
+                      "type": "number"
+                    },
+                    "ppO2AtDepth": {
+                      "type": "number"
+                    },
+                    "ppO2AboveWorking": {
+                      "type": "boolean"
+                    },
+                    "used": {
+                      "type": "object",
+                      "required": [
+                        "gfHigh",
+                        "sacLpm",
+                        "water",
+                        "altitudeM",
+                        "reserveBar"
+                      ],
+                      "properties": {
+                        "gfHigh": {
+                          "type": "object",
+                          "required": [
+                            "value",
+                            "source"
+                          ],
+                          "properties": {
+                            "value": {
+                              "type": "number"
+                            },
+                            "source": {
+                              "enum": [
+                                "request",
+                                "recording",
+                                "recordings",
+                                "site",
+                                "default"
+                              ],
+                              "description": "Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default"
+                            }
+                          }
+                        },
+                        "sacLpm": {
+                          "type": "object",
+                          "required": [
+                            "value",
+                            "source"
+                          ],
+                          "properties": {
+                            "value": {
+                              "type": "number"
+                            },
+                            "source": {
+                              "enum": [
+                                "request",
+                                "recording",
+                                "recordings",
+                                "site",
+                                "default"
+                              ],
+                              "description": "Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default"
+                            }
+                          }
+                        },
+                        "water": {
+                          "type": "object",
+                          "required": [
+                            "value",
+                            "source"
+                          ],
+                          "properties": {
+                            "value": {
+                              "enum": [
+                                "fresh",
+                                "salt",
+                                "en13319"
+                              ]
+                            },
+                            "source": {
+                              "enum": [
+                                "request",
+                                "recording",
+                                "recordings",
+                                "site",
+                                "default"
+                              ],
+                              "description": "Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default"
+                            }
+                          }
+                        },
+                        "altitudeM": {
+                          "type": "object",
+                          "required": [
+                            "value",
+                            "source"
+                          ],
+                          "properties": {
+                            "value": {
+                              "type": "number"
+                            },
+                            "source": {
+                              "enum": [
+                                "request",
+                                "recording",
+                                "recordings",
+                                "site",
+                                "default"
+                              ],
+                              "description": "Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default"
+                            }
+                          }
+                        },
+                        "reserveBar": {
+                          "type": "object",
+                          "required": [
+                            "value",
+                            "source"
+                          ],
+                          "properties": {
+                            "value": {
+                              "type": "number"
+                            },
+                            "source": {
+                              "enum": [
+                                "request",
+                                "recording",
+                                "recordings",
+                                "site",
+                                "default"
+                              ],
+                              "description": "Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "gas": {
+                      "type": "object",
+                      "required": [
+                        "o2",
+                        "he"
+                      ],
+                      "properties": {
+                        "o2": {
+                          "type": "number"
+                        },
+                        "he": {
+                          "type": "number"
+                        }
+                      }
+                    },
+                    "depthM": {
+                      "type": "number"
+                    },
+                    "recentDiveEndedAt": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "description": "When the Diver's Dive within the last 48 hours ended; the real limit is then shorter than shown"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "import_not_waiting",
+                        "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "gas_not_breathable",
+                        "body_weight_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "check_not_found",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "centre_not_found",
+                        "centre_changed",
+                        "centre_not_deletable",
+                        "centre_external_id_taken",
+                        "code_not_recognised",
+                        "code_not_a_person",
+                        "diver_choice_needed",
+                        "diver_has_other_account",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "import_not_waiting",
+                        "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -33593,6 +34745,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -34170,6 +35323,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -34295,6 +35449,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -34420,6 +35575,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -34545,6 +35701,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -35022,6 +36179,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -35615,6 +36773,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -35740,6 +36899,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -35865,6 +37025,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -35990,6 +37151,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -36134,6 +37296,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -36259,6 +37422,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -36384,6 +37548,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -36509,6 +37674,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -37028,6 +38194,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -37153,6 +38320,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -37278,6 +38446,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -37403,6 +38572,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -37912,6 +39082,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -38037,6 +39208,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -38162,6 +39334,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -38287,6 +39460,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -38794,6 +39968,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -38919,6 +40094,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -39044,6 +40220,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -39169,6 +40346,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -39408,6 +40586,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -39711,6 +40890,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -40011,6 +41191,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -40152,6 +41333,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -40293,6 +41475,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -40434,6 +41617,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -40705,6 +41889,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -40986,6 +42171,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -41127,6 +42313,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -41268,6 +42455,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -41409,6 +42597,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -41570,6 +42759,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -41711,6 +42901,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -41852,6 +43043,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -41993,6 +43185,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -42304,6 +43497,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -42445,6 +43639,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -42586,6 +43781,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -42727,6 +43923,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -43008,6 +44205,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -43149,6 +44347,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -43290,6 +44489,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -43431,6 +44631,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -43709,6 +44910,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -43850,6 +45052,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -43991,6 +45194,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -44132,6 +45336,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -44596,6 +45801,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -45185,6 +46391,7 @@
                             "recording_not_on_dive",
                             "last_recording",
                             "diver_not_found",
+                            "gas_not_breathable",
                             "body_weight_not_found",
                             "own_diver",
                             "diver_not_empty",
@@ -45315,6 +46522,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -45440,6 +46648,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -45565,6 +46774,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -46029,6 +47239,7 @@
                                   "recording_not_on_dive",
                                   "last_recording",
                                   "diver_not_found",
+                                  "gas_not_breathable",
                                   "body_weight_not_found",
                                   "own_diver",
                                   "diver_not_empty",
@@ -46162,6 +47373,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -46631,6 +47843,7 @@
                             "recording_not_on_dive",
                             "last_recording",
                             "diver_not_found",
+                            "gas_not_breathable",
                             "body_weight_not_found",
                             "own_diver",
                             "diver_not_empty",
@@ -46761,6 +47974,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -46886,6 +48100,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -47711,6 +48926,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -47836,6 +49052,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -47961,6 +49178,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -48167,6 +49385,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -48441,6 +49660,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -48566,6 +49786,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -48691,6 +49912,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -48897,6 +50119,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -49107,6 +50330,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -49232,6 +50456,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -49357,6 +50582,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -49563,6 +50789,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -49806,6 +51033,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -49931,6 +51159,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -50056,6 +51285,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -50262,6 +51492,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -50590,6 +51821,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -50715,6 +51947,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -50840,6 +52073,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -51046,6 +52280,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -51190,6 +52425,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -51427,6 +52663,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -51552,6 +52789,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -51677,6 +52915,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -51883,6 +53122,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -52648,6 +53888,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -52773,6 +54014,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -52898,6 +54140,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -53104,6 +54347,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -53552,6 +54796,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -53677,6 +54922,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -53802,6 +55048,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -54008,6 +55255,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -54197,6 +55445,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -54421,6 +55670,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -54546,6 +55796,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -54913,6 +56164,7 @@
                                     "recording_not_on_dive",
                                     "last_recording",
                                     "diver_not_found",
+                                    "gas_not_breathable",
                                     "body_weight_not_found",
                                     "own_diver",
                                     "diver_not_empty",
@@ -55129,6 +56381,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -55504,6 +56757,7 @@
                                   "recording_not_on_dive",
                                   "last_recording",
                                   "diver_not_found",
+                                  "gas_not_breathable",
                                   "body_weight_not_found",
                                   "own_diver",
                                   "diver_not_empty",
@@ -55719,6 +56973,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -55844,6 +57099,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -56318,6 +57574,7 @@
                                       "recording_not_on_dive",
                                       "last_recording",
                                       "diver_not_found",
+                                      "gas_not_breathable",
                                       "body_weight_not_found",
                                       "own_diver",
                                       "diver_not_empty",
@@ -56535,6 +57792,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -56660,6 +57918,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -56785,6 +58044,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -56991,6 +58251,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -57364,6 +58625,7 @@
                                   "recording_not_on_dive",
                                   "last_recording",
                                   "diver_not_found",
+                                  "gas_not_breathable",
                                   "body_weight_not_found",
                                   "own_diver",
                                   "diver_not_empty",
@@ -57579,6 +58841,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -57704,6 +58967,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -57829,6 +59093,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -58035,6 +59300,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -58260,6 +59526,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -58385,6 +59652,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -58510,6 +59778,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -58716,6 +59985,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -59028,6 +60298,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -59153,6 +60424,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -59299,6 +60571,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -59605,6 +60878,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -59802,6 +61076,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",
@@ -59952,6 +61227,7 @@
                         "recording_not_on_dive",
                         "last_recording",
                         "diver_not_found",
+                        "gas_not_breathable",
                         "body_weight_not_found",
                         "own_diver",
                         "diver_not_empty",

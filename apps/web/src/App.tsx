@@ -6,6 +6,7 @@ import { divesQuery, meQuery, setupQuery, type LogbookParams, type Me } from './
 import { DiveList, LogbookHeader } from './DiveList.tsx';
 import { listOfDiveAddress, logbookParams } from './lib/logbook.ts';
 import { sitesParams } from './lib/sites-list.ts';
+import { toolsParams } from './lib/tools.ts';
 import { pickLanguage } from './i18n/index.ts';
 import { DeletedNotices } from './DeletedDives.tsx';
 import { ImportFilesButton, ImportPanel, ImportProvider, RecentImports } from './ImportPanel.tsx';
@@ -26,11 +27,12 @@ const SitePage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.
 const CentresPage = lazy(() => import('./CentresPage.tsx').then((m) => ({ default: m.CentresPage })));
 const CentrePage = lazy(() => import('./CentresPage.tsx').then((m) => ({ default: m.CentrePage })));
 const ReviewPage = lazy(() => import('./ReviewPage.tsx').then((m) => ({ default: m.ReviewPage })));
+const ToolsPage = lazy(() => import('./ToolsPage.tsx').then((m) => ({ default: m.ToolsPage })));
 const SiteImportPage = lazy(() => import('./SiteImportPage.tsx').then((m) => ({ default: m.SiteImportPage })));
 
 /**
  * Minimal hash routing: "#/" (logbook, "#/?diver=<id>" for one Diver, "#/?site=<id>" for one Dive site),
- * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers", "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/centres", "#/centres/<id>", "#/account", "#/admin", "#/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
+ * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers", "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/centres", "#/centres/<id>", "#/tools" ("?o2=32&depth=30&…"), "#/account", "#/admin", "#/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
  */
 function useRoute(): string {
   const [route, setRoute] = useState(() => location.hash.slice(1) || '/');
@@ -105,6 +107,7 @@ function Navigation({ route, me }: { route: string; me: Me }) {
         <a href="#/divers" {...current(route === '/divers')}><Icon name="divers" />{t('nav.divers')}</a>
         <a href="#/sites" {...current(route === '/sites' || route.startsWith('/sites/') || route.startsWith('/sites?'))}><Icon name="site" />{t('nav.sites')}</a>
         <a href="#/centres" {...current(route === '/centres' || route.startsWith('/centres/'))}><Icon name="centre" />{t('nav.centres')}</a>
+        <a href="#/tools" {...current(route === '/tools' || route.startsWith('/tools?'))}><Icon name="tools" />{t('nav.tools')}</a>
       </nav>
       {/* The account is a labelled menu, not a bare name link (UI review C6). */}
       <div className="user-menu">
@@ -144,6 +147,7 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   if (path === '/sites') return <SitesPage params={sitesParams(params)} />;
   const siteId = /^\/sites\/([\w-]+)$/.exec(path!)?.[1];
   if (siteId) return <SitePage key={siteId} id={siteId} />;
+  if (path === '/tools') return <ToolsPage params={toolsParams(params)} />;
   if (path === '/centres') return <CentresPage />;
   const centreId = /^\/centres\/([\w-]+)$/.exec(path!)?.[1];
   if (centreId) return <CentrePage key={centreId} id={centreId} />;

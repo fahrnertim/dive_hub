@@ -590,6 +590,8 @@ export type RecordingSummary = {
   otuEnd?: number;
   /** Gas consumption at the surface as a tank pod measured it, L/min. */
   sacLpm?: number;
+  /** Respiratory minute volume at the surface as the computer reports it (FIT avg_rmv), L/min (ADR 0032). */
+  rmvLpm?: number;
   /** The computer's personal setting where its model has one (Suunto: −2 to +2). */
   conservatism?: number;
   /** Air pressure at the surface as the computer measured it, bar. */
@@ -628,6 +630,8 @@ export const recording = pgTable(
     exitLongitude: doublePrecision('exit_longitude'),
     /** Set once the Original was read for positions (imported with them, or backfilled). */
     positionsReadAt: timestamp('positions_read_at', { withTimezone: true }),
+    /** Set once the Original was read for the gas consumption the summary keeps (ADR 0032; backfilled). */
+    gasFiguresReadAt: timestamp('gas_figures_read_at', { withTimezone: true }),
     summary: jsonb('summary').$type<RecordingSummary>().notNull().default({}),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

@@ -197,9 +197,9 @@ and nothing reaches that User.
   per sensor), CNS, NDL, deco stop/ceiling, TTS, heading, heart rate, GPS (B6), events
   (gas switch, alarms, bookmarks, setpoint changes). Unknown source fields are kept in a
   per-source extension area (A7) rather than dropped.
-- *Planned ([ADR 0032](../decisions/0032-mod-and-no-decompression-limits.md), slice 21):* the summary also keeps FIT's
-  `avg_volume_sac`, `avg_rmv` (L/min at the surface) and `o2_toxicity` (OTU); older Recordings read their Originals again
-  once. The bottom-time tool takes its default SAC from them and its default GF from `gfHigh`; tests compare its NDL with
+- *From FIT, gas figures ([ADR 0032](../decisions/0032-mod-and-no-decompression-limits.md), implemented in slice 21):* the summary also keeps FIT's
+  `avg_volume_sac` as `sacLpm`, `avg_rmv` as `rmvLpm` (L/min at the surface) and `o2_toxicity` (OTU); older Recordings read their Originals again
+  once (`recording.gas_figures_read_at`, migration 0030), keeping a value already in the summary. The bottom-time tool takes its default SAC from them and its default GF from `gfHigh`; tests compare its NDL with
   the computer's `ndl` samples.
 - *Source logbook fields*: notes, buddy names, site name and similar values the Source
   delivered (UDDF, Subsurface). They're kept as the baseline for 3-way merges on re-import.
@@ -261,7 +261,7 @@ weighting feedback stay here (no exchange format has them).
 (water, suit, Cylinders) from the Diver's Dives with the same suit and a known water type, adjusted by physics for the
 cylinder at reserve and the water; a rule of thumb without history. See the [weight calculator note](../research/2026-10-06-weight-calculator.md).
 
-**Gas numbers and bottom time** (planned, [ADR 0032](../decisions/0032-mod-and-no-decompression-limits.md), slice 21) — not
+**Gas numbers and bottom time** (built in slice 21, [ADR 0032](../decisions/0032-mod-and-no-decompression-limits.md), slice 21) — not
 stored: computed on request. MOD, best mix, EAD and END for any gas mix; for a planned depth, air or nitrox, Cylinder and
 SAC, the shortest of the no-decompression limit (ZHL-16C with the Diver's GF, clean tissues), the oxygen limit and the
 gas, and which binds. Reads the Diver's Recordings (GF, SAC) and recent Dives (the 48-hour warning), the Cylinder
@@ -606,22 +606,24 @@ Edge cases:
   left out.
 - *The suit changed in SSI's app* isn't possible (SSI has no scuba suit field, checked 2026-10-08); lead changed there comes back three-way.
 
-### 6. A nitrox dive at 30 m (planned, ADR 0032)
+### 6. A nitrox dive at 30 m (ADR 0032, 0046)
 
 Tim plans 30 m on EAN32 with an AL80 in the Red Sea. His latest Garmin Recording says GF 40/85; his recent Recordings
 have a median SAC of 18 L/min.
 
-1. *Gas:* MOD 33.4 m at 1.4 and 39.7 m at 1.6 (salt water); at 30 m his ppO2 is 1.29.
+1. *Gas:* MOD 33.4 m at 1.4 and 39.6 m at 1.6 (salt water, rounded down); at 30 m his ppO2 is 1.29.
 2. *Bottom time:* NDL about 19 min (GF 85, "from your Garmin"), oxygen about 180 min, gas about 20 min above 50 bar after
    the ascent gas. The page says the NDL binds and the gas is close.
 3. He dived two hours ago (a Dive in his logbook): the page says the limit is shorter than shown and his computer knows
    by how much.
 
 Edge cases:
-- *Beyond the MOD or 40 m* (EAN32 at 36 m): no bottom time, "outside recreational limits"; the MOD is still shown.
+- *Beyond the MOD at 1.6 or 40 m* (EAN40 at 36 m, 42 m on air): no bottom time, "outside recreational limits"; the MOD is still shown.
 - *A mountain lake at 900 m, fresh water:* surface pressure 0.91 bar from the altitude; without it the NDL would be too
   long, so the page says when no altitude was given.
 - *No Recording with a GF* (an SSI-only logbook, or another computer): GF high 85, "default".
+- *EAN32 at 36 m* is past the working MOD (33.4 m) but within the contingency MOD (39.6 m): a bottom time comes, and the
+  page says the ppO2 is above the working limit.
 - *EAN40 at 30 m:* ppO2 1.6, the oxygen limit (45 min) is shown beside the NDL, and the page says 1.6 is the contingency
   limit.
 

@@ -8,7 +8,7 @@ date: 2026-10-06
 # ADR 0032: MOD and bottom time on the Tools page - Bühlmann ZHL-16C with gradient factors, capped by oxygen and gas
 
 ## Status
-Accepted – 2026-10-06. Not built yet. Amended by [ADR 0033](0033-gas-plans-rules-and-groups.md) (slice 22): the bottom
+Accepted – 2026-10-06. Built in slice 21 on 2026-10-09 ([as built](#slice-21-as-built)). Amended by [ADR 0046](0046-ndl-margin-and-planning-limits.md) (one minute of margin, the refusal beyond the MOD) and by [ADR 0033](0033-gas-plans-rules-and-groups.md) (slice 22): the bottom
 time's gas limit becomes the chosen gas rule's ascent pressure, and its default SAC the Diver's planning SAC from the
 logbook (FIT carries SAC only with a tank pod; the owner's Garmin files have none). Designed in [MOD and no-decompression limits](../research/2026-10-06-gas-and-ndl-tools.md);
 builds on the Tools page and Cylinders of [ADR 0031](0031-lead-suit-cylinders-and-lead-estimate.md).
@@ -97,3 +97,18 @@ Slice 21, after the weight calculator's slices 19 (Cylinders) and 20 (the Tools 
   ADR.
 - Recording summaries grow by three FIT fields and need a one-time backfill.
 - Repetitive dives, trimix NDLs, sites' altitude and the model-vs-computer view on the dive page stay open for later.
+
+## Slice 21 as built
+- **Server:** `apps/server/src/planning/` (pure modules `gas.ts`, `oxygen.ts`, `ndl.ts`, `bottom-time.ts`; `service.ts` for the
+  defaults and their sources; `routes.ts`): `GET /api/tools/gas` and `GET /api/tools/bottom-time`, computed on request,
+  nothing stored. Every bottom-time answer says where each assumed value came from (`request`, `recording`, `recordings`,
+  `site`, `default`) and the Diver's last Dive within 48 hours (`recentDiveEndedAt`).
+- **FIT:** the Recording summary keeps `sacLpm` and `rmvLpm` (L/min at the surface; `o2_toxicity` was kept already as
+  `otuEnd`). Older Recordings are read again once by a worker task (`gas_figures_read_at`, migration 0030); a value
+  already in the summary is kept. The units come from the FIT SDK profile; no sample file of the owner carries
+  `avg_volume_sac`, so they are unchecked against a real file.
+- **MCP:** one tool, `planning_gas_and_bottom_time` (scope `logbook:read`), with a fixed notice in every result (ADR 0046).
+- **Web:** the Tools page (`#/tools`, inputs in the address in metres and bar, converted to the User's units), a "Gas"
+  panel and a "Bottom time" panel; the estimate notice is on the page before anything is typed.
+- **Not done:** the comparison with the owner's logged Garmin NDL samples (`samples/private`, skipped when absent) and the
+  dive assessment's surfacing-GF rule; tissues from the logbook, a site's altitude and trimix NDLs stay open.

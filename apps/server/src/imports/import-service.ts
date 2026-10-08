@@ -14,6 +14,7 @@ import { placeRecording } from './placement.js';
 export const PROCESS_IMPORT_TASK = 'process_import';
 /** Reads positions for Recordings imported before they were kept (ADR 0020); queued at worker start. */
 export const BACKFILL_POSITIONS_TASK = 'backfill_positions';
+export const BACKFILL_GAS_FIGURES_TASK = 'backfill_gas_figures';
 export const FILL_CYLINDERS_TASK = 'fill_cylinders';
 
 /** An Import that waits for the User's choice of kinds is ended after this long, and its upload removed (ADR 0044). */
@@ -275,10 +276,39 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
     }
   }
 
+  /**
+   * Recordings imported before the summary kept the computer's gas consumption get it from their Original (ADR 0032).
+   * Each Recording is read once; a value the summary already has stays. Returns how many Recordings were read.
+   */
+  async function backfillGasFigures(): Promise<number> {
+    let read = 0;
+    for (;;) {
+      const batch = await db.select({ id: recording.id, recordingKey: recording.recordingKey, storageKey: original.storageKey, summary: recording.summary })
+        .from(recording).innerJoin(original, eq(original.id, recording.originalId))
+        .where(and(isNull(recording.gasFiguresReadAt), isNull(recording.deletedAt)))
+        .limit(50);
+      if (batch.length === 0) return read;
+      for (const r of batch) {
+        let found: { sacLpm?: number; rmvLpm?: number } = {};
+        try {
+          const data = await blobs.read(r.storageKey);
+          const parsed = (await formatOf(formats, data)?.parse(data))?.find((p) => p.recordingKey === r.recordingKey);
+          if (parsed) found = { ...(parsed.summary.sacLpm !== undefined && { sacLpm: parsed.summary.sacLpm }), ...(parsed.summary.rmvLpm !== undefined && { rmvLpm: parsed.summary.rmvLpm }) };
+        } catch {
+          // a missing or unreadable Original: nothing to learn, don't try again
+        }
+        await db.update(recording)
+          .set({ gasFiguresReadAt: new Date(), summary: { ...found, ...r.summary } })
+          .where(eq(recording.id, r.id));
+        read++;
+      }
+    }
+  }
+
   /** Dives imported before Cylinders were kept get them from their tank pod's data (ADR 0045). Returns how many. */
   const fillCylinders = () => fillMissingCylinders(db);
 
-  return { createImport, processImport, startImport, cancelImport, expireWaiting, backfillPositions, fillCylinders };
+  return { createImport, processImport, startImport, cancelImport, expireWaiting, backfillPositions, backfillGasFigures, fillCylinders };
 }
 
 export type ImportService = ReturnType<typeof createImportService>;

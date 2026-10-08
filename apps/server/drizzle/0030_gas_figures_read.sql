@@ -1,0 +1,1 @@
+ALTER TABLE "recording" ADD COLUMN "gas_figures_read_at" timestamp with time zone;

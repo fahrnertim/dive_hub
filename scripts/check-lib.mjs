@@ -41,6 +41,8 @@ const AREAS = [
   // Providers in the web client (ADR 0027): the account's Connections and each Dive's panels read them.
   [/^apps\/web\/src\/lib\/providers\.ts$/, ['@dives', '@account']],
   [/^apps\/web\/src\/Admin\.tsx$/, ['@admin']],
+  // The Tools page (ADR 0032): gas numbers and bottom time; its server computation and the MCP tool that answers the same.
+  [/^apps\/web\/src\/ToolsPage\.tsx$|^apps\/web\/src\/lib\/tools\.ts$|^apps\/server\/src\/planning\/|^apps\/server\/src\/mcp\/tools-planning\.ts$/, ['@tools']],
   // AI accesses to the MCP endpoint (ADR 0035): on the account page, their switch on the admin page.
   [/^apps\/web\/src\/AiAccess\.tsx$|^apps\/web\/src\/lib\/ai-access\.ts$/, ['@account', '@admin']],
   [/^apps\/server\/src\/mcp\//, ['@account', '@admin']],
@@ -60,7 +62,7 @@ const AREAS = [
 export const QUIET = /^(docs\/|samples\/|\.claude\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|skills-lock\.json$|\.gitignore$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$|apps\/server\/test\/fixtures\/write-assessment-fixture\.ts$|apps\/server\/test\/fixtures\/write-suunto-fixture\.ts$|apps\/server\/test\/fixtures\/write-merge-fixture\.ts$|apps\/server\/test\/fixtures\/write-account-export-fixture\.ts$|scripts\/token-report\.mjs$)/;
 
 /** The area tags a browser test can have; a test with none of them would run only in the full check. */
-export const TAGS = ['@dives', '@divers', '@sites', '@account', '@admin', '@layout'];
+export const TAGS = ['@dives', '@divers', '@sites', '@account', '@admin', '@layout', '@tools'];
 
 /** The tag of browser tests that only the full check runs: ui-quality's two variants without axe (small phone, tablet). */
 export const FULL_ONLY = '@full';

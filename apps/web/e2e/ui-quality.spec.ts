@@ -171,6 +171,26 @@ for (const v of variants) {
       await expectGoodPage(page, title('Dive centres'), v);
     });
 
+    test('Tools: empty, with a bottom time and every limit, and outside the limits', { tag: ['@tools'] }, async ({ page }) => {
+      await page.goto('/#/tools');
+      await expectGoodPage(page, title('Tools'), v);
+      // 30 m on EAN32 with a 11.1 L cylinder at 200 bar; the three limits and what was assumed.
+      await page.goto('/#/tools?o2=32&depth=30&volume=11.1&pressure=200');
+      await expect(page.getByTestId('bottom-time')).toBeVisible();
+      await expectGoodPage(page, title('Tools'), v);
+      // With the settings open (a setting in the address keeps them open).
+      await page.goto('/#/tools?o2=32&depth=30&volume=11.1&pressure=200&reserve=60');
+      await page.reload();
+      await expect(page.getByRole('textbox', { name: /^Reserve/ })).toBeVisible();
+      await expect(page.getByTestId('bottom-time')).toBeVisible();
+      await expectGoodPage(page, title('Tools'), v);
+      // Beyond the MOD: the reason, no number.
+      await page.goto('/#/tools?o2=40&depth=36&he=0');
+      await expect(page.getByTestId('bottom-time')).toHaveCount(0);
+      await expect(page.locator('#tools-bottom ~ .notice, .tools-answer .notice').first()).toBeVisible();
+      await expectGoodPage(page, title('Tools'), v);
+    });
+
     test('the code scanner, without a camera', { tag: ['@sites'] }, async ({ page }) => {
       // The same answer in every browser the tests run in: no camera.
       await page.addInitScript(() => {
@@ -732,7 +752,7 @@ test.describe('behaviour', () => {
     ['logbook', () => '/', ['@dives']], ['dive', () => `/#/dives/${diveId}`, ['@dives']], ['Divers', () => '/#/divers', ['@divers']],
     ['Dive sites', () => '/#/sites', ['@sites']], ['a dive site', () => `/#/sites/${siteId}`, ['@sites']],
     ['an imported dive site', () => `/#/sites/${importedSiteId}`, ['@sites']],
-    ['Dive centres', () => '/#/centres', ['@sites']], ['a dive centre', () => `/#/centres/${centreId}`, ['@sites']], ['account', () => '/#/account', ['@account']],
+    ['Dive centres', () => '/#/centres', ['@sites']], ['Tools', () => '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', ['@tools']], ['a dive centre', () => `/#/centres/${centreId}`, ['@sites']], ['account', () => '/#/account', ['@account']],
     ['Review', () => '/#/review', ['@dives']], ['admin', () => '/#/admin', ['@admin']], ['site import', () => '/#/admin/site-imports', ['@admin', '@sites']],
   ];
   for (const [name, path, tag] of sweep) {
@@ -751,7 +771,7 @@ test.describe('behaviour', () => {
   }
 
   test('text at 200 % still fits: nothing scrolls sideways (WCAG 1.4.4)', { tag: ['@layout'] }, async ({ page }) => {
-    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/centres', `/#/centres/${centreId}`, '/#/review', '/#/account', '/#/admin', '/#/admin/site-imports']) {
+    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/centres', `/#/centres/${centreId}`, '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', '/#/review', '/#/account', '/#/admin', '/#/admin/site-imports']) {
       await page.goto(path);
       await page.getByRole('heading', { level: 1 }).waitFor();
       await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });

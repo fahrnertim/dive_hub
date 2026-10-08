@@ -50,6 +50,20 @@ describe('looksLikeFit', () => {
   });
 });
 
+describe('FIT adapter: gas consumption and oxygen dose (ADR 0032)', () => {
+  it('keeps the volume SAC, RMV and OTU of the dive summary on the summary, in L/min and OTU', async () => {
+    const [rec] = await adapter.parse(makeSyntheticDive({ avgVolumeSac: 17.25, avgRmv: 21.5, o2Toxicity: 12 }));
+    expect(rec!.summary).toMatchObject({ sacLpm: 17.25, rmvLpm: 21.5, otuEnd: 12 });
+    expect(rec!.summary.extras).toBeUndefined();
+  });
+
+  it('keeps none of them when the file has none', async () => {
+    const [rec] = await adapter.parse(makeSyntheticDive());
+    expect(rec!.summary.sacLpm).toBeUndefined();
+    expect(rec!.summary.rmvLpm).toBeUndefined();
+  });
+});
+
 describe('FIT adapter on the synthetic dive', () => {
   it('maps device, time, depth and summary', async () => {
     const [rec] = await adapter.parse(fixture('synthetic-dive.fit'));

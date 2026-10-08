@@ -446,3 +446,22 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .body-weight-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-1); }
 .body-weight-list li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-4); }
 .body-weight-list .date { min-width: 8rem; }
+
+/* The Tools page (ADR 0032) */
+.tools-cylinder { border: 0; padding: 0; margin: 0 0 var(--space-5); min-width: 0; }
+.tools-cylinder > legend { font-weight: var(--weight-semibold); padding: 0; margin-bottom: var(--space-3); }
+.tools-answer { display: grid; gap: var(--space-3); margin-top: var(--space-4); }
+.tools-answer > p, .tools-answer .muted, .tools-answer .notice, .tools-answer .subheading { margin: 0; }
+.tools-result { font-size: var(--text-lg); }
+.tools-result strong { font-size: var(--text-xl, var(--text-lg)); }
+.tools-limits { width: 100%; border-collapse: collapse; }
+.tools-limits th, .tools-limits td { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border, currentColor); }
+.tools-limits th { text-align: left; font-weight: var(--weight-regular); }
+.tools-limits tbody tr:last-child th { border-bottom: none; }
+.tools-limits td { text-align: right; font-weight: var(--weight-semibold); white-space: nowrap; }
+.tools-assumptions { margin: 0; padding-left: var(--space-5); display: grid; gap: var(--space-1); }
+
+.tools-grid { align-items: start; }
+.tools-cylinder .tools-grid { margin-bottom: 0; }
+.tools-cylinder { margin-top: var(--space-5); }
+.input::placeholder { color: var(--color-text-muted); opacity: 1; }

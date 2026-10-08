@@ -16,6 +16,10 @@ export interface SyntheticDiveOptions {
   exit?: { latitude: number; longitude: number };
   /** The watch's activity profile: an apnea session is `apneaDiving` and has no gas (ADR 0044). */
   subSport?: 'singleGasDiving' | 'multiGasDiving' | 'apneaDiving';
+  /** The dive summary's gas consumption at the surface and the oxygen dose (ADR 0032); the default file has none. */
+  avgVolumeSac?: number;
+  avgRmv?: number;
+  o2Toxicity?: number;
 }
 
 const FIT_EPOCH_MS = Date.UTC(1989, 11, 31);
@@ -72,6 +76,9 @@ export function makeSyntheticDive(options: SyntheticDiveOptions = {}): Uint8Arra
   write(Profile.MesgNum.DIVE_SUMMARY, {
     ...summary, referenceMesg: 'session', referenceIndex: 0, diveNumber: options.diveNumber ?? 42,
     startCns: 0, endCns: 5, startN2: 0, endN2: 40,
+    ...(options.avgVolumeSac !== undefined && { avgVolumeSac: options.avgVolumeSac }),
+    ...(options.avgRmv !== undefined && { avgRmv: options.avgRmv }),
+    ...(options.o2Toxicity !== undefined && { o2Toxicity: options.o2Toxicity }),
   });
   write(Profile.MesgNum.DIVE_SUMMARY, { ...summary, referenceMesg: 'lap', referenceIndex: 0 });
   write(Profile.MesgNum.SESSION, {

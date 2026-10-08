@@ -3,6 +3,7 @@ import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import { createAuthClient } from 'better-auth/client';
 import { SITES_PAGE, type SitesParams } from './lib/sites-list.ts';
 import type { LogbookFilter, neighbourParams } from './lib/logbook.ts';
+import type { ToolsParams } from './lib/tools.ts';
 
 export const api = createApiClient();
 /** Better Auth's own endpoints (sign-in, sign-out) at /api/auth on this origin; the session is a cookie. */
@@ -475,3 +476,41 @@ export const importQuery = (id: string) => queryOptions({
 /** The Provider's sites near the Dive, nearest first; asks the Provider, so only when the User wants to pick one. */
 export const providerSitesQuery = (diveId: string, provider: string) =>
   queryOptions({ queryKey: keys.providerSites(diveId, provider), queryFn: () => fetchProviderSites(diveId, provider), staleTime: 5 * 60_000 });
+
+/** The Tools page (ADR 0032): computed on request; the inputs come from the page's address. */
+export type ToolsGas = Awaited<ReturnType<typeof fetchToolsGas>>;
+export type ToolsBottomTime = Awaited<ReturnType<typeof fetchToolsBottomTime>>;
+type ToolsInput = ToolsParams;
+/** Leaves out what is undefined (the address holds only what was typed); the type claims every key, which the query's optional keys accept. */
+const defined = <T extends object>(o: T) =>
+  Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as { [K in keyof T]: Exclude<T[K], undefined> };
+
+async function fetchToolsGas(p: ToolsInput) {
+  return unwrap(await api.GET('/api/tools/gas', {
+    params: { query: defined({ o2: p.o2!, he: p.he, depth: p.depth, water: p.water, altitude: p.altitude, ppo2Working: p.pw, ppo2Contingency: p.pc, oxygenNarcotic: p.narcotic }) },
+  }));
+}
+/** While the inputs are complete the last answer stays on screen until the next arrives, so the page doesn't blink; with incomplete inputs there is no answer. */
+export const toolsGasQuery = (p: ToolsInput) => {
+  const enabled = p.o2 !== undefined && p.o2 > 0;
+  return queryOptions({
+    queryKey: ['tools', 'gas', p] as const, queryFn: () => fetchToolsGas(p), enabled, retry: false,
+    ...(enabled && { placeholderData: keepPreviousData }),
+  });
+};
+
+async function fetchToolsBottomTime(p: ToolsInput, diverId: string | undefined) {
+  return unwrap(await api.GET('/api/tools/bottom-time', {
+    params: { query: defined({
+      depth: p.depth!, o2: p.o2!, he: p.he, volume: p.volume, pressure: p.pressure, sac: p.sac, reserve: p.reserve, gfHigh: p.gf,
+      water: p.water, altitude: p.altitude, ppo2Working: p.pw, ppo2Contingency: p.pc, diverId,
+    }) },
+  }));
+}
+export const toolsBottomTimeQuery = (p: ToolsInput, diverId: string | undefined, ready: boolean) => {
+  const enabled = ready && p.o2 !== undefined && p.o2 > 0 && p.depth !== undefined && p.depth > 0;
+  return queryOptions({
+    queryKey: ['tools', 'bottom-time', p, diverId] as const, queryFn: () => fetchToolsBottomTime(p, diverId), enabled, retry: false,
+    ...(enabled && { placeholderData: keepPreviousData }),
+  });
+};

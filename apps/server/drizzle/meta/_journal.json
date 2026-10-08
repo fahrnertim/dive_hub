@@ -211,6 +211,13 @@
       "when": 1791478002772,
       "tag": "0029_diver_body_weight",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1791482552348,
+      "tag": "0030_gas_figures_read",
+      "breakpoints": true
     }
   ]
 }

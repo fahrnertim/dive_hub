@@ -174,7 +174,7 @@ _German_: Tauchreise
 
 ## Gear and planning (partly built)
 
-Planned in [ADR 0031](decisions/0031-lead-suit-cylinders-and-lead-estimate.md) and [ADR 0032](decisions/0032-mod-and-no-decompression-limits.md) and [ADR 0033](decisions/0033-gas-plans-rules-and-groups.md). Built: Cylinder and SAC (ADR 0045), Lead, Weighting feedback and Exposure suit (ADR 0031); the rest not yet.
+Planned in [ADR 0031](decisions/0031-lead-suit-cylinders-and-lead-estimate.md) and [ADR 0032](decisions/0032-mod-and-no-decompression-limits.md) and [ADR 0033](decisions/0033-gas-plans-rules-and-groups.md). Built: Cylinder and SAC (ADR 0045), Lead, Weighting feedback and Exposure suit (ADR 0031), MOD, no-decompression limit, Oxygen exposure and Bottom time on the Tools page (ADR 0032, 0046); the rest not yet.
 
 **Lead**:
 The ballast a Diver carried on a Dive: one or more amounts with where they sat (belt, integrated, trim, ankle, backplate), and their total. No lead logged means unknown; 0 means none was carried.
@@ -217,7 +217,7 @@ _Avoid_: Max depth (that is the Dive's deepest point)
 _German_: MOD (maximale Einsatztiefe)
 
 **No-decompression limit (NDL)**:
-How long a diver may stay at a depth and still ascend directly, without decompression stops, by a decompression model (Bühlmann ZHL-16C) and gradient factors. Dive Hub computes it for clean tissues, air and nitrox, to 40 m; a dive computer also shows its own, in the Recording's samples.
+How long a diver may stay at a depth and still ascend directly, without decompression stops, by a decompression model (Bühlmann ZHL-16C) and gradient factors. Dive Hub computes it for clean tissues, air and nitrox, to 40 m, as the actual limit minus one minute of margin ([ADR 0046](decisions/0046-ndl-margin-and-planning-limits.md)); a dive computer also shows its own, in the Recording's samples.
 _Avoid_: No-deco time, no-stop time, bottom time (that is wider)
 _German_: Nullzeit
 

@@ -27,7 +27,8 @@
     "toDecide_one": "{{count}} zu entscheiden",
     "toDecide_other": "{{count}} zu entscheiden",
     "sites": "Tauchplätze",
-    "centres": "Tauchbasen"
+    "centres": "Tauchbasen",
+    "tools": "Werkzeuge"
   },
   "form": {
     "required": "Bitte fülle dieses Feld aus.",
@@ -490,7 +491,8 @@
     "cylinder_invalid": "Die Werte einer Flasche passen nicht: Der Druck am Ende liegt über dem am Anfang, das Gas hat mehr als 100 %, oder ein Flaschensender hängt an zwei Flaschen.",
     "cylinder_series_not_found": "Dieser Tauchgang hat keinen solchen Flaschensender. Lade ihn neu und versuch es noch einmal.",
     "weighting_feedback_invalid": "Zu passendem Blei gehört keine Angabe, um wie viel. Lass „Um wie viel“ leer.",
-    "suit_invalid": "Die Angaben zum Anzug passen nicht: Eine Dicke gehört zu einem Nass- oder Halbtrockenanzug, ein Unterzieher zu einem Trockenanzug."
+    "suit_invalid": "Die Angaben zum Anzug passen nicht: Eine Dicke gehört zu einem Nass- oder Halbtrockenanzug, ein Unterzieher zu einem Trockenanzug.",
+    "gas_not_breathable": "Ein Gemisch mit unter 16 % Sauerstoff ist an der Oberfläche nicht atembar."
   },
   "vocabulary": {
     "waterType": {
@@ -1880,5 +1882,95 @@
     "showCodes": "Codes zeigen",
     "taken": "Code für {{name}} übernommen.",
     "diveCaption": "SSI-Verifizierungscode eines Tauchprofis"
+  },
+  "tools": {
+    "title": "Werkzeuge",
+    "lead": "Gaswerte und eine Grundzeit für einen geplanten Tauchgang.",
+    "notice": "Das ist eine Schätzung, kein Rat: Grenzen, errechnet aus deinen Eingaben und Einstellungen. Dein Tauchcomputer und deine Ausbildung gelten, und kein Modell garantiert Sicherheit.",
+    "mix": {
+      "oxygen": "Sauerstoff",
+      "helium": "Helium",
+      "depth": "Tiefe",
+      "water": "Wasser",
+      "altitude": "Höhe"
+    },
+    "water": {
+      "salt": "Salzwasser",
+      "fresh": "Süßwasser",
+      "en13319": "EN 13319"
+    },
+    "limits": {
+      "working": "Arbeits-ppO₂",
+      "contingency": "Notfall-ppO₂",
+      "narcotic": "Sauerstoff für die END als narkotisch zählen"
+    },
+    "gas": {
+      "title": "Gas",
+      "empty": "Gib den Sauerstoff im Gemisch ein.",
+      "hypoxic": "Unter 18 % Sauerstoff: Dieses Gemisch ist nahe der Oberfläche hypoxisch und dort nicht atembar.",
+      "mod": "MOD bei {{ppo2}} bar",
+      "ppo2At": "ppO₂ in {{depth}}",
+      "bestMix": "Bestes Gemisch in {{depth}}",
+      "ead": "Äquivalente Lufttiefe",
+      "end": "Äquivalente narkotische Tiefe",
+      "rounded": "Tiefen werden auf einen Zehntel abgerundet."
+    },
+    "bottom": {
+      "title": "Grundzeit",
+      "cylinder": "Flasche",
+      "volume": "Volumen",
+      "pressure": "Fülldruck",
+      "reserve": "Reserve",
+      "sac": "Gasverbrauch",
+      "gf": "Gradient Factor High",
+      "empty": "Gib Sauerstoff und Tiefe ein.",
+      "result": "Grundzeit",
+      "minutes_one": "{{count}} Min.",
+      "minutes_other": "{{count}} Min.",
+      "noLimit": "Keine Grenze",
+      "noCylinder": "Keine Flasche angegeben",
+      "limitedBy": "Begrenzt durch: {{limits}}",
+      "and": "und",
+      "limits": "Die drei Grenzen",
+      "outside": "Außerhalb der Sporttauch-Grenzen",
+      "outsideReason": {
+        "depth": "Das ist tiefer als 40 m: Dive Hub nennt keine Grundzeit.",
+        "mod": "Diese Tiefe liegt jenseits der MOD ({{mod}}) dieses Gemischs beim Notfall-ppO₂.",
+        "gas": "Eine Grundzeit gibt es nur für Luft und Nitrox, 21 bis 40 % Sauerstoff."
+      },
+      "aboveWorking": "In dieser Tiefe beträgt der ppO₂ {{ppo2}} bar, über deiner Arbeitsgrenze.",
+      "otu": "Etwa {{otu}} OTU Sauerstoffbelastung.",
+      "recent": "Du bist in den letzten 48 Stunden getaucht (der letzte Tauchgang endete {{when}}). Die wirkliche Grenze ist kürzer als gezeigt.",
+      "assumptions": "Was angenommen wird"
+    },
+    "limit": {
+      "ndl": "Nullzeitgrenze",
+      "oxygen": "Sauerstoff",
+      "gas": "Gas"
+    },
+    "source": {
+      "default": "Standard",
+      "request": "eingegeben",
+      "recording": "vom Computer",
+      "recordings": "aus den letzten Tauchgängen",
+      "site": "vom Tauchplatz"
+    },
+    "assumed": {
+      "gf": "Gradient Factor High: {{value}} % ({{source}})",
+      "sac": "Gasverbrauch: {{value}} L/min ({{source}})",
+      "water": "Wasser: {{value}} ({{source}})",
+      "noAltitude": "Keine Höhe angegeben: Meereshöhe",
+      "altitude": "Höhe: {{value}} ({{source}})",
+      "reserve": "Reserve: {{value}} ({{source}})",
+      "model": "Modell: Bühlmann ZHL-16C, ohne Stopps, Abstieg 18 m/min, Aufstieg 9 m/min, 3 Min. Stopp auf 5 m, eine Minute Reserve."
+    },
+    "flying": "Warte nach dem Tauchen vor dem Fliegen: folge deinem Tauchcomputer und den Empfehlungen von DAN.",
+    "dive": {
+      "title": "Dein Tauchgang"
+    },
+    "settings": {
+      "title": "Einstellungen",
+      "hint": "Lass ein Feld leer, um den grau angezeigten Wert zu verwenden. Die Liste unter der Grundzeit sagt, woher jeder Wert kommt."
+    }
   }
 }

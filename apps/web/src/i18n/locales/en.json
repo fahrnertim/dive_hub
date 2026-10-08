@@ -27,7 +27,8 @@
     "toDecide_one": "{{count}} to decide",
     "toDecide_other": "{{count}} to decide",
     "sites": "Dive sites",
-    "centres": "Dive centres"
+    "centres": "Dive centres",
+    "tools": "Tools"
   },
   "form": {
     "required": "Fill in this field.",
@@ -490,7 +491,8 @@
     "cylinder_invalid": "A cylinder’s values don’t fit: the pressure at the end is above the start, the gas is over 100 %, or one tank pod is on two cylinders.",
     "cylinder_series_not_found": "This dive has no such tank pod. Reload it and try again.",
     "weighting_feedback_invalid": "Weighting that felt right has no amount. Leave “By how much” empty.",
-    "suit_invalid": "The suit’s values don’t fit: a thickness is for a wetsuit or a semidry suit, an undergarment for a drysuit."
+    "suit_invalid": "The suit’s values don’t fit: a thickness is for a wetsuit or a semidry suit, an undergarment for a drysuit.",
+    "gas_not_breathable": "A mix with under 16 % oxygen can’t be breathed at the surface."
   },
   "vocabulary": {
     "waterType": {
@@ -1880,5 +1882,95 @@
     "showCodes": "Show codes",
     "taken": "Code taken for {{name}}.",
     "diveCaption": "SSI verification code of a dive professional"
+  },
+  "tools": {
+    "title": "Tools",
+    "lead": "Gas numbers and a bottom time for a dive you are planning.",
+    "notice": "These are an estimate, not advice: limits worked out from what you enter and your settings. Your dive computer and your training govern, and no model guarantees safety.",
+    "mix": {
+      "oxygen": "Oxygen",
+      "helium": "Helium",
+      "depth": "Depth",
+      "water": "Water",
+      "altitude": "Altitude"
+    },
+    "water": {
+      "salt": "Salt",
+      "fresh": "Fresh",
+      "en13319": "EN 13319"
+    },
+    "limits": {
+      "working": "Working ppO₂",
+      "contingency": "Contingency ppO₂",
+      "narcotic": "Count oxygen as narcotic for END"
+    },
+    "gas": {
+      "title": "Gas",
+      "empty": "Enter the oxygen in the mix.",
+      "hypoxic": "Under 18 % oxygen: this mix is hypoxic near the surface and is not breathable there.",
+      "mod": "MOD at {{ppo2}} bar",
+      "ppo2At": "ppO₂ at {{depth}}",
+      "bestMix": "Best mix at {{depth}}",
+      "ead": "Equivalent air depth",
+      "end": "Equivalent narcotic depth",
+      "rounded": "Depths are rounded down to a tenth."
+    },
+    "bottom": {
+      "title": "Bottom time",
+      "cylinder": "Cylinder",
+      "volume": "Volume",
+      "pressure": "Fill pressure",
+      "reserve": "Reserve",
+      "sac": "Gas use",
+      "gf": "Gradient factor high",
+      "empty": "Enter the oxygen and the depth.",
+      "result": "Bottom time",
+      "minutes_one": "{{count}} min",
+      "minutes_other": "{{count}} min",
+      "noLimit": "No limit",
+      "noCylinder": "No cylinder given",
+      "limitedBy": "Limited by: {{limits}}",
+      "and": "and",
+      "limits": "The three limits",
+      "outside": "Outside recreational limits",
+      "outsideReason": {
+        "depth": "This is deeper than 40 m: Dive Hub gives no bottom time.",
+        "mod": "This depth is beyond the MOD ({{mod}}) of this mix at the contingency ppO₂.",
+        "gas": "Bottom time is only given for air and nitrox, 21 to 40 % oxygen."
+      },
+      "aboveWorking": "At this depth the ppO₂ is {{ppo2}} bar, above your working limit.",
+      "otu": "About {{otu}} OTU of oxygen exposure.",
+      "recent": "You dived within the last 48 hours (the last dive ended {{when}}). The real limit is shorter than shown.",
+      "assumptions": "What this assumes"
+    },
+    "limit": {
+      "ndl": "No-decompression limit",
+      "oxygen": "Oxygen",
+      "gas": "Gas"
+    },
+    "source": {
+      "default": "default",
+      "request": "entered",
+      "recording": "from your computer",
+      "recordings": "from your recent dives",
+      "site": "from the site"
+    },
+    "assumed": {
+      "gf": "Gradient factor high: {{value}} % ({{source}})",
+      "sac": "Gas use: {{value}} L/min ({{source}})",
+      "water": "Water: {{value}} ({{source}})",
+      "noAltitude": "No altitude given: sea level",
+      "altitude": "Altitude: {{value}} ({{source}})",
+      "reserve": "Reserve: {{value}} ({{source}})",
+      "model": "Model: Bühlmann ZHL-16C, no stops, descent 18 m/min, ascent 9 m/min, a 3 min stop at 5 m, one minute of margin."
+    },
+    "flying": "After diving, wait before flying: follow your dive computer and the guidance of DAN.",
+    "dive": {
+      "title": "Your dive"
+    },
+    "settings": {
+      "title": "Settings",
+      "hint": "Leave a field empty to use the value shown in grey. The list under the bottom time says where each value came from."
+    }
   }
 }

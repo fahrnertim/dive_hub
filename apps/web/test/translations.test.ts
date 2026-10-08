@@ -79,8 +79,9 @@ describe('texts a Provider words itself', () => {
 describe('codes from the API', () => {
   it.each([
     ['code', 'errors'],
-    // An Import's reasons, why a Push left a Participant out (ADR 0029), and which no-fly time applies (ADR 0036).
-    ['reason', 'import.reason', 'provider.leftOut', 'assessment.noFly'],
+    // An Import's reasons, why a Push left a Participant out (ADR 0029), which no-fly time applies (ADR 0036), and why
+    // the Tools page gives no bottom time (ADR 0032).
+    ['reason', 'import.reason', 'provider.leftOut', 'assessment.noFly', 'tools.bottom.outsideReason'],
     ['errorCode', 'import.errorCode'],
     ['result', 'import.result'],
     ['waterType', 'vocabulary.waterType'],

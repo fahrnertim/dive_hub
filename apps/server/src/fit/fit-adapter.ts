@@ -50,6 +50,7 @@ type FitMessage = Record<string, unknown>;
 type FitMessages = Record<string, FitMessage[] | undefined>;
 
 const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
+const positive = (v: unknown): number | undefined => { const n = num(v); return n !== undefined && n > 0 ? n : undefined; };
 const str = (v: unknown): string | undefined => (typeof v === 'string' && v.length > 0 ? v : undefined);
 /** A position from a FIT lat/long pair; the parser already converted semicircles to degrees. */
 const position = (lat: unknown, long: unknown): Position | undefined => {
@@ -203,6 +204,9 @@ function toRecording(m: FitMessages): ParsedRecording | undefined {
     // FIT's `o2_toxicity` is the oxygen dose in OTU.
     otuEnd: summarised('o2_toxicity'),
     avgAscentRateMps: num(diveSummary.avg_ascent_rate),
+    // Gas consumption at the surface in L/min (FIT: avg_volume_sac, avg_rmv; ADR 0032). Garmin writes them with a tank pod.
+    sacLpm: positive(diveSummary.avg_volume_sac),
+    rmvLpm: positive(diveSummary.avg_rmv),
   });
   if (Object.keys(extras).length > 0) summary.extras = extras;
 

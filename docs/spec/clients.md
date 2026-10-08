@@ -708,6 +708,24 @@ name, last name, e-mail, SSI leader number) and the codes built from them.
 
 *Web:* `DiverCodes.tsx`, `DiversPage.tsx`, `CentresPage.tsx` (`DiveCodes`).
 
+### The Tools page: gas numbers and bottom time
+
+([ADR 0032](../decisions/0032-mod-and-no-decompression-limits.md), [ADR 0046](../decisions/0046-ndl-margin-and-planning-limits.md).)
+`GET /api/tools/gas` and `GET /api/tools/bottom-time` compute on request and store nothing; metres, bar, litres.
+What a client **must** do, because these are limits from the Diver's own input and settings, not advice:
+- **Show the notice before any input** and with every answer: an estimate, not advice; the dive computer and training govern;
+  no model guarantees safety.
+- **Show the assumptions with the number:** `used` carries the gradient factor, SAC, water, altitude and reserve with their
+  `source` (`request`, `recording`, `recordings`, `site`, `default`); say which were defaults. With no altitude, say "sea level".
+- **Show which limit binds** (`binding`, several when they tie) and all three limits (`limits`; `null` is no limit, or no
+  Cylinder for the gas).
+- **Never show a number when `status` is `outside_limits`:** show the `reason` (`depth` beyond 40 m, `mod` beyond the MOD at
+  the contingency ppO₂, `gas` not air or nitrox 21–40 %) and the MOD. `ppO2AboveWorking` says the ppO₂ is above the working limit.
+- **Say when `recentDiveEndedAt` is set** (a Dive within 48 hours): the real limit is shorter than shown.
+- **Depths from the MOD are rounded down to 0.1 m:** a client must not round them up. A mix under 16 % oxygen answers
+  `gas_not_breathable` (400); a client sends `volume` and `pressure` together or neither.
+- Flying after diving only as DAN's text, no countdown.
+
 ## The MCP endpoint
 
 An LLM client is an API client Dive Hub can't make follow this contract, so the endpoint carries the rules itself
@@ -736,7 +754,8 @@ An LLM client is an API client Dive Hub can't make follow this contract, so the 
   model to name it when it passes the site's data on (see [Licenses](#licenses)).
 - **Tools** (names, descriptions and schemas are fixed in code, never built from data): `logbook_search_dives`,
   `logbook_get_dive`, `logbook_get_dive_assessment`, `logbook_stats`, `sites_search`, `sites_get`, `divers_buddies`,
-  `divers_list`. Each has an output
+  `divers_list`, `planning_gas_and_bottom_time` (computed, not read from the logbook: gas numbers and bottom time with
+  their assumptions and a fixed notice that a client passes on with the numbers). Each has an output
   schema; a result carries `structuredContent` and the same JSON as text.
 - **Units and times:** metres, °C, minutes. `start_local` is the wall-clock time where the dive was (null when the time
   zone is unknown), `start_utc` the instant (null when only the wall clock is known, [Dives](#dives)). A client that

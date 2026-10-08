@@ -35,6 +35,7 @@ export const PROBLEMS = {
   recording_not_on_dive: 'This recording does not belong to the dive',
   last_recording: 'This is the dive\'s only recording; it can\'t be split off',
   diver_not_found: 'Diver not found',
+  gas_not_breathable: 'A mix with under 16 % oxygen cannot be breathed at the surface',
   body_weight_not_found: 'The Diver has no body weight on that date',
   own_diver: 'Your own Diver can\'t be deleted',
   diver_not_empty: 'This Diver still has dives or devices, or is on a dive',

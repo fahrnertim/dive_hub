@@ -4,7 +4,7 @@
 import {
   ArrowDown, ArrowRightLeft, ArrowUp, BookOpen, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert,
   CircleCheck, CircleUser, CloudDownload, CloudUpload, Copy, Ellipsis, ExternalLink, Image, Info, KeyRound, Link, LogIn, LogOut, MapPin, Merge, Pencil, Plus, QrCode, Scissors, Shield, ShieldOff,
-  Star, Store, Trash, Undo2, Unlink, Upload, User, UserCheck, Users, UserX, type LucideIcon,
+  Star, Store, Trash, Undo2, Unlink, Upload, User, UserCheck, Users, UserX, Wrench, type LucideIcon,
 } from 'lucide-react';
 
 const ICONS = {
@@ -13,6 +13,8 @@ const ICONS = {
   site: MapPin,
   /** A Dive centre, and its verification code (ADR 0043). */
   centre: Store,
+  /** The Tools page: gas numbers and bottom time (ADR 0032). */
+  tools: Wrench,
   code: QrCode,
   /** Reading a code by camera or from an image file (ADR 0043). */
   camera: Camera,

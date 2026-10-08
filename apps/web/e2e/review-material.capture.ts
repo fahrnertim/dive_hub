@@ -24,7 +24,7 @@ const areas = process.env.REVIEW_AREAS?.split(',').map((a) => a.trim()).filter(B
 const want = (area: string) => !areas?.length || areas.includes(area);
 /** Which area a capture belongs to, by its name. */
 const areaOf = (name: string) => (/site|centre/.test(name) ? 'sites' : /divers/.test(name) ? 'divers'
-  : /account|signin|invitation/.test(name) ? 'account' : /admin/.test(name) ? 'admin' : 'dives');
+  : /account|signin|invitation/.test(name) ? 'account' : /admin/.test(name) ? 'admin' : /tools/.test(name) ? 'tools' : 'dives');
 
 /** Counts the page's requests until their bodies are read, so a capture can wait until the data is on screen. */
 async function trackRequests(page: Page) {
@@ -414,19 +414,33 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByText(de ? 'Nur Tauchplätze ergänzen, die schon hier sind' : 'Only fill dive sites that are already here').click();
     await capture(page, `${prefix}-site-import-ssi`, { aria: false, axe });
   };
+  // The Tools page (ADR 0032): empty, a bottom time with its three limits, and outside the limits.
+  const toolsPages = async (prefix: string, axe = false) => {
+    if (!want('tools')) return;
+    await page.goto('/#/tools'); await page.reload(); await page.getByRole('heading', { level: 1 }).waitFor();
+    await capture(page, `${prefix}-tools`, { aria: false, axe });
+    await page.goto('/#/tools?o2=32&depth=30&volume=11.1&pressure=200'); await page.getByTestId('bottom-time').waitFor();
+    await capture(page, `${prefix}-tools-bottom-time`, { aria: false, axe });
+    // A reload: a setting in the address opens the Settings section when the page is built, not when only the hash changes.
+    await page.goto('/#/tools?o2=32&depth=30&volume=11.1&pressure=200&reserve=60'); await page.reload(); await page.getByTestId('bottom-time').waitFor();
+    await capture(page, `${prefix}-tools-settings`, { aria: false, axe });
+    await page.goto('/#/tools?o2=40&depth=36&he=0'); await page.locator('.tools-answer .notice').first().waitFor();
+    await capture(page, `${prefix}-tools-outside`, { aria: false, axe });
+  };
+  const pagesOf = async (prefix: string, de: boolean, axe = false) => { await sitePages(prefix, de, axe); await toolsPages(prefix, axe); };
   await page.setViewportSize({ width: 1280, height: 900 });
-  await sitePages('17-en-light-desktop', false, true);
+  await pagesOf('17-en-light-desktop', false, true);
   await page.emulateMedia({ colorScheme: 'dark' });
-  await sitePages('18-en-dark-desktop', false);
+  await pagesOf('18-en-dark-desktop', false);
   await page.setViewportSize({ width: 320, height: 640 });
-  await sitePages('19-en-dark-320', false);
+  await pagesOf('19-en-dark-320', false);
   await setPreferences(request, { language: 'de' });
   await page.setViewportSize({ width: 390, height: 844 });
-  await sitePages('20-de-dark-390', true, true);
+  await pagesOf('20-de-dark-390', true, true);
   await page.emulateMedia({ colorScheme: 'light' });
-  await sitePages('21-de-light-390', true);
+  await pagesOf('21-de-light-390', true);
   await page.setViewportSize({ width: 320, height: 640 });
-  await sitePages('22-de-light-320', true);
+  await pagesOf('22-de-light-320', true);
   if (want('sites')) {
     await page.goto(`/#/?site=${site.id}`); await page.getByRole('region', { name: 'Tauchgänge' }).waitFor();
     await capture(page, '23-de-light-320-logbook-at-site', { aria: false });

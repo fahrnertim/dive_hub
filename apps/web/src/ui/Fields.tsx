@@ -23,10 +23,12 @@ interface FieldChrome {
  * A number in the UI language's format ("18,5" in German), with optional unit after it.
  * Arrow keys step the value; the stepper buttons are left out to keep forms calm.
  */
-export function NumberField({ label, description, unit, onInput, ...props }: FieldChrome & Omit<AriaNumberFieldProps, 'className' | 'children'> & {
+export function NumberField({ label, description, unit, onInput, placeholder, ...props }: FieldChrome & Omit<AriaNumberFieldProps, 'className' | 'children'> & {
   unit?: string;
   /** While typing; onChange only fires when the value commits (blur, Enter). */
   onInput?: () => void;
+  /** What applies while the field is empty (a default); not a value. */
+  placeholder?: string;
 }) {
   const message = useMessage();
   return (
@@ -34,7 +36,7 @@ export function NumberField({ label, description, unit, onInput, ...props }: Fie
       {/* The unit is part of the field's name for screen readers ("Max depth (m)"); visually it follows the input. */}
       <Label className="field-label">{label}{unit && <span className="visually-hidden"> ({unit})</span>}</Label>
       <Group className="input-group">
-        <Input className="input" onInput={onInput} />
+        <Input className="input" onInput={onInput} {...(placeholder && { placeholder })} />
         {unit && <span className="input-unit" aria-hidden="true">{unit}</span>}
       </Group>
       {description && <Text slot="description" className="field-description">{description}</Text>}
