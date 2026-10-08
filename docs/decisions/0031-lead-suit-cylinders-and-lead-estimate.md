@@ -137,8 +137,22 @@ body weight.
 - **SSI has no scuba suit** (checked 2026-10-08): in the 127 records of the development logbook the only suit key is
   the freediving one (`x_odin_user_log_frd_suit`, empty on all), so `get_divelog_vars`' suit list (85 to 89) is
   freediving's. The suit is not imported.
-- **Decided for SSI's lead** (owner, 2026-10-08; not built): a weight of 0 at SSI counts as not typed; lead changed
-  only at SSI changes a Dive with at most one entry (which keeps its placement) and nothing on a Dive with several.
+
+## Slice A part 2 as built: SSI's lead
+Built on 2026-10-08. `odin_user_log_weight_kg` is the dive's weight as typed at SSI (`ImportedDive.leadKg`); a weight of 0
+counts as not typed (owner's decision). Tested at `parseSsiDive`, `threeWay` and the import over HTTP against the fake SSI.
+
+- **Fills:** a Dive without Lead entries gets one entry without a placement, in the import's `fill` Revision, unless its
+  history spoke of `lead` (a Lead a User emptied stays empty). A Dive with entries keeps them.
+- **Changes at SSI** (three-way, field `lead`, compared as the total to 0.1 kg): taken where only SSI changed it; a Dive with
+  one entry takes the total and keeps its placement; a conflict when both changed it (values in kg); **a Dive with several
+  entries is left alone** (the field isn't compared, like several Cylinders).
+- **Never removes:** a weight emptied or set to 0 at SSI removes nothing here; where Dive Hub never saw a weight at SSI the
+  lead here stays. A weight that appears at SSI where the Dive here has no Lead is taken.
+- **Not sent to SSI.**
+
+### Decided, not built
+- Body weight of a Diver (part 3).
 
 ### Open
 - A request's `0` for a value that may be `null` arrives as `null` (the validator coerces, `Nullable` in

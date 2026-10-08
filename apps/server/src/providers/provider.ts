@@ -265,6 +265,8 @@ export interface ImportedDive {
   notes: string | null;
   /** The one tank a logbook entry describes, as typed there (ADR 0031, 0045); null when it gives no volume and no pressure. */
   cylinder: ProviderCylinder | null;
+  /** The weight typed at the Provider, in kg (ADR 0031); null when it gives none (0 counts as none). */
+  leadKg: number | null;
 }
 
 /** A Provider's single tank: what it keeps of a Cylinder. A value it doesn't have is null. */

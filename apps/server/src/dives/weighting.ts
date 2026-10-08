@@ -1,8 +1,8 @@
 // Lead, weighting feedback and the exposure suit of a Dive (ADR 0031): the Dive's own values. Lead is set as one
 // list of placed entries: no entries means unknown, one entry of 0 means no lead.
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
-import { dive, lead, type LeadPlacement, type SuitType, type SuitUndergarment, type WeightingFelt } from '../db/schema.js';
+import { dive, lead, revision, type LeadPlacement, type SuitType, type SuitUndergarment, type WeightingFelt } from '../db/schema.js';
 import type { Changes } from './revisions.js';
 
 export interface LeadEntry {
@@ -39,6 +39,23 @@ export async function setLead(tx: Tx, diveId: string, list: LeadInput[]): Promis
   if (JSON.stringify(before) === JSON.stringify(next)) return {};
   await write(tx, diveId, next);
   return { lead: { from: before, to: next } };
+}
+
+/**
+ * The weight typed at a Provider, in kg, as the Dive's Lead (ADR 0031). `fill`: a Dive without entries gets one, without
+ * a placement, unless its history spoke of Lead (one a User emptied stays empty); a Dive with entries keeps them.
+ * `take`: the Dive's only entry takes the total and keeps its placement, a Dive without entries gets one. With several
+ * entries nothing: the total can't be told to be one of them. Answers the change for the caller's Revision.
+ */
+export async function mergeProviderLead(tx: Tx, diveId: string, kg: number, how: 'fill' | 'take'): Promise<Changes> {
+  const before = await leadOf(tx, diveId);
+  if (before.length > 1 || (before.length === 1 && how === 'fill')) return {};
+  if (before.length === 0 && how === 'fill') {
+    const [spoken] = await tx.select({ id: revision.id }).from(revision)
+      .where(and(eq(revision.entityType, 'dive'), eq(revision.entityId, diveId), sql`jsonb_exists(${revision.changes}, 'lead')`)).limit(1);
+    if (spoken) return {};
+  }
+  return setLead(tx, diveId, [{ amountKg: kg, placement: before[0]?.placement ?? null }]);
 }
 
 export class WeightingError extends Error {

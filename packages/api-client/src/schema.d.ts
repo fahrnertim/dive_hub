@@ -12432,10 +12432,10 @@ export interface paths {
                                 /** @enum {unknown} */
                                 utcOffsetSource: "device" | "position" | "nearby" | "unknown";
                                 /**
-                                 * @description values (startsAt, …) only on Dives without a Recording; cylinder only on Dives with at most one Cylinder
+                                 * @description values (startsAt, …) only on Dives without a Recording; cylinder only on Dives with at most one Cylinder; lead only on Dives with at most one Lead entry
                                  * @enum {unknown}
                                  */
-                                field: "site" | "notes" | "buddies" | "cylinder" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
+                                field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
                                 hub: null | (string | number | string[] | {
                                     volumeL: null | number;
                                     material: null | ("aluminium" | "steel" | "carbon");
@@ -12630,7 +12630,7 @@ export interface paths {
                         conflicts?: {
                             remoteId: string;
                             /** @enum {unknown} */
-                            field: "site" | "notes" | "buddies" | "cylinder" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
+                            field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
                             /**
                              * @description hub: the Dive keeps its value; provider: it takes the Provider's
                              * @enum {unknown}

@@ -50397,13 +50397,14 @@
                               "notes",
                               "buddies",
                               "cylinder",
+                              "lead",
                               "startsAt",
                               "durationSeconds",
                               "maxDepthM",
                               "avgDepthM",
                               "waterTemperatureC"
                             ],
-                            "description": "values (startsAt, …) only on Dives without a Recording; cylinder only on Dives with at most one Cylinder"
+                            "description": "values (startsAt, …) only on Dives without a Recording; cylinder only on Dives with at most one Cylinder; lead only on Dives with at most one Lead entry"
                           },
                           "hub": {
                             "anyOf": [
@@ -50504,7 +50505,7 @@
                                     }
                                   }
                                 ],
-                                "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none)"
+                                "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
                               }
                             ]
                           },
@@ -50607,7 +50608,7 @@
                                     }
                                   }
                                 ],
-                                "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none)"
+                                "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
                               }
                             ]
                           }
@@ -51423,6 +51424,7 @@
                             "notes",
                             "buddies",
                             "cylinder",
+                            "lead",
                             "startsAt",
                             "durationSeconds",
                             "maxDepthM",

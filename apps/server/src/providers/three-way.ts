@@ -6,9 +6,9 @@ import { wallClockMs } from '../dives/time-zone.js';
 
 /**
  * Fields a Provider's change can bring: on every Dive the site, notes and buddies; the tank on a Dive with at most one
- * Cylinder; the values only on a Dive without a Recording.
+ * Cylinder, and the lead on a Dive with at most one Lead entry; the values only on a Dive without a Recording.
  */
-export const SYNCED_FIELDS = ['site', 'notes', 'buddies', 'cylinder', 'startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM', 'waterTemperatureC'] as const;
+export const SYNCED_FIELDS = ['site', 'notes', 'buddies', 'cylinder', 'lead', 'startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM', 'waterTemperatureC'] as const;
 export type SyncedField = (typeof SYNCED_FIELDS)[number];
 export const VALUE_FIELDS: readonly SyncedField[] = ['startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM', 'waterTemperatureC'];
 
@@ -27,6 +27,8 @@ export interface Comparable {
   waterTemperatureC: number | null;
   /** The one tank: the Provider's, or the Dive's only Cylinder in the values a Provider keeps. */
   cylinder: ProviderCylinder | null;
+  /** The lead in kg: the Provider's weight, or the total of the Dive's only Lead entry (none: null). */
+  lead: number | null;
 }
 
 const text = (v: string | null | undefined) => (v && v.trim() ? v.trim() : null);
@@ -37,7 +39,7 @@ export function comparableOf(d: ImportedDive): Comparable {
   return {
     site: Object.values(d.siteIds)[0] ?? null, notes: text(d.notes), buddies: [...new Set(d.people)].sort(),
     startsAt: local === null ? null : Math.floor(local / 60_000), durationSeconds: d.durationSeconds || null,
-    maxDepthM: d.maxDepthM, avgDepthM: d.avgDepthM, waterTemperatureC: d.waterTemperatureC, cylinder: d.cylinder,
+    maxDepthM: d.maxDepthM, avgDepthM: d.avgDepthM, waterTemperatureC: d.waterTemperatureC, cylinder: d.cylinder, lead: d.leadKg,
   };
 }
 
@@ -56,6 +58,7 @@ export function same(field: SyncedField, a: Comparable, b: Comparable): boolean 
   if (x === null || y === null) return x === y;
   if (field === 'cylinder') return sameCylinder(x as ProviderCylinder, y as ProviderCylinder);
   if (field === 'durationSeconds') return Math.abs((x as number) - (y as number)) < 60;
+  if (field === 'lead') return Math.abs((x as number) - (y as number)) < 0.06;
   if (field === 'maxDepthM' || field === 'avgDepthM' || field === 'waterTemperatureC') return Math.abs((x as number) - (y as number)) < 0.06;
   return x === y;
 }
@@ -73,6 +76,8 @@ export function threeWay(fields: readonly SyncedField[], base: Comparable, provi
     if (field === 'site' && provider.site === null) continue;
     // Nor does it remove a tank; and where Dive Hub never saw a tank there, the one here stays (the import only fills).
     if (field === 'cylinder' && (provider.cylinder === null || (base.cylinder === null && hub.cylinder !== null))) continue;
+    // Nor does it remove lead; and where Dive Hub never saw a weight there, the lead here stays.
+    if (field === 'lead' && (provider.lead === null || (base.lead === null && hub.lead !== null))) continue;
     if (same(field, base, hub)) take.push(field);
     else conflicts.push(field);
   }

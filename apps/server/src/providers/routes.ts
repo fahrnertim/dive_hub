@@ -391,7 +391,8 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
   });
   const ConflictValue = Type.Union([Type.String(), Type.Number(), Type.Array(Type.String()), ConflictCylinder], {
     description: 'site: its name; buddies: the names of Divers here (people Dive Hub doesn\'t know are left out); startsAt: local "YYYY-MM-DD HH:MM"; '
-      + 'cylinder: the tank typed at the Provider, or the Dive\'s only Cylinder in the same values (null: none)',
+      + 'cylinder: the tank typed at the Provider, or the Dive\'s only Cylinder in the same values (null: none); '
+      + 'lead: the weight typed at the Provider, or the total of the Dive\'s Lead, in kg (null: none)',
   });
   const Preview = Type.Object({
     mode: Type.Enum([...DIVE_IMPORT_MODES]),
@@ -433,7 +434,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       startsAt: DateTime,
       utcOffsetSeconds: Nullable(Type.Integer()),
       utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES]),
-      field: Type.Enum([...SYNCED_FIELDS], { description: 'values (startsAt, …) only on Dives without a Recording; cylinder only on Dives with at most one Cylinder' }),
+      field: Type.Enum([...SYNCED_FIELDS], { description: 'values (startsAt, …) only on Dives without a Recording; cylinder only on Dives with at most one Cylinder; lead only on Dives with at most one Lead entry' }),
       hub: Nullable(ConflictValue),
       provider: Nullable(ConflictValue),
     }), { description: 'Fields changed both at the Provider and here since Dive Hub last saw the dive: the User chooses; Dive Hub\'s stays unless told' }),

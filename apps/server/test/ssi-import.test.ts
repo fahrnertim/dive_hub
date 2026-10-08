@@ -108,6 +108,14 @@ describe('SSI dives for an import', () => {
     expect(parseSsiDive(withId(dive), context)!.cylinder).toBeNull();
   });
 
+  it('reads the weight typed at SSI as the lead of the dive in kg; 0 or nothing is not typed', () => {
+    const dive = handTypedDive({ at: '2025-08-10 10:00', depthM: 18, minutes: 45 });
+    expect(parseSsiDive(withId({ ...dive, odin_user_log_weight_kg: 6 }), context)!.leadKg).toBe(6);
+    expect(parseSsiDive(withId({ ...dive, odin_user_log_weight_kg: 4.8, odin_user_log_weight_lb: 11 }), context)!.leadKg).toBe(4.8);
+    expect(parseSsiDive(withId({ ...dive, odin_user_log_weight_kg: 0 }), context)!.leadKg).toBeNull();
+    expect(parseSsiDive(withId(dive), context)!.leadKg).toBeNull();
+  });
+
   it('skips a record without a start time', () => {
     expect(parseSsiDive(withId({ ...handTypedDive({ at: '', depthM: 3, minutes: 1 }) }), context)).toBeNull();
   });

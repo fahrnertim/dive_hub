@@ -419,6 +419,51 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
       expect(await cylindersOfDive(id)).toEqual([expect.objectContaining({ volumeL: 12, startPressureBar: 204 })]);
     }, 30_000);
 
+    it('makes the weight typed at SSI the lead of the Dive, takes a change only made at SSI, keeps a placement, and leaves several entries alone', async () => {
+      const lead = async (id: string) => (await diveOf(id) as unknown as { lead: object[] }).lead;
+      // A weight typed at SSI comes as one entry, without a placement; 0 there is not typed.
+      remote.lead = String(ctx.fakeSsi.addDive(ERIKA, { ...handTypedDive({ at: '2025-11-03 10:00', depthM: 14, minutes: 40, siteId: 3314 }), odin_user_log_weight_kg: 6 }));
+      const zero = String(ctx.fakeSsi.addDive(ERIKA, { ...handTypedDive({ at: '2025-11-04 10:00', depthM: 14, minutes: 40, siteId: 3314 }), odin_user_log_weight_kg: 0 }));
+      outcome = await runImport();
+      const id = of('lead').diveId!;
+      expect(await lead(id)).toEqual([{ amountKg: 6, placement: null }]);
+      const history = (await call('GET', `/api/dives/${id}/revisions`)).json() as { cause: string; changes: Record<string, unknown> }[];
+      expect(history.find((r) => 'lead' in r.changes)).toMatchObject({ cause: 'fill' });
+      expect(await lead(outcome.find((o) => o.remoteId === zero)!.diveId!)).toEqual([]);
+
+      // Changed only at SSI: the Dive's one entry takes the total and keeps where it was carried.
+      const record = ctx.fakeSsi.dives.get(Number(remote.lead))!;
+      await call('PATCH', `/api/dives/${id}`, { version: (await diveOf(id)).version, lead: [{ amountKg: 6, placement: 'belt' }] });
+      record.odin_user_log_weight_kg = 8;
+      outcome = await runImport();
+      expect(await lead(id)).toEqual([{ amountKg: 8, placement: 'belt' }]);
+
+      // Changed in both: shown with both totals; the Provider's is taken when told.
+      await call('PATCH', `/api/dives/${id}`, { version: (await diveOf(id)).version, lead: [{ amountKg: 9, placement: 'belt' }] });
+      record.odin_user_log_weight_kg = 10;
+      const p = (await preview()) as unknown as { conflicts: { remoteId: string; field: string; hub: unknown; provider: unknown }[] };
+      expect(p.conflicts).toEqual([expect.objectContaining({ remoteId: remote.lead, field: 'lead', hub: 9, provider: 10 })]);
+      outcome = await runImport({ conflicts: [{ remoteId: remote.lead!, field: 'lead', choice: 'provider' }] });
+      expect(await lead(id)).toEqual([{ amountKg: 10, placement: 'belt' }]);
+
+      // Several entries: SSI's one total belongs to none of them.
+      const parts = [{ amountKg: 6, placement: 'belt' }, { amountKg: 4, placement: 'trim' }];
+      await call('PATCH', `/api/dives/${id}`, { version: (await diveOf(id)).version, lead: parts });
+      record.odin_user_log_weight_kg = 12;
+      outcome = await runImport();
+      expect(await lead(id)).toEqual(parts);
+
+      // A weight emptied at SSI removes nothing here, and where Dive Hub never saw a weight at SSI the lead here stays.
+      record.odin_user_log_weight_kg = 0;
+      await runImport();
+      expect(await lead(id)).toEqual(parts);
+      const never = of('atSite').diveId!;
+      await call('PATCH', `/api/dives/${never}`, { version: (await diveOf(never)).version, lead: [{ amountKg: 7 }] });
+      Object.assign(ctx.fakeSsi.dives.get(Number(remote.atSite))!, { odin_user_log_weight_kg: 5 });
+      await runImport();
+      expect(await lead(never)).toEqual([{ amountKg: 7, placement: null }]);
+    }, 30_000);
+
     it('only adds to Dives here when told so', async () => {
       await call('PATCH', `/api/connections/${connectionId}`, { diveImport: { mode: 'add' } });
       remote.late = String(ctx.fakeSsi.addDive(ERIKA, handTypedDive({ at: '2025-10-01 10:00', depthM: 12, minutes: 40 })));

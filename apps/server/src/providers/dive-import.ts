@@ -27,6 +27,7 @@ import { REFERENCE_PREFIX, type ImportContext, type ImportedDive, type ProviderA
 import { currentRemote, fingerprintNow } from './push-service.js';
 import { comparableOf, SYNCED_FIELDS, threeWay, VALUE_FIELDS, type Comparable, type SyncedField } from './three-way.js';
 import { cylindersOf, mergeProviderCylinder, providerCylinderOf } from '../dives/cylinders.js';
+import { leadOf, leadTotalKg, mergeProviderLead } from '../dives/weighting.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 
 /** A dive computer found at the Provider, and how its dives are used. */
@@ -315,6 +316,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       }
     }
     if (d.cylinder) Object.assign(changes, await mergeProviderCylinder(tx, diveId, d.cylinder, 'fill'));
+    if (d.leadKg !== null) Object.assign(changes, await mergeProviderLead(tx, diveId, d.leadKg, 'fill'));
     if (Object.keys(changes).length === 0) return false;
     await tx.update(dive).set({ ...columns, version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
     await writeRevision(tx, 'dive', diveId, actor, 'fill', changes);
@@ -414,14 +416,16 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     const accounts = source && people.length > 0 ? await q.select({ diverId: diverExternalId.diverId, account: diverExternalId.externalId })
       .from(diverExternalId).where(and(eq(diverExternalId.source, source), inArray(diverExternalId.diverId, people.map((p) => p.diverId)))) : [];
     const cylinders = await cylindersOf(q, diveId);
+    const entries = await leadOf(q, diveId);
     const hub: Comparable = {
       site: siteId?.id ?? null, notes: row.notes?.trim() || null, buddies: accounts.map((a) => a.account).sort(),
       startsAt: Math.floor((row.startsAt.getTime() + (row.utcOffsetSeconds ?? 0) * 1000) / 60_000),
       durationSeconds: row.durationSeconds, maxDepthM: row.maxDepthM, avgDepthM: row.avgDepthM, waterTemperatureC: row.waterTemperatureC,
-      cylinder: cylinders.length === 1 ? providerCylinderOf(cylinders[0]!) : null,
+      cylinder: cylinders.length === 1 ? providerCylinderOf(cylinders[0]!) : null, lead: leadTotalKg(entries),
     };
     // The Provider's one tank can't be told to be one of several Cylinders: not compared then.
-    const fields = SYNCED_FIELDS.filter((f) => (f === 'cylinder' ? cylinders.length <= 1 : !row.primaryRecordingId || !VALUE_FIELDS.includes(f)));
+    // Nor can the Provider's one weight be told to be one of several Lead entries.
+    const fields = SYNCED_FIELDS.filter((f) => (f === 'cylinder' ? cylinders.length <= 1 : f === 'lead' ? entries.length <= 1 : !row.primaryRecordingId || !VALUE_FIELDS.includes(f)));
     return { row, hub, fields, people, accounts };
   }
 
@@ -479,6 +483,8 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
         changes.participants = { from: before, to: await participantsOf(tx, diveId) };
       } else if (field === 'cylinder') {
         if (d.cylinder) Object.assign(changes, await mergeProviderCylinder(tx, diveId, d.cylinder, 'take'));
+      } else if (field === 'lead') {
+        if (d.leadKg !== null) Object.assign(changes, await mergeProviderLead(tx, diveId, d.leadKg, 'take'));
       } else if (field === 'startsAt') {
         const time = await placeTime(tx, run, d);
         columns = { ...columns, ...columnsOf('startsAt', { at: time.startsAt, utcOffsetSeconds: time.utcOffsetSeconds }), utcOffsetSource: time.utcOffsetSource };

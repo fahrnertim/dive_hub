@@ -5,7 +5,7 @@ import { SYNCED_FIELDS, threeWay, type Comparable, type SyncedField } from '../s
 
 const base: Comparable = {
   site: '3314', notes: 'Turtle', buddies: ['4989164'], startsAt: 29_000_000, durationSeconds: 2700, maxDepthM: 18, avgDepthM: null,
-  waterTemperatureC: 24, cylinder: null,
+  waterTemperatureC: 24, cylinder: null, lead: null,
 };
 const tank: NonNullable<Comparable['cylinder']> = { volumeL: 12, material: 'steel', startPressureBar: 200, endPressureBar: 50, gas: { o2: 21, he: 0 } };
 const run = (provider: Partial<Comparable>, hub: Partial<Comparable>, fields: readonly SyncedField[] = SYNCED_FIELDS) =>
@@ -46,6 +46,24 @@ describe('three-way per field', () => {
     expect(since({}, { endPressureBar: 45 })).toEqual({ take: [], conflicts: [] });
     expect(since({ material: 'aluminium' }, { volumeL: 15 })).toEqual({ take: [], conflicts: ['cylinder'] });
     expect(since({ gas: { o2: 32, he: 0 } }, { gas: { o2: 32, he: 0 } })).toEqual({ take: [], conflicts: [] });
+  });
+
+  it('takes the lead total only the Provider changed, and compares it to 0.1 kg', () => {
+    const since = (provider: number | null, hub: number | null, before: number | null = 6) =>
+      threeWay(['lead'], { ...base, lead: before }, { ...base, lead: provider }, { ...base, lead: hub });
+    expect(since(8, 6)).toEqual({ take: ['lead'], conflicts: [] });
+    expect(since(6.04, 6)).toEqual({ take: [], conflicts: [] });
+    expect(since(6, 7)).toEqual({ take: [], conflicts: [] });
+    expect(since(8, 7)).toEqual({ take: [], conflicts: ['lead'] });
+  });
+
+  it('never removes lead because the Provider names none, and leaves the lead here alone where Dive Hub never saw a weight there', () => {
+    const since = (provider: number | null, hub: number | null, before: number | null) =>
+      threeWay(['lead'], { ...base, lead: before }, { ...base, lead: provider }, { ...base, lead: hub });
+    expect(since(null, 6, 6)).toEqual({ take: [], conflicts: [] });
+    expect(since(8, 6, null)).toEqual({ take: [], conflicts: [] });
+    // A weight that appears at SSI where the Dive here has none is taken.
+    expect(since(8, null, null)).toEqual({ take: ['lead'], conflicts: [] });
   });
 
   it('never removes a tank because the Provider names none, and leaves the tank here alone where Dive Hub never saw one there', () => {

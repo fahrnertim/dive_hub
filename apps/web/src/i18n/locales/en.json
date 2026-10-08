@@ -1294,6 +1294,7 @@
       "notes": "notes",
       "buddies": "buddies",
       "cylinder": "cylinder",
+      "lead": "lead",
       "startsAt": "start",
       "durationSeconds": "duration",
       "maxDepthM": "max depth",

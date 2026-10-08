@@ -169,5 +169,7 @@ export function parseSsiDive(r: SsiRecord, context: ImportContext, givenId?: str
     people: [...new Set(buddyIdsOf(r).flatMap((id) => { const account = context.people[String(id)]; return account ? [account] : []; }))],
     notes: text(r.odin_user_log_comment),
     cylinder: cylinderOf(r, gases[0] ?? null),
+    // SSI's weight, as typed; 0 is what an empty field reads as.
+    leadKg: positive(r.odin_user_log_weight_kg),
   };
 }

@@ -195,6 +195,7 @@ function Preview({ provider: p, connection: c, mode, onSettings, onStarted, onCl
     if (typeof v === 'number') {
       if (field === 'durationSeconds') return display.duration(v);
       if (field === 'waterTemperatureC') return display.temperature(v);
+      if (field === 'lead') return display.mass(v);
       return display.depth(v);
     }
     return v;
