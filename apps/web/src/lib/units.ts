@@ -21,8 +21,9 @@ export const temperatureIn = (celsius: number, units: UnitSystem) => (units === 
 export const pressureIn = (bar: number, units: UnitSystem) => (units === 'imperial' ? bar * PSI_PER_BAR : bar);
 const pressureUnit = (units: UnitSystem) => (units === 'imperial' ? 'psi' : 'bar');
 
-/** A depth or temperature typed in the User's units, back in metres or °C for storage. */
+/** A depth, pressure or temperature typed in the User's units, back in metres, bar or °C for storage. */
 export const depthFromDisplay = (value: number, units: UnitSystem) => (units === 'imperial' ? value / FEET_PER_METRE : value);
+export const pressureFromDisplay = (value: number, units: UnitSystem) => (units === 'imperial' ? value / PSI_PER_BAR : value);
 export const temperatureFromDisplay = (value: number, units: UnitSystem) => (units === 'imperial' ? (value - 32) * 5 / 9 : value);
 
 const unitFormat =(locale: string, unit: string, digits: number) =>

@@ -634,6 +634,40 @@ export const sampleSeries = pgTable(
   (t) => [primaryKey({ columns: [t.recordingId, t.channel] })],
 );
 
+export const CYLINDER_MATERIALS = ['aluminium', 'steel', 'carbon'] as const;
+export type CylinderMaterial = (typeof CYLINDER_MATERIALS)[number];
+export const cylinderMaterial = pgEnum('cylinder_material', [...CYLINDER_MATERIALS]);
+
+/**
+ * A Cylinder of a Dive (ADR 0031, 0045): the Dive's own values, set as one list, part of its version and its history.
+ * It may be tied to one pressure series of one of the Dive's Recordings (`recording_id` with `channel`).
+ */
+export const cylinder = pgTable(
+  'cylinder',
+  {
+    diveId: uuid('dive_id').notNull().references(() => dive.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    volumeL: real('volume_l'),
+    workingPressureBar: real('working_pressure_bar'),
+    material: cylinderMaterial('material'),
+    /** The gas in percent; both null when it isn't known. */
+    o2: real('o2'),
+    he: real('he'),
+    startPressureBar: real('start_pressure_bar'),
+    endPressureBar: real('end_pressure_bar'),
+    /** An import made it from a tank pod's data; it stays so while the Cylinder keeps the pod's series. */
+    fromPod: boolean('from_pod').notNull().default(false),
+    recordingId: uuid('recording_id').references(() => recording.id),
+    channel: text('channel'),
+  },
+  (t) => [
+    primaryKey({ columns: [t.diveId, t.position] }),
+    index('cylinder_recording_idx').on(t.recordingId),
+    check('cylinder_series_ck', sql`(${t.recordingId} is null) = (${t.channel} is null)`),
+    check('cylinder_gas_ck', sql`(${t.o2} is null) = (${t.he} is null)`),
+  ],
+);
+
 export const recordingEvent = pgTable(
   'recording_event',
   {

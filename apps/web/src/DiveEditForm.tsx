@@ -3,7 +3,9 @@ import { CalendarDateTime } from '@internationalized/date';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, ApiError, keys, unwrap, type DiveValues, type DiveView, type OverridableField } from './api.ts';
+import { CylinderFields, useCylinderProblem } from './Cylinders.tsx';
 import { announce } from './lib/announce.ts';
+import { cylindersOfDrafts, draftOfCylinder, emptyDraft, isBlank, sameDrafts } from './lib/cylinders.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { useLeaveGuard } from './lib/leave-guard.ts';
 import { useFormatValue } from './lib/dive-values.ts';
@@ -52,7 +54,7 @@ const FIELD_OF: Record<keyof Draft, OverridableField> = {
   maxDepth: 'maxDepthM', avgDepth: 'avgDepthM', waterTemperature: 'waterTemperatureC',
 };
 
-export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDone: () => void; focus?: 'notes' | undefined }) {
+export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDone: () => void; focus?: 'notes' | 'cylinders' | undefined }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const display = useDisplay();
@@ -63,6 +65,13 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
   const [notes, setNotes] = useState(d.notes ?? '');
   const [touched, setTouched] = useState<Set<OverridableField>>(new Set());
   const [reset, setReset] = useState<Set<OverridableField>>(new Set());
+  const [loadedCylinders] = useState(() => d.cylinders.map((c) => draftOfCylinder(c, units)));
+  // Opened to add Cylinders: the first one's fields are there already. Left empty, it is not saved.
+  const [cylinders, setCylinders] = useState(() => (focus === 'cylinders' && loadedCylinders.length === 0 ? [emptyDraft()] : loadedCylinders));
+  const typedCylinders = cylinders.filter((c) => !isBlank(c));
+  const cylindersChanged = !sameDrafts(typedCylinders, loadedCylinders, units);
+  const cylinderProblem = useCylinderProblem();
+  const cylindersFit = typedCylinders.every((c) => cylinderProblem(c) === null);
 
   const change = <K extends keyof Draft>(key: K, value: Draft[K]) => {
     const field = FIELD_OF[key];
@@ -102,7 +111,10 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
       }
       return unwrap(await api.PATCH('/api/dives/{id}', {
         params: { path: { id: d.id } },
-        body: { version: d.version, set, reset: [...reset], notes: notes.trim() === '' ? null : notes },
+        body: {
+          version: d.version, set, reset: [...reset], notes: notes.trim() === '' ? null : notes,
+          ...(cylindersChanged && { cylinders: cylindersOfDrafts(typedCylinders, units) }),
+        },
       }));
     },
     onSuccess: (updated) => {
@@ -114,7 +126,7 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
     },
   });
   // Unsaved changes: leaving the page or cancelling asks first (UI review B3).
-  const dirty = touched.size > 0 || reset.size > 0 || notes !== (d.notes ?? '');
+  const dirty = touched.size > 0 || reset.size > 0 || notes !== (d.notes ?? '') || cylindersChanged;
   useLeaveGuard(dirty && !save.isSuccess, t('dive.unsavedQuestion'));
   const cancel = () => {
     if (!dirty || confirm(t('dive.unsavedQuestion'))) onDone();
@@ -150,10 +162,10 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
   };
 
   return (
-    <Form className="form" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
+    <Form className="form" onSubmit={(e) => { e.preventDefault(); if (cylindersFit) save.mutate(); }}>
       <div className="form-grid">
         <div className="field-block">
-          <NumberField autoFocus={focus !== 'notes'} label={t('dive.number')} description={hint('number')} value={draft.number} onChange={(n) => change('number', n)} onInput={typing('number')} minValue={0} maxValue={100_000} step={1} />
+          <NumberField autoFocus={focus === undefined} label={t('dive.number')} description={hint('number')} value={draft.number} onChange={(n) => change('number', n)} onInput={typing('number')} minValue={0} maxValue={100_000} step={1} />
           {origin('number')}
         </div>
         <div className="field-block">
@@ -184,6 +196,7 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
           {origin('waterTemperatureC')}
         </div>
       </div>
+      <CylinderFields dive={d} drafts={cylinders} onChange={setCylinders} autoFocus={focus === 'cylinders'} />
       <TextArea autoFocus={focus === 'notes'} label={t('dive.notes')} value={notes} onChange={setNotes} maxLength={20_000} />
       {save.error && (
         <Notice tone="danger">

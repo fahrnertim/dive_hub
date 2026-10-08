@@ -13,6 +13,7 @@ import {
 } from './dive-service.js';
 import { valuesOfDive, type DiveValues } from './dive-values.js';
 import { createLogbookChecks } from './logbook-checks.js';
+import { takeCylinders } from './cylinders.js';
 import { writeRevision, type Actor, type Changes } from './revisions.js';
 
 type DiveRow = typeof dive.$inferSelect;
@@ -114,9 +115,11 @@ export function createMerging(db: Db) {
 
         // The other's Recordings first: which becomes primary is attaching's rule (ADR 0016, 0030). Each is a Recording
         // added in the history; the merge itself is one entry after them.
+        // Its Cylinders before them, so that a tank pod's data makes none beside the ones the other Dive has (ADR 0045).
+        const cylinders = await takeCylinders(tx, kept.id, other.id);
         for (const rec of await liveRecordings(tx, other.id)) await attachRecording(tx, kept.id, rec.id, actor, 'attach');
 
-        const extra: Changes = { mergedFrom: { from: null, to: other.id } };
+        const extra: Changes = { mergedFrom: { from: null, to: other.id }, ...cylinders };
         const before = await participantsOf(tx, kept.id);
         const added = (await participantsOf(tx, other.id)).filter((p) => p.diverId !== kept.diverId && !before.some((k) => k.diverId === p.diverId));
         if (added.length > 0) {

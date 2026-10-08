@@ -1,7 +1,7 @@
 import { run, type Runner } from 'graphile-worker';
 import type pg from 'pg';
 import type { FastifyBaseLogger } from 'fastify';
-import { BACKFILL_POSITIONS_TASK, EXPIRE_WAITING_IMPORTS_TASK, PROCESS_IMPORT_TASK, type ImportService } from './imports/import-service.js';
+import { BACKFILL_POSITIONS_TASK, EXPIRE_WAITING_IMPORTS_TASK, FILL_CYLINDERS_TASK, PROCESS_IMPORT_TASK, type ImportService } from './imports/import-service.js';
 import { IMPORT_SITES_TASK, type SiteImportService } from './sites/import/site-import-service.js';
 import type { AiAccessService } from './mcp/access-service.js';
 import type { AssessmentService } from './assessment/assessment-service.js';
@@ -53,10 +53,15 @@ export async function startWorker(
         const read = await imports.backfillPositions();
         if (read > 0) log.info({ read }, 'read positions of earlier Recordings');
       },
+      [FILL_CYLINDERS_TASK]: async () => {
+        const filled = await imports.fillCylinders();
+        if (filled > 0) log.info({ filled }, 'made the Cylinders of earlier Dives from their tank pod data');
+      },
     },
   });
   // Once per start; the job key keeps it to one queued job however many workers start.
   await runner.addJob(BACKFILL_POSITIONS_TASK, {}, { jobKey: BACKFILL_POSITIONS_TASK });
+  await runner.addJob(FILL_CYLINDERS_TASK, {}, { jobKey: FILL_CYLINDERS_TASK });
   await runner.addJob(ASSESS_DIVES_TASK, {}, { jobKey: ASSESS_DIVES_TASK });
   return runner;
 }

@@ -234,6 +234,12 @@ export const divesQuery = (p: LogbookParams = {}) => queryOptions({
 async function fetchDive(id: string) {
   return unwrap(await api.GET('/api/dives/{id}', { params: { path: { id } } }));
 }
+async function fetchCylinderCatalogue() {
+  return unwrap(await api.GET('/api/cylinder-catalogue'));
+}
+/** The cylinder catalogue (ADR 0031): a list in the server's code, the same until the next release. */
+export const cylinderCatalogueQuery = () =>
+  queryOptions({ queryKey: ['cylinder-catalogue'] as const, queryFn: fetchCylinderCatalogue, staleTime: Infinity });
 async function fetchRevisions(id: string) {
   return unwrap(await api.GET('/api/dives/{id}/revisions', { params: { path: { id } } }));
 }

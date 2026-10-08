@@ -9,7 +9,7 @@ import { bandSeconds, clock, formatRate } from './lib/assessment.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { mixName } from './lib/logbook.ts';
 import { nearest, perMinute, summarize } from './lib/profile.ts';
-import { tanksOf, type RecordedGas, type Tank } from './lib/tanks.ts';
+import { tanksOf, type RecordedGas, type Tank, type TiedCylinder } from './lib/tanks.ts';
 import { depthIn, pressureIn, temperatureIn } from './lib/units.ts';
 import { Notice, Table } from './ui/index.ts';
 
@@ -125,8 +125,10 @@ function TankStrip({ tanks, names, minutes, syncKey, describedBy }: {
  * tanks a tank pod measured (`gases` and `sacLpm` are the Recording's summary of them). `children` sit under the
  * charts, before the profile as a table: what recorded it.
  */
-export function DepthProfile({ recordingId, gases, sacLpm, children }: {
-  recordingId: string; gases?: RecordedGas[] | undefined; sacLpm?: number | undefined; children?: ReactNode;
+export function DepthProfile({ recordingId, gases, sacLpm, cylinders, children }: {
+  recordingId: string; gases?: RecordedGas[] | undefined; sacLpm?: number | undefined;
+  /** The Dive's Cylinders tied to this Recording's pressure series. */
+  cylinders?: TiedCylinder[] | undefined; children?: ReactNode;
 }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
@@ -277,7 +279,7 @@ export function DepthProfile({ recordingId, gases, sacLpm, children }: {
   // display.duration is recreated each render; units and locale capture what it depends on.
   }, [samples.data, recordingId, units, locale, depthUnit, temperatureUnit, t, dark]);
 
-  const tanks = useMemo(() => tanksOf(samples.data?.series ?? [], gases), [samples.data, gases]);
+  const tanks = useMemo(() => tanksOf(samples.data?.series ?? [], gases, cylinders), [samples.data, gases, cylinders]);
 
   if (samples.error) return <><Notice tone="danger">{errorText(samples.error)}</Notice>{children}</>;
   const depth = samples.data?.series.find((s) => s.channel === 'depth');

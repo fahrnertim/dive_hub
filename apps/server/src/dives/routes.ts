@@ -1,6 +1,6 @@
 // One Dive: its values (with Overrides), Recordings, editing, Primary recording, history (ADR 0015); its water
 // type from its site, and whether the computer was set to other water (ADR 0025).
-import { and, desc, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
@@ -8,11 +8,13 @@ import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import type { Db } from '../db/client.js';
 import {
-  OVERRIDABLE_FIELDS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, device, dive, diveSite, diverManagement, importJob, recording, revision, sampleSeries, user,
+  CYLINDER_MATERIALS, OVERRIDABLE_FIELDS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, device, dive, diveSite, diverManagement, importJob, recording, revision, sampleSeries, user,
   type RecordingSummary,
 } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
 import { DECO_MODELS, DIVE_MODES, GAS_CIRCUITS, SITE_WATER_TYPES, WATER_TYPES } from '../vocabulary.js';
+import { CYLINDER_CATALOGUE } from './cylinder-catalogue.js';
+import { CylinderError, cylindersOf, withoutPressures } from './cylinders.js';
 import { DiveError, participantsOf, type DiveService } from './dive-service.js';
 import type { Merging } from './merging.js';
 import { LOGBOOK_CHECK_RULES } from './logbook-check-rules.js';
@@ -104,6 +106,30 @@ const Participant = Type.Object({
   role: Role,
 });
 
+const SeriesRef = Type.Object({
+  recordingId: Type.String({ format: 'uuid' }),
+  channel: Type.String({ maxLength: 40, description: 'A tank pod\'s pressure channel of that Recording: tankPressure, further pods tankPressure:<n>' }),
+}, { additionalProperties: false, description: 'The pressure series of one of the Dive\'s Recordings that measured this Cylinder' });
+const CylinderValues = {
+  volumeL: Nullable(Type.Number({ exclusiveMinimum: 0, maximum: 100, description: 'Water volume in litres' })),
+  workingPressureBar: Nullable(Type.Number({ exclusiveMinimum: 0, maximum: 500 })),
+  material: Nullable(Type.Enum([...CYLINDER_MATERIALS])),
+  gas: Nullable(Type.Object({
+    o2: Type.Number({ minimum: 1, maximum: 100 }), he: Type.Number({ minimum: 0, maximum: 99 }),
+  }, { additionalProperties: false, description: 'Oxygen and helium in percent' })),
+  startPressureBar: Nullable(Type.Number({ minimum: 0, maximum: 500 })),
+  endPressureBar: Nullable(Type.Number({ minimum: 0, maximum: 500, description: 'Not above the start pressure' })),
+};
+const CylinderView = Type.Object({
+  ...CylinderValues,
+  fromPod: Type.Boolean({ description: 'An import made it from a tank pod\'s data and it still has the pod\'s series: clients say so (docs/spec/clients.md)' }),
+  series: Nullable(SeriesRef),
+});
+const CylinderInput = Type.Object({
+  ...Type.Partial(Type.Object(CylinderValues)).properties,
+  series: Type.Optional(Nullable(SeriesRef)),
+}, { additionalProperties: false });
+
 const RecordingView = Type.Object({
   id: Type.String(),
   isPrimary: Type.Boolean(),
@@ -145,6 +171,7 @@ const DiveView = Type.Object({
     description: 'Where the Device of the Primary recording placed the dive: its exit, else its entry. Private like the Dive',
   })),
   recordings: Type.Array(RecordingView),
+  cylinders: Type.Array(CylinderView, { description: 'The Dive\'s Cylinders in their order (ADR 0045)' }),
   participants: Type.Array(Participant, { description: 'Buddies first, then guides and instructors (ADR 0028)' }),
   verificationCodes: Type.Array(Type.Object({
     kind: Type.Enum(['centre', 'professional'], { description: 'Whose code it is: a Dive centre\'s (centre is set) or a professional\'s (diver is set)' }),
@@ -164,6 +191,11 @@ const EditBody = Type.Object({
   reset: Type.Optional(Type.Array(Field)),
   notes: Type.Optional(Nullable(Type.String({ maxLength: 20_000 }))),
   siteId: Type.Optional(Nullable(Type.String({ format: 'uuid', description: 'The Dive site, or null for none' }))),
+  cylinders: Type.Optional(Type.Array(CylinderInput, {
+    maxItems: 12,
+    description: 'The Dive\'s Cylinders as one list, replacing the ones it has; a value left out is unknown. 400 cylinder_invalid for an end '
+      + 'pressure above the start, a gas over 100 % or a series twice; 400 cylinder_series_not_found for a series the Dive\'s Recordings don\'t have',
+  })),
 });
 
 const RevisionView = Type.Object({
@@ -292,6 +324,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
 
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof DiveError) return reply.code(STATUS[error.code]).send(problem(error.code));
+    if (error instanceof CylinderError) return reply.code(400).send(problem(error.code));
     if (error instanceof ProviderServiceError) return replyProviderError(error, reply);
     throw error;
   });
@@ -342,6 +375,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
         durationSeconds: r.durationSeconds, maxDepthM: r.maxDepthM, parser: r.parser,
         summary: r.summary as RecordingSummary, channels,
       })),
+      cylinders: await cylindersOf(db, row.id),
       participants: await participantsOf(db, row.id),
       verificationCodes: [
         ...(await centres.codesOfDive(row.id)).map((c) => ({ kind: 'centre' as const, diver: null, ...c })),
@@ -362,17 +396,60 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
 
   app.patch('/dives/:id', {
     schema: {
-      summary: 'Edit a Dive: set values (they become Overrides), reset Overrides, change notes or the Dive site',
+      summary: 'Edit a Dive: set values (they become Overrides), reset Overrides, change notes, the Dive site or the Cylinders',
       description: 'Send the version you started from; if the Dive changed meanwhile the answer is 409 dive_changed.',
       params: IdParams, body: EditBody, response: { 200: DiveView, 400: Problem, 404: Problem, 409: Problem },
     },
   }, async (request) => {
-    const { version, set, reset, notes, siteId } = request.body;
+    const { version, set, reset, notes, siteId, cylinders } = request.body;
     await dives.edit(request.user!.id, request.params.id, {
       version, ...(set && { set: fromValues(set) }), ...(reset && { reset }), ...(notes !== undefined && { notes }),
-      ...(siteId !== undefined && { siteId }),
+      ...(siteId !== undefined && { siteId }), ...(cylinders && { cylinders }),
     });
     return view((await findDive(request, request.params.id))!);
+  });
+
+  app.get('/cylinder-catalogue', {
+    schema: {
+      summary: 'Common cylinders: picking one fills a Cylinder\'s volume, working pressure and material (ADR 0031)',
+      description: 'A list in code, the same for everyone. The Cylinder keeps the values, not the entry; any value can be typed instead. '
+        + 'Clients name an entry by its trade name, else by material, size and pressure (docs/spec/clients.md).',
+      response: {
+        200: Type.Array(Type.Object({
+          id: Type.String(),
+          tradeName: Nullable(Type.String({ description: 'The name it is sold under, the same in every language (AL80)' })),
+          twin: Type.Boolean({ description: 'Two cylinders on one manifold: volumeL is that of both' }),
+          volumeL: Type.Number(),
+          workingPressureBar: Type.Number(),
+          material: Type.Enum([...CYLINDER_MATERIALS]),
+        })),
+      },
+    },
+  }, async () => [...CYLINDER_CATALOGUE]);
+
+  app.get('/dives/:id/same-as-last', {
+    schema: {
+      summary: '"Same as last dive": what the Diver\'s previous Dive had, to put into this Dive\'s form',
+      description: 'The Cylinders of the Diver\'s Dive before this one by start time, without their pressures and their series (ADR 0031, 0045). '
+        + 'Nothing is changed: the client fills its form and the User saves (docs/spec/clients.md). `diveId` is null for a Diver\'s first Dive.',
+      params: IdParams,
+      response: {
+        200: Type.Object({
+          diveId: Nullable(Type.String({ description: 'The previous Dive' })),
+          cylinders: Type.Array(Type.Object({
+            volumeL: CylinderValues.volumeL, workingPressureBar: CylinderValues.workingPressureBar, material: CylinderValues.material, gas: CylinderValues.gas,
+          })),
+        }),
+        404: Problem,
+      },
+    },
+  }, async (request, reply) => {
+    const row = await findDive(request, request.params.id);
+    if (!row) return reply.code(404).send(problem('dive_not_found'));
+    const [previous] = await db.select({ id: dive.id }).from(dive)
+      .where(and(eq(dive.diverId, row.diverId), isNull(dive.deletedAt), lt(dive.startsAt, row.startsAt)))
+      .orderBy(desc(dive.startsAt), desc(dive.id)).limit(1);
+    return { diveId: previous?.id ?? null, cylinders: previous ? (await cylindersOf(db, previous.id)).map(withoutPressures) : [] };
   });
 
   app.put('/dives/:id/participants', {

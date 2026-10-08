@@ -8,6 +8,7 @@ import {
 import {
   columnsOf, plain, sameValue, valuesFromRecording, valuesOfDive, type DiveValues,
 } from './dive-values.js';
+import { fillCylindersFromRecording, setCylinders, untieRecording, type CylinderInput } from './cylinders.js';
 import { writeRevision, type Actor, type Changes, type RevisionCause } from './revisions.js';
 import { liveSite, siteRef } from '../sites/dive-site-link.js';
 import { keepApart, keepRestored } from './logbook-check-answers.js';
@@ -31,6 +32,8 @@ export interface DiveEdit {
   notes?: string | null;
   /** The Dive site, or null for none (the Dive's own value, ADR 0020). */
   siteId?: string | null;
+  /** The Dive's Cylinders as one list, in their order (the Dive's own values, ADR 0045). */
+  cylinders?: CylinderInput[];
 }
 
 type DiveRow = typeof dive.$inferSelect;
@@ -149,7 +152,9 @@ export async function createDiveFromRecording(
     waterTemperatureC: v.waterTemperatureC, primaryRecordingId: rec.id,
   }).returning({ id: dive.id });
   await tx.update(recording).set({ diveId: created!.id, updatedAt: new Date() }).where(eq(recording.id, rec.id));
-  await writeRevision(tx, 'dive', created!.id, actor, cause, { primaryRecordingId: { from: null, to: rec.id } });
+  await writeRevision(tx, 'dive', created!.id, actor, cause, {
+    primaryRecordingId: { from: null, to: rec.id }, ...(await fillCylindersFromRecording(tx, created!.id, rec)),
+  });
   return created!.id;
 }
 
@@ -161,6 +166,9 @@ export async function createDiveFromRecording(
 export async function attachRecording(tx: Tx, diveId: string, recordingId: string, actor: Actor, cause: RevisionCause) {
   await tx.update(recording).set({ diveId, updatedAt: new Date() }).where(eq(recording.id, recordingId));
   const [current] = await tx.select().from(dive).where(eq(dive.id, diveId)).for('update');
+  const [rec] = await tx.select().from(recording).where(eq(recording.id, recordingId));
+  // A tank pod's data makes the Dive's Cylinders where it has none (ADR 0045).
+  const changes: Changes = { recordings: { from: null, to: recordingId }, ...(current && rec && (await fillCylindersFromRecording(tx, diveId, rec))) };
   const takesOver = !!current && (!current.primaryRecordingId
     || ((await isProviderCopy(tx, current.primaryRecordingId)) && !(await isProviderCopy(tx, recordingId))));
   if (current && takesOver) {
@@ -168,11 +176,11 @@ export async function attachRecording(tx: Tx, diveId: string, recordingId: strin
     await applyToDive(tx, current, {
       values: merge(valuesOfDive(current), primary.values, current.overrides), overrides: current.overrides, notes: current.notes,
       primaryRecordingId: recordingId, offsetSource: primary.offsetSource,
-    }, actor, cause, { recordings: { from: null, to: recordingId } });
+    }, actor, cause, changes);
     return;
   }
   await tx.update(dive).set({ version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
-  await writeRevision(tx, 'dive', diveId, actor, cause, { recordings: { from: null, to: recordingId } });
+  await writeRevision(tx, 'dive', diveId, actor, cause, changes);
 }
 
 export function createDiveService(db: Db) {
@@ -195,7 +203,7 @@ export function createDiveService(db: Db) {
           values, overrides, notes: edit.notes === undefined ? current.notes : edit.notes,
           primaryRecordingId: current.primaryRecordingId, ...(edit.siteId !== undefined && { siteId: edit.siteId }),
           ...(primary && { offsetSource: primary.offsetSource }),
-        }, { type: 'user', id: userId }, 'edit');
+        }, { type: 'user', id: userId }, 'edit', edit.cylinders ? await setCylinders(tx, diveId, edit.cylinders) : {});
       });
     },
 
@@ -263,7 +271,7 @@ export function createDiveService(db: Db) {
         await applyToDive(tx, current, {
           values, overrides: current.overrides, notes: current.notes, primaryRecordingId: primary,
           ...(taken && { offsetSource: taken.offsetSource }),
-        }, actor, 'detach', { recordings: { from: rec.id, to: null } });
+        }, actor, 'detach', { recordings: { from: rec.id, to: null }, ...(await untieRecording(tx, current.id, rec.id)) });
         const created = await createDiveFromRecording(tx, rec, current.diverId, actor, 'detach');
         // Split off on purpose: the two Dives at the same time are two dives (ADR 0038), not a check to answer.
         await keepApart(tx, userId, created, [current.id]);
@@ -322,7 +330,7 @@ export function createDiveService(db: Db) {
  * After an Import changed a Dive's Primary recording, values without Override follow it.
  * Runs inside the Import's transaction.
  */
-export async function refreshFromPrimary(tx: Tx, diveId: string, actor: Actor, cause: RevisionCause): Promise<void> {
+export async function refreshFromPrimary(tx: Tx, diveId: string, actor: Actor, cause: RevisionCause, extra: Changes = {}): Promise<void> {
   const [current] = await tx.select().from(dive).where(eq(dive.id, diveId)).for('update');
   if (!current) return;
   const primary = await primaryOf(tx, current.primaryRecordingId);
@@ -330,7 +338,7 @@ export async function refreshFromPrimary(tx: Tx, diveId: string, actor: Actor, c
   await applyToDive(tx, current, {
     values, overrides: current.overrides, notes: current.notes, primaryRecordingId: current.primaryRecordingId,
     ...(primary && { offsetSource: primary.offsetSource }),
-  }, actor, cause);
+  }, actor, cause, extra);
 }
 
 export type DiveService = ReturnType<typeof createDiveService>;

@@ -139,8 +139,15 @@ test('review material', async ({ page, request, browser }) => {
     // A tank pod's pressure under the profile (ADR 0045). Last, so the logbook above doesn't gain this dive.
     await page.goto(`/#/dives/${await tankPodDive(request)}`); await page.getByRole('img', { name: 'Tank pressure' }).waitFor();
     await capture(page, '03h-dive-tank-pressure');
+    // Its Cylinder, made from the pod's data, in the Dive's form (ADR 0045, slice 2).
+    await page.getByRole('button', { name: 'Edit dive' }).click(); await page.getByRole('group', { name: /Cylinder 1/ }).waitFor();
+    await capture(page, '03i-dive-cylinders-form');
+    await page.getByRole('button', { name: 'Cancel' }).click();
     await page.setViewportSize({ width: 390, height: 844 });
     await capture(page, '03h-dive-tank-pressure-phone', { aria: false });
+    await page.getByRole('button', { name: 'Edit dive' }).click(); await page.getByRole('group', { name: /Cylinder 1/ }).waitFor();
+    await capture(page, '03i-dive-cylinders-form-phone', { aria: false });
+    await page.getByRole('button', { name: 'Cancel' }).click();
     await page.setViewportSize({ width: 1280, height: 900 });
   }
   if (want('divers')) {

@@ -485,7 +485,9 @@
     "code_not_recognised": "This isn’t a code Dive Hub knows. Paste the whole text of the QR code.",
     "code_not_a_person": "This is a dive centre’s code, not a buddy’s or a dive professional’s.",
     "diver_choice_needed": "No diver has this account yet. Choose who it is, or add a new diver.",
-    "diver_has_other_account": "This diver has another SSI account, so the code is someone else’s."
+    "diver_has_other_account": "This diver has another SSI account, so the code is someone else’s.",
+    "cylinder_invalid": "A cylinder’s values don’t fit: the pressure at the end is above the start, the gas is over 100 %, or one tank pod is on two cylinders.",
+    "cylinder_series_not_found": "This dive has no such tank pod. Reload it and try again."
   },
   "vocabulary": {
     "waterType": {
@@ -517,6 +519,11 @@
     "circuit": {
       "open_circuit": "open circuit",
       "diluent": "diluent"
+    },
+    "cylinderMaterial": {
+      "aluminium": "Aluminium",
+      "steel": "Steel",
+      "carbon": "Carbon"
     }
   },
   "history": {
@@ -595,7 +602,9 @@
       "position": "from where the dive was",
       "nearby": "from dives around it",
       "unknown": "unknown"
-    }
+    },
+    "cylindersSet": "Cylinders: {{list}}",
+    "cylindersRemoved": "Cylinders removed"
   },
   "decisions": {
     "title": "Recordings without a dive",
@@ -1295,6 +1304,38 @@
         "not_at_provider": "Sent without {{names}}: they aren’t in your SSI buddy list. Add them in SSI’s app by scanning their buddy QR code, then update the dive."
       }
     }
+  },
+  "cylinders": {
+    "title": "Cylinders",
+    "add": "Add cylinder",
+    "addFirst": "Add cylinders",
+    "remove": "Remove cylinder {{n}}",
+    "n": "Cylinder {{n}}",
+    "sameAsLast": "Same as last dive",
+    "lastHasNone": "The last dive has no cylinders.",
+    "catalogue": "Fill in from a common cylinder",
+    "catalogueEntry": "{{material}} {{volume}}, {{pressure}}",
+    "catalogueNamed": "{{name}} ({{volume}}, {{pressure}})",
+    "catalogueTwin": "{{material}} 2 × {{volume}}, {{pressure}}",
+    "volume": "Volume",
+    "workingPressure": "Working pressure",
+    "material": "Material",
+    "materialUnknown": "Not known",
+    "oxygen": "Oxygen",
+    "helium": "Helium",
+    "startPressure": "Pressure at the start",
+    "endPressure": "Pressure at the end",
+    "endAboveStart": "The pressure at the end is above the pressure at the start.",
+    "gasOver100": "Oxygen and helium are more than 100 % together.",
+    "series": "Pressure measured by",
+    "noSeries": "No tank pod",
+    "pod": "Tank pod on {{device}}",
+    "podN": "Tank pod {{n}} on {{device}}",
+    "fromPod": "From the tank pod",
+    "startAndEnd": "{{start}} at the start, {{end}} at the end, {{used}} used",
+    "startOnly": "{{start}} at the start",
+    "endOnly": "{{end}} at the end",
+    "unknown": "Nothing known about it"
   },
   "participants": {
     "title": "Buddies and guides",

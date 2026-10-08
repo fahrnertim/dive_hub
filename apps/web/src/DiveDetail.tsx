@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
 import { api, ApiError, diveNeighboursQuery, diveProvidersQuery, PAGE_SIZE, diveQuery, diversQuery, keys, unwrap, type DiveView, type NeighboursView, type OverridableField, type RecordingSummary } from './api.ts';
 import { AssessmentPanel, AssessmentProvider } from './Assessment.tsx';
 import { DeleteDiveDialog } from './DeleteDive.tsx';
 import { DepthProfile } from './DepthProfile.tsx';
+import { CylinderList } from './Cylinders.tsx';
 import { DiveEditForm } from './DiveEditForm.tsx';
 import { DiveHistory } from './DiveHistory.tsx';
 import { MergeHint, MergePicker } from './MergeDive.tsx';
@@ -36,7 +37,7 @@ export function DiveDetail({ id, recordingId, list = '' }: { id: string; recordi
   const position = neighbours.data?.position;
   const logbook = logbookHrefOf(position ? listQuery({ ...logbookParams(new URLSearchParams(list)), page: Math.ceil(position / PAGE_SIZE) }) : list);
   // Editing opens at the dive number, or at the notes when asked for from there.
-  const [editing, setEditing] = useState<false | 'values' | 'notes'>(false);
+  const [editing, setEditing] = useState<false | 'values' | 'notes' | 'cylinders'>(false);
   const [moving, setMoving] = useState(false);
   const [merging, setMerging] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -120,8 +121,8 @@ export function DiveDetail({ id, recordingId, list = '' }: { id: string; recordi
         {/* The dive's facts and its profile are one panel: the profile is on the first screen (UI redesign, slice A). */}
         <Panel>
           {editing
-            ? <DiveEditForm key={d.version} dive={d} focus={editing === 'notes' ? 'notes' : undefined} onDone={() => setEditing(false)} />
-            : <DiveFacts dive={d} onAddNotes={() => setEditing('notes')} />}
+            ? <DiveEditForm key={d.version} dive={d} focus={editing === 'values' ? undefined : editing} onDone={() => setEditing(false)} />
+            : <DiveFacts dive={d} onAddNotes={() => setEditing('notes')} onAddCylinders={() => setEditing('cylinders')} />}
           <Recordings dive={d} initial={recordingId} list={list} />
         </Panel>
         <AssessmentPanel dive={d} diverName={diverName} />
@@ -291,7 +292,7 @@ function useGasNames() {
  * What the Dive was: its values, the gas of the Primary recording, where, with whom, and the notes. Who dived along
  * and the notes are facts too; empty, each is the way to add them.
  */
-function DiveFacts({ dive: d, onAddNotes }: { dive: DiveView; onAddNotes: () => void }) {
+function DiveFacts({ dive: d, onAddNotes, onAddCylinders }: { dive: DiveView; onAddNotes: () => void; onAddCylinders: () => void }) {
   const { t } = useTranslation();
   const format = useFormatValue();
   const display = useDisplay();
@@ -326,6 +327,11 @@ function DiveFacts({ dive: d, onAddNotes }: { dive: DiveView; onAddNotes: () => 
           </Fact>
         )}
         <Participants dive={d} />
+        {d.cylinders.length === 0 && (
+          <Fact label={t('cylinders.title')}>
+            <Button variant="quiet" size="small" icon="add" onPress={onAddCylinders}>{t('cylinders.addFirst')}</Button>
+          </Fact>
+        )}
         {!d.notes && (
           <Fact label={t('dive.notes')}>
             <Button variant="quiet" size="small" icon="add" onPress={onAddNotes}>{t('dive.addNotes')}</Button>
@@ -333,6 +339,7 @@ function DiveFacts({ dive: d, onAddNotes }: { dive: DiveView; onAddNotes: () => 
         )}
       </dl>
       {picking && <SitePicker dive={d} onClose={() => setPicking(false)} />}
+      <CylinderList dive={d} />
       {d.notes && (
         <>
           <h2 className="subheading">{t('dive.notes')}</h2>
@@ -387,7 +394,7 @@ function Recordings({ dive: d, initial, list }: { dive: DiveView; initial: strin
     return (
       <div className="dive-recording">
         <h2 className="visually-hidden">{t('dive.recording')}</h2>
-        <RecordingDetails recording={recording} named />
+        <RecordingDetails recording={recording} cylinders={d.cylinders} named />
       </div>
     );
   }
@@ -416,7 +423,7 @@ function Recordings({ dive: d, initial, list }: { dive: DiveView; initial: strin
                 />
               </div>
               {makePrimary.error && <Notice tone="danger">{errorText(makePrimary.error)}</Notice>}
-              <RecordingDetails recording={r} />
+              <RecordingDetails recording={r} cylinders={d.cylinders} />
             </TabPanel>
           ))}
         </Tabs>
@@ -454,9 +461,14 @@ function NoRecording({ dive: d }: { dive: DiveView }) {
  * One Recording: its profile, and under it one line that says what recorded it (the device when no tab names it, the
  * dive mode, the deco model). Everything else the device says is a step away, as the profile's table is.
  */
-function RecordingDetails({ recording, named }: { recording: DiveView['recordings'][number]; named?: boolean }) {
+function RecordingDetails({ recording, cylinders, named }: { recording: DiveView['recordings'][number]; cylinders: DiveView['cylinders']; named?: boolean }) {
   const { t } = useTranslation();
   const display = useDisplay();
+  // The Dive's Cylinders tied to this Recording's pressure series: the profile's tanks speak of them (ADR 0045).
+  const tied = useMemo(
+    () => cylinders.flatMap((c) => (c.series?.recordingId === recording.id ? [{ ...c, channel: c.series.channel }] : [])),
+    [cylinders, recording.id],
+  );
   const gases = useGasNames()(recording.summary.gases);
   const s = recording.summary;
   const mode = s.diveMode && t(`vocabulary.diveMode.${s.diveMode}`);
@@ -497,7 +509,7 @@ function RecordingDetails({ recording, named }: { recording: DiveView['recording
   );
   return (
     <ErrorBoundary key={recording.id} fallback={<><Notice tone="danger">{t('dive.profileFailed')}</Notice>{about}</>}>
-      <DepthProfile recordingId={recording.id} gases={s.gases} sacLpm={s.sacLpm}>{about}</DepthProfile>
+      <DepthProfile recordingId={recording.id} gases={s.gases} sacLpm={s.sacLpm} cylinders={tied}>{about}</DepthProfile>
     </ErrorBoundary>
   );
 }

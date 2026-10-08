@@ -353,6 +353,19 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   profile's time axis, not as a third scale in the depth profile; tell several tanks apart by more than colour. Say
   the same in words (per tank: start, end, used; the pod's SAC) and in the profile's table. The series in their order
   belong to the gases that carry pressures, in theirs. *Web:* `DepthProfile.tsx`, `lib/tanks.ts`.
+- **Cylinders** ([ADR 0045](../decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md)): show a Dive's
+  `cylinders` in their order, each in words (size, material, working pressure, gas, start and end pressure and what
+  was used), and say which are `fromPod`. Editing sends the whole list with the Dive's edit (`cylinders` in
+  `PATCH /dives/{id}`): send back every Cylinder that stays, with its `series`, or it loses its tie and its mark; a
+  value left out is unknown. Pressures are typed in the User's pressure unit and sent in bar; send a value the User
+  didn't touch as it came, not as the form rounded it. Say at the Cylinder when the end pressure is above the start
+  (the API answers `cylinder_invalid`). Offer the pressure series of the Dive's Recordings (`channels` named
+  `tankPressure`, `tankPressure:<n>`) as "measured by". `GET /cylinder-catalogue` fills size, working pressure and
+  material when an entry is picked: name an entry by its `tradeName`, else by material, size and pressure (a `twin` as
+  2 x half its volume). "Same as last dive" (`GET /dives/{id}/same-as-last`) fills the form only; nothing is saved
+  until the User saves. A tank under the profile whose series a Cylinder is tied to takes the Cylinder's gas, size and
+  pressures. The history's change `cylinders` carries the list before and after.
+  *Web:* `Cylinders.tsx`, `lib/cylinders.ts`, `lib/tanks.ts`.
 - **A Dive's position is private.** Show it only to the Users who manage the Diver, as the API does.
 - **Participants** (ADR 0028, `participants` on the Dive): buddies, guides and instructors (`role`), any Diver of the
   instance but the Dive's own. Add them from a live search over every Diver by name (`GET /api/divers/search`, saying

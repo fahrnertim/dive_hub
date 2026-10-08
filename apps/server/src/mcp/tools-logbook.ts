@@ -3,6 +3,7 @@
 import { sql, type SQL } from 'drizzle-orm';
 import { Type, type Static } from 'typebox';
 import { PARTICIPANT_ROLES, type RecordingSummary } from '../db/schema.js';
+import { cylindersOf } from '../dives/cylinders.js';
 import { downsampleMinMax } from '../dives/downsample.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
 import { ProfileSummary, summariseProfile } from './profile.js';
@@ -265,6 +266,16 @@ const DiveDetail = (positions: boolean) => Type.Object({
       of_samples: Type.Integer({ description: 'How many samples the Recording holds; these are fewer, keeping the peaks' }),
     })),
   })),
+  cylinders: Type.Array(Type.Object({
+    volume_l: Type.Optional(Type.Number()),
+    working_pressure_bar: Type.Optional(Type.Number()),
+    material: Type.Optional(Type.String({ description: 'aluminium, steel or carbon' })),
+    gas: Type.Optional(Type.Object({ o2_percent: Type.Number(), he_percent: Type.Number() })),
+    start_pressure_bar: Type.Optional(Type.Number()),
+    end_pressure_bar: Type.Optional(Type.Number()),
+    from_tank_pod: Type.Boolean({ description: 'true: made by an import from a tank pod\'s readings, and still tied to them' }),
+    pressure_series: Type.Optional(Type.Object({ recording_id: Type.String(), channel: Type.String() }, { description: 'The Recording\'s sample series that measured this Cylinder' })),
+  }), { description: 'The tanks dived with, as logged on the Dive: what the user typed or corrected wins over a Recording\'s gases. A value left out is unknown; empty: none logged' }),
   // detailed only
   overridden_fields: Type.Optional(Type.Array(Type.String(), { description: 'Values the user set by hand; the others come from the Primary recording' })),
   from_provider: Type.Optional(Nullable(Type.String({ description: 'Set when the Dive was made from a logbook entry at a service such as SSI, without a dive computer\'s file' }))),
@@ -290,7 +301,7 @@ const computerOf = (s: RecordingSummary): Static<typeof Computer> => ({
 export const getDive = defineTool({
   name: 'logbook_get_dive',
   title: 'Get one Dive',
-  description: `Returns one of the user's Dives: its values, Dive site, notes, who else was on it, and a summary of the depth profile (deepest point and when, time-weighted average, minutes per 10 m band, temperature range). Use it after logbook_search_dives gave the id.
+  description: `Returns one of the user's Dives: its values, Dive site, notes, who else was on it, its Cylinders (size, gas, start and end pressure), and a summary of the depth profile (deepest point and when, time-weighted average, minutes per 10 m band, temperature range). Use it after logbook_search_dives gave the id.
 
 detail=detailed adds the Recordings (each dive computer's own data: gases, gradient factors, deco model, CNS, surface interval), which values the user set by hand, and longer notes. include_samples=true adds the profile itself, downsampled to about sample_points points per series (default: depth only); ask for it only when the shape of the dive matters, such as describing the ascent.
 
@@ -339,6 +350,16 @@ Error "dive not found": the id is wrong, the Dive was deleted, or it is not the 
       participants: (await participantsOf(ctx, [d.id])).get(d.id) ?? [],
       profile: depth ? summariseProfile(depth, seriesOf('temperature')) : null,
       profile_channels: primary?.channels ?? [],
+      cylinders: (await cylindersOf(ctx.tx, d.id)).map((c) => ({
+        ...(c.volumeL !== null && { volume_l: c.volumeL }),
+        ...(c.workingPressureBar !== null && { working_pressure_bar: c.workingPressureBar }),
+        ...(c.material && { material: c.material }),
+        ...(c.gas && { gas: { o2_percent: c.gas.o2, he_percent: c.gas.he } }),
+        ...(c.startPressureBar !== null && { start_pressure_bar: round(c.startPressureBar, 1)! }),
+        ...(c.endPressureBar !== null && { end_pressure_bar: round(c.endPressureBar, 1)! }),
+        from_tank_pod: c.fromPod,
+        ...(c.series && { pressure_series: { recording_id: c.series.recordingId, channel: c.series.channel } }),
+      })),
       ...(a.include_samples && primary && {
         samples: {
           recording_id: primary.id,

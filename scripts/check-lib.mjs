@@ -18,7 +18,7 @@ const AREAS = [
   // The scanner for verification codes (ADR 0043): on the new centre form, where a centre's number is set, and where a diver's code is taken.
   [/^apps\/web\/src\/CodeScanner\.tsx$|^apps\/web\/src\/lib\/qr-reader\.ts$/, ['@sites', '@divers']],
   [/^apps\/web\/src\/lib\/address-search\.ts$/, ['@sites', '@dives']],
-  [/^apps\/web\/src\/(DiveDetail|DiveEditForm|DiveHistory|DiveList|ProfileSketch|DepthProfile|Decisions|ReviewPage|ReviewStrip|ReviewRows|ImportPanel|DeleteDive|DeletedDives|MergeDive|LogbookChecks|Participants|Assessment)\.tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|tanks|sketch|logbook|review|devices|importable|deletion|assessment)\.ts$/, ['@dives']],
+  [/^apps\/web\/src\/(DiveDetail|DiveEditForm|DiveHistory|DiveList|ProfileSketch|DepthProfile|Decisions|ReviewPage|ReviewStrip|ReviewRows|ImportPanel|DeleteDive|DeletedDives|MergeDive|LogbookChecks|Participants|Assessment|Cylinders)\.tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|tanks|cylinders|sketch|logbook|review|devices|importable|deletion|assessment)\.ts$/, ['@dives']],
   // The Dive the deletion browser tests delete and restore (ADR 0026).
   [/^apps\/web\/e2e\/fixtures\/deletable-computer\.fit$/, ['@dives']],
   // The two computers' files of the Dives the merging browser tests merge (ADR 0038).

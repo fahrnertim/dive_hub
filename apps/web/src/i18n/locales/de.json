@@ -485,7 +485,9 @@
     "code_not_recognised": "Diesen Code kennt Dive Hub nicht. Füge den ganzen Text des QR-Codes ein.",
     "code_not_a_person": "Das ist der Code einer Tauchbasis, nicht der eines Buddys oder Tauchprofis.",
     "diver_choice_needed": "Dieses Konto hat noch kein Taucher. Wähle, wer es ist, oder füge einen neuen Taucher hinzu.",
-    "diver_has_other_account": "Dieser Taucher hat ein anderes SSI-Konto, der Code gehört also jemand anderem."
+    "diver_has_other_account": "Dieser Taucher hat ein anderes SSI-Konto, der Code gehört also jemand anderem.",
+    "cylinder_invalid": "Die Werte einer Flasche passen nicht: Der Druck am Ende liegt über dem am Anfang, das Gas hat mehr als 100 %, oder ein Flaschensender hängt an zwei Flaschen.",
+    "cylinder_series_not_found": "Dieser Tauchgang hat keinen solchen Flaschensender. Lade ihn neu und versuch es noch einmal."
   },
   "vocabulary": {
     "waterType": {
@@ -517,6 +519,11 @@
     "circuit": {
       "open_circuit": "offenes System",
       "diluent": "Diluent"
+    },
+    "cylinderMaterial": {
+      "aluminium": "Aluminium",
+      "steel": "Stahl",
+      "carbon": "Carbon"
     }
   },
   "history": {
@@ -595,7 +602,9 @@
       "position": "vom Ort des Tauchgangs",
       "nearby": "von Tauchgängen davor und danach",
       "unknown": "unbekannt"
-    }
+    },
+    "cylindersSet": "Flaschen: {{list}}",
+    "cylindersRemoved": "Flaschen entfernt"
   },
   "decisions": {
     "title": "Aufzeichnungen ohne Tauchgang",
@@ -1295,6 +1304,38 @@
         "not_at_provider": "Ohne {{names}} gesendet: Sie stehen nicht in deiner SSI-Buddyliste. Füge sie in SSIs App hinzu, indem du ihren Buddy-QR-Code scannst, und aktualisiere dann den Tauchgang."
       }
     }
+  },
+  "cylinders": {
+    "title": "Flaschen",
+    "add": "Flasche hinzufügen",
+    "addFirst": "Flaschen hinzufügen",
+    "remove": "Flasche {{n}} entfernen",
+    "n": "Flasche {{n}}",
+    "sameAsLast": "Wie beim letzten Tauchgang",
+    "lastHasNone": "Der letzte Tauchgang hat keine Flaschen.",
+    "catalogue": "Aus gängigen Flaschen ausfüllen",
+    "catalogueEntry": "{{material}} {{volume}}, {{pressure}}",
+    "catalogueNamed": "{{name}} ({{volume}}, {{pressure}})",
+    "catalogueTwin": "{{material}} 2 × {{volume}}, {{pressure}}",
+    "volume": "Volumen",
+    "workingPressure": "Betriebsdruck",
+    "material": "Material",
+    "materialUnknown": "Unbekannt",
+    "oxygen": "Sauerstoff",
+    "helium": "Helium",
+    "startPressure": "Druck am Anfang",
+    "endPressure": "Druck am Ende",
+    "endAboveStart": "Der Druck am Ende liegt über dem Druck am Anfang.",
+    "gasOver100": "Sauerstoff und Helium sind zusammen mehr als 100 %.",
+    "series": "Druck gemessen von",
+    "noSeries": "Kein Flaschensender",
+    "pod": "Flaschensender an {{device}}",
+    "podN": "Flaschensender {{n}} an {{device}}",
+    "fromPod": "Vom Flaschensender",
+    "startAndEnd": "{{start}} am Anfang, {{end}} am Ende, {{used}} verbraucht",
+    "startOnly": "{{start}} am Anfang",
+    "endOnly": "{{end}} am Ende",
+    "unknown": "Nichts darüber bekannt"
   },
   "participants": {
     "title": "Buddys und Guides",

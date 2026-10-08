@@ -234,10 +234,18 @@ the checks across dives. Deleted Dives keep their findings and count nowhere.
 
 **Cylinder** — per Dive: Equipment item (optional), volume, working pressure, material,
 gas mix (O2/He), start/end pressure, usage window.
-*Planned (ADR 0031, slice 19):* one or more per Dive (position); it may name the Diver's own cylinder item (ADR 0034,
-slice 23), which fills its values and counts the Dive for that item's schedules, material `aluminium`, `steel` or `carbon`; a **cylinder
-catalogue in code** (like the vocabularies: AL80, S80, steel 10/12/15 L, twins, …, each with its empty buoyancy in
-seawater and its source) fills the values when picked; any value can be typed. SSI gives one cylinder's volume, pressures
+*Implemented ([ADR 0045](../decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md), slice 2; table `cylinder`):*
+one or more per Dive (position), each with volume, working pressure, material `aluminium`, `steel` or `carbon`, gas and
+start and end pressure, any of them unknown; set as one list with the Dive's edit (one Revision with the list before
+and after). A Cylinder may be tied to one pressure series of one of the Dive's Recordings (Recording and channel); an
+import makes them where the Dive has none, from a tank pod's series (`from_pod`, kept while the Cylinder keeps the
+pod's series) and from each gas the computer gives a start or an end pressure for. A Recording split off takes its series along and the Cylinder stays; a merge gives the kept Dive the other's
+Cylinders where it has none. A **cylinder catalogue in code** (`GET /cylinder-catalogue`: AL80, AL63, AL100, AL40,
+steel 7 to 15 L, a twin) fills the values when picked; any value can be typed. "Same as last dive" is a route that
+changes nothing.
+*Planned (ADR 0031, slice 19):* it may name the Diver's own cylinder item (ADR 0034, slice 23), which fills its values
+and counts the Dive for that item's schedules; the catalogue's entries get their empty buoyancy in seawater and its
+source. SSI gives one cylinder's volume, pressures
 and a type ID (material once the IDs are looked up); FIT gives pressures (volume from message 147, later). UDDF:
 `tankmaterial`, `tankvolume`, `tankdata`. **Sensor mapping** links a
 Recording's pressure sensor (e.g. transmitter serial) to a Cylinder (Subsurface idea, B11).

@@ -862,6 +862,11 @@ test.describe('behaviour', () => {
     await expect(table.getByRole('columnheader', { name: 'Tank pressure' })).toBeVisible();
     await expect(table.getByRole('row').nth(1).getByRole('cell').last()).toHaveText('200 bar');
     await expectGoodPage(page);
+    // The pod's Cylinder in the Dive's form: a group of fields with its own name (ADR 0045, slice 2).
+    await page.getByRole('button', { name: 'Edit dive' }).click();
+    await expect(page.getByRole('group', { name: /Cylinder 1/ }).getByRole('textbox', { name: 'Pressure at the start (bar)' })).toHaveValue('200');
+    await expectGoodPage(page);
+    await page.getByRole('button', { name: 'Cancel' }).click();
 
     await setPreferences(request, { units: 'imperial' });
     await page.reload();

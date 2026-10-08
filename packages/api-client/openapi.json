@@ -266,6 +266,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -386,6 +388,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -556,6 +560,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -769,6 +775,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -889,6 +897,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -1465,6 +1475,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -1606,6 +1618,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -1771,6 +1785,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -1978,6 +1994,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -2205,6 +2223,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -2490,6 +2510,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -2610,6 +2632,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -2730,6 +2754,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -2889,6 +2915,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -3009,6 +3037,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -3129,6 +3159,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -3320,6 +3352,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -3440,6 +3474,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -3560,6 +3596,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -3751,6 +3789,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -3871,6 +3911,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -3991,6 +4033,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -4132,6 +4176,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -4252,6 +4298,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -4372,6 +4420,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -4534,6 +4584,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -4654,6 +4706,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -4774,6 +4828,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -5101,6 +5157,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -5221,6 +5279,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -5767,6 +5827,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -6132,6 +6194,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -6470,6 +6534,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -7188,6 +7254,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -7393,6 +7461,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -7517,6 +7587,7 @@
                     "waterMismatch",
                     "position",
                     "recordings",
+                    "cylinders",
                     "participants",
                     "verificationCodes"
                   ],
@@ -8083,6 +8154,148 @@
                           }
                         }
                       }
+                    },
+                    "cylinders": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "volumeL",
+                          "workingPressureBar",
+                          "material",
+                          "gas",
+                          "startPressureBar",
+                          "endPressureBar",
+                          "fromPod",
+                          "series"
+                        ],
+                        "properties": {
+                          "volumeL": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "maximum": 100,
+                                "description": "Water volume in litres"
+                              }
+                            ]
+                          },
+                          "workingPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "maximum": 500
+                              }
+                            ]
+                          },
+                          "material": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "enum": [
+                                  "aluminium",
+                                  "steel",
+                                  "carbon"
+                                ]
+                              }
+                            ]
+                          },
+                          "gas": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "o2",
+                                  "he"
+                                ],
+                                "properties": {
+                                  "o2": {
+                                    "type": "number",
+                                    "minimum": 1,
+                                    "maximum": 100
+                                  },
+                                  "he": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 99
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "description": "Oxygen and helium in percent"
+                              }
+                            ]
+                          },
+                          "startPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 500
+                              }
+                            ]
+                          },
+                          "endPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 500,
+                                "description": "Not above the start pressure"
+                              }
+                            ]
+                          },
+                          "fromPod": {
+                            "type": "boolean",
+                            "description": "An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md)"
+                          },
+                          "series": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "recordingId",
+                                  "channel"
+                                ],
+                                "properties": {
+                                  "recordingId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "channel": {
+                                    "type": "string",
+                                    "maxLength": 40,
+                                    "description": "A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n>"
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "description": "The pressure series of one of the Dive's Recordings that measured this Cylinder"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "The Dive's Cylinders in their order (ADR 0045)"
                     },
                     "participants": {
                       "type": "array",
@@ -8236,6 +8449,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -8324,7 +8539,7 @@
         }
       },
       "patch": {
-        "summary": "Edit a Dive: set values (they become Overrides), reset Overrides, change notes or the Dive site",
+        "summary": "Edit a Dive: set values (they become Overrides), reset Overrides, change notes, the Dive site or the Cylinders",
         "description": "Send the version you started from; if the Dive changed meanwhile the answer is 409 dive_changed.",
         "requestBody": {
           "required": true,
@@ -8459,6 +8674,136 @@
                         "description": "The Dive site, or null for none"
                       }
                     ]
+                  },
+                  "cylinders": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "volumeL": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "maximum": 100,
+                              "description": "Water volume in litres"
+                            }
+                          ]
+                        },
+                        "workingPressureBar": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "maximum": 500
+                            }
+                          ]
+                        },
+                        "material": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "enum": [
+                                "aluminium",
+                                "steel",
+                                "carbon"
+                              ]
+                            }
+                          ]
+                        },
+                        "gas": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "o2",
+                                "he"
+                              ],
+                              "properties": {
+                                "o2": {
+                                  "type": "number",
+                                  "minimum": 1,
+                                  "maximum": 100
+                                },
+                                "he": {
+                                  "type": "number",
+                                  "minimum": 0,
+                                  "maximum": 99
+                                }
+                              },
+                              "additionalProperties": false,
+                              "description": "Oxygen and helium in percent"
+                            }
+                          ]
+                        },
+                        "startPressureBar": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 500
+                            }
+                          ]
+                        },
+                        "endPressureBar": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 500,
+                              "description": "Not above the start pressure"
+                            }
+                          ]
+                        },
+                        "series": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "recordingId",
+                                "channel"
+                              ],
+                              "properties": {
+                                "recordingId": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "channel": {
+                                  "type": "string",
+                                  "maxLength": 40,
+                                  "description": "A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n>"
+                                }
+                              },
+                              "additionalProperties": false,
+                              "description": "The pressure series of one of the Dive's Recordings that measured this Cylinder"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "maxItems": 12,
+                    "description": "The Dive's Cylinders as one list, replacing the ones it has; a value left out is unknown. 400 cylinder_invalid for an end pressure above the start, a gas over 100 % or a series twice; 400 cylinder_series_not_found for a series the Dive's Recordings don't have"
                   }
                 }
               }
@@ -8498,6 +8843,7 @@
                     "waterMismatch",
                     "position",
                     "recordings",
+                    "cylinders",
                     "participants",
                     "verificationCodes"
                   ],
@@ -9064,6 +9410,148 @@
                           }
                         }
                       }
+                    },
+                    "cylinders": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "volumeL",
+                          "workingPressureBar",
+                          "material",
+                          "gas",
+                          "startPressureBar",
+                          "endPressureBar",
+                          "fromPod",
+                          "series"
+                        ],
+                        "properties": {
+                          "volumeL": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "maximum": 100,
+                                "description": "Water volume in litres"
+                              }
+                            ]
+                          },
+                          "workingPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "maximum": 500
+                              }
+                            ]
+                          },
+                          "material": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "enum": [
+                                  "aluminium",
+                                  "steel",
+                                  "carbon"
+                                ]
+                              }
+                            ]
+                          },
+                          "gas": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "o2",
+                                  "he"
+                                ],
+                                "properties": {
+                                  "o2": {
+                                    "type": "number",
+                                    "minimum": 1,
+                                    "maximum": 100
+                                  },
+                                  "he": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 99
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "description": "Oxygen and helium in percent"
+                              }
+                            ]
+                          },
+                          "startPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 500
+                              }
+                            ]
+                          },
+                          "endPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 500,
+                                "description": "Not above the start pressure"
+                              }
+                            ]
+                          },
+                          "fromPod": {
+                            "type": "boolean",
+                            "description": "An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md)"
+                          },
+                          "series": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "recordingId",
+                                  "channel"
+                                ],
+                                "properties": {
+                                  "recordingId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "channel": {
+                                    "type": "string",
+                                    "maxLength": 40,
+                                    "description": "A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n>"
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "description": "The pressure series of one of the Dive's Recordings that measured this Cylinder"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "The Dive's Cylinders in their order (ADR 0045)"
                     },
                     "participants": {
                       "type": "array",
@@ -9217,6 +9705,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -9337,6 +9827,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -9457,6 +9949,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -9657,6 +10151,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -9800,6 +10296,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -9920,6 +10418,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -10063,6 +10563,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -10174,6 +10676,317 @@
         }
       }
     },
+    "/api/cylinder-catalogue": {
+      "get": {
+        "summary": "Common cylinders: picking one fills a Cylinder's volume, working pressure and material (ADR 0031)",
+        "description": "A list in code, the same for everyone. The Cylinder keeps the values, not the entry; any value can be typed instead. Clients name an entry by its trade name, else by material, size and pressure (docs/spec/clients.md).",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "tradeName",
+                      "twin",
+                      "volumeL",
+                      "workingPressureBar",
+                      "material"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "tradeName": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "string",
+                            "description": "The name it is sold under, the same in every language (AL80)"
+                          }
+                        ]
+                      },
+                      "twin": {
+                        "type": "boolean",
+                        "description": "Two cylinders on one manifold: volumeL is that of both"
+                      },
+                      "volumeL": {
+                        "type": "number"
+                      },
+                      "workingPressureBar": {
+                        "type": "number"
+                      },
+                      "material": {
+                        "enum": [
+                          "aluminium",
+                          "steel",
+                          "carbon"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dives/{id}/same-as-last": {
+      "get": {
+        "summary": "\"Same as last dive\": what the Diver's previous Dive had, to put into this Dive's form",
+        "description": "The Cylinders of the Diver's Dive before this one by start time, without their pressures and their series (ADR 0031, 0045). Nothing is changed: the client fills its form and the User saves (docs/spec/clients.md). `diveId` is null for a Diver's first Dive.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "diveId",
+                    "cylinders"
+                  ],
+                  "properties": {
+                    "diveId": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "description": "The previous Dive"
+                        }
+                      ]
+                    },
+                    "cylinders": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "volumeL",
+                          "workingPressureBar",
+                          "material",
+                          "gas"
+                        ],
+                        "properties": {
+                          "volumeL": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "maximum": 100,
+                                "description": "Water volume in litres"
+                              }
+                            ]
+                          },
+                          "workingPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "maximum": 500
+                              }
+                            ]
+                          },
+                          "material": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "enum": [
+                                  "aluminium",
+                                  "steel",
+                                  "carbon"
+                                ]
+                              }
+                            ]
+                          },
+                          "gas": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "o2",
+                                  "he"
+                                ],
+                                "properties": {
+                                  "o2": {
+                                    "type": "number",
+                                    "minimum": 1,
+                                    "maximum": 100
+                                  },
+                                  "he": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 99
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "description": "Oxygen and helium in percent"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "import_not_waiting",
+                        "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "check_not_found",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "centre_not_found",
+                        "centre_changed",
+                        "centre_not_deletable",
+                        "centre_external_id_taken",
+                        "code_not_recognised",
+                        "code_not_a_person",
+                        "diver_choice_needed",
+                        "diver_has_other_account",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_unsupported",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/dives/{id}/participants": {
       "put": {
         "summary": "Set who else was on the Dive, as one list: any Diver of the instance (GET /divers/search) but the Dive's own, one role each",
@@ -10257,6 +11070,7 @@
                     "waterMismatch",
                     "position",
                     "recordings",
+                    "cylinders",
                     "participants",
                     "verificationCodes"
                   ],
@@ -10824,6 +11638,148 @@
                         }
                       }
                     },
+                    "cylinders": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "volumeL",
+                          "workingPressureBar",
+                          "material",
+                          "gas",
+                          "startPressureBar",
+                          "endPressureBar",
+                          "fromPod",
+                          "series"
+                        ],
+                        "properties": {
+                          "volumeL": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "maximum": 100,
+                                "description": "Water volume in litres"
+                              }
+                            ]
+                          },
+                          "workingPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "maximum": 500
+                              }
+                            ]
+                          },
+                          "material": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "enum": [
+                                  "aluminium",
+                                  "steel",
+                                  "carbon"
+                                ]
+                              }
+                            ]
+                          },
+                          "gas": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "o2",
+                                  "he"
+                                ],
+                                "properties": {
+                                  "o2": {
+                                    "type": "number",
+                                    "minimum": 1,
+                                    "maximum": 100
+                                  },
+                                  "he": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 99
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "description": "Oxygen and helium in percent"
+                              }
+                            ]
+                          },
+                          "startPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 500
+                              }
+                            ]
+                          },
+                          "endPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 500,
+                                "description": "Not above the start pressure"
+                              }
+                            ]
+                          },
+                          "fromPod": {
+                            "type": "boolean",
+                            "description": "An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md)"
+                          },
+                          "series": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "recordingId",
+                                  "channel"
+                                ],
+                                "properties": {
+                                  "recordingId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "channel": {
+                                    "type": "string",
+                                    "maxLength": 40,
+                                    "description": "A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n>"
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "description": "The pressure series of one of the Dive's Recordings that measured this Cylinder"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "The Dive's Cylinders in their order (ADR 0045)"
+                    },
                     "participants": {
                       "type": "array",
                       "items": {
@@ -10976,6 +11932,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -11096,6 +12054,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -11216,6 +12176,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -11363,6 +12325,7 @@
                     "waterMismatch",
                     "position",
                     "recordings",
+                    "cylinders",
                     "participants",
                     "verificationCodes"
                   ],
@@ -11930,6 +12893,148 @@
                         }
                       }
                     },
+                    "cylinders": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "volumeL",
+                          "workingPressureBar",
+                          "material",
+                          "gas",
+                          "startPressureBar",
+                          "endPressureBar",
+                          "fromPod",
+                          "series"
+                        ],
+                        "properties": {
+                          "volumeL": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "maximum": 100,
+                                "description": "Water volume in litres"
+                              }
+                            ]
+                          },
+                          "workingPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "maximum": 500
+                              }
+                            ]
+                          },
+                          "material": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "enum": [
+                                  "aluminium",
+                                  "steel",
+                                  "carbon"
+                                ]
+                              }
+                            ]
+                          },
+                          "gas": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "o2",
+                                  "he"
+                                ],
+                                "properties": {
+                                  "o2": {
+                                    "type": "number",
+                                    "minimum": 1,
+                                    "maximum": 100
+                                  },
+                                  "he": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 99
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "description": "Oxygen and helium in percent"
+                              }
+                            ]
+                          },
+                          "startPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 500
+                              }
+                            ]
+                          },
+                          "endPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 500,
+                                "description": "Not above the start pressure"
+                              }
+                            ]
+                          },
+                          "fromPod": {
+                            "type": "boolean",
+                            "description": "An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md)"
+                          },
+                          "series": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "recordingId",
+                                  "channel"
+                                ],
+                                "properties": {
+                                  "recordingId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "channel": {
+                                    "type": "string",
+                                    "maxLength": 40,
+                                    "description": "A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n>"
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "description": "The pressure series of one of the Dive's Recordings that measured this Cylinder"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "The Dive's Cylinders in their order (ADR 0045)"
+                    },
                     "participants": {
                       "type": "array",
                       "items": {
@@ -12082,6 +13187,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -12202,6 +13309,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -12322,6 +13431,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -12470,6 +13581,7 @@
                     "waterMismatch",
                     "position",
                     "recordings",
+                    "cylinders",
                     "participants",
                     "verificationCodes"
                   ],
@@ -13037,6 +14149,148 @@
                         }
                       }
                     },
+                    "cylinders": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "volumeL",
+                          "workingPressureBar",
+                          "material",
+                          "gas",
+                          "startPressureBar",
+                          "endPressureBar",
+                          "fromPod",
+                          "series"
+                        ],
+                        "properties": {
+                          "volumeL": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "maximum": 100,
+                                "description": "Water volume in litres"
+                              }
+                            ]
+                          },
+                          "workingPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "maximum": 500
+                              }
+                            ]
+                          },
+                          "material": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "enum": [
+                                  "aluminium",
+                                  "steel",
+                                  "carbon"
+                                ]
+                              }
+                            ]
+                          },
+                          "gas": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "o2",
+                                  "he"
+                                ],
+                                "properties": {
+                                  "o2": {
+                                    "type": "number",
+                                    "minimum": 1,
+                                    "maximum": 100
+                                  },
+                                  "he": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 99
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "description": "Oxygen and helium in percent"
+                              }
+                            ]
+                          },
+                          "startPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 500
+                              }
+                            ]
+                          },
+                          "endPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 500,
+                                "description": "Not above the start pressure"
+                              }
+                            ]
+                          },
+                          "fromPod": {
+                            "type": "boolean",
+                            "description": "An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md)"
+                          },
+                          "series": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "recordingId",
+                                  "channel"
+                                ],
+                                "properties": {
+                                  "recordingId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "channel": {
+                                    "type": "string",
+                                    "maxLength": 40,
+                                    "description": "A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n>"
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "description": "The pressure series of one of the Dive's Recordings that measured this Cylinder"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "The Dive's Cylinders in their order (ADR 0045)"
+                    },
                     "participants": {
                       "type": "array",
                       "items": {
@@ -13189,6 +14443,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -13309,6 +14565,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -13638,6 +14896,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -14197,6 +15457,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -14317,6 +15579,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -14477,6 +15741,7 @@
                     "waterMismatch",
                     "position",
                     "recordings",
+                    "cylinders",
                     "participants",
                     "verificationCodes"
                   ],
@@ -15044,6 +16309,148 @@
                         }
                       }
                     },
+                    "cylinders": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "volumeL",
+                          "workingPressureBar",
+                          "material",
+                          "gas",
+                          "startPressureBar",
+                          "endPressureBar",
+                          "fromPod",
+                          "series"
+                        ],
+                        "properties": {
+                          "volumeL": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "maximum": 100,
+                                "description": "Water volume in litres"
+                              }
+                            ]
+                          },
+                          "workingPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "maximum": 500
+                              }
+                            ]
+                          },
+                          "material": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "enum": [
+                                  "aluminium",
+                                  "steel",
+                                  "carbon"
+                                ]
+                              }
+                            ]
+                          },
+                          "gas": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "o2",
+                                  "he"
+                                ],
+                                "properties": {
+                                  "o2": {
+                                    "type": "number",
+                                    "minimum": 1,
+                                    "maximum": 100
+                                  },
+                                  "he": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 99
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "description": "Oxygen and helium in percent"
+                              }
+                            ]
+                          },
+                          "startPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 500
+                              }
+                            ]
+                          },
+                          "endPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 500,
+                                "description": "Not above the start pressure"
+                              }
+                            ]
+                          },
+                          "fromPod": {
+                            "type": "boolean",
+                            "description": "An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md)"
+                          },
+                          "series": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "recordingId",
+                                  "channel"
+                                ],
+                                "properties": {
+                                  "recordingId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "channel": {
+                                    "type": "string",
+                                    "maxLength": 40,
+                                    "description": "A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n>"
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "description": "The pressure series of one of the Dive's Recordings that measured this Cylinder"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "The Dive's Cylinders in their order (ADR 0045)"
+                    },
                     "participants": {
                       "type": "array",
                       "items": {
@@ -15196,6 +16603,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -15339,6 +16748,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -15459,6 +16870,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -15602,6 +17015,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -15801,6 +17216,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -15921,6 +17338,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -16240,6 +17659,7 @@
                     "waterMismatch",
                     "position",
                     "recordings",
+                    "cylinders",
                     "participants",
                     "verificationCodes"
                   ],
@@ -16807,6 +18227,148 @@
                         }
                       }
                     },
+                    "cylinders": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "volumeL",
+                          "workingPressureBar",
+                          "material",
+                          "gas",
+                          "startPressureBar",
+                          "endPressureBar",
+                          "fromPod",
+                          "series"
+                        ],
+                        "properties": {
+                          "volumeL": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "maximum": 100,
+                                "description": "Water volume in litres"
+                              }
+                            ]
+                          },
+                          "workingPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "maximum": 500
+                              }
+                            ]
+                          },
+                          "material": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "enum": [
+                                  "aluminium",
+                                  "steel",
+                                  "carbon"
+                                ]
+                              }
+                            ]
+                          },
+                          "gas": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "o2",
+                                  "he"
+                                ],
+                                "properties": {
+                                  "o2": {
+                                    "type": "number",
+                                    "minimum": 1,
+                                    "maximum": 100
+                                  },
+                                  "he": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 99
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "description": "Oxygen and helium in percent"
+                              }
+                            ]
+                          },
+                          "startPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 500
+                              }
+                            ]
+                          },
+                          "endPressureBar": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 500,
+                                "description": "Not above the start pressure"
+                              }
+                            ]
+                          },
+                          "fromPod": {
+                            "type": "boolean",
+                            "description": "An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md)"
+                          },
+                          "series": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "recordingId",
+                                  "channel"
+                                ],
+                                "properties": {
+                                  "recordingId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "channel": {
+                                    "type": "string",
+                                    "maxLength": 40,
+                                    "description": "A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n>"
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "description": "The pressure series of one of the Dive's Recordings that measured this Cylinder"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "The Dive's Cylinders in their order (ADR 0045)"
+                    },
                     "participants": {
                       "type": "array",
                       "items": {
@@ -16959,6 +18521,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -17079,6 +18643,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -17316,6 +18882,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -17714,6 +19282,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -17834,6 +19404,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -17954,6 +19526,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -18118,6 +19692,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -18238,6 +19814,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -18358,6 +19936,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -18522,6 +20102,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -18642,6 +20224,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -18762,6 +20346,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -18926,6 +20512,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -19046,6 +20634,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -19166,6 +20756,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -19604,6 +21196,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -20084,6 +21678,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -20268,6 +21864,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -20510,6 +22108,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -20630,6 +22230,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -20750,6 +22352,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -20870,6 +22474,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -21147,6 +22753,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -21267,6 +22875,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -21387,6 +22997,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -21507,6 +23119,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -21646,6 +23260,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -21766,6 +23382,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -21886,6 +23504,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -22006,6 +23626,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -22188,6 +23810,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -22324,6 +23948,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -22460,6 +24086,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -22596,6 +24224,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -22884,6 +24514,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -23004,6 +24636,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -23124,6 +24758,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -23244,6 +24880,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -23577,6 +25215,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -23697,6 +25337,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -23817,6 +25459,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -23937,6 +25581,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -24362,6 +26008,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -24498,6 +26146,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -24634,6 +26284,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -24770,6 +26422,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -25075,6 +26729,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -25195,6 +26851,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -25315,6 +26973,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -25435,6 +27095,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -25639,6 +27301,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -25759,6 +27423,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -25879,6 +27545,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -25999,6 +27667,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -26138,6 +27808,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -26258,6 +27930,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -26378,6 +28052,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -26498,6 +28174,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -26676,6 +28354,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -26796,6 +28476,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -26916,6 +28598,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -27036,6 +28720,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -27274,6 +28960,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -27394,6 +29082,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -27514,6 +29204,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -27634,6 +29326,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -28222,6 +29916,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -28794,6 +30490,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -28914,6 +30612,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -29034,6 +30734,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -29154,6 +30856,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -29626,6 +31330,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -30214,6 +31920,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -30334,6 +32042,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -30454,6 +32164,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -30574,6 +32286,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -30713,6 +32427,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -30833,6 +32549,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -30953,6 +32671,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -31073,6 +32793,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -31587,6 +33309,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -31707,6 +33431,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -31827,6 +33553,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -31947,6 +33675,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -32451,6 +34181,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -32571,6 +34303,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -32691,6 +34425,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -32811,6 +34547,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -33313,6 +35051,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -33433,6 +35173,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -33553,6 +35295,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -33673,6 +35417,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -33907,6 +35653,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -34205,6 +35953,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -34500,6 +36250,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -34636,6 +36388,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -34772,6 +36526,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -34908,6 +36664,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -35174,6 +36932,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -35450,6 +37210,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -35586,6 +37348,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -35722,6 +37486,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -35858,6 +37624,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -36014,6 +37782,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -36150,6 +37920,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -36286,6 +38058,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -36422,6 +38196,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -36728,6 +38504,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -36864,6 +38642,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -37000,6 +38780,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -37136,6 +38918,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -37412,6 +39196,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -37548,6 +39334,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -37684,6 +39472,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -37820,6 +39610,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -38093,6 +39885,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -38229,6 +40023,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -38365,6 +40161,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -38501,6 +40299,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -38960,6 +40760,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -39544,6 +41346,8 @@
                             "import_not_found",
                             "import_not_waiting",
                             "dive_not_found",
+                            "cylinder_invalid",
+                            "cylinder_series_not_found",
                             "dive_changed",
                             "dive_values_inconsistent",
                             "recording_not_on_dive",
@@ -39669,6 +41473,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -39789,6 +41595,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -39909,6 +41717,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -40368,6 +42178,8 @@
                                   "import_not_found",
                                   "import_not_waiting",
                                   "dive_not_found",
+                                  "cylinder_invalid",
+                                  "cylinder_series_not_found",
                                   "dive_changed",
                                   "dive_values_inconsistent",
                                   "recording_not_on_dive",
@@ -40496,6 +42308,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -40960,6 +42774,8 @@
                             "import_not_found",
                             "import_not_waiting",
                             "dive_not_found",
+                            "cylinder_invalid",
+                            "cylinder_series_not_found",
                             "dive_changed",
                             "dive_values_inconsistent",
                             "recording_not_on_dive",
@@ -41085,6 +42901,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -41205,6 +43023,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -42025,6 +43845,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -42145,6 +43967,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -42265,6 +44089,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -42466,6 +44292,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -42735,6 +44563,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -42855,6 +44685,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -42975,6 +44807,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -43176,6 +45010,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -43381,6 +45217,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -43501,6 +45339,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -43621,6 +45461,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -43822,6 +45664,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -44060,6 +45904,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -44180,6 +46026,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -44300,6 +46148,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -44501,6 +46351,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -44824,6 +46676,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -44944,6 +46798,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -45064,6 +46920,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -45265,6 +47123,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -45404,6 +47264,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -45636,6 +47498,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -45756,6 +47620,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -45876,6 +47742,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -46077,6 +47945,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -46677,6 +48547,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -46797,6 +48669,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -46917,6 +48791,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -47118,6 +48994,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -47559,6 +49437,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -47679,6 +49559,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -47799,6 +49681,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -48000,6 +49884,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -48184,6 +50070,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -48403,6 +50291,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -48523,6 +50413,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -48885,6 +50777,8 @@
                                     "import_not_found",
                                     "import_not_waiting",
                                     "dive_not_found",
+                                    "cylinder_invalid",
+                                    "cylinder_series_not_found",
                                     "dive_changed",
                                     "dive_values_inconsistent",
                                     "recording_not_on_dive",
@@ -49096,6 +50990,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -49466,6 +51362,8 @@
                                   "import_not_found",
                                   "import_not_waiting",
                                   "dive_not_found",
+                                  "cylinder_invalid",
+                                  "cylinder_series_not_found",
                                   "dive_changed",
                                   "dive_values_inconsistent",
                                   "recording_not_on_dive",
@@ -49676,6 +51574,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -49796,6 +51696,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -50265,6 +52167,8 @@
                                       "import_not_found",
                                       "import_not_waiting",
                                       "dive_not_found",
+                                      "cylinder_invalid",
+                                      "cylinder_series_not_found",
                                       "dive_changed",
                                       "dive_values_inconsistent",
                                       "recording_not_on_dive",
@@ -50477,6 +52381,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -50597,6 +52503,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -50717,6 +52625,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -50918,6 +52828,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -51286,6 +53198,8 @@
                                   "import_not_found",
                                   "import_not_waiting",
                                   "dive_not_found",
+                                  "cylinder_invalid",
+                                  "cylinder_series_not_found",
                                   "dive_changed",
                                   "dive_values_inconsistent",
                                   "recording_not_on_dive",
@@ -51496,6 +53410,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -51616,6 +53532,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -51736,6 +53654,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -51937,6 +53857,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -52157,6 +54079,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -52277,6 +54201,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -52397,6 +54323,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -52598,6 +54526,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -52905,6 +54835,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -53025,6 +54957,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -53166,6 +55100,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -53467,6 +55403,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -53659,6 +55597,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",
@@ -53804,6 +55744,8 @@
                         "import_not_found",
                         "import_not_waiting",
                         "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
                         "dive_changed",
                         "dive_values_inconsistent",
                         "recording_not_on_dive",

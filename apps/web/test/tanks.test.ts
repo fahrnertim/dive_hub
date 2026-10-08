@@ -26,6 +26,18 @@ describe('tanks of a Recording', () => {
     ]);
   });
 
+  it('speaks of the Cylinder its series is tied to: its gas, its size and the pressures logged on it', () => {
+    const gases = [{ o2: 32, he: 0, tankVolumeL: 12, startPressureBar: 200.4, endPressureBar: 50.1 }];
+    const tied = { channel: 'tankPressure', gas: { o2: 36, he: 0 }, volumeL: 15, startPressureBar: 210, endPressureBar: null };
+    expect(tanksOf([readings], gases, [tied])).toEqual([
+      { channel: 'tankPressure', gas: { o2: 36, he: 0 }, volumeL: 15, startBar: 210, endBar: 50.1, usedBar: 159.9, series: readings },
+    ]);
+    // A Cylinder that says nothing of its gas or size leaves the computer's; one tied to another series changes nothing.
+    const bare = { channel: 'tankPressure', gas: null, volumeL: null, startPressureBar: null, endPressureBar: null };
+    expect(tanksOf([readings], gases, [bare])).toEqual(tanksOf([readings], gases));
+    expect(tanksOf([readings], gases, [{ ...tied, channel: 'tankPressure:2' }])).toEqual(tanksOf([readings], gases));
+  });
+
   it('is a tank without a gas when the summary names none, and nothing without readings', () => {
     expect(tanksOf([readings])).toEqual([{ channel: 'tankPressure', startBar: 199.96, endBar: 50, usedBar: 150, series: readings }]);
     expect(tanksOf([{ channel: 'tankPressure', offsetsMs: [], values: [] }, { channel: 'tankPressureLow', offsetsMs: [0], values: [1] }])).toEqual([]);

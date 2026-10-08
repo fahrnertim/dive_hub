@@ -275,6 +275,25 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
       expect(first.entry_position.latitude).toBeCloseTo(DAHAB.latitude, 3);
     });
 
+    it('returns a Dive\'s Cylinders', async () => {
+      const client = await connect(key);
+      expect((await tool(client, 'logbook_get_dive', { dive_id: timsDive })).structuredContent!.cylinders).toEqual([]);
+      const version = async () => (await json<{ version: number }>('GET', `/api/dives/${timsDive}`, tim)).version;
+      const cylinders = [
+        { volumeL: 12, workingPressureBar: 232, material: 'steel', gas: { o2: 32, he: 0 }, startPressureBar: 205, endPressureBar: 60 },
+        { volumeL: 7 },
+      ];
+      expect((await call('PATCH', `/api/dives/${timsDive}`, tim, { version: await version(), cylinders })).statusCode).toBe(200);
+      try {
+        expect((await tool(client, 'logbook_get_dive', { dive_id: timsDive })).structuredContent!.cylinders).toEqual([
+          { volume_l: 12, working_pressure_bar: 232, material: 'steel', gas: { o2_percent: 32, he_percent: 0 }, start_pressure_bar: 205, end_pressure_bar: 60, from_tank_pod: false },
+          { volume_l: 7, from_tank_pod: false },
+        ]);
+      } finally {
+        await call('PATCH', `/api/dives/${timsDive}`, tim, { version: await version(), cylinders: [] });
+      }
+    });
+
     it('marks what other Users wrote: site texts and other Divers\' names', async () => {
       const client = await connect(key);
       const got = (await tool(client, 'logbook_get_dive', { dive_id: timsDive })).structuredContent!;

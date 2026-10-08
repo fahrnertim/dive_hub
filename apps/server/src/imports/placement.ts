@@ -8,6 +8,7 @@ import {
   device, dive, diverManagement, duplicateCandidate, original, recording, recordingEvent, sampleSeries, type ImportOutcome,
 } from '../db/schema.js';
 import { attachRecording, createDiveFromRecording, refreshFromPrimary } from '../dives/dive-service.js';
+import { reviseDive, untieLostSeries } from '../dives/cylinders.js';
 import { probablyNoDive } from '../dives/logbook-check-rules.js';
 import { writeRevision, type Actor } from '../dives/revisions.js';
 import type { ParsedRecording } from './parsed-recording.js';
@@ -73,7 +74,10 @@ export async function placeRecording(tx: Tx, c: Placement, rec: ParsedRecording)
     await writeRevision(tx, 'recording', known.id, actor, 'reimport', { originalId: { from: known.originalId, to: c.originalId } });
     // If it is a Dive's Primary recording, the Dive's values without Override follow the new data.
     const [owner] = await tx.select({ id: dive.id }).from(dive).where(eq(dive.primaryRecordingId, known.id));
-    if (owner) await refreshFromPrimary(tx, owner.id, actor, 'reimport');
+    // A Cylinder tied to a pressure series the new data no longer has loses its tie, in the same Revision.
+    const untied = known.diveId ? await untieLostSeries(tx, known.diveId, known.id) : {};
+    if (owner) await refreshFromPrimary(tx, owner.id, actor, 'reimport', owner.id === known.diveId ? untied : {});
+    if (known.diveId && owner?.id !== known.diveId && Object.keys(untied).length > 0) await reviseDive(tx, known.diveId, actor, 'reimport', untied);
     return { fileName, result: 'updated', recordingId: known.id, ...(known.diveId && { diveId: known.diveId }) };
   }
   // Deleted with its Dive (ADR 0026): not created again, so re-importing a whole export doesn't bring it back.

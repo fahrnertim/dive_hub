@@ -2,6 +2,7 @@ import { and, eq, isNull, lt, sql, type SQL } from 'drizzle-orm';
 import type { Readable } from 'node:stream';
 import type { Db } from '../db/client.js';
 import { DIVE_KINDS, importJob, importOriginal, original, recording, type DiveKind, type ImportFound, type ImportOutcome } from '../db/schema.js';
+import { fillMissingCylinders } from '../dives/cylinders.js';
 import type { Actor } from '../dives/revisions.js';
 import { positionColumns } from '../sites/dive-site-link.js';
 import type { BlobStore } from '../storage/blob-store.js';
@@ -13,6 +14,7 @@ import { placeRecording } from './placement.js';
 export const PROCESS_IMPORT_TASK = 'process_import';
 /** Reads positions for Recordings imported before they were kept (ADR 0020); queued at worker start. */
 export const BACKFILL_POSITIONS_TASK = 'backfill_positions';
+export const FILL_CYLINDERS_TASK = 'fill_cylinders';
 
 /** An Import that waits for the User's choice of kinds is ended after this long, and its upload removed (ADR 0044). */
 export const CHOICE_WAIT_DAYS = 7;
@@ -273,7 +275,10 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
     }
   }
 
-  return { createImport, processImport, startImport, cancelImport, expireWaiting, backfillPositions };
+  /** Dives imported before Cylinders were kept get them from their tank pod's data (ADR 0045). Returns how many. */
+  const fillCylinders = () => fillMissingCylinders(db);
+
+  return { createImport, processImport, startImport, cancelImport, expireWaiting, backfillPositions, fillCylinders };
 }
 
 export type ImportService = ReturnType<typeof createImportService>;

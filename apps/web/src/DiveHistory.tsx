@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { diversQuery, revisionsQuery, type DiveView, type RevisionView } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
+import { useCylinderText } from './Cylinders.tsx';
+import type { CylinderView } from './lib/cylinders.ts';
 import { deviceName } from './lib/devices.ts';
 import { useFormatValue, type HistoryField } from './lib/dive-values.ts';
 import { mergeEdits } from './lib/history.ts';
@@ -60,6 +62,7 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
   const diverName = (id: unknown) => divers.data?.find((v) => v.id === id)?.name ?? t('common.none');
   const who = r.actor.type === 'system' ? t('history.by.system')
     : r.actor.name ? t(`history.by.${r.actor.type}`, { name: r.actor.name }) : t('history.by.unknown');
+  const cylinderText = useCylinderText();
   const overrides = r.changes.overrides as { from: HistoryField[]; to: HistoryField[] } | undefined;
   const recordingName = (id: unknown) => {
     const n = dive.recordings.findIndex((rec) => rec.id === id);
@@ -89,6 +92,11 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
       return [t('history.change', { field: t('history.field.site'), from: name(from), to: name(to) })];
     }
     if (key === 'primaryRecordingId') return [t('history.changeTo', { field: t('history.field.primaryRecordingId'), value: recordingName(to) })];
+    if (key === 'cylinders') {
+      // The Dive's Cylinders as they were set (ADR 0045): the whole list, as it is saved.
+      const list = (to ?? []) as CylinderView[];
+      return [list.length > 0 ? t('history.cylindersSet', { list: list.map(cylinderText).join('; ') }) : t('history.cylindersRemoved')];
+    }
     if (key === 'participants') {
       // Who came onto the Dive, who left it, and whose role changed (ADR 0028); names as they were then.
       type P = { diverId: string; name: string; role: 'buddy' | 'guide' | 'instructor' };

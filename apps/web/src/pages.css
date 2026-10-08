@@ -53,6 +53,14 @@
 .field-origin { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .field-origin .badge { margin-left: 0; }
 .notes { white-space: pre-wrap; overflow-wrap: anywhere; }
+.cylinder-list { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-2); }
+.cylinder-list .badge { margin-left: var(--space-2); }
+.cylinder-fields { display: grid; gap: var(--space-4); }
+.cylinder-fieldset { display: grid; gap: var(--space-4); justify-items: start; margin: 0; padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); min-width: 0; }
+.cylinder-fieldset > .form-grid { width: 100%; }
+.cylinder-fieldset legend { padding: 0 var(--space-2); font-weight: 600; }
+.cylinder-foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
+.field-error { margin: 0; color: var(--color-danger); font-size: var(--text-sm); }
 /* Who dived along, as a fact: the names in a row, the ways to change them beside it. */
 .people-fact { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); }
 .people-fact li { display: inline-flex; align-items: center; gap: var(--space-2); }

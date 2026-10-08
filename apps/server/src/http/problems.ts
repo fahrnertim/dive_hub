@@ -26,6 +26,8 @@ export const PROBLEMS = {
   import_not_found: 'Import not found',
   import_not_waiting: 'This Import does not wait for a choice of kinds, or it found none of the kinds named',
   dive_not_found: 'Dive not found',
+  cylinder_invalid: 'A cylinder’s values don’t fit: an end pressure above the start, a gas over 100 %, or one pressure series on two cylinders',
+  cylinder_series_not_found: 'The dive’s recordings have no such tank pressure series',
   dive_changed: 'The dive was changed meanwhile; reload it and apply your changes again',
   dive_values_inconsistent: 'The average depth is deeper than the max depth',
   recording_not_on_dive: 'This recording does not belong to the dive',
