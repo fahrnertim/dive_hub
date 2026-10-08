@@ -2453,6 +2453,12 @@ export interface paths {
                                     channel: string;
                                 };
                             }[];
+                            sac: null | {
+                                /** @description Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas */
+                                litresPerMinute: number;
+                                barPerMinute: null | number;
+                            };
+                            sacMissing: null | ("too_short" | "no_average_depth" | "cylinder_incomplete");
                             /** @description Buddies first, then guides and instructors (ADR 0028) */
                             participants: {
                                 diverId: string;
@@ -2868,6 +2874,12 @@ export interface paths {
                                     channel: string;
                                 };
                             }[];
+                            sac: null | {
+                                /** @description Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas */
+                                litresPerMinute: number;
+                                barPerMinute: null | number;
+                            };
+                            sacMissing: null | ("too_short" | "no_average_depth" | "cylinder_incomplete");
                             /** @description Buddies first, then guides and instructors (ADR 0028) */
                             participants: {
                                 diverId: string;
@@ -3273,6 +3285,12 @@ export interface paths {
                                     channel: string;
                                 };
                             }[];
+                            sac: null | {
+                                /** @description Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas */
+                                litresPerMinute: number;
+                                barPerMinute: null | number;
+                            };
+                            sacMissing: null | ("too_short" | "no_average_depth" | "cylinder_incomplete");
                             /** @description Buddies first, then guides and instructors (ADR 0028) */
                             participants: {
                                 diverId: string;
@@ -3552,6 +3570,12 @@ export interface paths {
                                     channel: string;
                                 };
                             }[];
+                            sac: null | {
+                                /** @description Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas */
+                                litresPerMinute: number;
+                                barPerMinute: null | number;
+                            };
+                            sacMissing: null | ("too_short" | "no_average_depth" | "cylinder_incomplete");
                             /** @description Buddies first, then guides and instructors (ADR 0028) */
                             participants: {
                                 diverId: string;
@@ -3835,6 +3859,12 @@ export interface paths {
                                     channel: string;
                                 };
                             }[];
+                            sac: null | {
+                                /** @description Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas */
+                                litresPerMinute: number;
+                                barPerMinute: null | number;
+                            };
+                            sacMissing: null | ("too_short" | "no_average_depth" | "cylinder_incomplete");
                             /** @description Buddies first, then guides and instructors (ADR 0028) */
                             participants: {
                                 diverId: string;
@@ -4390,6 +4420,12 @@ export interface paths {
                                     channel: string;
                                 };
                             }[];
+                            sac: null | {
+                                /** @description Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas */
+                                litresPerMinute: number;
+                                barPerMinute: null | number;
+                            };
+                            sacMissing: null | ("too_short" | "no_average_depth" | "cylinder_incomplete");
                             /** @description Buddies first, then guides and instructors (ADR 0028) */
                             participants: {
                                 diverId: string;
@@ -4874,6 +4910,12 @@ export interface paths {
                                     channel: string;
                                 };
                             }[];
+                            sac: null | {
+                                /** @description Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas */
+                                litresPerMinute: number;
+                                barPerMinute: null | number;
+                            };
+                            sacMissing: null | ("too_short" | "no_average_depth" | "cylinder_incomplete");
                             /** @description Buddies first, then guides and instructors (ADR 0028) */
                             participants: {
                                 diverId: string;

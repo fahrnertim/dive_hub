@@ -232,7 +232,7 @@ _Avoid_: Oxygen toxicity (that is the harm), O2 clock
 _German_: Sauerstoffbelastung
 
 **SAC**:
-A diver's gas consumption at the surface in litres per minute; at depth it multiplies by the ambient pressure. Dive Hub computes it per Dive from its Cylinder's pressures (or a tank pod), plans with a high percentile of recent Dives, or takes it as typed ([ADR 0033](decisions/0033-gas-plans-rules-and-groups.md)).
+A diver's gas consumption at the surface in litres per minute; at depth it multiplies by the ambient pressure. Dive Hub computes it per Dive from its Cylinders' pressures and volumes, with real gas ([ADR 0045](decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md)), shows a tank pod's own beside it, plans with a high percentile of recent Dives, or takes it as typed ([ADR 0033](decisions/0033-gas-plans-rules-and-groups.md)).
 _Avoid_: RMV (fine as a synonym in UI text), air consumption, breathing rate
 _German_: Atemminutenvolumen (AMV)
 

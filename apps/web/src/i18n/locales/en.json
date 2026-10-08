@@ -1335,7 +1335,14 @@
     "startAndEnd": "{{start}} at the start, {{end}} at the end, {{used}} used",
     "startOnly": "{{start}} at the start",
     "endOnly": "{{end}} at the end",
-    "unknown": "Nothing known about it"
+    "unknown": "Nothing known about it",
+    "sac": "SAC on this dive: {{sac}}",
+    "sacWithDrop": "SAC on this dive: {{sac}} ({{drop}})",
+    "noSac": {
+      "cylinder_incomplete": "No SAC for this dive yet: it needs the volume and the pressure at the start and at the end of every cylinder.",
+      "no_average_depth": "No SAC for this dive yet: it needs the dive's average depth.",
+      "too_short": "No SAC for this dive: it is shorter than 15 minutes."
+    }
   },
   "participants": {
     "title": "Buddies and guides",

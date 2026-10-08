@@ -294,6 +294,29 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
       }
     });
 
+    it('returns the SAC on a Dive, or why it has none', async () => {
+      const client = await connect(key);
+      const got = async () => (await tool(client, 'logbook_get_dive', { dive_id: timsDive })).structuredContent!;
+      const before = await json<{ version: number; values: object }>('GET', `/api/dives/${timsDive}`, tim);
+      expect((await got()).sac).toBeUndefined();
+      const edit = async (body: object) => {
+        const { version } = await json<{ version: number }>('GET', `/api/dives/${timsDive}`, tim);
+        expect((await call('PATCH', `/api/dives/${timsDive}`, tim, { version, ...body })).statusCode).toBe(200);
+      };
+      try {
+        // 12 L of air from 201 to 51 bar over 40 minutes at an average of 10 m: 21.57 L/min, 1.88 bar/min (sac.test.ts).
+        await edit({ set: { durationSeconds: 40 * 60, avgDepthM: 10 }, cylinders: [{ volumeL: 12, startPressureBar: 201, endPressureBar: 51 }] });
+        const { sac } = await got();
+        expect(sac.litres_per_minute).toBeCloseTo(21.57, 1);
+        expect(sac.bar_per_minute).toBe(1.88);
+        await edit({ cylinders: [{ volumeL: 12, startPressureBar: 201 }] });
+        expect((await got()).sac).toEqual({ missing: 'cylinder_incomplete' });
+      } finally {
+        await edit({ reset: ['durationSeconds', 'avgDepthM'], cylinders: [] });
+      }
+      expect((await json<typeof before>('GET', `/api/dives/${timsDive}`, tim)).values).toEqual(before.values);
+    });
+
     it('marks what other Users wrote: site texts and other Divers\' names', async () => {
       const client = await connect(key);
       const got = (await tool(client, 'logbook_get_dive', { dive_id: timsDive })).structuredContent!;

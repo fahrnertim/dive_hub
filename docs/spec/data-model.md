@@ -270,7 +270,7 @@ request for levels and a group of Divers, each with a Cylinder and a SAC; the ga
 Diver (rock bottom at every level by default, never below 50 bar), the controlling Diver, real gas above 200 bar. Only
 Divers the User manages bring their logbook SAC; others a typed one (ADR 0028). Amends ADR 0032's gas limit and SAC.
 **SAC per Dive** is computed from its Cylinders (the litres summed over all of them, each with both pressures and a volume; at least
-15 minutes; [ADR 0045](../decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md))
+15 minutes; real gas at every pressure; built, `sac` on the Dive's view; [ADR 0045](../decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md))
 or a tank pod's SAC, not stored; a Diver's **planning SAC** is the 85th percentile of their last 20 such Dives (at least
 5, else 20 L/min). See the [gas consumption note](../research/2026-10-06-gas-consumption-planning.md).
 

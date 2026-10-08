@@ -49,6 +49,9 @@ export function formatPressure(bar: number | null, units: UnitSystem, locale: st
 /** A tank's size, "12 L", and a gas consumption at the surface, "17.5 L/min": litres in both unit systems for now (ADR 0045). */
 export const formatVolume = (litres: number, locale: string) => unitFormat(locale, 'liter', 1).format(litres);
 export const formatGasRate = (litresPerMinute: number, locale: string) => unitFormat(locale, 'liter-per-minute', 1).format(litresPerMinute);
+/** A pressure drop per minute at the surface, "1.9 bar/min" or "27 psi/min". */
+export const formatPressureRate = (barPerMinute: number, units: UnitSystem, locale: string) =>
+  `${new Intl.NumberFormat(locale, { maximumFractionDigits: units === 'imperial' ? 0 : 1 }).format(pressureIn(barPerMinute, units))} ${pressureUnit(units)}/min`;
 
 /** Just the unit symbol, e.g. for a chart axis: "m", "ft", "°C", "°F", "bar", "psi". */
 export function unitLabel(quantity: 'depth' | 'temperature' | 'minutes' | 'pressure', units: UnitSystem, locale: string): string {

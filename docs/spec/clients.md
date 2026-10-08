@@ -366,6 +366,13 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   until the User saves. A tank under the profile whose series a Cylinder is tied to takes the Cylinder's gas, size and
   pressures. The history's change `cylinders` carries the list before and after.
   *Web:* `Cylinders.tsx`, `lib/cylinders.ts`, `lib/tanks.ts`.
+- **SAC on this dive** ([ADR 0045](../decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md)): show the Dive's
+  `sac.litresPerMinute` (L/min, one decimal, in both unit systems) with its Cylinders, and `sac.barPerMinute` beside it
+  when it is not `null` (bar/min with one decimal, or psi/min whole). Don't compute it yourself: the server counts
+  real gas. Where `sac` is `null` and `sacMissing` is set, say what is missing: `cylinder_incomplete` (every Cylinder
+  needs its volume and both pressures), `no_average_depth`, `too_short` (under 15 minutes). A tank pod's own SAC
+  (`sacLpm` of the Recording) stays with the pressure strip, named as the pod's: the two may differ.
+  *Web:* `Cylinders.tsx`.
 - **A Dive's position is private.** Show it only to the Users who manage the Diver, as the API does.
 - **Participants** (ADR 0028, `participants` on the Dive): buddies, guides and instructors (`role`), any Diver of the
   instance but the Dive's own. Add them from a live search over every Diver by name (`GET /api/divers/search`, saying

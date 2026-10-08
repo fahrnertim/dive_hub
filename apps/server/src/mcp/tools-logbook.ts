@@ -4,6 +4,7 @@ import { sql, type SQL } from 'drizzle-orm';
 import { Type, type Static } from 'typebox';
 import { PARTICIPANT_ROLES, type RecordingSummary } from '../db/schema.js';
 import { cylindersOf } from '../dives/cylinders.js';
+import { SAC_MISSING, sacOfDive } from '../dives/sac.js';
 import { downsampleMinMax } from '../dives/downsample.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
 import { ProfileSummary, summariseProfile } from './profile.js';
@@ -276,6 +277,11 @@ const DiveDetail = (positions: boolean) => Type.Object({
     from_tank_pod: Type.Boolean({ description: 'true: made by an import from a tank pod\'s readings, and still tied to them' }),
     pressure_series: Type.Optional(Type.Object({ recording_id: Type.String(), channel: Type.String() }, { description: 'The Recording\'s sample series that measured this Cylinder' })),
   }), { description: 'The tanks dived with, as logged on the Dive: what the user typed or corrected wins over a Recording\'s gases. A value left out is unknown; empty: none logged' }),
+  sac: Type.Optional(Type.Object({
+    litres_per_minute: Type.Optional(Type.Number({ description: 'Litres per minute at the surface, summed over all Cylinders, with real gas' })),
+    bar_per_minute: Type.Optional(Type.Number({ description: 'The pressure drop per minute at the surface; only with exactly one Cylinder' })),
+    missing: Type.Optional(Type.Enum([...SAC_MISSING], { description: 'Why there is no figure: too_short (under 15 minutes), no_average_depth, or cylinder_incomplete (a Cylinder without both pressures and a volume)' })),
+  }, { description: 'Surface air consumption (SAC) on this Dive, computed from its Cylinders, its average depth and its duration. Left out when no Cylinders are logged' })),
   // detailed only
   overridden_fields: Type.Optional(Type.Array(Type.String(), { description: 'Values the user set by hand; the others come from the Primary recording' })),
   from_provider: Type.Optional(Nullable(Type.String({ description: 'Set when the Dive was made from a logbook entry at a service such as SSI, without a dive computer\'s file' }))),
@@ -301,7 +307,7 @@ const computerOf = (s: RecordingSummary): Static<typeof Computer> => ({
 export const getDive = defineTool({
   name: 'logbook_get_dive',
   title: 'Get one Dive',
-  description: `Returns one of the user's Dives: its values, Dive site, notes, who else was on it, its Cylinders (size, gas, start and end pressure), and a summary of the depth profile (deepest point and when, time-weighted average, minutes per 10 m band, temperature range). Use it after logbook_search_dives gave the id.
+  description: `Returns one of the user's Dives: its values, Dive site, notes, who else was on it, its Cylinders (size, gas, start and end pressure), the gas consumption at the surface computed from them (sac, in L/min; or what is missing for it), and a summary of the depth profile (deepest point and when, time-weighted average, minutes per 10 m band, temperature range). Use it after logbook_search_dives gave the id.
 
 detail=detailed adds the Recordings (each dive computer's own data: gases, gradient factors, deco model, CNS, surface interval), which values the user set by hand, and longer notes. include_samples=true adds the profile itself, downsampled to about sample_points points per series (default: depth only); ask for it only when the shape of the dive matters, such as describing the ascent.
 
@@ -338,6 +344,8 @@ Error "dive not found": the id is wrong, the Dive was deleted, or it is not the 
       return found && { offsetsMs: found.offsets_ms, values: found.values };
     };
     const depth = seriesOf('depth');
+    const cylinders = await cylindersOf(ctx.tx, d.id);
+    const { sac, missing } = sacOfDive({ durationSeconds: d.duration_seconds, avgDepthM: d.avg_depth_m }, cylinders);
     if (a.include_samples && wanted.every((c) => !seriesOf(c))) {
       throw new ToolError('no_samples', primary
         ? `This Dive's Primary recording has none of the series asked for. It has: ${primary.channels.join(', ') || 'none'}. Call again with sample_channels from that list, or without include_samples.`
@@ -350,7 +358,9 @@ Error "dive not found": the id is wrong, the Dive was deleted, or it is not the 
       participants: (await participantsOf(ctx, [d.id])).get(d.id) ?? [],
       profile: depth ? summariseProfile(depth, seriesOf('temperature')) : null,
       profile_channels: primary?.channels ?? [],
-      cylinders: (await cylindersOf(ctx.tx, d.id)).map((c) => ({
+      ...(sac && { sac: { litres_per_minute: sac.litresPerMinute, ...(sac.barPerMinute !== null && { bar_per_minute: sac.barPerMinute }) } }),
+      ...(missing && { sac: { missing } }),
+      cylinders: cylinders.map((c) => ({
         ...(c.volumeL !== null && { volume_l: c.volumeL }),
         ...(c.workingPressureBar !== null && { working_pressure_bar: c.workingPressureBar }),
         ...(c.material && { material: c.material }),

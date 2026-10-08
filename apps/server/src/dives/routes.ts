@@ -21,6 +21,7 @@ import { LOGBOOK_CHECK_RULES } from './logbook-check-rules.js';
 import type { LogbookChecks } from './logbook-checks.js';
 import { valuesFromRecording, type DiveValues } from './dive-values.js';
 import { REVISION_CAUSES } from './revisions.js';
+import { SAC_MISSING, sacOfDive } from './sac.js';
 import { waterMismatch } from './water.js';
 import { recordingPosition } from '../sites/dive-site-link.js';
 import { PositionSchema } from '../sites/routes.js';
@@ -172,6 +173,13 @@ const DiveView = Type.Object({
   })),
   recordings: Type.Array(RecordingView),
   cylinders: Type.Array(CylinderView, { description: 'The Dive\'s Cylinders in their order (ADR 0045)' }),
+  sac: Nullable(Type.Object({
+    litresPerMinute: Type.Number({ description: 'Litres per minute at the surface, summed over all the Dive\'s Cylinders, with real gas' }),
+    barPerMinute: Nullable(Type.Number({ description: 'The pressure drop per minute at the surface; only for a Dive with exactly one Cylinder' })),
+  }, { description: 'SAC on this dive, computed from its Cylinders, its average depth and its duration, never stored (ADR 0045)' })),
+  sacMissing: Nullable(Type.Enum([...SAC_MISSING], {
+    description: 'Why a Dive with Cylinders has no SAC: shorter than 15 minutes, no average depth, or a Cylinder without both pressures and a volume',
+  })),
   participants: Type.Array(Participant, { description: 'Buddies first, then guides and instructors (ADR 0028)' }),
   verificationCodes: Type.Array(Type.Object({
     kind: Type.Enum(['centre', 'professional'], { description: 'Whose code it is: a Dive centre\'s (centre is set) or a professional\'s (diver is set)' }),
@@ -351,6 +359,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     const [site] = row.siteId
       ? await db.select({ id: diveSite.id, name: diveSite.name, waterType: diveSite.waterType }).from(diveSite).where(eq(diveSite.id, row.siteId))
       : [];
+    const cylinders = await cylindersOf(db, row.id);
+    const { sac, missing: sacMissing } = sacOfDive(row, cylinders);
     return {
       id: row.id,
       diverId: row.diverId,
@@ -375,7 +385,9 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
         durationSeconds: r.durationSeconds, maxDepthM: r.maxDepthM, parser: r.parser,
         summary: r.summary as RecordingSummary, channels,
       })),
-      cylinders: await cylindersOf(db, row.id),
+      cylinders,
+      sac,
+      sacMissing,
       participants: await participantsOf(db, row.id),
       verificationCodes: [
         ...(await centres.codesOfDive(row.id)).map((c) => ({ kind: 'centre' as const, diver: null, ...c })),

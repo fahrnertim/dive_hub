@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ApiError, meQuery, type ProblemCode } from '../api.ts';
 import { countryName, formatDistance, formatPosition, type Position } from './geo.ts';
 import {
-  formatDate, formatDateTime, formatDepth, formatDiveDay, formatDiveTime, formatDuration, formatGasRate, formatMonth, formatPressure, formatTemperature, formatVolume, pickUnits, unitLabel,
+  formatDate, formatDateTime, formatDepth, formatDiveDay, formatDiveTime, formatDuration, formatGasRate, formatMonth, formatPressure, formatPressureRate, formatTemperature, formatVolume, pickUnits, unitLabel,
 } from './units.ts';
 
 /** Formatting in the UI language and the User's unit system (ADR 0014). */
@@ -38,6 +38,7 @@ export function useDisplay() {
     volume: (litres: number) => formatVolume(litres, locale),
     /** Gas consumption at the surface: "17.5 L/min". */
     gasRate: (litresPerMinute: number) => formatGasRate(litresPerMinute, locale),
+    pressureRate: (barPerMinute: number) => formatPressureRate(barPerMinute, units, locale),
     unit: (quantity: 'depth' | 'temperature' | 'minutes' | 'pressure') => unitLabel(quantity, units, locale),
   };
 }

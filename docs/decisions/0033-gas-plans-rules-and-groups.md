@@ -92,4 +92,6 @@ Slice 22, after slice 21 (which builds MOD, NDL and oxygen with ADR 0032's simpl
 ## Amendment 2026-10-08: a Dive with several Cylinders has a SAC
 "One cylinder (or identical ones)" is replaced: the litres used are summed over all Cylinders of the Dive, each with both
 pressures and a volume; bar/min is shown beside L/min for a single Cylinder. "SAC on this dive" is built with the
-Cylinders, ahead of the gas plan ([ADR 0045](0045-tank-pressure-cylinders-and-sac-on-a-dive.md)).
+Cylinders, ahead of the gas plan ([ADR 0045](0045-tank-pressure-cylinders-and-sac-on-a-dive.md)). Built on 2026-10-08, with
+real gas at every pressure and the compressibility source this ADR left open
+([research note](../research/2026-10-08-real-gas-compressibility.md)).

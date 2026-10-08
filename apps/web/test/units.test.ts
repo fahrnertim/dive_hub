@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { pickLanguage } from '../src/i18n/languages.ts';
 import {
   depthFromDisplay, temperatureFromDisplay,
-  formatDepth, formatDiveTime, formatDuration, formatGasRate, formatPressure, formatTemperature, formatVolume, pickUnits, unitLabel,
+  formatDepth, formatDiveTime, formatDuration, formatGasRate, formatPressure, formatPressureRate, formatTemperature, formatVolume, pickUnits, unitLabel,
 } from '../src/lib/units.ts';
 
 // Intl output uses narrow no-break spaces in places; compare with plain spaces.
@@ -52,6 +52,8 @@ describe('pressure', () => {
     expect(plain(formatVolume(12, 'en'))).toBe('12 L');
     expect(plain(formatGasRate(17.46, 'en'))).toBe('17.5 L/min');
     expect(plain(formatGasRate(17.46, 'de'))).toBe('17,5 l/min');
+    expect(plain(formatPressureRate(1.88, 'metric', 'de'))).toBe('1,9 bar/min');
+    expect(plain(formatPressureRate(1.88, 'imperial', 'en'))).toBe('27 psi/min');
   });
 });
 

@@ -7588,6 +7588,8 @@
                     "position",
                     "recordings",
                     "cylinders",
+                    "sac",
+                    "sacMissing",
                     "participants",
                     "verificationCodes"
                   ],
@@ -8296,6 +8298,53 @@
                         }
                       },
                       "description": "The Dive's Cylinders in their order (ADR 0045)"
+                    },
+                    "sac": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "litresPerMinute",
+                            "barPerMinute"
+                          ],
+                          "properties": {
+                            "litresPerMinute": {
+                              "type": "number",
+                              "description": "Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas"
+                            },
+                            "barPerMinute": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "description": "The pressure drop per minute at the surface; only for a Dive with exactly one Cylinder"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "SAC on this dive, computed from its Cylinders, its average depth and its duration, never stored (ADR 0045)"
+                        }
+                      ]
+                    },
+                    "sacMissing": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "too_short",
+                            "no_average_depth",
+                            "cylinder_incomplete"
+                          ],
+                          "description": "Why a Dive with Cylinders has no SAC: shorter than 15 minutes, no average depth, or a Cylinder without both pressures and a volume"
+                        }
+                      ]
                     },
                     "participants": {
                       "type": "array",
@@ -8844,6 +8893,8 @@
                     "position",
                     "recordings",
                     "cylinders",
+                    "sac",
+                    "sacMissing",
                     "participants",
                     "verificationCodes"
                   ],
@@ -9552,6 +9603,53 @@
                         }
                       },
                       "description": "The Dive's Cylinders in their order (ADR 0045)"
+                    },
+                    "sac": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "litresPerMinute",
+                            "barPerMinute"
+                          ],
+                          "properties": {
+                            "litresPerMinute": {
+                              "type": "number",
+                              "description": "Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas"
+                            },
+                            "barPerMinute": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "description": "The pressure drop per minute at the surface; only for a Dive with exactly one Cylinder"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "SAC on this dive, computed from its Cylinders, its average depth and its duration, never stored (ADR 0045)"
+                        }
+                      ]
+                    },
+                    "sacMissing": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "too_short",
+                            "no_average_depth",
+                            "cylinder_incomplete"
+                          ],
+                          "description": "Why a Dive with Cylinders has no SAC: shorter than 15 minutes, no average depth, or a Cylinder without both pressures and a volume"
+                        }
+                      ]
                     },
                     "participants": {
                       "type": "array",
@@ -11071,6 +11169,8 @@
                     "position",
                     "recordings",
                     "cylinders",
+                    "sac",
+                    "sacMissing",
                     "participants",
                     "verificationCodes"
                   ],
@@ -11779,6 +11879,53 @@
                         }
                       },
                       "description": "The Dive's Cylinders in their order (ADR 0045)"
+                    },
+                    "sac": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "litresPerMinute",
+                            "barPerMinute"
+                          ],
+                          "properties": {
+                            "litresPerMinute": {
+                              "type": "number",
+                              "description": "Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas"
+                            },
+                            "barPerMinute": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "description": "The pressure drop per minute at the surface; only for a Dive with exactly one Cylinder"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "SAC on this dive, computed from its Cylinders, its average depth and its duration, never stored (ADR 0045)"
+                        }
+                      ]
+                    },
+                    "sacMissing": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "too_short",
+                            "no_average_depth",
+                            "cylinder_incomplete"
+                          ],
+                          "description": "Why a Dive with Cylinders has no SAC: shorter than 15 minutes, no average depth, or a Cylinder without both pressures and a volume"
+                        }
+                      ]
                     },
                     "participants": {
                       "type": "array",
@@ -12326,6 +12473,8 @@
                     "position",
                     "recordings",
                     "cylinders",
+                    "sac",
+                    "sacMissing",
                     "participants",
                     "verificationCodes"
                   ],
@@ -13034,6 +13183,53 @@
                         }
                       },
                       "description": "The Dive's Cylinders in their order (ADR 0045)"
+                    },
+                    "sac": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "litresPerMinute",
+                            "barPerMinute"
+                          ],
+                          "properties": {
+                            "litresPerMinute": {
+                              "type": "number",
+                              "description": "Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas"
+                            },
+                            "barPerMinute": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "description": "The pressure drop per minute at the surface; only for a Dive with exactly one Cylinder"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "SAC on this dive, computed from its Cylinders, its average depth and its duration, never stored (ADR 0045)"
+                        }
+                      ]
+                    },
+                    "sacMissing": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "too_short",
+                            "no_average_depth",
+                            "cylinder_incomplete"
+                          ],
+                          "description": "Why a Dive with Cylinders has no SAC: shorter than 15 minutes, no average depth, or a Cylinder without both pressures and a volume"
+                        }
+                      ]
                     },
                     "participants": {
                       "type": "array",
@@ -13582,6 +13778,8 @@
                     "position",
                     "recordings",
                     "cylinders",
+                    "sac",
+                    "sacMissing",
                     "participants",
                     "verificationCodes"
                   ],
@@ -14290,6 +14488,53 @@
                         }
                       },
                       "description": "The Dive's Cylinders in their order (ADR 0045)"
+                    },
+                    "sac": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "litresPerMinute",
+                            "barPerMinute"
+                          ],
+                          "properties": {
+                            "litresPerMinute": {
+                              "type": "number",
+                              "description": "Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas"
+                            },
+                            "barPerMinute": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "description": "The pressure drop per minute at the surface; only for a Dive with exactly one Cylinder"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "SAC on this dive, computed from its Cylinders, its average depth and its duration, never stored (ADR 0045)"
+                        }
+                      ]
+                    },
+                    "sacMissing": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "too_short",
+                            "no_average_depth",
+                            "cylinder_incomplete"
+                          ],
+                          "description": "Why a Dive with Cylinders has no SAC: shorter than 15 minutes, no average depth, or a Cylinder without both pressures and a volume"
+                        }
+                      ]
                     },
                     "participants": {
                       "type": "array",
@@ -15742,6 +15987,8 @@
                     "position",
                     "recordings",
                     "cylinders",
+                    "sac",
+                    "sacMissing",
                     "participants",
                     "verificationCodes"
                   ],
@@ -16450,6 +16697,53 @@
                         }
                       },
                       "description": "The Dive's Cylinders in their order (ADR 0045)"
+                    },
+                    "sac": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "litresPerMinute",
+                            "barPerMinute"
+                          ],
+                          "properties": {
+                            "litresPerMinute": {
+                              "type": "number",
+                              "description": "Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas"
+                            },
+                            "barPerMinute": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "description": "The pressure drop per minute at the surface; only for a Dive with exactly one Cylinder"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "SAC on this dive, computed from its Cylinders, its average depth and its duration, never stored (ADR 0045)"
+                        }
+                      ]
+                    },
+                    "sacMissing": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "too_short",
+                            "no_average_depth",
+                            "cylinder_incomplete"
+                          ],
+                          "description": "Why a Dive with Cylinders has no SAC: shorter than 15 minutes, no average depth, or a Cylinder without both pressures and a volume"
+                        }
+                      ]
                     },
                     "participants": {
                       "type": "array",
@@ -17660,6 +17954,8 @@
                     "position",
                     "recordings",
                     "cylinders",
+                    "sac",
+                    "sacMissing",
                     "participants",
                     "verificationCodes"
                   ],
@@ -18368,6 +18664,53 @@
                         }
                       },
                       "description": "The Dive's Cylinders in their order (ADR 0045)"
+                    },
+                    "sac": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "litresPerMinute",
+                            "barPerMinute"
+                          ],
+                          "properties": {
+                            "litresPerMinute": {
+                              "type": "number",
+                              "description": "Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas"
+                            },
+                            "barPerMinute": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number",
+                                  "description": "The pressure drop per minute at the surface; only for a Dive with exactly one Cylinder"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "SAC on this dive, computed from its Cylinders, its average depth and its duration, never stored (ADR 0045)"
+                        }
+                      ]
+                    },
+                    "sacMissing": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "enum": [
+                            "too_short",
+                            "no_average_depth",
+                            "cylinder_incomplete"
+                          ],
+                          "description": "Why a Dive with Cylinders has no SAC: shorter than 15 minutes, no average depth, or a Cylinder without both pressures and a volume"
+                        }
+                      ]
                     },
                     "participants": {
                       "type": "array",

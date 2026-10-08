@@ -14,7 +14,10 @@ type Cylinder = {
   startPressureBar: number | null; endPressureBar: number | null; fromPod: boolean;
   series: { recordingId: string; channel: string } | null;
 };
-type DiveView = { id: string; version: number; cylinders: Cylinder[]; recordings: { id: string }[] };
+type DiveView = {
+  id: string; version: number; cylinders: Cylinder[]; recordings: { id: string }[];
+  sac: { litresPerMinute: number; barPerMinute: number | null } | null; sacMissing: string | null;
+};
 type RevisionView = { cause: string; actor: { type: string }; changes: Record<string, { from: unknown; to: unknown }> };
 
 describe.skipIf(!(await databaseReachable()))('Cylinders on a Dive', () => {
@@ -344,6 +347,44 @@ describe.skipIf(!(await databaseReachable()))('Cylinders on a Dive', () => {
       const first = await upload('theirs.fit', makeSyntheticDive({ serialNumber: 333, start: day(20) }), other);
       expect((await sameAsLast(first.diveId, other)).json()).toEqual({ diveId: null, cylinders: [] });
       expect((await sameAsLast(first.diveId)).statusCode).toBe(404);
+    });
+  });
+
+  describe('SAC on this dive (slice 3)', () => {
+    let diveId: string;
+    beforeAll(async () => {
+      diveId = await garminDive(27);
+    });
+
+    it('a Dive without Cylinders has none, and nothing is missing', async () => {
+      expect(await getDive(diveId)).toMatchObject({ sac: null, sacMissing: null });
+    });
+
+    it('says what is missing when a Cylinder lacks a pressure', async () => {
+      const { endPressureBar: _e, ...noEnd } = stage;
+      const response = await setCylinders(diveId, [steel12, noEnd]);
+      expect(response.json()).toMatchObject({ sac: null, sacMissing: 'cylinder_incomplete' });
+      expect(await getDive(diveId)).toMatchObject({ sac: null, sacMissing: 'cylinder_incomplete' });
+    });
+
+    it('is computed from the Cylinders, the average depth and the duration, and follows an edit of them', async () => {
+      // 12 L of air from 201 to 51 bar is 1725.6 L with real gas (worked in sac.test.ts): over 40 minutes at an
+      // average of 10 m that is 21.57 L/min and 1.88 bar/min; over 30 minutes at 20 m, 19.17 L/min.
+      const air12 = { volumeL: 12, startPressureBar: 201, endPressureBar: 51 };
+      const first = await inject('PATCH', `/api/dives/${diveId}`, tim, {
+        version: (await getDive(diveId)).version, set: { durationSeconds: 40 * 60, maxDepthM: 25, avgDepthM: 10 }, cylinders: [air12],
+      });
+      expect(first.statusCode).toBe(200);
+      const { sac, sacMissing } = await getDive(diveId);
+      expect(sacMissing).toBeNull();
+      expect(sac!.litresPerMinute).toBeCloseTo(21.57, 1);
+      expect(sac!.barPerMinute).toBe(1.88);
+
+      await inject('PATCH', `/api/dives/${diveId}`, tim, { version: (await getDive(diveId)).version, set: { durationSeconds: 30 * 60, avgDepthM: 20 } });
+      expect((await getDive(diveId)).sac!.litresPerMinute).toBeCloseTo(19.17, 1);
+
+      await inject('PATCH', `/api/dives/${diveId}`, tim, { version: (await getDive(diveId)).version, set: { durationSeconds: 10 * 60 } });
+      expect(await getDive(diveId)).toMatchObject({ sac: null, sacMissing: 'too_short' });
     });
   });
 });

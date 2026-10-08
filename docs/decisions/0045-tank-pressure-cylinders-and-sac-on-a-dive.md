@@ -1,6 +1,6 @@
 ---
 title: "ADR 0045: Tank pressure, Cylinders and SAC on a Dive - shown first, then logged, then computed"
-summary: Three slices. A tank pod's pressure is shown - one line per tank in a strip of its own under the depth profile, with start, end and used pressure in words, the pod's own SAC, and a column in the profile's table; psi for imperial (built). Cylinders on a Dive come before lead and suit (changes 0031's order), one or more, typed or from the catalogue, each optionally tied to one pressure series; one list with the Dive's edit, the catalogue and "same as last dive" as routes (built). Then "SAC on this dive" in L/min, summed in litres over all Cylinders with both pressures and a volume (changes 0033's "one cylinder or identical ones"), with bar/min beside it for a single Cylinder. An import with pod data makes the Cylinders itself. Open - a second pod is unverified.
+summary: Three slices. A tank pod's pressure is shown - one line per tank in a strip of its own under the depth profile, with start, end and used pressure in words, the pod's own SAC, and a column in the profile's table; psi for imperial (built). Cylinders on a Dive come before lead and suit (changes 0031's order), one or more, typed or from the catalogue, each optionally tied to one pressure series; one list with the Dive's edit, the catalogue and "same as last dive" as routes (built). Then "SAC on this dive" in L/min, summed in litres over all Cylinders with both pressures and a volume (changes 0033's "one cylinder or identical ones"), with bar/min beside it for a single Cylinder, computed by the server with real gas at every pressure (our own fit through NIST's data), with the reason where there is none (built). An import with pod data makes the Cylinders itself. Open - a second pod is unverified.
 status: accepted
 date: 2026-10-08
 ---
@@ -8,7 +8,7 @@ date: 2026-10-08
 # ADR 0045: Tank pressure, Cylinders and SAC on a Dive - shown first, then logged, then computed
 
 ## Status
-Accepted – 2026-10-08 (owner, in conversation). Slices 1 (showing) and 2 (Cylinders) built on 2026-10-08; slice 3 not built.
+Accepted – 2026-10-08 (owner, in conversation). Slices 1 (showing), 2 (Cylinders) and 3 (SAC on this dive) built on 2026-10-08.
 Amends [ADR 0037](0037-suunto-file-import-and-file-formats.md) (decision 5: the pressure is shown now),
 [ADR 0031](0031-lead-suit-cylinders-and-lead-estimate.md) (the order: Cylinders before lead and suit) and
 [ADR 0033](0033-gas-plans-rules-and-groups.md) (when a Dive's SAC counts).
@@ -55,7 +55,7 @@ Amends [ADR 0037](0037-suunto-file-import-and-file-formats.md) (decision 5: the 
   measured data, unlike a guessed prefill, which ADR 0031 rules out.
 - SSI's typed cylinder values are imported after that (ADR 0031's Provider part), not in this slice.
 
-### Slice 3: SAC on this dive
+### Slice 3: SAC on this dive (built)
 - **L/min at the surface** is the figure (glossary: SAC), computed and never stored, as ADR 0033 says.
 - **Several Cylinders count:** the litres used are summed over all Cylinders of the Dive, each pressure drop times its
   volume, with real gas; it needs both pressures and a volume on every Cylinder that was breathed from. This replaces
@@ -100,11 +100,37 @@ Built on 2026-10-08, the test seams agreed with the owner.
 - **Words under the strip:** a tank whose series is tied to a Cylinder takes the Cylinder's gas, size and logged
   pressures where it has them.
 
+### Slice 3 as built
+
+Built on 2026-10-08, the test seams agreed with the owner (the pure function, the Dive's route, the MCP tool, the
+dive page).
+
+- **The server computes it** (`sac` on the Dive's view, `{ litresPerMinute, barPerMinute }`, two decimals), so every
+  client, the MCP tool and the later planning SAC share one figure. Never stored.
+- **The figure:** litres used / (minutes × (average depth / 10 + 1)), ADR 0033's formula: no water density, no
+  altitude. Duration and average depth are the Dive's own values, so an Override counts.
+- **Real gas at every pressure**, not only above 200 bar (ADR 0033's wording for the gas plan): a cubic compressibility
+  factor per gas (oxygen, nitrogen, helium), mixed by the Cylinder's gas; a Cylinder without a gas counts as air. The
+  coefficients are **our own least-squares fit through NIST's isotherms at 20 °C**, 1 to 351 bar, within 0.2 % of them
+  (`scripts/fit-compressibility.mjs`, [research note](../research/2026-10-08-real-gas-compressibility.md)). Not
+  Subsurface's coefficients: they sit in a GPL-2.0 file, and Dive Hub is Apache-2.0 (ADR 0006).
+- **bar/min** is the pressure drop / the same surface minutes, for a Dive with exactly one Cylinder, else `null`.
+- **Every Cylinder must be complete:** one without a volume or one of its pressures means no SAC for the Dive; one with
+  equal start and end pressure adds nothing.
+- **Why there is none** is a code (`sacMissing`), for a Dive with Cylinders only: `too_short` (under 15 minutes),
+  `no_average_depth`, `cylinder_incomplete`, the first that applies in this order. Clients say it (owner, 2026-10-08).
+- **With a tank pod both figures show** (owner, 2026-10-08): "SAC on this dive" from the Cylinders under their list,
+  and the pod's own sentence under the pressure strip as the computer's figure. They may differ.
+- **Units:** L/min in both systems; the drop in bar/min (one decimal) or psi/min (whole).
+- **AI access (MCP):** `logbook_get_dive` returns `sac` (`litres_per_minute`, `bar_per_minute`, or `missing`).
+
 ## Open
 - **A second pod is unverified**: further series are stored, but the web client does not ask for them yet (the route
   takes exact channel names), and how Suunto writes two tanks of one gas is unknown. Wanted: a file
   ([samples](../../samples/README.md)).
 - A pod as a Device (ADR 0034) and planning SAC and gas plans (ADR 0033, slice 22) stay where they were.
+- The fit is at 20 °C: colder gas is denser at the same pressure, which the figure ignores (the size of the effect is
+  not worked out). The gas plan should use the same module (`real-gas.ts`).
 
 ## Consequences
 - A Dive recorded with a pod shows its gas use without anything being logged by hand.

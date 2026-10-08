@@ -1335,7 +1335,14 @@
     "startAndEnd": "{{start}} am Anfang, {{end}} am Ende, {{used}} verbraucht",
     "startOnly": "{{start}} am Anfang",
     "endOnly": "{{end}} am Ende",
-    "unknown": "Nichts darüber bekannt"
+    "unknown": "Nichts darüber bekannt",
+    "sac": "AMV bei diesem Tauchgang: {{sac}}",
+    "sacWithDrop": "AMV bei diesem Tauchgang: {{sac}} ({{drop}})",
+    "noSac": {
+      "cylinder_incomplete": "Noch kein AMV für diesen Tauchgang: dafür braucht jede Flasche ihr Volumen und den Druck am Anfang und am Ende.",
+      "no_average_depth": "Noch kein AMV für diesen Tauchgang: dafür fehlt die mittlere Tiefe.",
+      "too_short": "Kein AMV für diesen Tauchgang: er ist kürzer als 15 Minuten."
+    }
   },
   "participants": {
     "title": "Buddys und Guides",

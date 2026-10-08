@@ -120,11 +120,36 @@ test('a tank pod\'s Cylinder is there after the import, marked, and the profile 
     await page.getByRole('textbox', { name: 'Notes' }).fill('Checked in psi');
     await page.getByRole('button', { name: 'Save' }).click();
     await expect(page.getByText('Checked in psi')).toBeVisible();
+    // The typed note shows in the form before the save has answered: wait for the save itself.
+    await expect.poll(async () => (await getDive(request, podDive)).version).toBe(version + 1);
     const after = await getDive(request, podDive);
-    expect(after.version).toBe(version + 1);
     expect(after.cylinders[0]).toMatchObject({ startPressureBar: expect.closeTo(200.4, 1), endPressureBar: expect.closeTo(50.1, 1), fromPod: true });
   } finally {
     const d = await getDive(request, podDive);
     await request.patch(`/api/dives/${podDive}`, { data: { version: d.version, cylinders: asImported, notes: null }, headers });
   }
+});
+
+test('SAC on this dive: L/min from the Cylinders, bar/min beside it for a single one, and what is missing when there is none', { tag: ['@dives'] }, async ({ page, request }) => {
+  // 12 L of air from 201 to 51 bar is 1725.6 L with real gas; over 40 minutes at an average of 10 m: 21.57 L/min and
+  // 1.875 bar/min (worked in the server's sac.test.ts).
+  const air12 = { volumeL: 12, startPressureBar: 201, endPressureBar: 51 };
+  const { version } = await getDive(request, diveId);
+  await request.patch(`/api/dives/${diveId}`, { data: { version, set: { durationSeconds: 40 * 60, avgDepthM: 10 }, cylinders: [air12] }, headers });
+  await page.goto(`/#/dives/${diveId}`);
+  await expect(page.getByText('SAC on this dive: 21.6 L/min (1.9 bar/min)')).toBeVisible();
+
+  // A 7 L stage of air from 201 to 101 bar adds 653.2 L: together 29.7 L/min, and no pressure drop for two Cylinders.
+  await setCylinders(request, diveId, [air12, { volumeL: 7, startPressureBar: 201, endPressureBar: 101 }]);
+  await page.reload();
+  await expect(page.getByText(/^SAC on this dive: 29\.7 L\/min$/)).toBeVisible();
+
+  await setCylinders(request, diveId, [air12, { volumeL: 7, startPressureBar: 201 }]);
+  await page.reload();
+  await expect(page.getByText('No SAC for this dive yet: it needs the volume and the pressure at the start and at the end of every cylinder.')).toBeVisible();
+
+  await setPreferences(request, { language: 'de', units: 'imperial' });
+  await setCylinders(request, diveId, [air12]);
+  await page.reload();
+  await expect(page.getByText(/^AMV bei diesem Tauchgang: 21,6 l\/min \(27 psi\/min\)$/)).toBeVisible();
 });

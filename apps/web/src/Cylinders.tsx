@@ -38,6 +38,7 @@ export function useCylinderText() {
 export function CylinderList({ dive: d }: { dive: DiveView }) {
   const { t } = useTranslation();
   const text = useCylinderText();
+  const display = useDisplay();
   if (d.cylinders.length === 0) return null;
   return (
     <>
@@ -50,6 +51,14 @@ export function CylinderList({ dive: d }: { dive: DiveView }) {
           </li>
         ))}
       </ul>
+      {d.sac && (
+        <p className="cylinder-sac">
+          {d.sac.barPerMinute === null
+            ? t('cylinders.sac', { sac: display.gasRate(d.sac.litresPerMinute) })
+            : t('cylinders.sacWithDrop', { sac: display.gasRate(d.sac.litresPerMinute), drop: display.pressureRate(d.sac.barPerMinute) })}
+        </p>
+      )}
+      {d.sacMissing && <Muted>{t(`cylinders.noSac.${d.sacMissing}`)}</Muted>}
     </>
   );
 }
