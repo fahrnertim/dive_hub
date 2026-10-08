@@ -56,7 +56,9 @@ const variants = [
 ];
 
 for (const v of variants) {
-  test.describe(v.name, () => {
+  // The variants without axe run only in the full check (@full, ADR 0023): the two with axe cover both languages
+  // and colour schemes, and the width sweep covers the widths.
+  test.describe(v.name, { tag: v.axe ? [] : ['@full'] }, () => {
     test.use({ locale: v.locale, colorScheme: v.colorScheme, viewport: v.viewport });
     const title = (english: string) => (v.english ? english : undefined);
 

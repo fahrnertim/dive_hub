@@ -2,106 +2,59 @@
 // The checks for what changed (ADR 0023): typecheck, the unit tests whose imports changed, and the
 // browser tests of the areas touched. `pnpm check` while working and before a commit; `pnpm check:full` before a
 // push or a release (ADR 0023, amendment of 2026-10-08).
-//   pnpm check                 changes since the last commit (staged, unstaged and new files)
-//   pnpm check --base main     changes since another commit or branch
+//   pnpm check                 changes since each step's last green run, or since the last commit when none is recorded
+//   pnpm check --base main     changes since another commit or branch (--base HEAD: all uncommitted changes)
 //   pnpm check:full            everything
-//   pnpm check --dry           only say what would run (with --files a,b: for these paths)
-// Unknown paths count as "everything": when in doubt, run more.
-import { execSync, spawnSync } from 'node:child_process';
+//   pnpm check --dry           only say what would run and from which base (with --files a,b: for these paths)
+//   pnpm check --failed        only the browser tests that failed in the last browser run; records nothing
+// A step that passes records the state it passed on (a local git ref, refs/check/green-<step>); a run with --base
+// or --files records nothing. Unknown paths count as "everything": when in doubt, run more.
+import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { relative } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { FULL_ONLY, QUIET, STEPS, TAGS, changedSince, forBrowserTests, fullPlan, greenRun, planSteps, recordGreen, snapshot } from './check-lib.mjs';
 
 const args = process.argv.slice(2);
+
+// --failed: after a failing browser run, only the tests that failed (Playwright's record of its last run). It
+// says nothing about the other tests, so it records nothing: `pnpm check` afterwards runs the browser plan whole.
+if (args.includes('--failed')) {
+  let failed = [];
+  try {
+    failed = JSON.parse(readFileSync('apps/web/test-results/.last-run.json', 'utf8')).failedTests ?? [];
+  } catch { /* no browser run yet */ }
+  if (failed.length === 0) {
+    console.log('check: no browser test failed in the last browser run; nothing to run');
+    process.exit(0);
+  }
+  console.log(`check: the ${failed.length} browser test(s) that failed in the last browser run; nothing is recorded`);
+  process.exit(spawnSync('pnpm --filter @dive-hub/web test:e2e --last-failed', { stdio: 'inherit', shell: true }).status ?? 1);
+}
 const full = args.includes('--full');
 const dry = args.includes('--dry');
-const base = args.includes('--base') ? args[args.indexOf('--base') + 1] : 'HEAD';
-
-const git = (cmd) => execSync(`git ${cmd}`, { encoding: 'utf8' }).split('\n').map((l) => l.trim()).filter(Boolean);
+const givenBase = args.includes('--base') ? args[args.indexOf('--base') + 1] : null;
 // --files a,b: pretend these changed (to see what a change would run, with --dry).
 const given = args.includes('--files') ? args[args.indexOf('--files') + 1].split(',') : null;
-const changed = full ? [] : given ?? [...new Set([...git(`diff --name-only ${base}`), ...git('ls-files --others --exclude-standard')])];
+// Only a run that started from the recorded state can say that the state it passed on is green.
+const records = !dry && !given && !givenBase;
 
-/** Browser test areas (tags in apps/web/e2e) by source path; first match wins. */
-const AREAS = [
-  [/^apps\/web\/src\/SiteImportPage\.tsx$/, ['@admin', '@sites']],
-  [/^apps\/web\/src\/(SitesPage|SiteForm|SiteHistory)\.tsx$|^apps\/web\/src\/lib\/(site-origin|sites-list|geo)\.ts$/, ['@sites']],
-  [/^apps\/web\/src\/SitePicker\.tsx$/, ['@sites', '@dives']],
-  // Dive centres and their verification codes (ADR 0043): their own pages, a panel on a Dive site, a line on a Dive.
-  [/^apps\/web\/src\/CentresPage\.tsx$|^apps\/web\/src\/ui\/QrCode\.tsx$/, ['@sites', '@dives']],
-  // The scanner for verification codes (ADR 0043): on the new centre form, where a centre's number is set, and where a diver's code is taken.
-  [/^apps\/web\/src\/CodeScanner\.tsx$|^apps\/web\/src\/lib\/qr-reader\.ts$/, ['@sites', '@divers']],
-  [/^apps\/web\/src\/lib\/address-search\.ts$/, ['@sites', '@dives']],
-  [/^apps\/web\/src\/(DiveDetail|DiveEditForm|DiveHistory|DiveList|ProfileSketch|DepthProfile|Decisions|ReviewPage|ReviewStrip|ReviewRows|ImportPanel|DeleteDive|DeletedDives|MergeDive|LogbookChecks|Participants|Assessment)\.tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|sketch|logbook|review|devices|importable|deletion|assessment)\.ts$/, ['@dives']],
-  // The Dive the deletion browser tests delete and restore (ADR 0026).
-  [/^apps\/web\/e2e\/fixtures\/deletable-computer\.fit$/, ['@dives']],
-  // The two computers' files of the Dives the merging browser tests merge (ADR 0038).
-  [/^apps\/web\/e2e\/fixtures\/mergeable-(main|backup)\.fit$/, ['@dives']],
-  // The Dive whose assessment has several findings (ADR 0036).
-  [/^apps\/web\/e2e\/fixtures\/assessed-computer\.fit$/, ['@dives']],
-  // The Suunto dive a browser test imports (ADR 0037).
-  [/^apps\/web\/e2e\/fixtures\/suunto-d5\.json$/, ['@dives']],
-  // A Diver's codes and details, and taking a scanned code (ADR 0043): on the divers page; the codes also show on a Dive.
-  [/^apps\/web\/src\/DiverCodes\.tsx$/, ['@divers', '@dives']],
-  [/^apps\/web\/src\/DiversPage\.tsx$/, ['@divers']],
-  [/^apps\/web\/src\/(Account|AccountPage|Connections|ProviderBuddies)\.tsx$/, ['@account']],
-  // Importing a Provider's dives (ADR 0030): on the Connection, and the dives it makes.
-  [/^apps\/web\/src\/ProviderDiveImport\.tsx$/, ['@account', '@dives']],
-  [/^apps\/web\/src\/ProviderPanel\.tsx$/, ['@dives']],
-  // Providers in the web client (ADR 0027): the account's Connections and each Dive's panels read them.
-  [/^apps\/web\/src\/lib\/providers\.ts$/, ['@dives', '@account']],
-  [/^apps\/web\/src\/Admin\.tsx$/, ['@admin']],
-  // AI accesses to the MCP endpoint (ADR 0035): on the account page, their switch on the admin page.
-  [/^apps\/web\/src\/AiAccess\.tsx$|^apps\/web\/src\/lib\/ai-access\.ts$/, ['@account', '@admin']],
-  [/^apps\/server\/src\/mcp\//, ['@account', '@admin']],
-  [/^apps\/server\/src\/sites\/import\/|^apps\/server\/src\/providers\/ssi\/ssi-sites\.ts$/, ['@admin', '@sites']],
-  [/^apps\/server\/src\/sites\//, ['@sites', '@dives']],
-  [/^apps\/server\/src\/centres\//, ['@sites', '@dives']],
-  [/^apps\/server\/src\/(dives|imports|fit|suunto|assessment)\/|^apps\/server\/src\/(routes|vocabulary)\.ts$/, ['@dives']],
-  // Divers reach further than their page: a Dive shows its Participants and their codes, the account page imports buddies.
-  [/^apps\/server\/src\/divers\//, ['@divers', '@dives', '@account']],
-  [/^apps\/server\/src\/(users|auth)\//, ['@account', '@admin']],
-  [/^apps\/server\/src\/(providers|secrets)\//, ['@dives', '@account']],
-  [/^apps\/server\/test\/fixtures\/site-sources\//, ['@admin', '@sites']],
-  // Zips SSI's site list for the tests and the browser tests' server (ADR 0025).
-  [/^apps\/server\/test\/zip\.ts$/, ['@admin', '@sites']],
-];
-/** Paths that change no behaviour: no tests. */
-const QUIET = /^(docs\/|samples\/|\.claude\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|skills-lock\.json$|\.gitignore$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$|apps\/server\/test\/fixtures\/write-assessment-fixture\.ts$|apps\/server\/test\/fixtures\/write-suunto-fixture\.ts$|apps\/server\/test\/fixtures\/write-merge-fixture\.ts$|scripts\/token-report\.mjs$)/;
+// The state this run checks. Taken before anything runs: an edit made during the run counts as changed next time.
+const tree = given ? null : snapshot();
+/** Per step: where its changed files are counted from, and the files. */
+const since = Object.fromEntries(STEPS.map((step) => {
+  if (given) return [step, { from: '--files', base: null, changed: given }];
+  if (givenBase) return [step, { from: givenBase, base: givenBase, changed: changedSince(givenBase, tree) }];
+  const green = greenRun(step);
+  return [step, green
+    ? { from: `its green run of ${green.at}`, base: green.base, changed: changedSince(green.base, tree) }
+    : { from: 'the last commit (no green run recorded)', base: 'HEAD', changed: changedSince('HEAD', tree) }];
+}));
+// Changed texts count, for the browser tests, as the source files that use them.
+const browser = forBrowserTests(since.e2e.changed, since.e2e.base, tree);
+const plan = full ? fullPlan() : planSteps({ ...Object.fromEntries(STEPS.map((step) => [step, since[step].changed])), e2e: browser.changed });
+if (!full) for (const note of [browser.note, ...plan.notes]) if (note) console.log(`check: ${note}`);
 
-const plan = { typecheck: full, server: full ? 'all' : 'none', web: full ? 'all' : 'none', e2e: full ? 'all' : 'none', areas: new Set(), specs: new Set() };
-const everything = () => Object.assign(plan, { typecheck: true, server: 'all', web: 'all', e2e: 'all' });
-const more = (key, level) => { if (plan[key] !== 'all') plan[key] = level; };
-
-for (const path of changed) {
-  if (QUIET.test(path)) continue;
-  plan.typecheck = true;
-  const spec = /^apps\/web\/e2e\/([\w-]+\.spec\.ts)$/.exec(path);
-  if (spec) { more('e2e', 'some'); plan.specs.add(spec[1]); continue; }
-  if (/^apps\/web\/test\//.test(path)) { more('web', 'changed'); continue; }
-  if (/^apps\/server\/test\/[\w-]+\.test\.ts$/.test(path)) { more('server', 'changed'); continue; }
-  if (/^apps\/server\/test\/fixtures\//.test(path)) more('server', 'changed');
-  const area = AREAS.find(([re]) => re.test(path));
-  if (area) {
-    more(path.startsWith('apps/server/') ? 'server' : 'web', 'changed');
-    more('e2e', 'some');
-    for (const tag of area[1]) plan.areas.add(tag);
-    // Any page change can break the layout checks that span pages.
-    if (path.startsWith('apps/web/')) plan.areas.add('@layout');
-    continue;
-  }
-  // Shared code of one app (web: ui/, design/, i18n/, App, api; server: app, schema, migrations): that app's
-  // tests and every browser test. The test setup, packages, configuration and anything else: everything.
-  const app = /^apps\/(web|server)\/(src|drizzle)\//.exec(path)?.[1];
-  if (app) {
-    more(app, 'all');
-    plan.e2e = 'all';
-    console.log(`check: ${path} is shared ${app} code, so all ${app} tests and all browser tests run`);
-    continue;
-  }
-  everything();
-  console.log(`check: ${path} is shared or unknown, so everything runs`);
-}
-
-/** The area tags a browser test can have; a test with none of them would run only in the full check. */
-const TAGS = ['@dives', '@divers', '@sites', '@account', '@admin', '@layout'];
 /** Fails when a browser test has no area tag (ADR 0023): the checks by area would never run it. */
 function untaggedBrowserTests() {
   const { stdout, stderr } = spawnSync(`pnpm --filter @dive-hub/web exec playwright test --project=e2e --list --grep-invert "${TAGS.join('|')}"`, { encoding: 'utf8', shell: true });
@@ -112,27 +65,61 @@ function untaggedBrowserTests() {
   return 1;
 }
 
-const steps = [];
 const pnpm = (cmd) => `pnpm ${cmd}`;
-if (plan.typecheck) steps.push(['typecheck', pnpm('typecheck')]);
-if (plan.server !== 'none') steps.push([`server tests (${plan.server})`, pnpm(`--filter @dive-hub/server exec vitest run --passWithNoTests${plan.server === 'changed' ? ` --changed ${base}` : ''}`)]);
-if (plan.web !== 'none') steps.push([`web unit tests (${plan.web})`, pnpm(`--filter @dive-hub/web exec vitest run --passWithNoTests${plan.web === 'changed' ? ` --changed ${base}` : ''}`)]);
-if (plan.e2e !== 'none') {
-  steps.push(['browser test tags', untaggedBrowserTests]);
-  const grep = [...plan.areas, ...[...plan.specs].map((s) => s.replace(/\./g, '\\.'))].join('|');
-  const which = plan.e2e === 'all' ? 'all' : grep;
-  steps.push([`browser tests (${which})`, pnpm(`--filter @dive-hub/web test:e2e${plan.e2e === 'all' ? '' : ` --grep "${grep}"`}`)]);
+/**
+ * The unit tests of one app: all of them, or those that import a changed file (`vitest related`, which is what
+ * `vitest --changed` runs, but from our list of files: vitest's own list can only start at a commit).
+ */
+function unitTests(app, level) {
+  const run = `--filter @dive-hub/${app} exec vitest`;
+  if (level === 'all') return pnpm(`${run} run --passWithNoTests`);
+  const files = since[app].changed.filter((path) => !QUIET.test(path) && existsSync(path)).map((path) => relative(`apps/${app}`, path).replace(/\\/g, '/'));
+  const related = pnpm(`${run} related --run --passWithNoTests ${files.map((file) => `"${file}"`).join(' ')}`);
+  // Windows takes about 8000 characters in one command.
+  return related.length < 7000 ? related : pnpm(`${run} run --passWithNoTests`);
 }
 
+/** The steps to run: [name, command or function, the step in STEPS it completes (or null)]. */
+const steps = [];
+if (plan.typecheck) steps.push(['typecheck', pnpm('typecheck'), 'typecheck']);
+if (plan.scripts) steps.push(['check script tests', 'node --test scripts/check-lib.test.mjs', 'scripts']);
+if (plan.server !== 'none') steps.push([`server tests (${plan.server})`, unitTests('server', plan.server), 'server']);
+if (plan.web !== 'none') steps.push([`web unit tests (${plan.web})`, unitTests('web', plan.web), 'web']);
+if (plan.e2e !== 'none') {
+  steps.push(['browser test tags', untaggedBrowserTests, null]);
+  const grep = [...plan.areas, ...[...plan.specs].map((s) => s.replace(/\./g, '\\.'))].join('|');
+  const which = plan.e2e === 'all' ? 'all' : grep;
+  // The variants of ui-quality that only the full check runs (ADR 0023).
+  const without = full ? '' : ` --grep-invert "${FULL_ONLY}"`;
+  steps.push([`browser tests (${which}${full ? '' : `, without ${FULL_ONLY}`})`, pnpm(`--filter @dive-hub/web test:e2e${plan.e2e === 'all' ? '' : ` --grep "${grep}"`}${without}`), 'e2e']);
+}
+
+// A step with nothing to run is as green on this state as on the one it last passed on.
+const planned = new Set(steps.map(([, , step]) => step));
+if (records) for (const step of STEPS) if (!planned.has(step)) recordGreen(step, tree);
+
+/** "3 changed file(s) since …": one line when every step counts from the same base, else a line per base. */
+function bases() {
+  const names = { typecheck: 'typecheck', scripts: 'check script tests', server: 'server tests', web: 'web unit tests', e2e: 'browser tests' };
+  const byBase = new Map();
+  for (const step of STEPS) {
+    const text = `${since[step].changed.length} changed file(s) since ${since[step].from}`;
+    byBase.set(text, [...(byBase.get(text) ?? []), names[step]]);
+  }
+  if (byBase.size === 1) return `check: ${[...byBase.keys()][0].replace(' its ', ' the ')}`;
+  return `check: each step counts from its own last green run\n${[...byBase].map(([text, stepNames]) => `  ${stepNames.join(', ')}: ${text}`).join('\n')}`;
+}
+
+console.log(full ? 'check: everything' : bases());
 if (steps.length === 0) {
-  console.log(changed.length === 0 ? `check: nothing changed since ${base}` : 'check: only documentation and other quiet files changed; nothing to run');
+  console.log(STEPS.every((step) => since[step].changed.length === 0) ? 'check: nothing changed, nothing to run' : 'check: only documentation and other quiet files changed; nothing to run');
   process.exit(0);
 }
-console.log(`check: ${full ? 'everything' : `${changed.length} changed file(s) since ${base}`}\n${steps.map(([name]) => `  - ${name}`).join('\n')}`);
+console.log(steps.map(([name]) => `  - ${name}`).join('\n'));
 
 if (dry) process.exit(0);
 const times = [];
-for (const [name, cmd] of steps) {
+for (const [name, cmd, step] of steps) {
   console.log(`\n▶ ${name}${typeof cmd === 'string' ? `: ${cmd}` : ''}`);
   const started = Date.now();
   const status = typeof cmd === 'string' ? spawnSync(cmd, { stdio: 'inherit', shell: true }).status : cmd();
@@ -141,5 +128,6 @@ for (const [name, cmd] of steps) {
     console.log(`\n✗ ${name} failed\n${times.join('\n')}`);
     process.exit(status ?? 1);
   }
+  if (records && step) recordGreen(step, tree);
 }
 console.log(`\n✓ all checks passed\n${times.join('\n')}`);

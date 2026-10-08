@@ -35,10 +35,11 @@ Start at [docs/index.md](docs/index.md) — it lists every document.
 - Relative Markdown links (not `[[wikilinks]]`).
 - Record significant decisions as ADRs; don't re-litigate accepted ones without a new ADR.
 - **Checks** ([ADR 0023](docs/decisions/0023-faster-checks.md)): `pnpm check` while working and before proposing a commit (only what
-  the change touches; it runs everything by itself when the change is broad), `pnpm check:full` before a push or a release,
+  changed since its last green run; it runs everything by itself when the change is broad), `pnpm check:full` before a push or a release,
   and the review capture with `REVIEW_AREAS` only when UI changed.
+  After a failing browser test, `pnpm check --failed` reruns only the failed ones; then `pnpm check` once more.
   A commit of documentation only (`docs/`, `AGENTS.md`, `CLAUDE.md`, `README.md`) needs no check.
-  A new page or module gets its path in `scripts/check.mjs`, and a new browser test gets an area tag.
+  A new page or module gets its path in `scripts/check-lib.mjs`, and a new browser test gets an area tag.
 - A change that gives API clients a new duty (something to show, ask, format or send) updates the
   [client contract](docs/spec/clients.md) in the same change.
 - Keep this file short; details belong in `docs/`.

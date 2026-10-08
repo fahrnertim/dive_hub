@@ -1,6 +1,6 @@
 ---
 title: "ADR 0023: Checks by what changed, and a faster full check"
-summary: pnpm check runs typecheck, the unit tests whose imports changed and the browser tests of the areas touched (tags); pnpm check:full runs everything, before a commit as decided, since the amendment of 2026-10-08 before a push or a release. Browser tests run on 2 workers with a server and database each, prepared once; no trace recording by default; axe in 2 of 4 ui-quality variants; server tests share modules. Full check 10.5 → 3 min.
+summary: pnpm check runs typecheck, the unit tests whose imports changed and the browser tests of the areas touched (tags); pnpm check:full runs everything, before a commit as decided, since the amendment of 2026-10-08 before a push or a release. pnpm check counts each step from its last green run (amendment of 2026-10-08) and leaves two ui-quality variants to the full check; changed texts run the pages that use them; --failed reruns the failed browser tests. Browser tests run on 2 workers with a server and database each, prepared once; no trace recording by default; axe in 2 of 4 ui-quality variants; server tests share modules. Full check 10.5 → 3 min.
 status: accepted
 date: 2026-10-04
 ---
@@ -141,3 +141,85 @@ repeated them. Asked by the owner and decided with them on 2026-10-08.
   a git pre-push hook that runs the full check (it needs a setting in every clone and makes every push wait ten
   minutes; not installed, the rule is in AGENTS.md); keeping the rule and making the suite faster (worth doing
   anyway: `ui-quality.spec.ts` is most of the time).
+
+## Amendment 2026-10-08: the check counts from its last green run
+Why: `pnpm check` planned from the files changed since the last commit. Inside a slice that list only grows, so every
+rerun repeated everything the slice had touched so far: after one failing browser test was fixed, the server tests
+(79 s) and every area of the slice ran again, although they had passed on the same files. Asked by the owner on
+2026-10-08: testing times slow development down.
+
+- **A step that passes records the state it passed on.** The steps are the typecheck, the check script's tests, the
+  server tests, the web unit tests and the browser tests. The state is the working tree as a git tree (tracked files
+  with their edits, and new files that aren't ignored), held by a local ref `refs/check/green-<step>`. Nothing is
+  committed to a branch, the index is not touched, and git pushes and fetches no such ref.
+- **The next run plans each step from the files that differ from that step's record**, committed or not. Without a
+  record it counts from the last commit, as before. A step with nothing to run takes the new state as its record.
+  - After a failure, the steps that passed before it don't repeat for the files they passed on; the failed step and
+    those after it count from their older records.
+  - A file changed back to what passed doesn't count. A commit of the state that passed changes nothing: the check
+    then says "nothing changed". A pull or a branch switch counts like any other change.
+- **`--dry` says which base it used**: "N changed file(s) since the green run of …" or "… since the last commit (no
+  green run recorded)", per step when the steps differ.
+- **`--base <commit>` and `--files` record nothing**, and neither does `--dry`: only a run that started from the
+  record can say the new state is green. `pnpm check --base HEAD` is the check as it was (all uncommitted changes).
+  `pnpm check:full` runs everything and records each step that passes.
+- **The unit tests get their files from the script** (`vitest related <files>`, which is what `vitest --changed` runs
+  from its own list): vitest's list can only start at a commit. When the list is too long for one command line, all
+  of that app's unit tests run.
+- **The planning moved to `scripts/check-lib.mjs`** (the path map, the plan, the record) with tests in
+  `scripts/check-lib.test.mjs` (Node's test runner). They run as a step when a `scripts/check*` file changed, and in
+  the full check. A new page or module still gets its path in the map, now in `check-lib.mjs`.
+- **What is given up:** the record is trusted. A test that passed by luck (a flaky one) is not run again until its
+  files change or the full check runs; before, the next rerun in the same slice would have run it again.
+  "Green on the commit's final state" above now means: `pnpm check` exits green on that state, whether it ran steps
+  or found every step already recorded on it.
+- **To forget the records:** `git for-each-ref --format="%(refname)" refs/check` lists them, `git update-ref -d` removes one.
+- *Considered:* a file under `node_modules/.cache` naming the tree (git removes an unreferenced tree after two weeks,
+  and a second place to keep in step with git); one record for the whole run (a failure in the last step would repeat
+  all earlier ones, which is the common case); recording per browser test area (the areas overlap through `@layout`,
+  and Playwright's `--last-failed` does this better, see the next amendment).
+
+## Amendment 2026-10-08: fewer browser tests in `pnpm check`
+Why: the browser tests are nine tenths of a check. Measured on the full run of 2026-10-08 (285 tests, 540 s on
+2 workers, 871 s of worker time):
+
+| Part | Tests | Worker time |
+|---|---|---|
+| `ui-quality.spec.ts`, every page in 4 variants | 184 | 544 s |
+| – English, light, desktop (axe) | 46 | 208 s |
+| – German, dark, phone (axe) | 46 | 149 s |
+| – German, light, tablet | 46 | 99 s |
+| – English, light, small phone | 46 | 88 s |
+| `ui-quality.spec.ts`, "behaviour" (the width sweep is 22 s of it) | 29 | 66 s |
+| The 18 other spec files | 72 | 261 s |
+
+Decided with the owner on 2026-10-08. `pnpm check:full` runs everything, as before; all four points change only
+what `pnpm check` runs.
+
+- **`pnpm check --failed`** runs only the browser tests that failed in the last browser run (Playwright's
+  `--last-failed`, from `apps/web/test-results/.last-run.json`). It records nothing, because it says nothing about
+  the other tests: once they pass, `pnpm check` runs the browser plan whole, and that run is the one a commit needs.
+- **ui-quality's two variants without axe run only in the full check** (tag `@full`: English light small phone,
+  German light tablet; 92 of the 285 tests, 187 s of worker time). `pnpm check` passes `--grep-invert "@full"`.
+  - Still in `pnpm check`: both variants with axe (both languages, both colour schemes, desktop and phone) and the
+    width sweep from 320 to 1440 px.
+  - Given up until the push: German at tablet width, and one h1, the title and unique button names at 320 and 768 px.
+- **Changed texts run the browser tests of the pages that use them.** A changed `i18n/locales/*.json` ran every
+  browser test, and nearly every slice changes texts.
+  - For the browser tests the script compares the texts with the step's base, takes the top-level groups that
+    differ (`sites`, `diverCodes`, …) and counts the source files under `apps/web/src` that name a key of them
+    (`'sites.title'`, `` `import.status.${…}` ``) as changed. Those files then go through the path map like any
+    other: a page runs its areas, shared code runs everything.
+  - So nothing is kept by hand. On 2026-10-08, 24 of the 33 groups narrow to areas; `common`, `nav`, `form`,
+    `errors`, `logbook`, `geo`, `provider` and `providers` still run everything (named in `App.tsx`, `ui/`,
+    `lib/display.ts` or the texts' type file).
+  - A group that no source file names keeps the texts file as the change, which runs everything. So does
+    `--files`, which has no base to compare with.
+  - The web unit tests still all run for a changed texts file (4 s).
+  - Given up until the push: a text shown on a page of an area that none of the files naming its key belongs to
+    (a key passed on in a variable from a file of another area).
+- **`pages.css` runs `ui-quality.spec.ts`, not every browser test** (every page with axe, the width sweep and the
+  behaviour checks). Given up until the push: a style that hides or covers a control and so breaks one of the 18
+  other spec files.
+- *Dropped after measuring:* taking `@layout` off the width sweep (the sweep is 22 s of worker time), and not
+  building the web client when no web file changed (`vite build` takes 0.6 s).
