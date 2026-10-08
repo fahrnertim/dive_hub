@@ -3,6 +3,7 @@
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { cylinder, dive, recording, revision, sampleSeries, type CylinderMaterial } from '../db/schema.js';
+import type { ProviderCylinder } from '../providers/provider.js';
 import { writeRevision, type Actor, type Changes, type RevisionCause } from './revisions.js';
 
 export class CylinderError extends Error {
@@ -155,6 +156,44 @@ export async function fillMissingCylinders(db: Db): Promise<number> {
     });
   }
   return filled;
+}
+
+/** A Cylinder in the values a Provider's logbook keeps for its one tank (ADR 0031). */
+export const providerCylinderOf = ({ volumeL, material, startPressureBar, endPressureBar, gas }: Cylinder): ProviderCylinder =>
+  ({ volumeL, material, startPressureBar, endPressureBar, gas });
+
+/**
+ * The one tank typed at a Provider, on a Dive (ADR 0045, amended). `fill`: a Dive without Cylinders gets it as one,
+ * unless its history spoke of Cylinders (one a User emptied stays empty), and a Dive's only Cylinder takes the values
+ * it lacks. `take`: the only Cylinder takes every value the Provider has, a Dive without Cylinders gets one. What the
+ * Provider doesn't keep stays (working pressure, the series, "from the pod"), and so does a value it has none for.
+ * With several Cylinders nothing: the tank can't be told to be one of them. Pressures that would end above their
+ * start are left as they were. Answers the change for the caller's Revision (empty when nothing differs).
+ */
+export async function mergeProviderCylinder(tx: Tx, diveId: string, tank: ProviderCylinder, how: 'fill' | 'take'): Promise<Changes> {
+  const before = await cylindersOf(tx, diveId);
+  if (before.length > 1) return {};
+  const only = before[0];
+  if (!only && how === 'fill') {
+    const [spoken] = await tx.select({ id: revision.id }).from(revision)
+      .where(and(eq(revision.entityType, 'dive'), eq(revision.entityId, diveId), sql`jsonb_exists(${revision.changes}, 'cylinders')`)).limit(1);
+    if (spoken) return {};
+  }
+  const base: Cylinder = only ?? {
+    volumeL: null, workingPressureBar: null, material: null, gas: null, startPressureBar: null, endPressureBar: null, fromPod: false, series: null,
+  };
+  const pick = <T>(here: T | null, theirs: T | null) => (how === 'fill' ? here ?? theirs : theirs ?? here);
+  const next: Cylinder = {
+    ...base, volumeL: pick(base.volumeL, tank.volumeL), material: pick(base.material, tank.material), gas: pick(base.gas, tank.gas),
+    startPressureBar: pick(base.startPressureBar, tank.startPressureBar), endPressureBar: pick(base.endPressureBar, tank.endPressureBar),
+  };
+  if (next.startPressureBar !== null && next.endPressureBar !== null && next.endPressureBar > next.startPressureBar) {
+    next.startPressureBar = base.startPressureBar;
+    next.endPressureBar = base.endPressureBar;
+  }
+  if (JSON.stringify(base) === JSON.stringify(next)) return {};
+  await write(tx, diveId, [next]);
+  return { cylinders: { from: before, to: [next] } };
 }
 
 /** A Recording left the Dive: the Cylinders tied to its series stay, without the series. Answers the change for the Revision. */

@@ -48,6 +48,7 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
     return ((await call('GET', `/api/imports/${created.json().id}`)).json() as { outcome: Outcome[] }).outcome[0]!;
   };
   const diveOf = async (id: string) => (await call('GET', `/api/dives/${id}`)).json() as DiveView;
+  const cylindersOfDive = async (id: string) => ((await call('GET', `/api/dives/${id}`)).json() as { cylinders: Record<string, unknown>[] }).cylinders;
   const status = async (id: string) => (await call('GET', `/api/dives/${id}/providers/ssi`)).json() as { current: { remoteId: string; upToDate: boolean } | null };
   const preview = async () => (await call('GET', `/api/connections/${connectionId}/dive-import`)).json() as Preview;
   /** Starts the import, runs it as the worker would, and answers its outcome by SSI dive. */
@@ -352,6 +353,70 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
       expect((await diveOf(id)).recordings).toEqual([expect.objectContaining({ isPrimary: true, parser: 'ssi-app-api', device: expect.objectContaining({ serialNumber: '77' }) })]);
       // Once it has the computer's Recording, it is no computer found at SSI any more.
       expect((await preview()).computers.map((c) => c.key)).not.toContain('mares:77');
+    }, 30_000);
+
+    it('makes a Cylinder from the tank typed at SSI, fills the gaps of a Dive\'s only Cylinder, and leaves several alone', async () => {
+      const tank = { odin_user_log_tank_vol_l: 12, odin_user_log_var_tanktype_id: 19, odin_user_log_pressure_start_bar: 204, odin_user_log_pressure_end_bar: 47 };
+      remote.tank = String(ctx.fakeSsi.addDive(ERIKA, {
+        ...handTypedDive({ at: '2025-11-02 10:00', depthM: 18, minutes: 45, siteId: 3314 }), ...tank, odin_user_log_ean: 1, odin_user_log_ean_percent: 32,
+      }));
+      // Two Dives linked earlier get Cylinders here: one of a tank pod's kind (pressures, no material), and a pair.
+      const single = of('atSite').diveId!;
+      const pair = of('nowhere').diveId!;
+      const measured = { volumeL: 12, startPressureBar: 198, endPressureBar: 52 };
+      const twin = [{ volumeL: 7, startPressureBar: 200, endPressureBar: 90 }, { volumeL: 7, startPressureBar: 200, endPressureBar: 80 }];
+      expect((await call('PATCH', `/api/dives/${single}`, { version: (await diveOf(single)).version, cylinders: [measured] })).statusCode).toBe(200);
+      expect((await call('PATCH', `/api/dives/${pair}`, { version: (await diveOf(pair)).version, cylinders: twin })).statusCode).toBe(200);
+      Object.assign(ctx.fakeSsi.dives.get(Number(remote.atSite))!, { ...tank, odin_user_log_ean: 0 });
+      Object.assign(ctx.fakeSsi.dives.get(Number(remote.nowhere))!, tank);
+      outcome = await runImport();
+
+      // A Dive without Cylinders gets SSI's tank as one: not tied to a series, not from a pod.
+      const made = of('tank').diveId!;
+      expect(await cylindersOfDive(made)).toEqual([{
+        volumeL: 12, workingPressureBar: null, material: 'steel', gas: { o2: 32, he: 0 }, startPressureBar: 204, endPressureBar: 47,
+        fromPod: false, series: null,
+      }]);
+      const history = (await call('GET', `/api/dives/${made}/revisions`)).json() as { cause: string; changes: Record<string, unknown> }[];
+      expect(history.find((r) => 'cylinders' in r.changes)).toMatchObject({ cause: 'fill' });
+      // The only Cylinder of a Dive keeps what it has and takes what it lacked: the material and the gas.
+      expect(await cylindersOfDive(single)).toEqual([expect.objectContaining({ ...measured, material: 'steel', gas: { o2: 21, he: 0 } })]);
+      // With several, SSI's one tank belongs to none of them.
+      expect(await cylindersOfDive(pair)).toEqual(twin.map((c) => expect.objectContaining({ ...c, material: null })));
+      // Nothing is left to do: the next import changes none of them.
+      const versions = await Promise.all([made, single, pair].map(async (id) => (await diveOf(id)).version));
+      await runImport();
+      expect(await Promise.all([made, single, pair].map(async (id) => (await diveOf(id)).version))).toEqual(versions);
+    }, 30_000);
+
+    it('takes a tank changed only at SSI and keeps what a Provider has no word for; asks when both changed it', async () => {
+      const id = of('tank').diveId!;
+      const record = ctx.fakeSsi.dives.get(Number(remote.tank))!;
+      // Here: the working pressure, which SSI doesn't keep. At SSI: another end pressure.
+      const [mine] = await cylindersOfDive(id);
+      await call('PATCH', `/api/dives/${id}`, { version: (await diveOf(id)).version, cylinders: [{ ...mine, workingPressureBar: 232 }] });
+      record.odin_user_log_pressure_end_bar = 60;
+      outcome = await runImport();
+      expect(of('tank')).toMatchObject({ result: 'updated' });
+      expect(await cylindersOfDive(id)).toEqual([expect.objectContaining({ endPressureBar: 60, startPressureBar: 204, workingPressureBar: 232, material: 'steel' })]);
+
+      // Both change it: here the size, at SSI the tank type. Shown with both tanks; Dive Hub's stays unless told.
+      const [now] = await cylindersOfDive(id);
+      await call('PATCH', `/api/dives/${id}`, { version: (await diveOf(id)).version, cylinders: [{ ...now, volumeL: 15 }] });
+      record.odin_user_log_var_tanktype_id = 20;
+      const p = (await preview()) as unknown as { conflicts: { remoteId: string; field: string; hub: unknown; provider: unknown }[] };
+      expect(p.conflicts).toEqual([expect.objectContaining({
+        remoteId: remote.tank, field: 'cylinder',
+        hub: { volumeL: 15, material: 'steel', startPressureBar: 204, endPressureBar: 60, gas: { o2: 32, he: 0 } },
+        provider: { volumeL: 12, material: 'aluminium', startPressureBar: 204, endPressureBar: 60, gas: { o2: 32, he: 0 } },
+      })]);
+      outcome = await runImport({ conflicts: [{ remoteId: remote.tank!, field: 'cylinder', choice: 'provider' }] });
+      expect(await cylindersOfDive(id)).toEqual([expect.objectContaining({ volumeL: 12, material: 'aluminium', workingPressureBar: 232 })]);
+
+      // SSI's tank emptied there removes nothing here.
+      Object.assign(record, { odin_user_log_tank_vol_l: 0, odin_user_log_pressure_start_bar: 0, odin_user_log_pressure_end_bar: 0, odin_user_log_var_tanktype_id: 0 });
+      await runImport();
+      expect(await cylindersOfDive(id)).toEqual([expect.objectContaining({ volumeL: 12, startPressureBar: 204 })]);
     }, 30_000);
 
     it('only adds to Dives here when told so', async () => {

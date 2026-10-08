@@ -150,7 +150,8 @@ coverage, validity; B5), **Medical exam** (date, result, valid until, examiner),
   **Cylinders**, all the Dive's own values (not Overrides): part of its version, each change a Revision. "Same as last
   dive" copies suit, Cylinders (without pressures) and lead from the Diver's previous Dive into the form; nothing is
   filled without the User. An import from a Provider fills lead and the cylinder where empty and takes them back
-  three-way (amends ADR 0030).
+  three-way (amends ADR 0030); the tank typed at SSI also fills the gaps of a Dive's only Cylinder (ADR 0045, built;
+  lead: planned).
 - *Experience:* dive type/purpose, rating, notes, tags, problems.
 - *Social:* Participants, Joint dive, Visibility, Signatures.
 - *Hub state:* Pushes, Conflicts, Revisions.

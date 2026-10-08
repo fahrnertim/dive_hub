@@ -12209,12 +12209,30 @@ export interface paths {
                                 /** @enum {unknown} */
                                 utcOffsetSource: "device" | "position" | "nearby" | "unknown";
                                 /**
-                                 * @description values (startsAt, …) only on Dives without a Recording
+                                 * @description values (startsAt, …) only on Dives without a Recording; cylinder only on Dives with at most one Cylinder
                                  * @enum {unknown}
                                  */
-                                field: "site" | "notes" | "buddies" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
-                                hub: null | (string | number | string[]);
-                                provider: null | (string | number | string[]);
+                                field: "site" | "notes" | "buddies" | "cylinder" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
+                                hub: null | (string | number | string[] | {
+                                    volumeL: null | number;
+                                    material: null | ("aluminium" | "steel" | "carbon");
+                                    startPressureBar: null | number;
+                                    endPressureBar: null | number;
+                                    gas: null | {
+                                        o2: number;
+                                        he: number;
+                                    };
+                                });
+                                provider: null | (string | number | string[] | {
+                                    volumeL: null | number;
+                                    material: null | ("aluminium" | "steel" | "carbon");
+                                    startPressureBar: null | number;
+                                    endPressureBar: null | number;
+                                    gas: null | {
+                                        o2: number;
+                                        he: number;
+                                    };
+                                });
                             }[];
                             /** @description Logbook entries with several Dives here in the window: one of them, a new Dive (mode create), or leave it out */
                             decisions: {
@@ -12389,7 +12407,7 @@ export interface paths {
                         conflicts?: {
                             remoteId: string;
                             /** @enum {unknown} */
-                            field: "site" | "notes" | "buddies" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
+                            field: "site" | "notes" | "buddies" | "cylinder" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
                             /**
                              * @description hub: the Dive keeps its value; provider: it takes the Provider's
                              * @enum {unknown}

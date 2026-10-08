@@ -1260,6 +1260,7 @@
       "site": "dive site",
       "notes": "notes",
       "buddies": "buddies",
+      "cylinder": "cylinder",
       "startsAt": "start",
       "durationSeconds": "duration",
       "maxDepthM": "max depth",

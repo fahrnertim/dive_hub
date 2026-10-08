@@ -6,7 +6,7 @@ import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireAdmin, requireUser } from '../auth/fastify.js';
 import { Problem, problem, PROBLEMS, providerProblem, type ProblemCode } from '../http/problems.js';
-import { DIVE_IMPORT_MODES, MATCHING_WINDOWS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES } from '../db/schema.js';
+import { CYLINDER_MATERIALS, DIVE_IMPORT_MODES, MATCHING_WINDOWS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES } from '../db/schema.js';
 import { ImportView, toImportView } from '../routes.js';
 import { SITE_SOURCES, SOURCE_INFO } from '../sites/sources.js';
 import type { BuddyService } from './buddy-service.js';
@@ -382,8 +382,16 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       description: 'A Recording under 2 minutes that stayed above 3 m (a false start): the entry never links to it by itself, so it is asked about even as the only Dive',
     }),
   });
-  const ConflictValue = Type.Union([Type.String(), Type.Number(), Type.Array(Type.String())], {
-    description: 'site: its name; buddies: the names of Divers here (people Dive Hub doesn\'t know are left out); startsAt: local "YYYY-MM-DD HH:MM"',
+  const ConflictCylinder = Type.Object({
+    volumeL: Nullable(Type.Number()),
+    material: Nullable(Type.Enum([...CYLINDER_MATERIALS])),
+    startPressureBar: Nullable(Type.Number()),
+    endPressureBar: Nullable(Type.Number()),
+    gas: Nullable(Type.Object({ o2: Type.Number(), he: Type.Number() }, { description: 'O₂ and He as percent' })),
+  });
+  const ConflictValue = Type.Union([Type.String(), Type.Number(), Type.Array(Type.String()), ConflictCylinder], {
+    description: 'site: its name; buddies: the names of Divers here (people Dive Hub doesn\'t know are left out); startsAt: local "YYYY-MM-DD HH:MM"; '
+      + 'cylinder: the tank typed at the Provider, or the Dive\'s only Cylinder in the same values (null: none)',
   });
   const Preview = Type.Object({
     mode: Type.Enum([...DIVE_IMPORT_MODES]),
@@ -425,7 +433,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       startsAt: DateTime,
       utcOffsetSeconds: Nullable(Type.Integer()),
       utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES]),
-      field: Type.Enum([...SYNCED_FIELDS], { description: 'values (startsAt, …) only on Dives without a Recording' }),
+      field: Type.Enum([...SYNCED_FIELDS], { description: 'values (startsAt, …) only on Dives without a Recording; cylinder only on Dives with at most one Cylinder' }),
       hub: Nullable(ConflictValue),
       provider: Nullable(ConflictValue),
     }), { description: 'Fields changed both at the Provider and here since Dive Hub last saw the dive: the User chooses; Dive Hub\'s stays unless told' }),

@@ -493,7 +493,8 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
   - **dives changed at the Provider** (`counts.changed`): say that Dive Hub takes those changes;
   - **every field changed in both places** (`conflicts`, ADR 0030 amended): the Dive (number, else its time), the field,
     Dive Hub's value and the Provider's (`hub`, `provider`: a site's or people's names, a local "YYYY-MM-DD HH:MM", a
-    number in metres, °C or seconds, or text), with "keep Dive Hub's" preselected; send each choice as `conflicts` with the
+    number in metres, °C or seconds, or text; for the field `cylinder` a tank as `{ volumeL, material, startPressureBar,
+    endPressureBar, gas }`, said like a Cylinder with pressures in the User's unit, ADR 0045), with "keep Dive Hub's" preselected; send each choice as `conflicts` with the
     start (`hub` or `provider`). A conflict kept isn't asked again until the Provider changes the field again;
   - **every entry to decide** (`decisions`): the Provider's dive (its number, its local time as logged, depth, duration)
     and the Dives here (`candidates`, closest first, each named by its number, time, depth, duration, site), "A new dive"

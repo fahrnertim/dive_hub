@@ -48649,13 +48649,14 @@
                               "site",
                               "notes",
                               "buddies",
+                              "cylinder",
                               "startsAt",
                               "durationSeconds",
                               "maxDepthM",
                               "avgDepthM",
                               "waterTemperatureC"
                             ],
-                            "description": "values (startsAt, …) only on Dives without a Recording"
+                            "description": "values (startsAt, …) only on Dives without a Recording; cylinder only on Dives with at most one Cylinder"
                           },
                           "hub": {
                             "anyOf": [
@@ -48675,9 +48676,88 @@
                                     "items": {
                                       "type": "string"
                                     }
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "volumeL",
+                                      "material",
+                                      "startPressureBar",
+                                      "endPressureBar",
+                                      "gas"
+                                    ],
+                                    "properties": {
+                                      "volumeL": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "type": "number"
+                                          }
+                                        ]
+                                      },
+                                      "material": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "enum": [
+                                              "aluminium",
+                                              "steel",
+                                              "carbon"
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      "startPressureBar": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "type": "number"
+                                          }
+                                        ]
+                                      },
+                                      "endPressureBar": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "type": "number"
+                                          }
+                                        ]
+                                      },
+                                      "gas": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "type": "object",
+                                            "required": [
+                                              "o2",
+                                              "he"
+                                            ],
+                                            "properties": {
+                                              "o2": {
+                                                "type": "number"
+                                              },
+                                              "he": {
+                                                "type": "number"
+                                              }
+                                            },
+                                            "description": "O₂ and He as percent"
+                                          }
+                                        ]
+                                      }
+                                    }
                                   }
                                 ],
-                                "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\""
+                                "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none)"
                               }
                             ]
                           },
@@ -48699,9 +48779,88 @@
                                     "items": {
                                       "type": "string"
                                     }
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "volumeL",
+                                      "material",
+                                      "startPressureBar",
+                                      "endPressureBar",
+                                      "gas"
+                                    ],
+                                    "properties": {
+                                      "volumeL": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "type": "number"
+                                          }
+                                        ]
+                                      },
+                                      "material": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "enum": [
+                                              "aluminium",
+                                              "steel",
+                                              "carbon"
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      "startPressureBar": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "type": "number"
+                                          }
+                                        ]
+                                      },
+                                      "endPressureBar": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "type": "number"
+                                          }
+                                        ]
+                                      },
+                                      "gas": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "type": "object",
+                                            "required": [
+                                              "o2",
+                                              "he"
+                                            ],
+                                            "properties": {
+                                              "o2": {
+                                                "type": "number"
+                                              },
+                                              "he": {
+                                                "type": "number"
+                                              }
+                                            },
+                                            "description": "O₂ and He as percent"
+                                          }
+                                        ]
+                                      }
+                                    }
                                   }
                                 ],
-                                "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\""
+                                "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none)"
                               }
                             ]
                           }
@@ -49508,6 +49667,7 @@
                             "site",
                             "notes",
                             "buddies",
+                            "cylinder",
                             "startsAt",
                             "durationSeconds",
                             "maxDepthM",

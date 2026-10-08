@@ -897,6 +897,8 @@ test.describe('behaviour', () => {
     await cancelWaitingImports(request);
     try {
       await page.goto('/');
+      // The page takes drops once it is up: without waiting, a fast machine drops before it listens.
+      await expect(page.getByRole('button', { name: 'Import files' })).toBeVisible();
       await dropFiles(page, [{ name: 'account-export.zip', bytes: [...readFileSync('e2e/fixtures/account-export.zip')] }]);
       const choice = page.getByRole('group', { name: 'What to import from account-export.zip' });
       await expect(choice.getByRole('checkbox', { name: 'Scuba dives (1)' })).toBeChecked();
@@ -916,6 +918,7 @@ test.describe('behaviour', () => {
 
       // Cancelling removes the upload; nothing was imported.
       await page.goto('/');
+      await expect(page.getByRole('button', { name: 'Import files' })).toBeVisible();
       await dropFiles(page, [{ name: 'account-export.zip', bytes: [...readFileSync('e2e/fixtures/account-export.zip')] }]);
       await choice.getByRole('button', { name: 'Cancel the import' }).click();
       await expect(choice).toHaveCount(0);

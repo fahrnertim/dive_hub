@@ -5,6 +5,7 @@ import {
   api, diveImportPreviewQuery, diveTimesQuery, importQuery, keys, unwrap, type ConnectionView, type DiveImportMode, type DiveImportPreview,
   type ProviderView,
 } from './api.ts';
+import { useCylinderText } from './Cylinders.tsx';
 import { ProviderImportSummary } from './ImportPanel.tsx';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
@@ -145,6 +146,7 @@ function Preview({ provider: p, connection: c, mode, onSettings, onStarted, onCl
   const { t, i18n } = useTranslation();
   const errorText = useErrorText();
   const display = useDisplay();
+  const cylinderText = useCylinderText();
   const queryClient = useQueryClient();
   const preview = useQuery(diveImportPreviewQuery(c.id));
   // Entries with several Dives here: left out unless the User picks one (ADR 0030).
@@ -183,10 +185,12 @@ function Preview({ provider: p, connection: c, mode, onSettings, onStarted, onCl
     .filter((k) => data.counts[k] > 0);
   // The local time as the Provider keeps it, without a time zone.
   const local = (text: string) => formatDiveTime(`${text.replace(' ', 'T')}Z`, null, display.locale, true);
-  /** A conflicting value as the User reads it: depths, temperatures and durations in their units, names listed. */
-  const valueText = (field: DiveImportPreview['conflicts'][number]['field'], v: string | number | string[] | null): string => {
+  /** A conflicting value as the User reads it: depths, temperatures and durations in their units, names listed, a tank in words. */
+  const valueText = (field: DiveImportPreview['conflicts'][number]['field'], v: DiveImportPreview['conflicts'][number]['hub']): string => {
     if (v === null || (Array.isArray(v) && v.length === 0)) return t('common.none');
     if (Array.isArray(v)) return new Intl.ListFormat(i18n.language, { type: 'conjunction' }).format(v);
+    // The tank typed at the Provider, or the Dive's only Cylinder, in a Cylinder's words.
+    if (typeof v === 'object') return cylinderText({ ...v, workingPressureBar: null });
     if (field === 'startsAt' && typeof v === 'string') return local(v);
     if (typeof v === 'number') {
       if (field === 'durationSeconds') return display.duration(v);

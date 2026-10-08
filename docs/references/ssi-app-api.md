@@ -267,6 +267,10 @@ a synced dive has been seen:
   `_pos_end_*`, `_dive_sites_id` (with the site's position from `logbook_sites`), `_buddy_ids` (entry IDs → SSI
   accounts through `logbook_buddies`), `_comment`, `_ean` / `_ean_percent`, `_gf_set_1` / `_2`, `_cns_start` / `_end`.
   The samples' `ndl` is minutes; 99 means none.
+- Read as the dive's one tank ([ADR 0045](../decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md#ssis-tank-as-built)):
+  `_tank_vol_l`, `_pressure_start_bar`, `_pressure_end_bar` (0 counts as none; the `_psi` and `_cuft` twins aren't read)
+  and `_var_tanktype_id` (19 steel, 20 aluminium). In the owner's logbook (127 dives, 2026-10-08): both pressures and a
+  volume on 13, a volume and a type only on 8, none on 106 [R].
 - Kept: each dive's record as received, as one JSON Original; the buddy list itself never (only entry → account, on the
   Import), and of `logbook_sites` each site's name, position, country (alpha-2) and water type (`bow`: salt or fresh;
   artificial or missing is none, as in the site list). The private flag isn't read (owner, 2026-10-06).
@@ -278,7 +282,7 @@ a synced dive has been seen:
 | Call | What | Note |
 |---|---|---|
 | `get_user_data` | profile: name, address, birthday, units | [S] |
-| `get_divelog_vars` | ID → name lists for conditions (weather, entry, water body, current, surface, dive type, special dive, tank) | [S]; fetch at runtime when conditions are sent |
+| `get_divelog_vars` | ID → name lists for conditions (weather, entry, water body, current, surface, dive type, special dive, tank) | [S]; fetch at runtime when conditions are sent. Answers without a token [R] (2026-10-08): `logbook_vars.tanktype` is `{ 19: "steel", 20: "alu" }`, `logbook_vars.suit` `{ 85: "other", 86: "shorty", 87: "wetsuit", 88: "semidry", 89: "drysuit" }`; the two tank types are a constant in `ssi-import.ts` |
 | `get_buddies` | buddy list, the same entries as `logbook_buddies` in `get_divelog` ([Buddies](#buddies-checked-2026-10-05)) | [S]; no call to add a buddy is known |
 | `get_ccards` | certifications (card ID `ccard_uid`, course, date, instructor and centre numbers) | [S]; for an import from SSI later |
 | `get_gear`, `save_gear`, `delete_gear`, `get_gearsets`, `save_gearset` | equipment | [S] |

@@ -2,7 +2,7 @@
 // its capabilities (how Users sign in, what it imports or exports, with which operations, how fast it may be called)
 // and does only what is its own. Connections, credentials, Pushes, leases, pacing, problem codes and the routes are
 // the generic layer's (connection-service.ts, push-service.ts, leases.ts, routes.ts).
-import type { ParticipantRole, ProviderImportPlan } from '../db/schema.js';
+import type { CylinderMaterial, ParticipantRole, ProviderImportPlan } from '../db/schema.js';
 import type { SiteWaterType } from '../vocabulary.js';
 import type { SiteSource } from '../sites/sources.js';
 
@@ -263,6 +263,18 @@ export interface ImportedDive {
   /** The people on the dive, as their accounts at the Provider (Diver External IDs at `accountSource`). */
   people: string[];
   notes: string | null;
+  /** The one tank a logbook entry describes, as typed there (ADR 0031, 0045); null when it gives no volume and no pressure. */
+  cylinder: ProviderCylinder | null;
+}
+
+/** A Provider's single tank: what it keeps of a Cylinder. A value it doesn't have is null. */
+export interface ProviderCylinder {
+  volumeL: number | null;
+  material: CylinderMaterial | null;
+  startPressureBar: number | null;
+  endPressureBar: number | null;
+  /** In percent. */
+  gas: { o2: number; he: number } | null;
 }
 
 /** How a Provider's dive record came about, to find why its times differ from a computer's. Never used in matching. */

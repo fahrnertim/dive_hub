@@ -103,3 +103,8 @@ history exists.
 ## Amendment 2026-10-08: Cylinders come first
 Cylinders on a Dive are built before lead, suit and weighting feedback, as their own slice
 ([ADR 0045](0045-tank-pressure-cylinders-and-sac-on-a-dive.md)); slice A keeps the rest.
+
+## Amendment 2026-10-08: SSI's tank
+The Provider part for the Cylinder is built ([ADR 0045](0045-tank-pressure-cylinders-and-sac-on-a-dive.md#ssis-tank-as-built)).
+SSI's tank types are known (19 steel, 20 aluminium), so the material is taken. Beyond "where the Dive has none": the
+Dive's only Cylinder takes from SSI the values it lacks. Lead from SSI stays with slice A.

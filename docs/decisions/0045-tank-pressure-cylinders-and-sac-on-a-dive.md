@@ -1,6 +1,6 @@
 ---
 title: "ADR 0045: Tank pressure, Cylinders and SAC on a Dive - shown first, then logged, then computed"
-summary: Three slices. A tank pod's pressure is shown - one line per tank in a strip of its own under the depth profile, with start, end and used pressure in words, the pod's own SAC, and a column in the profile's table; psi for imperial (built). Cylinders on a Dive come before lead and suit (changes 0031's order), one or more, typed or from the catalogue, each optionally tied to one pressure series; one list with the Dive's edit, the catalogue and "same as last dive" as routes (built). Then "SAC on this dive" in L/min, summed in litres over all Cylinders with both pressures and a volume (changes 0033's "one cylinder or identical ones"), with bar/min beside it for a single Cylinder, computed by the server with real gas at every pressure (our own fit through NIST's data), with the reason where there is none (built). An import with pod data makes the Cylinders itself. Open - a second pod is unverified.
+summary: Three slices. A tank pod's pressure is shown - one line per tank in a strip of its own under the depth profile, with start, end and used pressure in words, the pod's own SAC, and a column in the profile's table; psi for imperial (built). Cylinders on a Dive come before lead and suit (changes 0031's order), one or more, typed or from the catalogue, each optionally tied to one pressure series; one list with the Dive's edit, the catalogue and "same as last dive" as routes (built). Then "SAC on this dive" in L/min, summed in litres over all Cylinders with both pressures and a volume (changes 0033's "one cylinder or identical ones"), with bar/min beside it for a single Cylinder, computed by the server with real gas at every pressure (our own fit through NIST's data), with the reason where there is none (built). An import with pod data makes the Cylinders itself; an import from SSI brings the one tank typed there - a Cylinder where the Dive has none, the gaps of its only one, changes three-way (built). Open - a second pod is unverified.
 status: accepted
 date: 2026-10-08
 ---
@@ -8,7 +8,7 @@ date: 2026-10-08
 # ADR 0045: Tank pressure, Cylinders and SAC on a Dive - shown first, then logged, then computed
 
 ## Status
-Accepted – 2026-10-08 (owner, in conversation). Slices 1 (showing), 2 (Cylinders) and 3 (SAC on this dive) built on 2026-10-08.
+Accepted – 2026-10-08 (owner, in conversation). Slices 1 (showing), 2 (Cylinders) and 3 (SAC on this dive) built on 2026-10-08, SSI's tank after them on the same day.
 Amends [ADR 0037](0037-suunto-file-import-and-file-formats.md) (decision 5: the pressure is shown now),
 [ADR 0031](0031-lead-suit-cylinders-and-lead-estimate.md) (the order: Cylinders before lead and suit) and
 [ADR 0033](0033-gas-plans-rules-and-groups.md) (when a Dive's SAC counts).
@@ -53,7 +53,8 @@ Amends [ADR 0037](0037-suunto-file-import-and-file-formats.md) (decision 5: the 
 - **An import with pod data creates the Cylinders itself**, marked as from the pod (size, gas, start and end pressure,
   tied to its series), where the Dive has none; the User can change them like any other (owner, 2026-10-08). This is
   measured data, unlike a guessed prefill, which ADR 0031 rules out.
-- SSI's typed cylinder values are imported after that (ADR 0031's Provider part), not in this slice.
+- SSI's typed cylinder values are imported after that (ADR 0031's Provider part), not in this slice: see
+  [SSI's tank as built](#ssis-tank-as-built).
 
 ### Slice 3: SAC on this dive (built)
 - **L/min at the surface** is the figure (glossary: SAC), computed and never stored, as ADR 0033 says.
@@ -124,7 +125,38 @@ dive page).
 - **Units:** L/min in both systems; the drop in bar/min (one decimal) or psi/min (whole).
 - **AI access (MCP):** `logbook_get_dive` returns `sac` (`litres_per_minute`, `bar_per_minute`, or `missing`).
 
+### SSI's tank as built
+
+Built on 2026-10-08, the test seams agreed with the owner (`parseSsiDive`, `threeWay`, the import over HTTP against the
+fake SSI). ADR 0031's Provider part for the Cylinder; lead comes with slice 19.
+
+- **What SSI has:** one tank per dive, typed by hand: `odin_user_log_tank_vol_l`, `_pressure_start_bar`,
+  `_pressure_end_bar`, `_var_tanktype_id`, and the dive's gas (`_ean`, `_ean_percent`). In the development logbook
+  (127 dives): 13 with both pressures and a volume, 8 with a volume and a type only, 106 with none.
+- **Any tank value makes one** (owner, 2026-10-08): a volume, a start or an end pressure. A size alone counts here,
+  unlike a computer's setting (slice 2): a person typed it for this dive. A gas or a tank type alone makes none.
+- **The material is taken:** SSI's tank type 19 is "steel", 20 "alu" (`get_divelog_vars`, looked up 2026-10-08, no
+  sign-in needed); another type gives no material. This settles ADR 0031's "once the IDs are known".
+- **Filled where the Dive has no Cylinders**, as one Cylinder, not tied to a series and not "from the pod", in the
+  import's `fill` Revision. Not where the Dive's history spoke of Cylinders: one the User emptied stays empty.
+- **The gaps of a Dive's only Cylinder are filled** (owner, 2026-10-08; amends ADR 0031's "where the Dive has none"):
+  a Cylinder from a computer or a pod takes from SSI the values it lacks (the material always, a volume, a pressure or
+  the gas where missing) and keeps every value it has, its series and its mark. **With several Cylinders nothing**:
+  SSI's one tank can't be told to be one of them.
+- **Changes come back three-way** as one field, `cylinder` (volume, material, both pressures, gas; whole bar, 0.1 L),
+  on every Dive with at most one Cylinder: changed only at SSI, the Cylinder takes SSI's values; changed in both
+  places, the User chooses in the preview, which shows both tanks. What SSI doesn't keep stays (working pressure,
+  series, mark), and so does a value SSI has none for.
+- **Never removed:** a tank emptied at SSI removes nothing here (like a site). Where Dive Hub never saw a tank at SSI
+  (the base has none, as after Dive Hub sent the dive: it sends no tank), the Cylinder here stays and only gaps fill.
+- **Pressures that would end above their start** are not taken (the Cylinder keeps the ones it had).
+- **Dives imported before** get theirs at the next import from SSI: it fills every linked Dive again. No task of its own.
+- **Not sent:** Dive Hub still sends no tank to SSI (ADR 0031: it would change every Push fingerprint).
+
 ## Open
+- Whether SSI's app sets tank type 20 ("alu") by itself is not known: 18 of the 19 typed dives in the development
+  logbook carry it, with 12 and 15 L tanks. The material enters the lead estimate later (ADR 0031).
+- Whether an update Dive Hub sends empties a tank typed at SSI is not checked (it sends the tank fields as null).
 - **A second pod is unverified**: further series are stored, but the web client does not ask for them yet (the route
   takes exact channel names), and how Suunto writes two tanks of one gas is unknown. Wanted: a file
   ([samples](../../samples/README.md)).

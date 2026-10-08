@@ -84,6 +84,30 @@ describe('SSI dives for an import', () => {
     expect(d.samples.temperature!.values).toEqual([24, 23.5, 24]);
   });
 
+  it('reads the tank typed at SSI as one cylinder: volume, pressures, material by SSI\'s tank type, the gas', () => {
+    const dive = handTypedDive({ at: '2025-08-10 10:00', depthM: 18, minutes: 45 });
+    // As dive #118 of the development logbook: 19 is "steel", 20 "alu" in SSI's `get_divelog_vars`.
+    const full = {
+      ...dive, odin_user_log_tank_vol_l: 12, odin_user_log_var_tanktype_id: 19, odin_user_log_pressure_start_bar: 204,
+      odin_user_log_pressure_end_bar: 47, odin_user_log_pressure_start_psi: 2959, odin_user_log_ean: 1, odin_user_log_ean_percent: 32,
+    };
+    expect(parseSsiDive(withId(full), context)!.cylinder).toEqual({
+      volumeL: 12, material: 'steel', startPressureBar: 204, endPressureBar: 47, gas: { o2: 32, he: 0 },
+    });
+    // A size and a type alone are a tank too: a person typed them for this dive.
+    const sizeOnly = { ...dive, odin_user_log_tank_vol_l: 15, odin_user_log_var_tanktype_id: 20, odin_user_log_pressure_start_bar: 0, odin_user_log_pressure_end_bar: 0, odin_user_log_ean: 0 };
+    expect(parseSsiDive(withId(sizeOnly), context)!.cylinder).toEqual({
+      volumeL: 15, material: 'aluminium', startPressureBar: null, endPressureBar: null, gas: { o2: 21, he: 0 },
+    });
+    // A tank type Dive Hub doesn't know names no material.
+    expect(parseSsiDive(withId({ ...sizeOnly, odin_user_log_var_tanktype_id: 77 }), context)!.cylinder).toMatchObject({ volumeL: 15, material: null });
+  });
+
+  it('reads no cylinder where SSI has no volume and no pressure: a gas or a tank type alone is none', () => {
+    const dive = { ...handTypedDive({ at: '2025-08-10 10:00', depthM: 18, minutes: 45 }), odin_user_log_tank_vol_l: 0, odin_user_log_var_tanktype_id: 20, odin_user_log_ean: 1, odin_user_log_ean_percent: 32 };
+    expect(parseSsiDive(withId(dive), context)!.cylinder).toBeNull();
+  });
+
   it('skips a record without a start time', () => {
     expect(parseSsiDive(withId({ ...handTypedDive({ at: '', depthM: 3, minutes: 1 }) }), context)).toBeNull();
   });

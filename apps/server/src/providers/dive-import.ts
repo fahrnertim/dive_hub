@@ -23,9 +23,10 @@ import type { SiteSource } from '../sites/sources.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import type { ConnectionService } from './connection-service.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
-import { REFERENCE_PREFIX, type ImportContext, type ImportedDive, type ProviderAdapter } from './provider.js';
+import { REFERENCE_PREFIX, type ImportContext, type ImportedDive, type ProviderAdapter, type ProviderCylinder } from './provider.js';
 import { currentRemote, fingerprintNow } from './push-service.js';
-import { comparableOf, SYNCED_FIELDS, threeWay, type Comparable, type SyncedField } from './three-way.js';
+import { comparableOf, SYNCED_FIELDS, threeWay, VALUE_FIELDS, type Comparable, type SyncedField } from './three-way.js';
+import { cylindersOf, mergeProviderCylinder, providerCylinderOf } from '../dives/cylinders.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 
 /** A dive computer found at the Provider, and how its dives are used. */
@@ -55,8 +56,9 @@ export interface ConflictView {
   utcOffsetSeconds: number | null;
   utcOffsetSource: UtcOffsetSource;
   field: SyncedField;
-  hub: string | number | string[] | null;
-  provider: string | number | string[] | null;
+  /** A site's or people's names, a local time, a number; for `cylinder` the tank's values. */
+  hub: string | number | string[] | ProviderCylinder | null;
+  provider: string | number | string[] | ProviderCylinder | null;
 }
 
 /** A Dive here that a Provider's logbook entry may be. */
@@ -279,7 +281,8 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
 
   /**
    * Fills what the Dive lacks from the Provider's dive (ADR 0030), overwriting nothing: the site (only one that already
-   * has the Provider's site ID), the Participants (by their accounts at the Provider, when the Dive has none), the notes.
+   * has the Provider's site ID), the Participants (by their accounts at the Provider, when the Dive has none), the notes,
+   * the tank typed there (a Cylinder where the Dive has none, the gaps of its only one; ADR 0045).
    * One Revision; whether anything changed.
    */
   async function fill(tx: Tx, run: Run, diveId: string, d: ImportedDive, actor: Actor): Promise<boolean> {
@@ -311,6 +314,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
         changes.participants = { from: [], to: await participantsOf(tx, diveId) };
       }
     }
+    if (d.cylinder) Object.assign(changes, await mergeProviderCylinder(tx, diveId, d.cylinder, 'fill'));
     if (Object.keys(changes).length === 0) return false;
     await tx.update(dive).set({ ...columns, version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
     await writeRevision(tx, 'dive', diveId, actor, 'fill', changes);
@@ -409,12 +413,15 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     const people = await participantsOf(q, diveId);
     const accounts = source && people.length > 0 ? await q.select({ diverId: diverExternalId.diverId, account: diverExternalId.externalId })
       .from(diverExternalId).where(and(eq(diverExternalId.source, source), inArray(diverExternalId.diverId, people.map((p) => p.diverId)))) : [];
+    const cylinders = await cylindersOf(q, diveId);
     const hub: Comparable = {
       site: siteId?.id ?? null, notes: row.notes?.trim() || null, buddies: accounts.map((a) => a.account).sort(),
       startsAt: Math.floor((row.startsAt.getTime() + (row.utcOffsetSeconds ?? 0) * 1000) / 60_000),
       durationSeconds: row.durationSeconds, maxDepthM: row.maxDepthM, avgDepthM: row.avgDepthM, waterTemperatureC: row.waterTemperatureC,
+      cylinder: cylinders.length === 1 ? providerCylinderOf(cylinders[0]!) : null,
     };
-    const fields = row.primaryRecordingId ? SYNCED_FIELDS.filter((f) => ['site', 'notes', 'buddies'].includes(f)) : SYNCED_FIELDS;
+    // The Provider's one tank can't be told to be one of several Cylinders: not compared then.
+    const fields = SYNCED_FIELDS.filter((f) => (f === 'cylinder' ? cylinders.length <= 1 : !row.primaryRecordingId || !VALUE_FIELDS.includes(f)));
     return { row, hub, fields, people, accounts };
   }
 
@@ -470,6 +477,8 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
         const list = [...keep.map((k) => ({ diveId, diverId: k.diverId, role: k.role })), ...add.map((diverId) => ({ diveId, diverId, role: 'buddy' as const }))];
         if (list.length > 0) await tx.insert(participant).values(list);
         changes.participants = { from: before, to: await participantsOf(tx, diveId) };
+      } else if (field === 'cylinder') {
+        if (d.cylinder) Object.assign(changes, await mergeProviderCylinder(tx, diveId, d.cylinder, 'take'));
       } else if (field === 'startsAt') {
         const time = await placeTime(tx, run, d);
         columns = { ...columns, ...columnsOf('startsAt', { at: time.startsAt, utcOffsetSeconds: time.utcOffsetSeconds }), utcOffsetSource: time.utcOffsetSource };
@@ -534,7 +543,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   }
 
   /** A field's value as the preview shows it: the site's and people's names, the local start, the number or text. */
-  async function shown(run: Run, field: SyncedField, c: Comparable, hubSiteId: string | null): Promise<string | number | string[] | null> {
+  async function shown(run: Run, field: SyncedField, c: Comparable, hubSiteId: string | null): Promise<string | number | string[] | ProviderCylinder | null> {
     if (field === 'site') {
       if (hubSiteId) return (await db.select({ name: diveSite.name }).from(diveSite).where(eq(diveSite.id, hubSiteId)))[0]?.name ?? null;
       return c.site ? run.context.sites[c.site]?.name ?? c.site : null;

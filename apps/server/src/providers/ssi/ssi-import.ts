@@ -1,6 +1,6 @@
 // SSI's dives as ImportedDives (ADR 0030). Pure: no database, no network. What SSI returns for a dive is in the SSI
 // reference ("A dive as SSI returns it"); fields a dive synced by SSI's own app may carry are read defensively.
-import { REFERENCE_PREFIX, type DiveOrigin, type ImportContext, type ImportedDive, type Series } from '../provider.js';
+import { REFERENCE_PREFIX, type DiveOrigin, type ImportContext, type ImportedDive, type ProviderCylinder, type Series } from '../provider.js';
 import type { SsiLogbook, SsiRecord } from './ssi-client.js';
 import { alpha2Of } from '../../sites/countries.js';
 import { buddyIdsOf, SAMPLE_INTERVAL_MS } from './ssi-record.js';
@@ -116,6 +116,22 @@ export function ssiOrigin(r: SsiRecord): DiveOrigin {
   };
 }
 
+/** SSI's tank types (`tanktype` in `get_divelog_vars`, SSI reference): 19 "steel", 20 "alu". */
+const MATERIAL_OF_TANK_TYPE: Record<number, ProviderCylinder['material']> = { 19: 'steel', 20: 'aluminium' };
+
+/**
+ * The one tank SSI's record describes (ADR 0031, 0045): its volume and its start and end pressure as typed there, the
+ * material by its tank type, and the dive's gas. None without a volume or a pressure: a gas or a tank type alone is no tank.
+ */
+function cylinderOf(r: SsiRecord, gas: ProviderCylinder['gas']): ProviderCylinder | null {
+  const volumeL = positive(r.odin_user_log_tank_vol_l);
+  const startPressureBar = positive(r.odin_user_log_pressure_start_bar);
+  const endPressureBar = positive(r.odin_user_log_pressure_end_bar);
+  if (volumeL === null && startPressureBar === null && endPressureBar === null) return null;
+  const material = MATERIAL_OF_TANK_TYPE[numberOf(r.odin_user_log_var_tanktype_id) ?? 0] ?? null;
+  return { volumeL, material, startPressureBar, endPressureBar, gas };
+}
+
 /** SSI's dive record in typed values; null when it has no start time. */
 export function parseSsiDive(r: SsiRecord, context: ImportContext, givenId?: string): ImportedDive | null {
   const remoteId = text(r.odin_user_log_id) ?? givenId ?? null;
@@ -132,6 +148,7 @@ export function parseSsiDive(r: SsiRecord, context: ImportContext, givenId?: str
   const site = siteId !== null && siteId > 0 ? context.sites[String(siteId)] : undefined;
   const nitrox = numberOf(r.odin_user_log_ean) === 1;
   const o2 = numberOf(r.odin_user_log_ean_percent);
+  const gases = nitrox && o2 !== null && o2 > 21 ? [{ o2, he: 0 }] : numberOf(r.odin_user_log_ean) === 0 ? [{ o2: 21, he: 0 }] : [];
   const gfLow = numberOf(r.odin_user_log_gf_set_1);
   const gfHigh = numberOf(r.odin_user_log_gf_set_2);
   return {
@@ -146,10 +163,11 @@ export function parseSsiDive(r: SsiRecord, context: ImportContext, givenId?: str
     sitePosition: site && site.latitude !== null && site.longitude !== null ? { latitude: site.latitude, longitude: site.longitude } : null,
     device: evidence === 'logbook' ? null : device,
     samples: evidence === 'logbook' ? {} : samples,
-    gases: nitrox && o2 !== null && o2 > 21 ? [{ o2, he: 0 }] : numberOf(r.odin_user_log_ean) === 0 ? [{ o2: 21, he: 0 }] : [],
+    gases,
     gfLow: gfLow !== null && gfLow > 0 ? gfLow : null, gfHigh: gfHigh !== null && gfHigh > 0 ? gfHigh : null,
     cnsStart: numberOf(r.odin_user_log_cns_start), cnsEnd: numberOf(r.odin_user_log_cns_end),
     people: [...new Set(buddyIdsOf(r).flatMap((id) => { const account = context.people[String(id)]; return account ? [account] : []; }))],
     notes: text(r.odin_user_log_comment),
+    cylinder: cylinderOf(r, gases[0] ?? null),
   };
 }
