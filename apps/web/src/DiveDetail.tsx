@@ -8,7 +8,7 @@ import { DeleteDiveDialog } from './DeleteDive.tsx';
 import { DepthProfile } from './DepthProfile.tsx';
 import { DiveEditForm } from './DiveEditForm.tsx';
 import { DiveHistory } from './DiveHistory.tsx';
-import { MergeHint } from './MergeDive.tsx';
+import { MergeHint, MergePicker } from './MergeDive.tsx';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { deviceName } from './lib/devices.ts';
@@ -38,6 +38,7 @@ export function DiveDetail({ id, recordingId, list = '' }: { id: string; recordi
   // Editing opens at the dive number, or at the notes when asked for from there.
   const [editing, setEditing] = useState<false | 'values' | 'notes'>(false);
   const [moving, setMoving] = useState(false);
+  const [merging, setMerging] = useState(false);
   const [deleting, setDeleting] = useState(false);
   // Closing the edit form puts focus back on "Edit dive" (the form had it; UI review B1).
   const editButton = useRef<HTMLButtonElement>(null);
@@ -105,6 +106,7 @@ export function DiveDetail({ id, recordingId, list = '' }: { id: string; recordi
                 label={t('dive.moreActions')} aria-label={t('common.forItem', { action: t('dive.moreActions'), item: title ?? '' })}
                 actions={[
                   ...(several ? [{ id: 'move', label: t('dive.moveTo'), icon: 'move' as const, onAction: () => setMoving(true) }] : []),
+                  { id: 'merge', label: t('merge.withAnother'), icon: 'merge', onAction: () => setMerging(true) },
                   { id: 'delete', label: t('dive.deleteMenu'), icon: 'delete', onAction: () => setDeleting(true) },
                 ]}
               />
@@ -131,6 +133,7 @@ export function DiveDetail({ id, recordingId, list = '' }: { id: string; recordi
         <DiveHistory dive={d} />
       </div>
       {moving && <MoveDialog dive={d} onClose={() => setMoving(false)} />}
+      {merging && <MergePicker dive={d} onClose={() => setMerging(false)} />}
       {deleting && <DeleteDiveDialog dive={d} name={d.values.number !== null ? t('dive.title', { number: d.values.number }) : display.diveTime(d.values.startsAt.at, d.values.startsAt.utcOffsetSeconds, d.utcOffsetSource)} onClose={() => setDeleting(false)} />}
     </>
   );

@@ -104,6 +104,10 @@
 .nearby-sites { list-style: none; margin: var(--space-3) 0 0; padding: 0; }
 .nearby-sites > li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); padding: var(--space-3) 0; border-top: 1px solid var(--color-border); overflow-wrap: anywhere; }
 .nearby-sites > li:first-child { border-top: none; }
+/* The Dives a merge by hand chooses from (ADR 0038, amended). */
+.nearby-dives { list-style: none; margin: var(--space-3) 0; padding: 0; }
+.nearby-dives > li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); padding: var(--space-3) 0; border-top: 1px solid var(--color-border); overflow-wrap: anywhere; }
+.nearby-dives > li:first-child { border-top: none; }
 .site-imports { list-style: none; margin: 0; padding: 0; }
 .site-imports > li { padding: var(--space-3) 0; border-top: 1px solid var(--color-border); overflow-wrap: anywhere; }
 .site-imports > li:first-child { border-top: none; padding-top: 0; }

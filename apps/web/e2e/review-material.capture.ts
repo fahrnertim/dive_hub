@@ -493,6 +493,12 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('button', { name: /^They are two dives: / }).waitFor();
     await capture(page, '70b-review-check');
     await page.goto(`/#/dives/${pair.kept}`); await page.getByRole('button', { name: 'Merge the two…' }).waitFor();
+    // Merging by hand: the dives nearby to choose from (ADR 0038, amended).
+    await page.getByRole('button', { name: /^More/ }).click();
+    await page.getByRole('menuitem', { name: 'Merge with another dive…' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: /^Merge with this dive…/ }).waitFor();
+    await capture(page, '71a-dive-merge-picker', { full: false });
+    await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
     await page.getByRole('button', { name: 'Merge the two…' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Merge', exact: true }).waitFor();
     await capture(page, '71-dive-merge-dialog', { full: false });

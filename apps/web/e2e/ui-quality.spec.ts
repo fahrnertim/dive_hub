@@ -534,6 +534,13 @@ for (const v of variants) {
         const open = page.getByRole('button', { name: v.english ? 'Merge the two…' : /^Beide zusammenführen/ });
         await expect(open).toBeVisible();
         await expectGoodPage(page, title('Dive 31'), v);
+        // Merging by hand: the dives nearby to choose from.
+        await page.getByRole('button', { name: /^(More|Mehr)/ }).click();
+        await page.getByRole('menuitem', { name: v.english ? 'Merge with another dive…' : /^Mit einem anderen Tauchgang zusammenführen/ }).click();
+        const picker = page.getByRole('dialog');
+        await expect(picker.getByRole('button', { name: v.english ? /^Merge with this dive…/ : /^Mit diesem zusammenführen/ })).toBeVisible();
+        await expectGoodPage(page, title('Dive 31'), v);
+        await picker.getByRole('button', { name: v.english ? 'Cancel' : 'Abbrechen' }).click();
         await open.click();
         await expect(page.getByRole('dialog').getByRole('button', { name: v.english ? 'Merge' : 'Zusammenführen', exact: true })).toBeVisible();
         await expectGoodPage(page, title('Dive 31'), v);

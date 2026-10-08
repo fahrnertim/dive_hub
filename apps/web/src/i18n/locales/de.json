@@ -630,6 +630,11 @@
     "confirmBoth": "Zusammenführen und in {{name}} löschen",
     "confirmHere": "Nur hier zusammenführen",
     "nothingMerged": "Es wurde nichts zusammengeführt.",
+    "withAnother": "Mit einem anderen Tauchgang zusammenführen …",
+    "pickTitle": "Mit einem anderen Tauchgang zusammenführen",
+    "pickIntro": "Das sind die anderen Tauchgänge in diesem Logbuch vom Tag davor bis zum Tag danach. Wähle den, der derselbe Tauchgang ist. Vor dem Zusammenführen wirst du noch einmal gefragt.",
+    "pickNone": "In diesem Logbuch gibt es keinen anderen Tauchgang vom Tag davor bis zum Tag danach. Steht derselbe Tauchgang an einem anderen Tag, korrigiere zuerst sein Datum.",
+    "pick": "Mit diesem zusammenführen …",
     "done": "Die beiden Tauchgänge sind jetzt einer."
   },
   "review": {

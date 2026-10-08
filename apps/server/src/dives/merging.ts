@@ -5,7 +5,7 @@
 import { and, desc, eq, gte, inArray, isNull, lte, ne, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { OVERRIDABLE_FIELDS, dive, diveSite, participant, push, recording, type OverridableField } from '../db/schema.js';
-import { OVERLAP_TOLERANCE_SECONDS } from '../imports/matching.js';
+import { OVERLAP_TOLERANCE_SECONDS, localStartMs } from '../imports/matching.js';
 import { currentRemote, type PushRow } from '../providers/push-service.js';
 import { liveSite } from '../sites/dive-site-link.js';
 import {
@@ -19,6 +19,7 @@ type DiveRow = typeof dive.$inferSelect;
 
 /** The widest UTC offset: a Dive whose offset is unknown keeps a wall-clock time at most this far from its instant. */
 const MAX_OFFSET_MS = 14 * 3600_000;
+const DAY_MS = 86_400_000;
 /** Values a Dive may lack; the start and the duration it always has. */
 const FILLABLE = ['number', 'maxDepthM', 'avgDepthM', 'waterTemperatureC'] as const satisfies readonly OverridableField[];
 
@@ -48,25 +49,31 @@ export function createMerging(db: Db) {
     /**
      * The Dives of the same Diver this one breaks a rule of the logbook checks with (ADR 0038): at the same time, as the
      * checks see it. With how many Recordings each has, the Providers each is at, which of the two a merge would keep,
-     * and whether the User answered that they are two dives.
+     * and whether the User answered that they are two dives. `nearby` lists instead every Dive of the Diver from the
+     * local day before to the day after, with the rule where there is one: the Dives to choose from for a merge by hand.
      */
-    async candidates(userId: string, diveId: string) {
+    async candidates(userId: string, diveId: string, scope: 'rule' | 'nearby' = 'rule') {
       const [row] = await db.select().from(dive).where(and(eq(dive.id, diveId), isNull(dive.deletedAt)));
       if (!row || !(await managedDiverIds(db, userId)).has(row.diverId)) throw new DiveError('dive_not_found');
-      // The same local day is a check too (entry_apart_from_recording): up to a day and both offsets away either way.
-      const reach = Math.max((row.durationSeconds + OVERLAP_TOLERANCE_SECONDS) * 1000 + MAX_OFFSET_MS, 24 * 3600_000 + 2 * MAX_OFFSET_MS);
+      // The same local day is a check too (entry_apart_from_recording), and nearby is the day before to the day after: up
+      // to two days and both offsets away either way.
+      const reach = Math.max((row.durationSeconds + OVERLAP_TOLERANCE_SECONDS) * 1000 + MAX_OFFSET_MS, 48 * 3600_000 + 2 * MAX_OFFSET_MS);
       const near = await db.select({ d: dive, siteName: diveSite.name }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId))
         .where(and(
           eq(dive.diverId, row.diverId), isNull(dive.deletedAt), ne(dive.id, row.id),
           lte(dive.startsAt, new Date(row.startsAt.getTime() + reach)),
-          gte(dive.startsAt, new Date(row.startsAt.getTime() - 48 * 3600_000 - MAX_OFFSET_MS)),
-        ));
+          gte(dive.startsAt, new Date(row.startsAt.getTime() - 48 * 3600_000 - 2 * MAX_OFFSET_MS)),
+        )).orderBy(dive.startsAt, dive.id);
       if (near.length === 0) return [];
       const all = [row.id, ...near.map(({ d }) => d.id)];
       const recs = await db.select({ diveId: recording.diveId }).from(recording).where(and(inArray(recording.diveId, all), isNull(recording.deletedAt)));
       const count = (id: string) => recs.filter((r) => r.diveId === id).length;
       const found = await checks.against(row.id, near.map(({ d }) => ({ ...d, recordings: count(d.id) })), { ...row, recordings: count(row.id) });
-      const hits = found.map((f) => ({ id: f.other.id, rule: f.rule, answered: f.answered, siteName: near.find(({ d }) => d.id === f.other.id)!.siteName }));
+      const localDay = (d: DiveRow) => Math.floor(localStartMs(d) / DAY_MS);
+      const hits = near
+        .map(({ d, siteName }) => ({ d, siteName, hit: found.find((f) => f.other.id === d.id) }))
+        .filter(({ d, hit }) => (scope === 'nearby' ? Math.abs(localDay(d) - localDay(row)) <= 1 : hit !== undefined))
+        .map(({ d, siteName, hit }) => ({ id: d.id, rule: hit?.rule ?? null, answered: hit?.answered ?? false, siteName }));
       if (hits.length === 0) return [];
       const pushes = await pushesOf(db, [row.id, ...hits.map((h) => h.id)]);
       const at = (id: string) => [...byProvider(pushes, id)].flatMap(([provider, rows]) => {

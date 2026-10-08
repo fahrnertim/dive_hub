@@ -292,4 +292,42 @@ describe.skipIf(!(await databaseReachable()))('merging two Dives, and moving a l
       expect(await uploadSuunto('2026-03-16')).toMatchObject({ result: 'unchanged', diveId: copy });
     });
   });
+
+  describe('a pair no rule finds, merged by hand', () => {
+    let fromFile: string;
+    let fromEntry: string;
+    let dayBefore: string;
+    let dayAfter: string;
+    const nearbyOf = (id: string) => json<(Candidate & { rule: string | null })[]>('GET', `/api/dives/${id}/merge-candidates?scope=nearby`);
+
+    it('an entry hours from the file and 5 minutes longer breaks no rule with it: nothing is hinted at', async () => {
+      // The file's dive is 33:45 long, to 34.2 m, in the morning; the entries are local times at the lake.
+      const entries = [
+        addEntry('2026-05-11 23:30', 20, 12), addEntry('2026-05-12 14:00', 39, 34), addEntry('2026-05-13 00:10', 20, 12), addEntry('2026-05-14 09:00', 20, 12),
+      ];
+      const made = await runImport();
+      [dayBefore, fromEntry, dayAfter] = entries.map((e) => made.find((o) => o.remoteId === e)!.diveId!) as [string, string, string];
+      fromFile = (await uploadSuunto('2026-05-12')).diveId!;
+      expect(await candidatesOf(fromFile)).toEqual([]);
+      expect(await candidatesOf(fromEntry)).toEqual([]);
+    });
+
+    it('asked for the Dives nearby, it lists the Diver\'s from the day before to the day after, in order, without a rule', async () => {
+      const nearby = await nearbyOf(fromFile);
+      expect(nearby.map((c) => c.id)).toEqual([dayBefore, fromEntry, dayAfter]);
+      expect(nearby[1]).toMatchObject({ rule: null, answered: false, recordings: 0, keeps: fromFile, at: [{ provider: 'ssi' }], bothAt: [] });
+    });
+
+    it('a pair a rule does find is listed there with its rule', async () => {
+      const typed = addEntry('2026-05-12 20:00', 33, 34);
+      const again = (await runImport()).find((o) => o.remoteId === typed)!.diveId!;
+      expect((await nearbyOf(fromFile)).find((c) => c.id === again)).toMatchObject({ rule: 'entry_apart_from_recording' });
+    });
+
+    it('merged, the file\'s Dive is kept and linked to the entry', async () => {
+      expect((await merge(fromEntry, fromFile)).json()).toMatchObject({ id: fromFile });
+      expect(await at(fromFile, 'ssi')).not.toBeNull();
+      expect((await nearbyOf(fromFile)).map((c) => c.id)).not.toContain(fromEntry);
+    });
+  });
 });

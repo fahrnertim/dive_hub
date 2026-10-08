@@ -264,6 +264,11 @@ async function fetchMergeCandidates(id: string) {
 }
 /** The Dives of the same Diver at the same time as this one, which it may be merged with (ADR 0038). */
 export const mergeCandidatesQuery = (id: string) => queryOptions({ queryKey: keys.mergeCandidates(id), queryFn: () => fetchMergeCandidates(id) });
+/** Every Dive of the same Diver from the day before to the day after: what a merge by hand chooses from (ADR 0038, amended). */
+export const nearbyDivesQuery = (id: string) => queryOptions({
+  queryKey: [...keys.mergeCandidates(id), 'nearby'] as const,
+  queryFn: async () => unwrap(await api.GET('/api/dives/{id}/merge-candidates', { params: { path: { id }, query: { scope: 'nearby' } } })),
+});
 
 /** The Dives before and after one in a list's order (ADR 0042); under the Dive, so whatever changes the logbook asks again. */
 export const diveNeighboursQuery = (id: string, list: ReturnType<typeof neighbourParams>) => queryOptions({

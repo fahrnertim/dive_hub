@@ -240,7 +240,8 @@ const PairedDive = {
 
 const MergeCandidate = Type.Object({
   ...PairedDive,
-  rule: Rule,
+  /** Null for a Dive that is only nearby (`scope=nearby`) and breaks no logbook check with this one. */
+  rule: Nullable(Rule),
   answered: Type.Boolean({ description: 'The User said these are two dives: don\'t hint at the pair again (it can still be merged)' }),
   keeps: Type.String({ description: 'Which of the two Dives a merge keeps: the one with a Recording when only one has, else the Dive asked about' }),
   bothAt: Type.Array(Type.String(), {
@@ -410,11 +411,16 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
 
   app.get('/dives/:id/merge-candidates', {
     schema: {
-      summary: 'The Dives of the same Diver this one overlaps in time and may be merged with',
-      description: 'Overlap as an import matches a Recording to a Dive (5 minutes of tolerance; local times where a time zone is unknown).',
-      params: IdParams, response: { 200: Type.Array(MergeCandidate), 404: Problem },
+      summary: 'The Dives of the same Diver this one may be merged with',
+      description: 'By default those it breaks a logbook check with (ADR 0038): at the same time as an import matches a Recording to a Dive '
+        + '(5 minutes of tolerance; local times where a time zone is unknown), or the same dive typed with another start. `scope=nearby` '
+        + 'lists every Dive of the Diver from the local day before to the day after, in order of their start, each with its rule or null: '
+        + 'the Dives to choose from when the User merges two by hand.',
+      params: IdParams,
+      querystring: Type.Object({ scope: Type.Optional(Type.Enum(['rule', 'nearby'], { default: 'rule' })) }),
+      response: { 200: Type.Array(MergeCandidate), 404: Problem },
     },
-  }, async (request) => (await merging.candidates(request.user!.id, request.params.id)).map(({ dive: d, siteName, recordings, at, keeps, bothAt, rule, answered }) => ({
+  }, async (request) => (await merging.candidates(request.user!.id, request.params.id, request.query.scope)).map(({ dive: d, siteName, recordings, at, keeps, bothAt, rule, answered }) => ({
     id: d.id, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
     utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
     site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null, fromProvider: d.fromProvider, recordings, at, keeps, bothAt,

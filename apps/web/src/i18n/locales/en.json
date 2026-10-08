@@ -630,6 +630,11 @@
     "confirmBoth": "Merge and delete in {{name}}",
     "confirmHere": "Merge only here",
     "nothingMerged": "Nothing was merged.",
+    "withAnother": "Merge with another dive…",
+    "pickTitle": "Merge with another dive",
+    "pickIntro": "These are the other dives in this logbook from the day before to the day after this one. Choose the one that is the same dive. You are asked again before anything is merged.",
+    "pickNone": "This logbook has no other dive from the day before to the day after this one. If the same dive is logged on another day, correct its date first.",
+    "pick": "Merge with this dive…",
     "done": "The two dives are one now."
   },
   "review": {

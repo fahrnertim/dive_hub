@@ -3393,12 +3393,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * The Dives of the same Diver this one overlaps in time and may be merged with
-         * @description Overlap as an import matches a Recording to a Dive (5 minutes of tolerance; local times where a time zone is unknown).
+         * The Dives of the same Diver this one may be merged with
+         * @description By default those it breaks a logbook check with (ADR 0038): at the same time as an import matches a Recording to a Dive (5 minutes of tolerance; local times where a time zone is unknown), or the same dive typed with another start. `scope=nearby` lists every Dive of the Diver from the local day before to the day after, in order of their start, each with its rule or null: the Dives to choose from when the User merges two by hand.
          */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    scope?: "rule" | "nearby";
+                };
                 header?: never;
                 path: {
                     id: string;
@@ -3436,11 +3438,7 @@ export interface paths {
                                 provider: string;
                                 remoteNumber: null | number;
                             }[];
-                            /**
-                             * @description recording_beside_entry: a Dive without a Recording and one with a Recording at the same time, as an import would have attached them; overlapping_dives: two Dives of one Diver that overlap in time; entry_apart_from_recording: a Dive without a Recording and one with one on the same local day, not overlapping, with depth (0.2 m or 3 %) and duration (3 minutes) agreeing: probably one dive typed with another start (never `obvious`; show both local start times and their difference)
-                             * @enum {unknown}
-                             */
-                            rule: "recording_beside_entry" | "overlapping_dives" | "entry_apart_from_recording" | "short_shallow_dive";
+                            rule: null | ("recording_beside_entry" | "overlapping_dives" | "entry_apart_from_recording" | "short_shallow_dive");
                             /** @description The User said these are two dives: don't hint at the pair again (it can still be merged) */
                             answered: boolean;
                             /** @description Which of the two Dives a merge keeps: the one with a Recording when only one has, else the Dive asked about */

@@ -278,6 +278,10 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
     and is listed in `GET /api/dives/deleted` with `movedTo`. *Web:* `DiveDetail.tsx` (`MoveDialog`).
 - **Merging two Dives** ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md)): the same descent logged twice
   (a logbook entry and its computer's file whose times didn't match at first, or two entries).
+  - **Must offer to merge a Dive with another by hand,** for the pairs no rule finds:
+    `GET /api/dives/{id}/merge-candidates?scope=nearby` lists the Diver's other Dives from the local day before to the day
+    after, in order of their start. Show each as in the hint below and let the User choose one; then the same dialog and
+    the same merge. `rule` is null where the two break no logbook check. *Web:* `MergeDive.tsx` (`MergePicker`).
   - **Must say on a Dive that another Dive of its Diver was at the same time** (`GET /api/dives/{id}/merge-candidates`
     not empty): show that Dive (time, duration, depth, site, with or without a recording), link to it, and offer to merge
     the two. Never merge unasked: two overlapping Dives can be two dives with wrongly typed times.

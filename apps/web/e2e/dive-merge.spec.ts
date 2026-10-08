@@ -44,6 +44,30 @@ test('says another dive was at the same time, merges the two after asking, and l
   await expect(page.getByRole('link', { name: 'Open that dive' }).first()).toHaveAttribute('href', `#/dives/${kept}`);
 });
 
+// Merging by hand (ADR 0038, amended): any other Dive of the Diver from the day before to the day after can be chosen,
+// whether a rule found the pair or not; the merge dialog asks as always.
+test('offers the dives nearby to merge with by hand, and asks before merging the one chosen', { tag: ['@dives'] }, async ({ page, request }) => {
+  const { kept, other } = await mergeablePair(request);
+  try {
+    await page.goto(`/#/dives/${other}`);
+    await page.getByRole('button', { name: /^More/ }).click();
+    await page.getByRole('menuitem', { name: 'Merge with another dive…' }).click();
+    const picker = page.getByRole('dialog', { name: 'Merge with another dive' });
+    await expect(picker).toContainText('from the day before to the day after');
+    const row = picker.getByRole('listitem').filter({ hasText: 'with a recording' });
+    await expect(row.getByRole('link', { name: /^Dive 31/ })).toHaveAttribute('href', `#/dives/${kept}`);
+    await row.getByRole('button', { name: /^Merge with this dive…: Dive 31/ }).click();
+
+    const dialog = page.getByRole('dialog', { name: 'Merge these two dives?' });
+    await expect(dialog.getByText(/^Stays: Dive 31 .* with a recording$/)).toBeVisible();
+    await expect(dialog.getByText(/^Goes to “Deleted dives”: Dive 31 .* without a recording$/)).toBeVisible();
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  } finally {
+    await mergePair(request);
+  }
+});
+
 // Logbook checks (ADR 0038): the pair waits on the Review page, and the logbook says so in one line.
 test('lists two dives at the same time on the logbook, keeps them apart when told so, asks again, and merges them', { tag: ['@dives'] }, async ({ page, request }) => {
   await mergeablePair(request);

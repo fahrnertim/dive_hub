@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, diveProvidersQuery, keys, mergeCandidatesQuery, unwrap, type DiveView, type LogbookCheckView, type MergeCandidateView, type ProviderView } from './api.ts';
+import { api, ApiError, diveProvidersQuery, keys, mergeCandidatesQuery, nearbyDivesQuery, unwrap, type DiveView, type LogbookCheckView, type MergeCandidateView, type ProviderView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { deleteChoice } from './lib/deletion.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
@@ -22,6 +22,12 @@ function useSideText() {
     d.recordings > 0 ? t('merge.withRecording') : t('merge.withoutRecording'),
   ].filter(Boolean).join(' · ');
 }
+
+/** The dive page's Dive as one side of a merge. */
+const sideOf = (d: DiveView): MergeSide => ({
+  id: d.id, version: d.version, number: d.values.number, startsAt: d.values.startsAt.at, utcOffsetSeconds: d.values.startsAt.utcOffsetSeconds,
+  utcOffsetSource: d.utcOffsetSource, durationSeconds: d.values.durationSeconds, maxDepthM: d.values.maxDepthM, site: d.site, recordings: d.recordings.length,
+});
 
 /**
  * On the dive page (ADR 0038): another Dive of the same Diver at the same time, which may be the same dive logged twice
@@ -51,15 +57,46 @@ export function MergeHint({ dive: d }: { dive: DiveView }) {
         );
       })}
       {merging && (
-        <MergeDialog
-          dive={{
-            id: d.id, version: d.version, number: d.values.number, startsAt: d.values.startsAt.at, utcOffsetSeconds: d.values.startsAt.utcOffsetSeconds,
-            utcOffsetSource: d.utcOffsetSource, durationSeconds: d.values.durationSeconds, maxDepthM: d.values.maxDepthM, site: d.site, recordings: d.recordings.length,
-          }}
-          other={merging} onClose={() => setMerging(null)}
-        />
+        <MergeDialog dive={sideOf(d)} other={merging} onClose={() => setMerging(null)} />
       )}
     </>
+  );
+}
+
+/**
+ * Merging by hand (ADR 0038, amended): the Diver's other Dives from the day before to the day after, to choose the one
+ * that is the same dive where no rule found the pair. Choosing one opens the merge dialog, which asks as always.
+ */
+export function MergePicker({ dive: d, onClose }: { dive: DiveView; onClose: () => void }) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const sideText = useSideText();
+  const nearby = useQuery(nearbyDivesQuery(d.id));
+  const [chosen, setChosen] = useState<MergeCandidateView | null>(null);
+  if (chosen) return <MergeDialog dive={sideOf(d)} other={chosen} onClose={onClose} />;
+  return (
+    <Dialog title={t('merge.pickTitle')} isOpen onOpenChange={(open) => !open && onClose()}>
+      {nearby.isPending && <Muted>{t('common.loading')}</Muted>}
+      {nearby.error && <Notice tone="danger">{errorText(nearby.error)}</Notice>}
+      {nearby.data && (nearby.data.length === 0 ? <p>{t('merge.pickNone')}</p> : (
+        <>
+          <p>{t('merge.pickIntro')}</p>
+          <ul className="nearby-dives">
+            {nearby.data.map((c) => (
+              <li key={c.id}>
+                <a href={`#/dives/${c.id}`}>{sideText(c)}</a>
+                <Button size="small" icon="merge" aria-label={t('common.forItem', { action: t('merge.pick'), item: sideText(c) })} onPress={() => setChosen(c)}>
+                  {t('merge.pick')}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </>
+      ))}
+      <div className="form-actions">
+        <Button onPress={onClose}>{t('common.cancel')}</Button>
+      </div>
+    </Dialog>
   );
 }
 

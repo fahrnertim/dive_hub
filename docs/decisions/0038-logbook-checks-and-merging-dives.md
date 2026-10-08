@@ -1,6 +1,6 @@
 ---
 title: "ADR 0038: Logbook checks, and merging two Dives"
-summary: Built (slices 18b, 18c) - a scan of the logbook for contradictions (a Dive without a Recording overlapping one with a Recording; two Dives of one Diver overlapping) by pure rules and the import's own matching, computed each time, shown in "Needs your decision" with resolutions (merge, two dives, correct a time, move to another Diver, delete); nothing merges unasked. Merging two Dives is fill the kept one, move the Provider link, delete the other the normal way. A Dive linked to a Provider moves to another Diver as a copy, the old one deleted with its link so the import doesn't bring it back. Amends 0016, 0030. Amended 2026-10-07: a fourth rule about one Dive, short_shallow_dive (a Recording under 2 minutes above 3 m, at no Provider: delete or keep, rule version 3); the same test in matching is open for the next slice.
+summary: Built (slices 18b, 18c) - a scan of the logbook for contradictions (a Dive without a Recording overlapping one with a Recording; two Dives of one Diver overlapping) by pure rules and the import's own matching, computed each time, shown in "Needs your decision" with resolutions (merge, two dives, correct a time, move to another Diver, delete); nothing merges unasked. Merging two Dives is fill the kept one, move the Provider link, delete the other the normal way. A Dive linked to a Provider moves to another Diver as a copy, the old one deleted with its link so the import doesn't bring it back. Amends 0016, 0030. Amended 2026-10-07: a fourth rule about one Dive, short_shallow_dive (a Recording under 2 minutes above 3 m, at no Provider: delete or keep, rule version 3); the same test in matching is open for the next slice. Amended 2026-10-08: the 3-minute duration window of the third rule stays as it is; a merge by hand on the dive page (the Diver's Dives from the day before to the day after) covers pairs no rule finds.
 status: accepted
 date: 2026-10-07
 ---
@@ -206,6 +206,26 @@ Decided with the owner on 2026-10-07.
   Review page has a group of its own ("Probably not dives"), the logbook's line counts it, "Delete…" opens the delete
   dialog and lands on the logbook with its Undo. Not tested through the API: a short Dive at a Provider getting no
   suggestion (the pure rule's test covers it).
+
+## Amendment 2026-10-08: the duration window stays, and a merge by hand (owner)
+Why: the owner found an entry and a Recording that are the same dive and were offered nowhere. Walked through the rules
+(read-only on the owner's instance), the pair passed everything of `entry_apart_from_recording` but the duration, which
+was seconds over the 3 minutes allowed. No tie, no false start and no earlier answer was involved.
+
+- **The window stays at 3 minutes, compared in seconds** (owner): "within 3 minutes" is clearer than a rounded
+  "about 3 minutes". No rule changes and `LOGBOOK_CHECKS_VERSION` stays 4. Known and accepted: a Provider that keeps
+  whole minutes can put a pair seconds over the window, and it is then not offered.
+- **A merge by hand covers what the rules don't find.** "Also offered on the dive page, without a check" of the Decision
+  was built only as the hint for pairs a rule finds. Now the dive page's menu has "Merge with another dive…": it lists
+  the Diver's other Dives from the local day before to the day after, each a link with what tells it apart, and the one
+  chosen opens the merge dialog unchanged (which stays, which goes, the Provider question).
+- **Three local days, no search** (owner): enough for a wrongly typed time and a night dive across midnight, and a short
+  list. A dive logged on another day gets its date corrected first. The server's merge itself has no such limit.
+- **Clients** get a duty: offering the merge by hand ([client contract](../spec/clients.md), updated in the same change).
+- **As built:** `GET /api/dives/{id}/merge-candidates?scope=nearby` (`merging.candidates`) lists every live Dive of the
+  Diver whose local day is at most one from this Dive's, in order of their start, with `rule` (now nullable: null where
+  the two break no check) and the same `keeps`, `at` and `bothAt` the dialog needs. Without `scope` the answer is as
+  before. Web: `MergePicker` in `MergeDive.tsx`. A pair merged this way gets no answer recorded, and none is needed.
 
 ### The same test in matching (done 2026-10-07: [ADR 0030, amended](0030-importing-dives-from-providers.md#amended-a-probable-non-dive-is-never-matched-by-itself-owner-2026-10-07); rule version 4)
 Built as planned below, with two corrections to what was written here: `decideMatch` does not decide
