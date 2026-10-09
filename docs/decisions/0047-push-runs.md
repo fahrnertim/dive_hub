@@ -11,7 +11,7 @@ date: 2026-10-09
 Proposed – 2026-10-09. The owner answered the open questions the same day (marked "owner" below). Extends
 [ADR 0027](0027-providers-as-adapters.md) (a new limit an adapter declares; "batch sending will go through the worker")
 and builds on [ADR 0010](0010-graphile-worker-job-queue.md), [ADR 0029](0029-push-requirements-and-buddies.md) and
-[ADR 0040](0040-logbook-rows-and-filters.md). To be built as slice 22b, before slice 23
+[ADR 0040](0040-logbook-rows-and-filters.md). To be built as slice 22c, after the dive numbers slice (22b, owner 2026-10-09, see "Renumbering") and before slice 23
 ([plan](../research/2026-10-09-push-runs.md#implementation-plan)).
 
 ## Context
@@ -171,8 +171,11 @@ run's reason with the way to fix it and to continue; errors that don't time out.
   chain ends.
 - SSI numbers a dive by the highest number plus one, so old Dives sent into a logbook that has newer ones get high
   numbers. That is today's behaviour for a single send; a run makes it more visible. Not changed here.
-- **Renumbering is not designed** (owner's idea, 2026-10-09: optionally make the Provider's numbers follow Dive
-  Hub's). It needs its own decision. What is known for it: with explicit numbers the order of creates decides nothing;
+- **Renumbering is not designed here** (owner's idea, 2026-10-09: a number Dive Hub computes beside the one a Source
+  gave, and optionally making the Provider's numbers follow it). It gets its own slice and ADR, **built before this
+  one** (owner, 2026-10-09; [what is known and open](../research/2026-10-09-push-runs.md#dive-numbers-first-slice-22b)).
+  That ADR amends this one with what a run gains (a third choice, "also set the numbers there", and what the plan and
+  the preview count for it); the implementation prompt for slice 22c is brought up to date then. What is known for it: with explicit numbers the order of creates decides nothing;
   the order matters when dives already there change their number, and only if the Provider refuses a number twice
   (then from the highest down when numbers move up, so each is free before it is taken, and from the lowest up when
   they move down). Whether SSI refuses a duplicate number is unchecked (an owner's check in the
