@@ -463,6 +463,7 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 
 .tools-grid { align-items: start; }
 /* A gas plan's levels and Divers (ADR 0033): lines with a pencil and a bin, and one set of fields open under its line. */
+.plan-mix { margin-top: var(--space-4); max-width: 14rem; }
 .plan-part { margin-top: var(--space-5); }
 .plan-part > .subheading { margin: 0 0 var(--space-2); }
 .plan-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--color-border); }

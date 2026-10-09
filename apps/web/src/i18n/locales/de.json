@@ -2015,7 +2015,7 @@
     "plan": {
       "title": "Gasplan",
       "lead": "Plane das Gas für eine oder mehrere Ebenen, für dich oder eine Gruppe. Der Plan folgt dem Taucher, dem zuerst die Reserve ausgeht.",
-      "empty": "Gib oben das Gemisch ein und füge eine Ebene und einen Taucher hinzu, um den Plan zu sehen.",
+      "empty": "Füge eine Ebene und einen Taucher hinzu, um den Plan zu sehen.",
       "levels": "Ebenen",
       "levelN": "Ebene {{n}}",
       "removeLevel": "Ebene {{n}} entfernen",
@@ -2095,7 +2095,11 @@
       "marker": "Die gestrichelte Linie ist Minute {{minute}}: Bis dahin die letzte Ebene verlassen.",
       "noNdl": "Dieser Plan prüft das Gas, die MOD und 40 m. Die Nullzeit über mehrere Ebenen prüft er nicht: Das macht dein Tauchcomputer.",
       "assumedRates": "Abstieg {{descent}}, Aufstieg {{ascent}}",
-      "pressureAxis": "Druck"
+      "pressureAxis": "Druck",
+      "mix": "Gemisch",
+      "mixHint": "Sauerstoff in Prozent, Nitrox bis 40. Leer plant mit Luft.",
+      "assumedAir": "Gemisch: Luft ({{source}})",
+      "assumedNitrox": "Gemisch: Nitrox {{o2}} ({{source}})"
     }
   }
 }

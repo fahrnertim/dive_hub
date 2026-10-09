@@ -2015,7 +2015,7 @@
     "plan": {
       "title": "Gas plan",
       "lead": "Plan the gas of one or more levels for yourself or a group. The plan follows the Diver who runs out of margin first.",
-      "empty": "Enter the mix above, add a level and a Diver to see the plan.",
+      "empty": "Add a level and a Diver to see the plan.",
       "levels": "Levels",
       "levelN": "Level {{n}}",
       "removeLevel": "Remove level {{n}}",
@@ -2095,7 +2095,11 @@
       "marker": "The dashed line is minute {{minute}}: leave the last level by then.",
       "noNdl": "This plan checks the gas, the MOD and 40 m. It does not check the no-decompression limit over several levels: your dive computer does.",
       "assumedRates": "Descent {{descent}}, ascent {{ascent}}",
-      "pressureAxis": "Pressure"
+      "pressureAxis": "Pressure",
+      "mix": "Mix",
+      "mixHint": "Oxygen in percent, nitrox to 40. Empty plans with air.",
+      "assumedAir": "Mix: air ({{source}})",
+      "assumedNitrox": "Mix: nitrox {{o2}} ({{source}})"
     }
   }
 }

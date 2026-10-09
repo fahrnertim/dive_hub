@@ -558,7 +558,8 @@ export type ToolsPlan =
 async function fetchToolsPlan(p: ToolsInput) {
   const answer = await unwrap(await api.GET('/api/tools/gas-plan', {
     params: { query: defined({
-      o2: p.o2!, he: p.he, water: p.water, altitude: p.altitude, rule: p.rule, bar: p.bar, ppo2Contingency: p.pc, descentRate: p.dr, ascentRate: p.ar,
+      // The plan's own mix (air when empty), never the one of "Your dive"; no helium: a plan is air or nitrox.
+      o2: p.mix ?? 21, water: p.water, altitude: p.altitude, rule: p.rule, bar: p.bar, ppo2Contingency: p.pc, descentRate: p.dr, ascentRate: p.ar,
       levels: JSON.stringify((p.levels ?? []).map((l) => ({ depth: l.depth, minutes: l.minutes }))),
       divers: JSON.stringify((p.divers ?? []).map((d) => defined({ name: d.name, volume: d.volume, pressure: d.pressure, sac: d.sac, diverId: d.diverId }))),
     }) },
@@ -566,7 +567,7 @@ async function fetchToolsPlan(p: ToolsInput) {
   return answer as unknown as ToolsPlan;
 }
 export const toolsPlanQuery = (p: ToolsInput) => {
-  const enabled = p.o2 !== undefined && p.o2 > 0 && (p.levels?.length ?? 0) > 0 && (p.divers?.length ?? 0) > 0;
+  const enabled = (p.levels?.length ?? 0) > 0 && (p.divers?.length ?? 0) > 0;
   return queryOptions({
     queryKey: ['tools', 'plan', p] as const, queryFn: () => fetchToolsPlan(p), enabled, retry: false,
     ...(enabled && { placeholderData: keepPreviousData }),

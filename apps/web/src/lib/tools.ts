@@ -58,9 +58,11 @@ export interface ToolsParams {
   ar?: number | undefined;
   levels?: PlanLevel[] | undefined;
   divers?: PlanDiver[] | undefined;
+  /** The gas plan's own mix: oxygen in percent, air when empty. Not the mix of "Your dive" (`o2`). */
+  mix?: number | undefined;
 }
 
-const NUMBERS = ['o2', 'he', 'depth', 'altitude', 'volume', 'pressure', 'sac', 'bar', 'gf', 'pw', 'pc', 'dr', 'ar'] as const;
+const NUMBERS = ['o2', 'he', 'depth', 'altitude', 'volume', 'pressure', 'sac', 'bar', 'gf', 'pw', 'pc', 'dr', 'ar', 'mix'] as const;
 
 const finite = (raw: string | undefined): number | undefined => {
   const n = raw === undefined || raw === '' ? Number.NaN : Number(raw);

@@ -428,14 +428,14 @@ test('review material', async ({ page, request, browser }) => {
     await page.goto('/#/tools?lv=20x15,12x10'); await page.locator('.plan-profile canvas').first().waitFor();
     await capture(page, `${prefix}-tools-plan-sketch`, { aria: false, axe });
     // A gas plan of a group with a turn rule, and one that does not fit.
-    await page.goto('/#/tools?o2=21&water=fresh&rule=thirds&lv=20x15,12x10&dv=Tim~12~200~20~&dv=Ann~10~200~15~'); await page.reload(); await page.getByTestId('plan-briefing').waitFor();
+    await page.goto('/#/tools?mix=32&water=fresh&rule=thirds&lv=20x15,12x10&dv=Tim~12~200~20~&dv=Ann~10~200~15~'); await page.reload(); await page.getByTestId('plan-briefing').waitFor();
     await capture(page, `${prefix}-tools-plan`, { aria: false, axe });
     // One set of fields open at a time: a level's, then the search for another Diver.
     await page.locator('.plan-levels .plan-actions .btn').first().click();
     await capture(page, `${prefix}-tools-plan-level`, { aria: false, axe });
     await page.locator('.plan-add').last().click(); await page.getByRole('searchbox').fill('a'); await page.getByRole('option').first().waitFor();
     await capture(page, `${prefix}-tools-plan-find`, { aria: false, axe });
-    await page.goto('/#/tools?o2=21&water=fresh&lv=20x40&dv=Tim~12~200~20~'); await page.reload(); await page.getByTestId('plan-briefing').waitFor();
+    await page.goto('/#/tools?water=fresh&lv=20x40&dv=Tim~12~200~20~'); await page.reload(); await page.getByTestId('plan-briefing').waitFor();
     await capture(page, `${prefix}-tools-plan-no-fit`, { aria: false, axe });
     await page.goto('/#/tools?o2=40&depth=36&he=0'); await page.locator('.tools-answer .notice').first().waitFor();
     await capture(page, `${prefix}-tools-outside`, { aria: false, axe });

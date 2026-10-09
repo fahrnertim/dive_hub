@@ -93,10 +93,12 @@ test('imperial units: feet and psi in the fields and the answers, metres and bar
 });
 
 test('a gas plan for a group: levels and Divers as lists with one editor open, the profile, the controlling Diver, and the rule explained', { tag: ['@tools'] }, async ({ page }) => {
-  await page.goto('/#/tools?o2=21&water=fresh');
+  // The plan stands on its own: nothing of "Your dive" is typed, and it plans with air.
+  await page.goto('/#/tools?water=fresh');
   await expectGoodPage(page, 'Tools');
   const plan = page.getByRole('region', { name: 'Gas plan' });
-  await expect(plan.getByText(/Enter the mix above, add a level and a Diver/)).toBeVisible();
+  await expect(plan.getByText('Add a level and a Diver to see the plan.')).toBeVisible();
+  await expect(plan.getByRole('textbox', { name: /^Mix/ })).toHaveAttribute('placeholder', '21');
   const levels = plan.getByRole('list', { name: 'Levels' }).getByRole('listitem');
   const divers = plan.getByRole('list', { name: 'Divers' }).getByRole('listitem');
 
@@ -136,6 +138,7 @@ test('a gas plan for a group: levels and Divers as lists with one editor open, t
   await expect(plan.getByRole('row', { name: /^Ann/ }).getByRole('cell').nth(1)).toHaveText('1060 L');
   await expect(plan.getByText('Erika: gas use 20 L/min (entered)')).toBeVisible();
   await expect(plan.getByText('Gas rule: Rock bottom (default)')).toBeVisible();
+  await expect(plan.getByText('Mix: air (default)')).toBeVisible();
   await expect(plan.getByText(/estimate, not advice/i)).toHaveCount(0);
   await expect(page.locator('#main').getByText(/estimate, not advice/i)).toBeVisible();
 
@@ -161,6 +164,13 @@ test('a gas plan for a group: levels and Divers as lists with one editor open, t
   await page.reload();
   await expect(plan.getByTestId('plan-briefing')).toBeVisible();
 
+  // The plan has its own mix, in its own place in the address; the mix of "Your dive" is not the plan's.
+  await plan.getByRole('textbox', { name: /^Mix/ }).fill('32');
+  await plan.getByRole('textbox', { name: /^Mix/ }).press('Tab');
+  await expect(plan.getByText('Mix: nitrox 32 (entered)')).toBeVisible();
+  await expect(page).toHaveURL(/mix=32/);
+  await expect(page).not.toHaveURL(/o2=/);
+
   // Turn rules show a turn pressure and say who they are for.
   // The water in the address keeps the settings open.
   await page.getByRole('button', { name: /Gas rule/ }).click();
@@ -185,18 +195,24 @@ test('a gas plan that does not fit says when to leave, and one beyond the limits
   await expect(plan.getByRole('img', { name: 'Planned profile' })).toBeVisible();
   await expect(plan.getByRole('img', { name: 'Planned pressure' })).toHaveCount(0);
   await expect(plan.getByRole('list', { name: 'Levels' }).getByRole('listitem')).toHaveText([/Descent/, /Level 1/, /Ascent/, /Safety stop/, /Ascent/]);
-  await expect(plan.getByText(/Enter the mix above/)).toBeVisible();
+  await expect(plan.getByText('Add a level and a Diver to see the plan.')).toBeVisible();
   // 40 minutes at 20 m for one Diver in a 12 L cylinder is more than the cylinder holds.
-  await page.goto('/#/tools?o2=21&water=fresh&lv=20x40&dv=Tim~12~200~20~');
+  await page.goto('/#/tools?water=fresh&lv=20x40&dv=Tim~12~200~20~');
   await expect(plan.getByText('The plan does not fit.')).toBeVisible();
   await expect(plan.getByText(/Leave 20 m by minute \d+ at the latest/)).toBeVisible();
   await expect(plan.getByText(/The dashed line is minute \d+/)).toBeVisible();
 
-  await page.goto('/#/tools?o2=21&lv=20x5,42x5&dv=Tim~12~200~20~');
+  await page.goto('/#/tools?lv=20x5,42x5&dv=Tim~12~200~20~');
   await expect(plan.getByText('Outside recreational limits')).toBeVisible();
   await expect(plan.getByText(/deeper than 40 m/)).toBeVisible();
   await expect(plan.getByRole('table')).toHaveCount(0);
   await expect(plan.getByRole('img')).toHaveCount(0);
+  // Nitrox 40 at 30 m is beyond its MOD: the plan's own mix decides, and there is no picture.
+  await page.goto('/#/tools?mix=40&lv=30x10&dv=Tim~12~200~20~');
+  await expect(plan.getByText('Outside recreational limits')).toBeVisible();
+  await expect(plan.getByRole('img')).toHaveCount(0);
+  await page.goto('/#/tools?lv=20x5,42x5&dv=Tim~12~200~20~');
+  await expect(plan.getByText('Outside recreational limits')).toBeVisible();
   // A level removed with its bin leaves the others.
   await plan.getByRole('button', { name: 'Remove level 2' }).click();
   await expect(plan.getByTestId('plan-fits')).toBeVisible();

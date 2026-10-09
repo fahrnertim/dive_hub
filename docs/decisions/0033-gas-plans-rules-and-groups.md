@@ -140,5 +140,10 @@ The first page was one long form: every level and every Diver with all their fie
   and until it comes the page draws the levels' stretches itself (`planSketch` in `lib/tools.ts`, the server's rule for the way down,
   between, up and the stop, with the plan's rates) and lists them. No gas, no pressure strip and no minute to leave by come from the
   sketch, and beyond 40 m or the limits there is none.
+- **The plan has its own mix** (owner: "why is the gas planner dependent on the upper tool?"): the page read the oxygen of
+  "Your dive", whose depth and cylinder the plan ignores, and stayed silent without it. Now the Gas plan panel has an mix field
+  of its own (21 to 40 %, empty is air; address `mix`), a level and a Diver are enough for an answer, and the assumptions name the
+  mix and where it came from. `o2` in the address no longer reaches the plan. The settings (water, altitude, gas rule, ppO2, rates)
+  stay shared with the bottom time. The API is unchanged: `o2` is still the plan's one mix. A mix per Diver is a later slice.
 - **Later:** reordering levels by dragging (delete and add does it for the two to four levels of a plan); a Bühlmann check over the
   whole profile, as a slice of its own; each Diver's ascent pressure marked in the pressure strip.

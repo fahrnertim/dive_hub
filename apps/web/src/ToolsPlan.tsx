@@ -81,11 +81,18 @@ export function PlanSection({ params, plan, managed }: { params: ToolsParams; pl
     <section className="panel" aria-labelledby="tools-plan">
       <div className="panel-head"><h2 id="tools-plan">{t('tools.plan.title')}</h2></div>
       <Muted>{t('tools.plan.lead')}</Muted>
+      <div className="plan-mix">
+        <NumberField
+          label={t('tools.plan.mix')} unit="%" placeholder="21" description={t('tools.plan.mixHint')}
+          value={params.mix ?? Number.NaN} onChange={(v) => control.set({ mix: num(v) })}
+          minValue={21} maxValue={40} formatOptions={{ maximumFractionDigits: 0 }}
+        />
+      </div>
       {answered ? <PlanProfile plan={answered} names={answered.divers.map(name)} />
         : sketched && <PlanProfile plan={sketched} names={NO_NAMES} />}
       <Levels params={params} levels={levels} divers={divers} segments={answered?.segments ?? sketched?.segments} managed={managed} control={control} />
       <DiverRows params={params} divers={divers} answered={answered} managed={managed} control={control} />
-      {(params.o2 === undefined || empty) && <Muted>{t('tools.plan.empty')}</Muted>}
+      {empty && <Muted>{t('tools.plan.empty')}</Muted>}
       {plan.error != null && <Notice tone="danger">{errorText(plan.error)}</Notice>}
       {plan.data && !empty && <PlanAnswer plan={plan.data} params={params} />}
     </section>
@@ -366,6 +373,7 @@ function PlanAnswer({ plan, params }: { plan: ToolsPlan; params: ToolsParams }) 
   const rule = plan.used.gasRule.value.kind as ToolsRule;
   const turn = plan.divers.some((d) => d.turnPressureBar !== null);
   const lastLevel = levels.at(-1);
+  const mix = params.mix ?? 21;
   const source = (s: string) => t(`tools.source.${s}` as 'tools.source.default');
   const minute = (n: number) => String(Math.max(0, Math.floor(n)));
   const rate = (r: { value: number; source: string }) => `${formatRate(r.value, display.units, display.locale)} (${source(r.source)})`;
@@ -408,6 +416,7 @@ function PlanAnswer({ plan, params }: { plan: ToolsPlan; params: ToolsParams }) 
               : t('tools.plan.assumedSac', { name: name(d, i), value: d.sacLpm.value, source: source(d.sacLpm.source) })}
           </li>
         ))}
+        <li>{t(mix === 21 ? 'tools.plan.assumedAir' : 'tools.plan.assumedNitrox', { o2: mix, source: source(params.mix === undefined ? 'default' : 'request') })}</li>
         <li>{t('tools.assumed.rule', { rule: t(`tools.rules.${rule}.name`), source: source(plan.used.gasRule.source) })}</li>
         <li>{t('tools.assumed.water', { value: t(`tools.water.${plan.used.water.value as 'salt'}`).toLowerCase(), source: source(plan.used.water.source) })}</li>
         <li>{t('tools.plan.assumedRates', { descent: rate(plan.used.descentRateMPerMin), ascent: rate(plan.used.ascentRateMPerMin) })}</li>
