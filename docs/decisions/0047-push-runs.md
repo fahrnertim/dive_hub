@@ -11,8 +11,12 @@ date: 2026-10-09
 Proposed – 2026-10-09. The owner answered the open questions the same day (marked "owner" below). Extends
 [ADR 0027](0027-providers-as-adapters.md) (a new limit an adapter declares; "batch sending will go through the worker")
 and builds on [ADR 0010](0010-graphile-worker-job-queue.md), [ADR 0029](0029-push-requirements-and-buddies.md) and
-[ADR 0040](0040-logbook-rows-and-filters.md). To be built as slice 22c, after the dive numbers slice (22b, owner 2026-10-09, see "Renumbering") and before slice 23
+[ADR 0040](0040-logbook-rows-and-filters.md). To be built as slice 22c, after the dive numbers slice (22b, owner 2026-10-09) and before slice 23
 ([plan](../research/2026-10-09-push-runs.md#implementation-plan)).
+
+**Amended 2026-10-09 by [ADR 0048](0048-dive-numbers.md)** (dive numbers): a run's creates carry Dive Hub's number
+when the Connection follows numbers, a third choice sets the number of dives already there, and number changes go
+first in an order that keeps each number free. The places are marked "ADR 0048" below.
 
 ## Context
 - A Dive goes to a Provider from its own page, one at a time. A User with a logbook of some hundred Dives and a new
@@ -55,6 +59,15 @@ Each Dive in scope is one of these, from Dive Hub's data alone (the same checks 
 | the same, and the update would remove a verification there (`updateRemovesVerification`) | only with `updatesRemovingVerification: true` as well (default false) |
 | at the Provider and up to date | left out |
 | a blocking requirement unmet | left out, listed with what is unmet |
+| at the Provider, its number there differs (`current.number.differs` and `canSet`, ADR 0048) | its number is set only with `numbers: true` (default false) |
+| the same, at a Provider where a number change can remove a verification (`current.number.removesVerification`) | only with `updatesRemovingVerification: true` as well |
+
+- **Numbers (ADR 0048).** The two last rows exist only for a Connection that follows numbers at a Provider that sets
+  them on an update; elsewhere `numbers` changes nothing. They are beside the rows above, not instead: a Dive that is
+  updated in the run gets its number with that update (one save, and the update then needs
+  `updatesRemovingVerification` where a number change can remove a verification); a Dive that is up to date, or whose
+  update isn't chosen, gets an item with the action `number`, which changes only the number
+  (`pushes.setNumber`). A dive the run creates carries the Dive's number without any choice, where it is free.
 
 - An advisory requirement doesn't hold a Dive back; its Push records who was left out, as for a single send.
 - An update overwrites what Dive Hub sends, as a single update does. A change made at the Provider and not yet imported
@@ -63,11 +76,23 @@ Each Dive in scope is one of these, from Dive Hub's data alone (the same checks 
 - **A dive at the same time already at the Provider** that Dive Hub didn't send (`exists`) is only found when the
   Provider is asked. The run skips the Dive with the reason `exists` and never links or creates a second one by itself;
   the User decides on the Dive's page, as today.
-- **Oldest first** (by start time). SSI's adapter numbers a new dive "highest in the logbook plus one" and never
-  sends Dive Hub's number, so the order of sending is the numbering, and oldest first numbers the new dives in the
-  order they were dived. The order is the run's own matter, not a promise of the API: clients read `position`, and a
-  later change may order differently (owner's question, 2026-10-09, see "Renumbering" below).
-- **The ceiling** cuts after the oldest Dives; the preview says how many are beyond it. The next run takes them.
+- **Order: number changes first, then oldest first** (ADR 0048).
+  - Creates and updates go oldest first (by start time). Where the Connection doesn't follow numbers, SSI's adapter
+    numbers a new dive "highest in the logbook plus one", so the order of sending is the numbering, and oldest first
+    numbers the new dives in the order they were dived.
+  - `number` items go before them, each when its number is free: worked out when the run is planned, from the
+    numbers on the Pushes. An item is next when no other dive of the Connection that Dive Hub knows holds the number
+    it wants (after the items before it); among those that could go, the highest wanted number first. So numbers
+    moving up go from the highest down and numbers moving down from the lowest up, and the creates behind them find
+    their numbers free.
+  - Dives that only swap numbers among themselves can never be next: they are left out (`number_taken`) and go from
+    their own pages. A number held by a dive only at the Provider is found when the item is sent: `skipped` with
+    `number_taken`.
+  - The order is the run's own matter, not a promise of the API: clients read `position`.
+- **The ceiling** counts every item and cuts after the number changes that fit, then after the oldest Dives; the
+  preview says how many are beyond it. The next run takes them. A logbook whose numbers all moved by one takes
+  several runs before a create behind them goes with its own number; sent earlier, it is numbered "highest plus one"
+  and shows "number differs".
 
 ### Limits an adapter declares (owner: SSI 5 s and 100)
 `limits.run: { pauseMs, maxDives } | null` beside `limits.pauseMs`:
@@ -94,8 +119,8 @@ minutes doesn't hold one of the worker's two slots, and other jobs (Imports) run
 ### What stops a run, and what doesn't
 | What happens on a Dive | The item | The run |
 |---|---|---|
-| sent, updated, or linked to our own dive found there | `sent`, with its Push | goes on |
-| `exists`; a blocking requirement unmet by now; up to date by now; an update not chosen by now; the Dive deleted | `skipped`, with the reason | goes on |
+| sent, updated, its number set, or linked to our own dive found there | `sent`, with its Push | goes on |
+| `exists`; a blocking requirement unmet by now; up to date by now; an update not chosen by now; the Dive deleted; its number taken there or nothing to set by now (ADR 0048) | `skipped`, with the reason | goes on |
 | the Connection or the Dive is busy (`provider_busy`) | waits, tried again later, three times in all | goes on |
 | refused, not answering, an answer we can't read, the dive gone there | `failed`, with the problem code | goes on; **the second such failure in a row stops it** |
 | sign-in needed, wrong credentials, not connected | waits | **stops at once** |
@@ -115,7 +140,7 @@ minutes doesn't hold one of the worker's two slots, and other jobs (Imports) run
 | Route | Does |
 |---|---|
 | `POST /api/connections/{id}/push-runs/preview` | what a run would do: counts per row of the table above, how many would be sent, how many are beyond the ceiling, the Dives a blocking requirement holds back (the first 100, with what is unmet), how many would go without a Participant, the limits and the time it takes. Stores nothing, calls no Provider |
-| `POST /api/connections/{id}/push-runs` | starts it (202 with the run). The same body as the preview: `dives` (`{ list: { siteId?, q?, only? } }` or `{ ids: [...] }`), `updates`, `updatesRemovingVerification` |
+| `POST /api/connections/{id}/push-runs` | starts it (202 with the run). The same body as the preview: `dives` (`{ list: { siteId?, q?, only? } }` or `{ ids: [...] }`), `updates`, `updatesRemovingVerification`, `numbers` (ADR 0048) |
 | `GET /api/push-runs` | the User's runs, newest first, without items |
 | `GET /api/push-runs/{id}` | one run with its items |
 | `POST /api/push-runs/{id}/cancel` | asks it to stop |
@@ -133,7 +158,7 @@ minutes doesn't hold one of the worker's two slots, and other jobs (Imports) run
 ### Clients
 The duties go into the [client contract](../spec/clients.md) with the code (listed in the
 [plan](../research/2026-10-09-push-runs.md#client-duties-for-clientsmd)). In short: preview before starting and say
-what is left out and why; the two update choices unticked; the Provider's notices; a determinate progress that survives
+what is left out and why; the two update choices and the numbers choice unticked; the Provider's notices; a determinate progress that survives
 leaving the page; a stop control; a result that names every Dive not sent with its reason and leads to it; a stopped
 run's reason with the way to fix it and to continue; errors that don't time out.
 
@@ -169,17 +194,16 @@ run's reason with the way to fix it and to continue; errors that don't time out.
 - With several app processes, a crash can leave two chains of steps for one run for a while. An item is taken by one
   step only and the leases hold, so nothing is sent twice; the run is merely paced by the Connection's pause until one
   chain ends.
-- SSI numbers a dive by the highest number plus one, so old Dives sent into a logbook that has newer ones get high
-  numbers. That is today's behaviour for a single send; a run makes it more visible. Not changed here.
-- **Renumbering is not designed here** (owner's idea, 2026-10-09: a number Dive Hub computes beside the one a Source
-  gave, and optionally making the Provider's numbers follow it). It gets its own slice and ADR, **built before this
-  one** (owner, 2026-10-09; [what is known and open](../research/2026-10-09-push-runs.md#dive-numbers-first-slice-22b)).
-  That ADR amends this one with what a run gains (a third choice, "also set the numbers there", and what the plan and
-  the preview count for it); the implementation prompt for slice 22c is brought up to date then. What is known for it: with explicit numbers the order of creates decides nothing;
-  the order matters when dives already there change their number, and only if the Provider refuses a number twice
-  (then from the highest down when numbers move up, so each is free before it is taken, and from the lowest up when
-  they move down). Whether SSI refuses a duplicate number is unchecked (an owner's check in the
-  [SSI reference](../references/ssi-app-api.md#owners-checks-pending)). A run's items and the adapter's `limits.run`
-  would carry such a pass unchanged.
+- Where a Connection doesn't follow numbers, SSI numbers a dive by the highest number plus one, so old Dives sent
+  into a logbook that has newer ones get high numbers. That is today's behaviour for a single send; a run makes it
+  more visible.
+- **Numbers are [ADR 0048](0048-dive-numbers.md)** (slice 22b, built before this one; owner, 2026-10-09): Dive Hub
+  computes a Dive's number, and a Connection can make the Provider's numbers follow. What a run gains from it is
+  marked "ADR 0048" above: creates carry the number, the choice `numbers` sets it on dives already there, number
+  changes go first in an order that keeps each free, and Dive Hub never sends a number another dive there has, so the
+  order doesn't depend on whether SSI would refuse one (still an owner's check, for the record). A run's item gains
+  the action `number` and the run the column `numbers`; the adapter's `limits.run` carries it unchanged.
+- Renumbering a long logbook at SSI takes as many saves as it has dives after the change: at 100 per run and about
+  12 minutes each, a logbook of 500 that moved by one is five runs.
 - Not designed: bulk import from a Provider, bulk delete at a Provider, a run over several Providers at once, a
   schedule ("send new Dives by itself"), an MCP tool that sends.

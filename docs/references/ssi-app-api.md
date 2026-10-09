@@ -133,6 +133,8 @@ it happens again, the `SSI call` line's `detail` shows SSI's reason.
     the app (rating, buddies, …) survive.
   - Read-only keys of the read side (`updates`, `app_version`, …) are left out.
 - SSI's dive number (`odin_user_log_nr`) is the client's choice: Dive Hub takes the highest in the logbook + 1 [S].
+  Planned ([ADR 0048](../decisions/0048-dive-numbers.md), slice 22b): the Dive's own number where the Connection is
+  set to follow and no dive in SSI's logbook has it; whether an update can change it is an owner's check below.
 
 ### The dive record: the fields Dive Hub fills
 
@@ -380,8 +382,16 @@ From the research note. Record the result here with date and app version, and tu
   wildlife IDs; Dive Hub keeps only ID, name, position and country.
 - [ ] A buddy code and a professional's code drawn by Dive Hub: does SSI's app take them (add the buddy; verify a
   dive)? And what do `leader_nr` and `leader_active` hold for a professional and for someone who is none?
-- [ ] Two dives with the same dive number (`odin_user_log_nr`): does SSI refuse the second, or keep both? Needed
-  before renumbering dives at SSI is designed ([ADR 0047](../decisions/0047-push-runs.md), "Renumbering"). Asked 2026-10-09.
+- Dive numbers ([ADR 0048](../decisions/0048-dive-numbers.md)), asked 2026-10-09. Run with `round-trip.ts number`,
+  a mode slice 22b adds first ([what it does and what each result switches](../research/2026-10-09-dive-numbers.md#owners-checks-the-builds-first-step)):
+  - [ ] An update with another `odin_user_log_nr`: does the number change in SSI's logbook and app? Does `internalPk`
+    have to follow? Decides whether SSI's adapter sets numbers on an update ("Set number").
+  - [ ] Two dives with the same number, by an update and by a create: does SSI refuse the second, or keep both?
+    For the record only: Dive Hub never sends a number another dive there has.
+  - [ ] A verified dive whose number is changed (`round-trip.ts number --dive … --to …`, only if the owner wants to
+    risk one): is the verification still there? Until shown, Dive Hub warns that it may be lost.
+  - [ ] After a delete: do the other dives keep their numbers? The record has a key
+    `reset_profile_divelog_number_with_deletion` whose effect is unknown.
 - [ ] The first Push runs ([ADR 0047](../decisions/0047-push-runs.md)): does SSI refuse anything when 100 dives go
   5 s apart (a save, or the logbook read after it)? Record the `SSI call` line's `detail` and the count that went.
 - [ ] Surface interval: seconds or minutes. Log a dive in the app with a known surface interval (e.g. 1 h 30 min),
