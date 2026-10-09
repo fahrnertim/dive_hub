@@ -47,7 +47,11 @@ interface ListControl {
  * the plan drawn like a dive, the answer per Diver with the controlling Diver marked, the rule's own words and where each
  * SAC came from. An estimate, not advice: the notice at the top of the page covers it.
  */
-export function PlanSection({ params, plan, managed }: { params: ToolsParams; plan: PlanQuery; managed: ManagedDiver[] }) {
+export function PlanSection({ params, plan, managed, settings }: {
+  params: ToolsParams; plan: PlanQuery; managed: ManagedDiver[];
+  /** The plan's rarely changed settings, under its lists. */
+  settings: ReactNode;
+}) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const name = useDiverName();
@@ -92,6 +96,7 @@ export function PlanSection({ params, plan, managed }: { params: ToolsParams; pl
         : sketched && <PlanProfile plan={sketched} names={NO_NAMES} />}
       <Levels params={params} levels={levels} divers={divers} segments={answered?.segments ?? sketched?.segments} managed={managed} control={control} />
       <DiverRows params={params} divers={divers} answered={answered} managed={managed} control={control} />
+      {settings}
       {empty && <Muted>{t('tools.plan.empty')}</Muted>}
       {plan.error != null && <Notice tone="danger">{errorText(plan.error)}</Notice>}
       {plan.data && !empty && <PlanAnswer plan={plan.data} params={params} />}

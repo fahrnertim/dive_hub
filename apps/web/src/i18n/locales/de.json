@@ -1885,7 +1885,7 @@
   },
   "tools": {
     "title": "Werkzeuge",
-    "lead": "Gaswerte und eine Grundzeit für einen geplanten Tauchgang.",
+    "lead": "Gaswerte, eine Grundzeit und ein Gasplan für einen geplanten Tauchgang.",
     "notice": "Das ist eine Schätzung, kein Rat: Grenzen, errechnet aus deinen Eingaben und Einstellungen. Dein Tauchcomputer und deine Ausbildung gelten, und kein Modell garantiert Sicherheit.",
     "mix": {
       "oxygen": "Sauerstoff",
@@ -1975,7 +1975,7 @@
       "hint": "Lass ein Feld leer, um den grau angezeigten Wert zu verwenden. Die Liste unter der Grundzeit sagt, woher jeder Wert kommt.",
       "descentRate": "Abstiegsgeschwindigkeit",
       "ascentRate": "Aufstiegsgeschwindigkeit",
-      "rateHint": "Für den Gasplan."
+      "hintPlan": "Lass ein Feld leer, um den grau angezeigten Wert zu verwenden. Die Liste unter dem Plan sagt, woher jeder Wert kommt."
     },
     "rules": {
       "label": "Gasregel",
@@ -2100,6 +2100,11 @@
       "mixHint": "Sauerstoff in Prozent, Nitrox bis 40. Leer plant mit Luft.",
       "assumedAir": "Gemisch: Luft ({{source}})",
       "assumedNitrox": "Gemisch: Nitrox {{o2}} ({{source}})"
+    },
+    "parts": "Werkzeuge",
+    "tab": {
+      "gas": "Gas und Grundzeit",
+      "plan": "Gasplan"
     }
   }
 }

@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { diversQuery, toolsBottomTimeQuery, toolsGasQuery, toolsPlanQuery, type ToolsBottomTime, type ToolsGas } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { usePageTitle } from './lib/page.ts';
-import { replaceToolsAddress, RULES_WITH_BAR, TOOLS_RULES, TOOLS_WATERS, type ToolsParams } from './lib/tools.ts';
+import { keepToolsParams, replaceToolsAddress, RULES_WITH_BAR, TOOLS_RULES, TOOLS_WATERS, toolsTabHref, type Tool, type ToolsParams } from './lib/tools.ts';
 import { PlanSection, RuleExplanation } from './ToolsPlan.tsx';
 import { depthFromDisplay, depthIn, pressureFromDisplay, pressureIn } from './lib/units.ts';
 import { Checkbox, Disclosure, Muted, NumberField, Notice, PageHeader, Select } from './ui/index.ts';
@@ -16,14 +16,19 @@ const tenth = (n: number) => Math.round(n * 10) / 10;
 const DEFAULTS = { gf: 85, sac: 20, reserveBar: 50, ascentBar: 100, altitudeM: 0, pw: 1.4, pc: 1.6, descentRate: 18, ascentRate: 9 };
 
 /** The settings that, once in the address, keep their section open. */
-const SETTINGS = ['water', 'altitude', 'rule', 'bar', 'sac', 'gf', 'pw', 'pc', 'narcotic', 'dr', 'ar'] as const;
+const SETTINGS = {
+  gas: ['water', 'altitude', 'rule', 'bar', 'sac', 'gf', 'pw', 'pc', 'narcotic'],
+  plan: ['water', 'altitude', 'rule', 'bar', 'pc', 'dr', 'ar'],
+} as const;
+const TOOLS: readonly Tool[] = ['gas', 'plan'];
 
 const num = (v: number) => (Number.isNaN(v) ? undefined : v);
 
 /**
  * Gas numbers and a bottom time for a planned dive (ADR 0032). Limits computed from the inputs and the Diver's own
  * settings, not advice: the notice is on the page before anything is typed, and every answer says what it assumed.
- * One set of inputs feeds both answers.
+ * One set of inputs feeds both answers. The gas plan (ADR 0033) is a part of its own, with its own address and inputs:
+ * the parts share the notice and the settings both read.
  */
 export function ToolsPage({ params }: { params: ToolsParams }) {
   const { t } = useTranslation();
@@ -33,14 +38,26 @@ export function ToolsPage({ params }: { params: ToolsParams }) {
   const gas = useQuery(toolsGasQuery(params));
   const bottom = useQuery(toolsBottomTimeQuery(params, own, !divers.isPending));
   const plan = useQuery(toolsPlanQuery(params));
+  const tool = params.tool ?? 'gas';
+  useEffect(() => keepToolsParams(params));
   return (
     <>
       <PageHeader title={t('tools.title')} lead={t('tools.lead')} />
       <Notice>{t('tools.notice')}</Notice>
-      <Inputs params={params} assumed={bottom.data} />
-      <GasSection params={params} gas={gas} />
-      <BottomTimeSection params={params} bottom={bottom} />
-      <PlanSection params={params} plan={plan} managed={divers.data ?? []} />
+      <nav className="subnav" aria-label={t('tools.parts')}>
+        {TOOLS.map((id) => (
+          <a key={id} href={toolsTabHref(params, id)} {...(id === tool && { 'aria-current': 'page' as const })}>{t(`tools.tab.${id}`)}</a>
+        ))}
+      </nav>
+      {tool === 'gas' ? (
+        <>
+          <Inputs params={params} assumed={bottom.data} />
+          <GasSection params={params} gas={gas} />
+          <BottomTimeSection params={params} bottom={bottom} />
+        </>
+      ) : (
+        <PlanSection params={params} plan={plan} managed={divers.data ?? []} settings={<Settings params={params} tool="plan" />} />
+      )}
     </>
   );
 }
@@ -51,9 +68,6 @@ function Inputs({ params, assumed }: { params: ToolsParams; assumed: ToolsBottom
   const { units } = display;
   const set = (change: Partial<ToolsParams>) => replaceToolsAddress({ ...params, ...change });
   const used = assumed?.used;
-  /** A default as the field's placeholder, in the User's units. */
-  const inDepth = (m: number) => String(Math.round(depthIn(m, units)));
-  const inPressure = (bar: number) => String(Math.round(pressureIn(bar, units)));
   return (
     <Section title={t('tools.dive.title')} id="tools-dive">
       <div className="form-grid tools-grid">
@@ -78,54 +92,77 @@ function Inputs({ params, assumed }: { params: ToolsParams; assumed: ToolsBottom
           />
         </div>
       </fieldset>
-      <Disclosure title={t('tools.settings.title')} defaultExpanded={SETTINGS.some((k) => params[k] !== undefined)}>
-        <Muted>{t('tools.settings.hint')}</Muted>
-        <div className="form-grid tools-grid">
-          <Select
-            label={t('tools.mix.water')} value={params.water ?? 'salt'}
-            options={TOOLS_WATERS.map((w) => ({ id: w, label: t(`tools.water.${w}`) }))}
-            onChange={(water) => set({ water: water ?? undefined })}
-          />
+      <Settings params={params} tool="gas" used={used} />
+    </Section>
+  );
+}
+
+/**
+ * The rarely changed settings of a part, in a collapsible: both parts share water, altitude, the gas rule and the
+ * contingency ppO2 (they travel with the address to the other part); the rest belongs to one of them.
+ */
+function Settings({ params, tool, used }: { params: ToolsParams; tool: Tool; used?: ToolsBottomTime['used'] | undefined }) {
+  const { t } = useTranslation();
+  const display = useDisplay();
+  const { units } = display;
+  const set = (change: Partial<ToolsParams>) => replaceToolsAddress({ ...params, ...change });
+  /** A default as the field's placeholder, in the User's units. */
+  const inDepth = (m: number) => String(Math.round(depthIn(m, units)));
+  const inPressure = (bar: number) => String(Math.round(pressureIn(bar, units)));
+  return (
+    <Disclosure title={t('tools.settings.title')} defaultExpanded={SETTINGS[tool].some((k) => params[k] !== undefined)}>
+      <Muted>{t(tool === 'plan' ? 'tools.settings.hintPlan' : 'tools.settings.hint')}</Muted>
+      <div className="form-grid tools-grid">
+        <Select
+          label={t('tools.mix.water')} value={params.water ?? 'salt'}
+          options={TOOLS_WATERS.map((w) => ({ id: w, label: t(`tools.water.${w}`) }))}
+          onChange={(water) => set({ water: water ?? undefined })}
+        />
+        <NumberField
+          label={t('tools.mix.altitude')} unit={display.unit('depth')} placeholder={inDepth(used?.altitudeM.value ?? DEFAULTS.altitudeM)}
+          value={params.altitude === undefined ? Number.NaN : Math.round(depthIn(params.altitude, units))}
+          onChange={(v) => set({ altitude: Number.isNaN(v) ? undefined : Math.round(depthFromDisplay(v, units)) })}
+          minValue={0} maxValue={units === 'imperial' ? 16400 : 5000} formatOptions={{ maximumFractionDigits: 0 }}
+        />
+        <Select
+          label={t('tools.rules.label')} value={params.rule ?? 'rock_bottom'}
+          options={TOOLS_RULES.map((r) => ({ id: r, label: t(`tools.rules.${r}.name`) }))}
+          onChange={(rule) => set({ rule: rule === 'rock_bottom' ? undefined : rule ?? undefined, bar: undefined })}
+        />
+        {RULES_WITH_BAR.includes(params.rule ?? 'rock_bottom') && (
           <NumberField
-            label={t('tools.mix.altitude')} unit={display.unit('depth')} placeholder={inDepth(used?.altitudeM.value ?? DEFAULTS.altitudeM)}
-            value={params.altitude === undefined ? Number.NaN : Math.round(depthIn(params.altitude, units))}
-            onChange={(v) => set({ altitude: Number.isNaN(v) ? undefined : Math.round(depthFromDisplay(v, units)) })}
-            minValue={0} maxValue={units === 'imperial' ? 16400 : 5000} formatOptions={{ maximumFractionDigits: 0 }}
+            label={t(`tools.rules.${params.rule as 'reserve'}.bar`)} unit={display.unit('pressure')}
+            placeholder={inPressure(params.rule === 'ascent_pressure' ? DEFAULTS.ascentBar : DEFAULTS.reserveBar)}
+            value={params.bar === undefined ? Number.NaN : Math.round(pressureIn(params.bar, units))}
+            onChange={(v) => set({ bar: Number.isNaN(v) ? undefined : tenth(pressureFromDisplay(v, units)) })}
+            minValue={0} maxValue={units === 'imperial' ? 5000 : 350} formatOptions={{ maximumFractionDigits: 0 }}
           />
-          <Select
-            label={t('tools.rules.label')} value={params.rule ?? 'rock_bottom'}
-            options={TOOLS_RULES.map((r) => ({ id: r, label: t(`tools.rules.${r}.name`) }))}
-            onChange={(rule) => set({ rule: rule === 'rock_bottom' ? undefined : rule ?? undefined, bar: undefined })}
-          />
-          {RULES_WITH_BAR.includes(params.rule ?? 'rock_bottom') && (
-            <NumberField
-              label={t(`tools.rules.${params.rule as 'reserve'}.bar`)} unit={display.unit('pressure')}
-              placeholder={inPressure(params.rule === 'ascent_pressure' ? DEFAULTS.ascentBar : DEFAULTS.reserveBar)}
-              value={params.bar === undefined ? Number.NaN : Math.round(pressureIn(params.bar, units))}
-              onChange={(v) => set({ bar: Number.isNaN(v) ? undefined : tenth(pressureFromDisplay(v, units)) })}
-              minValue={0} maxValue={units === 'imperial' ? 5000 : 350} formatOptions={{ maximumFractionDigits: 0 }}
-            />
-          )}
-          <NumberField label={t('tools.bottom.sac')} unit="L/min" placeholder={String(used?.sacLpm.value ?? DEFAULTS.sac)} value={params.sac ?? Number.NaN} onChange={(v) => set({ sac: num(v) })} minValue={1} maxValue={100} formatOptions={{ maximumFractionDigits: 1 }} />
-          <NumberField label={t('tools.bottom.gf')} unit="%" placeholder={String(used?.gfHigh.value ?? DEFAULTS.gf)} value={params.gf ?? Number.NaN} onChange={(v) => set({ gf: num(v) })} minValue={20} maxValue={100} formatOptions={{ maximumFractionDigits: 0 }} />
-          <NumberField label={t('tools.limits.working')} unit="bar" placeholder={String(DEFAULTS.pw)} value={params.pw ?? Number.NaN} onChange={(v) => set({ pw: num(v) })} minValue={1} maxValue={2} step={0.1} formatOptions={{ maximumFractionDigits: 2 }} />
-          <NumberField label={t('tools.limits.contingency')} unit="bar" placeholder={String(DEFAULTS.pc)} value={params.pc ?? Number.NaN} onChange={(v) => set({ pc: num(v) })} minValue={1} maxValue={2} step={0.1} formatOptions={{ maximumFractionDigits: 2 }} />
-        </div>
-        <RuleExplanation rule={params.rule ?? 'rock_bottom'} />
+        )}
+        {tool === 'gas' && (
+          <>
+            <NumberField label={t('tools.bottom.sac')} unit="L/min" placeholder={String(used?.sacLpm.value ?? DEFAULTS.sac)} value={params.sac ?? Number.NaN} onChange={(v) => set({ sac: num(v) })} minValue={1} maxValue={100} formatOptions={{ maximumFractionDigits: 1 }} />
+            <NumberField label={t('tools.bottom.gf')} unit="%" placeholder={String(used?.gfHigh.value ?? DEFAULTS.gf)} value={params.gf ?? Number.NaN} onChange={(v) => set({ gf: num(v) })} minValue={20} maxValue={100} formatOptions={{ maximumFractionDigits: 0 }} />
+            <NumberField label={t('tools.limits.working')} unit="bar" placeholder={String(DEFAULTS.pw)} value={params.pw ?? Number.NaN} onChange={(v) => set({ pw: num(v) })} minValue={1} maxValue={2} step={0.1} formatOptions={{ maximumFractionDigits: 2 }} />
+          </>
+        )}
+        <NumberField label={t('tools.limits.contingency')} unit="bar" placeholder={String(DEFAULTS.pc)} value={params.pc ?? Number.NaN} onChange={(v) => set({ pc: num(v) })} minValue={1} maxValue={2} step={0.1} formatOptions={{ maximumFractionDigits: 2 }} />
+      </div>
+      <RuleExplanation rule={params.rule ?? 'rock_bottom'} />
+      {tool === 'plan' && (
         <div className="form-grid tools-grid">
           {/* Metres a minute in the address; the limits are the server's (3 to 30 down, 3 to 18 up). */}
           {([['dr', 'descentRate', 30], ['ar', 'ascentRate', 18]] as const).map(([key, word, max]) => (
             <NumberField
-              key={key} label={t(`tools.settings.${word}`)} description={t('tools.settings.rateHint')} unit={`${display.unit('depth')}/min`}
+              key={key} label={t(`tools.settings.${word}`)} unit={`${display.unit('depth')}/min`}
               placeholder={inDepth(DEFAULTS[word])} value={params[key] === undefined ? Number.NaN : Math.round(depthIn(params[key], units))}
               onChange={(v) => set({ [key]: Number.isNaN(v) ? undefined : tenth(depthFromDisplay(v, units)) })}
               minValue={Math.ceil(depthIn(3, units))} maxValue={Math.floor(depthIn(max, units))} formatOptions={{ maximumFractionDigits: 0 }}
             />
           ))}
         </div>
-        <Checkbox isSelected={params.narcotic !== false} onChange={(narcotic) => set({ narcotic })}>{t('tools.limits.narcotic')}</Checkbox>
-      </Disclosure>
-    </Section>
+      )}
+      {tool === 'gas' && <Checkbox isSelected={params.narcotic !== false} onChange={(narcotic) => set({ narcotic })}>{t('tools.limits.narcotic')}</Checkbox>}
+    </Disclosure>
   );
 }
 

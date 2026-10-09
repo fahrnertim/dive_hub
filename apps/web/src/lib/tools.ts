@@ -29,7 +29,12 @@ export interface PlanDiver {
   diverId?: string | undefined;
 }
 
+/** The parts of the Tools page: gas numbers and a bottom time (`#/tools`), and the gas plan (`#/tools/plan`). */
+export type Tool = 'gas' | 'plan';
+
 export interface ToolsParams {
+  /** The part of the page; without, gas numbers and a bottom time. */
+  tool?: 'plan' | undefined;
   /** Oxygen and helium in percent. */
   o2?: number | undefined;
   he?: number | undefined;
@@ -86,6 +91,31 @@ const diverOf = (text: string): PlanDiver[] => {
   return [{ name, volume: v, pressure: p, sac: finite(sac), diverId: diverId || undefined }];
 };
 
+/** What only one part reads, and what both do: a part's address carries its own inputs and the shared settings. */
+const OWN = {
+  gas: ['o2', 'he', 'depth', 'volume', 'pressure', 'sac', 'gf', 'pw', 'narcotic'],
+  plan: ['mix', 'dr', 'ar', 'levels', 'divers'],
+} as const satisfies Record<Tool, readonly (keyof ToolsParams)[]>;
+const SHARED = ['water', 'altitude', 'rule', 'bar', 'pc'] as const satisfies readonly (keyof ToolsParams)[];
+
+function pick(from: ToolsParams, keys: readonly (keyof ToolsParams)[]): ToolsParams {
+  const result: ToolsParams = {};
+  for (const key of keys) if (from[key] !== undefined) Object.assign(result, { [key]: from[key] });
+  return result;
+}
+
+/** What each part last had in its address, while the app is open: going to the other part and back keeps what was typed. */
+const kept: Partial<Record<Tool, ToolsParams>> = {};
+export function keepToolsParams(p: ToolsParams): void {
+  kept[p.tool ?? 'gas'] = p;
+}
+
+/** The address of a part from the one shown: the settings both share as they are now, and the part's own inputs as it last had them. */
+export function toolsTabHref(current: ToolsParams, tool: Tool, last: ToolsParams = kept[tool] ?? {}): string {
+  if ((current.tool ?? 'gas') === tool) return toolsHref(current);
+  return toolsHref({ ...pick(last, OWN[tool]), ...pick(current, SHARED), ...(tool === 'plan' && { tool }) });
+}
+
 /** The page's address for these inputs; what is empty is left out. */
 export function toolsHref(p: ToolsParams): string {
   const query = new URLSearchParams();
@@ -96,11 +126,15 @@ export function toolsHref(p: ToolsParams): string {
   if (p.levels?.length) query.set('lv', levelsText(p.levels));
   for (const d of p.divers ?? []) query.append('dv', diverText(d));
   const text = query.toString();
-  return text ? `#/tools?${text}` : '#/tools';
+  const base = p.tool === 'plan' ? '#/tools/plan' : '#/tools';
+  return text ? `${base}?${text}` : base;
 }
 
-/** The inputs in the address (see toolsHref). */
-export function toolsParams(query: URLSearchParams): ToolsParams {
+/**
+ * The inputs in the address (see toolsHref), of the part it names. An address from before the plan had its own part
+ * (`#/tools?lv=…`) is the plan's. What the other part reads is left out.
+ */
+export function toolsParams(query: URLSearchParams, tool: Tool = 'gas'): ToolsParams {
   const water = query.get('water');
   const rule = query.get('rule');
   const result: ToolsParams = {};
@@ -115,7 +149,8 @@ export function toolsParams(query: URLSearchParams): ToolsParams {
   if (levels.length > 0) result.levels = levels;
   const divers = query.getAll('dv').flatMap(diverOf);
   if (divers.length > 0) result.divers = divers;
-  return result;
+  const plan = tool === 'plan' || result.levels !== undefined || result.divers !== undefined;
+  return { ...pick(result, [...SHARED, ...OWN[plan ? 'plan' : 'gas']]), ...(plan && { tool: 'plan' as const }) };
 }
 
 export interface PlanStretch {

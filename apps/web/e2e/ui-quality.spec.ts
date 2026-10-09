@@ -185,10 +185,10 @@ for (const v of variants) {
       await expect(page.getByTestId('bottom-time')).toBeVisible();
       await expectGoodPage(page, title('Tools'), v);
       // A gas plan of two Divers with a turn rule, and one that does not fit.
-      await page.goto('/#/tools?o2=21&water=fresh&rule=thirds&lv=20x20&dv=Tim~12~200~20~&dv=Ann~10~200~15~');
+      await page.goto('/#/tools/plan?water=fresh&rule=thirds&lv=20x20&dv=Tim~12~200~20~&dv=Ann~10~200~15~');
       await expect(page.getByTestId('plan-briefing')).toBeVisible();
       await expectGoodPage(page, title('Tools'), v);
-      await page.goto('/#/tools?o2=21&water=fresh&lv=20x40&dv=Tim~12~200~20~');
+      await page.goto('/#/tools/plan?water=fresh&lv=20x40&dv=Tim~12~200~20~');
       await expect(page.getByTestId('plan-briefing')).toBeVisible();
       await expectGoodPage(page, title('Tools'), v);
       // Beyond the MOD: the reason, no number.
@@ -759,7 +759,7 @@ test.describe('behaviour', () => {
     ['logbook', () => '/', ['@dives']], ['dive', () => `/#/dives/${diveId}`, ['@dives']], ['Divers', () => '/#/divers', ['@divers']],
     ['Dive sites', () => '/#/sites', ['@sites']], ['a dive site', () => `/#/sites/${siteId}`, ['@sites']],
     ['an imported dive site', () => `/#/sites/${importedSiteId}`, ['@sites']],
-    ['Dive centres', () => '/#/centres', ['@sites']], ['Tools', () => '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', ['@tools']], ['a dive centre', () => `/#/centres/${centreId}`, ['@sites']], ['account', () => '/#/account', ['@account']],
+    ['Dive centres', () => '/#/centres', ['@sites']], ['Tools', () => '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', ['@tools']], ['a gas plan', () => '/#/tools/plan?water=fresh&lv=20x15,12x10&dv=Tim~12~200~20~&dv=Ann~10~200~15~', ['@tools']], ['a dive centre', () => `/#/centres/${centreId}`, ['@sites']], ['account', () => '/#/account', ['@account']],
     ['Review', () => '/#/review', ['@dives']], ['admin', () => '/#/admin', ['@admin']], ['site import', () => '/#/admin/site-imports', ['@admin', '@sites']],
   ];
   for (const [name, path, tag] of sweep) {

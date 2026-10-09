@@ -32,7 +32,7 @@ const SiteImportPage = lazy(() => import('./SiteImportPage.tsx').then((m) => ({ 
 
 /**
  * Minimal hash routing: "#/" (logbook, "#/?diver=<id>" for one Diver, "#/?site=<id>" for one Dive site),
- * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers", "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/centres", "#/centres/<id>", "#/tools" ("?o2=32&depth=30&…"), "#/account", "#/admin", "#/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
+ * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers", "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/centres", "#/centres/<id>", "#/tools" ("?o2=32&depth=30&…"), "#/tools/plan" ("?mix=32&lv=20x20&dv=…"), "#/account", "#/admin", "#/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
  */
 function useRoute(): string {
   const [route, setRoute] = useState(() => location.hash.slice(1) || '/');
@@ -107,7 +107,7 @@ function Navigation({ route, me }: { route: string; me: Me }) {
         <a href="#/divers" {...current(route === '/divers')}><Icon name="divers" />{t('nav.divers')}</a>
         <a href="#/sites" {...current(route === '/sites' || route.startsWith('/sites/') || route.startsWith('/sites?'))}><Icon name="site" />{t('nav.sites')}</a>
         <a href="#/centres" {...current(route === '/centres' || route.startsWith('/centres/'))}><Icon name="centre" />{t('nav.centres')}</a>
-        <a href="#/tools" {...current(route === '/tools' || route.startsWith('/tools?'))}><Icon name="tools" />{t('nav.tools')}</a>
+        <a href="#/tools" {...current(route === '/tools' || route.startsWith('/tools?') || route.startsWith('/tools/'))}><Icon name="tools" />{t('nav.tools')}</a>
       </nav>
       {/* The account is a labelled menu, not a bare name link (UI review C6). */}
       <div className="user-menu">
@@ -147,7 +147,7 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   if (path === '/sites') return <SitesPage params={sitesParams(params)} />;
   const siteId = /^\/sites\/([\w-]+)$/.exec(path!)?.[1];
   if (siteId) return <SitePage key={siteId} id={siteId} />;
-  if (path === '/tools') return <ToolsPage params={toolsParams(params)} />;
+  if (path === '/tools' || path === '/tools/plan') return <ToolsPage params={toolsParams(params, path === '/tools' ? 'gas' : 'plan')} />;
   if (path === '/centres') return <CentresPage />;
   const centreId = /^\/centres\/([\w-]+)$/.exec(path!)?.[1];
   if (centreId) return <CentrePage key={centreId} id={centreId} />;

@@ -1885,7 +1885,7 @@
   },
   "tools": {
     "title": "Tools",
-    "lead": "Gas numbers and a bottom time for a dive you are planning.",
+    "lead": "Gas numbers, a bottom time and a gas plan for a dive you are planning.",
     "notice": "These are an estimate, not advice: limits worked out from what you enter and your settings. Your dive computer and your training govern, and no model guarantees safety.",
     "mix": {
       "oxygen": "Oxygen",
@@ -1975,7 +1975,7 @@
       "hint": "Leave a field empty to use the value shown in grey. The list under the bottom time says where each value came from.",
       "descentRate": "Descent rate",
       "ascentRate": "Ascent rate",
-      "rateHint": "For the gas plan."
+      "hintPlan": "Leave a field empty to use the value shown in grey. The list under the plan says where each value came from."
     },
     "rules": {
       "label": "Gas rule",
@@ -2100,6 +2100,11 @@
       "mixHint": "Oxygen in percent, nitrox to 40. Empty plans with air.",
       "assumedAir": "Mix: air ({{source}})",
       "assumedNitrox": "Mix: nitrox {{o2}} ({{source}})"
+    },
+    "parts": "Tools",
+    "tab": {
+      "gas": "Gas and bottom time",
+      "plan": "Gas plan"
     }
   }
 }

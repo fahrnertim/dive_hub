@@ -145,5 +145,12 @@ The first page was one long form: every level and every Diver with all their fie
   of its own (21 to 40 %, empty is air; address `mix`), a level and a Diver are enough for an answer, and the assumptions name the
   mix and where it came from. `o2` in the address no longer reaches the plan. The settings (water, altitude, gas rule, ppO2, rates)
   stay shared with the bottom time. The API is unchanged: `o2` is still the plan's one mix. A mix per Diver is a later slice.
+- **The plan is a part of Tools with its own address** (owner: "does it make sense to give it its own sub page?"): Tools has two
+  parts as link tabs under the notice, like Review's: "Gas and bottom time" at `#/tools` and "Gas plan" at `#/tools/plan`. Two
+  parallel tools of one level are what tabs are for (ux-navigation); a top-level entry would be the sixth in the phone's bar. Each
+  part's address carries its own inputs and the settings both read (water, altitude, gas rule and its bar, contingency ppO2), and
+  each shows only the settings it reads: the rates are the plan's; gas use, gradient factor, working ppO2 and END are the bottom
+  time's. Going to the other part takes the shared settings along and brings that part back as it was last (kept while the app is
+  open, not stored). An address from before (`#/tools?lv=…`) still opens the plan. The API and the MCP tool are unchanged.
 - **Later:** reordering levels by dragging (delete and add does it for the two to four levels of a plan); a Bühlmann check over the
   whole profile, as a slice of its own; each Diver's ascent pressure marked in the pressure strip.

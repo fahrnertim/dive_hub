@@ -94,7 +94,16 @@ test('imperial units: feet and psi in the fields and the answers, metres and bar
 
 test('a gas plan for a group: levels and Divers as lists with one editor open, the profile, the controlling Diver, and the rule explained', { tag: ['@tools'] }, async ({ page }) => {
   // The plan stands on its own: nothing of "Your dive" is typed, and it plans with air.
-  await page.goto('/#/tools?water=fresh');
+  // The plan is a part of Tools with its own address; "Your dive" is not on it.
+  await page.goto('/#/tools');
+  const parts = page.getByRole('navigation', { name: 'Tools' });
+  await expect(parts.getByRole('link', { name: 'Gas and bottom time' })).toHaveAttribute('aria-current', 'page');
+  await parts.getByRole('link', { name: 'Gas plan' }).click();
+  await expect(page).toHaveURL(/#\/tools\/plan$/);
+  await expect(parts.getByRole('link', { name: 'Gas plan' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByRole('heading', { name: 'Your dive' })).toHaveCount(0);
+  await expect(page.locator('#main').getByText(/estimate, not advice/i)).toBeVisible();
+  await page.goto('/#/tools/plan?water=fresh');
   await expectGoodPage(page, 'Tools');
   const plan = page.getByRole('region', { name: 'Gas plan' });
   await expect(plan.getByText('Add a level and a Diver to see the plan.')).toBeVisible();
@@ -158,7 +167,7 @@ test('a gas plan for a group: levels and Divers as lists with one editor open, t
   await expect(divers).toHaveCount(2);
 
   // The address keeps the levels and the Divers; a reload brings the plan back.
-  await expect(page).toHaveURL(/lv=20x20/);
+  await expect(page).toHaveURL(/#\/tools\/plan\?.*lv=20x20/);
   await expect(page).toHaveURL(/dv=Erika(~|%7E)12(~|%7E)200(~|%7E)20(~|%7E)[0-9a-f-]{36}/);
   await expect(page).toHaveURL(/dv=Ann(~|%7E)12(~|%7E)200(~|%7E)15/);
   await page.reload();
@@ -170,6 +179,15 @@ test('a gas plan for a group: levels and Divers as lists with one editor open, t
   await expect(plan.getByText('Mix: nitrox 32 (entered)')).toBeVisible();
   await expect(page).toHaveURL(/mix=32/);
   await expect(page).not.toHaveURL(/o2=/);
+
+  // The other part and back: the plan is still there, and the shared settings went along.
+  await parts.getByRole('link', { name: 'Gas and bottom time' }).click();
+  await expect(page).toHaveURL(/#\/tools\?water=fresh$/);
+  await expect(page.getByRole('heading', { name: 'Your dive' })).toBeVisible();
+  await expect(plan).toHaveCount(0);
+  await parts.getByRole('link', { name: 'Gas plan' }).click();
+  await expect(page).toHaveURL(/#\/tools\/plan\?.*mix=32.*lv=20x20/);
+  await expect(plan.getByTestId('plan-briefing')).toBeVisible();
 
   // Turn rules show a turn pressure and say who they are for.
   // The water in the address keeps the settings open.
@@ -191,27 +209,32 @@ test('a gas plan for a group: levels and Divers as lists with one editor open, t
 test('a gas plan that does not fit says when to leave, and one beyond the limits gives no numbers', { tag: ['@tools'] }, async ({ page }) => {
   const plan = page.getByRole('region', { name: 'Gas plan' });
   // The profile is there with the first level, before a mix or a Diver: the way down and up is already in the list.
-  await page.goto('/#/tools?lv=20x20');
+  await page.goto('/#/tools/plan?lv=20x20');
   await expect(plan.getByRole('img', { name: 'Planned profile' })).toBeVisible();
   await expect(plan.getByRole('img', { name: 'Planned pressure' })).toHaveCount(0);
   await expect(plan.getByRole('list', { name: 'Levels' }).getByRole('listitem')).toHaveText([/Descent/, /Level 1/, /Ascent/, /Safety stop/, /Ascent/]);
   await expect(plan.getByText('Add a level and a Diver to see the plan.')).toBeVisible();
   // 40 minutes at 20 m for one Diver in a 12 L cylinder is more than the cylinder holds.
-  await page.goto('/#/tools?water=fresh&lv=20x40&dv=Tim~12~200~20~');
+  await page.goto('/#/tools/plan?water=fresh&lv=20x40&dv=Tim~12~200~20~');
   await expect(plan.getByText('The plan does not fit.')).toBeVisible();
   await expect(plan.getByText(/Leave 20 m by minute \d+ at the latest/)).toBeVisible();
   await expect(plan.getByText(/The dashed line is minute \d+/)).toBeVisible();
 
-  await page.goto('/#/tools?lv=20x5,42x5&dv=Tim~12~200~20~');
+  await page.goto('/#/tools/plan?lv=20x5,42x5&dv=Tim~12~200~20~');
   await expect(plan.getByText('Outside recreational limits')).toBeVisible();
   await expect(plan.getByText(/deeper than 40 m/)).toBeVisible();
   await expect(plan.getByRole('table')).toHaveCount(0);
   await expect(plan.getByRole('img')).toHaveCount(0);
   // Nitrox 40 at 30 m is beyond its MOD: the plan's own mix decides, and there is no picture.
-  await page.goto('/#/tools?mix=40&lv=30x10&dv=Tim~12~200~20~');
+  await page.goto('/#/tools/plan?mix=40&lv=30x10&dv=Tim~12~200~20~');
   await expect(plan.getByText('Outside recreational limits')).toBeVisible();
   await expect(plan.getByRole('img')).toHaveCount(0);
-  await page.goto('/#/tools?lv=20x5,42x5&dv=Tim~12~200~20~');
+  await page.goto('/#/tools/plan?lv=20x5,42x5&dv=Tim~12~200~20~');
+  await expect(plan.getByText('Outside recreational limits')).toBeVisible();
+  // An address from before the plan had its own part still opens the plan.
+  await page.goto('/#/tools?lv=20x20&dv=Tim~12~200~20~');
+  await expect(plan.getByTestId('plan-fits')).toBeVisible();
+  await page.goto('/#/tools/plan?lv=20x5,42x5&dv=Tim~12~200~20~');
   await expect(plan.getByText('Outside recreational limits')).toBeVisible();
   // A level removed with its bin leaves the others.
   await plan.getByRole('button', { name: 'Remove level 2' }).click();
