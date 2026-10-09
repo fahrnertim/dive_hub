@@ -50,6 +50,16 @@ export interface DiveExport extends Direction {
   requirements: Requirement[];
   /** Field names a read-back reports differences under; clients translate them. */
   readBackFields?: string[];
+  /**
+   * Absent when the Provider numbers dives by itself and a client can't choose (ADR 0048). Present: a Connection can be
+   * set to number dives here as in Dive Hub.
+   */
+  numbers?: {
+    /** The operations on which the client sets the dive's number. `update` goes with `setNumber`. */
+    set: ('create' | 'update')[];
+    /** Whether changing the number of a dive already there can remove a verification it has (ADR 0043). */
+    changeRemovesVerification: boolean;
+  };
 }
 
 export interface Capabilities {
@@ -173,12 +183,22 @@ export interface ActionContext {
 export interface DiveExportAction {
   /** A dive we sent before (by our reference), and one at about the same time, if the Provider has them. */
   find?(dive: OutgoingDive, reference: string): Promise<{ ours: RemoteDive | null; sameTime: RemoteDive | null }>;
-  create(dive: OutgoingDive, reference: string): Promise<Delivered>;
+  /**
+   * With a `number` (ADR 0048), the adapter gives the dive that number unless another dive there has it, as far as it
+   * can tell; then it numbers its own way. `Delivered.remoteNumber` is what the dive has afterwards.
+   */
+  create(dive: OutgoingDive, reference: string, number?: number | null): Promise<Delivered>;
   /**
    * Null when the remote dive is gone (deleted at the Provider). `previous` is the payload the current Push recorded,
-   * so the adapter can tell what it set before from what the User set in the Provider's own app.
+   * so the adapter can tell what it set before from what the User set in the Provider's own app. With a `number`: it
+   * is set unless another dive there has it, in which case the number there stays.
    */
-  update?(remoteId: string, dive: OutgoingDive, previous: Record<string, unknown> | null): Promise<Delivered | null>;
+  update?(remoteId: string, dive: OutgoingDive, previous: Record<string, unknown> | null, number?: number | null): Promise<Delivered | null>;
+  /**
+   * With `numbers.set` holding `update` (ADR 0048): changes only the number of the remote dive. `taken` saves nothing
+   * and names the dive that holds the number; null when the remote dive is gone.
+   */
+  setNumber?(remoteId: string, number: number): Promise<{ result: 'set'; remoteNumber: number } | { result: 'taken'; by: RemoteDive } | null>;
   /** `gone`: it was already deleted at the Provider. */
   remove?(remoteId: string): Promise<'deleted' | 'gone'>;
   /**

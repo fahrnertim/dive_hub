@@ -8,7 +8,7 @@ date: 2026-10-05
 # ADR 0027: Providers as adapters that declare their capabilities
 
 ## Status
-Accepted – 2026-10-05. Amends [ADR 0024](0024-ssi-target-via-app-api.md) (where the SSI code sits, the Connection's
+Accepted – 2026-10-05. Extended by [ADR 0048](0048-dive-numbers.md) (built 2026-10-09): an adapter declares `numbers` and may set a dive's number on a create, an update and alone (`setNumber`). Amends [ADR 0024](0024-ssi-target-via-app-api.md) (where the SSI code sits, the Connection's
 credentials, the routes and codes, the pause between actions) and [ADR 0026](0026-deleting-dives.md) (deleting asks
 every Provider the Dive is at, not SSI by name). Amended on 2026-10-05 by the [cleanup slice](#amendment-2026-10-05-leases-in-postgresql-and-deleting-at-several-providers)
 (the [follow-ups](../research/2026-10-05-provider-layer-follow-ups.md)). Amended by [ADR 0029](0029-push-requirements-and-buddies.md)

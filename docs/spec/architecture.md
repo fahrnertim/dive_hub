@@ -866,3 +866,25 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   `providers/dive-import.ts`: the current link before our reference), so a Dive merged into another keeps taking changes
   made at the Provider; and the web client says which of two Dives a merge keeps (the hint, the pair, the dialog).
 - Not yet: rules beyond overlaps (a number twice, a dive inside a no-fly time), telling by e-mail, the checks over MCP.
+
+**Slice 22b (2026-10-09): dive numbers** ([ADR 0048](../decisions/0048-dive-numbers.md)).
+- `dive.number` is kept by `renumber(tx, diverIds)` in `apps/server/src/dives/dive-numbers.ts`: one `UPDATE … FROM (row_number() …)` per
+  Diver, after a row lock on the Diver rows (ordered by id) so two concurrent changes do not interleave. It changes no `version` and
+  writes no Revision. Called wherever a Diver's counted Dives change: `createDiveFromRecording`, `applyToDive` (start time or Primary
+  recording), `remove`, `restore`, merge and move (both Divers), the provider dive import (create, and an update that moves the start),
+  user deletion, and the Diver's settings. Migrations 0031 (columns `diver.dives_before`, `diver.apnea_counts`,
+  `connection.follow_numbers`, the Push action `number`) and 0032 (drops `number` from every `overrides`, numbers the existing Dives).
+- `number` is no Override (`OVERRIDABLE_FIELDS`, `FILLABLE`), no `DiveValues` field; the detail adds `values.number`. `set.number` and
+  `reset: ['number']` answer 400 (Fastify's validator strips unknown properties, so the field is named as `Type.Never`).
+- Providers: `Capabilities…export.numbers { set: ('create'|'update')[], changeRemovesVerification }`, `create(dive, ref, number?)`,
+  `update(…, number?)`, `setNumber(remoteId, number)` (`set` / `taken` / null). `pushes.setNumber` is the one way a number is set
+  alone: a lease, a Push with the action `number`, `provider_number_taken` with the dive there that has it. `numbersFor` decides
+  what a send carries (only while the Connection follows and only on an operation the Provider declares). The number is no part of
+  `OutgoingDive` or the fingerprint, so a differing number is not "changed since sent".
+- SSI declares `numbers: { set: ['create'], changeRemovesVerification: true }` until the owner's checks
+  (`test/fixtures/ssi/round-trip.ts number`) show that an update sets a number; its create uses Dive Hub's number unless a dive in the
+  logbook has it.
+- Web: no number field in the edit form; "Dive numbers" per Diver (`DiversPage.tsx`), "Number dives in SSI as in Dive Hub"
+  (`ProviderDiveNumbers.tsx`), "Set number" in `ProviderPanel.tsx`, "Number on the computer" with the Recording.
+- Tests: `dive-numbers.test.ts`, `provider-numbers.test.ts`, the numbers rules in `provider-contract.ts`, `ssi-adapter.test.ts`; the e2e
+  server gives the seeded Divers `dives_before` 41 and 500 so the fixtures keep their numbers (42, 501 to 504).

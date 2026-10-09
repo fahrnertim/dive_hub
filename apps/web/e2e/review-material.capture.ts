@@ -9,7 +9,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import {
   cancelWaitingImports, waitingImport,
-  E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, falseStart, forgetDivers, keepFalseStart, mergePair, mergeablePair, tankPodDive,
+  E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, diveNumber, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, falseStart, forgetDivers, keepFalseStart, mergePair, mergeablePair, tankPodDive,
   leaveLena, leaveSsi, lenaReady, openLine, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
@@ -105,7 +105,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('link', { name: 'Imports', exact: true }).click(); await page.getByRole('heading', { name: 'Imports', level: 2 }).waitFor();
     await capture(page, '01b-review-imports');
     await cancelWaitingImports(request);
-    await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: /Dive 42/ }).waitFor();
+    await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: /Dive \d+/ }).waitFor();
     await capture(page, '02-dive');
     await tabOrder(page, '02-dive', 30);
     await page.getByRole('button', { name: 'Edit dive' }).click();
@@ -118,7 +118,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('button', { name: /^What the assessment can/ }).click(); await page.getByRole('dialog').waitFor();
     await capture(page, '03c-dive-assessment-about', { full: false });
     await page.keyboard.press('Escape');
-    await page.goto('/#/?q=77'); await page.getByText('2 findings').waitFor();
+    await page.goto(`/#/?q=${await diveNumber(request, assessed)}`); await page.getByText('2 findings').waitFor();
     await capture(page, '03c-logbook-finding-mark', { aria: false });
     // The logbook's rows (ADR 0040): buddies as circles (more than fit), then a "Show only" filter pressed.
     await setBuddies(request, dive42, [
@@ -248,7 +248,7 @@ test('review material', async ({ page, request, browser }) => {
       await capture(page, '08b-logbook-de-phone-buddies-show-only', { aria: false });
       await clearParticipants(request, dive42);
       await forgetDivers(request, 'Lena Meier');
-      await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: /Tauchgang 42/ }).waitFor();
+      await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: /Tauchgang \d+/ }).waitFor();
       await capture(page, '09-dive-de-phone', { aria: false });
       await page.goto(`/#/dives/${await assessedDive(request)}`); await page.getByRole('heading', { name: 'Auswertung' }).waitFor();
       await capture(page, '09b-dive-assessment-de-phone', { aria: false });
@@ -346,7 +346,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: de ? 'Tauchplatz bearbeiten' : 'Edit dive site' }).click();
     await capture(page, `${prefix}-site-edit`, { aria: false, axe });
-    await page.goto(`/#/dives/${sitedDive}`); await page.getByRole('heading', { name: de ? /Tauchgang 7/ : /Dive 7/ }).waitFor();
+    await page.goto(`/#/dives/${sitedDive}`); await page.getByRole('heading', { name: de ? /Tauchgang \d+/ : /Dive \d+/ }).waitFor();
     await capture(page, `${prefix}-dive-with-site`, { aria: false, axe });
     await page.getByRole('button', { name: de ? 'Tauchplatz ändern' : 'Change dive site' }).click();
     await page.getByRole('dialog').waitFor();
@@ -403,7 +403,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('dialog').waitFor();
     await capture(page, `${prefix}-site-adopt`, { full: false, aria: false, axe });
     await page.keyboard.press('Escape');
-    await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: de ? /Tauchgang 42/ : /Dive 42/ }).waitFor();
+    await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: de ? /Tauchgang \d+/ : /Dive \d+/ }).waitFor();
     await capture(page, `${prefix}-dive-at-fresh-water-site`, { aria: false, axe });
     await page.goto('/#/admin/site-imports'); await page.locator('.site-imports > li').first().waitFor();
     await capture(page, `${prefix}-site-import`, { aria: false, axe });
@@ -584,31 +584,32 @@ test('review material', async ({ page, request, browser }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await setPreferences(request, { language: 'en' });
     const nine = await deletableDive(request);
-    await page.goto(`/#/dives/${nine}`); await page.reload(); await page.getByRole('heading', { name: 'Dive 9' }).waitFor();
-    await openDelete('More: Dive 9', /^Delete dive/, 'Delete dive');
+    const nineNumber = await diveNumber(request, nine);
+    await page.goto(`/#/dives/${nine}`); await page.reload(); await page.getByRole('heading', { name: `Dive ${nineNumber}` }).waitFor();
+    await openDelete(`More: Dive ${nineNumber}`, /^Delete dive/, 'Delete dive');
     await capture(page, '32-dive-delete', { full: false });
     await page.keyboard.press('Escape');
     await sendToSsi(request, nine);
-    await page.reload(); await page.getByRole('heading', { name: 'Dive 9' }).waitFor();
-    await openDelete('More: Dive 9', /^Delete dive/, 'Delete here and in SSI');
+    await page.reload(); await page.getByRole('heading', { name: `Dive ${nineNumber}` }).waitFor();
+    await openDelete(`More: Dive ${nineNumber}`, /^Delete dive/, 'Delete here and in SSI');
     await capture(page, '33-dive-delete-ssi', { full: false });
     await page.getByRole('dialog').getByRole('button', { name: 'Delete only here' }).click();
     await page.getByRole('button', { name: 'Undo' }).waitFor();
     await capture(page, '34-logbook-deleted');
     await page.reload();
     await page.getByRole('link', { name: 'Show deleted dives', exact: true }).click();
-    await page.getByRole('button', { name: 'Restore: Dive 9' }).waitFor();
+    await page.getByRole('button', { name: /^Restore: .*2026/ }).waitFor();
     await capture(page, '35-logbook-deleted-dives');
     await setPreferences(request, { language: 'de' });
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload();
-    await page.getByRole('button', { name: 'Wiederherstellen: Tauchgang 9' }).waitFor();
+    await page.getByRole('button', { name: /^Wiederherstellen: .*2026/ }).waitFor();
     await capture(page, '36-logbook-deleted-dives-de-dark-390', { aria: false });
     await deletableDive(request);
     await sendToSsi(request, nine);
-    await page.goto(`/#/dives/${nine}`); await page.getByRole('heading', { name: 'Tauchgang 9' }).waitFor();
-    await openDelete('Mehr: Tauchgang 9', /^Tauchgang löschen/, 'Hier und in SSI löschen');
+    await page.goto(`/#/dives/${nine}`); await page.getByRole('heading', { name: `Tauchgang ${nineNumber}` }).waitFor();
+    await openDelete(`Mehr: Tauchgang ${nineNumber}`, /^Tauchgang löschen/, 'Hier und in SSI löschen');
     await capture(page, '37-dive-delete-ssi-de-dark-390', { full: false, aria: false });
     await page.keyboard.press('Escape');
     await deletableDive(request);

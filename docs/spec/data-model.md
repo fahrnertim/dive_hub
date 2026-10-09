@@ -89,6 +89,7 @@ These apply to every entity unless stated otherwise. They close gaps A2, A3, A5 
 **Diver** — personal data (name, birth date, contact details, emergency contact), plus
 merge pointer (`merged into`) for the claim case. A Diver either has a logbook
 (managed Divers) or is only referenced (external Divers / "contacts").
+*Dive numbers (ADR 0048):* `dives_before` (integer 0 to 100 000, default 0: the dives made before this logbook) and `apnea_counts` (boolean, default true) set how the Diver's Dives are numbered.
 *External IDs (ADR 0024):* `(Diver, Source, external id)`. They're unique per Source among Divers that aren't merged, and a
 Diver has at most one per Source. They record the person's account at a service (SSI account ID, a PADI account).
 Setting one that another Diver already has proposes linking the two Divers (as in the claim case). Certification
@@ -126,7 +127,7 @@ coverage, validity; B5), **Medical exam** (date, result, valid until, examiner),
 ### Dives
 
 **Dive** — one Diver's logbook entry.
-- *Owner:* Diver. *Number:* the Diver's own dive number.
+- *Owner:* Diver. *Number:* the Diver's own dive number: its place by start time among the Diver's Dives that count, plus the Diver's `dives_before` (ADR 0048). Stored in `dive.number` and kept by the server (`renumber`: no version, no Revision), never typed, null for a Deleted dive and for an apnea session when the Diver's `apnea_counts` is false. The computer's counter stays on the Recording.
 - *Time and depth:* start (UTC + offset), duration, max/avg depth, surface interval.
   These are derived from the Primary recording; any of them can be an **Override**.
   *Implemented (ADR 0015):* number, start + offset, duration, max/avg depth and water temperature
@@ -365,6 +366,7 @@ password only if the User chose "Keep me signed in" (both encrypted with the ope
 state `active`, `needs sign-in` or `failed`. Disconnecting deletes the password and token.
 *Diver mappings:* `(Connection, Diver, remote id)` for Targets whose people are records of one account, such as an
 entry in the User's SSI buddy list. They're set by the User, or matched through the Diver's SSI External ID.
+*Dive numbers (ADR 0048):* `follow_numbers` (boolean, default false): number dives at the Provider as Dive Hub does; only for a Provider that declares `numbers`.
 *Not built (ADR 0029):* SSI finds a buddy's entry by the Diver's SSI External ID at send time; every entry seen has an
 SSI account. Mappings come if an entry without one turns up.
 *Implemented (slice 10):* `connection` for SSI, one per User and Diver, with `state` and `keep_signed_in`; Diver
@@ -430,7 +432,7 @@ state (`pending`, `handed over`, `confirmed`, `failed`, `outdated`), remote ID i
 reference** (a stable value we send, for finding the dive again when an answer is lost) and **read-back result**
 (fields the Target stored differently). `confirmed` means delivered with an ID back; it isn't SSI's dive-centre
 confirmation. Re-pushing an `outdated` Push updates the same remote dive: a new Push with the same remote ID.
-*Implemented (slice 10):* `push` with `action` (`create`, `update`, `link`, `delete`), `state`, remote ID, number and
+*Implemented (slice 10):* `push` with `action` (`create`, `update`, `link`, `delete`, and since ADR 0048 `number`: only the number there changed, copying the fingerprint and payload of the Push before it), `state`, remote ID, number and
 reference, the record sent (without samples) and a `fingerprint` of it; `outdated` is the fingerprint differing from
 the Dive's current one, worked out when asked, not stored.
 *Providers (ADR 0027, slice 13):* `push.provider` instead of `target`; the fingerprint is the adapter's; `remote_gone` marks a

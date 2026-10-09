@@ -63,6 +63,11 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
     },
     onError: () => refresh(),
   });
+  const setNumber = useMutation({
+    mutationFn: async () => unwrap(await api.POST('/api/dives/{id}/providers/{provider}/number', { params: { path: { id: d.id, provider: p.id } } })),
+    onSuccess: async (done) => { await refresh(done.status); announce(pt('numberSet', { number: done.status.current?.remoteNumber ?? '' })); },
+    onError: () => refresh(),
+  });
   const remove = useMutation({
     mutationFn: async () => unwrap(await api.DELETE('/api/dives/{id}/providers/{provider}', { params: { path: { id: d.id, provider: p.id } } })),
     onSuccess: async (next) => { await refresh(next); announce(pt('deleted')); },
@@ -109,6 +114,34 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
       {last?.state === 'failed' && !send.error && <Notice tone="danger">{pt('lastFailed', { error: failure(last) })}</Notice>}
       {last?.leftOut && last.leftOut.length > 0 && last.state !== 'failed' && <LeftOut provider={p} push={last} />}
       {last?.differences && last.differences.length > 0 && <Differences provider={p} push={last} />}
+
+      {s.current?.number?.differs && (
+        <div className="provider-number">
+          <p>{pt('numberDiffers', { remote: s.current.remoteNumber ?? '', wanted: s.current.number.wanted })}</p>
+          {s.current.number.canSet && !signInNeeded && (
+            s.current.number.removesVerification
+              ? (
+                <ConfirmButton icon="send" title={pt('setNumberTitle', { number: s.current.number.wanted })} body={pt('setNumberBody')}
+                  confirmLabel={pt('setNumber', { number: s.current.number.wanted })} onConfirm={() => setNumber.mutateAsync().catch(() => undefined)}>
+                  {pt('setNumber', { number: s.current.number.wanted })}
+                </ConfirmButton>
+              )
+              : (
+                <Button icon="send" isPending={setNumber.isPending} onPress={() => setNumber.mutate()}>
+                  {pt('setNumber', { number: s.current.number.wanted })}
+                </Button>
+              )
+          )}
+        </div>
+      )}
+      {setNumber.error && (
+        <Notice tone="danger">
+          {errorText(setNumber.error)}
+          {setNumber.error instanceof ApiError && setNumber.error.details.diveId && (
+            <> <a href={`#/dives/${setNumber.error.details.diveId}`}>{pt('numberHolder', { date: setNumber.error.details.existing?.startsAt ?? '' })}</a></>
+          )}
+        </Notice>
+      )}
 
       {ready && !signInNeeded && s.current?.updateRemovesVerification && can('update') && (
         <Notice>{pt('removesVerification')} <VerifyAgain dive={d} /></Notice>

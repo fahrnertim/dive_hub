@@ -10,6 +10,7 @@ date: 2026-10-03
 ## Status
 Accepted – 2026-10-03. Amended by [ADR 0025](0025-ssi-site-import-and-site-water-type.md) (2026-10-05): the water type
 is no longer a Dive value or Override; it is the Dive site's, and the computer's setting stays on the Recording.
+Amended by [ADR 0048](0048-dive-numbers.md) (2026-10-09, built): the dive number is no Override either; the server works it out (`dive.number`).
 
 ## Context
 Slice 5 makes the dive page the place to keep a Dive: setting values by hand (**Overrides**, as the

@@ -489,6 +489,8 @@ function RecordingDetails({ recording, cylinders, named }: { recording: DiveView
   const values: [string, string][] = [];
   if (mode) values.push([t('dive.diveMode'), mode]);
   if (deco) values.push([t('dive.decoModel'), deco]);
+  // The computer's own counter, kept with the Recording; the Dive's number is its place in the logbook (ADR 0048).
+  if (s.diveNumber !== undefined) values.push([t('dive.numberOnComputer'), String(s.diveNumber)]);
   if (gases) values.push([t('dive.gases'), gases]);
   // The computer's setting, not the Dive's water (that is the site's, ADR 0025).
   if (s.waterType) {

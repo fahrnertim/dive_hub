@@ -296,6 +296,7 @@
     "morePeople": "+{{count}}"
   },
   "dive": {
+    "numberOnComputer": "Number on the computer",
     "back": "Logbook",
     "neighbours": "Dives in the list",
     "previousDive": "Previous dive",
@@ -472,6 +473,9 @@
     "provider_not_sent": "This dive isn’t in {{name}}.",
     "provider_dive_gone": "The dive was deleted in {{name}}. Send it again to create it there anew.",
     "provider_busy": "This dive is being sent to {{name}} right now. Wait a moment.",
+    "provider_number_taken": "Another dive in {{name}} has that number. Change the number of that dive first.",
+    "provider_numbers_off": "Dives aren’t numbered as in Dive Hub in {{name}}. Turn it on in the connection first.",
+    "provider_number_nothing_to_set": "There is no number to set: the number in {{name}} is the same, or this dive has none.",
     "provider_unsupported": "{{name}} doesn’t offer that.",
     "provider_import_off": "Importing dives from {{name}} is off. Choose what the import may do first.",
     "provider_site_data_not_confirmed": "Confirm the explanation about {{name}}’s missing licence first.",
@@ -759,6 +763,11 @@
     "restored": "{{name}} restored."
   },
   "divers": {
+    "numbers": "Dive numbers of {{name}}",
+    "divesBefore": "Dives before this logbook",
+    "divesBeforeHint": "The first dive here is this number plus one. 0 if this logbook has them all.",
+    "apneaCounts": "Count apnea sessions",
+    "numbersSaved": "The dive numbers of {{name}} are updated.",
     "title": "Divers",
     "intro": "The Divers whose logbooks you keep. Your own comes first.",
     "own": "you",
@@ -1143,8 +1152,19 @@
       "create": "Sent",
       "update": "Updated",
       "link": "Linked to a dive in {{name}}",
-      "delete": "Deleted in {{name}}"
+      "delete": "Deleted in {{name}}",
+      "number": "Number set to {{number}}"
     },
+    "numberSet": "Number in {{name}} set to {{number}}.",
+    "numberDiffers": "In {{name}} this is dive {{remote}}; here it is dive {{wanted}}.",
+    "setNumber": "Set to {{number}} in {{name}}",
+    "setNumberTitle": "Change the number in {{name}} to {{number}}?",
+    "setNumberBody": "Only the number changes. A dive center’s verification of this dive in {{name}} can be removed by it.",
+    "numberHolder": "Open the dive of {{date}} that has it in Dive Hub.",
+    "numbersFollow": "Number dives in {{name}} as in Dive Hub",
+    "numbersHint": "Off: {{name}} numbers dives itself. On: a dive sent to {{name}} gets its Dive Hub number, and a dive whose number differs there offers “Set number”. Nothing is sent by turning this on. A number another dive in {{name}} has is never given twice.",
+    "numbersOn": "Dives in {{name}} follow the Dive Hub numbers.",
+    "numbersOff": "{{name}} numbers dives itself again.",
     "handedOverAction": "Handed over",
     "diveNumber": "{{name}} dive {{number}}",
     "goneAlready": "it was already deleted in {{name}}",

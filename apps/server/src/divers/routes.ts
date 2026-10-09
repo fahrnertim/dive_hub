@@ -24,6 +24,8 @@ const BodyWeightView = Type.Object({ date: Type.String({ description: 'YYYY-MM-D
 const DiverView = Type.Object({
   id: Type.String(), name: Type.String(),
   isOwn: Type.Boolean({ description: 'The User\'s own Diver' }),
+  divesBefore: Type.Integer({ description: 'The dives made before the first one in this logbook (ADR 0048): the first Dive here gets the next number' }),
+  apneaCounts: Type.Boolean({ description: 'Whether apnea sessions count in the Dive numbers (ADR 0048)' }),
   diveCount: Type.Integer(), deviceCount: Type.Integer(),
   mutedRules: Type.Array(Type.String(), {
     description: 'Rules of the dive assessment not shown for this Diver (ADR 0036); show them again with PUT /divers/{id}/muted-rules/{rule}',
@@ -124,13 +126,24 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
     schema: { summary: 'Start keeping another Diver\'s logbook (e.g. a child\'s)', body: Type.Object({ name: Name }), response: { 201: DiverView, ...errors } },
   }, async (request, reply) => {
     const created = await divers.create(request.user!.id, request.body.name.trim());
-    return reply.code(201).send({ id: created.id, name: created.name, isOwn: false, diveCount: 0, deviceCount: 0, mutedRules: [] });
+    return reply.code(201).send({ id: created.id, name: created.name, isOwn: false, divesBefore: 0, apneaCounts: true, diveCount: 0, deviceCount: 0, mutedRules: [] });
   });
 
   app.patch('/divers/:id', {
-    schema: { summary: 'Rename a Diver whose logbook the User keeps', params: IdParams, body: Type.Object({ name: Name }), response: { 200: DiverView, ...errors } },
+    schema: {
+      summary: 'Rename a Diver whose logbook the User keeps, or change its Dive number settings',
+      description: "ADR 0048: `divesBefore` (0 to 100 000) and `apneaCounts` change the numbers of the Diver's Dives, which are numbered again. At least one field.",
+      params: IdParams,
+      body: Type.Object({
+        name: Type.Optional(Name),
+        divesBefore: Type.Optional(Type.Integer({ minimum: 0, maximum: 100_000 })),
+        apneaCounts: Type.Optional(Type.Boolean()),
+      }, { additionalProperties: false, minProperties: 1 }),
+      response: { 200: DiverView, ...errors },
+    },
   }, async (request) => {
-    await divers.rename(request.user!.id, request.params.id, request.body.name.trim());
+    const { name, ...settings } = request.body;
+    await divers.update(request.user!.id, request.params.id, { ...settings, ...(name !== undefined && { name: name.trim() }) });
     return (await listDivers(request.user!.id)).find((d) => d.id === request.params.id)!;
   });
 

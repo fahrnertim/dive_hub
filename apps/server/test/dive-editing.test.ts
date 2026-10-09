@@ -62,9 +62,10 @@ describe.skipIf(!(await databaseReachable()))('keeping a Dive', () => {
   it('shows the Primary recording\'s values, none overridden, and the device summary in our vocabulary', async () => {
     const d = await getDive();
     expect(d.overrides).toEqual([]);
-    expect(d.values).toEqual(d.fromRecording);
+    // The Dive's number is computed (ADR 0048): its place in the logbook, not the computer's counter, which stays on the Recording.
+    expect(d.values).toEqual({ ...d.fromRecording, number: 1 });
     expect(d.values.maxDepthM).toBeCloseTo(18.5, 2);
-    expect(d.values).toMatchObject({ number: 42, durationSeconds: 1800 });
+    expect(d.values).toMatchObject({ number: 1, durationSeconds: 1800 });
     expect(d.recordings.map((r) => [r.id, r.isPrimary])).toEqual([[mainId, true], [backupId, false]]);
     // The computer's salinity setting stays with the Recording; without a site the Dive has no water type.
     expect(d.recordings[0]!.summary).toMatchObject({ decoModel: 'buhlmann_zhl16c', waterType: 'salt', waterDensity: 1025 });

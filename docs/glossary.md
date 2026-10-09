@@ -96,7 +96,7 @@ until the dive computer's file comes in ([ADR 0030](decisions/0030-importing-div
 _Avoid_: Log entry, activity, event
 _German_: Tauchgang
 
-**Dive number** (planned):
+**Dive number**:
 A Dive's place in its Diver's logbook: the dives made before the logbook plus its position by start time among the Diver's Dives that count. Dive Hub works it out; nobody types it. A Deleted dive has none, and an apnea session has none when its Diver doesn't count them. Not the counter a dive computer writes into its file (the *number on the computer*, shown with the Recording), and not a Provider's own number for its dive, which can be made to follow ([ADR 0048](decisions/0048-dive-numbers.md)).
 _Avoid_: Log number, dive count, ID
 _German_: Tauchgangsnummer

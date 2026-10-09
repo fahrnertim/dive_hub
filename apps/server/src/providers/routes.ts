@@ -71,6 +71,10 @@ const ProviderView = Type.Object({
         delivery: Type.Enum(['confirmed', 'handed_over'], { description: 'confirmed: an ID comes back. handed_over: no ID, so no update, delete or link' }),
         requirements: Type.Array(RequirementView),
         readBackFields: Type.Array(Type.String(), { description: 'Field names read-back differences are reported under; translate them' }),
+        numbers: Nullable(Type.Object({
+          set: Type.Array(Type.Enum(['create', 'update']), { description: 'The operations on which a client sets the dive\'s number here; update goes with POST /api/dives/{id}/providers/{provider}/number' }),
+          changeRemovesVerification: Type.Boolean({ description: 'Changing the number of a dive already there can remove a verification it has: warn before' }),
+        }, { description: 'ADR 0048: null when the Provider numbers by itself. Else a Connection can be set to number dives here as in Dive Hub (diveNumbers.follow)' })),
       })),
       import: Nullable(Direction),
     })),
@@ -94,6 +98,9 @@ const ConnectionView = Type.Object({
   state: Type.Enum(['active', 'needs_sign_in'], { description: 'needs_sign_in: the Provider no longer accepts the sign-in; sign in again' }),
   lastUsedAt: Nullable(DateTime),
   createdAt: DateTime,
+  diveNumbers: Nullable(Type.Object({
+    follow: Type.Boolean({ description: 'Dives are numbered here as in Dive Hub (off until the User turns it on; it sends nothing by itself)' }),
+  }, { description: 'ADR 0048; null when the Provider declares no numbers' })),
   diveImport: Nullable(Type.Object({
     mode: Type.Enum([...DIVE_IMPORT_MODES], {
       description: 'off; add: only link and fill Dives here, never create; create: also create Dives Dive Hub doesn\'t have',
@@ -126,7 +133,7 @@ const UnmetView = Type.Object({
 
 const PushView = Type.Object({
   id: Type.String(),
-  action: Type.Enum(['create', 'update', 'link', 'delete'], { description: 'link: tied to a dive already there, nothing sent' }),
+  action: Type.Enum(['create', 'update', 'link', 'delete', 'number'], { description: 'link: tied to a dive already there, nothing sent. number: only its number there was changed (ADR 0048)' }),
   state: Type.Enum(['pending', 'handed_over', 'confirmed', 'failed'], {
     description: 'confirmed: the Provider accepted it and gave its ID (not SSI\'s dive-center confirmation); handed_over: delivered without an ID',
   }),
@@ -159,6 +166,12 @@ const StatusView = Type.Object({
       description: 'An update now would remove the dive centre\'s verification of the dive at the Provider (SSI: it changes the start time there, '
         + 'or the dive was linked and never sent, so the start time there isn\'t known). Say so before sending (docs/spec/clients.md, ADR 0043)',
     }),
+    number: Nullable(Type.Object({
+      wanted: Type.Integer({ description: 'The Dive\'s number here' }),
+      differs: Type.Boolean({ description: 'The Provider\'s number (remoteNumber) is another. Not "changed since sent": don\'t offer an update for it' }),
+      canSet: Type.Boolean({ description: 'The Provider sets numbers on an update: offer "Set number" (POST /api/dives/{id}/providers/{provider}/number)' }),
+      removesVerification: Type.Boolean({ description: 'Setting it can remove a verification the dive has there: warn before' }),
+    }, { description: 'ADR 0048; null when the Connection doesn\'t follow, the Provider declares no numbers or the Dive has no number' })),
   }, { description: 'The remote dive this Dive has now; null when none (never sent, deleted)' })),
   pushes: Type.Array(PushView, { description: 'Newest first' }),
 });
@@ -176,6 +189,7 @@ export const PROVIDER_STATUS: Partial<Record<ProblemCode, number>> = {
   invalid_input: 400, encryption_key_missing: 400, provider_wrong_credentials: 400, provider_unsupported: 400,
   provider_already_connected: 409, provider_account_taken: 409, provider_other_account: 409, provider_not_connected: 409,
   provider_sign_in_needed: 409, provider_requirements_unmet: 409, provider_not_sent: 409, provider_dive_gone: 409, provider_busy: 409,
+  provider_number_taken: 409, provider_numbers_off: 409, provider_number_nothing_to_set: 409,
   provider_unavailable: 502, provider_refused: 502, provider_import_off: 409, provider_account_held: 409,
 };
 /** A refusal about a Provider; with provider_requirements_unmet, what is unmet. */
@@ -185,6 +199,11 @@ const ProviderProblem = Type.Object({
     id: Type.String(), name: Type.String(), dives: Type.Integer({ description: 'The Dives it is a Participant on' }),
   }, { description: 'With provider_account_held: the external Diver here with this account; connect again with claim to make it yours' })),
   unmet: Type.Optional(Type.Array(UnmetView, { description: 'With provider_requirements_unmet: every requirement unmet, blocking ones among them' })),
+  existing: Type.Optional(Type.Object({
+    remoteId: Type.String(), number: Nullable(Type.Integer()), startsAt: Nullable(Type.String()),
+    maxDepthM: Nullable(Type.Number()), durationMinutes: Nullable(Type.Number()),
+  }, { description: 'With provider_number_taken: the dive at the Provider that has the number' })),
+  diveId: Type.Optional(Nullable(Type.String({ description: 'With provider_number_taken: the Dive here that dive is, if Dive Hub knows it' }))),
 });
 const errors = { 400: Problem, 404: Problem, 409: ProviderProblem, 502: Problem };
 
@@ -227,7 +246,7 @@ export function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Sta
       dives: dives ? {
         export: exports ? {
           ...direction(exports)!, delivery: exports.delivery, requirements: exports.requirements.map(requirementView),
-          readBackFields: exports.readBackFields ?? [],
+          readBackFields: exports.readBackFields ?? [], numbers: exports.numbers ?? null,
         } : null,
         import: direction(dives.import),
       } : null,
@@ -251,12 +270,14 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
 
   const importsDives = (provider: string) => !!providers.list().find((a) => a.id === provider)?.capabilities.data.dives?.import?.operations.includes('list');
   const connectionView = (c: Awaited<ReturnType<ConnectionService['list']>>[number]): Static<typeof ConnectionView> => {
-    const { importMode, importWindowMinutes, ...rest } = c;
+    const { importMode, importWindowMinutes, followNumbers, ...rest } = c;
     return {
       ...rest, lastUsedAt: c.lastUsedAt?.toISOString() ?? null, createdAt: c.createdAt.toISOString(),
+      diveNumbers: hasNumbers(c.provider) ? { follow: followNumbers } : null,
       diveImport: importsDives(c.provider) ? { mode: importMode, windowMinutes: importWindowMinutes } : null,
     };
   };
+  const hasNumbers = (provider: string) => !!providers.list().find((a) => a.id === provider)?.capabilities.data.dives?.export?.numbers;
   const oneConnection = async (userId: string, id: string) => connectionView((await connections.list(userId)).find((c) => c.id === id)!);
   type Status = Awaited<ReturnType<PushService['status']>>;
   const statusView = (s: Status): Static<typeof StatusView> =>
@@ -350,22 +371,28 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
 
   app.patch('/connections/:id', {
     schema: {
-      summary: 'Change what importing the account\'s dives may do, the matching window, and the choice per dive computer (ADR 0030)',
+      summary: 'Change what importing the account\'s dives may do, the matching window, the choice per dive computer (ADR 0030), and whether dives are numbered at the Provider as in Dive Hub (ADR 0048)',
+      description: 'diveNumbers.follow turns on numbering at the Provider; it sends nothing by itself. 400 provider_unsupported at a Provider that declares no numbers. At least one of the two.',
       params: IdParams,
       body: Type.Object({
-        diveImport: Type.Object({
+        diveImport: Type.Optional(Type.Object({
           mode: Type.Optional(Type.Enum([...DIVE_IMPORT_MODES])),
           windowMinutes: Type.Optional(Type.Union(MATCHING_WINDOWS.map((m) => Type.Literal(m)), { description: '5, 15, 30 or 60' })),
           computers: Type.Optional(ComputerChoices),
-        }, { additionalProperties: false }),
-      }, { additionalProperties: false }),
+        }, { additionalProperties: false })),
+        diveNumbers: Type.Optional(Type.Object({ follow: Type.Boolean() }, { additionalProperties: false })),
+      }, { additionalProperties: false, minProperties: 1 }),
       response: { 200: ConnectionView, ...errors },
     },
   }, async (request) => {
-    const { computers, ...set } = request.body.diveImport;
-    await diveImports.settings(request.user!.id, request.params.id, {
-      ...set, ...(computers && { computers: Object.fromEntries(computers.map((c) => [c.key, c.choice])) }),
-    });
+    const { diveImport, diveNumbers } = request.body;
+    if (diveImport) {
+      const { computers, ...set } = diveImport;
+      await diveImports.settings(request.user!.id, request.params.id, {
+        ...set, ...(computers && { computers: Object.fromEntries(computers.map((c) => [c.key, c.choice])) }),
+      });
+    }
+    if (diveNumbers) await connections.setFollowNumbers(request.user!.id, request.params.id, diveNumbers.follow);
     return oneConnection(request.user!.id, request.params.id);
   });
 
@@ -612,6 +639,21 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       outcome: sent.result, existing: sent.result === 'exists' ? sent.existing : null,
       status: statusView(await pushes.status(request.user!.id, id, provider)),
     };
+  });
+
+  app.post('/dives/:id/providers/:provider/number', {
+    schema: {
+      summary: 'Set the number of the Dive\'s remote dive to the Dive\'s own number, and change nothing else there (ADR 0048)',
+      description: 'Makes a Push with the action number. The Dive\'s state stays what it was: one changed since it was sent still is. '
+        + '409 provider_numbers_off (the Connection doesn\'t follow), provider_number_nothing_to_set (no number, or the Provider has it already: fetch the status again), '
+        + 'provider_number_taken (another dive there has the number; existing names it, diveId the Dive here if known: set that one first), and the codes a send has.',
+      params: DiveProviderParams,
+      response: { 200: Type.Object({ status: StatusView }), ...errors },
+    },
+  }, async (request) => {
+    const { id, provider } = request.params;
+    await pushes.setNumber(request.user!.id, id, provider);
+    return { status: statusView(await pushes.status(request.user!.id, id, provider)) };
   });
 
   app.delete('/dives/:id/providers/:provider', {

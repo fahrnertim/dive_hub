@@ -411,7 +411,7 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
       const theSite = (await tool(client, 'sites_get', { site_id: site })).structuredContent!;
       expect(theSite).toMatchObject({ shared_name: 'Blue Hole', shared_water_body: 'Red Sea', shared_description: INJECTION, your_dives: 1, position: DAHAB });
       expect(theSite).not.toHaveProperty('description');
-      expect(theSite.your_latest_dives).toEqual([{ id: timsDive, number: 14, date: '2026-03-14', max_depth_m: 31 }]);
+      expect(theSite.your_latest_dives).toEqual([{ id: timsDive, number: 2, date: '2026-03-14', max_depth_m: 31 }]);
       const people = (await tool(client, 'divers_buddies')).structuredContent!.people;
       expect(people).toEqual([
         expect.objectContaining({ diver_id: bob, shared_name: 'Bob Miller', dives_together: 1, as_buddy: 1 }),

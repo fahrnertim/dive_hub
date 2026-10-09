@@ -8,6 +8,7 @@ import {
   connection, device, dive, diver, diverBodyWeight, diverExternalId, diverManagement, participant, recording,
 } from '../db/schema.js';
 import { managedDiverIds } from '../dives/dive-service.js';
+import { renumber } from '../dives/dive-numbers.js';
 import { writeRevision } from '../dives/revisions.js';
 import { mergeExternalDiver } from './merge.js';
 import { tidyName } from '../providers/buddy-service.js';
@@ -293,6 +294,8 @@ export function createDiverService(db: Db) {
         id: diver.id,
         name: diver.name,
         isOwn: diverManagement.isOwn,
+        divesBefore: diver.divesBefore,
+        apneaCounts: diver.apneaCounts,
         diveCount: sql<number>`(select count(*)::int from ${dive} where ${dive.diverId} = ${diver.id} and ${dive.deletedAt} is null)`,
         deviceCount: sql<number>`(select count(*)::int from ${device} where ${device.diverId} = ${diver.id} and ${device.deletedAt} is null)`,
         /** Rules of the dive assessment the Diver's Users muted (ADR 0036). */
@@ -334,9 +337,16 @@ export function createDiverService(db: Db) {
       });
     },
 
-    async rename(userId: string, diverId: string, name: string) {
+    /**
+     * Changes a Diver's name or its two settings for the Dive numbers (ADR 0048). A setting that changed numbers the
+     * Diver's Dives again, in the same transaction.
+     */
+    async update(userId: string, diverId: string, change: { name?: string; divesBefore?: number; apneaCounts?: boolean }) {
       await managedOrThrow(userId, diverId);
-      await db.update(diver).set({ name, updatedAt: new Date() }).where(eq(diver.id, diverId));
+      await db.transaction(async (tx) => {
+        await tx.update(diver).set({ ...change, updatedAt: new Date() }).where(eq(diver.id, diverId));
+        if (change.divesBefore !== undefined || change.apneaCounts !== undefined) await renumber(tx, [diverId]);
+      });
     },
 
     /** A Diver's body weights, newest first; only for a User who manages the Diver (ADR 0031). */

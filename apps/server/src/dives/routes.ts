@@ -62,13 +62,19 @@ const StartsAt = Type.Object({
   utcOffsetSeconds: Nullable(Type.Integer({ minimum: -12 * 3600, maximum: 14 * 3600, multipleOf: 900 })),
 });
 
-const ValuesSchema = Type.Object({
-  number: Nullable(Type.Integer({ minimum: 0, maximum: 100_000 })),
+const valueProperties = {
   startsAt: StartsAt,
   durationSeconds: Type.Number({ minimum: 0, maximum: 48 * 3600 }),
   maxDepthM: Nullable(Type.Number({ minimum: 0, maximum: 400 })),
   avgDepthM: Nullable(Type.Number({ minimum: 0, maximum: 400 })),
   waterTemperatureC: Nullable(Type.Number({ minimum: -5, maximum: 50 })),
+};
+/** The values a User can set or a Recording gives. The Dive's number is neither (ADR 0048): a request naming it is 400. */
+const ValuesSchema = Type.Object(valueProperties, { additionalProperties: false });
+/** The values in effect: the Dive's number is computed, shown with them. */
+const DiveValuesView = Type.Object({
+  number: Nullable(Type.Integer({ description: "The Dive's place in its Diver's logbook plus the Diver's dives before it (ADR 0048): computed, never set; null for a Dive that doesn't count" })),
+  ...valueProperties,
 });
 
 const SummaryView = Type.Object({
@@ -181,7 +187,7 @@ const DiveView = Type.Object({
   id: Type.String(),
   diverId: Type.String({ description: 'The Diver whose logbook this Dive is in' }),
   version: Type.Integer({ description: 'Send it back with an edit; it changes with every change' }),
-  values: ValuesSchema,
+  values: DiveValuesView,
   overrides: Type.Array(Field, { description: 'Values the User set by hand' }),
   utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES], {
     description: 'Where the start\'s UTC offset came from (ADR 0030): device, position (the time zone where the dive was), nearby (the '
@@ -233,7 +239,13 @@ const DiveView = Type.Object({
 
 const EditBody = Type.Object({
   version: Type.Integer(),
-  set: Type.Optional(Type.Partial(ValuesSchema)),
+  set: Type.Optional(Type.Object({
+    startsAt: Type.Optional(valueProperties.startsAt), durationSeconds: Type.Optional(valueProperties.durationSeconds),
+    maxDepthM: Type.Optional(valueProperties.maxDepthM), avgDepthM: Type.Optional(valueProperties.avgDepthM),
+    waterTemperatureC: Type.Optional(valueProperties.waterTemperatureC),
+    // Named so that it is refused (400), not left out silently like an unknown field: ADR 0048.
+    number: Type.Optional(Type.Never({ description: 'Never accepted: the number of a Dive is computed' })),
+  }, { additionalProperties: false, description: 'Values to override. The number of the Dive is none of them (ADR 0048): naming it is 400' })),
   reset: Type.Optional(Type.Array(Field)),
   notes: Type.Optional(Nullable(Type.String({ maxLength: 20_000 }))),
   siteId: Type.Optional(Nullable(Type.String({ format: 'uuid', description: 'The Dive site, or null for none' }))),
@@ -410,11 +422,11 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       id: row.id,
       diverId: row.diverId,
       version: row.version,
-      values: toValues({
-        number: row.number, startsAt: { at: row.startsAt, utcOffsetSeconds: row.utcOffsetSeconds },
+      values: { number: row.number, ...toValues({
+        startsAt: { at: row.startsAt, utcOffsetSeconds: row.utcOffsetSeconds },
         durationSeconds: row.durationSeconds, maxDepthM: row.maxDepthM, avgDepthM: row.avgDepthM,
         waterTemperatureC: row.waterTemperatureC,
-      }),
+      }) },
       overrides: row.overrides,
       utcOffsetSource: row.utcOffsetSource,
       fromProvider: row.fromProvider,

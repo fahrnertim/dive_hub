@@ -4,6 +4,7 @@ import type { Db, Tx } from '../db/client.js';
 import { original, session, user } from '../db/schema.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { PROBLEMS } from '../http/problems.js';
+import { renumber } from '../dives/dive-numbers.js';
 import type { Role } from './invitations.js';
 
 export class UserAdminError extends Error {
@@ -116,6 +117,9 @@ async function deleteUserData(tx: Tx, userId: string) {
     or entity_id in (select id from doomed_dive) or entity_id in (select id from doomed_diver)`);
   await tx.execute(sql`delete from duplicate_candidate where recording_id in (select id from doomed_recording)`);
   // A surviving Dive (of a Diver someone else also manages) loses its Primary recording if it was one of these.
+  // Their Divers' apnea sessions may stop counting, so those Divers' Dives are numbered again (ADR 0048).
+  const unlinked = await rows<{ diver_id: string }>(sql`select distinct diver_id from dive
+    where primary_recording_id in (select id from doomed_recording) and id not in (select id from doomed_dive)`);
   await tx.execute(sql`update dive set primary_recording_id = null where primary_recording_id in (select id from doomed_recording)`);
   await tx.execute(sql`delete from recording where id in (select id from doomed_recording)`); // samples, events cascade
   // Pushes record what reached a Target (ADR 0024); they go with their Dive. The User's Connections hold
@@ -137,6 +141,7 @@ async function deleteUserData(tx: Tx, userId: string) {
     returning storage_key`)).map((r) => r.storage_key);
   const uploads = (await rows<{ upload_storage_key: string | null }>(sql`delete from import where user_id = ${userId}
     returning upload_storage_key`)).flatMap((r) => (r.upload_storage_key ? [r.upload_storage_key] : []));
+  await renumber(tx, unlinked.map((r) => r.diver_id));
   // Sessions, credentials, invitations and reset links cascade with the user row.
   await tx.delete(user).where(eq(user.id, userId));
   return { originals, uploads };

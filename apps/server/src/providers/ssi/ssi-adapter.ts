@@ -34,6 +34,9 @@ export const SSI_CAPABILITIES: Capabilities = {
           },
         ],
         readBackFields: [...COMPARED_FIELDS],
+        // ADR 0048. A save with another number is not shown to change it yet (the owner's checks, `round-trip.ts number`),
+        // so only a create takes Dive Hub's number; and a changed number may remove a verification until a dive is shown to keep it.
+        numbers: { set: ['create'], changeRemovesVerification: true },
       },
       // `list`: the whole logbook, profiles included, in one read (ADR 0030).
       import: { operations: ['list'] },
@@ -174,10 +177,12 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         const same = dives.find((r) => { const m = ssiMinutes(r.odin_user_log_datetime); return m !== null && Math.abs(m - at) <= SAME_DIVE_MINUTES; });
         return { ours: ours ? remoteDive(ours) : null, sameTime: same ? remoteDive(same) : null };
       },
-      async create(dive, reference) {
+      async create(dive, reference, wanted) {
         const { dives, buddies } = await logbook.recent();
-        // SSI's dive number is the client's choice: the highest in the logbook + 1.
-        const number = Math.max(0, ...dives.map((r) => numberOf(r.odin_user_log_nr) ?? 0)) + 1;
+        // SSI's dive number is the client's choice: Dive Hub's when it is asked to and no dive in the logbook has it
+        // (a duplicate is never made), else the highest in the logbook + 1.
+        const taken = wanted != null && dives.some((r) => numberOf(r.odin_user_log_nr) === wanted);
+        const number = wanted != null && !taken ? wanted : Math.max(0, ...dives.map((r) => numberOf(r.odin_user_log_nr) ?? 0)) + 1;
         const { ids, leftOut } = buddiesFor(dive, buddies);
         const record = withBuddies(createRecord(forSsi(dive), { number, accountId: ctx.accountId, reference }), ids);
         return { ...(await saveAndReadBack(ctx, record, number)), leftOut };

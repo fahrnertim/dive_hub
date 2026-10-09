@@ -68,7 +68,8 @@ describe.skipIf(!(await databaseReachable()))('0011 and 0012: the water type mov
     await migrateDatabase(t.db, t.pool, migrations);
 
     const { rows: [after] } = await q('select overrides from dive where id = $1', [dive]);
-    expect(after.overrides).toEqual(['number']);
+    // 'number' was kept by that migration; ADR 0048 (0032) dropped it, as a number is no Override any more.
+    expect(after.overrides).toEqual([]);
     const columns = (await q(`select table_name, column_name from information_schema.columns where column_name = 'water_type'`)).rows;
     expect(columns).toEqual([{ table_name: 'dive_site', column_name: 'water_type' }]);
     const { rows: [revision] } = await q('select changes from revision where entity_id = $1', [dive]);

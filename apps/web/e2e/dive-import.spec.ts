@@ -40,8 +40,8 @@ test('imports Lena\'s SSI dives from her Connection: the setting, the preview, a
     await expect(section.getByText('skipped (left out by you): 1')).toBeVisible();
 
     // Dive 501 is linked to SSI's dive 14: sending it updates that dive.
-    const { dives } = await (await request.get(`/api/dives?diverId=${diverId}&q=501`)).json() as { dives: { id: string }[] };
-    await page.goto(`/#/dives/${dives[0]!.id}`);
+    const { dives } = await (await request.get(`/api/dives?diverId=${diverId}&limit=100`)).json() as { dives: { id: string; startsAt: string }[] };
+    await page.goto(`/#/dives/${dives.find((d) => d.startsAt.startsWith('2025-08-12T08:00'))!.id}`);
     await expect(page.getByText(/^In SSI as dive 14, /)).toBeVisible();
 
     // The first dive typed by hand became a dive without a recording; its time zone is Hausreef's.

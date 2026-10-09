@@ -29,6 +29,7 @@ import { comparableOf, SYNCED_FIELDS, threeWay, VALUE_FIELDS, type Comparable, t
 import { cylindersOf, mergeProviderCylinder, providerCylinderOf } from '../dives/cylinders.js';
 import { leadOf, leadTotalKg, mergeProviderLead } from '../dives/weighting.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
+import { renumber } from '../dives/dive-numbers.js';
 
 /** A dive computer found at the Provider, and how its dives are used. */
 export interface ComputerView {
@@ -348,6 +349,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     await writeRevision(tx, 'dive', created!.id, actor, 'import-create', { fromProvider: { from: null, to: run.adapter.id } });
     await fill(tx, run, created!.id, d, actor);
     await link(tx, run, created!.id, d, true);
+    await renumber(tx, [run.diverId]);
     return created!.id;
   }
 
@@ -508,6 +510,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     }
     await tx.update(dive).set({ ...columns, version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
     await writeRevision(tx, 'dive', diveId, actor, 'update', changes);
+    if (changes.startsAt) await renumber(tx, [current.diverId]);
     if (wasUpToDate && remote) {
       const loaded = await loadOutgoingDive(tx, run.userId, diveId);
       await tx.insert(push).values({

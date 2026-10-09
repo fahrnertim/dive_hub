@@ -40,6 +40,25 @@ function declared(adapter: ProviderAdapter): string[] {
     Object.entries(directions ?? {}).flatMap(([direction, d]) => (d as { operations: string[] }).operations.map((op) => `${kind}.${direction}.${op}`)));
 }
 
+/**
+ * What is wrong with an adapter's `numbers` (ADR 0048): it holds only operations the export has, `update` in it goes with
+ * `setNumber` (and `setNumber` without it is wrong), and a Provider that hands dives over has no number to set.
+ */
+export function numbersProblems(adapter: ProviderAdapter): string[] {
+  const exports = adapter.capabilities.data.dives?.export;
+  const numbers = exports?.numbers;
+  const hasSetNumber = !!adapter.dives && !!adapter.dives.open({ connectionId: 'x', accountId: 'x', access: 'x' }).setNumber;
+  const problems: string[] = [];
+  if (!numbers) {
+    if (hasSetNumber) problems.push('setNumber without numbers');
+    return problems;
+  }
+  for (const op of numbers.set) if (!exports!.operations.includes(op)) problems.push(`numbers.set has ${op}, which the export does not`);
+  if (numbers.set.includes('update') !== hasSetNumber) problems.push('numbers.set update and setNumber go together');
+  if (exports!.delivery === 'handed_over') problems.push('numbers with delivery handed_over');
+  return problems;
+}
+
 /** Operations with a case below. */
 const CASES = [
   'dives.export.create', 'dives.export.readBack', 'dives.export.find', 'dives.export.link', 'dives.export.update',
@@ -104,6 +123,11 @@ export function providerContract(name: string, make: () => ContractHarness) {
       expect(!!c.data.buddies?.import?.operations.includes('find')).toBe(!!adapter.buddies);
       // The list's people are matched to Divers by their account at the Provider.
       if (adapter.buddies) expect(adapter.accountSource).toBeDefined();
+    });
+
+    it('declares numbers only as it can set them', () => {
+      const { adapter } = make();
+      expect(numbersProblems(adapter)).toEqual([]);
     });
 
     it('has a case for every operation it declares', () => {

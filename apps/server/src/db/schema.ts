@@ -51,6 +51,10 @@ export const diver = pgTable('diver', {
   lastName: text('last_name'),
   email: text('email'),
   leaderNumber: text('leader_number'),
+  /** The dives made before the first one in this logbook (ADR 0048): the first Dive here gets the next number. */
+  divesBefore: integer('dives_before').notNull().default(0),
+  /** Whether apnea sessions count in the Dive numbers (ADR 0048). */
+  apneaCounts: boolean('apnea_counts').notNull().default(true),
   createdBy: uuid('created_by').references(() => user.id, { onDelete: 'set null' }),
   /**
    * Set when this external Diver was merged into another (ADR 0028, amended): claimed by its person's User through their
@@ -61,6 +65,7 @@ export const diver = pgTable('diver', {
   updatedAt: updatedAt(),
   deletedAt: deletedAt(),
 }, (t) => [
+  check('diver_dives_before_ck', sql`${t.divesBefore} between 0 and 100000`),
   check('diver_code_parts_ck', sql`${t.firstName} ~ '^[^\\x3B\\r\\n]{1,100}$' and ${t.lastName} ~ '^[^\\x3B\\r\\n]{1,100}$' and ${t.email} ~ '^[^\\x3B\\s]{3,254}$' and ${t.leaderNumber} ~ '^[^\\x3B\\s]{1,20}$'`),
 ]);
 
@@ -484,7 +489,7 @@ export const siteImport = pgTable(
  * `startsAt` covers the start time and its UTC offset together.
  */
 export const OVERRIDABLE_FIELDS = [
-  'number', 'startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM', 'waterTemperatureC',
+  'startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM', 'waterTemperatureC',
 ] as const;
 export type OverridableField = (typeof OVERRIDABLE_FIELDS)[number];
 
@@ -510,6 +515,10 @@ export const dive = pgTable(
   {
     id: id(),
     diverId: uuid('diver_id').notNull().references(() => diver.id),
+    /**
+     * The Dive's place in its Diver's logbook (ADR 0048): computed, never typed. Written only by `renumber`
+     * (src/dives/dive-numbers.ts); null for a Dive that doesn't count (deleted, or apnea the Diver doesn't count).
+     */
     number: integer('number'),
     startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
     /** Local UTC offset at the dive, in seconds (gap A8). */
@@ -802,6 +811,8 @@ export const connection = pgTable(
     importWindowMinutes: integer('import_window_minutes').notNull().default(15),
     /** The User's choice per dive computer found at the Provider, by `manufacturer:serial`; kept here, not on the Device. */
     importComputers: jsonb('import_computers').$type<Record<string, ComputerChoice>>().notNull().default({}),
+    /** Whether dives are numbered at the Provider as in Dive Hub (ADR 0048); off until the User turns it on. */
+    followNumbers: boolean('follow_numbers').notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -823,7 +834,7 @@ export const providerSiteData = pgTable('provider_site_data', {
 });
 
 export const pushMode = pgEnum('push_mode', ['api', 'qr']);
-export const pushAction = pgEnum('push_action', ['create', 'update', 'link', 'delete']);
+export const pushAction = pgEnum('push_action', ['create', 'update', 'link', 'delete', 'number']);
 export const pushState = pgEnum('push_state', ['pending', 'handed_over', 'confirmed', 'failed']);
 
 /** A field the Provider stored differently from what was sent (read back after saving). */

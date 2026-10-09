@@ -69,7 +69,7 @@ describe.skipIf(!(await databaseReachable()))('Suunto files through the import p
       ({ diveId, recordingId } = result as { diveId: string; recordingId: string });
       const [d] = await db.select().from(dive).where(eq(dive.id, diveId));
       // The offset is the file's (+01:00), whatever the file's name says; Suunto's number in a series is no dive number.
-      expect(d).toMatchObject({ utcOffsetSeconds: 3600, utcOffsetSource: 'device', number: null, primaryRecordingId: recordingId });
+      expect(d).toMatchObject({ utcOffsetSeconds: 3600, utcOffsetSource: 'device', number: 1, primaryRecordingId: recordingId });
       expect(d!.maxDepthM).toBeCloseTo(21.49, 2);
       const [rec] = await recordingsOf(diveId);
       expect(rec).toMatchObject({ parser: 'suunto-json', parserVersion: '1', recordingKey: `suunto:900000000001:${Math.floor(day(1).getTime() / 1000)}` });

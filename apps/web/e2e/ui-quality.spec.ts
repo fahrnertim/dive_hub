@@ -8,7 +8,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { dataFile, type PreparedData } from './prepare.ts';
 import {
   cancelWaitingImports, waitingImport,
-  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectGoodPage, externalDiver, openLine,
+  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, diveNumber, seededDiveId, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectGoodPage, externalDiver, openLine,
   forgetDivers, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences, falseStart, keepFalseStart, tankPodDive
 } from './support.ts';
 
@@ -105,17 +105,18 @@ for (const v of variants) {
 
     test("a dive's assessment: several findings, one shown on the profile", { tag: ['@dives'] }, async ({ page, request }) => {
       const id = await assessedDive(request);
+      const n = await diveNumber(request, id);
       await page.goto(`/#/dives/${id}`);
       const lane = page.getByRole('group', { name: v.english ? 'Findings along the dive' : 'Hinweise im Verlauf des Tauchgangs' });
       // Selecting a bar opens its finding: the page is checked with one finding open and the others one row each.
       await lane.getByRole('button', { name: v.english ? /^Fast ascent/ : /^Schneller Aufstieg/ }).click();
       await expect(page.getByText(v.english ? /Not medical advice/ : /Kein medizinischer Rat/)).toBeVisible();
       await expect(page.getByRole('button', { name: v.english ? /^Put aside on this dive: Fast ascent/ : /: Schneller Aufstieg$/ }).first()).toBeVisible();
-      await expectGoodPage(page, title('Dive 77'), v);
+      await expectGoodPage(page, title(`Dive ${n}`), v);
       // The fixed note's full text, one step away.
       await page.getByRole('button', { name: v.english ? /^What the assessment can/ : /^Was die Auswertung sagen kann/ }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
-      await expectGoodPage(page, title('Dive 77'), v);
+      await expectGoodPage(page, title(`Dive ${n}`), v);
       await page.keyboard.press('Escape');
       // The lane stays inside the page on a phone.
       const box = await lane.boundingBox();
@@ -124,12 +125,13 @@ for (const v of variants) {
 
     test("a dive's assessment: a finding put aside and a rule muted", { tag: ['@dives'] }, async ({ page, request }) => {
       const id = await assessedDive(request);
+      const n = await diveNumber(request, id);
       try {
         await putAside(request, id, { dismiss: ['ppo2'], mute: ['ascent_rate'] });
         await page.goto(`/#/dives/${id}`);
         await page.getByText(v.english ? '2 findings put aside' : '2 Hinweise beiseitegelegt').click();
         await expect(page.getByRole('button', { name: v.english ? 'Show again: Fast ascent' : 'Wieder zeigen: Schneller Aufstieg' })).toBeVisible();
-        await expectGoodPage(page, title('Dive 77'), v);
+        await expectGoodPage(page, title(`Dive ${n}`), v);
       } finally {
         await assessedDive(request);
       }
@@ -137,11 +139,12 @@ for (const v of variants) {
 
     test("a dive's assessment: nothing stands out", { tag: ['@dives'] }, async ({ page, request }) => {
       const id = await assessedDive(request);
+      const n = await diveNumber(request, id);
       try {
         await putAside(request, id, { dismiss: 'all' });
         await page.goto(`/#/dives/${id}`);
         await expect(page.getByText(v.english ? 'Nothing stands out on this dive.' : 'An diesem Tauchgang fällt nichts auf.')).toBeVisible();
-        await expectGoodPage(page, title('Dive 77'), v);
+        await expectGoodPage(page, title(`Dive ${n}`), v);
       } finally {
         await assessedDive(request);
       }
@@ -326,6 +329,7 @@ for (const v of variants) {
 
     test('Divers, with a rule of the assessment muted', { tag: ['@divers', '@dives'] }, async ({ page, request }) => {
       const id = await assessedDive(request);
+      const n = await diveNumber(request, id);
       try {
         await putAside(request, id, { mute: ['ascent_rate', 'safety_stop'] });
         await page.goto('/#/divers');
@@ -578,15 +582,16 @@ for (const v of variants) {
 
     test('a dive from SSI without a recording, and where its time zone came from', { tag: ['@dives'] }, async ({ page, request }) => {
       try {
-        await page.goto(`/#/dives/${await diveWithoutRecording(request)}`);
+        const id = await diveWithoutRecording(request);
+        await page.goto(`/#/dives/${id}`);
         await expect(page.getByText(v.english ? /^No recording yet/ : /^Noch keine Aufzeichnung/)).toBeVisible();
-        await expectGoodPage(page, title('Dive'), v);
+        await expectGoodPage(page, title(`Dive ${await diveNumber(request, id)}`), v);
       } finally {
         await leaveLena(request);
       }
     });
 
-    // Deleting a Dive (ADR 0026): the shared dive 42 only gets the dialog opened; dive 9 is deleted and comes back.
+    // Deleting a Dive (ADR 0026): the shared seeded dive only gets the dialog opened; dive 9 is deleted and comes back.
     const openDelete = async (page: Page, id: string, number: number) => {
       await page.goto(`/#/dives/${id}`);
       await page.getByRole('button', { name: v.english ? `More: Dive ${number}` : `Mehr: Tauchgang ${number}` }).click();
@@ -594,25 +599,27 @@ for (const v of variants) {
       return page.getByRole('dialog');
     };
 
-    test('deleting a dive, asked first', { tag: ['@dives'] }, async ({ page }) => {
-      const dialog = await openDelete(page, diveId, 42);
+    test('deleting a dive, asked first', { tag: ['@dives'] }, async ({ page, request }) => {
+      const n = await diveNumber(request, diveId);
+      const dialog = await openDelete(page, diveId, n);
       await expect(dialog.getByRole('button', { name: v.english ? 'Cancel' : 'Abbrechen' })).toBeVisible();
-      await expectGoodPage(page, title('Dive 42'), v);
+      await expectGoodPage(page, title(`Dive ${n}`), v);
     });
 
     test('deleting a dive in SSI, then the logbook with Undo and the deleted dives', { tag: ['@dives'] }, async ({ page, request }) => {
       const id = await deletableDive(request);
       await sendToSsi(request, id);
       try {
-        const dialog = await openDelete(page, id, 9);
+        const n = await diveNumber(request, id);
+        const dialog = await openDelete(page, id, n);
         await expect(dialog.getByRole('button', { name: v.english ? 'Delete here and in SSI' : 'Hier und in SSI löschen' })).toBeVisible();
-        await expectGoodPage(page, title('Dive 9'), v);
+        await expectGoodPage(page, title(`Dive ${n}`), v);
         await dialog.getByRole('button', { name: v.english ? 'Delete only here' : 'Nur hier löschen' }).click();
         await expect(page.getByRole('button', { name: v.english ? 'Undo' : 'Rückgängig' })).toBeVisible();
         await expectGoodPage(page, title('Logbook'), v);
         await page.reload();
         await page.getByRole('link', { name: v.english ? 'Show deleted dives' : 'Gelöschte Tauchgänge zeigen', exact: true }).click();
-        await expect(page.getByRole('button', { name: v.english ? 'Delete in SSI: Dive 9' : 'In SSI löschen: Tauchgang 9' })).toBeVisible();
+        await expect(page.getByRole('button', { name: v.english ? /^Delete in SSI: .*2026/ : /^In SSI löschen: .*2026/ })).toBeVisible();
         await expectGoodPage(page, title('Review'), v);
       } finally {
         await deletableDive(request);
@@ -621,21 +628,22 @@ for (const v of variants) {
 
     test('a dive with another at the same time, merging them asked first, and the pair on the logbook', { tag: ['@dives'] }, async ({ page, request }) => {
       const { kept } = await mergeablePair(request);
+      const n = await diveNumber(request, kept);
       try {
         await page.goto(`/#/dives/${kept}`);
         const open = page.getByRole('button', { name: v.english ? 'Merge the two…' : /^Beide zusammenführen/ });
         await expect(open).toBeVisible();
-        await expectGoodPage(page, title('Dive 31'), v);
+        await expectGoodPage(page, title(`Dive ${n}`), v);
         // Merging by hand: the dives nearby to choose from.
         await page.getByRole('button', { name: /^(More|Mehr)/ }).click();
         await page.getByRole('menuitem', { name: v.english ? 'Merge with another dive…' : /^Mit einem anderen Tauchgang zusammenführen/ }).click();
         const picker = page.getByRole('dialog');
         await expect(picker.getByRole('button', { name: v.english ? /^Merge with this dive…/ : /^Mit diesem zusammenführen/ })).toBeVisible();
-        await expectGoodPage(page, title('Dive 31'), v);
+        await expectGoodPage(page, title(`Dive ${n}`), v);
         await picker.getByRole('button', { name: v.english ? 'Cancel' : 'Abbrechen' }).click();
         await open.click();
         await expect(page.getByRole('dialog').getByRole('button', { name: v.english ? 'Merge' : 'Zusammenführen', exact: true })).toBeVisible();
-        await expectGoodPage(page, title('Dive 31'), v);
+        await expectGoodPage(page, title(`Dive ${n}`), v);
         // The same pair waits as a logbook check, with its decisions on the Review page and a line on the logbook.
         await page.goto('/');
         await page.getByRole('link', { name: v.english ? 'Review them' : 'Durchsehen' }).click();
@@ -857,7 +865,7 @@ test.describe('behaviour', () => {
     await resetDive(request);
     await page.goto(`/#/dives/${diveId}`);
     await page.getByRole('button', { name: 'Edit dive' }).click();
-    await expect(page.getByRole('textbox', { name: 'Dive number' })).toBeFocused();
+    await expect(page.getByRole('group', { name: 'Start' }).getByRole('spinbutton').first()).toBeFocused();
     await page.getByRole('button', { name: 'Cancel' }).click();
     await expect(page.getByRole('button', { name: 'Edit dive' })).toBeFocused();
   });
@@ -1066,11 +1074,12 @@ test.describe('behaviour', () => {
     await expect(sort).toContainText('Shallowest first');
 
     const search = page.getByRole('searchbox', { name: 'Search' });
-    await search.fill('42');
-    await expect(page).toHaveURL(/q=42/);
-    await expect(diveRows(page)).toHaveCount(1); // dive 42
+    const seededNumber = String(await diveNumber(request, await seededDiveId(request)));
+    await search.fill(seededNumber);
+    await expect(page).toHaveURL(new RegExp(`q=${seededNumber}`));
+    await expect(diveRows(page)).toHaveCount(1); // the seeded dive
     await page.reload();
-    await expect(search).toHaveValue('42');
+    await expect(search).toHaveValue(seededNumber);
     await search.fill('no such words');
     await expect(page.getByText('No dives match “no such words”.')).toBeVisible();
   });

@@ -4,7 +4,7 @@
 // Fixture: e2e/fixtures/sited-computer.fit (apps/server/test/fixtures/write-sited-fixture.ts).
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
-import { E2E_BASE_URL, activeResultShown, diveRows, expectGoodPage, resetDive, seededDiveId, setPreferences } from './support.ts';
+import { E2E_BASE_URL, activeResultShown, diveNumber, diveRows, expectGoodPage, resetDive, seededDiveId, setPreferences } from './support.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -32,7 +32,7 @@ test.afterAll(async ({ request }) => {
   await resetDive(request);
 });
 
-test('a dive with a position: a new dive site is made from it and chosen', { tag: ['@sites', '@dives'] }, async ({ page }) => {
+test('a dive with a position: a new dive site is made from it and chosen', { tag: ['@sites', '@dives'] }, async ({ page, request }) => {
   await page.goto(`/#/dives/${sitedDiveId}`);
   const facts = page.locator('dl.facts').first();
   await expect(facts).toContainText('28.5003° N, 34.5197° E');
@@ -45,7 +45,7 @@ test('a dive with a position: a new dive site is made from it and chosen', { tag
   await expect(dialog.getByRole('textbox', { name: 'Name' })).toBeFocused();
   await expect(dialog.getByRole('textbox', { name: 'Latitude' })).toHaveValue('28.5003');
   await expect(dialog).toContainText('Every User of this Dive Hub sees the dive site');
-  await expectGoodPage(page, 'Dive 7');
+  await expectGoodPage(page, `Dive ${await diveNumber(request, sitedDiveId)}`);
   await dialog.getByRole('textbox', { name: 'Name' }).fill('Lighthouse');
   await dialog.getByRole('button', { name: 'Country' }).click();
   await page.getByRole('option', { name: 'Egypt' }).click();

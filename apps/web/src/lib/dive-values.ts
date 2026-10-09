@@ -6,7 +6,7 @@ import { useDisplay } from './display.ts';
  * Fields a Dive's history can name: today's Dive values, and the water type, which was one until it became the
  * Dive site's (ADR 0025). Old Revisions keep mentioning it and stay readable.
  */
-export type HistoryField = OverridableField | 'waterType';
+export type HistoryField = OverridableField | 'waterType' | 'number';
 
 const WATER_TYPES = ['fresh', 'salt', 'brackish', 'en13319', 'custom'] as const;
 

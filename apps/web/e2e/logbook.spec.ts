@@ -1,7 +1,7 @@
 // The logbook's rows in a real browser (ADR 0040, UI redesign slice C): what a row says, the months and totals around
 // the list, buddies as circles with their names as text, and "Show only" with its counts, in the address.
 import { expect, test } from '@playwright/test';
-import { clearParticipants, diveRows, diveWithoutRecording, externalDiver, leaveLena, seededDiveId, setBuddies, setPreferences } from './support.ts';
+import { clearParticipants, diveNumber, diveRows, diveWithoutRecording, externalDiver, leaveLena, seededDiveId, setBuddies, setPreferences } from './support.ts';
 
 test.beforeEach(async ({ request }) => {
   await setPreferences(request, { language: null, units: null });
@@ -15,10 +15,11 @@ test('a row says its number, when and with whom; a month heading and the logbook
   const id = await seededDiveId(request);
   await setBuddies(request, id, [await externalDiver(request, 'Kai Lund'), await externalDiver(request, 'Ulla Berg')]);
   try {
-    await page.goto('/#/?q=42');
-    const row = diveRows(page).filter({ hasText: 'Number 42' });
+    const n = await diveNumber(request, id);
+    await page.goto(`/#/?q=${n}`);
+    const row = diveRows(page).filter({ hasText: new RegExp(`Number ${n}(?!\\d)`) });
     await expect(row).toHaveCount(1);
-    await expect(row.getByRole('link')).toHaveAttribute('href', `#/dives/${id}?list=q%3D42`);
+    await expect(row.getByRole('link')).toHaveAttribute('href', `#/dives/${id}?list=q%3D${n}`);
     // Circles with two letters for the eye; the names and roles are text for screen readers.
     await expect(row.getByText('KL', { exact: true })).toBeVisible();
     await expect(row.getByText('UB', { exact: true })).toBeVisible();
@@ -37,7 +38,7 @@ test('a row says its number, when and with whom; a month heading and the logbook
 
     // The row is one large target; its link is the way in for keyboard and screen readers.
     await row.getByText('KL', { exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Dive 42', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: `Dive ${n}`, level: 1 })).toBeVisible();
   } finally {
     await clearParticipants(request, id);
   }
@@ -50,8 +51,9 @@ test('a row sketches its dive from the recorded profile; a dive without a record
   expect(dives.find((d) => d.id === id)!.profile!.depthsM.length).toBe(48);
   expect(dives.find((d) => d.id === without)!.profile).toBeNull();
 
-  await page.goto('/#/?q=42');
-  const row = diveRows(page).filter({ hasText: 'Number 42' });
+  const n = await diveNumber(request, id);
+  await page.goto(`/#/?q=${n}`);
+  const row = diveRows(page).filter({ hasText: new RegExp(`Number ${n}(?!\\d)`) });
   await expect(row.locator('svg.sketch path.sketch-line')).toHaveCount(1);
   // The sketch is decoration: nothing for a screen reader to stop at, and it stays inside its box.
   await expect(row.locator('.sketch')).toHaveAttribute('aria-hidden', 'true');

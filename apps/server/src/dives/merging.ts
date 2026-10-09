@@ -16,6 +16,7 @@ import { createLogbookChecks } from './logbook-checks.js';
 import { takeCylinders } from './cylinders.js';
 import { takeWeighting } from './weighting.js';
 import { writeRevision, type Actor, type Changes } from './revisions.js';
+import { renumber } from './dive-numbers.js';
 
 type DiveRow = typeof dive.$inferSelect;
 
@@ -23,7 +24,7 @@ type DiveRow = typeof dive.$inferSelect;
 const MAX_OFFSET_MS = 14 * 3600_000;
 const DAY_MS = 86_400_000;
 /** Values a Dive may lack; the start and the duration it always has. */
-const FILLABLE = ['number', 'maxDepthM', 'avgDepthM', 'waterTemperatureC'] as const satisfies readonly OverridableField[];
+const FILLABLE = ['maxDepthM', 'avgDepthM', 'waterTemperatureC'] as const satisfies readonly OverridableField[];
 
 /** The Dive's Pushes, newest first, by Provider. */
 function byProvider(pushes: PushRow[], diveId: string): Map<string, PushRow[]> {
@@ -155,6 +156,7 @@ export function createMerging(db: Db) {
         await writeRevision(tx, 'dive', other.id, actor, 'merge', {
           deletedAt: { from: null, to: at.toISOString() }, mergedInto: { from: null, to: kept.id },
         });
+        await renumber(tx, [kept.diverId]);
         return { kept: kept.id, merged: other.id };
       });
     },
@@ -175,6 +177,7 @@ export function createMerging(db: Db) {
         if (!linked) {
           await tx.update(dive).set({ diverId, version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
           await writeRevision(tx, 'dive', diveId, actor, 'move', { diverId: { from: current.diverId, to: diverId } });
+          await renumber(tx, [current.diverId, diverId]);
           return diveId;
         }
         const { id: _id, version: _version, createdAt: _createdAt, updatedAt: _updatedAt, deletedAt: _deletedAt, ...rest } = current;
@@ -191,6 +194,7 @@ export function createMerging(db: Db) {
         await writeRevision(tx, 'dive', diveId, actor, 'move', {
           deletedAt: { from: null, to: at.toISOString() }, movedTo: { from: null, to: copy!.id },
         });
+        await renumber(tx, [current.diverId, diverId]);
         return copy!.id;
       });
     },

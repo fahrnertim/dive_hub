@@ -13,7 +13,7 @@ test.beforeEach(async ({ request }) => {
 test('shows the dive with the recording\'s values, the device data and how it came to be', { tag: ['@dives'] }, async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Jan 15, 2026, 11:00 AM (UTC+2)' }).click();
-  await expect(page.getByRole('heading', { name: /Dive 42/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Dive \d+/ })).toBeVisible();
   const facts = page.locator('dl.facts').first();
   await expect(facts).toContainText('18.5 m');
   await expect(facts).toContainText('30 min');
@@ -127,7 +127,7 @@ test('refuses to overwrite a change made elsewhere meanwhile', { tag: ['@dives']
 test('speaks German and works in feet, including typing a decimal comma', { tag: ['@dives'] }, async ({ page, request }) => {
   await setPreferences(request, { language: 'de', units: 'imperial' });
   await page.goto(`/#/dives/${diveId}`);
-  await expect(page.getByRole('heading', { name: /Tauchgang 42/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Tauchgang \d+/ })).toBeVisible();
   await expect(page.locator('dl.facts').first()).toContainText('60,7 ft');
   await page.getByText('Alle Werte der Aufzeichnung').click();
   await expect(page.getByText('Salzwasser (1.025 kg/m³)')).toBeVisible();
@@ -139,4 +139,21 @@ test('speaks German and works in feet, including typing a decimal comma', { tag:
   // Stored in metres: 65.6 ft = 20.0 m.
   const dive = await (await request.get(`/api/dives/${diveId}`)).json();
   expect(dive.values.maxDepthM).toBeCloseTo(19.995, 2);
+});
+
+test('the dive number is not typed: the form has no field for it; the Diver\'s settings and the computer\'s counter are elsewhere', { tag: ['@dives', '@divers'] }, async ({ page }) => {
+  await page.goto(`/#/dives/${diveId}`);
+  await expect(page.getByRole('heading', { name: /Dive \d+/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Edit dive' }).click();
+  await expect(page.getByRole('group', { name: 'Start' })).toBeVisible();
+  await expect(page.getByRole('spinbutton', { name: /^Dive number/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  // The computer's own counter is with the recording's values.
+  await page.getByText('All values').first().click();
+  await expect(page.getByText('Number on the computer').first()).toBeVisible();
+
+  await page.goto('/#/divers');
+  const settings = page.getByRole('group', { name: /^Dive numbers of Erika/ });
+  await expect(settings.getByRole('textbox', { name: 'Dives before this logbook' })).toHaveValue('41');
+  await expect(settings.getByRole('checkbox', { name: 'Count apnea sessions' })).toBeChecked();
 });

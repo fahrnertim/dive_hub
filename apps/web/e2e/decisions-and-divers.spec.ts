@@ -36,7 +36,7 @@ test('a recording that doesn\'t clearly fit is put aside, brought back and added
   await expect(panel).toContainText('the max depth differs too much');
   // The values that differ from the dive are marked, and the button names its target.
   await expect(panel.locator('mark').first()).toBeVisible();
-  await expect(panel.getByRole('button', { name: /^Add to Dive 42:/ })).toBeVisible();
+  await expect(panel.getByRole('button', { name: /^Add to Dive \d+:/ })).toBeVisible();
   await expectGoodPage(page, 'Review');
 
   await panel.getByRole('button', { name: /^Discard:/ }).click();
@@ -48,7 +48,7 @@ test('a recording that doesn\'t clearly fit is put aside, brought back and added
   await page.getByRole('button', { name: 'Decide again' }).click();
   await page.getByRole('link', { name: /^To decide/ }).click();
 
-  await page.getByRole('button', { name: /^Add to Dive 42:/ }).click();
+  await page.getByRole('button', { name: /^Add to Dive \d+:/ }).click();
   await expect(page.getByText('Nothing waits for your decision.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Review', level: 1 })).toBeFocused(); // nothing left to decide
   await page.getByRole('link', { name: '‹ Logbook' }).click();

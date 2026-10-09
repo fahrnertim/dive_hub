@@ -1,14 +1,14 @@
 ---
 title: "ADR 0048: Dive numbers are computed, and a Provider's numbers can follow them"
 summary: A Dive's number is its place by start time among its Diver's Dives plus "dives before this logbook" - computed by the server, never typed; apnea sessions count unless the Diver's setting says no. A Connection can be set to number dives at its Provider as Dive Hub does (off by default) - new dives carry the number, a dive whose number differs there offers "Set number", and Dive Hub never gives a dive a number another dive there has.
-status: proposed
+status: accepted
 date: 2026-10-09
 ---
 
 # ADR 0048: Dive numbers are computed, and a Provider's numbers can follow them
 
 ## Status
-Proposed – 2026-10-09. The owner answered the open questions the same day (marked "owner" below). Changes
+Accepted – 2026-10-09; built in slice 22b the same day ("As built" at the end). The owner answered the open questions the same day (marked "owner" below). Changes
 [ADR 0015](0015-overrides-vocabulary-and-browser-tests.md) in one point (the number is no longer a value of the Primary recording
 that can be overridden), settles what [ADR 0040](0040-logbook-rows-and-filters.md) left open ("numbers are to be
 calculated"), extends [ADR 0027](0027-providers-as-adapters.md) (a Provider declares whether a client sets its dive
@@ -191,3 +191,22 @@ show who holds a taken number and lead there.
 - A number change at SSI is a full save of SSI's record. Renumbering a long logbook is as slow as sending it.
 - Not designed: a logbook filter "number differs" (the run's preview counts them), renumbering dives that are only
   at the Provider, more than one logbook per Diver, a number per kind (a separate apnea count).
+
+## As built (slice 22b, 2026-10-09)
+- As decided, with these points:
+  - `set.number` and `reset: ['number']` on `PATCH /api/dives/{id}` answer 400 because they are named in the schema as
+    `Type.Never`: Fastify's validator strips unknown properties instead of refusing them, so "400 as for any unknown field"
+    did not hold.
+  - The detail response has `values.number` (read only); `fromRecording` has none.
+  - `PATCH /api/divers/{id}` takes `name`, `divesBefore` and `apneaCounts` (at least one); `PATCH /api/connections/{id}` takes
+    `diveImport` and/or `diveNumbers`.
+  - `renumber` takes a row lock on the Diver rows (ordered by id), so two changes at once give the same numbers as one after the
+    other.
+  - Dive Hub's e2e server gives its two seeded Divers `divesBefore` 41 and 500, so the fixtures stay Dive 42 and 501 to 504.
+- **What SSI declares:** `numbers: { set: ['create'], changeRemovesVerification: true }`. The owner's three checks have not been
+  run (`round-trip.ts number`, see [ssi-app-api.md](../references/ssi-app-api.md#owners-checks-pending)); until they are, "Set
+  number" and numbers on an update are built and tested against the test-only ledger only. A create at SSI carries Dive Hub's
+  number unless a dive in the logbook has it, else the highest plus one. When a check shows that an update sets a number, SSI's
+  adapter gets `update(…, number)` and `setNumber` and declares `set: ['create', 'update']`; if the verification survives, it
+  declares `changeRemovesVerification: false`.
+

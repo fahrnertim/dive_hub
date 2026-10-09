@@ -1,8 +1,8 @@
 // Merging two Dives in a real browser (ADR 0038): the dive page says another dive was at the same time, asks before
 // merging, and afterwards one Dive is left while the other is among the deleted dives, saying where it went.
-// Fixtures: e2e/fixtures/mergeable-main.fit and mergeable-backup.fit, dive 31 (apps/server/test/fixtures/write-merge-fixture.ts).
+// Fixtures: e2e/fixtures/mergeable-main.fit and mergeable-backup.fit, dive 31 on the computers (the Dives' numbers are their places, ADR 0048) (apps/server/test/fixtures/write-merge-fixture.ts).
 import { expect, test } from '@playwright/test';
-import { diveRows, falseStart, keepFalseStart, mergePair, mergeablePair, openLine, setPreferences } from './support.ts';
+import { diveNumber, diveRows, falseStart, keepFalseStart, mergePair, mergeablePair, openLine, setPreferences } from './support.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -23,8 +23,8 @@ test('says another dive was at the same time, merges the two after asking, and l
   await page.getByRole('button', { name: 'Merge the two…' }).click();
   let dialog = page.getByRole('dialog', { name: 'Merge these two dives?' });
   // Which of the two stays is said by what tells them apart, here the recording.
-  await expect(dialog.getByText(/^Stays: Dive 31 .* with a recording$/)).toBeVisible();
-  await expect(dialog.getByText(/^Goes to “Deleted dives”: Dive 31 .* without a recording$/)).toBeVisible();
+  await expect(dialog.getByText(/^Stays: Dive \d+ .* with a recording$/)).toBeVisible();
+  await expect(dialog.getByText(/^Goes to “Deleted dives”: Dive \d+ .* without a recording$/)).toBeVisible();
   await expect(dialog).toContainText('The dive with the recording stays.');
   await expect(dialog).toContainText('You can restore the other one under “Deleted dives” on the logbook.');
   await dialog.getByRole('button', { name: 'Cancel' }).click();
@@ -55,12 +55,12 @@ test('offers the dives nearby to merge with by hand, and asks before merging the
     const picker = page.getByRole('dialog', { name: 'Merge with another dive' });
     await expect(picker).toContainText('from the day before to the day after');
     const row = picker.getByRole('listitem').filter({ hasText: 'with a recording' });
-    await expect(row.getByRole('link', { name: /^Dive 31/ })).toHaveAttribute('href', `#/dives/${kept}`);
-    await row.getByRole('button', { name: /^Merge with this dive…: Dive 31/ }).click();
+    await expect(row.getByRole('link', { name: /^Dive \d+/ })).toHaveAttribute('href', `#/dives/${kept}`);
+    await row.getByRole('button', { name: /^Merge with this dive…: Dive \d+/ }).click();
 
     const dialog = page.getByRole('dialog', { name: 'Merge these two dives?' });
-    await expect(dialog.getByText(/^Stays: Dive 31 .* with a recording$/)).toBeVisible();
-    await expect(dialog.getByText(/^Goes to “Deleted dives”: Dive 31 .* without a recording$/)).toBeVisible();
+    await expect(dialog.getByText(/^Stays: Dive \d+ .* with a recording$/)).toBeVisible();
+    await expect(dialog.getByText(/^Goes to “Deleted dives”: Dive \d+ .* without a recording$/)).toBeVisible();
     await dialog.getByRole('button', { name: 'Cancel' }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
   } finally {
@@ -70,45 +70,46 @@ test('offers the dives nearby to merge with by hand, and asks before merging the
 
 // Logbook checks (ADR 0038): the pair waits on the Review page, and the logbook says so in one line.
 test('lists two dives at the same time on the logbook, keeps them apart when told so, asks again, and merges them', { tag: ['@dives'] }, async ({ page, request }) => {
-  await mergeablePair(request);
+  const { kept } = await mergeablePair(request);
+  const n = await diveNumber(request, kept);
   try {
     await page.goto('/');
     const main = page.locator('#main');
     await expect(main.getByText('One thing needs your decision: 1 pair of dives at the same time.')).toBeVisible();
     await page.getByRole('link', { name: 'Review them' }).click();
     await expect(main.getByRole('heading', { name: 'Dives at the same time', level: 2 })).toBeVisible();
-    await expect(main.getByRole('button', { name: 'They are two dives: Dive 31 and Dive 31' })).toBeVisible();
+    await expect(main.getByRole('button', { name: /^They are two dives: Dive \d+ and Dive \d+$/ })).toBeVisible();
     // The pair says which of the two a merge keeps.
-    await expect(main.getByRole('listitem').filter({ hasText: /^Dive 31 ?stays when merged.* with a recording · Erika$/ })).toHaveCount(1);
-    await expect(main.getByRole('listitem').filter({ hasText: /^Dive 31 ?stays when merged.* without a recording · Erika$/ })).toHaveCount(0);
+    await expect(main.getByRole('listitem').filter({ hasText: /^Dive \d+ ?stays when merged.* with a recording · Erika$/ })).toHaveCount(1);
+    await expect(main.getByRole('listitem').filter({ hasText: /^Dive \d+ ?stays when merged.* without a recording · Erika$/ })).toHaveCount(0);
 
     // "They are two dives": the pair leaves, with a way back that has the focus.
-    await page.getByRole('button', { name: 'They are two dives: Dive 31 and Dive 31' }).click();
+    await page.getByRole('button', { name: /^They are two dives: Dive \d+ and Dive \d+$/ }).click();
     await expect(main.getByText('Kept as two dives.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Undo' })).toBeFocused();
-    await expect(main.getByRole('button', { name: 'They are two dives: Dive 31 and Dive 31' })).toHaveCount(0);
+    await expect(main.getByRole('button', { name: /^They are two dives: Dive \d+ and Dive \d+$/ })).toHaveCount(0);
     await page.getByRole('button', { name: 'Undo' }).click();
-    await expect(main.getByRole('button', { name: 'They are two dives: Dive 31 and Dive 31' })).toBeVisible();
+    await expect(main.getByRole('button', { name: /^They are two dives: Dive \d+ and Dive \d+$/ })).toBeVisible();
 
     // Kept apart again, the pair can be asked about again from the quiet list.
-    await page.getByRole('button', { name: 'They are two dives: Dive 31 and Dive 31' }).click();
+    await page.getByRole('button', { name: /^They are two dives: Dive \d+ and Dive \d+$/ }).click();
     await expect(main.getByText('Kept as two dives.')).toBeVisible();
     await page.reload();
     await page.getByRole('link', { name: 'Decided' }).click();
-    await page.getByRole('button', { name: 'Ask again: Dive 31 and Dive 31' }).click();
+    await page.getByRole('button', { name: /^Ask again: Dive \d+ and Dive \d+$/ }).click();
     await page.getByRole('link', { name: /^To decide/ }).click();
-    await expect(main.getByRole('button', { name: 'They are two dives: Dive 31 and Dive 31' })).toBeVisible();
+    await expect(main.getByRole('button', { name: /^They are two dives: Dive \d+ and Dive \d+$/ })).toBeVisible();
 
     // Merged from the logbook: asked first, and the logbook stays.
-    await page.getByRole('button', { name: 'Merge the two…: Dive 31 and Dive 31' }).click();
+    await page.getByRole('button', { name: /^Merge the two…: Dive \d+ and Dive \d+$/ }).click();
     const dialog = page.getByRole('dialog', { name: 'Merge these two dives?' });
-    await expect(dialog.getByText(/^Stays: Dive 31 .* with a recording$/)).toBeVisible();
+    await expect(dialog.getByText(/^Stays: Dive \d+ .* with a recording$/)).toBeVisible();
     await dialog.getByRole('button', { name: 'Merge', exact: true }).click();
     await expect(dialog).toHaveCount(0);
-    await expect(main.getByRole('button', { name: 'They are two dives: Dive 31 and Dive 31' })).toHaveCount(0);
+    await expect(main.getByRole('button', { name: /^They are two dives: Dive \d+ and Dive \d+$/ })).toHaveCount(0);
     await expect(page.getByText('Nothing waits for your decision.')).toBeVisible();
     await page.getByRole('link', { name: '‹ Logbook' }).click();
-    await expect(diveRows(page).filter({ hasText: /Number 31(?!\d)/ })).toHaveCount(1);
+    await expect(diveRows(page).filter({ hasText: new RegExp(`Number ${n}(?!\\d)`) })).toHaveCount(1);
   } finally {
     await mergePair(request);
   }

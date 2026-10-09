@@ -2,7 +2,7 @@
 // guidance, evidence and sources on demand; the time lane; the ascent's colours in words; putting a finding aside and
 // muting a rule; the list's mark.
 import { expect, test } from '@playwright/test';
-import { assessedDive, diveRows, setPreferences } from './support.ts';
+import { assessedDive, diveNumber, diveRows, setPreferences } from './support.ts';
 
 test.beforeEach(async ({ request }) => {
   await setPreferences(request, { language: null, units: null });
@@ -91,8 +91,9 @@ test('shows each finding as one row with its numbers; guidance, sources and acti
 
 test('puts a finding aside on the dive and mutes a rule for the Diver; the logbook\'s mark follows', { tag: ['@dives'] }, async ({ page, request }) => {
   const id = await assessedDive(request);
-  await page.goto('/#/?q=77');
-  const row = diveRows(page).filter({ hasText: 'Number 77' });
+  const n = await diveNumber(request, id);
+  await page.goto(`/#/?q=${n}`);
+  const row = diveRows(page).filter({ hasText: new RegExp(`Number ${n}(?!\d)`) });
   await expect(row).toContainText('2 findings');
 
   await page.goto(`/#/dives/${id}`);
@@ -121,7 +122,7 @@ test('puts a finding aside on the dive and mutes a rule for the Diver; the logbo
   // Its bar left the lane with it.
   await expect(page.getByRole('group', { name: 'Findings along the dive' }).getByRole('button', { name: /^Fast ascent/ })).toHaveCount(0);
 
-  await page.goto('/#/?q=77');
+  await page.goto(`/#/?q=${n}`);
   await expect(row).toBeVisible();
   await expect(row).not.toContainText(/finding/);
 

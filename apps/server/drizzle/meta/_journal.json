@@ -218,6 +218,20 @@
       "when": 1791482552348,
       "tag": "0030_gas_figures_read",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1791535747936,
+      "tag": "0031_dive_numbers",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1791535753529,
+      "tag": "0032_number_existing_dives",
+      "breakpoints": true
     }
   ]
 }

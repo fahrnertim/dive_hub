@@ -13,6 +13,7 @@ import { setLead, setSuit, setWeightingFeedback, type LeadInput, type SuitInput,
 import { writeRevision, type Actor, type Changes, type RevisionCause } from './revisions.js';
 import { liveSite, siteRef } from '../sites/dive-site-link.js';
 import { keepApart, keepRestored } from './logbook-check-answers.js';
+import { renumber } from './dive-numbers.js';
 
 export class DiveError extends Error {
   constructor(readonly code:
@@ -121,6 +122,8 @@ export async function applyToDive(
   if (Object.keys(changes).length === 0) return changes;
   await tx.update(dive).set({ ...columns, version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, current.id));
   await writeRevision(tx, 'dive', current.id, actor, cause, changes);
+  // The start time orders the Diver's Dives and the Primary recording says whether it is an apnea session (ADR 0048).
+  if (changes.startsAt || changes.primaryRecordingId) await renumber(tx, [current.diverId]);
   return changes;
 }
 
@@ -154,7 +157,7 @@ export async function createDiveFromRecording(
 ): Promise<string> {
   const v = valuesFromRecording(rec);
   const [created] = await tx.insert(dive).values({
-    diverId, number: v.number, startsAt: v.startsAt.at, utcOffsetSeconds: v.startsAt.utcOffsetSeconds, utcOffsetSource: rec.utcOffsetSource,
+    diverId, startsAt: v.startsAt.at, utcOffsetSeconds: v.startsAt.utcOffsetSeconds, utcOffsetSource: rec.utcOffsetSource,
     durationSeconds: v.durationSeconds, maxDepthM: v.maxDepthM, avgDepthM: v.avgDepthM,
     waterTemperatureC: v.waterTemperatureC, primaryRecordingId: rec.id,
   }).returning({ id: dive.id });
@@ -162,6 +165,7 @@ export async function createDiveFromRecording(
   await writeRevision(tx, 'dive', created!.id, actor, cause, {
     primaryRecordingId: { from: null, to: rec.id }, ...(await fillCylindersFromRecording(tx, created!.id, rec)),
   });
+  await renumber(tx, [diverId]);
   return created!.id;
 }
 
@@ -304,6 +308,7 @@ export function createDiveService(db: Db) {
           .where(and(eq(recording.diveId, diveId), isNull(recording.deletedAt)));
         await tx.update(dive).set({ deletedAt: at, version: sql`${dive.version} + 1`, updatedAt: at }).where(eq(dive.id, diveId));
         await writeRevision(tx, 'dive', diveId, { type: 'user', id: userId }, 'delete', { deletedAt: { from: null, to: at.toISOString() } });
+        await renumber(tx, [current.diverId]);
       });
     },
 
@@ -333,6 +338,7 @@ export function createDiveService(db: Db) {
         await tx.update(dive).set({ deletedAt: null, siteId, version: sql`${dive.version} + 1`, updatedAt: at }).where(eq(dive.id, diveId));
         await writeRevision(tx, 'dive', diveId, { type: 'user', id: userId }, 'restore', changes);
         await keepRestored(tx, userId, diveId);
+        await renumber(tx, [current.diverId]);
       });
     },
   };

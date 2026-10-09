@@ -101,7 +101,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
       const rows = await db.select({
         id: connection.id, provider: connection.provider, diverId: connection.diverId, diverName: diver.name,
         accountId: connection.accountId, accountLabel: connection.accountLabel, keepSignedIn: connection.keepSignedIn,
-        importMode: connection.importMode, importWindowMinutes: connection.importWindowMinutes,
+        importMode: connection.importMode, importWindowMinutes: connection.importWindowMinutes, followNumbers: connection.followNumbers,
         state: connection.state, lastUsedAt: connection.lastUsedAt, createdAt: connection.createdAt,
       }).from(connection).innerJoin(diver, eq(diver.id, connection.diverId))
         .where(eq(connection.userId, userId)).orderBy(connection.createdAt);
@@ -112,6 +112,17 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
 
     /** The Connection of a Diver at a Provider, if the User has one. */
     forDiver,
+
+    /**
+     * Whether dives are numbered at the Provider as in Dive Hub (ADR 0048). Turning it on sends nothing. Refused with
+     * `provider_unsupported` at a Provider that declares no `numbers`.
+     */
+    async setFollowNumbers(userId: string, connectionId: string, follow: boolean) {
+      const row = await ownConnection(userId, connectionId);
+      const adapter = registry.get(row.provider);
+      if (follow && !adapter.capabilities.data.dives?.export?.numbers) throw new ProviderServiceError('provider_unsupported', named(adapter));
+      await db.update(connection).set({ followNumbers: follow, updatedAt: new Date() }).where(eq(connection.id, row.id));
+    },
 
     /** One of the User's Connections, or `connection_not_found`. */
     own: ownConnection,

@@ -4,11 +4,11 @@
 // into problem codes. What a Provider does with the Dive is the adapter's.
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { push } from '../db/schema.js';
+import { dive, push } from '../db/schema.js';
 import type { ConnectionService } from './connection-service.js';
 import { LeaseBusy, type Leases } from './leases.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
-import { ProviderError, referenceOf, type Delivered, type OutgoingDive, type ProviderAdapter, type RemoteDive, type RemoteSite } from './provider.js';
+import { ProviderError, referenceOf, type Delivered, type DiveExport, type OutgoingDive, type ProviderAdapter, type RemoteDive, type RemoteSite } from './provider.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { forProvider, leftOutBy, unmetRequirements } from './requirements.js';
 
@@ -61,6 +61,20 @@ export function fingerprintNow(adapter: ProviderAdapter, loaded: Awaited<ReturnT
   if (!adapter.dives || !exports) return null;
   return adapter.dives.fingerprint(forProvider(loaded.outgoing, unmetRequirements(exports.requirements, loaded.row.siteId, loaded.outgoing)));
 }
+
+/**
+ * What numbering at a Provider means for a Dive (ADR 0048): null unless the Connection follows Dive Hub's numbers, the
+ * Provider declares `numbers` and the Dive has a number; else the number and what the Provider does with it.
+ */
+export function numbersFor(conn: { followNumbers: boolean } | null, exports: DiveExport, number: number | null) {
+  const declared = exports.numbers;
+  if (!conn?.followNumbers || !declared || number === null) return null;
+  return {
+    wanted: number, onCreate: declared.set.includes('create'), onUpdate: declared.set.includes('update'),
+    removesVerification: declared.changeRemovesVerification,
+  };
+}
+type NumbersFor = NonNullable<ReturnType<typeof numbersFor>>;
 
 export function createPushService(deps: { db: Db; registry: ProviderRegistry; connections: ConnectionService; leases: Leases }) {
   const { db, registry, connections, leases } = deps;
@@ -188,12 +202,29 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
   }
 
   /** The remote dive a Dive has now: whether it is up to date, and what an update would cost there (ADR 0043). */
-  function remoteState(current: PushRow, dives: NonNullable<ProviderAdapter['dives']>, outgoing: OutgoingDive) {
+  function remoteState(current: PushRow, dives: NonNullable<ProviderAdapter['dives']>, outgoing: OutgoingDive, numbers: NumbersFor | null) {
     const upToDate = current.fingerprint !== null && current.fingerprint === dives.fingerprint(outgoing);
+    // Whether the Provider's number is Dive Hub's is a state of its own, not "changed since sent" (ADR 0048).
+    const number = numbers && {
+      wanted: numbers.wanted, differs: current.remoteNumber !== numbers.wanted, canSet: numbers.onUpdate,
+      removesVerification: numbers.removesVerification,
+    };
     return {
       remoteId: current.remoteId!, remoteNumber: current.remoteNumber, sentAt: current.createdAt, upToDate,
-      updateRemovesVerification: !upToDate && (dives.updateRemovesVerification?.(outgoing, current.payload) ?? false),
+      updateRemovesVerification: !upToDate && ((dives.updateRemovesVerification?.(outgoing, current.payload) ?? false)
+        || (!!number?.differs && number.canSet && number.removesVerification)),
+      number,
     };
+  }
+
+  /** The Dive of this Diver whose current remote dive at the Provider is this one, if Dive Hub knows it. */
+  async function diveAtRemote(diverId: string, provider: string, remoteId: string): Promise<string | null> {
+    const candidates = await db.selectDistinct({ id: push.diveId }).from(push).innerJoin(dive, eq(dive.id, push.diveId))
+      .where(and(eq(push.provider, provider), eq(push.remoteId, remoteId), eq(dive.diverId, diverId)));
+    for (const { id } of candidates) {
+      if (currentRemote(await pushesOf(id, provider))?.remoteId === remoteId) return id;
+    }
+    return null;
   }
 
   /** A Dive's state at one Provider. */
@@ -209,7 +240,7 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
       connection: conn ? { id: conn.id, state: conn.state, accountLabel: conn.accountLabel } : null,
       siteId: row.siteId,
       unmet,
-      current: current ? remoteState(current, dives, outgoing) : null,
+      current: current ? remoteState(current, dives, outgoing, numbersFor(conn, exports, row.number)) : null,
       pushes,
     };
   }
@@ -259,6 +290,7 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
       if (unmet.some((u) => u.severity === 'blocking')) {
         throw new ProviderServiceError('provider_requirements_unmet', named(adapter), { unmet });
       }
+      const wanted = numbersFor(conn, exports, row.number);
       const advisory = leftOutBy(unmet);
       /** Who this Push couldn't carry: advisory ones nobody could send, and those the Provider doesn't have. */
       const leftOut = (d: Delivered) => {
@@ -287,7 +319,7 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
 
         const current = currentRemote(await pushesOf(diveId, adapter.id));
         if (current && action.update) {
-          const updated = await action.update(current.remoteId!, outgoing, current.payload)
+          const updated = await action.update(current.remoteId!, outgoing, current.payload, wanted?.onUpdate ? wanted.wanted : undefined)
             .catch((error: unknown) => failed('update', error, current.remoteId));
           if (!updated) {
             await record(adapter, { ...base, action: 'update', state: 'failed', remoteId: current.remoteId, errorCode: 'provider_dive_gone', remoteGone: true });
@@ -311,8 +343,60 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
           }
         }
 
-        const created = await action.create(outgoing, reference(diveId)).catch((error: unknown) => failed('create', error));
+        const created = await action.create(outgoing, reference(diveId), wanted?.onCreate ? wanted.wanted : undefined).catch((error: unknown) => failed('create', error));
         return { result: 'created', push: await delivered('create', created) };
+      }));
+    },
+
+    /**
+     * Sets the number of the Dive's remote dive to the Dive's own (ADR 0048) and nothing else, as a Push of its own: the
+     * fingerprint and payload of the Push before it stay, so the Dive's state is what it was. Refused while the
+     * Connection doesn't follow, when the Provider sets no numbers on an update, when there is nothing to set, and
+     * when another dive at the Provider has the number (`provider_number_taken`, naming it).
+     */
+    async setNumber(userId: string, diveId: string, provider: string): Promise<{ result: 'set'; push: PushRow }> {
+      const { adapter, dives, exports } = exporter(provider);
+      const loaded = await loadOutgoingDive(db, userId, diveId);
+      const { row } = loaded;
+      const conn = await connectionOrThrow(userId, row.diverId, adapter);
+      if (!conn.followNumbers) throw new ProviderServiceError('provider_numbers_off', named(adapter));
+      if (!exports.numbers?.set.includes('update')) throw new ProviderServiceError('provider_unsupported', named(adapter));
+      const first = currentRemote(await pushesOf(diveId, adapter.id));
+      if (!first) throw new ProviderServiceError('provider_not_sent', named(adapter));
+      if (row.number === null || first.remoteNumber === row.number) throw new ProviderServiceError('provider_number_nothing_to_set', named(adapter));
+      return leased(diveId, [adapter], () => connections.withAccess(conn, async (ctx) => {
+        // Under the lease: what is current now may be another Push than a moment ago.
+        const current = currentRemote(await pushesOf(diveId, adapter.id));
+        if (!current) throw new ProviderServiceError('provider_not_sent', named(adapter));
+        if (current.remoteNumber === row.number) throw new ProviderServiceError('provider_number_nothing_to_set', named(adapter));
+        const base = { diveId, connectionId: conn.id, userId, diveVersion: current.diveVersion, remoteId: current.remoteId, remoteReference: current.remoteReference };
+        const failed = async (error: unknown): Promise<never> => {
+          if (signedOut(error)) throw error;
+          const problem = asProblem(error, adapter);
+          await record(adapter, {
+            ...base, action: 'number', state: 'failed',
+            errorCode: problem instanceof ProviderServiceError ? problem.code : 'internal_error',
+          });
+          throw problem;
+        };
+        const outcome = await dives.open(ctx).setNumber!(current.remoteId!, row.number!).catch((error: unknown) => failed(error));
+        if (!outcome) {
+          await record(adapter, { ...base, action: 'number', state: 'failed', errorCode: 'provider_dive_gone', remoteGone: true });
+          throw new ProviderServiceError('provider_dive_gone', named(adapter));
+        }
+        if (outcome.result === 'taken') {
+          await record(adapter, { ...base, action: 'number', state: 'failed', errorCode: 'provider_number_taken' });
+          throw new ProviderServiceError('provider_number_taken', named(adapter), {
+            existing: outcome.by, diveId: await diveAtRemote(row.diverId, adapter.id, outcome.by.remoteId),
+          });
+        }
+        return {
+          result: 'set' as const,
+          push: await record(adapter, {
+            ...base, action: 'number', state: 'confirmed', remoteNumber: outcome.remoteNumber,
+            fingerprint: current.fingerprint, payload: current.payload,
+          }),
+        };
       }));
     },
 

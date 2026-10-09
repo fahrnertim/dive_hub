@@ -4,7 +4,7 @@
 // Its requirements are SSI's with the severities swapped (ADR 0029): a Wikidata ID for the site is only advisory, and
 // every Participant needs a PADI account, or nothing is sent.
 import { createHash } from 'node:crypto';
-import { ProviderError, type Delivered, type OutgoingDive, type ProviderAdapter } from '../src/providers/provider.js';
+import { ProviderError, type Delivered, type OutgoingDive, type ProviderAdapter, type RemoteDive } from '../src/providers/provider.js';
 
 export interface FakeLedger {
   adapter: ProviderAdapter;
@@ -18,6 +18,10 @@ export interface FakeLedger {
   refuseDelete: boolean;
   /** Makes every token invalid, as when they expire. */
   expireTokens(): void;
+  /** Puts a dive there that Dive Hub doesn't know (one only at the Provider), under the account of the sign-in token. */
+  seedRemote(entry: { number: number; startsAt: string }): string;
+  /** Changes the number of a dive there, as the Provider's own app would. */
+  renumber(remoteId: string, number: number): void;
 }
 
 /** The Participants' PADI accounts: all the Ledger keeps of them. */
@@ -31,6 +35,14 @@ export function createFakeLedger(): FakeLedger {
     if (!found) throw new ProviderError('signed_out', 'token no longer valid');
     return found;
   };
+  const ownerOf = (): string => [...fake.tokens.values()][0]!.accountId;
+  const remoteDive = (remoteId: string, d: { number: number; startsAt: string }): RemoteDive => ({
+    remoteId, number: d.number, startsAt: d.startsAt.slice(0, 16).replace('T', ' '), maxDepthM: null, durationMinutes: null,
+  });
+  /** The ledger's own way: the highest number of the account plus one. */
+  const nextNumber = (accountId: string) => Math.max(0, ...[...fake.dives.values()].filter((d) => d.accountId === accountId).map((d) => d.number)) + 1;
+  const holderOf = (accountId: string, number: number, except?: string) =>
+    [...fake.dives.entries()].find(([id, d]) => d.accountId === accountId && d.number === number && id !== except);
   const delivered = (remoteId: string, dive: OutgoingDive): Delivered => ({
     remoteId, remoteNumber: fake.dives.get(remoteId)!.number, payload: { startsAt: dive.startsAt.toISOString(), notes: dive.notes }, differences: null,
   });
@@ -40,6 +52,12 @@ export function createFakeLedger(): FakeLedger {
     down: false,
     refuseDelete: false,
     expireTokens: () => fake.tokens.clear(),
+    seedRemote: ({ number, startsAt }) => {
+      const remoteId = `L${nextId++}`;
+      fake.dives.set(remoteId, { accountId: ownerOf(), number, startsAt, notes: null, participants: [] });
+      return remoteId;
+    },
+    renumber: (remoteId, number) => { fake.dives.get(remoteId)!.number = number; },
     adapter: {
       id: 'ledger',
       capabilities: {
@@ -49,6 +67,7 @@ export function createFakeLedger(): FakeLedger {
           dives: {
             export: {
               operations: ['create', 'update', 'delete'], delivery: 'confirmed',
+              numbers: { set: ['create', 'update'], changeRemovesVerification: true },
               requirements: [
                 { type: 'site_external_id', severity: 'advisory', source: 'wikidata', description: 'The Ledger files dives by Wikidata item.' },
                 {
@@ -79,18 +98,28 @@ export function createFakeLedger(): FakeLedger {
             return dive && dive.accountId === accountId ? dive : null;
           };
           return {
-            async create(dive) {
+            async create(dive, _reference, wanted) {
               const { accountId } = account(ctx.access);
               const remoteId = `L${nextId++}`;
-              const number = [...fake.dives.values()].filter((d) => d.accountId === accountId).length + 1;
+              // A number another dive has is not given twice: the ledger numbers its own way then.
+              const number = wanted != null && !holderOf(accountId, wanted) ? wanted : nextNumber(accountId);
               fake.dives.set(remoteId, { accountId, number, startsAt: dive.startsAt.toISOString(), notes: dive.notes, participants: padiOf(dive) });
               return delivered(remoteId, dive);
             },
-            async update(remoteId, dive) {
+            async update(remoteId, dive, _previous, wanted) {
               const kept = mine(remoteId);
               if (!kept) return null;
               Object.assign(kept, { startsAt: dive.startsAt.toISOString(), notes: dive.notes, participants: padiOf(dive) });
+              if (wanted != null && !holderOf(kept.accountId, wanted, remoteId)) kept.number = wanted;
               return delivered(remoteId, dive);
+            },
+            async setNumber(remoteId, number) {
+              const kept = mine(remoteId);
+              if (!kept) return null;
+              const holder = holderOf(kept.accountId, number, remoteId);
+              if (holder) return { result: 'taken', by: remoteDive(holder[0], holder[1]) };
+              kept.number = number;
+              return { result: 'set', remoteNumber: number };
             },
             async remove(remoteId) {
               if (!mine(remoteId)) return 'gone';

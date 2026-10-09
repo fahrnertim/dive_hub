@@ -4,7 +4,6 @@ import type { OverridableField, RecordingSummary } from '../db/schema.js';
 
 /** The overridable values as stored on the Dive (startsAt carries its UTC offset along). */
 export interface DiveValues {
-  number: number | null;
   startsAt: { at: Date; utcOffsetSeconds: number | null };
   durationSeconds: number;
   maxDepthM: number | null;
@@ -22,7 +21,6 @@ export interface RecordingFacts {
 }
 
 export const valuesFromRecording = (r: RecordingFacts): DiveValues => ({
-  number: r.summary.diveNumber ?? null,
   startsAt: { at: r.startsAt, utcOffsetSeconds: r.utcOffsetSeconds },
   durationSeconds: r.durationSeconds,
   maxDepthM: r.maxDepthM,
@@ -41,10 +39,9 @@ export function columnsOf<F extends OverridableField>(field: F, value: DiveValue
 
 /** The values as they are on a Dive row. */
 export const valuesOfDive = (d: {
-  number: number | null; startsAt: Date; utcOffsetSeconds: number | null; durationSeconds: number;
+  startsAt: Date; utcOffsetSeconds: number | null; durationSeconds: number;
   maxDepthM: number | null; avgDepthM: number | null; waterTemperatureC: number | null;
 }): DiveValues => ({
-  number: d.number,
   startsAt: { at: d.startsAt, utcOffsetSeconds: d.utcOffsetSeconds },
   durationSeconds: d.durationSeconds,
   maxDepthM: d.maxDepthM,

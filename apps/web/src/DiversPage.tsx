@@ -11,7 +11,7 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, Dialog, Form, DiverAvatar, Muted, Notice, PageHeader, Panel, SearchList, Select, Table, TextField, type SearchListItem } from './ui/index.ts';
+import { Button, Checkbox, Dialog, Form, DiverAvatar, NumberField, Muted, Notice, PageHeader, Panel, SearchList, Select, Table, TextField, type SearchListItem } from './ui/index.ts';
 
 /** The Divers whose logbooks the User keeps, their Devices (ADR 0016), and the other divers Users dived with (ADR 0028). */
 export function DiversPage() {
@@ -145,6 +145,7 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
         </>
       )}
       {(rename.error ?? remove.error) && <Notice tone="danger">{errorText(rename.error ?? remove.error)}</Notice>}
+      <DiveNumbers diver={d} />
       <MutedRules diver={d} />
       {codes && <DiverCodesDialog diverId={d.id} name={d.name} onClose={() => setCodes(false)} />}
       {weight && <BodyWeightDialog diverId={d.id} name={d.name} onClose={() => setWeight(false)} />}
@@ -153,6 +154,38 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
 }
 
 /** Admins: merges an external Diver into another Diver, the same person (ADR 0028), picked by name. */
+/**
+ * How this Diver's Dives are numbered (ADR 0048): by start time, after the dives they did before this logbook, and
+ * with or without apnea sessions. The numbers follow at once, in the logbook and at the Providers that follow them.
+ */
+function DiveNumbers({ diver: d }: { diver: DiverView }) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const queryClient = useQueryClient();
+  const save = useMutation({
+    mutationFn: async (body: { divesBefore?: number; apneaCounts?: boolean }) => unwrap(await api.PATCH('/api/divers/{id}', { params: { path: { id: d.id } }, body })),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: keys.divers });
+      // Every Dive's number may have moved.
+      await queryClient.invalidateQueries({ queryKey: keys.dives });
+      announce(t('divers.numbersSaved', { name: d.name }));
+    },
+  });
+  return (
+    <fieldset className="dive-numbers">
+      <legend className="meta">{t('divers.numbers', { name: d.name })}</legend>
+      <NumberField
+        label={t('divers.divesBefore')} description={t('divers.divesBeforeHint')} value={d.divesBefore} minValue={0} maxValue={100_000} step={1}
+        onChange={(n) => { if (!Number.isNaN(n) && n !== d.divesBefore) save.mutate({ divesBefore: n }); }}
+      />
+      <Checkbox isSelected={d.apneaCounts} onChange={(on) => save.mutate({ apneaCounts: on })}>
+        {t('divers.apneaCounts')}
+      </Checkbox>
+      {save.error && <Notice tone="danger">{errorText(save.error)}</Notice>}
+    </fieldset>
+  );
+}
+
 /**
  * Rules of the dive assessment a User stopped showing for this Diver (ADR 0036), with the way back: a muted rule shows
  * on no Dive, so this is where it is found again.

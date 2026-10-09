@@ -8,7 +8,7 @@ date: 2026-10-07
 # ADR 0040: Logbook rows, "Show only" filters and their counts
 
 ## Status
-Accepted – 2026-10-07. Amends [ADR 0017](0017-logbook-list-paging.md).
+Accepted – 2026-10-07. Amends [ADR 0017](0017-logbook-list-paging.md). Numbers are calculated, as it left open: [ADR 0048](0048-dive-numbers.md) (built 2026-10-09).
 
 ## Context
 The [UI redesign](../research/2026-10-07-ui-redesign-proposal.md) (section 3, owner's answers under "Outcome") replaces

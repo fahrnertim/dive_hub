@@ -105,9 +105,9 @@ async function addCentre(api: APIRequestContext, siteId: string): Promise<string
 
 export async function prepareServer(baseURL: string, session: string, slot: number) {
   const api = await request.newContext({ baseURL, storageState: session, extraHTTPHeaders: { origin: baseURL } });
-  const { dives } = await (await api.get('/api/dives?q=42')).json() as { dives: { id: string; number: number | null }[] };
+  const { dives } = await (await api.get('/api/dives?limit=100')).json() as { dives: { id: string; startsAt: string }[] };
   const data: PreparedData = {
-    diveId: dives.find((d) => d.number === 42)!.id,
+    diveId: dives.find((d) => d.startsAt.startsWith('2026-01-15T09:00'))!.id,
     ...(await makeLinks(api, baseURL)),
     siteId: await addCrowd(api, baseURL),
     importedSiteId: await importEgypt(api),

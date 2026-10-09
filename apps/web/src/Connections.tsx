@@ -8,6 +8,7 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { connectable, useProviders, useProviderText } from './lib/providers.ts';
 import { ProviderBuddies } from './ProviderBuddies.tsx';
 import { ProviderDiveImport } from './ProviderDiveImport.tsx';
+import { ProviderDiveNumbers } from './ProviderDiveNumbers.tsx';
 import { Badge, Button, ConfirmButton, Dialog, Form, Muted, Notice, Panel, RadioGroup, Select, Table, TextField } from './ui/index.ts';
 
 /** A choice with its explanation under it, read together by screen readers. */
@@ -124,6 +125,7 @@ function ProviderConnections({ provider: p }: { provider: ProviderView }) {
       )}
       {own.map((c) => <ProviderBuddies key={`buddies-${c.id}`} provider={p} connection={c} />)}
       {own.map((c) => <ProviderDiveImport key={`import-${c.id}`} provider={p} connection={c} several={several} />)}
+      {own.map((c) => <ProviderDiveNumbers key={`numbers-${c.id}`} provider={p} connection={c} />)}
       {unconnected.length > 0 && <ConnectForm provider={p} divers={unconnected} several={several} />}
       {signingIn && <SignInDialog provider={p} connection={signingIn} onClose={() => setSigningIn(null)} />}
     </Panel>

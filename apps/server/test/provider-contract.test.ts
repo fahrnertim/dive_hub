@@ -6,7 +6,8 @@ import type { OutgoingDive } from '../src/providers/provider.js';
 import { createFakeHandover } from './fake-handover-provider.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { computerDive, createFakeSsi, handTypedDive } from './fake-ssi.js';
-import { providerContract } from './provider-contract.js';
+import { numbersProblems, providerContract } from './provider-contract.js';
+import { describe, expect, it } from 'vitest';
 
 const dive: OutgoingDive = {
   startsAt: new Date('2026-01-15T08:00:00Z'), utcOffsetSeconds: 7200, durationSeconds: 2400, maxDepthM: 18.2, avgDepthM: 11.4,
@@ -68,4 +69,33 @@ providerContract('Ledger (test only)', () => {
     deleteThere: (remoteId) => { fake.dives.delete(remoteId); },
     participant: { diverId: 'kai', name: 'Kai', role: 'guide', ids: { padi: '77' } },
   };
+});
+
+describe('the contract rules for numbers', () => {
+  const ledger = () => createFakeLedger().adapter;
+  const withNumbers = (numbers: unknown, drop: 'setNumber' | null = null) => {
+    const adapter = ledger();
+    const exports = adapter.capabilities.data.dives!.export as unknown as { numbers: unknown };
+    exports.numbers = numbers;
+    if (drop) {
+      const open = adapter.dives!.open;
+      adapter.dives!.open = (c) => { const { setNumber: _dropped, ...rest } = open(c); return rest; };
+    }
+    return adapter;
+  };
+
+  it('accepts what the ledger declares', () => {
+    expect(numbersProblems(ledger())).toEqual([]);
+  });
+
+  it('finds an update without setNumber, an operation the export lacks, and numbers on a hand-over', () => {
+    expect(numbersProblems(withNumbers({ set: ['create', 'update'], changeRemovesVerification: false }, 'setNumber')))
+      .toEqual(['numbers.set update and setNumber go together']);
+    expect(numbersProblems(withNumbers({ set: ['create'], changeRemovesVerification: false })))
+      .toEqual(['numbers.set update and setNumber go together']);
+    expect(numbersProblems(withNumbers(null))).toEqual(['setNumber without numbers']);
+    const handover = createFakeHandover().adapter;
+    (handover.capabilities.data.dives!.export as unknown as { numbers: unknown }).numbers = { set: ['create'], changeRemovesVerification: false };
+    expect(numbersProblems(handover)).toContain('numbers with delivery handed_over');
+  });
 });

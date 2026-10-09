@@ -8,7 +8,7 @@ date: 2026-10-06
 # ADR 0030: Importing dives from a Provider (SSI first)
 
 ## Status
-Accepted – 2026-10-06. Amended 2026-10-07 (below): a probable non-dive is never matched by itself. Amended by [ADR 0031](0031-lead-suit-cylinders-and-lead-estimate.md) (planned: an import also
+Accepted – 2026-10-06. A Dive's number is no longer taken from the Recording ([ADR 0048](0048-dive-numbers.md)): an import that creates or moves a Dive renumbers its Diver's Dives. Amended 2026-10-07 (below): a probable non-dive is never matched by itself. Amended by [ADR 0031](0031-lead-suit-cylinders-and-lead-estimate.md) (planned: an import also
 fills lead and the cylinder and takes them back three-way). Amends [ADR 0027](0027-providers-as-adapters.md) (dives get an `import` direction with `list`) and
 [ADR 0016](0016-recording-decisions-and-divers.md) (a Recording that attaches to a Dive without one becomes its
 primary). Designed in [Importing dives from SSI](../research/2026-10-06-ssi-import.md).

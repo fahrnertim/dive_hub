@@ -16,7 +16,6 @@ import { Badge, Button, DateTimeField, Form, Muted, Notice, NumberField, TextAre
 
 /** The form's values, in the User's display units (feet, °F, minutes, local time at the site). */
 interface Draft {
-  number: number;
   start: CalendarDateTime;
   offsetHours: number;
   durationMin: number;
@@ -39,9 +38,8 @@ function localStart(s: DiveValues['startsAt']) {
   };
 }
 
-function draftOf(v: DiveValues, units: 'metric' | 'imperial'): Draft {
+function draftOf(v: Omit<DiveValues, 'number'>, units: 'metric' | 'imperial'): Draft {
   return {
-    number: numberOrNaN(v.number),
     ...localStart(v.startsAt),
     durationMin: Math.round(v.durationSeconds / 60),
     maxDepth: v.maxDepthM === null ? Number.NaN : round1(depthIn(v.maxDepthM, units)),
@@ -52,7 +50,7 @@ function draftOf(v: DiveValues, units: 'metric' | 'imperial'): Draft {
 
 /** Draft fields → the Dive value they edit. */
 const FIELD_OF: Record<keyof Draft, OverridableField> = {
-  number: 'number', start: 'startsAt', offsetHours: 'startsAt', durationMin: 'durationSeconds',
+  start: 'startsAt', offsetHours: 'startsAt', durationMin: 'durationSeconds',
   maxDepth: 'maxDepthM', avgDepth: 'avgDepthM', waterTemperature: 'waterTemperatureC',
 };
 
@@ -113,7 +111,6 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
       const set: Partial<DiveValues> = {};
       for (const field of touched) {
         switch (field) {
-          case 'number': set.number = nanToNull(draft.number); break;
           case 'startsAt': {
             const s = draft.start;
             const offsetSeconds = Math.round(draft.offsetHours * 4) * 900; // quarter hours
@@ -186,11 +183,7 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
     <Form className="form" onSubmit={(e) => { e.preventDefault(); if (cylindersFit) save.mutate(); }}>
       <div className="form-grid">
         <div className="field-block">
-          <NumberField autoFocus={focus === undefined} label={t('dive.number')} description={hint('number')} value={draft.number} onChange={(n) => change('number', n)} onInput={typing('number')} minValue={0} maxValue={100_000} step={1} />
-          {origin('number')}
-        </div>
-        <div className="field-block">
-          <DateTimeField label={t('dive.start')} description={hint('startsAt')} value={draft.start} onChange={(v) => v && change('start', v as CalendarDateTime)} isRequired />
+          <DateTimeField autoFocus={focus === undefined} label={t('dive.start')} description={hint('startsAt')} value={draft.start} onChange={(v) => v && change('start', v as CalendarDateTime)} isRequired />
           {origin('startsAt')}
         </div>
         {/* Its own cell, beside the start: stacked under it, it left a hole in the grid (visual refresh 7). */}

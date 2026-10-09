@@ -25,10 +25,16 @@ export const E2E_USER = { email: 'erika@example.com', name: 'Erika', password: '
 
 type Dive = { id: string; version: number; overrides: string[]; recordings: { id: string }[] };
 
-/** The seeded Dive (number 42, from the main and the backup computer). */
+/** The seeded Dive (number 42 until an older Dive is added, from the main and the backup computer). */
 export async function seededDiveId(api: APIRequestContext): Promise<string> {
-  const { dives } = await (await api.get('/api/dives?q=42')).json() as { dives: { id: string; number: number | null }[] };
-  return dives.find((d) => d.number === 42)!.id;
+  // By its main computer (serial 111), not its number or start: a Dive's number is its place in the logbook (ADR 0048),
+  // which other specs move, and a spec may have set its start by hand.
+  const { dives } = await (await api.get('/api/dives?limit=200')).json() as { dives: { id: string }[] };
+  for (const d of dives) {
+    const view = await (await api.get(`/api/dives/${d.id}`)).json() as { recordings: { device: { serialNumber: string } | null }[] };
+    if (view.recordings.some((r) => r.device?.serialNumber === '111')) return d.id;
+  }
+  throw new Error('the seeded Dive is not in the logbook');
 }
 const headers = { origin: E2E_BASE_URL };
 
@@ -80,7 +86,11 @@ export async function setPreferences(api: APIRequestContext, preferences: { lang
  */
 export async function expectGoodPage(page: Page, title?: string, options: { axe?: boolean } = {}) {
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
-  if (title) await expect(page).toHaveTitle(`${title} – Dive Hub`);
+  // The seeded Dive is "Dive 42" only while no Dive of the logbook starts before it (ADR 0048: a number is a place), and the
+  // specs add older ones: its title is then any number.
+  const seeded = title?.match(/^(Dive|Tauchgang) 42$/);
+  if (seeded) await expect(page).toHaveTitle(new RegExp(`^${seeded[1]} \\d+ – Dive Hub$`));
+  else if (title) await expect(page).toHaveTitle(`${title} – Dive Hub`);
   else await expect(page).toHaveTitle(/^.+ – Dive Hub$/);
 
   // axe is the slowest check; ui-quality runs it in two of its four variants (ADR 0023).
@@ -255,17 +265,31 @@ export async function leaveSsi(api: APIRequestContext, diveId: string) {
   await api.patch(`/api/dives/${diveId}`, { data: { version: dive.version, siteId: null }, headers });
 }
 
-type DeletedDive = { id: string; number: number | null; version: number };
+type DeletedDive = { id: string; number: number | null; version: number; startsAt: string };
+
+/**
+ * The fixtures' dives are found by their start (UTC, from the computer's file), not by a number: since ADR 0048 a Dive's
+ * number is its place in the logbook, which other specs move. A minute is the precision the fixtures need.
+ */
+const FIXTURE_START = { assessed: '2026-02-20T09:00', deletable: '2026-03-05T08:00', mergeable: '2026-04-02T08:00' } as const;
+const startsWith = (prefix: string) => (d: { startsAt: string }) => d.startsAt.startsWith(prefix);
+async function livedAt(api: APIRequestContext, prefix: string) {
+  const { dives } = await (await api.get('/api/dives?limit=100')).json() as { dives: { id: string; number: number | null; diverId: string; startsAt: string }[] };
+  return dives.filter(startsWith(prefix));
+}
+/** A Dive's number now (it moves when dives are added or deleted), for the texts that name it. */
+export async function diveNumber(api: APIRequestContext, id: string): Promise<number> {
+  return ((await (await api.get(`/api/dives/${id}`)).json()) as { values: { number: number } }).values.number;
+}
 
 /**
  * Dive 9 (e2e/fixtures/deletable-computer.fit), in the logbook and not in SSI, for the tests that delete it (ADR 0026):
  * imported the first time, restored when an earlier test left it deleted, and taken out of SSI.
  */
 export async function deletableDive(api: APIRequestContext): Promise<string> {
-  const { dives } = await (await api.get('/api/dives?q=9')).json() as { dives: { id: string; number: number | null }[] };
-  let id = dives.find((d) => d.number === 9)?.id;
+  let id = (await livedAt(api, FIXTURE_START.deletable))[0]?.id;
   if (!id) {
-    const deleted = (await (await api.get('/api/dives/deleted')).json() as { dives: DeletedDive[] }).dives.find((d) => d.number === 9);
+    const deleted = (await (await api.get('/api/dives/deleted')).json() as { dives: DeletedDive[] }).dives.find(startsWith(FIXTURE_START.deletable));
     if (deleted) {
       await api.post(`/api/dives/${deleted.id}/restore`, { data: { version: deleted.version }, headers });
       id = deleted.id;
@@ -291,11 +315,10 @@ export async function deletableDive(api: APIRequestContext): Promise<string> {
  */
 export async function mergeablePair(api: APIRequestContext): Promise<{ kept: string; other: string }> {
   type Shown = { id: string; version: number; recordings: { id: string; device: { serialNumber: string } | null }[] };
-  const find = async () => (await (await api.get('/api/dives?q=31')).json() as { dives: { id: string; number: number | null }[] })
-    .dives.filter((d) => d.number === 31).map((d) => d.id);
+  const find = async () => (await livedAt(api, FIXTURE_START.mergeable)).map((d) => d.id);
   const shown = async (id: string) => await (await api.get(`/api/dives/${id}`)).json() as Shown;
   const merged = async (into: string) => (await (await api.get('/api/dives/deleted')).json() as { dives: (DeletedDive & { mergedInto: string | null })[] })
-    .dives.find((d) => d.number === 31 && d.mergedInto === into);
+    .dives.find((d) => startsWith(FIXTURE_START.mergeable)(d) && d.mergedInto === into);
   let ids = await find();
   if (ids.length === 0) {
     for (const name of ['mergeable-main.fit', 'mergeable-backup.fit']) {
@@ -329,8 +352,7 @@ export async function mergeablePair(api: APIRequestContext): Promise<{ kept: str
 
 /** Merges the pair again, so the logbook has nothing to decide for the tests that follow. */
 export async function mergePair(api: APIRequestContext): Promise<void> {
-  const { dives } = await (await api.get('/api/dives?q=31')).json() as { dives: { id: string; number: number | null }[] };
-  const ids = dives.filter((d) => d.number === 31).map((d) => d.id);
+  const ids = (await livedAt(api, FIXTURE_START.mergeable)).map((d) => d.id);
   if (ids.length < 2) return;
   const version = async (id: string) => (await (await api.get(`/api/dives/${id}`)).json() as { version: number }).version;
   await api.post(`/api/dives/${ids[0]}/merge`, { data: { version: await version(ids[0]!), otherId: ids[1], otherVersion: await version(ids[1]!) }, headers });
@@ -478,8 +500,7 @@ type AssessedFinding = { rule: string; dismissed: boolean; muted: boolean };
  * time; every finding shown again, whatever an earlier test put aside.
  */
 export async function assessedDive(api: APIRequestContext): Promise<string> {
-  const { dives } = await (await api.get('/api/dives?q=77')).json() as { dives: { id: string; number: number | null; diverId: string }[] };
-  let found = dives.find((d) => d.number === 77);
+  let found = (await livedAt(api, FIXTURE_START.assessed))[0];
   if (!found) {
     const upload = await api.post('/api/imports', {
       headers, multipart: { file: { name: 'assessed-computer.fit', mimeType: 'application/octet-stream', buffer: readFileSync('e2e/fixtures/assessed-computer.fit') } },
@@ -487,7 +508,7 @@ export async function assessedDive(api: APIRequestContext): Promise<string> {
     const url = `/api/imports/${(await upload.json() as { id: string }).id}`;
     await expect.poll(async () => (await (await api.get(url)).json()).status).toBe('done');
     const id = ((await (await api.get(url)).json()) as { outcome: { diveId?: string }[] }).outcome[0]!.diveId!;
-    found = { id, number: 77, diverId: (await (await api.get(`/api/dives/${id}`)).json() as { diverId: string }).diverId };
+    found = { id, number: null, startsAt: '', diverId: (await (await api.get(`/api/dives/${id}`)).json() as { diverId: string }).diverId };
   }
   const { findings } = await (await api.get(`/api/dives/${found.id}/assessment`)).json() as { findings: AssessedFinding[] };
   for (const f of findings) {

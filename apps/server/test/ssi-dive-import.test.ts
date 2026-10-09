@@ -170,7 +170,7 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
       const d = await diveOf(id);
       expect(d).toMatchObject({
         recordings: [], fromProvider: 'ssi', utcOffsetSource: 'position', site: { name: 'Hausreef' },
-        values: { number: null, startsAt: { at: '2025-08-10T07:00:00.000Z', utcOffsetSeconds: 3 * 3600 }, maxDepthM: 20 },
+        values: { number: 2, startsAt: { at: '2025-08-10T07:00:00.000Z', utcOffsetSeconds: 3 * 3600 }, maxDepthM: 20 },
       });
       // Made from SSI's dive: up to date there.
       expect(await status(id)).toMatchObject({ current: { remoteId: remote.atSite, upToDate: true } });
@@ -237,7 +237,7 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
       expect((await upload('computer', { serialNumber: 3333, start: new Date('2025-08-11T11:00:00Z'), diveNumber: 71 }))).toMatchObject({ result: 'attached', diveId: id });
       const d = await diveOf(id);
       expect(d.recordings.find((r) => r.isPrimary)!.parser).not.toBe('ssi-app-api');
-      expect(d).toMatchObject({ utcOffsetSource: 'device', values: { number: 71 } });
+      expect(d).toMatchObject({ utcOffsetSource: 'device', values: { number: 3 } });  // its place by start time; the computer's 71 stays on the Recording (ADR 0048)
       // Its SSI dive is linked here: not a computer found at SSI any more.
       expect((await preview()).computers).toEqual([]);
       // A new SSI dive from it is: now Dive Hub has the computer from files, so it suggests logbook entries; the choice kept stays.
@@ -249,7 +249,7 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
     it('makes a file\'s Recording primary on a Dive that had none', async () => {
       const id = of('atSite').diveId!;
       expect(await upload('atSite', { serialNumber: 5555, start: new Date('2025-08-10T07:00:00Z'), diveNumber: 70 })).toMatchObject({ result: 'attached', diveId: id });
-      expect(await diveOf(id)).toMatchObject({ utcOffsetSource: 'device', values: { number: 70 }, recordings: [{ isPrimary: true }] });
+      expect(await diveOf(id)).toMatchObject({ utcOffsetSource: 'device', values: { number: 2 }, recordings: [{ isPrimary: true }] });
     });
 
     it('keeps a Dive deleted here deleted', async () => {

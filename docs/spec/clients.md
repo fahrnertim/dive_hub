@@ -269,6 +269,14 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - The User can give a field back to the recording (`reset`).
   - While editing, mark a field as edited while typing, not on blur (nothing should move under a pointer about
     to press Save). *Web:* `DiveDetail.tsx`, `DiveEditForm.tsx`.
+- **The number** ([ADR 0048](../decisions/0048-dive-numbers.md)): `values.number` on the detail and `number` in the list are the
+  Dive's place in its Diver's logbook, worked out by the server: **never offer a field for it**; `PATCH` with `set.number` or
+  `reset: ['number']` answers 400, and `overrides` never names it. It is `null` for a Deleted dive and for an apnea session of a
+  Diver who doesn't count them (`apneaCounts`): show the dive without a number. It moves when another Dive is added, deleted,
+  merged, moved or re-timed, or when the Diver's settings change, **without** a new `version` or a Revision: don't treat a changed
+  number as a conflict. The computer's own counter is `recordings[].summary.diveNumber`; show it as "Number on the computer"
+  with the Recording, not as the Dive's number. A link or a note that says "Dive 57" can mean another Dive later: link by id.
+  *Web:* `DiveEditForm.tsx` (no field), `DiveDetail.tsx`.
 - **Time:** a Dive's start is UTC plus the UTC offset at the dive. Show and edit it as the local time at the dive.
   The offset is edited in quarter hours. Without a known offset, the device's time zone stands in.
   *Web:* `DiveEditForm.tsx`, `lib/units.ts`.
@@ -444,6 +452,18 @@ returns findings from fixed rules; the client words them.
 
 ### Sending a Dive to a Provider (SSI)
 From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities (ADR 0024, 0027). *Web:* `ProviderPanel.tsx`.
+- **A Provider's numbers** ([ADR 0048](../decisions/0048-dive-numbers.md)): a Provider whose `data.dives.export.numbers` isn't null can be
+  made to number dives as Dive Hub does. Per Connection, `diveNumbers.follow` (off until the User turns it on; `PATCH
+  /api/connections/{id}` with `{ diveNumbers: { follow } }`; turning it on sends nothing; `provider_unsupported` at a Provider that
+  declares none). Offer it with the explanation, next to the import settings; a dive sent while it is on carries its number.
+  `current.number` (null when not following) says `wanted`, whether the Provider's number `differs`, `canSet` and
+  `removesVerification`. When it differs, say so ("In SSI this is dive 57; here it is dive 42") and, with `canSet`, offer
+  "Set number" (`POST /api/dives/{id}/providers/{provider}/number`): only the number changes, as a Push with the action
+  `number` (name it in the history); with `removesVerification` ask first. A differing number is **not** "changed since sent":
+  don't offer an update for it. Problems: `provider_number_taken` (409; `existing` names the dive there that has the number and
+  `diveId` the Dive here it is, if any: say so, link to it, keep the notice until dismissed; set that one first),
+  `provider_numbers_off`, `provider_number_nothing_to_set` (fetch the status again), and a send's codes. *Web:*
+  `ProviderPanel.tsx`, `ProviderDiveNumbers.tsx`.
 - **Show where the Dive is there:** not there yet, or its dive number there and when it was sent, with "changed since
   sent" when `current.upToDate` is false. Offer "Send to SSI", or "Update in SSI" when the Provider offers `update`.
   A Provider with `delivery: handed_over` gives no ID back: say when it was handed over, and that sending again adds
@@ -581,6 +601,9 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
   - Other Divers can be deleted only while they have no Dives and no Devices and are on no Dive; offer it only then
     (`diver_not_empty`).
   - Two Divers with the same name are allowed, but warn about it.
+  - **Dive numbers** ([ADR 0048](../decisions/0048-dive-numbers.md)): `divesBefore` (integer 0 to 100 000, "Dives before this logbook") and
+    `apneaCounts` ("Count apnea sessions", on by default) are set with `PATCH /api/divers/{id}` (`name` is optional now; at
+    least one field). The numbers follow at once: refresh the logbook and open Dives afterwards. *Web:* `DiversPage.tsx`.
   - *Web:* `DiversPage.tsx`.
 - **Other divers** (external, ADR 0028; `GET /api/external-divers`): anyone renames them; offer deleting only with
   `canDelete` and not `inUse` (`diver_not_deletable`, `diver_in_use`). Say which services an account is known at

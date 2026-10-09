@@ -132,7 +132,7 @@ it happens again, the `SSI call` line's `detail` shows SSI's reason.
   - An update re-sends SSI's current record (from `get_divelog`) with Dive Hub's values on top, so values edited in
     the app (rating, buddies, …) survive.
   - Read-only keys of the read side (`updates`, `app_version`, …) are left out.
-- SSI's dive number (`odin_user_log_nr`) is the client's choice: Dive Hub takes the highest in the logbook + 1 [S].
+- SSI's dive number (`odin_user_log_nr`) is the client's choice: Dive Hub takes the highest in the logbook + 1, or Dive Hub's own number on a create when the Connection follows numbers and it is free (ADR 0048) [S].
   Planned ([ADR 0048](../decisions/0048-dive-numbers.md), slice 22b): the Dive's own number where the Connection is
   set to follow and no dive in SSI's logbook has it; whether an update can change it is an owner's check below.
 
@@ -142,6 +142,7 @@ From `ownFields()` in `apps/server/src/ssi/ssi-record.ts`. On an update, a field
 
 | SSI key | From | Notes |
 |---|---|---|
+| `odin_user_log_nr` | the dive number | On a create, Dive Hub's number when the Connection follows numbers and no dive in the logbook has it, else the highest + 1 (SSI's own way). On an update the existing number is kept until the checks below show that a changed one is taken [S] |
 | `odin_user_log_datetime`, `_date`, `_entry_time` | start + UTC offset | `YYYY-MM-DD HH:MM` local wall-clock time, **no time zone**; SSI keeps minutes [S] |
 | `odin_user_log_divetime` | duration | whole minutes; SSI rounds [S] |
 | `odin_user_log_depth_m` / `_ft`, `_avg_depth_m` / `_ft` | max / average depth | both units are sent |
@@ -382,8 +383,8 @@ From the research note. Record the result here with date and app version, and tu
   wildlife IDs; Dive Hub keeps only ID, name, position and country.
 - [ ] A buddy code and a professional's code drawn by Dive Hub: does SSI's app take them (add the buddy; verify a
   dive)? And what do `leader_nr` and `leader_active` hold for a professional and for someone who is none?
-- Dive numbers ([ADR 0048](../decisions/0048-dive-numbers.md)), asked 2026-10-09. Run with `round-trip.ts number`,
-  a mode slice 22b adds first ([what it does and what each result switches](../research/2026-10-09-dive-numbers.md#owners-checks-the-builds-first-step)):
+- Dive numbers ([ADR 0048](../decisions/0048-dive-numbers.md)), asked 2026-10-09. Run with `round-trip.ts number`
+  (it needs `SSI_SITE_ID`; it makes and deletes throwaway dives in 2000; `--pause` waits for Enter between steps), a mode slice 22b built (2026-10-09, not run yet) ([what it does and what each result switches](../research/2026-10-09-dive-numbers.md#owners-checks-the-builds-first-step)):
   - [ ] An update with another `odin_user_log_nr`: does the number change in SSI's logbook and app? Does `internalPk`
     have to follow? Decides whether SSI's adapter sets numbers on an update ("Set number").
   - [ ] Two dives with the same number, by an update and by a create: does SSI refuse the second, or keep both?

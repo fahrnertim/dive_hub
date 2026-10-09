@@ -56,7 +56,8 @@ describe.skipIf(!(await databaseReachable()))('import pipeline (PostgreSQL)', ()
     const [result] = await runImport('dive.fit', garmin);
     expect(result).toMatchObject({ result: 'created' });
     const [d] = await db.select().from(dive).where(eq(dive.id, result!.diveId!));
-    expect(d).toMatchObject({ number: 42, utcOffsetSeconds: 7200, primaryRecordingId: result!.recordingId });
+    // The computer's counter (42) is on the Recording; the Dive's number is its place in the logbook (ADR 0048).
+    expect(d).toMatchObject({ number: 1, utcOffsetSeconds: 7200, primaryRecordingId: result!.recordingId });
     expect(d!.maxDepthM).toBeCloseTo(18.5, 2);
     const series = await db.select().from(sampleSeries).where(eq(sampleSeries.recordingId, result!.recordingId!));
     expect(series.map((s) => s.channel).sort()).toEqual(['depth', 'heartRate', 'po2', 'temperature']);

@@ -128,7 +128,12 @@ for (const file of ['main-computer.fit', 'backup-computer.fit']) {
 // and 10:40 local time each day. Her SSI logbook (ADR 0030): two dives typed by hand at Hausreef, one from a Mares, and
 // one typed by hand at 10:20 on each of those days, between two of her dives (dive-import.spec.ts decides the first; the
 // second stays to decide).
-const lena = await createDiverService(db).create(user.id, 'Lena');
+const divers = createDiverService(db);
+const lena = await divers.create(user.id, 'Lena');
+// Dive numbers are the place in the logbook (ADR 0048): the seeded Dive is 42 and Lena's four are 501 to 504, as the
+// computers counted them, by the dives before these logbooks.
+await divers.update(user.id, (await divers.list(user.id)).find((d) => d.isOwn)!.id, { divesBefore: 41 });
+await divers.update(user.id, lena.id, { divesBefore: 500 });
 const dives = createMerging(db);
 for (const [n, start] of [[501, '2025-08-12T08:00:00Z'], [502, '2025-08-12T08:40:00Z'], [503, '2025-08-13T08:00:00Z'], [504, '2025-08-13T08:40:00Z']] as const) {
   const created = await imports.createImport(user.id, `lena-${n}.fit`, Readable.from([Buffer.from(makeSyntheticDive({ serialNumber: 7070, start: new Date(start), diveNumber: n }))]), 1 << 26);

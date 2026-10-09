@@ -296,6 +296,7 @@
     "morePeople": "+{{count}}"
   },
   "dive": {
+    "numberOnComputer": "Nummer auf dem Computer",
     "back": "Logbuch",
     "neighbours": "Tauchgänge in der Liste",
     "previousDive": "Vorheriger Tauchgang",
@@ -472,6 +473,9 @@
     "provider_not_sent": "Dieser Tauchgang ist nicht in {{name}}.",
     "provider_dive_gone": "Der Tauchgang wurde in {{name}} gelöscht. Sende ihn erneut, um ihn dort neu anzulegen.",
     "provider_busy": "Dieser Tauchgang wird gerade an {{name}} gesendet. Warte einen Moment.",
+    "provider_number_taken": "Ein anderer Tauchgang in {{name}} hat diese Nummer. Ändere zuerst die Nummer dieses Tauchgangs.",
+    "provider_numbers_off": "In {{name}} werden Tauchgänge nicht wie in Dive Hub nummeriert. Schalte das zuerst in der Verbindung ein.",
+    "provider_number_nothing_to_set": "Es gibt keine Nummer zu setzen: Die Nummer in {{name}} ist dieselbe, oder dieser Tauchgang hat keine.",
     "provider_unsupported": "{{name}} bietet das nicht an.",
     "provider_import_off": "Der Import von Tauchgängen aus {{name}} ist aus. Wähle zuerst, was der Import darf.",
     "provider_site_data_not_confirmed": "Bestätige zuerst die Erklärung zur fehlenden Lizenz von {{name}}.",
@@ -759,6 +763,11 @@
     "restored": "{{name}} wiederhergestellt."
   },
   "divers": {
+    "numbers": "Tauchgangsnummern von {{name}}",
+    "divesBefore": "Tauchgänge vor diesem Logbuch",
+    "divesBeforeHint": "Der erste Tauchgang hier bekommt diese Zahl plus eins. 0, wenn dieses Logbuch alle enthält.",
+    "apneaCounts": "Apnoe-Sessions mitzählen",
+    "numbersSaved": "Die Tauchgangsnummern von {{name}} sind aktualisiert.",
     "title": "Taucher",
     "intro": "Die Taucher, deren Logbuch du führst. Dein eigener steht oben.",
     "own": "du",
@@ -1143,8 +1152,19 @@
       "create": "Gesendet",
       "update": "Aktualisiert",
       "link": "Mit einem Tauchgang in {{name}} verknüpft",
-      "delete": "In {{name}} gelöscht"
+      "delete": "In {{name}} gelöscht",
+      "number": "Nummer auf {{number}} gesetzt"
     },
+    "numberSet": "Nummer in {{name}} auf {{number}} gesetzt.",
+    "numberDiffers": "In {{name}} ist das Tauchgang {{remote}}; hier ist es Tauchgang {{wanted}}.",
+    "setNumber": "In {{name}} auf {{number}} setzen",
+    "setNumberTitle": "Nummer in {{name}} auf {{number}} ändern?",
+    "setNumberBody": "Nur die Nummer ändert sich. Eine Bestätigung dieses Tauchgangs durch ein Tauchzentrum in {{name}} kann dabei entfallen.",
+    "numberHolder": "Tauchgang vom {{date}} in Dive Hub öffnen, der sie hat.",
+    "numbersFollow": "Tauchgänge in {{name}} wie in Dive Hub nummerieren",
+    "numbersHint": "Aus: {{name}} nummeriert selbst. Ein: Ein an {{name}} gesendeter Tauchgang bekommt seine Dive-Hub-Nummer, und bei abweichender Nummer gibt es „Nummer setzen“. Das Einschalten sendet nichts. Eine Nummer, die ein anderer Tauchgang in {{name}} hat, wird nie doppelt vergeben.",
+    "numbersOn": "Tauchgänge in {{name}} folgen den Dive-Hub-Nummern.",
+    "numbersOff": "{{name}} nummeriert wieder selbst.",
     "handedOverAction": "Übergeben",
     "diveNumber": "{{name}}-Tauchgang {{number}}",
     "goneAlready": "er war in {{name}} schon gelöscht",
