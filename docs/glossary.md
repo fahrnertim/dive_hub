@@ -432,6 +432,11 @@ One action on one Dive at one Provider (sent, updated, linked to a dive already 
 _Avoid_: Export, sync, share, broadcast
 _German_: Übertragung
 
+**Push run** (planned):
+One User's request to send many Dives of one Diver to one Provider in one go. It makes an ordinary Push per Dive, one after another, says beforehand which Dives it leaves out and why, and afterwards what became of each. It can be stopped and taken up again ([ADR 0047](decisions/0047-push-runs.md)).
+_Avoid_: Batch, bulk upload, sync, job
+_German_: Sammelübertragung (on screen: "Tauchgänge an SSI senden")
+
 **Export**:
 A file Dive Hub produces on request (such as UDDF) for the User to take elsewhere.
 _Avoid_: Push, download
