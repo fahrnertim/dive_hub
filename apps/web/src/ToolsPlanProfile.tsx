@@ -14,7 +14,10 @@ const RIGHT_SPACE = 16;
  * dashed line, and under it each Diver's pressure falling over the same minutes. The picture for sighted users: the
  * list of levels and the table of the Divers say the same in text.
  */
-export function PlanProfile({ plan, names }: { plan: Extract<ToolsPlan, { status: 'ok' }>; names: string[] }) {
+export function PlanProfile({ plan, names }: {
+  /** The answer, or before there is one the levels' stretches alone: no Divers, and no minute to leave by. */
+  plan: Pick<Extract<ToolsPlan, { status: 'ok' }>, 'segments' | 'divers' | 'leaveLastLevelAtMinute' | 'fits'>; names: string[];
+}) {
   const { t } = useTranslation();
   const display = useDisplay();
   const summaryId = useId();
@@ -79,11 +82,11 @@ export function PlanProfile({ plan, names }: { plan: Extract<ToolsPlan, { status
         {t('tools.plan.profileSummary', { depth: display.depth(deepest), minutes: Math.round(runtime) })}
       </p>
       {leaveAt !== null && <Muted>{t('tools.plan.marker', { minute: Math.floor(leaveAt) })}</Muted>}
-      <PressureStrip
+      {lines.length > 0 && <PressureStrip
         series={lines} labels={names} range={[0, runtime]} syncKey="plan" describedBy={pressureId}
         title={t('tools.plan.pressure')} axisTitle={t('tools.plan.pressureAxis')} rightSpace={RIGHT_SPACE}
-      />
-      <p id={pressureId} className="visually-hidden">{t('tools.plan.pressureSummary')}</p>
+      />}
+      {lines.length > 0 && <p id={pressureId} className="visually-hidden">{t('tools.plan.pressureSummary')}</p>}
     </div>
   );
 }

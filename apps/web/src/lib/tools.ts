@@ -116,6 +116,41 @@ export function toolsParams(query: URLSearchParams): ToolsParams {
   return result;
 }
 
+export interface PlanStretch {
+  kind: 'descent' | 'level' | 'ascent' | 'safety_stop';
+  fromDepthM: number;
+  depthM: number;
+  minutes: number;
+}
+
+/**
+ * The stretches of the levels alone, as the server counts them (planning/gas-plan.ts): for the profile and the list while
+ * there is no answer yet (no mix, no Diver, or a change on its way). No gas and no limit comes from here; deeper than 40 m
+ * there is no picture, as there is no answer.
+ */
+export function planSketch(levels: PlanLevel[], rates: { descentRate?: number | undefined; ascentRate?: number | undefined }): PlanStretch[] | undefined {
+  if (levels.length === 0 || levels.some((l) => l.depth > 40)) return undefined;
+  const down = rates.descentRate ?? 18;
+  const up = rates.ascentRate ?? 9;
+  const stretches: PlanStretch[] = [];
+  let at = 0;
+  const move = (to: number) => {
+    if (to === at) return;
+    stretches.push({ kind: to > at ? 'descent' : 'ascent', fromDepthM: at, depthM: to, minutes: Math.abs(to - at) / (to > at ? down : up) });
+    at = to;
+  };
+  for (const level of levels) {
+    move(level.depth);
+    stretches.push({ kind: 'level', fromDepthM: at, depthM: at, minutes: level.minutes });
+  }
+  if (at > 5) {
+    move(5);
+    stretches.push({ kind: 'safety_stop', fromDepthM: 5, depthM: 5, minutes: 3 });
+  }
+  move(0);
+  return stretches;
+}
+
 /** A change in the page: the new address replaces the current one, so typing does not fill the history. */
 export function replaceToolsAddress(p: ToolsParams): void {
   const oldURL = location.href;

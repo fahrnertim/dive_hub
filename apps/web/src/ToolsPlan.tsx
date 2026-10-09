@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { useId, useState, type ReactNode } from 'react';
+import { useId, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { diverSearchQuery, type ToolsPlan, type ToolsPlanDiver } from './api.ts';
 import { formatRate } from './lib/assessment.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
-import { replaceToolsAddress, type PlanDiver, type PlanLevel, type ToolsParams, type ToolsRule } from './lib/tools.ts';
+import { planSketch, replaceToolsAddress, type PlanDiver, type PlanLevel, type ToolsParams, type ToolsRule } from './lib/tools.ts';
 import { depthFromDisplay, depthIn, pressureFromDisplay, pressureIn } from './lib/units.ts';
 import { PlanProfile } from './ToolsPlanProfile.tsx';
 import { Badge, Button, Muted, Notice, NumberField, SearchList, Table, TextField, type SearchListItem } from './ui/index.ts';
@@ -14,6 +14,7 @@ const tenth = (n: number) => Math.round(n * 10) / 10;
 const MAX_ROWS = 8;
 const DEFAULT_CYLINDER = { volume: 12, pressure: 200 };
 const num = (v: number) => (Number.isNaN(v) ? undefined : v);
+const NO_NAMES: string[] = [];
 /** The search's row for someone who is no Diver here. */
 const GUEST = 'guest';
 
@@ -59,6 +60,15 @@ export function PlanSection({ params, plan, managed }: { params: ToolsParams; pl
   const answered = plan.data?.status === 'ok' && !empty
     && plan.data.segments.filter((s) => s.kind === 'level').length === levels.length && plan.data.divers.length === divers.length
     ? plan.data : undefined;
+  // Until there is an answer (no mix or Diver yet, or a change on its way) the levels alone give the profile; not beyond the limits.
+  // Kept while the levels and rates stay the same: the chart is drawn anew for new points.
+  const levelsKey = levels.map((l) => `${l.depth}x${l.minutes}`).join();
+  const outside = plan.data?.status === 'outside_limits' && !empty;
+  const sketched = useMemo(() => {
+    const segments = outside ? undefined : planSketch(levels, { descentRate: params.dr, ascentRate: params.ar });
+    return segments && { segments, divers: [], leaveLastLevelAtMinute: 0, fits: true };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the levels by their values, not by the array of this render
+  }, [levelsKey, outside, params.dr, params.ar]);
   const control: ListControl = {
     open, setOpen,
     set: (change) => replaceToolsAddress({ ...params, ...change }),
@@ -71,8 +81,9 @@ export function PlanSection({ params, plan, managed }: { params: ToolsParams; pl
     <section className="panel" aria-labelledby="tools-plan">
       <div className="panel-head"><h2 id="tools-plan">{t('tools.plan.title')}</h2></div>
       <Muted>{t('tools.plan.lead')}</Muted>
-      {answered && <PlanProfile plan={answered} names={answered.divers.map(name)} />}
-      <Levels params={params} levels={levels} divers={divers} answered={answered} managed={managed} control={control} />
+      {answered ? <PlanProfile plan={answered} names={answered.divers.map(name)} />
+        : sketched && <PlanProfile plan={sketched} names={NO_NAMES} />}
+      <Levels params={params} levels={levels} divers={divers} segments={answered?.segments ?? sketched?.segments} managed={managed} control={control} />
       <DiverRows params={params} divers={divers} answered={answered} managed={managed} control={control} />
       {(params.o2 === undefined || empty) && <Muted>{t('tools.plan.empty')}</Muted>}
       {plan.error != null && <Notice tone="danger">{errorText(plan.error)}</Notice>}
@@ -115,8 +126,8 @@ const newDiver = (name: string, params: ToolsParams, diverId?: string): PlanDive
  * the levels and up (with the safety stop) are lines of their own, as the plan counts them. The first level brings the
  * User's own Diver, so a plan for oneself needs nothing more.
  */
-function Levels({ params, levels, divers, answered, managed, control }: {
-  params: ToolsParams; levels: PlanLevel[]; divers: PlanDiver[]; answered: OkPlan | undefined; managed: ManagedDiver[]; control: ListControl;
+function Levels({ params, levels, divers, segments, managed, control }: {
+  params: ToolsParams; levels: PlanLevel[]; divers: PlanDiver[]; segments: OkPlan['segments'] | undefined; managed: ManagedDiver[]; control: ListControl;
 }) {
   const { t } = useTranslation();
   const display = useDisplay();
@@ -130,10 +141,10 @@ function Levels({ params, levels, divers, answered, managed, control }: {
   // Every stretch of the answer in its order, or the levels alone while there is none.
   type Line = { level: number; until: number | null } | { level: null; kind: 'descent' | 'ascent' | 'safety_stop'; from: number; to: number; minutes: number; until: number };
   const lines: Line[] = [];
-  if (answered) {
+  if (segments) {
     let level = 0;
     let run = 0;
-    for (const s of answered.segments) {
+    for (const s of segments) {
       run += s.minutes;
       lines.push(s.kind === 'level' ? { level: level++, until: run } : { level: null, kind: s.kind, from: s.fromDepthM, to: s.depthM, minutes: s.minutes, until: run });
     }

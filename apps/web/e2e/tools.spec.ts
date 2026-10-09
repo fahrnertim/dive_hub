@@ -180,6 +180,12 @@ test('a gas plan for a group: levels and Divers as lists with one editor open, t
 
 test('a gas plan that does not fit says when to leave, and one beyond the limits gives no numbers', { tag: ['@tools'] }, async ({ page }) => {
   const plan = page.getByRole('region', { name: 'Gas plan' });
+  // The profile is there with the first level, before a mix or a Diver: the way down and up is already in the list.
+  await page.goto('/#/tools?lv=20x20');
+  await expect(plan.getByRole('img', { name: 'Planned profile' })).toBeVisible();
+  await expect(plan.getByRole('img', { name: 'Planned pressure' })).toHaveCount(0);
+  await expect(plan.getByRole('list', { name: 'Levels' }).getByRole('listitem')).toHaveText([/Descent/, /Level 1/, /Ascent/, /Safety stop/, /Ascent/]);
+  await expect(plan.getByText(/Enter the mix above/)).toBeVisible();
   // 40 minutes at 20 m for one Diver in a 12 L cylinder is more than the cylinder holds.
   await page.goto('/#/tools?o2=21&water=fresh&lv=20x40&dv=Tim~12~200~20~');
   await expect(plan.getByText('The plan does not fit.')).toBeVisible();

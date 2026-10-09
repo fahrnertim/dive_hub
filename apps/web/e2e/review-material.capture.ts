@@ -424,6 +424,9 @@ test('review material', async ({ page, request, browser }) => {
     // A reload: a setting in the address opens the Settings section when the page is built, not when only the hash changes.
     await page.goto('/#/tools?o2=32&depth=30&volume=11.1&pressure=200&rule=reserve&bar=60'); await page.reload(); await page.getByTestId('bottom-time').waitFor();
     await capture(page, `${prefix}-tools-settings`, { aria: false, axe });
+    // The profile with the first levels, before a mix or a Diver.
+    await page.goto('/#/tools?lv=20x15,12x10'); await page.locator('.plan-profile canvas').first().waitFor();
+    await capture(page, `${prefix}-tools-plan-sketch`, { aria: false, axe });
     // A gas plan of a group with a turn rule, and one that does not fit.
     await page.goto('/#/tools?o2=21&water=fresh&rule=thirds&lv=20x15,12x10&dv=Tim~12~200~20~&dv=Ann~10~200~15~'); await page.reload(); await page.getByTestId('plan-briefing').waitFor();
     await capture(page, `${prefix}-tools-plan`, { aria: false, axe });

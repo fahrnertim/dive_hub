@@ -136,5 +136,9 @@ The first page was one long form: every level and every Diver with all their fie
   a guest is not an external Diver. When Visibility arrives, a Diver who shares their Dives could bring their SAC too.
 - **The plan says that it does not check the no-decompression limit** over several levels (a notice with every answer, the MCP tool's
   description): it checks the gas, the MOD and 40 m.
+- **The profile is there with the first level** (owner: "where is my profile preview?"): the answer needs a mix, a level and a Diver,
+  and until it comes the page draws the levels' stretches itself (`planSketch` in `lib/tools.ts`, the server's rule for the way down,
+  between, up and the stop, with the plan's rates) and lists them. No gas, no pressure strip and no minute to leave by come from the
+  sketch, and beyond 40 m or the limits there is none.
 - **Later:** reordering levels by dragging (delete and add does it for the two to four levels of a plan); a Bühlmann check over the
   whole profile, as a slice of its own; each Diver's ascent pressure marked in the pressure strip.

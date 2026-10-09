@@ -752,7 +752,8 @@ else plans with the SAC sent or 20 L/min, and no logbook value of theirs is in t
   when the last level is deeper), and a level's `minutes` count from arriving. `used.descentRateMPerMin` and
   `used.ascentRateMPerMin` say which rates applied and where they came from.
 - A client **may** draw the plan: the profile from `segments`, and each Diver's pressure from `pressuresBar` (at the start and at
-  the end of every segment, one more value than there are segments). A picture needs the same in text.
+  the end of every segment, one more value than there are segments). A picture needs the same in text. Before there is an answer
+  (no mix or no Diver yet) it may draw the levels' stretches by the same rule, with no gas and no limit, and never beyond 40 m.
 - **Say who a Diver is to the plan** where it lets the User pick one: a Diver the User manages brings their SAC, another Diver
   of the instance only their name, and anyone else is a guest who exists only in the request.
 - `outside_limits` gives the `reason` and `levelIndex` and no numbers.
