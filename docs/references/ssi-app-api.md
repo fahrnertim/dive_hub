@@ -154,6 +154,20 @@ it. A guess is that SSI refuses a new dive whose reference matches a deleted one
 the dive again from its own copy. Neither is checked; the refusals were logged before the `detail` field existed. If
 it happens again, the `SSI call` line's `detail` shows SSI's reason.
 
+### SSI's app: how it uploads dives (checked 2026-10-10, app 5.0.43)
+
+Read from the app's compiled code and one capture; details in the
+[research note](../research/2026-10-10-ssi-app-bulk-upload.md):
+- **The app has no bulk call [R].** `save_divelog` is its only save; its import of several dives from a dive computer
+  saves one dive at a time (`_batchImportSaveOneDive`).
+- **It keeps a local queue [R]:** each dive has `needsUpload` and `uploadError`, sent by
+  `DivesSynchronisation.uploadDives`. How fast the queue is sent is not known [?] (owner's check below).
+- **The save's answer to the app carries the stored dive [R]:** `result.dive` (a list with one record, 387 keys),
+  `result.divestats` and `result.potential_duplicate` (seen on an update of a dive without samples). Dive Hub doesn't
+  read `result`.
+- **To read the app's code again:** `adb -s <emulator> shell pm path com.divessi.ssi`, `adb pull` each file; the Dart
+  code is `lib/arm64-v8a/libapp.so` in `split_config.arm64_v8a.apk`, and its readable strings hold the call names.
+
 ### Saving: `what=save_divelog`
 
 - `POST …&what=save_divelog&token=…`, `Content-Type: application/x-www-form-urlencoded`, body `json_data=<the record as JSON>` [S].
@@ -330,6 +344,8 @@ a synced dive has been seen:
 | `get_buddies` | buddy list, the same entries as `logbook_buddies` in `get_divelog` ([Buddies](#buddies-checked-2026-10-05)) | [S]; no call to add a buddy is known |
 | `get_ccards` | certifications (card ID `ccard_uid`, course, date, instructor and centre numbers) | [S]; for an import from SSI later |
 | `get_gear`, `save_gear`, `delete_gear`, `get_gearsets`, `save_gearset` | equipment | [S] |
+| `get_divelog_history`, `set_divelog_history` | the account's totals from before the logbook (`history_scuba_totaldives`, `_since`, `_totaldivetime`, …, the same for freediving) | [R] the read, in the capture of 2026-10-10; the write is a name in the app's code only |
+| `sonar` | the app's social feed (about 830 KB) | [R], capture of 2026-10-10 |
 | `APP_CACHE_CENTER.zip` (`/app/…`, no sign-in) | dive centres | [S]; no licence, like the site list |
 | `my.divessi.com` web logbook | form posts with a session cookie, SSO via `rest.divessi.com/sso/login` | [S]; the fallback if the app API closes |
 
@@ -424,6 +440,10 @@ From the research note. Record the result here with date and app version, and tu
   wildlife IDs; Dive Hub keeps only ID, name, position and country.
 - [ ] A buddy code and a professional's code drawn by Dive Hub: does SSI's app take them (add the buddy; verify a
   dive)? And what do `leader_nr` and `leader_active` hold for a professional and for someone who is none?
+- [ ] The app's upload queue ([research](../research/2026-10-10-ssi-app-bulk-upload.md#owners-checks-open)): log three
+  or four manual dives in the emulator in airplane mode, go online with HTTP Toolkit recording. One call or several,
+  the gaps between them, the calls that follow.
+- [ ] The save's answer from Dive Hub: does a create's answer hold `result.dive`, and does it hold the samples?
 - Dive numbers ([ADR 0048](../decisions/0048-dive-numbers.md)), asked 2026-10-09. Run with `round-trip.ts number`
   (it needs `SSI_SITE_ID`; it makes and deletes throwaway dives in 2000; `--pause` waits for Enter between steps)
   ([what it does and what each result switches](../research/2026-10-09-dive-numbers.md#owners-checks-the-builds-first-step)).
