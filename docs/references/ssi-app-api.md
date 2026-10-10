@@ -67,6 +67,7 @@ Found with the owner's account on 2026-10-10 [R]; the decision is [ADR 0049](../
   sends the number in both on a create.
 - **Dive Hub's side:** such an answer is the error `not_stored` (`provider_not_stored`), for an update or delete by the
   other ID, for a create by the dive missing from the read right after. Migration `0033` marks the Pushes of those days.
+- **Confirmed in use:** with the app's User-Agent, the owner's sends from Dive Hub arrive at SSI again (2026-10-10) [R].
 - **The owner asked SSI** for a supported way on 2026-10-10 (an interface or partner programme, leave for a client
   that says who it is, or another way to bring dives with a profile into MySSI). No answer yet.
 
