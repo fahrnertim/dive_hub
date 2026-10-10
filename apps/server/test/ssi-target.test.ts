@@ -193,6 +193,24 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Provider', () => {
       expect(after.current).toMatchObject({ remoteId: before.remoteId });
       expect(after.pushes[0]).toMatchObject({ state: 'failed', failureCode: 'provider_not_stored' });
     });
+    it('with the Connection numbering as Dive Hub does, "Set number" gives the SSI dive the Dive\'s number and nothing else', async () => {
+      const connectionId = (await status()).connection!.id;
+      expect((await call('PATCH', `/api/divers/${timDiver}`, tim, { divesBefore: 10 })).statusCode).toBe(200);
+      expect((await call('PATCH', `/api/connections/${connectionId}`, tim, { diveNumbers: { follow: true } })).statusCode).toBe(200);
+      type Numbered = { current: { remoteId: string; remoteNumber: number; number: { wanted: number; differs: boolean; canSet: boolean } } };
+      const before = (await status() as unknown as Numbered).current;
+      expect(before.number).toMatchObject({ wanted: 11, differs: true, canSet: true });
+      const comment = ssiDive(before.remoteId).odin_user_log_comment;
+
+      expect((await call('POST', `/api/dives/${diveId}/providers/ssi/number`, tim)).statusCode).toBe(200);
+      expect(ssiDive(before.remoteId)).toMatchObject({ odin_user_log_nr: 11, odin_user_log_comment: comment });
+      const after = await status();
+      expect((after as unknown as Numbered).current).toMatchObject({ remoteNumber: 11, number: { differs: false } });
+      expect(after.pushes[0]).toMatchObject({ action: 'number', state: 'confirmed' });
+
+      await call('PATCH', `/api/connections/${connectionId}`, tim, { diveNumbers: { follow: false } });
+      await call('PATCH', `/api/divers/${timDiver}`, tim, { divesBefore: 0 });
+    });
 
     it('deletes the SSI dive there, and creates a new one when sent again', async () => {
       const remoteId = (await status()).current!.remoteId;

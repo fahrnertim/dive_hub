@@ -29,8 +29,6 @@ import type { SiteImportService } from './sites/import/site-import-service.js';
 import { siteImportRoutes } from './sites/import/site-import-routes.js';
 import type { ProviderLayer } from './providers/layer.js';
 import { providerRoutes } from './providers/routes.js';
-import type { SsiClient } from './providers/ssi/ssi-client.js';
-import { tempNumberChecksRoute } from './providers/ssi/temp-number-checks-route.js';
 import { assessmentRoutes } from './assessment/routes.js';
 import type { AssessmentService } from './assessment/assessment-service.js';
 import { aiAccessRoutes } from './mcp/access-routes.js';
@@ -52,7 +50,6 @@ export interface AppDeps {
   /** Providers such as SSI, their Connections and Pushes (ADR 0024, 0027). */
   providers: ProviderLayer;
   /** TEMPORARY: with it, the owner's checks of SSI's dive numbers run from the Connections page (ADR 0048). */
-  tempSsiClient?: SsiClient;
   blobs: BlobStore;
   auth: Auth;
   /** The dive assessment (ADR 0036): kept up to date after whatever changes a logbook. */
@@ -112,7 +109,6 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
   await app.register(centreRoutes, { prefix: '/api', ...deps, centres: createCentreService(deps.db), divers });
   await app.register(siteImportRoutes, { prefix: '/api', ...deps });
   await app.register(providerRoutes, { prefix: '/api', auth: deps.auth, ...deps.providers });
-  if (deps.tempSsiClient) await app.register(tempNumberChecksRoute, { prefix: '/api', auth: deps.auth, connections: deps.providers.connections, client: deps.tempSsiClient });
   await app.register(aiAccessRoutes, { prefix: '/api', auth: deps.auth, accesses: deps.aiAccesses, baseUrl: deps.baseUrl });
   // The MCP endpoint (ADR 0035): not under /api, authenticated by an AI access's key instead of a session.
   await app.register(mcpEndpoint, { db: deps.db, accesses: deps.aiAccesses, baseUrl: deps.baseUrl });

@@ -109,6 +109,56 @@ describe('the SSI adapter and a save SSI drops', () => {
   });
 });
 
+describe('the SSI adapter and dive numbers (ADR 0048)', () => {
+  const numberAt = (fake: ReturnType<typeof createFakeSsi>, remoteId: string | null) => fake.dives.get(Number(remoteId))!.odin_user_log_nr;
+
+  it('declares that a client sets the number on a create and on an update', () => {
+    expect(SSI_CAPABILITIES.data.dives!.export!.numbers).toEqual({ set: ['create', 'update'], changeRemovesVerification: true });
+  });
+
+  it('sets the number with an update, and leaves it alone without one or when another dive has it', async () => {
+    const { fake, adapter, ctx } = await setUp();
+    const a = await adapter.dives!.open(ctx).create(dive('2026-01-15T09:00:00Z'), 'divehub-1');
+    const b = await adapter.dives!.open(ctx).create(dive('2026-01-16T09:00:00Z'), 'divehub-2');
+    const changed = { ...dive('2026-01-16T09:00:00Z'), notes: 'Turtle' };
+
+    expect((await adapter.dives!.open(ctx).update!(b.remoteId!, changed, null))!.remoteNumber).toBe(2);
+    expect((await adapter.dives!.open(ctx).update!(b.remoteId!, changed, null, 7))!.remoteNumber).toBe(7);
+    expect(numberAt(fake, b.remoteId)).toBe(7);
+    // SSI itself would take a number twice (the owner's check, 2026-10-10): Dive Hub doesn't send it.
+    expect((await adapter.dives!.open(ctx).update!(b.remoteId!, changed, null, 1))!.remoteNumber).toBe(7);
+    expect(numberAt(fake, b.remoteId)).toBe(7);
+    expect(numberAt(fake, a.remoteId)).toBe(1);
+    // Its own number is not "taken".
+    expect((await adapter.dives!.open(ctx).update!(b.remoteId!, changed, null, 7))!.remoteNumber).toBe(7);
+  });
+
+  it('"Set number" changes only the number, names the dive that holds a taken one, and answers null for a dive that is gone', async () => {
+    const { fake, adapter, ctx } = await setUp();
+    const a = await adapter.dives!.open(ctx).create(dive('2026-01-15T09:00:00Z'), 'divehub-1');
+    const b = await adapter.dives!.open(ctx).create(dive('2026-01-16T09:00:00Z'), 'divehub-2');
+    fake.dives.get(Number(b.remoteId))!.odin_user_log_comment = 'Written in the app';
+
+    expect(await adapter.dives!.open(ctx).setNumber!(b.remoteId!, 12)).toEqual({ result: 'set', remoteNumber: 12 });
+    expect(fake.dives.get(Number(b.remoteId))).toMatchObject({ odin_user_log_nr: 12, odin_user_log_comment: 'Written in the app' });
+
+    const saves = fake.calls.filter((c) => c.what === 'save_divelog').length;
+    expect(await adapter.dives!.open(ctx).setNumber!(b.remoteId!, 1)).toMatchObject({ result: 'taken', by: { remoteId: a.remoteId, number: 1 } });
+    expect(fake.calls.filter((c) => c.what === 'save_divelog').length).toBe(saves);
+    expect(numberAt(fake, b.remoteId)).toBe(12);
+
+    expect(await adapter.dives!.open(ctx).setNumber!('999', 3)).toBeNull();
+  });
+
+  it('refuses a "Set number" SSI answers and does not store', async () => {
+    const { fake, adapter, ctx } = await setUp();
+    const a = await adapter.dives!.open(ctx).create(dive('2026-01-15T09:00:00Z'), 'divehub-1');
+    fake.dropSaves = true;
+    await expect(adapter.dives!.open(ctx).setNumber!(a.remoteId!, 5)).rejects.toMatchObject({ reason: 'not_stored' });
+    expect(numberAt(fake, a.remoteId)).toBe(1);
+  });
+});
+
 describe('the SSI adapter\'s read-back fields', () => {
   it('each have a text in the web client (they are no enum the translation test could read)', () => {
     for (const field of SSI_CAPABILITIES.data.dives!.export!.readBackFields!) expect(Object.keys(en.provider.field)).toContain(field);

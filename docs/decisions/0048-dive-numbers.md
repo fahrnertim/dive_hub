@@ -71,7 +71,7 @@ numbers) and amends [ADR 0047](0047-push-runs.md) (what a Push run gains). To be
 - `changeRemovesVerification`: whether changing the number of a dive already there can remove a verification it has
   (ADR 0043).
 
-**SSI** declares `set: ['create']` and `changeRemovesVerification: true` until the owner's checks say more:
+**SSI** declares `set: ['create']` and `changeRemovesVerification: true` until the owner's checks say more (they did on 2026-10-10: "As built"):
 `update` joins when an update with another number is shown to change it, and `changeRemovesVerification` becomes
 false when a verified dive is shown to keep its verification. Each is one line in the adapter and one in the
 [SSI reference](../references/ssi-app-api.md).
@@ -187,7 +187,7 @@ show who holds a taken number and lead there.
   one; MCP is read-only).
 - A Push can now be a number change (`number`); views of a Dive's Pushes need a word for it.
 - At SSI, numbers follow only for dives sent after the setting was turned on, until the User sets the others or a
-  Push run does (22c). Until the checks are run, SSI's adapter sets numbers on a create only.
+  Push run does (22c). Until the checks were run (2026-10-10), SSI's adapter set numbers on a create only.
 - A number change at SSI is a full save of SSI's record. Renumbering a long logbook is as slow as sending it.
 - Not designed: a logbook filter "number differs" (the run's preview counts them), renumbering dives that are only
   at the Provider, more than one logbook per Diver, a number per kind (a separate apnea count).
@@ -203,11 +203,15 @@ show who holds a taken number and lead there.
   - `renumber` takes a row lock on the Diver rows (ordered by id), so two changes at once give the same numbers as one after the
     other.
   - Dive Hub's e2e server gives its two seeded Divers `divesBefore` 41 and 500, so the fixtures stay Dive 42 and 501 to 504.
-- **What SSI declares:** `numbers: { set: ['create'], changeRemovesVerification: true }`. The owner's three checks have not been
-  run (`round-trip.ts number`, see [ssi-app-api.md](../references/ssi-app-api.md#owners-checks-pending)); until they are, "Set
-  number" and numbers on an update are built and tested against the test-only ledger only. A create at SSI carries Dive Hub's
-  number unless a dive in the logbook has it, else the highest plus one. When a check shows that an update sets a number, SSI's
-  adapter gets `update(…, number)` and `setNumber` and declares `set: ['create', 'update']`; if the verification survives, it
-  declares `changeRemovesVerification: false`.
-
-**Temporary check panel.** The owner's checks can also run from the Connections page ("Check numbers at SSI (temporary)" under an active SSI Connection), with the Connection's own access instead of a separate sign-in: `apps/server/src/providers/ssi/number-checks.ts` (shared with `round-trip.ts number`), `temp-number-checks-route.ts` (`POST /api/connections/{id}/temp-ssi-number-checks`, not in the OpenAPI document) and `apps/web/src/TempSsiNumberChecks.tsx`. All three, with their lines in `app.ts`, `main.ts` and `Connections.tsx`, are deleted once the answers are in this section.
+- **What SSI declares, since the owner's checks of 2026-10-10:** `numbers: { set: ['create', 'update'], changeRemovesVerification: true }`.
+  The checks ([results](../references/ssi-app-api.md#owners-checks-pending)): an update with another number changes it; SSI
+  takes a number twice, by an update and by a create, without refusing; the other dives keep their numbers after a delete. So
+  SSI's adapter sets the number on a create, on an update and alone ("Set number": SSI's own record back with only the number
+  changed), each time only when no other dive in the logbook it just read has it, and "Set number" answers `taken` with that
+  dive. A "Set number" whose dive doesn't have the number in the read right after is `provider_not_stored` (ADR 0049).
+  Not checked: a verified dive, so `changeRemovesVerification` stays true and the client warns; it becomes false when a
+  verified dive is shown to keep its verification (`round-trip.ts number --dive … --to …`).
+  Between 2026-10-09 and these checks SSI declared `set: ['create']`.
+- **The checks ran from a temporary panel** on the Connections page, with the Connection's own sign-in (a separate sign-in
+  with Dive Hub's User-Agent of then was answered `signed_out`, ADR 0049). The panel and its route are deleted; the checks
+  themselves stay as `test/fixtures/ssi/number-checks.ts` for `round-trip.ts number`.

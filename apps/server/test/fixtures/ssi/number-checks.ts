@@ -1,9 +1,8 @@
-// TEMPORARY (ADR 0048, "As built"): the owner's checks of how SSI treats a dive's number, used by `round-trip.ts number` and by
-// the temporary "Check numbers at SSI" panel of the Connections page, which runs them with the Connection's own token.
-// Delete this file, the route in `routes.ts`, `TempSsiNumberChecks.tsx` and their lines once the answers are in the ADR.
+// The owner's checks of how SSI treats a dive's number (ADR 0048), run by `round-trip.ts number`. Run on 2026-10-10 except
+// for a verified dive; the results are in docs/references/ssi-app-api.md.
 // It writes to the real SSI account: throwaway dives dated 2000, which it deletes again.
-import { createRecord, deleteRecord, writableRecord, type DiveForSsi } from './ssi-record.js';
-import type { SsiClient, SsiRecord } from './ssi-client.js';
+import { createRecord, deleteRecord, writableRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
+import type { SsiClient, SsiRecord } from '../../../src/providers/ssi/ssi-client.js';
 
 export interface NumberChecks {
   client: SsiClient;
@@ -83,10 +82,10 @@ export async function runNumberChecks(o: NumberChecks): Promise<void> {
       const dive = { ...base, startsAt: new Date(startsAt) };
       // New for every run: SSI may merge a dive with an earlier one that has the same reference.
       const reference = `divehub-number-test-${number}-${runId}`;
-      const { id, answer } = await client.save(account.token, createRecord(dive, { number, accountId: account.accountId, reference }));
+      const { id } = await client.save(account.token, createRecord(dive, { number, accountId: account.accountId, reference }));
       created.push(id);
       references.set(id, reference);
-      log(`   saved ${reference} for account ${account.accountId}; SSI answered dive ID ${id}; its answer: ${JSON.stringify(answer ?? {})}`);
+      log(`   saved ${reference} for account ${account.accountId}; SSI answered dive ID ${id}`);
       return id;
     };
     const isOurs = (d: SsiRecord) => String(d.odin_user_log_divecomputer_dive_ref ?? '').startsWith('divehub-number-test-');

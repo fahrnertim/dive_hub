@@ -7,7 +7,7 @@ import {
 } from '../provider.js';
 import { SsiError, type SsiBuddy, type SsiClient, type SsiLogbook, type SsiRecord } from './ssi-client.js';
 import {
-  buddyIdsOf, COMPARED_FIELDS, compareReadBack, createRecord, deleteRecord, fingerprint, localTime, startChangesAtSsi, updateRecord, withBuddies,
+  buddyIdsOf, COMPARED_FIELDS, compareReadBack, createRecord, deleteRecord, fingerprint, localTime, startChangesAtSsi, updateRecord, withBuddies, writableRecord,
   type DiveForSsi,
 } from './ssi-record.js';
 import { contextOf, parseSsiDive, ssiOrigin, SSI_PARSER } from './ssi-import.js';
@@ -34,9 +34,9 @@ export const SSI_CAPABILITIES: Capabilities = {
           },
         ],
         readBackFields: [...COMPARED_FIELDS],
-        // ADR 0048. A save with another number is not shown to change it yet (the owner's checks, `round-trip.ts number`),
-        // so only a create takes Dive Hub's number; and a changed number may remove a verification until a dive is shown to keep it.
-        numbers: { set: ['create'], changeRemovesVerification: true },
+        // ADR 0048, the owner's checks of 2026-10-10: SSI keeps the number a create or an update carries, and takes one
+        // twice without a word, so the adapter looks itself. Not checked: a verified dive, so a change may remove it.
+        numbers: { set: ['create', 'update'], changeRemovesVerification: true },
       },
       // `list`: the whole logbook, profiles included, in one read (ADR 0030).
       import: { operations: ['list'] },
@@ -171,6 +171,9 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
   function open(ctx: ActionContext): DiveExportAction {
     const logbook = logbookOf(ctx);
     const byId = async (remoteId: string) => (await logbook.current()).dives.find((r) => idOf(r.odin_user_log_id) === remoteId);
+    /** Another dive of the logbook just read that has this number: SSI would take it twice. */
+    const holderOf = async (number: number, except: string) =>
+      (await logbook.current()).dives.find((r) => numberOf(r.odin_user_log_nr) === number && idOf(r.odin_user_log_id) !== except);
     return {
       async find(dive, reference) {
         const { dives } = await logbook.recent();
@@ -190,15 +193,30 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         const record = withBuddies(createRecord(forSsi(dive), { number, accountId: ctx.accountId, reference }), ids);
         return { ...(await saveAndReadBack(ctx, record, number)), leftOut };
       },
-      async update(remoteId, dive, previous) {
+      async update(remoteId, dive, previous, wanted) {
         const remote = await byId(remoteId);
         if (!remote) return null;
         const { ids, leftOut } = buddiesFor(dive, (await logbook.current()).buddies);
         // Buddies set in SSI's app stay; those Dive Hub sent before are replaced by those it sends now.
         const sentBefore = buddyIdsOf(previous);
         const kept = buddyIdsOf(remote).filter((id) => !sentBefore.includes(id) && !ids.includes(id));
-        const record = withBuddies(updateRecord(remote, forSsi(dive)), [...ids, ...kept]);
-        return { ...(await saveAndReadBack(ctx, record, numberOf(remote.odin_user_log_nr))), leftOut };
+        // The number there stays unless Dive Hub's is asked for and no other dive has it.
+        const number = wanted != null && !(await holderOf(wanted, remoteId)) ? wanted : numberOf(remote.odin_user_log_nr);
+        const record = { ...withBuddies(updateRecord(remote, forSsi(dive)), [...ids, ...kept]), odin_user_log_nr: number };
+        return { ...(await saveAndReadBack(ctx, record, number)), leftOut };
+      },
+      async setNumber(remoteId, number) {
+        const remote = await byId(remoteId);
+        if (!remote) return null;
+        const holder = await holderOf(number, remoteId);
+        if (holder) return { result: 'taken', by: remoteDive(holder) };
+        // SSI's own record back with only the number changed: nothing of Dive Hub's newer values goes along.
+        const record = { ...writableRecord(remote), odin_user_log_nr: number };
+        const { id } = await called('save_divelog', ctx.connectionId, () => client.save(ctx.access, record));
+        const after = keep(ctx.connectionId, await called('get_divelog', ctx.connectionId, () => client.logbook(ctx.access)));
+        const stored = after.dives.find((r) => idOf(r.odin_user_log_id) === id);
+        if (!stored || numberOf(stored.odin_user_log_nr) !== number) throw new ProviderError('not_stored', 'save_divelog: SSI answered, but the dive does not have the number saved');
+        return { result: 'set', remoteNumber: number };
       },
       async remove(remoteId) {
         const remote = await byId(remoteId);

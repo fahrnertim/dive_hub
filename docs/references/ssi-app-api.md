@@ -425,15 +425,20 @@ From the research note. Record the result here with date and app version, and tu
 - [ ] A buddy code and a professional's code drawn by Dive Hub: does SSI's app take them (add the buddy; verify a
   dive)? And what do `leader_nr` and `leader_active` hold for a professional and for someone who is none?
 - Dive numbers ([ADR 0048](../decisions/0048-dive-numbers.md)), asked 2026-10-09. Run with `round-trip.ts number`
-  (it needs `SSI_SITE_ID`; it makes and deletes throwaway dives in 2000; `--pause` waits for Enter between steps), a mode slice 22b built (2026-10-09, not run yet) ([what it does and what each result switches](../research/2026-10-09-dive-numbers.md#owners-checks-the-builds-first-step)):
-  - [ ] An update with another `odin_user_log_nr`: does the number change in SSI's logbook and app? Does `internalPk`
-    have to follow? Decides whether SSI's adapter sets numbers on an update ("Set number").
-  - [ ] Two dives with the same number, by an update and by a create: does SSI refuse the second, or keep both?
-    For the record only: Dive Hub never sends a number another dive there has.
+  (it needs `SSI_SITE_ID`; it makes and deletes throwaway dives in 2000; `--pause` waits for Enter between steps)
+  ([what it does and what each result switches](../research/2026-10-09-dive-numbers.md#owners-checks-the-builds-first-step)).
+  Run on 2026-10-10 with the owner's account, from a temporary panel in Dive Hub with the Connection's own sign-in [R]:
+  - [x] An update with another `odin_user_log_nr` changes the number: a dive created as 92 and saved again with 94
+    read back as 94. `internalPk` doesn't have to follow: it reads back `null` whatever was sent. Not looked at: the
+    number in the app's own view. So SSI's adapter sets numbers on an update and with "Set number".
+  - [x] SSI takes a number twice without a word, by an update (a second dive saved with 94: both read back as 94) and
+    by a create (a third dive created as 94). Nothing at SSI stops a duplicate: Dive Hub looks in the logbook it reads
+    before every save and never sends a number another dive there has.
   - [ ] A verified dive whose number is changed (`round-trip.ts number --dive … --to …`, only if the owner wants to
     risk one): is the verification still there? Until shown, Dive Hub warns that it may be lost.
-  - [ ] After a delete: do the other dives keep their numbers? The record has a key
-    `reset_profile_divelog_number_with_deletion` whose effect is unknown.
+  - [x] After a delete the other dives keep their numbers: none of the 88 dives had another number after the three
+    throwaway dives were deleted. The record's key `reset_profile_divelog_number_with_deletion` was sent as the record
+    has it by default; its effect with another value is unknown.
 - [ ] The first Push runs ([ADR 0047](../decisions/0047-push-runs.md)): does SSI refuse anything when 100 dives go
   5 s apart (a save, or the logbook read after it)? Record the `SSI call` line's `detail` and the count that went.
 - [ ] Surface interval: seconds or minutes. Log a dive in the app with a known surface interval (e.g. 1 h 30 min),

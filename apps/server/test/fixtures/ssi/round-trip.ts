@@ -17,7 +17,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
-import { runNumberChecks } from '../../../src/providers/ssi/number-checks.js';
+import { runNumberChecks } from './number-checks.js';
 import { userAgent } from '../../../src/sites/import/polite-http.js';
 import { createSsiClient, type SsiRecord } from '../../../src/providers/ssi/ssi-client.js';
 import { compareReadBack, createRecord, deleteRecord, updateRecord, writableRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
@@ -97,7 +97,6 @@ if (mode === 'read') {
     const at = process.argv.indexOf(name);
     return at >= 0 ? process.argv[at + 1] : undefined;
   };
-  // The checks themselves are shared with the temporary panel of the Connections page (number-checks.ts).
   await runNumberChecks({
     client, access: account.token, accountId: account.accountId, siteId: process.env.SSI_SITE_ID, log: console.log, wait,
     ...(arg('--dive') && { dive: { id: arg('--dive')!, to: Number(arg('--to')) } }),

@@ -49,7 +49,7 @@ const aiAccesses = createAiAccessService(db, auth);
 
 const app = await buildApp(
   {
-    db, imports, siteImports, providers, tempSsiClient: ssiClient, blobs, auth, aiAccesses, assessments, setup, invitations: createInvitations(db), baseUrl: config.baseUrl,
+    db, imports, siteImports, providers, blobs, auth, aiAccesses, assessments, setup, invitations: createInvitations(db), baseUrl: config.baseUrl,
     maxUploadBytes: config.maxUploadBytes, trustedProxies: config.trustedProxies, webDir: config.webDir,
   },
   { logger: { level: config.logLevel } },

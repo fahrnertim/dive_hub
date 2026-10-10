@@ -9,7 +9,6 @@ import { connectable, useProviders, useProviderText } from './lib/providers.ts';
 import { ProviderBuddies } from './ProviderBuddies.tsx';
 import { ProviderDiveImport } from './ProviderDiveImport.tsx';
 import { ProviderDiveNumbers } from './ProviderDiveNumbers.tsx';
-import { TempSsiNumberChecks } from './TempSsiNumberChecks.tsx';
 import { Badge, Button, ConfirmButton, Dialog, Form, Muted, Notice, Panel, RadioGroup, Select, Table, TextField } from './ui/index.ts';
 
 /** A choice with its explanation under it, read together by screen readers. */
@@ -127,7 +126,6 @@ function ProviderConnections({ provider: p }: { provider: ProviderView }) {
       {own.map((c) => <ProviderBuddies key={`buddies-${c.id}`} provider={p} connection={c} />)}
       {own.map((c) => <ProviderDiveImport key={`import-${c.id}`} provider={p} connection={c} several={several} />)}
       {own.map((c) => <ProviderDiveNumbers key={`numbers-${c.id}`} provider={p} connection={c} />)}
-      {own.map((c) => <TempSsiNumberChecks key={`temp-checks-${c.id}`} connection={c} />)}
       {/* ADR 0049: said where the User connects and on the Connection. */}
       {p.notices.includes('presents_as_app') && <Muted>{pt('notice.presents_as_app')}</Muted>}
       {unconnected.length > 0 && <ConnectForm provider={p} divers={unconnected} several={several} />}

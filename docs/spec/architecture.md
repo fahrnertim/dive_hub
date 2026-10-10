@@ -881,9 +881,9 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   alone: a lease, a Push with the action `number`, `provider_number_taken` with the dive there that has it. `numbersFor` decides
   what a send carries (only while the Connection follows and only on an operation the Provider declares). The number is no part of
   `OutgoingDive` or the fingerprint, so a differing number is not "changed since sent".
-- SSI declares `numbers: { set: ['create'], changeRemovesVerification: true }` until the owner's checks
-  (`test/fixtures/ssi/round-trip.ts number`) show that an update sets a number; its create uses Dive Hub's number unless a dive in the
-  logbook has it.
+- SSI declares `numbers: { set: ['create', 'update'], changeRemovesVerification: true }` since the owner's checks of
+  2026-10-10 (`test/fixtures/ssi/round-trip.ts number`): its create, its update and its `setNumber` use Dive Hub's number unless
+  another dive in the logbook has it (SSI itself would take it twice). A verified dive was not checked.
 - Web: no number field in the edit form; "Dive numbers" per Diver (`DiversPage.tsx`), "Number dives in SSI as in Dive Hub"
   (`ProviderDiveNumbers.tsx`), "Set number" in `ProviderPanel.tsx`, "Number on the computer" with the Recording.
 - Tests: `dive-numbers.test.ts`, `provider-numbers.test.ts`, the numbers rules in `provider-contract.ts`, `ssi-adapter.test.ts`; the e2e

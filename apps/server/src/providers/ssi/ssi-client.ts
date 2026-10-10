@@ -88,7 +88,7 @@ export interface SsiClient {
   signIn(email: string, password: string): Promise<SsiAccount>;
   logbook(token: string): Promise<SsiLogbook>;
   /** Creates a dive (`odin_user_log_id: null`) or updates one; returns SSI's dive ID. */
-  save(token: string, record: SsiRecord): Promise<{ id: string; /** TEMPORARY (the owner's number checks): SSI's answer, scalar values only */ answer?: Record<string, string> }>;
+  save(token: string, record: SsiRecord): Promise<{ id: string }>;
 }
 
 export interface SsiClientOptions {
@@ -188,11 +188,7 @@ export function createSsiClient(options: SsiClientOptions): SsiClient {
       // saves for: "added to Log" with an invented ID (ADR 0049).
       const sent = idText(record.odin_user_log_id);
       if (id && sent && id !== sent) throw new SsiError('not_stored', `save_divelog: SSI answered another dive ID than the one saved; nothing was stored (ok: ${JSON.stringify(answer.ok ?? null)})`);
-      if (id) {
-        const answers = Object.fromEntries(Object.entries(answer).filter(([, v]) => v === null || ['string', 'number', 'boolean'].includes(typeof v))
-          .map(([k, v]) => [k, String(v).slice(0, 60)]));
-        return { id, answer: answers };
-      }
+      if (id) return { id };
       // SSI's reason, else which fields it sent instead (names only; values may hold personal data).
       const reason = typeof answer.error === 'string' && answer.error ? answer.error
         : `no dive id in the answer (ok: ${JSON.stringify(answer.ok ?? null)}, fields: ${Object.keys(data).join(', ')}${answer === data ? '' : ` / success: ${Object.keys(answer).join(', ')}`})`;
