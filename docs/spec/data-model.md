@@ -435,6 +435,12 @@ confirmation. Re-pushing an `outdated` Push updates the same remote dive: a new 
 *Implemented (slice 10):* `push` with `action` (`create`, `update`, `link`, `delete`, and since ADR 0048 `number`: only the number there changed, copying the fingerprint and payload of the Push before it), `state`, remote ID, number and
 reference, the record sent (without samples) and a `fingerprint` of it; `outdated` is the fingerprint differing from
 the Dive's current one, worked out when asked, not stored.
+**Push run** (ADR 0047, slice 22c, migration 0034): `push_run` has User, Connection, `provider`, Diver, `status` (`queued`, `running`, `done`,
+`cancelled`, `stopped`), the three choices (`updates`, `updates_removing_verification`, `numbers`), `left_out` (counts by reason, as planned),
+`consecutive_failures`, `stop_code`, `cancel_requested_at`, `created_at`, `started_at` and `finished_at`. One active run per Connection (partial
+unique index `push_run_one_active_uq`); the last five per Connection are kept. `push_run_item` (primary key run and Dive) has `position`, `action`
+(`create`, `update`, `number`), `state` (`waiting`, `sending`, `sent`, `skipped`, `failed`), `outcome`, `reason`, the `push` it made (set null when
+that goes) and `attempts`. A run holds no Dive data: what is sent is read when its turn comes.
 *Providers (ADR 0027, slice 13):* `push.provider` instead of `target`; the fingerprint is the adapter's; `remote_gone` marks a
 Push that found the remote dive deleted there (it was a failure code before). A Provider without an ID back records
 `handed_over`, which has no current remote dive, so sending again hands it over again.

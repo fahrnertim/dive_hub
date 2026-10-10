@@ -888,3 +888,23 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   (`ProviderDiveNumbers.tsx`), "Set number" in `ProviderPanel.tsx`, "Number on the computer" with the Recording.
 - Tests: `dive-numbers.test.ts`, `provider-numbers.test.ts`, the numbers rules in `provider-contract.ts`, `ssi-adapter.test.ts`; the e2e
   server gives the seeded Divers `dives_before` 41 and 500 so the fixtures keep their numbers (42, 501 to 504).
+
+**Slice 22c (2026-10-10): Push runs** ([ADR 0047](../decisions/0047-push-runs.md)).
+- `providers/push-run-service.ts` (`preview`, `start`, `list`, `get`, `cancel`, `continue`, `step`, `requeueActive`), the pure planner
+  `push-run-plan.ts` (`planItem`, `orderItems`) and the routes `push-run-routes.ts`, registered inside `providerRoutes`. The logbook's list
+  filter moved to `dives/list-filter.ts` so `GET /api/dives` and a run's `list` share it.
+- The worker has one task, `push_run_step`, one job per Dive: `step(runId)` sends one Dive through `pushes.send` / `pushes.setNumber` and
+  returns `{afterMs}` (the larger of the adapter's `limits.run.pauseMs` and `limits.pauseMs`) or `null`; the task queues the next job
+  with `runAt` and the job key `push-run:<id>`. No job sleeps, and the worker's two slots serve other work between Dives.
+  `requeueActive()` at worker start puts `sending` items back to `waiting` and queues a step per active run.
+- Planning reads Dive Hub's data and the kept read-back, and calls no Provider (`preview` stores nothing). Number changes are ordered
+  so each number is free when it is set (highest first among those moving up); dives that only swap numbers are `number_taken`.
+  The ceiling `maxDives` cuts the ordered list.
+- What stops a run: `provider_sign_in_needed`, `provider_wrong_credentials` and `provider_not_connected` at once (the Dive stays
+  waiting); the second failure in a row otherwise; `provider_busy` retries behind the others, three attempts, and is no failure.
+  Continue resets the failed items whose reason is worth another try (`provider_unavailable`, `provider_refused`, `provider_not_stored`,
+  `provider_dive_gone`, `internal_error`).
+- Capabilities: `limits.run { pauseMs, maxDives } | null` (SSI 5000 ms and 100; the ledger fake 1000 and 3; hand-over `null`), checked in
+  `provider-contract.ts` (`runProblems`). Web: `PushRun.tsx`. Tests: `push-run-plan.test.ts`, `push-runs.test.ts`, `push-run.spec.ts`, and
+  a case in `ui-quality.spec.ts`; the e2e server gives the fake SSI a 150 ms run pause and has test-only routes to expire SSI's tokens and
+  clear runs.

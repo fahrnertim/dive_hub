@@ -3,6 +3,7 @@ import type pg from 'pg';
 import type { FastifyBaseLogger } from 'fastify';
 import { BACKFILL_GAS_FIGURES_TASK, BACKFILL_POSITIONS_TASK, EXPIRE_WAITING_IMPORTS_TASK, FILL_CYLINDERS_TASK, PROCESS_IMPORT_TASK, type ImportService } from './imports/import-service.js';
 import { IMPORT_SITES_TASK, type SiteImportService } from './sites/import/site-import-service.js';
+import { PUSH_RUN_STEP_TASK, type PushRunService } from './providers/push-run-service.js';
 import type { AiAccessService } from './mcp/access-service.js';
 import type { AssessmentService } from './assessment/assessment-service.js';
 
@@ -13,10 +14,12 @@ const ASSESS_DIVES_TASK = 'assess-dives';
 const PURGE_AI_ACCESS_LOG_TASK = 'purge-ai-access-log';
 
 export async function startWorker(
-  pool: pg.Pool, imports: ImportService, siteImports: SiteImportService, aiAccesses: AiAccessService, assessments: AssessmentService, log: FastifyBaseLogger,
+  pool: pg.Pool, imports: ImportService, siteImports: SiteImportService, aiAccesses: AiAccessService, assessments: AssessmentService, pushRuns: PushRunService, log: FastifyBaseLogger,
 ): Promise<Runner> {
   // An import still "running" now was cut off when the worker last stopped.
   await siteImports.failInterrupted();
+  // A run that was going when the worker stopped goes on: its next step is queued again (ADR 0047).
+  await pushRuns.requeueActive();
   const runner = await run({
     pgPool: pool,
     concurrency: 2,
@@ -36,6 +39,12 @@ export async function startWorker(
         log.info({ siteImportId }, 'importing dive sites');
         await siteImports.run(siteImportId);
         log.info({ siteImportId }, 'dive site import finished');
+      },
+      // One Dive of a Push run; the next step is queued after the Provider's pause, so no job sleeps (ADR 0047).
+      [PUSH_RUN_STEP_TASK]: async (payload, helpers) => {
+        const { runId } = payload as { runId: string };
+        const next = await pushRuns.step(runId);
+        if (next) await helpers.addJob(PUSH_RUN_STEP_TASK, { runId }, { runAt: new Date(Date.now() + next.afterMs), jobKey: `push-run:${runId}`, maxAttempts: 1 });
       },
       [EXPIRE_WAITING_IMPORTS_TASK]: async () => {
         const ended = await imports.expireWaiting();

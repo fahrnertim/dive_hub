@@ -10,6 +10,7 @@ import { toolsParams } from './lib/tools.ts';
 import { pickLanguage } from './i18n/index.ts';
 import { DeletedNotices } from './DeletedDives.tsx';
 import { ImportFilesButton, ImportPanel, ImportProvider, RecentImports } from './ImportPanel.tsx';
+import { PushRunStrip } from './PushRun.tsx';
 import { ReviewLinks, ReviewStrip } from './ReviewStrip.tsx';
 import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
@@ -172,6 +173,7 @@ function Logbook({ params }: { params: LogbookParams }) {
       <LogbookHeader importAction={returning && <ImportFilesButton />} />
       <DeletedNotices />
       <ReviewStrip />
+      <PushRunStrip />
       {returning ? (
         <>
           <DiveList params={params} />

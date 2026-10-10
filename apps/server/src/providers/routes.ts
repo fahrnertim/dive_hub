@@ -14,6 +14,8 @@ import type { ConnectionService } from './connection-service.js';
 import type { DiveImportService } from './dive-import.js';
 import { SYNCED_FIELDS } from './three-way.js';
 import { FIND_BY, OPERATIONS, type ProviderAdapter, type Requirement } from './provider.js';
+import { pushRunRoutes } from './push-run-routes.js';
+import type { PushRunService } from './push-run-service.js';
 import type { PushRow, PushService } from './push-service.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
 
@@ -22,6 +24,7 @@ export interface ProviderRouteDeps {
   providers: ProviderRegistry;
   connections: ConnectionService;
   pushes: PushService;
+  pushRuns: PushRunService;
   buddies: BuddyService;
   diveImports: DiveImportService;
 }
@@ -84,7 +87,13 @@ const ProviderView = Type.Object({
     })),
   }),
   notices: Type.Array(Type.Enum(['shows_unconfirmed', 'presents_as_app']), { description: 'Things a client must say: shows_unconfirmed, the Provider shows dives sent this way as unconfirmed; presents_as_app, Dive Hub introduces itself to the Provider as its own app (ADR 0049)' }),
-  limits: Type.Object({ pauseMs: Type.Integer({ description: 'Pause between two actions on one Connection; requests wait their turn' }) }),
+  limits: Type.Object({
+    pauseMs: Type.Integer({ description: 'Pause between two actions on one Connection; requests wait their turn' }),
+    run: Nullable(Type.Object({
+      pauseMs: Type.Integer({ description: 'Pause between two Dives of a Push run' }),
+      maxDives: Type.Integer({ description: 'The most Dives one Push run sends; start again for the rest' }),
+    }, { description: 'ADR 0047; null: the Provider takes no Push runs' })),
+  }),
 });
 
 const ConnectionView = Type.Object({
@@ -189,6 +198,7 @@ export const PROVIDER_STATUS: Partial<Record<ProblemCode, number>> = {
   invalid_input: 400, encryption_key_missing: 400, provider_wrong_credentials: 400, provider_unsupported: 400,
   provider_already_connected: 409, provider_account_taken: 409, provider_other_account: 409, provider_not_connected: 409,
   provider_sign_in_needed: 409, provider_requirements_unmet: 409, provider_not_sent: 409, provider_dive_gone: 409, provider_busy: 409,
+  push_run_active: 409, push_run_nothing_to_send: 409, push_run_not_found: 404, push_run_not_active: 409, push_run_not_stopped: 409,
   provider_number_taken: 409, provider_numbers_off: 409, provider_number_nothing_to_set: 409,
   provider_unavailable: 502, provider_refused: 502, provider_not_stored: 502, provider_import_off: 409, provider_account_held: 409,
 };
@@ -203,6 +213,7 @@ const ProviderProblem = Type.Object({
     remoteId: Type.String(), number: Nullable(Type.Integer()), startsAt: Nullable(Type.String()),
     maxDepthM: Nullable(Type.Number()), durationMinutes: Nullable(Type.Number()),
   }, { description: 'With provider_number_taken: the dive at the Provider that has the number' })),
+  runId: Type.Optional(Type.String({ description: 'With push_run_active: the run that is going' })),
   diveId: Type.Optional(Nullable(Type.String({ description: 'With provider_number_taken: the Dive here that dive is, if Dive Hub knows it' }))),
 });
 const errors = { 400: Problem, 404: Problem, 409: ProviderProblem, 502: Problem };
@@ -257,7 +268,7 @@ export function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Sta
   };
 }
 
-export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, buddies, diveImports }) => {
+export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, pushRuns, buddies, diveImports }) => {
   app.addHook('onRequest', requireUser(auth));
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof ProviderServiceError) return replyProviderError(error, reply);
@@ -282,6 +293,8 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
   type Status = Awaited<ReturnType<PushService['status']>>;
   const statusView = (s: Status): Static<typeof StatusView> =>
     ({ ...s, current: s.current && { ...s.current, sentAt: s.current.sentAt.toISOString() }, pushes: s.pushes.map(pushView) });
+
+  await app.register(pushRunRoutes, { pushRuns });
 
   app.get('/providers', {
     schema: {

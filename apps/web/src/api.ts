@@ -26,6 +26,8 @@ export class ApiError extends Error {
       unmet?: UnmetView[]; diver?: { id: string; name: string; dives?: number }; centre?: { id: string; name: string };
       /** With provider_number_taken: the dive at the Provider that has the number, and the Dive here it is (ADR 0048). */
       existing?: { remoteId: string; number: number | null; startsAt: string | null }; diveId?: string | null;
+      /** With push_run_active: the run that is going (ADR 0047). */
+      runId?: string;
     } = {},
   ) {
     super(message);
@@ -126,6 +128,10 @@ export const keys = {
   siteImports: ['site-imports'] as const,
   providers: ['providers'] as const,
   connections: ['connections'] as const,
+  /** Push runs (ADR 0047): the User's list, one run with its items, and what a start would do. */
+  pushRuns: ['push-runs'] as const,
+  pushRun: (id: string) => ['push-runs', id] as const,
+  pushRunPreview: (connectionId: string, body: unknown) => ['push-run-preview', connectionId, body] as const,
   /** The Dive at every Provider; one Provider's state sits under it, so refreshing this refreshes both. */
   diveProviders: (diveId: string) => ['dives', diveId, 'providers'] as const,
   providerStatus: (diveId: string, provider: string) => ['dives', diveId, 'providers', provider] as const,
@@ -162,13 +168,13 @@ export function unwrap<T>(result: { data?: T; error?: unknown; response: Respons
     const body = result.error as {
       code?: ProblemCode; error?: string; message?: string; provider?: string; providerName?: string;
       unmet?: UnmetView[]; diver?: { id: string; name: string; dives?: number }; centre?: { id: string; name: string };
-      existing?: { remoteId: string; number: number | null; startsAt: string | null }; diveId?: string | null;
+      existing?: { remoteId: string; number: number | null; startsAt: string | null }; diveId?: string | null; runId?: string;
     } | undefined;
     const message = body?.error ?? body?.message ?? `Request failed (${result.response.status})`;
     const provider = body?.provider ? { id: body.provider, name: body.providerName ?? body.provider } : undefined;
     throw new ApiError(message, result.response.status, body?.code, provider, {
       ...(body?.unmet && { unmet: body.unmet }), ...(body?.diver && { diver: body.diver }), ...(body?.centre && { centre: body.centre }),
-      ...(body?.existing && { existing: body.existing }), ...(body?.diveId && { diveId: body.diveId }),
+      ...(body?.existing && { existing: body.existing }), ...(body?.diveId && { diveId: body.diveId }), ...(body?.runId && { runId: body.runId }),
     });
   }
   return result.data as T;
@@ -579,3 +585,43 @@ export const toolsPlanQuery = (p: ToolsInput) => {
     ...(enabled && { placeholderData: keepPreviousData }),
   });
 };
+
+/** Sending many Dives to a Provider (ADR 0047). */
+export type PushRunView = Awaited<ReturnType<typeof fetchPushRuns>>[number];
+export type PushRunDetail = Awaited<ReturnType<typeof fetchPushRun>>;
+export type PushRunPreview = Awaited<ReturnType<typeof fetchPushRunPreview>>;
+/** What a run sends: the logbook's list as it is, and the three choices (unticked unless the User ticks them). */
+export interface PushRunChoices { list: { siteId?: string | undefined; q?: string | undefined; only?: string | undefined }; updates: boolean; updatesRemovingVerification: boolean; numbers: boolean }
+const pushRunBody = (c: PushRunChoices) => ({
+  dives: { list: { ...(c.list.siteId && { siteId: c.list.siteId }), ...(c.list.q && { q: c.list.q }), ...(c.list.only && { only: c.list.only }) } },
+  updates: c.updates, updatesRemovingVerification: c.updatesRemovingVerification, numbers: c.numbers,
+});
+async function fetchPushRuns() {
+  return unwrap(await api.GET('/api/push-runs'));
+}
+async function fetchPushRun(id: string) {
+  return unwrap(await api.GET('/api/push-runs/{id}', { params: { path: { id } } }));
+}
+async function fetchPushRunPreview(connectionId: string, choices: PushRunChoices) {
+  return unwrap(await api.POST('/api/connections/{id}/push-runs/preview', { params: { path: { id: connectionId } }, body: pushRunBody(choices) }));
+}
+export const pushRunActive = (r: Pick<PushRunView, 'status'>) => r.status === 'queued' || r.status === 'running';
+/** The User's runs, newest first; asked again every two seconds while one is going (no faster: ADR 0047). */
+export const pushRunsQuery = () => queryOptions({
+  queryKey: keys.pushRuns, queryFn: fetchPushRuns, refetchInterval: (q) => (q.state.data?.some(pushRunActive) ? 2000 : false),
+});
+/** One run with its items; the list above has the progress, this has what happened to each Dive. */
+export const pushRunQuery = (id: string) => queryOptions({ queryKey: keys.pushRun(id), queryFn: () => fetchPushRun(id) });
+/** What a run with these choices would do, from Dive Hub's data alone. */
+export const pushRunPreviewQuery = (connectionId: string, choices: PushRunChoices) => queryOptions({
+  queryKey: keys.pushRunPreview(connectionId, choices), queryFn: () => fetchPushRunPreview(connectionId, choices), placeholderData: keepPreviousData, staleTime: 0,
+});
+export async function startPushRun(connectionId: string, choices: PushRunChoices) {
+  return unwrap(await api.POST('/api/connections/{id}/push-runs', { params: { path: { id: connectionId } }, body: pushRunBody(choices) }));
+}
+export async function cancelPushRun(id: string) {
+  return unwrap(await api.POST('/api/push-runs/{id}/cancel', { params: { path: { id } } }));
+}
+export async function continuePushRun(id: string) {
+  return unwrap(await api.POST('/api/push-runs/{id}/continue', { params: { path: { id } } }));
+}

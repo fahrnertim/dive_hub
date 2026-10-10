@@ -26,7 +26,7 @@ import { computerDive, createFakeSsi, handTypedDive } from './fake-ssi.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import { createMerging } from '../src/dives/merging.js';
 import { createDiverService } from '../src/divers/diver-service.js';
-import { dive } from '../src/db/schema.js';
+import { dive, pushRun } from '../src/db/schema.js';
 import { eq } from 'drizzle-orm';
 import { createInvitations } from '../src/users/invitations.js';
 import { createSetup } from '../src/users/setup.js';
@@ -103,9 +103,13 @@ const fakeSsi = createFakeSsi({
     { owner: 5_012_047, id: 2_826_964, buddy_master_id: 4_512_484, firstname: 'Mia', lastname: 'Stone', email: 'mia@example.com', dob: '1985-03-04', phone: '+49 170 000002', city: 'Linz' },
   ],
 });
+const quick = <A extends { capabilities: { limits: { pauseMs: number; run: unknown } } }>(adapter: A): A => ({
+  ...adapter, capabilities: { ...adapter.capabilities, limits: { pauseMs: 0, run: { pauseMs: 150, maxDives: 100 } } },
+});
 const providers = createProviderLayer({
   db, blobs, secrets: createSecretBox(Buffer.alloc(32, 9)),
-  adapters: [createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch }) })],
+  // SSI's pauses between Dives are for the real SSI (5 s in a run); the fake takes them as fast as the browser tests go.
+  adapters: [quick(createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch }) }))],
   // The fake needs no pause between actions; the browser tests would only wait, so the pauses are skipped.
   clock: skippingClock(),
 });
@@ -150,7 +154,7 @@ for (const record of [
 ]) fakeSsi.addDive(6_100_200, record);
 
 // Uploads made by the tests are processed in the background, as in the real app.
-const worker = await startWorker(pool, imports, siteImports, aiAccesses, assessments, app.log);
+const worker = await startWorker(pool, imports, siteImports, aiAccesses, assessments, providers.pushRuns, app.log);
 // Test-only (never in the production app): a browser test changes a dive in an SSI account's logbook, as the User would
 // in SSI's app (ADR 0030: changes taken back). By the account's e-mail and SSI's dive number; only the fields given.
 app.post('/e2e/fake-ssi/dive', { schema: { hide: true } }, async (request) => {
@@ -161,6 +165,21 @@ app.post('/e2e/fake-ssi/dive', { schema: { hide: true } }, async (request) => {
   Object.assign(record, set);
   return { found: true };
 });
+
+// Test-only: SSI's tokens expire (a Connection that keeps no password then needs a new sign-in).
+app.post('/e2e/fake-ssi/expire-tokens', { schema: { hide: true } }, async () => { fakeSsi.expireTokens(); return { ok: true }; });
+
+// Test-only: the dives in an SSI account's logbook are removed (what earlier tests sent), so a run finds no dive there.
+app.post('/e2e/fake-ssi/clear-dives', { schema: { hide: true } }, async (request) => {
+  const { email } = request.body as { email: string };
+  const account = fakeSsi.accounts.find((a) => a.email === email);
+  for (const [key, record] of fakeSsi.dives) if (record.odin_user_log_user_master_id === account?.accountId) fakeSsi.dives.delete(key);
+  return { ok: true };
+});
+
+// Test-only: a run that ended stays in the logbook's strip until dismissed, in each browser's own storage; the tests that
+// start runs remove them, so other tests see no strip.
+app.post('/e2e/push-runs/clear', { schema: { hide: true } }, async () => { await db.delete(pushRun); return { ok: true }; });
 
 await app.listen({ host: '127.0.0.1', port });
 console.log(`e2e server ready on http://localhost:${port}`);

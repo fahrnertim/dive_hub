@@ -77,6 +77,11 @@ export interface Capabilities {
   limits: {
     /** Pause between two actions on one Connection, in ms. */
     pauseMs: number;
+    /**
+     * Push runs (ADR 0047): the pause between two Dives of a run (at least `pauseMs`) and the most Dives one run sends.
+     * Null: no runs. A Provider whose delivery is `handed_over` must declare null.
+     */
+    run: { pauseMs: number; maxDives: number } | null;
   };
 }
 

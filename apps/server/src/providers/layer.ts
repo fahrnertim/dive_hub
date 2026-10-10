@@ -10,6 +10,7 @@ import { createConnectionService } from './connection-service.js';
 import { createDiveImportService } from './dive-import.js';
 import { createLeases, type Clock } from './leases.js';
 import type { ProviderAdapter } from './provider.js';
+import { createPushRunService } from './push-run-service.js';
 import { createPushService } from './push-service.js';
 import { createProviderRegistry } from './registry.js';
 
@@ -18,9 +19,10 @@ export function createProviderLayer(deps: { db: Db; secrets: SecretBox; blobs: B
   const leases = createLeases({ db: deps.db, ...(deps.clock && { clock: deps.clock }) });
   const connections = createConnectionService({ db: deps.db, registry: providers, secrets: deps.secrets, leases });
   const pushes = createPushService({ db: deps.db, registry: providers, connections, leases });
+  const pushRuns = createPushRunService({ db: deps.db, registry: providers, pushes });
   const buddies = createBuddyService({ registry: providers, connections, divers: createDiverService(deps.db) });
   const diveImports = createDiveImportService({ db: deps.db, blobs: deps.blobs, registry: providers, connections });
-  return { providers, connections, pushes, buddies, diveImports };
+  return { providers, connections, pushes, pushRuns, buddies, diveImports };
 }
 
 export type ProviderLayer = ReturnType<typeof createProviderLayer>;

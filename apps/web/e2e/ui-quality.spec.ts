@@ -9,7 +9,7 @@ import { dataFile, type PreparedData } from './prepare.ts';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, diveNumber, seededDiveId, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectGoodPage, externalDiver, openLine,
-  forgetDivers, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences, falseStart, keepFalseStart, tankPodDive
+  clearPushRuns, expireSsiTokens, forgetDivers, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences, falseStart, keepFalseStart, tankPodDive
 } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
@@ -91,6 +91,31 @@ for (const v of variants) {
       } finally {
         await clearParticipants(request, diveId);
         await leaveLena(request);
+      }
+    });
+
+    test('sending many dives to SSI: the dialog and a stopped run', { tag: ['@dives'] }, async ({ page, request }) => {
+      await resetDive(request);
+      try {
+        // The test reef has no SSI site ID: the dialog names what is held back and links to the site.
+        const { connectionId, siteId } = await pushRunSetup(request, diveId, { keepSignedIn: false, siteExternalId: null });
+        await page.goto(`/#/?site=${siteId}`);
+        await page.getByRole('button', { name: v.english ? 'Send to SSI…' : 'An SSI senden…' }).click();
+        await expect(page.getByRole('dialog').getByRole('link', { name: /SSI test reef/ })).toBeVisible();
+        await expectGoodPage(page, title('Logbook'), v);
+        await page.keyboard.press('Escape');
+        // A run that stopped for a sign-in need: the reason and the way on stay in the strip.
+        await request.put(`/api/dive-sites/${siteId}/external-ids/ssi`, { data: { externalId: '7099' }, headers });
+        await expireSsiTokens(request);
+        const started = await request.post(`/api/connections/${connectionId}/push-runs`, { data: { dives: { list: { siteId } } }, headers });
+        expect(started.status(), await started.text()).toBe(202);
+        await page.goto('/#/');
+        await page.reload();
+        await expect(page.getByRole('button', { name: v.english ? 'Continue' : 'Fortsetzen' })).toBeVisible();
+        await expectGoodPage(page, title('Logbook'), v);
+      } finally {
+        await clearPushRuns(request);
+        await leaveSsi(request, diveId);
       }
     });
 

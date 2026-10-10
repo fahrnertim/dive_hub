@@ -504,3 +504,19 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .tools-cylinder .tools-grid { margin-bottom: 0; }
 .tools-cylinder { margin-top: var(--space-5); }
 .input::placeholder { color: var(--color-text-muted); opacity: 1; }
+/* Push runs (ADR 0047): the dialog before sending and the strip while a run goes and after it. */
+.logbook-send { align-self: end; }
+.push-run-dialog { display: grid; gap: var(--space-3); }
+.push-run-dialog .dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-3); margin-top: var(--space-2); }
+.push-run-count { margin: 0; font-size: var(--text-md); }
+.push-run-leftout h3 { margin: 0 0 var(--space-1); font-size: var(--text-md); }
+.push-run-leftout ul, .push-run-items { margin: 0; padding-left: var(--space-5); display: grid; gap: var(--space-1); }
+.push-run-strip { flex-direction: column; align-items: stretch; }
+.push-run-progress { display: grid; gap: var(--space-1); flex: 1; }
+.push-run-bar { height: 0.5rem; border-radius: var(--radius-sm); background: var(--color-surface); overflow: hidden; }
+.push-run-fill { height: 100%; background: var(--color-accent); transition: width var(--duration-fast); }
+.push-run-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); }
+.push-run-head > p { margin: 0; flex: 1 1 16rem; }
+.push-run-actions { display: flex; gap: var(--space-2); }
+.push-run-items { list-style: none; padding-left: 0; }
+@media (prefers-reduced-motion: reduce) { .push-run-fill { transition: none; } }

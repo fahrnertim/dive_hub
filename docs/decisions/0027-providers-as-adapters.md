@@ -52,7 +52,8 @@ and pass through to clients; Users see no change, apart from signing in to SSI o
 - **Read-back fields**, the names under which differences are reported (clients translate them).
 - **Notices** a client must show, e.g. `shows_unconfirmed` (SSI shows dives sent this way as unconfirmed).
 - **Limits:** the pause between actions on one Connection. One action at a time per Connection holds for every Provider,
-  so it isn't declared.
+  so it isn't declared. Since [ADR 0047](0047-push-runs.md) also `limits.run` (`pauseMs` between two Dives of a Push run, `maxDives`
+  per run; `null` for a Provider that takes no runs).
 
 Its behaviour is a small interface: `signIn`, and per kind an `open(context)` that returns the operations for one
 action. Everything the Provider says comes back as typed values: an adapter error carries a reason (`wrong_credentials`,
@@ -218,7 +219,7 @@ Provider is called.
   action makes up to four).
 - **Waiting up to 30 s:** a request stays open up to 30 s plus its action. A reverse proxy with a shorter timeout answers
   with a gateway error instead of `provider_busy`. More than about six SSI sends queued at once hit the limit; the web
-  client sends one at a time, and batch sending will go through the worker (ADR 0010).
+  client sends one at a time, and batch sending goes through the worker (Push runs, ADR 0047, built in slice 22c).
 
 ### Considered
 - **Advisory locks:** see above.

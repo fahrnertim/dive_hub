@@ -36,7 +36,7 @@ export async function seededDiveId(api: APIRequestContext): Promise<string> {
   }
   throw new Error('the seeded Dive is not in the logbook');
 }
-const headers = { origin: E2E_BASE_URL };
+export const headers = { origin: E2E_BASE_URL };
 
 /**
  * Puts the seeded Dive back to its imported state: no Overrides, no notes, the main computer as
@@ -547,4 +547,39 @@ export async function waitingImport(api: APIRequestContext): Promise<string> {
 export async function cancelWaitingImports(api: APIRequestContext) {
   const imports = await (await api.get('/api/imports')).json() as { id: string; status: string }[];
   for (const i of imports.filter((x) => x.status === 'awaiting_choice')) await api.post(`/api/imports/${i.id}/cancel`, { headers });
+}
+
+/**
+ * Erika's SSI connection as the push-run tests need it: the password not kept (so an expired token stops a run), and
+ * the test reef's SSI site ID set or taken away. Returns the Connection, the site and the Dive's id.
+ */
+export async function pushRunSetup(api: APIRequestContext, diveId: string, options: { keepSignedIn: boolean; siteExternalId: string | null }) {
+  await disconnectSsi(api);
+  const me = await (await api.get('/api/me')).json() as { ownDiver: { id: string } };
+  const made = await api.post('/api/connections/ssi', { data: { diverId: me.ownDiver.id, ...SSI_ACCOUNT, keepSignedIn: options.keepSignedIn }, headers });
+  if (!made.ok()) throw new Error(`connecting to SSI failed: ${made.status()} ${await made.text()}`);
+  const connection = await made.json() as { id: string };
+  await readyForSsi(api, diveId);
+  await api.post('/e2e/fake-ssi/clear-dives', { data: { email: SSI_ACCOUNT.login }, headers });
+  const dive = await (await api.get(`/api/dives/${diveId}`)).json() as { site: { id: string } };
+  await api.put(`/api/dive-sites/${dive.site.id}/external-ids/ssi`, { data: { externalId: options.siteExternalId }, headers });
+  return { connectionId: connection.id, siteId: dive.site.id };
+}
+
+/** Makes the fake SSI forget every token it issued, as when SSI's tokens expire. */
+export async function expireSsiTokens(api: APIRequestContext) {
+  await api.post('/e2e/fake-ssi/expire-tokens', { data: {}, headers });
+}
+
+export async function signInSsi(api: APIRequestContext, connectionId: string) {
+  const response = await api.post(`/api/connections/${connectionId}/sign-in`, { data: { password: SSI_ACCOUNT.password, keepSignedIn: false }, headers });
+  if (!response.ok()) throw new Error(`signing in to SSI failed: ${response.status()} ${await response.text()}`);
+}
+
+/** Stops any Push run that goes and removes all of them, so the next test starts without a strip. */
+export async function clearPushRuns(api: APIRequestContext) {
+  for (const run of await (await api.get('/api/push-runs')).json() as { id: string; status: string }[]) {
+    if (run.status === 'queued' || run.status === 'running') await api.post(`/api/push-runs/${run.id}/cancel`, { headers });
+  }
+  await api.post('/e2e/push-runs/clear', { data: {}, headers });
 }

@@ -59,6 +59,18 @@ export function numbersProblems(adapter: ProviderAdapter): string[] {
   return problems;
 }
 
+/** What a Provider's `limits.run` must satisfy (ADR 0047): a run's pause is at least the Connection's, and a hand-over takes no runs. */
+export function runProblems(adapter: ProviderAdapter): string[] {
+  const { limits, data } = adapter.capabilities;
+  if (!limits.run) return [];
+  const problems: string[] = [];
+  if (limits.run.pauseMs < limits.pauseMs) problems.push('run.pauseMs is below the Connection’s pauseMs');
+  if (limits.run.maxDives < 1) problems.push('run.maxDives is below 1');
+  // Without an ID back, a second run would send everything again.
+  if (data.dives?.export?.delivery === 'handed_over') problems.push('run with delivery handed_over');
+  return problems;
+}
+
 /** Operations with a case below. */
 const CASES = [
   'dives.export.create', 'dives.export.readBack', 'dives.export.find', 'dives.export.link', 'dives.export.update',
@@ -91,6 +103,9 @@ export function providerContract(name: string, make: () => ContractHarness) {
       expect(c.name.length).toBeGreaterThan(0);
       expect(['none', 'password', 'token']).toContain(c.signIn.kind);
       expect(c.limits.pauseMs).toBeGreaterThanOrEqual(0);
+      if (c.limits.run) expect(c.limits.run.pauseMs).toBeGreaterThanOrEqual(c.limits.pauseMs);
+      // Without an ID back, a second run would send everything again (ADR 0047).
+      if (c.data.dives?.export?.delivery === 'handed_over') expect(c.limits.run).toBeNull();
       const exports = c.data.dives?.export;
       expect(!!exports).toBe(!!adapter.dives);
       if (exports) {

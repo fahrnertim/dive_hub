@@ -1,14 +1,14 @@
 ---
 title: "ADR 0047: Push runs, sending many Dives to a Provider in one action"
 summary: A User sends the Dives the logbook's list shows to one Provider as a Push run - previewed from Dive Hub's data, run by the worker one Dive at a time with the adapter's own pause and ceiling (SSI 5 s, 100), updates only when chosen, Dives that can't go skipped and reported, stopped after two failures in a row, cancellable, continued after a restart.
-status: proposed
+status: accepted
 date: 2026-10-09
 ---
 
 # ADR 0047: Push runs, sending many Dives to a Provider in one action
 
 ## Status
-Proposed – 2026-10-09. The owner answered the open questions the same day (marked "owner" below). Extends
+Accepted – 2026-10-10, built in slice 22c (see "As built" at the end). Proposed 2026-10-09. The owner answered the open questions the same day (marked "owner" below). Extends
 [ADR 0027](0027-providers-as-adapters.md) (a new limit an adapter declares; "batch sending will go through the worker")
 and builds on [ADR 0010](0010-graphile-worker-job-queue.md), [ADR 0029](0029-push-requirements-and-buddies.md) and
 [ADR 0040](0040-logbook-rows-and-filters.md). To be built as slice 22c, after the dive numbers slice (22b, owner 2026-10-09) and before slice 23
@@ -207,3 +207,20 @@ run's reason with the way to fix it and to continue; errors that don't time out.
   12 minutes each, a logbook of 500 that moved by one is five runs.
 - Not designed: bulk import from a Provider, bulk delete at a Provider, a run over several Providers at once, a
   schedule ("send new Dives by itself"), an MCP tool that sends.
+
+## As built (slice 22c, 2026-10-10)
+
+Everything above was built as decided. What the code settled, and the few additions:
+
+- **Tables and routes:** `push_run` and `push_run_item` (migration 0034, [data model](../spec/data-model.md)); the six routes and the duties of a
+  client are in the [client contract](../spec/clients.md#sending-many-dives-to-a-provider-push-runs); the worker step is in the
+  [architecture](../spec/architecture.md).
+- **Additions to the preview:** `leftOut` (the same counts a started run keeps), and `blocked.dives` is the first 100 with `siteId` so a
+  client groups them by site. The body of preview and start is the same.
+- **Not ordered:** an update that also carries a number (the dive is changed and the number differs) is one save with the number in it, so it
+  is not part of the number-changing order: a create running before it can take that number first (Dive Hub never sends a number another
+  dive there holds). To renumber many dives, start a run with only `numbers` ticked.
+- **Failures:** a Provider's `provider_busy` is retried behind the other work and is no failure; a Dive deleted while the run waits is
+  skipped as `dive_not_found`; a run whose Provider is no longer on this instance stops with `provider_not_connected`.
+- **Client:** the "Send to SSI…" button in the logbook's toolbar opens the dialog; the strip above the list shows progress, the result
+  with what was not sent, or the stop with Continue. The e2e pause is 150 ms (the real one is 5 s).

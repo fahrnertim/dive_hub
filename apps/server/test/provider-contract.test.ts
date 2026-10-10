@@ -6,7 +6,7 @@ import type { OutgoingDive } from '../src/providers/provider.js';
 import { createFakeHandover } from './fake-handover-provider.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { computerDive, createFakeSsi, handTypedDive } from './fake-ssi.js';
-import { numbersProblems, providerContract } from './provider-contract.js';
+import { numbersProblems, providerContract, runProblems } from './provider-contract.js';
 import { describe, expect, it } from 'vitest';
 
 const dive: OutgoingDive = {
@@ -97,5 +97,16 @@ describe('the contract rules for numbers', () => {
     const handover = createFakeHandover().adapter;
     (handover.capabilities.data.dives!.export as unknown as { numbers: unknown }).numbers = { set: ['create'], changeRemovesVerification: false };
     expect(numbersProblems(handover)).toContain('numbers with delivery handed_over');
+  });
+
+  it('finds a run limit below the Connection’s pause, and runs on a hand-over', () => {
+    expect(runProblems(ledger())).toEqual([]);
+    const slow = ledger();
+    slow.capabilities.limits.run = { pauseMs: 100, maxDives: 3 };
+    expect(runProblems(slow)).toEqual(['run.pauseMs is below the Connection’s pauseMs']);
+    const handover = createFakeHandover().adapter;
+    expect(runProblems(handover)).toEqual([]);
+    handover.capabilities.limits.run = { pauseMs: 1000, maxDives: 3 };
+    expect(runProblems(handover)).toEqual(['run with delivery handed_over']);
   });
 });

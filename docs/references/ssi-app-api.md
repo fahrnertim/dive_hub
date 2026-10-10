@@ -119,6 +119,7 @@ Only when a User does something. There are no background calls: the worker never
 | Open the buddy list (Connections) or the buddy picker on a dive | `get_divelog` (may come from the kept read-back) |
 | Show what importing the dives would do (the preview, [ADR 0030](../decisions/0030-importing-dives-from-providers.md)) | `get_divelog` (always read afresh) |
 | Start the import | `get_divelog` (may come from the kept read; the worker never calls SSI) |
+| Send many dives (a Push run, [ADR 0047](../decisions/0047-push-runs.md)) | per dive as "Send a dive" above, one dive every 5 s (the worker; `limits.run`), at most 100 per run; a run stops at once when SSI wants a new sign-in |
 | Any of these after SSI's token expired, with the password kept | `authenticate` first |
 
 The browser also reads again when the site or buddy picker is open and its data is older than 5 or 2 minutes. That

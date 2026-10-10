@@ -10,6 +10,7 @@ import {
   importJob, participant, recording, sampleSeries,
 } from './db/schema.js';
 import { downsampleMinMax } from './dives/downsample.js';
+import { DIVE_ONLY, diveListFilter, FINDINGS_SHOWN, type DiveOnly } from './dives/list-filter.js';
 import { Problem, problem } from './http/problems.js';
 import type { ImportService } from './imports/import-service.js';
 import { UploadTooLargeError } from './storage/blob-store.js';
@@ -60,8 +61,6 @@ export const ImportView = Type.Object({
 
 /** The logbook list (ADR 0017, 0040): a page of Dives, sorted, searched, narrowed by "show only" filters, with the total. */
 const DIVE_SORTS = ['startsAt', 'number', 'maxDepth', 'duration'] as const;
-const DIVE_ONLY = ['no-recording', 'no-site', 'with-findings', 'not-at-provider'] as const;
-type DiveOnly = (typeof DIVE_ONLY)[number];
 const ONLY_PATTERN = `^(${DIVE_ONLY.join('|')})(,(${DIVE_ONLY.join('|')}))*$`;
 const DiveListQuery = Type.Object({
   diverId: Type.Optional(Type.String({ format: 'uuid', description: 'Only this Diver\'s Dives' })),
@@ -184,23 +183,6 @@ async function withDecisions(db: Db, rows: (typeof importJob.$inferSelect)[]) {
   return views;
 }
 
-/** Findings that differ from guidance and that the User neither dismissed on the Dive nor muted for its Diver. */
-const FINDINGS_SHOWN = sql<number>`(select count(*)::int from dive_finding f where f.dive_id = "dive"."id" and f.severity <> 'info'
-  and not exists (select 1 from finding_dismissal x where x.dive_id = f.dive_id and x.rule = f.rule)
-  and not exists (select 1 from muted_rule m where m.diver_id = "dive"."diver_id" and m.rule = f.rule))`.mapWith(Number);
-
-const NO_RECORDING = sql`not exists (select 1 from recording r where r.dive_id = "dive"."id" and r.deleted_at is null)`;
-
-/**
- * A Provider the User is connected to for the Dive's Diver has no current dive for it: the newest Push there that decides
- * ("found gone", or confirmed with a remote ID or a delete) is none, a delete or gone. The same rule as `currentRemote`.
- */
-const notAtProvider = (userId: string) => sql`exists (select 1 from connection c where c.user_id = ${userId}::uuid and c.diver_id = "dive"."diver_id"
-  and not exists (select 1 from (select p.action, p.remote_gone from push p where p.dive_id = "dive"."id" and p.provider = c.provider
-      and (p.remote_gone or (p.state = 'confirmed' and (p.action = 'delete' or p.remote_id is not null)))
-      order by p.created_at desc, p.id desc limit 1) newest
-    where not newest.remote_gone and newest.action <> 'delete'))`;
-
 /** The local month of a Dive, as the logbook groups it: an unknown offset keeps the wall-clock time as it is. */
 const LOCAL_MONTH = sql<string>`to_char("dive"."starts_at" at time zone 'UTC' + make_interval(secs => coalesce("dive"."utc_offset_seconds", 0)), 'YYYY-MM')`;
 
@@ -301,24 +283,7 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
     const { diverId, siteId, q, only, sort = 'startsAt', order = 'desc' } = query;
     const managed = await managedDiverIds(request);
     const divers = diverId ? managed.filter((id) => id === diverId) : managed;
-    const filters: Record<DiveOnly, SQL> = {
-      'no-recording': NO_RECORDING,
-      'no-site': isNull(dive.siteId),
-      'with-findings': sql`${FINDINGS_SHOWN} > 0`,
-      'not-at-provider': notAtProvider(userId(request)),
-    };
-
-    const text = q?.trim();
-    let search: SQL | undefined;
-    if (text) {
-      const pattern = `%${text.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
-      const asNumber = /^\d{1,9}$/.test(text) ? Number(text) : undefined;
-      search = or(ilike(dive.notes, pattern), ilike(diveSite.name, pattern), asNumber === undefined ? undefined : eq(dive.number, asNumber));
-    }
-    // The counts follow the Diver and the search but not the chosen filters, so a chip keeps its number once pressed.
-    const base = and(inArray(dive.diverId, divers), isNull(dive.deletedAt), siteId ? eq(dive.siteId, siteId) : undefined, search);
-    const chosen = (only?.split(',') ?? []) as DiveOnly[];
-    const where = and(base, ...chosen.map((f) => filters[f]));
+    const { filters, base, where } = diveListFilter({ userId: userId(request), diverIds: divers, siteId, q, only });
     const column = { startsAt: dive.startsAt, number: dive.number, maxDepth: dive.maxDepthM, duration: dive.durationSeconds }[sort];
     // Dives without a value (no number, no depth) go last either way; the start time breaks ties.
     const direction = order === 'asc' ? sql`asc nulls last` : sql`desc nulls last`;

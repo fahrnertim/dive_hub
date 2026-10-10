@@ -907,6 +907,75 @@ export const diveLease = pgTable(
   (t) => [primaryKey({ columns: [t.diveId, t.provider] })],
 );
 
+export const pushRunStatus = pgEnum('push_run_status', ['queued', 'running', 'done', 'cancelled', 'stopped']);
+export const pushRunItemState = pgEnum('push_run_item_state', ['waiting', 'sending', 'sent', 'skipped', 'failed']);
+
+/** What a Push run left out when it started, as counts (ADR 0047, 0048). */
+export interface PushRunLeftOut {
+  upToDate: number;
+  requirementsUnmet: number;
+  updateNotChosen: number;
+  removesVerification: number;
+  updateUnsupported: number;
+  beyondCeiling: number;
+  notFound: number;
+  numberNotChosen: number;
+  numberTaken: number;
+}
+
+/**
+ * One User's request to send many Dives of one Diver to one Provider (ADR 0047). The worker sends one item at a time
+ * through the ordinary Push; only one is queued or running per Connection (the partial unique index).
+ */
+export const pushRun = pgTable(
+  'push_run',
+  {
+    id: id(),
+    userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    connectionId: uuid('connection_id').notNull().references(() => connection.id, { onDelete: 'cascade' }),
+    provider: text('provider').notNull(),
+    diverId: uuid('diver_id').notNull().references(() => diver.id),
+    status: pushRunStatus('status').notNull().default('queued'),
+    updates: boolean('updates').notNull(),
+    updatesRemovingVerification: boolean('updates_removing_verification').notNull(),
+    numbers: boolean('numbers').notNull().default(false),
+    leftOut: jsonb('left_out').$type<PushRunLeftOut>().notNull(),
+    /** Failures in a row; the second stops the run. */
+    consecutiveFailures: integer('consecutive_failures').notNull().default(0),
+    /** Why it stopped, as a problem code. */
+    stopCode: text('stop_code'),
+    cancelRequestedAt: timestamp('cancel_requested_at', { withTimezone: true }),
+    createdAt: createdAt(),
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('push_run_one_active_uq').on(t.connectionId).where(sql`${t.status} in ('queued', 'running')`),
+    index('push_run_user_idx').on(t.userId, t.createdAt),
+  ],
+);
+
+/** One Dive of a Push run: what is done with it, where it stands, and the Push it made. */
+export const pushRunItem = pgTable(
+  'push_run_item',
+  {
+    runId: uuid('run_id').notNull().references(() => pushRun.id, { onDelete: 'cascade' }),
+    diveId: uuid('dive_id').notNull().references(() => dive.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    /** `create`, `update` or `number`. */
+    action: text('action').notNull(),
+    state: pushRunItemState('state').notNull().default('waiting'),
+    /** `created`, `updated`, `linked` or `numbered`. */
+    outcome: text('outcome'),
+    /** A skip reason, or the problem code of a failure. */
+    reason: text('reason'),
+    pushId: uuid('push_id').references(() => push.id, { onDelete: 'set null' }),
+    attempts: integer('attempts').notNull().default(0),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+  },
+  (t) => [primaryKey({ columns: [t.runId, t.diveId] }), index('push_run_item_order_idx').on(t.runId, t.position)],
+);
+
 export const actorType = pgEnum('actor_type', ['user', 'import', 'system', 'site_import']);
 
 /** A recorded change to logbook data: who or what changed which values, and when. */

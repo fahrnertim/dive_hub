@@ -10,6 +10,7 @@ import {
 import { useAddressSearch } from './lib/address-search.ts';
 import { usePageTitle } from './lib/page.ts';
 import { useNames, useProviders } from './lib/providers.ts';
+import { SendToProvider } from './PushRun.tsx';
 import { ProfileSketch } from './ProfileSketch.tsx';
 import { sketchScale } from './lib/sketch.ts';
 import { Avatar, Button, DiverAvatar, Icon, Muted, Notice, PageHeader, Panel, Select, TextField, ToggleChip } from './ui/index.ts';
@@ -114,6 +115,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
                 options={SORT_CHOICES.map((c) => ({ id: c.id, label: t(`logbook.sort.${c.id}`) }))}
               />
             </div>
+            <SendToProvider params={params} />
           </div>
           {dives.data && <ShowOnly params={params} counts={dives.data.counts} />}
         </>

@@ -508,6 +508,42 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
     there, which trying again doesn't fix (SSI does this to a client it takes no saves from). Say that the Provider may
     no longer take dives from Dive Hub, and that the dive there is as it was.
 
+### Sending many Dives to a Provider (Push runs)
+
+A **Push run** sends many Dives of one Diver to one Provider ([ADR 0047](../decisions/0047-push-runs.md), amended by
+[ADR 0048](../decisions/0048-dive-numbers.md)). The server makes an ordinary Push per Dive, one at a time, paced for the
+Provider; the client only asks, shows and reports. A Provider takes runs when `GET /api/providers` gives it
+`limits.run` (`pauseMs`, `maxDives`; `null` means no runs: a hand-over Provider). Routes (all under the signed-in User):
+`POST /api/connections/{id}/push-runs/preview`, `POST /api/connections/{id}/push-runs` (202), `GET /api/push-runs`,
+`GET /api/push-runs/{id}` (with the items), `POST /api/push-runs/{id}/cancel` and `POST /api/push-runs/{id}/continue` (202).
+The body of the first two is `dives` (exactly one of `list`: the logbook's `siteId`, `q` and `only` as `GET /api/dives`
+takes them, and `ids`, up to 500) and the three choices `updates`, `updatesRemovingVerification` and `numbers`, all false
+unless the User ticks them.
+
+- **Must show a preview before anything is sent**, from the preview route (it stores nothing and calls no Provider): how many
+  Dives are new (`counts.create`), what is left out and why (`leftOut`, `blocked`, `beyondCeiling`), `withLeftOut` (Dives that
+  go without something the Provider can't take), the Provider's `notices`, and the time (`estimatedSeconds`) with the words
+  that the User can leave. Offer the three choices **unticked**, each only where it matters: updates (`counts.update`, it
+  replaces the Provider's values), updates that remove a verification (only with the first), numbers
+  (`counts.number`; say what `counts.numberRemovingVerification` and `counts.numberTaken` hold back). Send nothing when
+  `send` is 0.
+- **Lead from what is held back to its fix:** `blocked.dives` carry `siteId` and `unmet` (the same requirements as a single
+  Dive's status), so group them by site and link to it; Dives without a site to the logbook's "no site" filter.
+- **Must show the run while it goes and after it:** `counts` over `counts.total` as progress, one Stop (`cancel`; the Dive
+  being sent is finished first, `cancelRequested`), and the result. Poll `GET /api/push-runs` while a run is active; announce
+  the start and the end, not every Dive. A run ends as `done`, `cancelled` or `stopped`.
+- **A `stopped` run says why and offers Continue** (`stopCode`: a sign-in need, wrong credentials, or two failures in a row).
+  It does not time out and is no toast. Continue takes the failed Dives that are worth another try first, then the waiting
+  ones. A sign-in need is fixed in the account first.
+- **Report what was not sent** from `items` (`state` `skipped` with a `reason`: `exists`, `requirements_unmet`, `up_to_date`,
+  `update_not_chosen`, `removes_verification`, `update_unsupported`, `dive_not_found`, `number_taken`; `failed` with a problem
+  code), each with the Dive.
+- **One run per Connection at a time:** `push_run_active` carries the `runId` of the one that goes; show it instead of an error.
+  Other codes: `push_run_nothing_to_send`, `push_run_not_found`, `push_run_not_active`, `push_run_not_stopped`. The last five
+  runs of a Connection are kept.
+- *Web:* `PushRun.tsx` (`SendToProvider` in the logbook's toolbar, `PushRunStrip` above the list); the ended run's Dismiss is
+  kept in the browser per run id.
+
 ### Importing dives from a Provider (SSI)
 From the Connection (`diveImport` on `GET /api/connections`, null when the Provider imports no dives) and the
 Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/0030-importing-dives-from-providers.md).

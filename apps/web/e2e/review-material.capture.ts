@@ -10,7 +10,7 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, diveNumber, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, falseStart, forgetDivers, keepFalseStart, mergePair, mergeablePair, tankPodDive,
-  leaveLena, leaveSsi, lenaReady, openLine, readyForSsi, sendToSsi, setBuddies, setPreferences,
+  clearPushRuns, expireSsiTokens, leaveLena, leaveSsi, lenaReady, openLine, pushRunSetup, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
 const out = process.env.REVIEW_OUT ?? 'review-output/';
@@ -526,6 +526,36 @@ test('review material', async ({ page, request, browser }) => {
     if (want('account')) {
       await page.goto('/#/account'); await page.reload(); await page.getByText('Verbunden, Passwort gespeichert').waitFor();
       await capture(page, '31-account-ssi-de-dark-390', { aria: false });
+    }
+    // Sending many dives (ADR 0047): the dialog with a dive held back, and a run stopped by a sign-in need; German on a dark phone.
+    if (want('dives')) {
+      await setPreferences(request, { language: 'en' });
+      await page.emulateMedia({ colorScheme: 'light' });
+      await page.setViewportSize({ width: 1280, height: 900 });
+      const { connectionId, siteId } = await pushRunSetup(request, dive42, { keepSignedIn: false, siteExternalId: null });
+      await page.goto(`/#/?site=${siteId}`); await page.reload();
+      await page.getByRole('button', { name: 'Send to SSI…' }).click();
+      await page.getByRole('dialog').getByText(/held back/).waitFor();
+      await capture(page, '32-logbook-send-dialog', { full: false });
+      await page.keyboard.press('Escape');
+      await request.put(`/api/dive-sites/${siteId}/external-ids/ssi`, { headers, data: { externalId: '7099' } });
+      await expireSsiTokens(request);
+      await request.post(`/api/connections/${connectionId}/push-runs`, { headers, data: { dives: { list: { siteId } } } });
+      await page.reload(); await page.getByRole('button', { name: 'Continue' }).waitFor();
+      await capture(page, '33-logbook-run-stopped');
+      await setPreferences(request, { language: 'de' });
+      await page.emulateMedia({ colorScheme: 'dark' });
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.reload(); await page.getByRole('button', { name: 'Fortsetzen' }).waitFor();
+      await capture(page, '34-logbook-run-stopped-de-dark-390');
+      await page.getByRole('button', { name: 'An SSI senden…' }).click();
+      await page.getByRole('dialog').waitFor();
+      await capture(page, '35-logbook-send-dialog-de-dark-390', { full: false });
+      await page.keyboard.press('Escape');
+      await clearPushRuns(request);
+      await leaveSsi(request, dive42);
+      await setPreferences(request, { language: 'en' });
+      await page.emulateMedia({ colorScheme: 'light' });
     }
     await setPreferences(request, { language: null });
     await page.emulateMedia({ colorScheme: 'light' });
