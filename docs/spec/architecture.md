@@ -87,7 +87,7 @@ switches it on; behind a reverse proxy, `/mcp` must be forwarded like `/api`.
 | `DIVEHUB_BASE_URL` | Public URL users open (required in production). With https, cookies are `Secure` and use the `__Secure-` prefix. Invitation links point here. |
 | `DIVEHUB_TRUSTED_PROXIES` | Comma-separated IPs/CIDRs of the reverse proxy. Only their `X-Forwarded-For` counts for the client IP (rate limiting, session records). |
 | `DIVEHUB_AUTH_SECRET` | Cookie signing secret; generated into the data directory when unset. |
-| `DIVEHUB_CONTACT` | Optional: the operator's e-mail address or URL, added to the User-Agent of Site imports ([below](#dive-site-imports-and-licenses)) and of calls to SSI. |
+| `DIVEHUB_CONTACT` | Optional: the operator's e-mail address or URL, added to the User-Agent of Site imports ([below](#dive-site-imports-and-licenses)). Not sent to SSI: calls there carry the SSI app's User-Agent ([ADR 0049](../decisions/0049-ssi-app-user-agent.md)). |
 | `DIVEHUB_ENCRYPTION_KEY` | Optional: 32 bytes as base64 (`openssl rand -base64 32`). Encrypts what Dive Hub keeps for Targets (SSI tokens and passwords, [ADR 0024](../decisions/0024-ssi-target-via-app-api.md)). Without it, Users can't choose "Keep me signed in" for SSI, and tokens are stored as they are. Keep it apart from database backups; losing it means every User signs in to SSI again. A wrong length stops the server at start. |
 | `DIVEHUB_SSI_URL` | Only for tests: another endpoint for SSI's app API. |
 | `DIVEHUB_OVERPASS_URL`, `DIVEHUB_WIKIDATA_SPARQL_URL` | Optional: other endpoints for Site imports (default `overpass-api.de`, `query.wikidata.org`). |

@@ -51,7 +51,7 @@ describe.skipIf(!(await databaseReachable()))('the provider layer', () => {
 
   it('hands every Provider\'s capabilities to clients', async () => {
     expect((await call('GET', '/api/providers')).json()).toEqual([
-      expect.objectContaining({ id: 'ssi', name: 'SSI', notices: ['shows_unconfirmed'] }),
+      expect.objectContaining({ id: 'ssi', name: 'SSI', notices: ['shows_unconfirmed', 'presents_as_app'] }),
       {
         id: 'handover', name: 'Hand-over',
         signIn: { kind: 'token', login: null, canKeepPassword: false },

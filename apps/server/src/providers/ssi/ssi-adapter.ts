@@ -46,7 +46,7 @@ export const SSI_CAPABILITIES: Capabilities = {
     // `find`: the account's buddy list (no call to add an entry is known).
     buddies: { import: { operations: ['find'] } },
   },
-  notices: ['shows_unconfirmed'],
+  notices: ['shows_unconfirmed', 'presents_as_app'],
   limits: { pauseMs: 2000 },
 };
 
@@ -162,7 +162,10 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
     const { id } = await called('save_divelog', ctx.connectionId, () => client.save(ctx.access, sent));
     const after = keep(ctx.connectionId, await called('get_divelog', ctx.connectionId, () => client.logbook(ctx.access)));
     const stored = after.dives.find((r) => idOf(r.odin_user_log_id) === id);
-    return { remoteId: id, remoteNumber: number, payload: withoutDatasets(sent), differences: stored ? compareReadBack(sent, stored) : null };
+    // SSI can answer a save with a dive ID and store nothing (ADR 0049): a dive that isn't in the logbook right after is
+    // not a sent dive. Our reference finds it should it turn up later.
+    if (!stored) throw new ProviderError('not_stored', 'save_divelog: SSI answered with a dive ID, but the dive is not in the logbook; nothing was stored');
+    return { remoteId: id, remoteNumber: number, payload: withoutDatasets(sent), differences: compareReadBack(sent, stored) };
   }
 
   function open(ctx: ActionContext): DiveExportAction {

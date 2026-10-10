@@ -83,7 +83,7 @@ const ProviderView = Type.Object({
       description: 'find: the account\'s own list of people (SSI: the buddy list), GET /api/connections/{id}/buddies',
     })),
   }),
-  notices: Type.Array(Type.Enum(['shows_unconfirmed']), { description: 'Things a client must say: shows_unconfirmed, the Provider shows dives sent this way as unconfirmed' }),
+  notices: Type.Array(Type.Enum(['shows_unconfirmed', 'presents_as_app']), { description: 'Things a client must say: shows_unconfirmed, the Provider shows dives sent this way as unconfirmed; presents_as_app, Dive Hub introduces itself to the Provider as its own app (ADR 0049)' }),
   limits: Type.Object({ pauseMs: Type.Integer({ description: 'Pause between two actions on one Connection; requests wait their turn' }) }),
 });
 
@@ -190,7 +190,7 @@ export const PROVIDER_STATUS: Partial<Record<ProblemCode, number>> = {
   provider_already_connected: 409, provider_account_taken: 409, provider_other_account: 409, provider_not_connected: 409,
   provider_sign_in_needed: 409, provider_requirements_unmet: 409, provider_not_sent: 409, provider_dive_gone: 409, provider_busy: 409,
   provider_number_taken: 409, provider_numbers_off: 409, provider_number_nothing_to_set: 409,
-  provider_unavailable: 502, provider_refused: 502, provider_import_off: 409, provider_account_held: 409,
+  provider_unavailable: 502, provider_refused: 502, provider_not_stored: 502, provider_import_off: 409, provider_account_held: 409,
 };
 /** A refusal about a Provider; with provider_requirements_unmet, what is unmet. */
 const ProviderProblem = Type.Object({

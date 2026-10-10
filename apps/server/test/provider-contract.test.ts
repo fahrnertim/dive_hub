@@ -27,7 +27,7 @@ providerContract('SSI', () => {
   let clock = 0;
   return {
     // The clock moves on with every action, so a kept logbook never hides what the fake changed.
-    adapter: createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fake.fetch, userAgent: 'DiveHub (test)' }), now: () => (clock += 5 * 60_000) }),
+    adapter: createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fake.fetch }), now: () => (clock += 5 * 60_000) }),
     signIn: { kind: 'password', login: 'erika@example.com', password: 'ssi-password' },
     wrongSignIn: { kind: 'password', login: 'erika@example.com', password: 'wrong' },
     secrets: ['ssi-password', 'token-'],

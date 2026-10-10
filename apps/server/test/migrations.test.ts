@@ -120,4 +120,25 @@ describe.skipIf(!(await databaseReachable()))('0013: Providers as adapters (ADR 
     expect(pushes[noSite]).toMatchObject({ error_code: 'provider_requirements_unmet' });
     expect((await q(`select 1 from pg_type where typname = 'target'`)).rows).toEqual([]);
   });
+  it('marks the saves SSI answered and never stored as failed Pushes: an update with another dive ID, a create with an invented one', async () => {
+    const q = (sql: string, params: unknown[] = []) => t.pool.query(sql, params);
+    const diver = (await q(`insert into diver (name) values ('Tim') returning id`)).rows[0].id as string;
+    const dive = (await q(`insert into dive (diver_id, starts_at, duration_seconds) values ($1, now(), 1800) returning id`, [diver])).rows[0].id as string;
+    const pushOf = async (action: string, remoteId: string, sentId: number | null, differences: string | null, at = '2026-10-09T15:24:57Z') =>
+      (await q(`insert into push (dive_id, provider, mode, action, state, dive_version, remote_id, remote_number, payload, differences, created_at)
+        values ($1, 'ssi', 'api', $2, 'confirmed', 1, $3, 86, $4, $5, $6) returning id`,
+      [dive, action, remoteId, JSON.stringify({ odin_user_log_id: sentId }), differences, at])).rows[0].id as string;
+    const stored = await pushOf('update', '27031918', 27_031_918, '[]', '2026-10-07T10:45:38Z');
+    const dropped = await pushOf('update', '902545080', 27_031_918, null);
+    const created = await pushOf('create', '29837680', null, '[]', '2026-10-06T09:40:51Z');
+    const invented = await pushOf('create', '931274039', null, null, '2026-10-10T06:21:25Z');
+    // The migration ran with the others above; its statements again, over these rows.
+    const sql = await readFile(join(migrations, '0033_mark_saves_ssi_did_not_store.sql'), 'utf8');
+    for (const statement of sql.split('--> statement-breakpoint')) await q(statement);
+    const pushes = Object.fromEntries((await q('select id, state, error_code, remote_id, remote_number from push where dive_id = $1', [dive])).rows.map((r) => [r.id, r]));
+    expect(pushes[stored]).toMatchObject({ state: 'confirmed', error_code: null, remote_id: '27031918' });
+    expect(pushes[dropped]).toMatchObject({ state: 'failed', error_code: 'provider_not_stored', remote_id: '27031918' });
+    expect(pushes[created]).toMatchObject({ state: 'confirmed', remote_id: '29837680' });
+    expect(pushes[invented]).toMatchObject({ state: 'failed', error_code: 'provider_not_stored', remote_id: null, remote_number: null });
+  });
 });

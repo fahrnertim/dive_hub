@@ -490,7 +490,9 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
 - **`outcome: exists`:** nothing was sent; a dive at the same time is there. Show it (number, time, depth, minutes)
   and ask: link to it (`onExisting: link`) or send a new one (`create`).
 - **Must show the Provider's `notices`:** `shows_unconfirmed` means it shows the dive as unconfirmed (SSI: only a dive
-  center can confirm it there).
+  center can confirm it there). `presents_as_app` means Dive Hub introduces itself to the Provider as the Provider's own
+  app, which the Provider hasn't agreed to and could object to ([ADR 0049](../decisions/0049-ssi-app-user-agent.md)):
+  say so where the User connects and on the Connection.
 - **Must warn before an update that removes the Provider's verification** (`current.updateRemovesVerification`: the
   update changes the dive's start time there, and SSI then drops a dive centre's verification of the entry; it is
   also true when what is at the Provider is unknown). Say it before the User sends, and after the update that the
@@ -502,6 +504,9 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
   (fields stored differently, named by the Provider's `readBackFields`; show an unknown one by its name). A history of
   Pushes is optional; `remoteGone` on a confirmed delete means it was already deleted there.
 - **Translate provider_* codes with the Provider named** (`providerName` in the answer). *Web:* `lib/display.ts` (`useProblemText`).
+  - **`provider_not_stored`** is not `provider_refused`: the Provider answered that the dive was saved and it isn't
+    there, which trying again doesn't fix (SSI does this to a client it takes no saves from). Say that the Provider may
+    no longer take dives from Dive Hub, and that the dive there is as it was.
 
 ### Importing dives from a Provider (SSI)
 From the Connection (`diveImport` on `GET /api/connections`, null when the Provider imports no dives) and the

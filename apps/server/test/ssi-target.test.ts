@@ -182,6 +182,18 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Provider', () => {
       expect((await status()).current).not.toBeNull();
     });
 
+    it('records a save SSI answers without storing it as a failed Push with its own reason, and the dive stays as it was sent', async () => {
+      const before = (await status()).current!;
+      ctx.fakeSsi.dropSaves = true;
+      const response = await send();
+      ctx.fakeSsi.dropSaves = false;
+      expect(response.statusCode).toBe(502);
+      expect(response.json()).toMatchObject({ code: 'provider_not_stored', provider: 'ssi' });
+      const after = await status();
+      expect(after.current).toMatchObject({ remoteId: before.remoteId });
+      expect(after.pushes[0]).toMatchObject({ state: 'failed', failureCode: 'provider_not_stored' });
+    });
+
     it('deletes the SSI dive there, and creates a new one when sent again', async () => {
       const remoteId = (await status()).current!.remoteId;
       const after = (await call('DELETE', `/api/dives/${diveId}/providers/ssi`, tim)).json() as Status;

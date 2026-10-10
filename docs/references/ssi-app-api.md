@@ -31,14 +31,54 @@ As of 2026-10-05 the site list, sending, the profile chart, updating, deleting a
 ### Endpoint and fixed parameters
 
 - One endpoint: `https://api.divessi.com/app/a21.php`, with the action in `what=` [S].
-- Every call also sends four fixed query parameters that the Android app sends [S]: a client label (`ssiapp`), the app version
-  (`version`, e.g. `ADR_4.1.272-ssi`), `lang=en`, `context=s`. They are defined once in
+- Every call also sends the fixed query parameters the Android app sends [R] (owner's capture of app 5.0.43,
+  2026-10-10): `ssiapp=0815_ADR`, `version=ADR_5.0.43-ssi`, `appVersion=5.0.43-ssi`, `lang=en`, `context=s`,
+  `platform=ADR`, `brand=SSI`, `osVersion` (the Android API level), and three about the phone (`device`, `deviceName`,
+  `manufacturer`), where Dive Hub says "Dive Hub". They are defined once in
   `apps/server/src/providers/ssi/ssi-client.ts` (`APP_PARAMS`).
-  - No key, signature or secret is involved [S].
-  - SSI's own app is at 5.0.43 (2026-10-01), and the API still answered the 4.1.x version string on 2026-10-01 [S].
-- Dive Hub adds an honest `User-Agent: DiveHub (+<project URL>; <DIVEHUB_CONTACT>)`.
+  - No key, signature or secret is involved [R].
+  - Until 2026-10-10 Dive Hub sent only `ssiapp`, `version=ADR_4.1.272-ssi`, `lang` and `context`. Which parameters
+    are sent doesn't decide whether a save is stored (below).
+- **The User-Agent is the app's**, `Dart/3.12 (dart:io)` ([ADR 0049](../decisions/0049-ssi-app-user-agent.md)); until
+  2026-10-10 it was Dive Hub's own, `DiveHub (+<project URL>; <DIVEHUB_CONTACT>)`.
 - The answer is HTTP 200 with JSON, also for refusals [S]. Anything else (an HTTP error, HTML) counts as
   "unavailable" (`ssi_unavailable`).
+
+### Saves only from the app's User-Agent (2026-10-10)
+
+Found with the owner's account on 2026-10-10 [R]; the decision is [ADR 0049](../decisions/0049-ssi-app-user-agent.md).
+- **What SSI does to another client:** a save is answered as a create that worked,
+  `{ ok: "added to Log", error: "", temp_id: "", odin_user_log_id: "9…" }`, with a nine-digit dive ID (as a string)
+  that exists nowhere. This is the answer to an update too, where a stored one answers with the dive's own ID wrapped in
+  `success`. Nothing is stored. Reading the logbook works as before.
+- **When:** the last update SSI stored for Dive Hub was on 2026-10-07 10:45 UTC; the first that provably wasn't, on
+  2026-10-09 15:24 UTC. Dive Hub's record didn't change in between.
+- **What decides it:** the User-Agent alone. With Dive Hub's own record and parameters, SSI stored the save for
+  `Dart/3.12 (dart:io)` and `Dart/3.5 (dart:io)`; not for `Mozilla/5.0`, `okhttp/4.12.0`, `curl/8.9.1`, `node`,
+  `LogbookSync/1.0`, `DiveHub`, `DH (+<project URL>)` or `Dart/3.12 (dart:io) DiveHub`. The app's parameters with Dive
+  Hub's User-Agent were not stored; the app's User-Agent with Dive Hub's parameters was.
+- **The record is not it:** the app's own save (347 keys; booleans as `true`/`false`, the start as
+  `2026-08-07T16:05:00.000`) and Dive Hub's (341 keys; `0`/`1`, `2026-08-07 16:05`) were both stored with the app's
+  User-Agent. The app sends six keys Dive Hub doesn't: `odin_user_log_gear_details`, `log_extended_data_latitude`,
+  `_longitude`, `_conservatism`, `_decomodel`, `_libdivecomputer_identifier_base64`.
+- **A fresh sign-in** with Dive Hub's own User-Agent answered `authenticated: false` on its first `get_divelog`
+  (`round-trip.ts read`, 2026-10-09), while the Connection's older token still read.
+- **`internalPk` is not the dive number:** the app saved the owner's dive number 89 with `internalPk: 86`. Dive Hub
+  sends the number in both on a create.
+- **Dive Hub's side:** such an answer is the error `not_stored` (`provider_not_stored`), for an update or delete by the
+  other ID, for a create by the dive missing from the read right after. Migration `0033` marks the Pushes of those days.
+- **The owner asked SSI** for a supported way on 2026-10-10 (an interface or partner programme, leave for a client
+  that says who it is, or another way to bring dives with a profile into MySSI). No answer yet.
+
+### Capturing the app
+
+How the app's calls were read (2026-10-10), for the next time SSI's answers change:
+- The app (`com.divessi.ssi`, Flutter) doesn't trust a user-installed certificate. It runs in an Android emulator with a
+  "Google APIs" image of Android 16 or older (rootable, and without Android 17's certificate transparency rule; the
+  app targets API 37), installed from a phone with `adb pull` of its APK files and `adb install-multiple`. An x86_64
+  image runs its arm64 code.
+- HTTP Toolkit, "Android device via ADB", installs its certificate as a system certificate; the app doesn't pin.
+- Captures hold the password and token: they stay in `samples/private/` (git-ignored).
 
 ### Sign-in: `what=authenticate`
 
@@ -347,7 +387,7 @@ SSI is a Provider ([ADR 0027](../decisions/0027-providers-as-adapters.md)): ever
 ## When SSI changes something
 
 1. **Symptoms:**
-   - Pushes fail with `provider_unavailable` (an HTTP error, HTML, or JSON without the expected keys), or with `provider_refused` (no dive ID in the answer).
+   - Pushes fail with `provider_unavailable` (an HTTP error, HTML, or JSON without the expected keys), or with `provider_refused` (no dive ID in the answer), or with `provider_not_stored` (SSI answered and stored nothing: [above](#saves-only-from-the-apps-user-agent-2026-10-10)).
    - Read-back differences appear that weren't there before.
    - Connections fall to "Sign in again" for everyone (sign-in changed).
 2. **Check with a real account:**

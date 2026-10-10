@@ -105,7 +105,7 @@ const fakeSsi = createFakeSsi({
 });
 const providers = createProviderLayer({
   db, blobs, secrets: createSecretBox(Buffer.alloc(32, 9)),
-  adapters: [createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch, userAgent: 'DiveHub (e2e)' }) })],
+  adapters: [createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch }) })],
   // The fake needs no pause between actions; the browser tests would only wait, so the pauses are skipped.
   clock: skippingClock(),
 });

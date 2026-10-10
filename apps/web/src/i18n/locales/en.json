@@ -469,6 +469,7 @@
     "provider_sign_in_needed": "{{name}} wants you to sign in again. Do it in your account.",
     "provider_unavailable": "{{name}} didn’t answer as expected. Try again later; if it keeps happening, {{name}} may have changed its app.",
     "provider_refused": "{{name}} didn’t save the dive. Try again later.",
+    "provider_not_stored": "{{name}} answered that the dive was saved, but it isn’t there. {{name}} may no longer take dives from Dive Hub; trying again won’t help until Dive Hub is updated.",
     "provider_requirements_unmet": "{{name}} needs something first; the panel says what.",
     "provider_not_sent": "This dive isn’t in {{name}}.",
     "provider_dive_gone": "The dive was deleted in {{name}}. Send it again to create it there anew.",
@@ -1145,7 +1146,8 @@
     "deleteCannot": "It is also in {{name}}, as dive {{number}}, but this Diver isn’t connected to {{name}} any more, so it stays there. The logbook reminds you; connect again to delete it there.",
     "deleted": "Deleted in {{name}}.",
     "notice": {
-      "shows_unconfirmed": "{{name}} shows dives sent from Dive Hub as unconfirmed: only a dive center can confirm a dive there."
+      "shows_unconfirmed": "{{name}} shows dives sent from Dive Hub as unconfirmed: only a dive center can confirm a dive there.",
+      "presents_as_app": "Dive Hub introduces itself to {{name}} as the {{name}} app, because {{name}} stores dives only from its own app. {{name}} has not agreed to this and could object or block the account."
     },
     "history": "History of sending",
     "action": {

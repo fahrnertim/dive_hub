@@ -210,3 +210,4 @@ show who holds a taken number and lead there.
   adapter gets `update(…, number)` and `setNumber` and declares `set: ['create', 'update']`; if the verification survives, it
   declares `changeRemovesVerification: false`.
 
+**Temporary check panel.** The owner's checks can also run from the Connections page ("Check numbers at SSI (temporary)" under an active SSI Connection), with the Connection's own access instead of a separate sign-in: `apps/server/src/providers/ssi/number-checks.ts` (shared with `round-trip.ts number`), `temp-number-checks-route.ts` (`POST /api/connections/{id}/temp-ssi-number-checks`, not in the OpenAPI document) and `apps/web/src/TempSsiNumberChecks.tsx`. All three, with their lines in `app.ts`, `main.ts` and `Connections.tsx`, are deleted once the answers are in this section.

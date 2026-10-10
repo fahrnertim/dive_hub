@@ -31,10 +31,11 @@ const siteImports = createSiteImportService({
 });
 // The Providers of this instance (ADR 0027): SSI only, for now. Every call to SSI is logged (no token or password), to
 // tell Dive Hub's use of an account from the owner's own (docs/references/ssi-app-api.md); calls only come after `app` exists.
+const ssiClient = createSsiClient({ url: config.ssiUrl });
 const providers = createProviderLayer({
   db, blobs, secrets: createSecretBox(config.encryptionKey),
   adapters: [createSsiAdapter({
-    client: createSsiClient({ url: config.ssiUrl, userAgent: userAgent(config.contact) }),
+    client: ssiClient,
     onCall: (call) => app.log.info({ ssi: call }, 'SSI call'),
   })],
 });
@@ -48,7 +49,7 @@ const aiAccesses = createAiAccessService(db, auth);
 
 const app = await buildApp(
   {
-    db, imports, siteImports, providers, blobs, auth, aiAccesses, assessments, setup, invitations: createInvitations(db), baseUrl: config.baseUrl,
+    db, imports, siteImports, providers, tempSsiClient: ssiClient, blobs, auth, aiAccesses, assessments, setup, invitations: createInvitations(db), baseUrl: config.baseUrl,
     maxUploadBytes: config.maxUploadBytes, trustedProxies: config.trustedProxies, webDir: config.webDir,
   },
   { logger: { level: config.logLevel } },

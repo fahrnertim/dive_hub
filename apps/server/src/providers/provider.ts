@@ -73,7 +73,7 @@ export interface Capabilities {
     buddies?: { import?: Direction };
   };
   /** Things a client must say about this Provider, e.g. that it shows dives sent this way as unconfirmed. */
-  notices: ('shows_unconfirmed')[];
+  notices: ('shows_unconfirmed' | 'presents_as_app')[];
   limits: {
     /** Pause between two actions on one Connection, in ms. */
     pauseMs: number;
@@ -81,7 +81,8 @@ export interface Capabilities {
 }
 
 /** Why the Provider didn't do what was asked; the generic layer turns it into a problem code. */
-export type ProviderErrorReason = 'wrong_credentials' | 'signed_out' | 'refused' | 'unavailable' | 'bad_response';
+/** `not_stored`: the Provider answered a save as done and stored nothing (SSI, for a client it doesn't take saves from: ADR 0049). */
+export type ProviderErrorReason = 'wrong_credentials' | 'signed_out' | 'refused' | 'not_stored' | 'unavailable' | 'bad_response';
 
 export class ProviderError extends Error {
   constructor(readonly reason: ProviderErrorReason, detail: string) {

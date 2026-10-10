@@ -8,7 +8,8 @@ date: 2026-10-04
 # ADR 0024: SSI as the first Target, through its private app API
 
 ## Status
-Accepted – 2026-10-04. SSI site import built and amended by [ADR 0025](0025-ssi-site-import-and-site-water-type.md)
+Accepted – 2026-10-04. The User-Agent point is replaced by [ADR 0049](0049-ssi-app-user-agent.md) (2026-10-10): SSI
+stores saves only from its own app's User-Agent, so calls to SSI carry it. SSI site import built and amended by [ADR 0025](0025-ssi-site-import-and-site-water-type.md)
 (2026-10-05): no alias names, private sites left out, "only fill" runs; sending uses the Dive site's water type.
 Amended by [ADR 0027](0027-providers-as-adapters.md) (2026-10-05): SSI is a Provider adapter behind a generic layer; one
 sealed credentials value per Connection (existing Connections signed in again once); generic routes and `provider_*`

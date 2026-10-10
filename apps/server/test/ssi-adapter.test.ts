@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { OutgoingDive } from '../src/providers/provider.js';
 import en from '../../web/src/i18n/locales/en.json' with { type: 'json' };
 import { createSsiAdapter, SSI_CAPABILITIES, type SsiCallLog } from '../src/providers/ssi/ssi-adapter.js';
-import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
+import { createSsiClient, type Fetch } from '../src/providers/ssi/ssi-client.js';
 import { createFakeSsi } from './fake-ssi.js';
 
 const dive = (start: string): OutgoingDive => ({
@@ -17,7 +17,7 @@ async function setUp() {
   const fake = createFakeSsi();
   let now = 0;
   const adapter = createSsiAdapter({
-    client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fake.fetch, userAgent: 'DiveHub (test)' }),
+    client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fake.fetch }),
     now: () => now,
   });
   const { account, access } = await adapter.signIn({ kind: 'password', login: 'erika@example.com', password: 'ssi-password' });
@@ -70,7 +70,7 @@ describe('the SSI adapter\'s call log', () => {
     const fake = createFakeSsi();
     const calls: SsiCallLog[] = [];
     const adapter = createSsiAdapter({
-      client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fake.fetch, userAgent: 'DiveHub (test)' }),
+      client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fake.fetch }),
       onCall: (c) => calls.push(c),
     });
     const { account, access } = await adapter.signIn({ kind: 'password', login: 'erika@example.com', password: 'ssi-password' });
@@ -89,6 +89,23 @@ describe('the SSI adapter\'s call log', () => {
     const logged = JSON.stringify(calls);
     expect(logged).not.toContain(access);
     expect(logged).not.toContain('ssi-password');
+  });
+});
+
+describe('the SSI adapter and a save SSI drops', () => {
+  it('refuses a create that is not in the logbook afterwards, and an update SSI answers with another dive: neither is a sent dive', async () => {
+    const fake = createFakeSsi();
+    let agent: string | null = null;
+    // As another client than SSI's app, for which SSI answers a save and stores nothing.
+    const fetch: Fetch = (url, init) => fake.fetch(url, agent ? { ...init, headers: { ...init.headers, 'User-Agent': agent } } : init);
+    const adapter = createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch }) });
+    const { account, access } = await adapter.signIn({ kind: 'password', login: 'erika@example.com', password: 'ssi-password' });
+    const ctx = { connectionId: 'c1', accountId: account.id, access };
+    const { remoteId } = await adapter.dives!.open(ctx).create(dive('2026-01-15T09:00:00Z'), 'divehub-1');
+    agent = 'DiveHub (+https://example.org)';
+    await expect(adapter.dives!.open(ctx).create(dive('2026-01-16T09:00:00Z'), 'divehub-2')).rejects.toMatchObject({ reason: 'not_stored' });
+    await expect(adapter.dives!.open(ctx).update!(remoteId!, { ...dive('2026-01-15T09:00:00Z'), notes: 'changed' }, null)).rejects.toMatchObject({ reason: 'not_stored' });
+    expect(fake.dives.size).toBe(1);
   });
 });
 

@@ -50,6 +50,8 @@ export interface FakeSsi {
   expireTokens(): void;
   /** While set, every call answers with this HTTP status. */
   failWith: number | null;
+  /** Answer saves as SSI does for a client that isn't its app: with an invented dive ID, storing nothing. */
+  dropSaves: boolean;
   /** Adds a dive as if it had been logged in the SSI app. */
   addDive(accountId: number, values: SsiRecord): number;
 }
@@ -101,6 +103,7 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
     dives: new Map(),
     calls: [],
     failWith: null,
+    dropSaves: false,
     expireTokens: () => tokens.clear(),
     addDive(accountId, values) {
       const id = nextDiveId++;
@@ -144,6 +147,11 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
           odin_user_log_verified: false,
           odin_user_log_user_master_id: accountId,
         };
+        // Since October 2026 SSI stores a save only from its own app's User-Agent; any other gets the answer of a create
+        // with an invented ID, for an update too, and nothing is stored (the owner's account, 2026-10-10).
+        if (fake.dropSaves || !/^Dart\/\d+\.\d+ \(dart:io\)$/.test(init.headers['User-Agent'] ?? '')) {
+          return answer({ ok: 'added to Log', error: '', temp_id: '', odin_user_log_id: String(900_000_000 + (nextDiveId++ % 100_000_000)) });
+        }
         const id = record.odin_user_log_id;
         if (id === null || id === undefined) {
           const created = nextDiveId++;

@@ -17,6 +17,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
+import { runNumberChecks } from '../../../src/providers/ssi/number-checks.js';
 import { userAgent } from '../../../src/sites/import/polite-http.js';
 import { createSsiClient, type SsiRecord } from '../../../src/providers/ssi/ssi-client.js';
 import { compareReadBack, createRecord, deleteRecord, updateRecord, writableRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
@@ -25,7 +26,7 @@ const out = fileURLToPath(new URL('../../../../../samples/private/ssi/', import.
 const tokenFile = `${out}token.json`;
 const mode = process.argv[2];
 const pause = process.argv.includes('--pause');
-const client = createSsiClient({ userAgent: userAgent(process.env.DIVEHUB_CONTACT) });
+const client = createSsiClient({});
 const save = async (name: string, value: unknown) => {
   await writeFile(`${out}${name}.json`, `${JSON.stringify(value, null, 2)}\n`);
   console.log(`  saved samples/private/ssi/${name}.json`);
@@ -96,95 +97,11 @@ if (mode === 'read') {
     const at = process.argv.indexOf(name);
     return at >= 0 ? process.argv[at + 1] : undefined;
   };
-  const read = async () => (await client.logbook(account.token)).dives;
-  const numberOf = (d: SsiRecord | undefined) => (d ? Number(d.odin_user_log_nr) : null);
-  if (arg('--dive')) {
-    // A verified dive: only if the owner wants to risk one. Putting the number back doesn't bring a verification back.
-    const id = arg('--dive');
-    const to = Number(arg('--to'));
-    if (!Number.isInteger(to)) throw new Error('--to needs a whole number');
-    const show = (d: SsiRecord | undefined, label: string) =>
-      console.log(`${label}: number ${numberOf(d)}, ssiOrigin ${JSON.stringify(d?.ssiOrigin ?? null)}`);
-    const dive = (await read()).find((d) => String(d.odin_user_log_id) === id);
-    if (!dive) throw new Error(`SSI dive ${id} not found`);
-    show(dive, 'before');
-    await client.save(account.token, { ...writableRecord(dive), odin_user_log_nr: to, internalPk: to });
-    show((await read()).find((d) => String(d.odin_user_log_id) === id), 'after');
-  } else {
-    if (!process.env.SSI_SITE_ID) throw new Error('Set SSI_SITE_ID to a site ID from your SSI logbook (see logbook.json after "read")');
-    const base: DiveForSsi = {
-      startsAt: new Date('2000-01-01T12:00:00Z'), utcOffsetSeconds: 0, durationSeconds: 60, maxDepthM: 1, avgDepthM: 0.5,
-      waterTemperatureC: 20, maxTemperatureC: 21, waterType: 'fresh', notes: 'Dive Hub number test – delete me',
-      siteSsiId: process.env.SSI_SITE_ID, participants: [], entry: null, exit: null, gases: [{ o2: 21, he: 0 }], gfLow: null, gfHigh: null,
-      cnsStart: null, cnsEnd: null, device: null,
-      samples: { depth: { offsetsMs: [0, 20_000, 40_000, 60_000], values: [0, 1, 1, 0] }, temperature: { offsetsMs: [0], values: [20] } },
-    };
-    // 1. the logbook as it is
-    const before = await read();
-    const numbers = new Map(before.map((d) => [String(d.odin_user_log_id), numberOf(d)]));
-    const top = Math.max(0, ...[...numbers.values()].map((n) => n ?? 0));
-    console.log(`1. logbook: ${before.length} dives, highest number ${top}`);
-    const created: string[] = [];
-    const make = async (startsAt: string, number: number) => {
-      const dive = { ...base, startsAt: new Date(startsAt) };
-      const { id } = await client.save(account.token, createRecord(dive, { number, accountId: account.accountId, reference: `divehub-number-test-${number}` }));
-      created.push(id);
-      return id;
-    };
-    const find = async (id: string) => (await read()).find((d) => String(d.odin_user_log_id) === id);
-    const report = async (label: string, id: string) => {
-      const d = await find(id);
-      console.log(`  ${label}: odin_user_log_nr ${numberOf(d)}, internalPk ${d?.internalPk ?? null}`);
-      return d;
-    };
-    try {
-      // 2. two dives
-      const a = await make('2000-01-01T12:00:00Z', top + 1);
-      const b = await make('2000-01-02T12:00:00Z', top + 2);
-      console.log(`2. created A (${a}) as ${top + 1} and B (${b}) as ${top + 2}`);
-      // 3. does an update change the number?
-      const aRecord = (await find(a)) as SsiRecord;
-      await client.save(account.token, { ...writableRecord(aRecord), odin_user_log_nr: top + 3 });
-      let after = await report(`3. A saved with odin_user_log_nr ${top + 3}`, a);
-      if (numberOf(after) !== top + 3) {
-        await client.save(account.token, { ...writableRecord(aRecord), odin_user_log_nr: top + 3, internalPk: top + 3 });
-        after = await report(`3. A saved again with internalPk ${top + 3} too`, a);
-      }
-      console.log(`   -> ${numberOf(after) === top + 3 ? 'the number moved' : 'the number did NOT move'}`);
-      await wait(`Is dive A number ${top + 3} in the app?`);
-      // 4. a number twice on an update
-      const bRecord = (await find(b)) as SsiRecord;
-      const aNumber = numberOf(await find(a));
-      try {
-        await client.save(account.token, { ...writableRecord(bRecord), odin_user_log_nr: aNumber, internalPk: aNumber });
-        console.log('4. B saved with A\'s number: accepted');
-      } catch (error) {
-        console.log(`4. B saved with A's number: refused (${(error as Error).message})`);
-      }
-      await report('   B now', b);
-      await report('   A now', a);
-      await wait('Look at both dives in the app.');
-      // 5. a number twice on a create
-      try {
-        const c = await make('2000-01-03T12:00:00Z', aNumber as number);
-        console.log(`5. C (${c}) created with A's number ${aNumber}: accepted`);
-        await report('   C now', c);
-      } catch (error) {
-        console.log(`5. C created with A's number: refused (${(error as Error).message})`);
-      }
-      await wait('Look at the dives in the app.');
-    } finally {
-      // 6. delete what was made; what does a delete do to the others' numbers?
-      for (const id of created) {
-        const d = await find(id);
-        if (d) await client.save(account.token, deleteRecord(d));
-      }
-      const last = await read();
-      const moved = last.filter((d) => numbers.has(String(d.odin_user_log_id)) && numbers.get(String(d.odin_user_log_id)) !== numberOf(d));
-      console.log(`6. deleted ${created.length} throwaway dives; dives from step 1 whose number changed: ${moved.length}`);
-      for (const d of moved) console.log(`   ${d.odin_user_log_id}: ${numbers.get(String(d.odin_user_log_id))} -> ${numberOf(d)}`);
-    }
-  }
+  // The checks themselves are shared with the temporary panel of the Connections page (number-checks.ts).
+  await runNumberChecks({
+    client, access: account.token, accountId: account.accountId, siteId: process.env.SSI_SITE_ID, log: console.log, wait,
+    ...(arg('--dive') && { dive: { id: arg('--dive')!, to: Number(arg('--to')) } }),
+  });
 } else {
   console.log('Usage: round-trip.ts read | token | write [--pause] | number [--pause] | number --dive <SSI dive ID> --to <n>');
 }

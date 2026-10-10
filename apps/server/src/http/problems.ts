@@ -85,6 +85,7 @@ export const PROBLEMS = {
   provider_sign_in_needed: 'The service wants you to sign in again',
   provider_unavailable: 'The service did not answer, or answered with something unexpected; try again later',
   provider_refused: 'The service did not save the dive',
+  provider_not_stored: 'The service answered that the dive was saved, but it is not there; the service may no longer take dives from Dive Hub',
   provider_requirements_unmet: 'The service needs something first; see unmet',
   provider_not_sent: 'This dive is not at this service',
   provider_dive_gone: 'The dive is no longer at the service; it was deleted there',

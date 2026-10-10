@@ -469,6 +469,7 @@
     "provider_sign_in_needed": "{{name}} möchte, dass du dich neu anmeldest. Das geht in deinem Konto.",
     "provider_unavailable": "{{name}} hat nicht wie erwartet geantwortet. Versuch es später noch einmal; passiert das öfter, hat {{name}} vielleicht seine App geändert.",
     "provider_refused": "{{name}} hat den Tauchgang nicht gespeichert. Versuch es später noch einmal.",
+    "provider_not_stored": "{{name}} hat geantwortet, der Tauchgang sei gespeichert, aber er ist dort nicht vorhanden. Vielleicht nimmt {{name}} keine Tauchgänge mehr von Dive Hub an; ein neuer Versuch hilft erst nach einem Update von Dive Hub.",
     "provider_requirements_unmet": "{{name}} braucht zuerst noch etwas; das Feld sagt, was.",
     "provider_not_sent": "Dieser Tauchgang ist nicht in {{name}}.",
     "provider_dive_gone": "Der Tauchgang wurde in {{name}} gelöscht. Sende ihn erneut, um ihn dort neu anzulegen.",
@@ -1145,7 +1146,8 @@
     "deleteCannot": "Er ist auch in {{name}}, als Tauchgang {{number}}, aber dieser Taucher ist nicht mehr mit {{name}} verbunden, also bleibt er dort. Das Logbuch erinnert dich daran; verbinde dich erneut, um ihn dort zu löschen.",
     "deleted": "In {{name}} gelöscht.",
     "notice": {
-      "shows_unconfirmed": "{{name}} zeigt Tauchgänge aus Dive Hub als unbestätigt: Nur eine Tauchbasis kann dort einen Tauchgang bestätigen."
+      "shows_unconfirmed": "{{name}} zeigt Tauchgänge aus Dive Hub als unbestätigt: Nur eine Tauchbasis kann dort einen Tauchgang bestätigen.",
+      "presents_as_app": "Dive Hub meldet sich bei {{name}} als die {{name}}-App, weil {{name}} Tauchgänge nur von der eigenen App speichert. {{name}} hat dem nicht zugestimmt und könnte widersprechen oder das Konto sperren."
     },
     "history": "Verlauf des Sendens",
     "action": {

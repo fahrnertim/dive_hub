@@ -110,7 +110,7 @@ export async function createTestApp(t: TestDatabase, options: {
     db: t.db, blobs, secrets: createSecretBox(encryptionKey ?? undefined),
     adapters: [
       createSsiAdapter({
-        client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch, userAgent: 'DiveHub (test)' }),
+        client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch }),
         now: () => ssiClock.now,
       }),
       ...extraProviders,

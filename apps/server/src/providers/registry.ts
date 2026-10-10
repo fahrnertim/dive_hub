@@ -36,7 +36,7 @@ export class ProviderServiceError extends Error {
 }
 
 const PROBLEM_OF: Record<ProviderError['reason'], ProblemCode> = {
-  wrong_credentials: 'provider_wrong_credentials', signed_out: 'provider_sign_in_needed', refused: 'provider_refused',
+  wrong_credentials: 'provider_wrong_credentials', signed_out: 'provider_sign_in_needed', refused: 'provider_refused', not_stored: 'provider_not_stored',
   unavailable: 'provider_unavailable', bad_response: 'provider_unavailable',
 };
 
