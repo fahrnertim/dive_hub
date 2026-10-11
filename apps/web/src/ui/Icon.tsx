@@ -2,7 +2,7 @@
 // imports lucide-react, so the set stays small and consistent; names here say what the icon means.
 // Names were checked with the suggest-lucide-icons skill against the installed version.
 import {
-  ArrowDown, ArrowRightLeft, ArrowUp, BookOpen, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, TriangleAlert,
+  ArrowDown, ArrowRightLeft, ArrowUp, Award, BookOpen, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, TriangleAlert,
   CircleCheck, CircleUser, CloudDownload, CloudUpload, Copy, Ellipsis, ExternalLink, Image, Info, KeyRound, Link, LogIn, LogOut, MapPin, Merge, Pencil, Plus, QrCode, Scissors, Shield, ShieldOff,
   Star, Store, Trash, Undo2, Unlink, Upload, User, UserCheck, Users, UserX, Wrench, X, type LucideIcon,
 } from 'lucide-react';
@@ -23,6 +23,8 @@ const ICONS = {
   admin: Shield,
   account: CircleUser,
   user: User,
+  /** A certification card (ADR 0050). */
+  certification: Award,
   signOut: LogOut,
   back: ChevronLeft,
   /** Closing a dialog (UI/UX pass C1). */

@@ -153,6 +153,9 @@ test('the dive number is not typed: the form has no field for it; the Diver\'s s
   await expect(page.getByText('Number on the computer').first()).toBeVisible();
 
   await page.goto('/#/divers');
+  // Behind a line that shows the current values (C7); opened, the fields are there.
+  await expect(page.getByText('starts at 42 · apnea sessions counted').first()).toBeVisible();
+  await page.getByRole('button', { name: /^Dive numbers: / }).first().click();
   const settings = page.getByRole('group', { name: /^Dive numbers of Erika/ });
   await expect(settings.getByRole('textbox', { name: 'Dives before this logbook' })).toHaveValue('41');
   await expect(settings.getByRole('checkbox', { name: 'Count apnea sessions' })).toBeChecked();

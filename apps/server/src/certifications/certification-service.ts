@@ -2,7 +2,7 @@
 // Seen and changed only by the Users who manage the Diver; an external Diver has none (nobody manages it, ADR 0028).
 // An imported card is the agency's record: its fields are read-only here, only its notes change. A card's picture is
 // fetched by a worker job into the blob store and served only through the API.
-import { and, desc, eq, isNull, ne, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { certification, diver, diverManagement, original } from '../db/schema.js';
 import type { CertificationImageState, CertificationVerification } from '../db/schema.js';
@@ -16,6 +16,31 @@ import type { BlobStore } from '../storage/blob-store.js';
 export const CERTIFICATION_IMAGE_TASK = 'certification_image';
 /** Attempts before a picture is `failed` (a "Fetch again" starts afresh). */
 export const CERTIFICATION_IMAGE_ATTEMPTS = 3;
+
+/** A card expiring within this many days is `soon` (ADR 0050, as built in slice 25c). */
+export const EXPIRING_SOON_DAYS = 90;
+
+export type CertificationExpiry = 'none' | 'valid' | 'soon' | 'expired';
+
+const isoDay = (date: Date) => date.toISOString().slice(0, 10);
+
+/** Where a card stands on `today` (a UTC day): a card is valid on the day it expires. */
+export function expiryOf(expiresOn: string | null, today = isoDay(new Date())): CertificationExpiry {
+  if (!expiresOn) return 'none';
+  if (expiresOn < today) return 'expired';
+  const limit = isoDay(new Date(new Date(`${today}T00:00:00Z`).getTime() + EXPIRING_SOON_DAYS * 86_400_000));
+  return expiresOn <= limit ? 'soon' : 'valid';
+}
+
+/** What the Divers list shows of a Diver's cards. `newest` is the first card of the list: an expired card only when all are. */
+export interface CertificationSummary {
+  count: number;
+  newest: { agency: string; level: string } | null;
+  expired: number;
+  expiringSoon: number;
+}
+
+export const NO_CERTIFICATIONS: CertificationSummary = { count: 0, newest: null, expired: 0, expiringSoon: 0 };
 
 export class CertificationError extends Error {
   constructor(
@@ -68,6 +93,8 @@ export interface CertificationView {
   source: string | null;
   cardId: string | null;
   category: string | null;
+  /** `none` without an expiry date; `soon` within 90 days; `expired` after the day. */
+  expiry: CertificationExpiry;
   imageState: CertificationImageState;
   /** The API path of the picture, only while `imageState` is `stored`. */
   imageUrl: string | null;
@@ -119,7 +146,7 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
     id: r.id, diverId: r.diverId, agency: r.agency, level: r.level, number: r.number, issuedOn: r.issuedOn, expiresOn: r.expiresOn,
     divesAtIssue: r.divesAtIssue, instructorName: r.instructorName, instructorNumber: r.instructorNumber, centreName: r.centreName,
     centreNumber: r.centreNumber, centreCity: r.centreCity, centreCountry: r.centreCountry, verification: r.verification,
-    notes: r.notes, source: r.source, cardId: r.externalId, category: r.category, imageState: r.imageState,
+    notes: r.notes, source: r.source, cardId: r.externalId, category: r.category, expiry: expiryOf(r.expiresOn), imageState: r.imageState,
     imageUrl: r.imageState === 'stored' ? `/api/divers/${r.diverId}/certifications/${r.id}/image` : null,
     importedAt: r.importedAt?.toISOString() ?? null, version: r.version, createdAt: r.createdAt.toISOString(),
   });
@@ -177,14 +204,37 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
     'centreCity', 'centreCountry', 'remoteCourseId', 'category', 'imageUrl',
   ] as const;
 
+  /** Expired cards last: the list's first sort key. */
+  const listOrder = () => sql`coalesce(${certification.expiresOn} < ${isoDay(new Date())}::date, false)`;
+
   return {
     /** A Diver's cards, the newest issue first. Only for a User who manages the Diver. */
     async list(userId: string, diverId: string): Promise<CertificationView[]> {
       await managedOrThrow(userId, diverId);
       const rows = await db.select().from(certification)
         .where(and(eq(certification.diverId, diverId), isNull(certification.deletedAt)))
-        .orderBy(sql`${certification.issuedOn} desc nulls last`, desc(certification.createdAt));
+        .orderBy(listOrder(), sql`${certification.issuedOn} desc nulls last`, desc(certification.createdAt));
       return rows.map(view);
+    },
+
+    /** The summaries of several Divers' cards, by Diver id (no managing check: the caller passes the User's own Divers). */
+    async summaries(diverIds: string[]): Promise<Map<string, CertificationSummary>> {
+      const out = new Map<string, CertificationSummary>();
+      if (diverIds.length === 0) return out;
+      const rows = await db.select({
+        diverId: certification.diverId, agency: certification.agency, level: certification.level, expiresOn: certification.expiresOn,
+      }).from(certification)
+        .where(and(inArray(certification.diverId, diverIds), isNull(certification.deletedAt)))
+        .orderBy(listOrder(), sql`${certification.issuedOn} desc nulls last`, desc(certification.createdAt));
+      for (const r of rows) {
+        const s = out.get(r.diverId) ?? { count: 0, newest: { agency: r.agency, level: r.level }, expired: 0, expiringSoon: 0 };
+        const expiry = expiryOf(r.expiresOn);
+        s.count += 1;
+        if (expiry === 'expired') s.expired += 1;
+        if (expiry === 'soon') s.expiringSoon += 1;
+        out.set(r.diverId, s);
+      }
+      return out;
     },
 
     async create(userId: string, diverId: string, input: CertificationInput): Promise<CertificationView> {

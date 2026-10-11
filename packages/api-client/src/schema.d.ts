@@ -6157,6 +6157,18 @@ export interface paths {
                             deviceCount: number;
                             /** @description Rules of the dive assessment not shown for this Diver (ADR 0036); show them again with PUT /divers/{id}/muted-rules/{rule} */
                             mutedRules: string[];
+                            /** @description What the Divers list shows of a Diver's certification cards (ADR 0050); the cards are GET /divers/{id}/certifications */
+                            certifications: {
+                                count: number;
+                                newest: null | {
+                                    agency: string;
+                                    level: string;
+                                };
+                                /** @description Cards whose expiry date has passed */
+                                expired: number;
+                                /** @description Cards expiring within 90 days (not yet expired) */
+                                expiringSoon: number;
+                            };
                         }[];
                     };
                 };
@@ -6198,6 +6210,18 @@ export interface paths {
                             deviceCount: number;
                             /** @description Rules of the dive assessment not shown for this Diver (ADR 0036); show them again with PUT /divers/{id}/muted-rules/{rule} */
                             mutedRules: string[];
+                            /** @description What the Divers list shows of a Diver's certification cards (ADR 0050); the cards are GET /divers/{id}/certifications */
+                            certifications: {
+                                count: number;
+                                newest: null | {
+                                    agency: string;
+                                    level: string;
+                                };
+                                /** @description Cards whose expiry date has passed */
+                                expired: number;
+                                /** @description Cards expiring within 90 days (not yet expired) */
+                                expiringSoon: number;
+                            };
                         };
                     };
                 };
@@ -6504,6 +6528,18 @@ export interface paths {
                             deviceCount: number;
                             /** @description Rules of the dive assessment not shown for this Diver (ADR 0036); show them again with PUT /divers/{id}/muted-rules/{rule} */
                             mutedRules: string[];
+                            /** @description What the Divers list shows of a Diver's certification cards (ADR 0050); the cards are GET /divers/{id}/certifications */
+                            certifications: {
+                                count: number;
+                                newest: null | {
+                                    agency: string;
+                                    level: string;
+                                };
+                                /** @description Cards whose expiry date has passed */
+                                expired: number;
+                                /** @description Cards expiring within 90 days (not yet expired) */
+                                expiringSoon: number;
+                            };
                         };
                     };
                 };
@@ -8419,6 +8455,11 @@ export interface paths {
                              * @enum {unknown}
                              */
                             verification: "self_declared" | "card_seen" | "verified_with_agency";
+                            /**
+                             * @description none: no expiry date; soon: expires within 90 days (the day itself is still valid); expired: the date has passed. Expired cards come last in the list
+                             * @enum {unknown}
+                             */
+                            expiry: "none" | "valid" | "soon" | "expired";
                             notes: null | string;
                             source: null | string;
                             cardId: null | string;
@@ -8566,6 +8607,11 @@ export interface paths {
                              * @enum {unknown}
                              */
                             verification: "self_declared" | "card_seen" | "verified_with_agency";
+                            /**
+                             * @description none: no expiry date; soon: expires within 90 days (the day itself is still valid); expired: the date has passed. Expired cards come last in the list
+                             * @enum {unknown}
+                             */
+                            expiry: "none" | "valid" | "soon" | "expired";
                             notes: null | string;
                             source: null | string;
                             cardId: null | string;
@@ -8728,6 +8774,11 @@ export interface paths {
                              * @enum {unknown}
                              */
                             verification: "self_declared" | "card_seen" | "verified_with_agency";
+                            /**
+                             * @description none: no expiry date; soon: expires within 90 days (the day itself is still valid); expired: the date has passed. Expired cards come last in the list
+                             * @enum {unknown}
+                             */
+                            expiry: "none" | "valid" | "soon" | "expired";
                             notes: null | string;
                             source: null | string;
                             cardId: null | string;

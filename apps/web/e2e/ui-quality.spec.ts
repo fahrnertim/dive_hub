@@ -600,21 +600,33 @@ for (const v of variants) {
       }
     });
 
-    test('Divers, a diver’s certifications, empty, typed and imported', { tag: ['@divers', '@account'] }, async ({ page, request }) => {
+    test('Divers, a diver’s certifications, empty, typed, expired and imported', { tag: ['@divers', '@account'] }, async ({ page, request }) => {
       const name = `Karte Probe ${v.locale} ${Date.now()}`;
       const created = await (await request.post('/api/divers', { data: { name }, headers })).json() as { id: string };
       try {
         await page.goto('/#/divers');
-        const dialog = page.getByRole('dialog');
-        await page.getByRole('button', { name: `${v.english ? 'Certifications' : 'Zertifizierungen'}: ${name}` }).click();
-        await expect(dialog.getByText(v.english ? 'No certifications yet.' : 'Noch keine Zertifizierungen.')).toBeVisible();
+        const row = page.getByRole('listitem').filter({ hasText: name });
+        await expect(row.getByText(v.english ? 'No cards yet' : 'Noch keine Karten')).toBeVisible();
+        await row.getByRole('button', { name: v.english ? /^Certifications: / : /^Zertifizierungen: / }).click();
+        await expect(row.getByText(v.english ? 'No certifications yet.' : 'Noch keine Zertifizierungen.')).toBeVisible();
         await expectGoodPage(page, title('Divers'), v);
-        await dialog.getByRole('button', { name: v.english ? 'Add certification' : 'Zertifizierung hinzufügen' }).click();
+        await row.getByRole('button', { name: v.english ? 'Add certification' : 'Zertifizierung hinzufügen' }).click();
+        const dialog = page.getByRole('dialog');
         await expectGoodPage(page, title('Divers'), v);
         await dialog.getByRole('textbox', { name: v.english ? /^Agency/ : /^Organisation/ }).fill('PADI');
         await dialog.getByRole('textbox', { name: v.english ? /^Course or level/ : /^Kurs oder Stufe/ }).fill('Open Water Diver');
         await dialog.getByRole('button', { name: v.english ? 'Save certification' : 'Zertifizierung speichern' }).click();
-        await expect(dialog.getByRole('listitem')).toHaveCount(1);
+        await expect(row.getByRole('list', { name: v.english ? 'Certification cards' : 'Zertifizierungskarten' }).getByRole('listitem')).toHaveCount(1);
+        await expectGoodPage(page, title('Divers'), v);
+        // An expired card, in words (C21), and the line counting it.
+        await request.post(`/api/divers/${created.id}/certifications`, {
+          data: { agency: 'DAN', level: 'First Aid', issuedOn: '2020-01-01', expiresOn: '2021-01-01' }, headers,
+        });
+        await page.reload();
+        await expect(row.getByText(v.english ? '1 expired' : '1 abgelaufen')).toBeVisible();
+        // The address says the section is open, so it is still open after the reload.
+        await expect(row.getByRole('button', { name: v.english ? /^Certifications: / : /^Zertifizierungen: / })).toHaveAttribute('aria-expanded', 'true');
+        await expect(row.getByRole('listitem').filter({ hasText: 'First Aid' })).toContainText(v.english ? 'Expired' : 'Abgelaufen');
         await expectGoodPage(page, title('Divers'), v);
       } finally {
         await request.delete(`/api/divers/${created.id}`, { headers });
@@ -630,7 +642,7 @@ for (const v of variants) {
         const dialog = page.getByRole('dialog');
         const close = dialog.getByRole('button', { name: v.english ? 'Close dialog' : 'Dialog schließen' });
         const openers = [
-          `Codes: ${name}`, `${v.english ? 'Body weight' : 'Körpergewicht'}: ${name}`, `${v.english ? 'Certifications' : 'Zertifizierungen'}: ${name}`,
+          `Codes: ${name}`, `${v.english ? 'Body weight' : 'Körpergewicht'}: ${name}`,
         ];
         for (const opener of openers) {
           const trigger = page.getByRole('button', { name: opener });

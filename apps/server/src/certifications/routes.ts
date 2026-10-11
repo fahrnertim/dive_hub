@@ -32,6 +32,9 @@ export const CertificationView = Type.Object({
   verification: Type.Enum([...CERTIFICATION_VERIFICATIONS], {
     description: 'self_declared: typed by the User; card_seen: the User says they looked at the card; verified_with_agency: read from the agency\'s own record by an import (never settable by hand)',
   }),
+  expiry: Type.Enum(['none', 'valid', 'soon', 'expired'], {
+    description: 'none: no expiry date; soon: expires within 90 days (the day itself is still valid); expired: the date has passed. Expired cards come last in the list',
+  }),
   notes: Nullable(Type.String()),
   source: Nullable(Type.String({ description: 'The Provider the card was imported from (`ssi`). Not null: the card\'s fields can\'t be changed, only its notes' })),
   cardId: Nullable(Type.String({ description: 'The Provider\'s ID of the card' })),

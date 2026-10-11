@@ -260,4 +260,46 @@ describe.skipIf(!(await databaseReachable()))('certifications of a Diver', () =>
       expect((await t.db.execute(sql`select count(*)::int as n from certification where diver_id = ${child.id}::uuid`)).rows).toEqual([{ n: 0 }]);
     });
   });
+
+  describe('summary and expiry', () => {
+    // Offsets from today in whole days, written out by hand rather than computed the way the server does.
+    const day = (offset: number) => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
+    type Summary = { count: number; newest: { agency: string; level: string } | null; expired: number; expiringSoon: number };
+    const summaryOf = async (who: string, diverId: string) =>
+      ((await (await as(who)('GET', '/api/divers')).json()) as { id: string; certifications: Summary }[]).find((d) => d.id === diverId)!.certifications;
+    let mia: string;
+
+    beforeAll(async () => {
+      mia = ((await (await as('tim')('POST', '/api/divers', { name: 'Mia' })).json()) as { id: string }).id;
+    });
+
+    it('says a Diver with no cards has none', async () => {
+      expect(await summaryOf('tim', mia)).toEqual({ count: 0, newest: null, expired: 0, expiringSoon: 0 });
+    });
+
+    it('counts the cards, names the newest valid one and counts the expired and the expiring within 90 days', async () => {
+      const tim = as('tim');
+      await tim('POST', cards(mia), { agency: 'SSI', level: 'Open Water Diver', issuedOn: '2021-01-01' });
+      await tim('POST', cards(mia), { agency: 'DAN', level: 'First Aid', issuedOn: '2022-01-01', expiresOn: day(30) });
+      await tim('POST', cards(mia), { agency: 'PADI', level: 'Rescue Diver', issuedOn: '2023-01-01', expiresOn: day(400) });
+      await tim('POST', cards(mia), { agency: 'ERC', level: 'EFR', issuedOn: '2024-01-01', expiresOn: day(-1) });
+      // Expiring on day 90 still counts as soon, day 91 does not.
+      await tim('POST', cards(mia), { agency: 'XX', level: 'Edge', issuedOn: '2020-01-01', expiresOn: day(90) });
+      await tim('POST', cards(mia), { agency: 'XX', level: 'Beyond', issuedOn: '2020-01-01', expiresOn: day(91) });
+      expect(await summaryOf('tim', mia)).toEqual({ count: 6, newest: { agency: 'PADI', level: 'Rescue Diver' }, expired: 1, expiringSoon: 2 });
+    });
+
+    it('marks each card\'s expiry and lists the expired ones last', async () => {
+      const all = (await list('tim', mia)) as (Card & { expiry: string })[];
+      // Latest issue first among the valid ones (a tie: the card added last), the expired card at the end.
+      expect(all.map((c) => [c.level, c.expiry])).toEqual([
+        ['Rescue Diver', 'valid'], ['First Aid', 'soon'], ['Open Water Diver', 'none'], ['Beyond', 'valid'], ['Edge', 'soon'], ['EFR', 'expired'],
+      ]);
+    });
+
+    it('is only in the Divers list of the Users who keep the Diver', async () => {
+      const others = (await (await as('bob')('GET', '/api/divers')).json()) as { id: string }[];
+      expect(others.map((d) => d.id)).not.toContain(mia);
+    });
+  });
 });

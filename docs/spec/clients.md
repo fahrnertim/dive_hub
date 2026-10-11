@@ -679,7 +679,8 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
   everyone for an external Diver, gets `diver_not_found`, and no other view of a Diver carries it. **Must say who sees it**
   where it is set ("Only you and the other Users who keep this Diver see it"). *Web:* `BodyWeight.tsx`, a dialog opened from
   the Diver's row on `DiversPage.tsx`.
-- **Certifications of a Diver** (ADR 0050): `GET /api/divers/{id}/certifications` (newest first), `POST` (`agency`, `level`
+- **Certifications of a Diver** (ADR 0050): `GET /api/divers/{id}/certifications` (newest issue first, **expired cards last**; each
+  has `expiry`: `none`, `valid`, `soon` = expires within 90 days, `expired`), `POST` (`agency`, `level`
   required; `cardSeen` makes it `card_seen`), `PUT …/{certificationId}` with `version` (`certification_changed` on 409;
   an imported card, `source` not null, takes only `notes`, else `certification_read_only`), `DELETE …/{certificationId}`
   (`certification_not_found`), `GET …/{certificationId}/image` (`image/png`, needs the session: show it with an `img` on the
@@ -688,7 +689,12 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
   import only for a Connection whose Provider declares `data.certifications.import`. **Must show them only to the Users
   who keep the Diver** (others and external Divers get `diver_not_found`), **say who sees them**, show verification in
   words (never a colour alone), show a card with `imageState` pending as "being fetched" and failed with "Fetch again".
-  Cards are never sent to a Provider and have no MCP tool. *Web:* `Certifications.tsx`, a dialog on the Divers page.
+  Cards are never sent to a Provider and have no MCP tool. **Say an expired card in words** ("Expired", with the colour only
+  as a second cue) and show it after the valid ones. The Divers list (`GET /api/divers`) carries a `certifications` summary per
+  Diver (`count`, `newest` = `{ agency, level }` or null, `expired`, `expiringSoon`), so a client can say "3 cards, 1 expires
+  soon" on the Diver's line without fetching the cards; it is the same for every User who keeps the Diver and nobody else sees it.
+  *Web:* `Certifications.tsx`, a section of the Divers page under the Diver's line (open state in the address,
+  `#/divers?certifications=own|<diver id>`; the profile menu links to `own`); the card form is a dialog.
 - **Devices from a Provider:** importing a Provider's dives from a computer creates its Device for the Connection's
   Diver, the same Device the computer's own files find later (ADR 0030); list it like any other.
 - **Devices:** assigning one to another Diver affects only Imports from then on (ADR 0016). Say so where it is

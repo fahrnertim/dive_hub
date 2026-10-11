@@ -93,3 +93,19 @@ checked, 409 `certification_changed`), `GET …/{certId}/image` (`image/png`, `C
   while one is pending. Capability `certifications` is null at a Provider that has none.
 - Not built: Agency catalog, expiry reminders, MCP tool, visibility to guides.
 - A guide can't see a buddy's level in Dive Hub (ADR 0028); that needs a Visibility decision later.
+
+### Slice 25c (2026-10-11): the section with the Diver
+UI/UX pass, Part B ([research note](../research/2026-10-11-ui-ux-pass.md)); no new decision, the section ADR 0050 decided is built.
+- **Placement:** an inline Certifications section on each Diver's row of the Divers page, replacing the dialog. Closed it is one line:
+  the count, the newest valid card and badges for what expires within 90 days and what has expired ("No cards yet" when empty).
+  The open state is in the address (`#/divers?certifications=own|<diver id>`, one section at a time); the profile menu's "My
+  certifications" links to `own`. A link only: no second place holds cards.
+- **API:** `GET /api/divers` gains `certifications` `{ count, newest, expired, expiringSoon }` per Diver (`newest` is the first card
+  of the list, so an expired card only when all are); a card gains `expiry` (`none` | `valid` | `soon` | `expired`, a UTC day, valid on
+  the day it expires); the list puts expired cards last. Server test: `diver-certifications.test.ts` ("summary and expiry").
+- **Tiles:** a grid, one per row on a phone; the picture first as a thumbnail button that opens it large in a dialog; an expired tile is
+  sunken with a dashed border and the word "Expired", "Expires soon" in words too. "Add certification" is the one main action, "Import
+  from SSI" beside it. The card form stays a dialog: instructor and centre behind "More details" (open when filled), Save and Cancel
+  sticky at the foot so they stay in view on a phone.
+- **Dive numbers** (C7) sit behind a line showing the current values ("starts at 42 · apnea sessions counted").
+- Still not built: Dive-page hints, visibility to guides, expiry reminders by mail.

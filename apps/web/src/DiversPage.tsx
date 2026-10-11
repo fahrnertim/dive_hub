@@ -5,30 +5,31 @@ import {
   api, devicesQuery, diverSearchQuery, diversQuery, externalDiversQuery, keys, meQuery, unwrap, type DeviceView, type DiverView, type ExternalDiverView,
 } from './api.ts';
 import { BodyWeightDialog } from './BodyWeight.tsx';
-import { CertificationsDialog } from './Certifications.tsx';
+import { CertificationsSection } from './Certifications.tsx';
 import { DiverCodesDialog, TakeCodeDialog } from './DiverCodes.tsx';
 import { deviceName } from './lib/devices.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, Checkbox, ConfirmButton, Dialog, Form, DiverAvatar, NumberField, Muted, Notice, PageHeader, Panel, SearchList, Select, Table, TextField, type SearchListItem } from './ui/index.ts';
+import { Button, Checkbox, ConfirmButton, Dialog, Disclosure, Form, DiverAvatar, NumberField, Muted, Notice, PageHeader, Panel, SearchList, Select, Table, TextField, type SearchListItem } from './ui/index.ts';
 
 /** The Divers whose logbooks the User keeps, their Devices (ADR 0016), and the other divers Users dived with (ADR 0028). */
-export function DiversPage() {
+export function DiversPage({ open }: { open?: string | undefined }) {
   const { t } = useTranslation();
   usePageTitle(t('divers.title'));
   return (
     <>
       <PageHeader title={t('divers.title')} />
-      <Divers />
+      <Divers open={open} />
       <OtherDivers />
       <Devices />
     </>
   );
 }
 
-function Divers() {
+/** `open` is the address's `certifications`: `own` or a Diver's id, whose section is open (the profile menu links to `own`). */
+function Divers({ open }: { open: string | undefined }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const queryClient = useQueryClient();
@@ -53,7 +54,7 @@ function Divers() {
       {divers.isPending && <Muted>{t('common.loading')}</Muted>}
       {divers.error && <Notice tone="danger">{errorText(divers.error)}</Notice>}
       <ul className="diver-list" ref={list}>
-        {divers.data?.map((d, index) => <DiverRow key={d.id} diver={d} list={list} index={index} count={divers.data.length} />)}
+        {divers.data?.map((d, index) => <DiverRow key={d.id} diver={d} list={list} index={index} count={divers.data.length} certificationsOpen={open === d.id || (open === 'own' && d.isOwn)} />)}
       </ul>
       <Form className="form-inline" onSubmit={submit}>
         <TextField
@@ -77,14 +78,15 @@ function useSameName() {
   };
 }
 
-function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: RefObject<HTMLUListElement | null>; index: number; count: number }) {
+function DiverRow({ diver: d, list, index, count, certificationsOpen }: {
+  diver: DiverView; list: RefObject<HTMLUListElement | null>; index: number; count: number; certificationsOpen: boolean;
+}) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const queryClient = useQueryClient();
   const [renaming, setRenaming] = useState(false);
   const [codes, setCodes] = useState(false);
   const [weight, setWeight] = useState(false);
-  const [certifications, setCertifications] = useState(false);
   const [newName, setNewName] = useState(d.name);
   const all = useQuery(diversQuery());
   const sameName = useSameName();
@@ -135,9 +137,6 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
             <Button variant="quiet" aria-label={t('common.forItem', { action: t('bodyWeight.open'), item: d.name })} onPress={() => setWeight(true)}>
               {t('bodyWeight.open')}
             </Button>
-            <Button variant="quiet" aria-label={t('common.forItem', { action: t('certifications.open'), item: d.name })} onPress={() => setCertifications(true)}>
-              {t('certifications.open')}
-            </Button>
             <Button ref={renameButton} variant="quiet" aria-label={t('common.forItem', { action: t('divers.rename'), item: d.name })} onPress={() => { setNewName(d.name); setRenaming(true); }}>
               {t('divers.rename')}
             </Button>
@@ -154,10 +153,14 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
         </>
       )}
       {rename.error && <Notice tone="danger">{errorText(rename.error)}</Notice>}
+      {/* Which section is open lives in the address, so a link (the profile menu's) can point at it. */}
+      <CertificationsSection
+        diver={d} isOpen={certificationsOpen}
+        onOpenChange={(open) => location.replace(open ? `#/divers?certifications=${d.id}` : '#/divers')}
+      />
       <DiveNumbers diver={d} />
       <MutedRules diver={d} />
       {codes && <DiverCodesDialog diverId={d.id} name={d.name} onClose={() => setCodes(false)} />}
-      {certifications && <CertificationsDialog diverId={d.id} name={d.name} onClose={() => setCertifications(false)} />}
       {weight && <BodyWeightDialog diverId={d.id} name={d.name} onClose={() => setWeight(false)} />}
     </li>
   );
@@ -181,18 +184,25 @@ function DiveNumbers({ diver: d }: { diver: DiverView }) {
       announce(t('divers.numbersSaved', { name: d.name }));
     },
   });
+  // Behind a line that shows the current values (UI/UX pass C7): three Divers no longer make a page of number fields.
+  const summary = <span className="meta">{t(d.apneaCounts ? 'divers.numbersSummary' : 'divers.numbersSummaryNoApnea', { next: d.divesBefore + 1 })}</span>;
   return (
-    <fieldset className="dive-numbers">
-      <legend className="meta">{t('divers.numbers', { name: d.name })}</legend>
-      <NumberField
-        label={t('divers.divesBefore')} description={t('divers.divesBeforeHint')} value={d.divesBefore} minValue={0} maxValue={100_000} step={1}
-        onChange={(n) => { if (!Number.isNaN(n) && n !== d.divesBefore) save.mutate({ divesBefore: n }); }}
-      />
-      <Checkbox isSelected={d.apneaCounts} onChange={(on) => save.mutate({ apneaCounts: on })}>
-        {t('divers.apneaCounts')}
-      </Checkbox>
-      {save.error && <Notice tone="danger">{errorText(save.error)}</Notice>}
-    </fieldset>
+    <Disclosure
+      className="diver-section" summary={summary}
+      title={<><span aria-hidden="true">{t('divers.numbersShort')}</span><span className="visually-hidden">{t('common.forItem', { action: t('divers.numbersShort'), item: d.name })}</span></>}
+    >
+      <fieldset className="dive-numbers">
+        <legend className="visually-hidden">{t('divers.numbers', { name: d.name })}</legend>
+        <NumberField
+          label={t('divers.divesBefore')} description={t('divers.divesBeforeHint')} value={d.divesBefore} minValue={0} maxValue={100_000} step={1}
+          onChange={(n) => { if (!Number.isNaN(n) && n !== d.divesBefore) save.mutate({ divesBefore: n }); }}
+        />
+        <Checkbox isSelected={d.apneaCounts} onChange={(on) => save.mutate({ apneaCounts: on })}>
+          {t('divers.apneaCounts')}
+        </Checkbox>
+        {save.error && <Notice tone="danger">{errorText(save.error)}</Notice>}
+      </fieldset>
+    </Disclosure>
   );
 }
 

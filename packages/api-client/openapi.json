@@ -24876,7 +24876,8 @@
                       "apneaCounts",
                       "diveCount",
                       "deviceCount",
-                      "mutedRules"
+                      "mutedRules",
+                      "certifications"
                     ],
                     "properties": {
                       "id": {
@@ -24909,6 +24910,51 @@
                           "type": "string"
                         },
                         "description": "Rules of the dive assessment not shown for this Diver (ADR 0036); show them again with PUT /divers/{id}/muted-rules/{rule}"
+                      },
+                      "certifications": {
+                        "type": "object",
+                        "required": [
+                          "count",
+                          "newest",
+                          "expired",
+                          "expiringSoon"
+                        ],
+                        "properties": {
+                          "count": {
+                            "type": "integer"
+                          },
+                          "newest": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "agency",
+                                  "level"
+                                ],
+                                "properties": {
+                                  "agency": {
+                                    "type": "string"
+                                  },
+                                  "level": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "expired": {
+                            "type": "integer",
+                            "description": "Cards whose expiry date has passed"
+                          },
+                          "expiringSoon": {
+                            "type": "integer",
+                            "description": "Cards expiring within 90 days (not yet expired)"
+                          }
+                        },
+                        "description": "What the Divers list shows of a Diver's certification cards (ADR 0050); the cards are GET /divers/{id}/certifications"
                       }
                     }
                   }
@@ -24956,7 +25002,8 @@
                     "apneaCounts",
                     "diveCount",
                     "deviceCount",
-                    "mutedRules"
+                    "mutedRules",
+                    "certifications"
                   ],
                   "properties": {
                     "id": {
@@ -24989,6 +25036,51 @@
                         "type": "string"
                       },
                       "description": "Rules of the dive assessment not shown for this Diver (ADR 0036); show them again with PUT /divers/{id}/muted-rules/{rule}"
+                    },
+                    "certifications": {
+                      "type": "object",
+                      "required": [
+                        "count",
+                        "newest",
+                        "expired",
+                        "expiringSoon"
+                      ],
+                      "properties": {
+                        "count": {
+                          "type": "integer"
+                        },
+                        "newest": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "agency",
+                                "level"
+                              ],
+                              "properties": {
+                                "agency": {
+                                  "type": "string"
+                                },
+                                "level": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "expired": {
+                          "type": "integer",
+                          "description": "Cards whose expiry date has passed"
+                        },
+                        "expiringSoon": {
+                          "type": "integer",
+                          "description": "Cards expiring within 90 days (not yet expired)"
+                        }
+                      },
+                      "description": "What the Divers list shows of a Diver's certification cards (ADR 0050); the cards are GET /divers/{id}/certifications"
                     }
                   }
                 }
@@ -25687,7 +25779,8 @@
                     "apneaCounts",
                     "diveCount",
                     "deviceCount",
-                    "mutedRules"
+                    "mutedRules",
+                    "certifications"
                   ],
                   "properties": {
                     "id": {
@@ -25720,6 +25813,51 @@
                         "type": "string"
                       },
                       "description": "Rules of the dive assessment not shown for this Diver (ADR 0036); show them again with PUT /divers/{id}/muted-rules/{rule}"
+                    },
+                    "certifications": {
+                      "type": "object",
+                      "required": [
+                        "count",
+                        "newest",
+                        "expired",
+                        "expiringSoon"
+                      ],
+                      "properties": {
+                        "count": {
+                          "type": "integer"
+                        },
+                        "newest": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "agency",
+                                "level"
+                              ],
+                              "properties": {
+                                "agency": {
+                                  "type": "string"
+                                },
+                                "level": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "expired": {
+                          "type": "integer",
+                          "description": "Cards whose expiry date has passed"
+                        },
+                        "expiringSoon": {
+                          "type": "integer",
+                          "description": "Cards expiring within 90 days (not yet expired)"
+                        }
+                      },
+                      "description": "What the Divers list shows of a Diver's certification cards (ADR 0050); the cards are GET /divers/{id}/certifications"
                     }
                   }
                 }
@@ -35007,6 +35145,7 @@
                       "centreCity",
                       "centreCountry",
                       "verification",
+                      "expiry",
                       "notes",
                       "source",
                       "cardId",
@@ -35144,6 +35283,15 @@
                           "verified_with_agency"
                         ],
                         "description": "self_declared: typed by the User; card_seen: the User says they looked at the card; verified_with_agency: read from the agency's own record by an import (never settable by hand)"
+                      },
+                      "expiry": {
+                        "enum": [
+                          "none",
+                          "valid",
+                          "soon",
+                          "expired"
+                        ],
+                        "description": "none: no expiry date; soon: expires within 90 days (the day itself is still valid); expired: the date has passed. Expired cards come last in the list"
                       },
                       "notes": {
                         "anyOf": [
@@ -35847,6 +35995,7 @@
                     "centreCity",
                     "centreCountry",
                     "verification",
+                    "expiry",
                     "notes",
                     "source",
                     "cardId",
@@ -35984,6 +36133,15 @@
                         "verified_with_agency"
                       ],
                       "description": "self_declared: typed by the User; card_seen: the User says they looked at the card; verified_with_agency: read from the agency's own record by an import (never settable by hand)"
+                    },
+                    "expiry": {
+                      "enum": [
+                        "none",
+                        "valid",
+                        "soon",
+                        "expired"
+                      ],
+                      "description": "none: no expiry date; soon: expires within 90 days (the day itself is still valid); expired: the date has passed. Expired cards come last in the list"
                     },
                     "notes": {
                       "anyOf": [
@@ -36702,6 +36860,7 @@
                     "centreCity",
                     "centreCountry",
                     "verification",
+                    "expiry",
                     "notes",
                     "source",
                     "cardId",
@@ -36839,6 +36998,15 @@
                         "verified_with_agency"
                       ],
                       "description": "self_declared: typed by the User; card_seen: the User says they looked at the card; verified_with_agency: read from the agency's own record by an import (never settable by hand)"
+                    },
+                    "expiry": {
+                      "enum": [
+                        "none",
+                        "valid",
+                        "soon",
+                        "expired"
+                      ],
+                      "description": "none: no expiry date; soon: expires within 90 days (the day itself is still valid); expired: the date has passed. Expired cards come last in the list"
                     },
                     "notes": {
                       "anyOf": [

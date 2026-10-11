@@ -398,8 +398,7 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .muted-rules { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); font-size: var(--text-sm); }
 .muted-rules ul { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin: 0; padding: 0; list-style: none; }
 .muted-rules li { display: flex; align-items: baseline; gap: var(--space-2); }
-.dive-numbers { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-2) var(--space-6); margin: 0; padding: 0; border: 0; min-width: 0; }
-.dive-numbers legend { float: left; width: 100%; padding: 0; margin-bottom: var(--space-1); }
+.dive-numbers { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-2) var(--space-6); margin: 0; padding: 0; border: 0; min-width: 0; }
 .dive-numbers .field { max-width: 14rem; }
 
 /* Review page and the logbook's strip (UI redesign 4) */
@@ -537,18 +536,32 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 /* Certifications (ADR 0050) */
 .certifications { display: grid; gap: var(--space-3); }
 .certifications > p, .certifications .muted, .certifications .notice { margin: 0; }
-.certification-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
-.certification { display: grid; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); min-width: 0; }
+.certification-list { list-style: none; margin: 0; padding: 0; display: grid; align-items: start; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); gap: var(--space-3); }
+.certification { display: grid; align-content: start; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); min-width: 0; }
+/* An expired card is sunken and muted, and says "Expired" in words; colour alone is not the cue (WCAG 1.4.1). */
+.certification.is-expired { background: var(--color-surface-sunken); border-style: dashed; }
+.certification.is-expired .certification-title { color: var(--color-text-muted); }
 .certification-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); }
 .certification-title { overflow-wrap: anywhere; }
-.certification-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: var(--space-1) var(--space-4); margin: 0; }
+.certification-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: var(--space-1) var(--space-4); margin: 0; }
 .certification-facts div { min-width: 0; }
 .certification-facts dt { color: var(--color-text-muted); font-size: var(--text-sm); }
 .certification-facts dd { margin: 0; overflow-wrap: anywhere; }
 .certification-notes, .certification-picture-failed, .certification .muted { margin: 0; overflow-wrap: anywhere; }
-.certification-picture { display: block; max-width: min(100%, 24rem); height: auto; border-radius: var(--radius-sm); }
+/* The picture is the first thing of a tile, full width, and a button: it opens large. */
+.certification-thumb { display: block; width: 100%; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface-sunken); cursor: pointer; overflow: hidden; }
+.certification-thumb img { display: block; width: 100%; height: auto; max-height: 12rem; object-fit: contain; }
+.certification-thumb:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.certification-picture-large { display: block; width: 100%; height: auto; border-radius: var(--radius-sm); }
 .certification .actions { display: flex; flex-wrap: wrap; gap: var(--space-1); }
 .certification-form { display: grid; gap: var(--space-3); }
-.certification-form-title { margin: 0; font-size: var(--text-md, 1rem); }
+/* On a phone the form is longer than the screen: Save and Cancel stay at its foot, in view (UI/UX pass C20). */
+.certification-form > .form-actions { position: sticky; bottom: calc(-1 * var(--space-5)); z-index: 1; padding-block: var(--space-3); margin-bottom: calc(-1 * var(--space-2));
+  background: var(--color-surface); border-top: 1px solid var(--color-border); }
+.certification-more-fields { display: grid; gap: var(--space-3); padding-top: var(--space-3); }
+/* A Diver's row has sections under the line: Certifications, Dive numbers. */
+.diver-section { flex-basis: 100%; min-width: 0; }
+.diver-section > .disclosure-panel { padding-top: var(--space-2); }
+.certification-summary { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); }
 .certification-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: var(--space-3); }
 .certification-suggestions { display: flex; flex-wrap: wrap; gap: var(--space-1); }

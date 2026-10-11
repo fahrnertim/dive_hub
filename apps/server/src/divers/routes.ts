@@ -6,7 +6,7 @@ import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireAdmin, requireUser } from '../auth/fastify.js';
 import { Problem, problem } from '../http/problems.js';
-import type { CertificationService } from '../certifications/certification-service.js';
+import { NO_CERTIFICATIONS, type CertificationService } from '../certifications/certification-service.js';
 import { DiverError, type DiverActor, type DiverService } from './diver-service.js';
 
 export interface DiverRouteDeps {
@@ -24,6 +24,13 @@ const DiverSource = Type.Enum(['ssi', 'padi'], { description: 'A service a perso
 const DateParam = Type.String({ pattern: '^\\d{4}-\\d{2}-\\d{2}$', description: 'YYYY-MM-DD' });
 const BodyWeightView = Type.Object({ date: Type.String({ description: 'YYYY-MM-DD' }), kg: Type.Number() });
 
+const CertificationSummary = Type.Object({
+  count: Type.Integer(),
+  newest: Nullable(Type.Object({ agency: Type.String(), level: Type.String() })),
+  expired: Type.Integer({ description: 'Cards whose expiry date has passed' }),
+  expiringSoon: Type.Integer({ description: 'Cards expiring within 90 days (not yet expired)' }),
+}, { description: 'What the Divers list shows of a Diver\'s certification cards (ADR 0050); the cards are GET /divers/{id}/certifications' });
+
 const DiverView = Type.Object({
   id: Type.String(), name: Type.String(),
   isOwn: Type.Boolean({ description: 'The User\'s own Diver' }),
@@ -33,6 +40,7 @@ const DiverView = Type.Object({
   mutedRules: Type.Array(Type.String(), {
     description: 'Rules of the dive assessment not shown for this Diver (ADR 0036); show them again with PUT /divers/{id}/muted-rules/{rule}',
   }),
+  certifications: CertificationSummary,
 });
 
 const FoundDiver = Type.Object({
@@ -107,7 +115,11 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
     throw error;
   });
 
-  const listDivers = async (userId: string) => divers.list(userId);
+  const listDivers = async (userId: string) => {
+    const rows = await divers.list(userId);
+    const summaries = await certifications.summaries(rows.map((d) => d.id));
+    return rows.map((d) => ({ ...d, certifications: summaries.get(d.id) ?? NO_CERTIFICATIONS }));
+  };
 
   app.get('/divers', {
     schema: { summary: 'The Divers whose logbooks the User keeps, own first', response: { 200: Type.Array(DiverView) } },
@@ -129,7 +141,7 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
     schema: { summary: 'Start keeping another Diver\'s logbook (e.g. a child\'s)', body: Type.Object({ name: Name }), response: { 201: DiverView, ...errors } },
   }, async (request, reply) => {
     const created = await divers.create(request.user!.id, request.body.name.trim());
-    return reply.code(201).send({ id: created.id, name: created.name, isOwn: false, divesBefore: 0, apneaCounts: true, diveCount: 0, deviceCount: 0, mutedRules: [] });
+    return reply.code(201).send({ id: created.id, name: created.name, isOwn: false, divesBefore: 0, apneaCounts: true, diveCount: 0, deviceCount: 0, mutedRules: [], certifications: NO_CERTIFICATIONS });
   });
 
   app.patch('/divers/:id', {

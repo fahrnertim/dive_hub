@@ -33,7 +33,7 @@ const SiteImportPage = lazy(() => import('./SiteImportPage.tsx').then((m) => ({ 
 
 /**
  * Minimal hash routing: "#/" (logbook, "#/?diver=<id>" for one Diver, "#/?site=<id>" for one Dive site),
- * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers", "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/centres", "#/centres/<id>", "#/tools" ("?o2=32&depth=30&…"), "#/tools/plan" ("?mix=32&lv=20x20&dv=…"), "#/account", "#/admin", "#/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
+ * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers" ("?certifications=own|<diver id>": that Diver's certifications open), "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/centres", "#/centres/<id>", "#/tools" ("?o2=32&depth=30&…"), "#/tools/plan" ("?mix=32&lv=20x20&dv=…"), "#/account", "#/admin", "#/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
  */
 function useRoute(): string {
   const [route, setRoute] = useState(() => location.hash.slice(1) || '/');
@@ -118,6 +118,8 @@ function Navigation({ route, me }: { route: string; me: Me }) {
           label={<>{me.user.name}<span className="visually-hidden">{t('nav.accountMenu')}</span></>}
           actions={[
             { id: 'account', label: t('nav.account'), href: '#/account', icon: 'user' },
+            // The own Diver's cards are a section of the Divers page; this is only a link to it (ADR 0050).
+            { id: 'certifications', label: t('nav.myCertifications'), href: '#/divers?certifications=own', icon: 'certification' },
             // Rare and for one role: not in the bar (UI redesign 5.1).
             ...(me.user.role === 'admin' ? [{ id: 'admin', label: t('nav.administration'), href: '#/admin', icon: 'admin' as const }] : []),
             { id: 'sign-out', label: t('common.signOut'), onAction: () => void signOut(), icon: 'signOut' },
@@ -143,7 +145,7 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   const diveId = /^\/dives\/([\w-]+)$/.exec(path!)?.[1];
   if (diveId) return <DiveDetail key={diveId} id={diveId} recordingId={params.get('recording') ?? undefined} list={listOfDiveAddress(params)} />;
   if (route === '/account') return <AccountPage />;
-  if (route === '/divers') return <DiversPage />;
+  if (path === '/divers') return <DiversPage open={params.get('certifications') ?? undefined} />;
   if (path === '/review') return <ReviewPage tab={reviewTab(params)} />;
   if (path === '/sites') return <SitesPage params={sitesParams(params)} />;
   const siteId = /^\/sites\/([\w-]+)$/.exec(path!)?.[1];

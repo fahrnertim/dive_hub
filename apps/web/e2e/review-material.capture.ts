@@ -198,9 +198,18 @@ test('review material', async ({ page, request, browser }) => {
     const connection = ((await (await request.get('/api/connections')).json()) as { id: string; provider: string; diverId: string }[])
       .find((c) => c.provider === 'ssi' && c.diverId === ownDiver!.id);
     if (connection) await request.post(`/api/connections/${connection.id}/certifications/import`, { headers });
+    // One expired and one expiring soon (slice 25c): the Diver's line counts them, the tiles say so in words.
+    const inDays = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+    await request.post(`/api/divers/${ownDiver!.id}/certifications`, { headers, data: { agency: 'ERC', level: 'Emergency First Response', issuedOn: '2023-02-01', expiresOn: inDays(-20) } });
+    await request.post(`/api/divers/${ownDiver!.id}/certifications`, { headers, data: { agency: 'DAN', level: 'Oxygen Provider', issuedOn: '2024-02-01', expiresOn: inDays(40) } });
+    await page.reload();
+    await page.getByRole('button', { name: `Certifications: ${ownDiver!.name}` }).waitFor();
+    await capture(page, '04f-divers-certifications-closed', { full: false, aria: false });
     await page.getByRole('button', { name: `Certifications: ${ownDiver!.name}` }).click();
-    await page.getByRole('dialog').getByRole('img', { name: /^Picture of the card/ }).first().waitFor({ timeout: 20_000 }).catch(() => undefined);
-    await capture(page, '04f-divers-certifications', { full: false, aria: false });
+    await page.getByRole('button', { name: /^Show picture large/ }).first().waitFor({ timeout: 20_000 }).catch(() => undefined);
+    await capture(page, '04f-divers-certifications', { aria: false });
+    await page.getByRole('button', { name: /^Show picture large/ }).first().click().catch(() => undefined);
+    await capture(page, '04g-divers-certification-picture', { full: false, aria: false });
     await page.keyboard.press('Escape');
     const cards = (await (await request.get(`/api/divers/${ownDiver!.id}/certifications`)).json()) as { id: string }[];
     for (const c of cards) await request.delete(`/api/divers/${ownDiver!.id}/certifications/${c.id}`, { headers });
@@ -279,11 +288,16 @@ test('review material', async ({ page, request, browser }) => {
       const connections = (await (await request.get('/api/connections')).json()) as { id: string; provider: string; diverId: string }[];
       const ssi = connections.find((c) => c.provider === 'ssi' && c.diverId === diver!.id);
       if (ssi) await request.post(`/api/connections/${ssi.id}/certifications/import`, { headers });
+      await request.post(`/api/divers/${diver!.id}/certifications`, {
+        headers, data: { agency: 'ERC', level: 'Emergency First Response', issuedOn: '2023-02-01', expiresOn: new Date(Date.now() - 20 * 86_400_000).toISOString().slice(0, 10) },
+      });
+      await page.reload();
       await page.getByRole('button', { name: `Zertifizierungen: ${diver!.name}` }).click();
-      await page.getByRole('dialog').getByRole('img', { name: /^Bild der Karte/ }).first().waitFor({ timeout: 20_000 }).catch(() => undefined);
+      await page.getByRole('button', { name: /^Bild groß anzeigen/ }).first().waitFor({ timeout: 20_000 }).catch(() => undefined);
       await capture(page, '10c-divers-certifications-de-phone', { aria: false });
-      await page.getByRole('dialog').getByRole('button', { name: 'Zertifizierung hinzufügen' }).click();
-      await capture(page, '10d-divers-certification-form-de-phone', { aria: false });
+      await page.getByRole('button', { name: 'Zertifizierung hinzufügen' }).click();
+      await page.getByRole('button', { name: 'Weitere Angaben' }).click();
+      await capture(page, '10d-divers-certification-form-de-phone', { full: false, aria: false });
       await page.keyboard.press('Escape');
       for (const c of (await (await request.get(`/api/divers/${diver!.id}/certifications`)).json()) as { id: string }[]) {
         await request.delete(`/api/divers/${diver!.id}/certifications/${c.id}`, { headers });
