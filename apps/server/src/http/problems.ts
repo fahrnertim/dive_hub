@@ -102,6 +102,7 @@ export const PROBLEMS = {
   push_run_nothing_to_send: 'There is no dive to send with these choices',
   push_run_not_found: 'No such run',
   push_run_not_active: 'This run is not going anymore',
+  push_run_going: 'This run is still going; only an ended run can be dismissed',
   push_run_not_stopped: 'This run did not stop; only a stopped run can be continued',
   provider_account_held: 'An external diver here has this account; send claim to make them your diver (they merge into it)',
   diver_not_external: 'Only an external diver (one no User keeps) can be merged into another',

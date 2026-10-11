@@ -294,6 +294,10 @@
   /* The count sits on the icon's corner, so the Logbook item is as tall as the others. */
   .app-nav a { position: relative; }
   .app-nav .count { position: absolute; top: var(--space-1); left: calc(50% + 0.5rem); }
+  /* The run's mark takes the other corner, so both can show. */
+  /* The first item is narrow: on the bar the mark is the icon alone (the numbers are in the strip and read out). */
+  .app-nav .run-mark { left: auto; right: calc(50% + 0.5rem); padding: 0 var(--space-1); }
+  .app-nav .run-mark > [aria-hidden='true']:not(svg) { display: none; }
   .app-nav a:active { background: var(--color-surface-sunken, var(--color-border)); }
   /* With the keyboard open the bar would sit behind it (or float up by chance): it steps aside while a field has focus. */
   html[data-typing] .app-nav { display: none; }

@@ -603,6 +603,17 @@ test('review material', async ({ page, request, browser }) => {
       await page.getByRole('dialog').waitFor();
       await capture(page, '35-logbook-send-dialog-de-dark-390', { full: false });
       await page.keyboard.press('Escape');
+      // A run going, with an earlier one (slice 25d): the mark beside "Logbook" and the list "Earlier runs", as drawn by the server's answer.
+      const now = new Date().toISOString();
+      const stub = { connectionId, provider: 'ssi', diverId: '00000000-0000-4000-8000-000000000003', stopCode: null, updates: false, updatesRemovingVerification: false,
+        numbers: false, cancelRequested: false, leftOut: {}, pauseMs: 0, createdAt: now, startedAt: now, dismissedAt: null };
+      await page.route('**/api/push-runs', (route) => route.fulfill({ json: [
+        { ...stub, id: '00000000-0000-4000-8000-000000000001', status: 'running', counts: { total: 10, waiting: 7, sent: 3, skipped: 0, failed: 0 }, finishedAt: null },
+        { ...stub, id: '00000000-0000-4000-8000-000000000004', status: 'done', counts: { total: 2, waiting: 0, sent: 2, skipped: 0, failed: 0 }, finishedAt: now },
+      ] }));
+      await page.reload(); await page.getByRole('button', { name: 'Frühere Sendungen (1)' }).click();
+      await capture(page, '35f-logbook-run-going-earlier-de-dark-390', { full: false });
+      await page.unroute('**/api/push-runs');
       await clearPushRuns(request);
       await leaveSsi(request, dive42);
       // A dive changed after it was sent (slice 22d): the "Changed since sent" chip, and the dialog's link to it.

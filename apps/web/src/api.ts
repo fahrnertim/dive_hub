@@ -638,6 +638,10 @@ export async function startPushRun(connectionId: string, choices: PushRunChoices
 export async function cancelPushRun(id: string) {
   return unwrap(await api.POST('/api/push-runs/{id}/cancel', { params: { path: { id } } }));
 }
+/** Puts an ended run away for good, on the server: every browser of the User stops showing it (slice 25d). */
+export async function dismissPushRun(id: string) {
+  return unwrap(await api.POST('/api/push-runs/{id}/dismiss', { params: { path: { id } } }));
+}
 export async function continuePushRun(id: string) {
   return unwrap(await api.POST('/api/push-runs/{id}/continue', { params: { path: { id } } }));
 }

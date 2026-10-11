@@ -530,6 +530,11 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .push-run-head > p { margin: 0; flex: 1 1 16rem; }
 .push-run-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .push-run-items { list-style: none; padding-left: 0; }
+/* Earlier runs: a quiet list under the strip; each line says when and what it did (slice 25d). */
+.push-run-earlier ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.push-run-earlier p { margin: 0; }
+/* A run going, beside "Logbook" in the navigation: the count's pill, with the send icon. */
+.run-mark { display: inline-flex; align-items: center; gap: var(--space-1); }
 @media (prefers-reduced-motion: reduce) { .push-run-fill { transition: none; } }
 @media (max-width: 40rem) { .logbook-send-spacer { display: none; } }
 

@@ -10,7 +10,7 @@ import { toolsParams } from './lib/tools.ts';
 import { pickLanguage } from './i18n/index.ts';
 import { DeletedNotices } from './DeletedDives.tsx';
 import { ImportFilesButton, ImportPanel, ImportProvider, RecentImports } from './ImportPanel.tsx';
-import { PushRunStrip } from './PushRun.tsx';
+import { PushRunStrip, RunMark } from './PushRun.tsx';
 import { ReviewLinks, ReviewStrip } from './ReviewStrip.tsx';
 import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
@@ -103,6 +103,7 @@ function Navigation({ route, me }: { route: string; me: Me }) {
       <nav className="app-nav" aria-label={t('nav.main')}>
         <a href="#/" {...current(route === '/' || route.startsWith('/?') || route.startsWith('/dives/') || route.startsWith('/review'))}>
           <Icon name="logbook" />{t('nav.logbook')}
+          <RunMark />
           {waiting > 0 && <span className="count"><span aria-hidden="true">{waiting}</span><span className="visually-hidden">{t('nav.toDecide', { count: waiting })}</span></span>}
         </a>
         <a href="#/divers" {...current(route === '/divers')}><Icon name="divers" />{t('nav.divers')}</a>

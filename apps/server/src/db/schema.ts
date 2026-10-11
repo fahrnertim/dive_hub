@@ -948,6 +948,8 @@ export const pushRun = pgTable(
     createdAt: createdAt(),
     startedAt: timestamp('started_at', { withTimezone: true }),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
+    /** When the User put the ended run away from the logbook's strip; null while it is shown. Cleared when the run is taken up again. */
+    dismissedAt: timestamp('dismissed_at', { withTimezone: true }),
   },
   (t) => [
     uniqueIndex('push_run_one_active_uq').on(t.connectionId).where(sql`${t.status} in ('queued', 'running')`),

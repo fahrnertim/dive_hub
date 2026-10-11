@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Label, ProgressBar } from 'react-aria-components';
 import {
-  ApiError, cancelPushRun, connectionsQuery, continuePushRun, keys, pushRunActive, pushRunPreviewQuery, pushRunQuery, pushRunsQuery,
+  ApiError, cancelPushRun, connectionsQuery, continuePushRun, dismissPushRun, keys, pushRunActive, pushRunPreviewQuery, pushRunQuery, pushRunsQuery,
   siteQuery, startPushRun, type ConnectionView, type LogbookParams, type ProviderView, type PushRunChoices, type PushRunDetail, type PushRunView,
 } from './api.ts';
 import { announce } from './lib/announce.ts';
@@ -269,28 +269,46 @@ function SendDialog({ connection, provider, params, filterName, onClose }: {
   );
 }
 
-const DISMISSED = 'pushRunDismissed';
-const dismissedRuns = (): string[] => {
-  try { return JSON.parse(localStorage.getItem(DISMISSED) ?? '[]') as string[]; } catch { return []; }
-};
-const rememberDismissed = (id: string) => {
-  try { localStorage.setItem(DISMISSED, JSON.stringify([id, ...dismissedRuns()].slice(0, 20))); } catch { /* the strip comes back after a reload; harmless */ }
-};
+/** A run going, as a mark beside "Logbook" in the navigation: done of total, the whole sentence for screen readers. */
+export function RunMark() {
+  const { t } = useTranslation();
+  const runs = useQuery(pushRunsQuery());
+  const providers = useProviders();
+  const run = runs.data?.find((r) => pushRunActive(r));
+  if (!run) return null;
+  const name = providers.data?.find((p) => p.id === run.provider)?.name ?? run.provider;
+  const done = run.counts.sent + run.counts.skipped + run.counts.failed;
+  return (
+    <span className="count run-mark">
+      <Icon name="send" />
+      <span aria-hidden="true">{done}/{run.counts.total}</span>
+      <span className="visually-hidden">{t('pushRun.inNav', { name, done, total: run.counts.total })}</span>
+    </span>
+  );
+}
 
 /**
  * The newest run, in a strip above the logbook: progress while it goes, then what it did. A stopped run stays until it
- * is continued or dismissed, and says why (no toast; it doesn't time out). The logbook is refreshed when a run ends.
+ * is continued or dismissed, and says why (no toast; it doesn't time out). Dismissing is stored with the run on the
+ * server, so no browser shows it again. The logbook is refreshed when a run ends. Runs that are not in the strip are
+ * listed under "Earlier runs" (the kept five of each Connection), dismissed or not.
  */
 export function PushRunStrip() {
   const runs = useQuery(pushRunsQuery());
-  const [dismissed, setDismissed] = useState<string[]>(dismissedRuns);
   const queryClient = useQueryClient();
-  const run = runs.data?.find((r) => pushRunActive(r)) ?? runs.data?.find((r) => !dismissed.includes(r.id));
+  // The strip is for what is going or the newest run; an older run never takes its place when that is dismissed.
+  const newest = runs.data?.[0];
+  const run = runs.data?.find((r) => pushRunActive(r)) ?? (newest && !newest.dismissedAt ? newest : undefined);
   const status = run?.status;
   const seen = useRef<{ id: string; active: boolean } | null>(null);
   const { t } = useTranslation();
   const providers = useProviders();
-  const name = run ? (providers.data?.find((p) => p.id === run.provider)?.name ?? run.provider) : '';
+  const nameOf = (provider: string) => providers.data?.find((p) => p.id === provider)?.name ?? provider;
+  const name = run ? nameOf(run.provider) : '';
+  const dismiss = useMutation({
+    mutationFn: (id: string) => dismissPushRun(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.pushRuns }),
+  });
   useEffect(() => {
     if (!run) return;
     const active = pushRunActive(run);
@@ -302,11 +320,39 @@ export function PushRunStrip() {
     }
     seen.current = { id: run.id, active };
   }, [run, status, queryClient, t, name]);
-  if (!run) return null;
-  const dismiss = () => { rememberDismissed(run.id); setDismissed(dismissedRuns()); };
-  return pushRunActive(run)
-    ? <ActiveStrip run={run} name={name} />
-    : <EndedStrip run={run} name={name} onDismiss={dismiss} />;
+  const earlier = (runs.data ?? []).filter((r) => r.id !== run?.id && !pushRunActive(r));
+  return (
+    <>
+      {run && (pushRunActive(run)
+        ? <ActiveStrip run={run} name={name} />
+        : <EndedStrip run={run} name={name} onDismiss={() => dismiss.mutate(run.id)} dismissError={dismiss.error} />)}
+      {earlier.length > 0 && <EarlierRuns runs={earlier} nameOf={nameOf} />}
+    </>
+  );
+}
+
+/** The runs the strip isn't showing: when, what they did, and a "Not sent" list each, as in the strip. */
+function EarlierRuns({ runs, nameOf }: { runs: PushRunView[]; nameOf: (provider: string) => string }) {
+  const { t } = useTranslation();
+  const display = useDisplay();
+  return (
+    <div className="push-run-earlier">
+      <Disclosure title={t('pushRun.earlier', { count: runs.length })}>
+        <ul>
+          {runs.map((r) => {
+            const name = nameOf(r.provider);
+            const unsent = r.counts.skipped + r.counts.failed;
+            return (
+              <li key={r.id}>
+                <p>{t('pushRun.earlierLine', { when: display.dateTime(r.createdAt), summary: runSummary(t, r, name) })}</p>
+                {unsent > 0 && <Disclosure title={t('pushRun.details', { count: unsent })}><RunItems id={r.id} name={name} provider={named(undefined, r.provider)} /></Disclosure>}
+              </li>
+            );
+          })}
+        </ul>
+      </Disclosure>
+    </div>
+  );
 }
 
 function runSummary(translate: TFunction, run: PushRunView, name: string) {
@@ -343,7 +389,7 @@ function ActiveStrip({ run, name }: { run: PushRunView; name: string }) {
   );
 }
 
-function EndedStrip({ run, name, onDismiss }: { run: PushRunView; name: string; onDismiss: () => void }) {
+function EndedStrip({ run, name, onDismiss, dismissError }: { run: PushRunView; name: string; onDismiss: () => void; dismissError: Error | null }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const problemText = useProblemText();
@@ -370,6 +416,7 @@ function EndedStrip({ run, name, onDismiss }: { run: PushRunView; name: string; 
         </div>
       </div>
       {resume.isError && <Notice tone="danger">{errorText(resume.error)}</Notice>}
+      {dismissError && <Notice tone="danger">{errorText(dismissError)}</Notice>}
       {unsent > 0 && <Disclosure title={t('pushRun.details', { count: unsent })}><RunItems id={run.id} name={name} provider={provider} /></Disclosure>}
     </>
   );

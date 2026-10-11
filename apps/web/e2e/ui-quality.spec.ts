@@ -127,6 +127,25 @@ for (const v of variants) {
       }
     });
 
+    test('a run going in the navigation, and earlier runs listed (slice 25d)', { tag: ['@dives'] }, async ({ page }) => {
+      const now = new Date().toISOString();
+      const base = {
+        connectionId: '00000000-0000-4000-8000-000000000002', provider: 'ssi', diverId: '00000000-0000-4000-8000-000000000003',
+        stopCode: null, updates: false, updatesRemovingVerification: false, numbers: false, cancelRequested: false, leftOut: {}, pauseMs: 0,
+        createdAt: now, startedAt: now, dismissedAt: null,
+      };
+      const runs = [
+        { ...base, id: '00000000-0000-4000-8000-000000000001', status: 'running', counts: { total: 10, waiting: 7, sent: 3, skipped: 0, failed: 0 }, finishedAt: null },
+        { ...base, id: '00000000-0000-4000-8000-000000000004', status: 'done', counts: { total: 2, waiting: 0, sent: 2, skipped: 0, failed: 0 }, finishedAt: now },
+      ];
+      await page.route('**/api/push-runs', (route) => route.fulfill({ json: runs }));
+      await page.goto('/#/');
+      await expect(page.locator('.run-mark')).toBeVisible();
+      await page.getByRole('button', { name: v.english ? 'Earlier runs (1)' : 'Frühere Sendungen (1)' }).click();
+      await expect(page.locator('.push-run-earlier').getByRole('listitem')).toHaveCount(1);
+      await expectGoodPage(page, title('Logbook'), v);
+    });
+
     test('dive, reading and editing', { tag: ['@dives'] }, async ({ page }) => {
       await page.goto(`/#/dives/${diveId}`);
       await expect(page.locator('canvas').first()).toBeVisible();

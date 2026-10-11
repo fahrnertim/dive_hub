@@ -436,6 +436,39 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
     expect(((await preview({ dives: { ids: [deleted] } })).json() as Preview)).toMatchObject({ send: 0, counts: { notFound: 1 } });
   });
 
+  it('stores a run\'s dismissal with the run: only an ended run, the User\'s own, undone when the run is taken up again (slice 25d)', async () => {
+    await upload(day(1));
+    await upload(day(2));
+    const created = await started();
+    expect((await json<{ dismissedAt: string | null }>('GET', `/api/push-runs/${created.id}`)).dismissedAt).toBeNull();
+    // A run that goes cannot be put away.
+    const going = await call('POST', `/api/push-runs/${created.id}/dismiss`);
+    expect(going.statusCode).toBe(409);
+    expect(going.json()).toMatchObject({ code: 'push_run_going' });
+    await runToEnd(created.id);
+    // Another User's run is none of theirs.
+    expect((await call('POST', `/api/push-runs/${created.id}/dismiss`, undefined, bob)).statusCode).toBe(404);
+    const dismissed = await call('POST', `/api/push-runs/${created.id}/dismiss`);
+    expect(dismissed.statusCode).toBe(200);
+    expect(dismissed.json().dismissedAt).toEqual(expect.any(String));
+    // The list carries it, so every browser and client sees the same strip; dismissing again changes nothing.
+    const [listed] = await json<{ id: string; dismissedAt: string | null }[]>('GET', '/api/push-runs');
+    expect(listed).toMatchObject({ id: created.id, dismissedAt: dismissed.json().dismissedAt });
+    expect((await call('POST', `/api/push-runs/${created.id}/dismiss`)).json().dismissedAt).toBe(dismissed.json().dismissedAt);
+  });
+
+  it('shows a continued run again: taking a stopped run up clears its dismissal', async () => {
+    for (const n of [1, 2, 3]) await upload(day(n));
+    const created = await started();
+    ledger.down = true;
+    await ctx.providers.pushRuns.step(created.id);
+    await ctx.providers.pushRuns.step(created.id);
+    expect((await run(created.id)).status).toBe('stopped');
+    expect((await call('POST', `/api/push-runs/${created.id}/dismiss`)).statusCode).toBe(200);
+    ledger.down = false;
+    expect((await call('POST', `/api/push-runs/${created.id}/continue`)).json().dismissedAt).toBeNull();
+  });
+
   it('keeps the last five runs of a Connection', async () => {
     const first = await upload(day(1));
     const ids: string[] = [];

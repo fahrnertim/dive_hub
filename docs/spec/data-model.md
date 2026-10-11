@@ -440,7 +440,7 @@ reference, the record sent (without samples) and a `fingerprint` of it; `outdate
 the Dive's current one, worked out when asked, not stored.
 **Push run** (ADR 0047, slice 22c, migration 0034): `push_run` has User, Connection, `provider`, Diver, `status` (`queued`, `running`, `done`,
 `cancelled`, `stopped`), the three choices (`updates`, `updates_removing_verification`, `numbers`), `left_out` (counts by reason, as planned),
-`consecutive_failures`, `stop_code`, `cancel_requested_at`, `created_at`, `started_at` and `finished_at`. One active run per Connection (partial
+`consecutive_failures`, `stop_code`, `cancel_requested_at`, `created_at`, `started_at`, `finished_at` and `dismissed_at` (the User put the ended run away from the strip; cleared when it is continued; slice 25d, migration 0036). One active run per Connection (partial
 unique index `push_run_one_active_uq`); the last five per Connection are kept. `push_run_item` (primary key run and Dive) has `position`, `action`
 (`create`, `update`, `number`), `state` (`waiting`, `sending`, `sent`, `skipped`, `failed`), `outcome`, `reason`, the `push` it made (set null when
 that goes) and `attempts`. A run holds no Dive data: what is sent is read when its turn comes.

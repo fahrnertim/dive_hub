@@ -518,7 +518,7 @@ A **Push run** sends many Dives of one Diver to one Provider ([ADR 0047](../deci
 Provider; the client only asks, shows and reports. A Provider takes runs when `GET /api/providers` gives it
 `limits.run` (`pauseMs`, `maxDives`; `null` means no runs: a hand-over Provider). Routes (all under the signed-in User):
 `POST /api/connections/{id}/push-runs/preview`, `POST /api/connections/{id}/push-runs` (202), `GET /api/push-runs`,
-`GET /api/push-runs/{id}` (with the items), `POST /api/push-runs/{id}/cancel` and `POST /api/push-runs/{id}/continue` (202).
+`GET /api/push-runs/{id}` (with the items), `POST /api/push-runs/{id}/cancel`, `POST /api/push-runs/{id}/dismiss` and `POST /api/push-runs/{id}/continue` (202).
 The body of the first two is `dives` (exactly one of `list`: the logbook's `siteId`, `q` and `only` as `GET /api/dives`
 takes them, and `ids`, up to 500) and the three choices `updates`, `updatesRemovingVerification` and `numbers`, all false
 unless the User ticks them.
@@ -550,10 +550,17 @@ unless the User ticks them.
   `update_not_chosen`, `removes_verification`, `update_unsupported`, `dive_not_found`, `number_taken`; `failed` with a problem
   code), each with the Dive.
 - **One run per Connection at a time:** `push_run_active` carries the `runId` of the one that goes; show it instead of an error.
-  Other codes: `push_run_nothing_to_send`, `push_run_not_found`, `push_run_not_active`, `push_run_not_stopped`. The last five
-  runs of a Connection are kept.
-- *Web:* `PushRun.tsx` (`SendToProvider` in the logbook's toolbar with its `SendDialog`, which owns the selection; `PushRunStrip` above the list); the ended run's Dismiss is
-  kept in the browser per run id.
+  Other codes: `push_run_nothing_to_send`, `push_run_not_found`, `push_run_not_active`, `push_run_not_stopped`,
+  `push_run_going` (dismissing a run that goes). The last five runs of a Connection are kept.
+- **Make a run findable from every page, and list the earlier ones** (slice 25d): while a run goes, mark it where the User
+  navigates (the web client: beside "Logbook", `done` of `counts.total`, the sentence for screen readers), so that "you can leave
+  this page" is true. Keep the runs that are not shown as the strip reachable ("Earlier runs": when, what it did, its
+  not-sent Dives), dismissed or not.
+- **Dismissal belongs to the run:** `POST /api/push-runs/{id}/dismiss` (an ended run only; again changes nothing) sets
+  `dismissedAt`, and every client of the User sees it. Don't keep it per device. Show a run as the strip only while it goes or
+  while it is the newest and `dismissedAt` is null. Continuing a stopped run clears `dismissedAt`.
+- *Web:* `PushRun.tsx` (`SendToProvider` in the logbook's toolbar with its `SendDialog`, which owns the selection; `PushRunStrip` above the list, `RunMark` in the navigation); the ended run's Dismiss is
+  stored on the server (`dismissedAt`).
 
 ### Importing dives from a Provider (SSI)
 From the Connection (`diveImport` on `GET /api/connections`, null when the Provider imports no dives) and the

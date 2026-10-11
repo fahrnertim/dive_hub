@@ -36,6 +36,7 @@ const RunView = Type.Object({
   createdAt: DateTime,
   startedAt: Nullable(DateTime),
   finishedAt: Nullable(DateTime),
+  dismissedAt: Nullable(DateTime),
 });
 
 const ItemView = Type.Object({
@@ -97,8 +98,8 @@ const StartBody = Type.Object({
 });
 
 const time = (d: Date | null) => d?.toISOString() ?? null;
-const runView = <T extends { stopCode: string | null; createdAt: Date; startedAt: Date | null; finishedAt: Date | null }>(r: T) =>
-  ({ ...r, stopCode: r.stopCode as ProblemCode | null, createdAt: r.createdAt.toISOString(), startedAt: time(r.startedAt), finishedAt: time(r.finishedAt) });
+const runView = <T extends { stopCode: string | null; createdAt: Date; startedAt: Date | null; finishedAt: Date | null; dismissedAt: Date | null }>(r: T) =>
+  ({ ...r, stopCode: r.stopCode as ProblemCode | null, createdAt: r.createdAt.toISOString(), startedAt: time(r.startedAt), finishedAt: time(r.finishedAt), dismissedAt: time(r.dismissedAt) });
 
 const PushRunProblem = Type.Object({
   ...Problem.properties,
@@ -157,6 +158,14 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
       params: IdParams, response: { 200: RunView, ...errors },
     },
   }, async (request) => runView(await pushRuns.cancel(userId(request), request.params.id)));
+
+  app.post('/push-runs/:id/dismiss', {
+    schema: {
+      summary: 'Put an ended run away from the logbook\'s strip, for every browser and client of the User',
+      description: 'Stored with the run (dismissedAt). Only an ended run: 409 push_run_going while it goes. Taking a stopped run up again clears it.',
+      params: IdParams, response: { 200: RunView, ...errors },
+    },
+  }, async (request) => runView(await pushRuns.dismiss(userId(request), request.params.id)));
 
   app.post('/push-runs/:id/continue', {
     schema: {

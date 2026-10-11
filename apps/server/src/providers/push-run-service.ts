@@ -174,7 +174,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
       id: row.id, connectionId: row.connectionId, provider: row.provider, diverId: row.diverId, status: row.status, stopCode: row.stopCode,
       updates: row.updates, updatesRemovingVerification: row.updatesRemovingVerification, numbers: row.numbers,
       cancelRequested: row.cancelRequestedAt !== null, counts, leftOut: row.leftOut, pauseMs,
-      createdAt: row.createdAt, startedAt: row.startedAt, finishedAt: row.finishedAt,
+      createdAt: row.createdAt, startedAt: row.startedAt, finishedAt: row.finishedAt, dismissedAt: row.dismissedAt,
     };
   }
 
@@ -272,6 +272,14 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
       return view(await ownRun(userId, runId));
     },
 
+    /** Puts an ended run away from the strip, for every browser and client of the User; again does not move the time. */
+    async dismiss(userId: string, runId: string) {
+      const row = await ownRun(userId, runId);
+      if (row.status === 'queued' || row.status === 'running') throw error('push_run_going');
+      if (!row.dismissedAt) await db.update(pushRun).set({ dismissedAt: new Date() }).where(eq(pushRun.id, runId));
+      return view(await ownRun(userId, runId));
+    },
+
     /** Takes up a stopped run: the failures worth another try are waiting again, and a step is queued. */
     async continue(userId: string, runId: string) {
       const row = await ownRun(userId, runId);
@@ -283,7 +291,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
         await db.transaction(async (tx) => {
           await tx.update(pushRunItem).set({ state: 'waiting', reason: null, attempts: 0, finishedAt: null })
             .where(and(eq(pushRunItem.runId, runId), eq(pushRunItem.state, 'failed'), inArray(pushRunItem.reason, RETRIED_ON_CONTINUE)));
-          await tx.update(pushRun).set({ status: 'queued', stopCode: null, consecutiveFailures: 0, finishedAt: null }).where(eq(pushRun.id, runId));
+          await tx.update(pushRun).set({ status: 'queued', stopCode: null, consecutiveFailures: 0, finishedAt: null, dismissedAt: null }).where(eq(pushRun.id, runId));
           await queueStep(tx, runId);
         });
       } catch (e) {

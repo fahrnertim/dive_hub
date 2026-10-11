@@ -181,3 +181,69 @@ test('"everything not in SSI yet" ignores the logbook\'s search, and the choice 
   await leaveSsi(request, first.id);
   await leaveSsi(request, second);
 });
+
+test('a dismissed run stays dismissed on the server, in any browser (UI/UX pass C5)', { tag: ['@dives'] }, async ({ page, request }) => {
+  const dive = await resetDive(request);
+  const { connectionId, siteId } = await pushRunSetup(request, dive.id, { keepSignedIn: true, siteExternalId: '7099' });
+  const started = await request.post(`/api/connections/${connectionId}/push-runs`, { data: { dives: { list: { siteId } } }, headers });
+  expect(started.status(), await started.text()).toBe(202);
+  const { id } = await started.json() as { id: string };
+  await page.goto('/#/');
+  const strip = page.locator('#main').getByText(/Sent 1 of 1 dives to SSI\./);
+  await expect(strip).toBeVisible();
+
+  await page.getByRole('button', { name: 'Dismiss' }).click();
+  await expect(strip).toBeHidden();
+  const stored = await (await request.get('/api/push-runs')).json() as { id: string; dismissedAt: string | null }[];
+  expect(stored.find((r) => r.id === id)?.dismissedAt).not.toBeNull();
+
+  // Not kept in this browser: with its storage emptied, the run is still put away.
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await expect(page.getByRole('region', { name: 'Dives' })).toBeVisible();
+  await expect(strip).toBeHidden();
+  await leaveSsi(request, dive.id);
+});
+
+test('a run going shows beside "Logbook" on every page, with the count announced (UI/UX pass C5)', { tag: ['@dives'] }, async ({ page }) => {
+  const run = {
+    id: '00000000-0000-4000-8000-000000000001', connectionId: '00000000-0000-4000-8000-000000000002', provider: 'ssi',
+    diverId: '00000000-0000-4000-8000-000000000003', status: 'running', stopCode: null, updates: false, updatesRemovingVerification: false,
+    numbers: false, cancelRequested: false, counts: { total: 10, waiting: 7, sent: 3, skipped: 0, failed: 0 }, leftOut: {}, pauseMs: 0,
+    createdAt: new Date().toISOString(), startedAt: new Date().toISOString(), finishedAt: null, dismissedAt: null,
+  };
+  await page.route('**/api/push-runs', (route) => route.fulfill({ json: [run] }));
+  await page.goto('/#/divers');
+  const logbook = page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: /Logbook/ });
+  // Not only on the logbook: "you can leave this page" is true because the mark follows the User.
+  await expect(logbook).toContainText('Sending to SSI: 3 of 10 dives');
+  await expect(logbook.locator('.run-mark')).toBeVisible();
+  await page.getByRole('link', { name: /Logbook/ }).click();
+  await expect(page.locator('.push-run-strip').getByRole('progressbar')).toBeVisible();
+});
+
+test('earlier runs can be found again, also after the newest is dismissed (UI/UX pass C5)', { tag: ['@dives'] }, async ({ page, request }) => {
+  const first = await resetDive(request);
+  const second = await deletableDive(request);
+  const { connectionId, siteId } = await pushRunSetup(request, first.id, { keepSignedIn: true, siteExternalId: '7099' });
+  await readyForSsi(request, second);
+  await request.put(`/api/dive-sites/${siteId}/external-ids/ssi`, { data: { externalId: '7099' }, headers });
+  for (const id of [first.id, second]) {
+    const started = await request.post(`/api/connections/${connectionId}/push-runs`, { data: { dives: { ids: [id] } }, headers });
+    expect(started.status(), await started.text()).toBe(202);
+    // One run at a time per Connection: the next starts after this one ended.
+    await expect.poll(async () => ((await (await request.get('/api/push-runs')).json()) as { status: string }[])[0]?.status).toBe('done');
+  }
+  await page.goto('/#/');
+  const earlier = page.getByRole('button', { name: 'Earlier runs (1)' });
+  await expect(earlier).toBeVisible();
+  await earlier.click();
+  await expect(page.locator('.push-run-earlier').getByRole('listitem')).toHaveCount(1);
+  await expect(page.locator('.push-run-earlier').getByText(/Sent 1 of 1 dives to SSI\./)).toBeVisible();
+
+  // Dismissing the strip does not lose the runs: both are listed now.
+  await page.getByRole('button', { name: 'Dismiss' }).click();
+  await expect(page.getByRole('button', { name: 'Earlier runs (2)' })).toBeVisible();
+  await leaveSsi(request, first.id);
+  await leaveSsi(request, second);
+});

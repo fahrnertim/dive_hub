@@ -1,0 +1,1 @@
+ALTER TABLE "push_run" ADD COLUMN "dismissed_at" timestamp with time zone;
