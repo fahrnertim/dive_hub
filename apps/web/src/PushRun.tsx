@@ -44,7 +44,8 @@ export function SendToProvider({ params }: { params: LogbookParams }) {
   const chosen = options.find((o) => o.connection.id === open);
   const single = options.length === 1 ? options[0] : undefined;
   return (
-    <div className="logbook-choice logbook-send">
+    <div className="logbook-send">
+      <span className="field-label logbook-send-spacer" aria-hidden="true">&nbsp;</span>
       {single ? (
         <Button
           ref={trigger} variant="secondary" icon="send" isDisabled={single.active} onPress={() => setOpen(single.connection.id)}

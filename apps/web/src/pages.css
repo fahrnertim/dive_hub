@@ -505,7 +505,9 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .tools-cylinder { margin-top: var(--space-5); }
 .input::placeholder { color: var(--color-text-muted); opacity: 1; }
 /* Push runs (ADR 0047): the dialog before sending and the strip while a run goes and after it. */
-.logbook-send { align-self: end; }
+/* The button sits on the row of the fields' inputs: an invisible label above it takes the height of their labels. */
+.logbook-send { flex: 0 0 auto; min-width: 0; display: grid; gap: var(--space-1); }
+.logbook-send-spacer { visibility: hidden; }
 .push-run-dialog { display: grid; gap: var(--space-3); }
 .push-run-dialog .dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-3); margin-top: var(--space-2); }
 .push-run-count { margin: 0; font-size: var(--text-md); }
@@ -520,3 +522,4 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .push-run-actions { display: flex; gap: var(--space-2); }
 .push-run-items { list-style: none; padding-left: 0; }
 @media (prefers-reduced-motion: reduce) { .push-run-fill { transition: none; } }
+@media (max-width: 40rem) { .logbook-send-spacer { display: none; } }
