@@ -36,8 +36,47 @@ export interface FakeSsiBuddy {
   leader_nr?: string;
 }
 
+/** A certification card of an account, as `get_ccards` lists it (invented values; the shape is from the capture of 2026-10-10). */
+export interface FakeSsiCard {
+  /** The account whose cards they are. */
+  owner: number;
+  ccard_uid: string;
+  ccard_course_name: string;
+  ccard_course_short: string;
+  ccard_cat: string;
+  ccard_course_id: number;
+  ccard_dives: number;
+  ccard_issue_date: string;
+  ccard_expire_date: string | null;
+  ccard_instructor_number: number;
+  ccard_instructor_name: string;
+  ccard_divecenter_number: number;
+  ccard_divecenter_name: string;
+  ccard_divecenter_city: string;
+  ccard_divecenter_country: string;
+}
+
+/** A card with invented values; `uid` and `course` differ per card. */
+export function fakeCard(owner: number, v: { uid: string; course: string; short: string; courseId: number; issued: string; dives?: number }): FakeSsiCard {
+  return {
+    owner, ccard_uid: v.uid, ccard_course_name: v.course, ccard_course_short: v.short, ccard_cat: 'scubadiving', ccard_course_id: v.courseId,
+    ccard_dives: v.dives ?? 12, ccard_issue_date: v.issued, ccard_expire_date: null, ccard_instructor_number: 77001,
+    ccard_instructor_name: 'Ida Instructor', ccard_divecenter_number: 123456, ccard_divecenter_name: 'Blue Hole Divers',
+    ccard_divecenter_city: 'Dahab', ccard_divecenter_country: 'Egypt',
+  };
+}
+
+/** A real 1 × 1 PNG: the browser tests show it, so a browser must be able to decode it. */
+export const PNG_BYTES = new Uint8Array(Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64',
+));
+
 export interface FakeSsi {
   fetch: Fetch;
+  /** Every account's certification cards (`get_ccards`). */
+  cards: FakeSsiCard[];
+  /** Answers for `my.divessi.com/cert/<uid>`: by default the same small PNG for every card. */
+  cardImages: Map<string, { status?: number; contentType?: string; bytes: Uint8Array }>;
   accounts: FakeSsiAccount[];
   /** Stored dives by SSI dive ID, deleted ones included (with odin_user_log_deleted: 1). */
   dives: Map<number, SsiRecord>;
@@ -90,7 +129,7 @@ export function computerDive(v: {
   };
 }
 
-export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: FakeSsiSite[]; buddies?: FakeSsiBuddy[] } = {}): FakeSsi {
+export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: FakeSsiSite[]; buddies?: FakeSsiBuddy[]; cards?: FakeSsiCard[] } = {}): FakeSsi {
   const tokens = new Map<string, number>();
   let nextToken = 1;
   let nextDiveId = 27_000_001;
@@ -100,6 +139,8 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
       { odin_dive_sites_id: 3314, odin_dive_sites_name: 'Hausreef', odin_dive_sites_lat: 27.29, odin_dive_sites_lon: 33.82, odin_countries_code_iso: 'EG' },
     ],
     buddies: options.buddies ?? [],
+    cards: options.cards ?? [],
+    cardImages: new Map(),
     dives: new Map(),
     calls: [],
     failWith: null,
@@ -111,7 +152,21 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
       return id;
     },
     fetch: async (url, init) => {
-      const params = new URL(url).searchParams;
+      const address = new URL(url);
+      // A card's picture: public by card ID, no token, no `what` (SSI's `my.divessi.com/cert/<uid>`).
+      const picture = /\/cert\/([^/]+)$/.exec(address.pathname);
+      if (picture) {
+        fake.calls.push({ what: 'card_image', method: init.method });
+        const given = fake.cardImages.get(decodeURIComponent(picture[1]!));
+        const body = given ?? { bytes: PNG_BYTES };
+        return {
+          status: body.status ?? 200, text: async () => '',
+          arrayBuffer: async () => body.bytes.buffer.slice(body.bytes.byteOffset, body.bytes.byteOffset + body.bytes.byteLength) as ArrayBuffer,
+          headers: { get: (name: string) => (name.toLowerCase() === 'content-type' ? body.contentType ?? 'image/png'
+            : name.toLowerCase() === 'content-length' ? String(body.bytes.byteLength) : null) },
+        };
+      }
+      const params = address.searchParams;
       const what = params.get('what') ?? '';
       fake.calls.push({ what, method: init.method });
       const answer = (body: unknown, status = 200) => ({ status, text: async () => JSON.stringify(body) });
@@ -134,6 +189,13 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
         const buddies = fake.buddies.filter((b) => b.owner === accountId)
           .map(({ owner: _owner, ...b }) => ({ ...b, master_id: b.buddy_master_id, forename: b.firstname, confirmed: 1, deleted: 0, favorite: 0 }));
         return answer({ verified_dives: 0, logbook_details: own, logbook_sites: fake.sites, logbook_buddies: buddies });
+      }
+      if (what === 'get_ccards') {
+        const own = fake.cards.filter((c) => c.owner === accountId).map(({ owner: _owner, ...c }) => ({
+          ...c, ccard_cat_title: `course_cat_${c.ccard_cat}`, ccard_image_back: 'https://cdn.invalid/cards/back.jpg',
+          ccard_image_front: `https://cdn.invalid/cards/1000/${c.ccard_course_short}.jpg`, ccard_image_front_thumb: `https://cdn.invalid/cards/200/${c.ccard_course_short}.jpg`,
+        }));
+        return answer({ ccard_amount: own.length, ccard_list: own, cat_array: ['scubadiving', 'freediving', 'other'] });
       }
       if (what === 'save_divelog' && init.method === 'POST') {
         const record = JSON.parse(new URLSearchParams(init.body ?? '').get('json_data') ?? '{}') as SsiRecord;

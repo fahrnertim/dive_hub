@@ -34,6 +34,8 @@ const AREAS = [
   [/^apps\/web\/src\/DiversPage\.tsx$/, ['@divers']],
   // A Diver's body weight (ADR 0031), a dialog on the divers page.
   [/^apps\/web\/src\/BodyWeight\.tsx$/, ['@divers']],
+  // A Diver's certification cards (ADR 0050), a dialog on the divers page; their server side also takes part in the import.
+  [/^apps\/web\/src\/Certifications\.tsx$|^apps\/server\/src\/certifications\//, ['@divers', '@account']],
   [/^apps\/web\/src\/(Account|AccountPage|Connections|ProviderBuddies)\.tsx$/, ['@account']],
   // Importing a Provider's dives (ADR 0030): on the Connection, and the dives it makes.
   [/^apps\/web\/src\/ProviderDiveImport\.tsx$/, ['@account', '@dives']],

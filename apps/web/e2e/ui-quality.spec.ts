@@ -592,6 +592,27 @@ for (const v of variants) {
       }
     });
 
+    test('Divers, a diver’s certifications, empty, typed and imported', { tag: ['@divers', '@account'] }, async ({ page, request }) => {
+      const name = `Karte Probe ${v.locale} ${Date.now()}`;
+      const created = await (await request.post('/api/divers', { data: { name }, headers })).json() as { id: string };
+      try {
+        await page.goto('/#/divers');
+        const dialog = page.getByRole('dialog');
+        await page.getByRole('button', { name: `${v.english ? 'Certifications' : 'Zertifizierungen'}: ${name}` }).click();
+        await expect(dialog.getByText(v.english ? 'No certifications yet.' : 'Noch keine Zertifizierungen.')).toBeVisible();
+        await expectGoodPage(page, title('Divers'), v);
+        await dialog.getByRole('button', { name: v.english ? 'Add certification' : 'Zertifizierung hinzufügen' }).click();
+        await expectGoodPage(page, title('Divers'), v);
+        await dialog.getByRole('textbox', { name: v.english ? /^Agency/ : /^Organisation/ }).fill('PADI');
+        await dialog.getByRole('textbox', { name: v.english ? /^Course or level/ : /^Kurs oder Stufe/ }).fill('Open Water Diver');
+        await dialog.getByRole('button', { name: v.english ? 'Save certification' : 'Zertifizierung speichern' }).click();
+        await expect(dialog.getByRole('listitem')).toHaveCount(1);
+        await expectGoodPage(page, title('Divers'), v);
+      } finally {
+        await request.delete(`/api/divers/${created.id}`, { headers });
+      }
+    });
+
     test('Divers, an admin merging an external diver',{ tag: ['@divers'] }, async ({ page, request }) => {
       const name = `Merge me ${v.locale} ${Date.now()}`;
       const id = await externalDiver(request, name);

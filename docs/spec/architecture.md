@@ -908,3 +908,12 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   `provider-contract.ts` (`runProblems`). Web: `PushRun.tsx`. Tests: `push-run-plan.test.ts`, `push-runs.test.ts`, `push-run.spec.ts`, and
   a case in `ui-quality.spec.ts`; the e2e server gives the fake SSI a 150 ms run pause and has test-only routes to expire SSI's tokens and
   clear runs.
+
+**Slice 24 (2026-10-11): Certifications** ([ADR 0050](../decisions/0050-certifications.md)).
+- `certifications/certification-service.ts` (`list`, `create`, `update`, `remove`, `importFrom`, `image`, `refetchImage`, `fetchImage`, `imageKeysOf`,
+  `releaseKeys`) and `certifications/routes.ts`; table `certification` (migration 0035). The SSI adapter reads `get_ccards` and the public card
+  picture (`certifications.find`, `.image`); capability `data.certifications.import`. The worker task `certification_image` fetches a picture
+  into the blob store (3 attempts; the last failure marks it `failed`). A card's blob is released when no other card or Original refers to it;
+  deleting a Diver or a User releases theirs.
+- Web: `Certifications.tsx`, a dialog on the Divers page. Tests: `diver-certifications.test.ts`, cases in `provider-contract.ts` and
+  `ssi-client.test.ts`, `certifications.spec.ts`, a case in `ui-quality.spec.ts`; the e2e server's fake SSI has two invented cards for Erika.

@@ -523,3 +523,22 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .push-run-items { list-style: none; padding-left: 0; }
 @media (prefers-reduced-motion: reduce) { .push-run-fill { transition: none; } }
 @media (max-width: 40rem) { .logbook-send-spacer { display: none; } }
+
+/* Certifications (ADR 0050) */
+.certifications { display: grid; gap: var(--space-3); }
+.certifications > p, .certifications .muted, .certifications .notice { margin: 0; }
+.certification-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.certification { display: grid; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); min-width: 0; }
+.certification-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); }
+.certification-title { overflow-wrap: anywhere; }
+.certification-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: var(--space-1) var(--space-4); margin: 0; }
+.certification-facts div { min-width: 0; }
+.certification-facts dt { color: var(--color-text-muted); font-size: var(--text-sm); }
+.certification-facts dd { margin: 0; overflow-wrap: anywhere; }
+.certification-notes, .certification-picture-failed, .certification .muted { margin: 0; overflow-wrap: anywhere; }
+.certification-picture { display: block; max-width: min(100%, 24rem); height: auto; border-radius: var(--radius-sm); }
+.certification .actions { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.certification-form { display: grid; gap: var(--space-3); }
+.certification-form-title { margin: 0; font-size: var(--text-md, 1rem); }
+.certification-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: var(--space-3); }
+.certification-suggestions { display: flex; flex-wrap: wrap; gap: var(--space-1); }

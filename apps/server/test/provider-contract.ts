@@ -74,7 +74,7 @@ export function runProblems(adapter: ProviderAdapter): string[] {
 /** Operations with a case below. */
 const CASES = [
   'dives.export.create', 'dives.export.readBack', 'dives.export.find', 'dives.export.link', 'dives.export.update',
-  'dives.export.delete', 'diveSites.import.find', 'buddies.import.find', 'dives.import.list',
+  'dives.export.delete', 'diveSites.import.find', 'buddies.import.find', 'certifications.import.find', 'dives.import.list',
 ];
 /** Operations the adapter interface doesn't carry, and where they are tested instead. */
 const ELSEWHERE: Record<string, string> = {
@@ -138,6 +138,7 @@ export function providerContract(name: string, make: () => ContractHarness) {
       expect(!!c.data.buddies?.import?.operations.includes('find')).toBe(!!adapter.buddies);
       // The list's people are matched to Divers by their account at the Provider.
       if (adapter.buddies) expect(adapter.accountSource).toBeDefined();
+      expect(!!c.data.certifications?.import?.operations.includes('find')).toBe(!!adapter.certifications);
     });
 
     it('declares numbers only as it can set them', () => {
@@ -283,6 +284,25 @@ export function providerContract(name: string, make: () => ContractHarness) {
         expect([typeof b.remoteId, typeof b.name]).toEqual(['string', 'string']);
         expect(b.account === null || typeof b.account === 'string').toBe(true);
       }
+    });
+
+    it.runIf(declares('certifications.import.find'))('offers the certification cards of the account as typed values, and each picture without a sign-in', async () => {
+      const h = make();
+      const cards = await h.adapter.certifications!.find(await connect(h));
+      expect(cards.length).toBeGreaterThan(0);
+      for (const c of cards) {
+        expect(Object.keys(c).sort()).toEqual([
+          'agency', 'category', 'centreCity', 'centreCountry', 'centreName', 'centreNumber', 'courseId', 'divesAtIssue', 'expiresOn',
+          'imageUrl', 'instructorName', 'instructorNumber', 'issuedOn', 'level', 'remoteId',
+        ]);
+        expect([typeof c.remoteId, typeof c.agency, typeof c.level]).toEqual(['string', 'string', 'string']);
+        expect(c.issuedOn === null || /^\d{4}-\d{2}-\d{2}$/.test(c.issuedOn)).toBe(true);
+        expect(c.imageUrl === null || typeof c.imageUrl === 'string').toBe(true);
+      }
+      const withImage = cards.find((c) => c.imageUrl)!;
+      const image = await h.adapter.certifications!.image(withImage.imageUrl!);
+      expect(image.mediaType).toBe('image/png');
+      expect(image.bytes.byteLength).toBeGreaterThan(8);
     });
 
     it.runIf(declares('diveSites.import.find'))('offers its dive sites with their IDs', async () => {

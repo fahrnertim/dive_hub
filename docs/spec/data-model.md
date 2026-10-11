@@ -115,9 +115,12 @@ Diver, never by other Users (ADR 0028); deleted with the Diver. No height, sex o
 Users can manage one Diver (two parents; a dive center handing a guest's log over to
 the guest). External Divers are managed by no one (ADR 0028): shared like Dive sites.
 
-**Certification** — Diver, Agency (catalog entry or free text), level (catalog or free
-text), number, date, instructor (Diver reference or text), card images (Media),
-verification state (`self-declared`, `card seen`, `verified with agency`). Covers B3.
+**Certification** (built, ADR 0050) — Diver, agency and level as free text (suggestions from the Diver's other cards;
+the Agency catalog stays planned), number, issue and expiry date, dives at issue, instructor and dive centre as text
+snapshots, verification state (`self_declared`, `card_seen` by hand; `verified_with_agency` only an import sets), notes,
+and for an imported card its `source`, card ID (unique per Diver and source), and the card picture (a PNG in the blob
+store, `image_state` none/pending/stored/failed; not the planned Media entity). Seen and changed only by the Users who
+manage the Diver; an imported card takes only notes; soft-deleted. Covers B3.
 
 **Membership** (0..n per Diver, B4), **Insurance** (policy number, insurer contact,
 coverage, validity; B5), **Medical exam** (date, result, valid until, examiner), **Dive permit**.

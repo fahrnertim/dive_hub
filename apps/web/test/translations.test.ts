@@ -83,7 +83,8 @@ describe('codes from the API', () => {
     // the Tools page gives no bottom time (ADR 0032).
     ['reason', 'import.reason', 'provider.leftOut', 'assessment.noFly', 'tools.bottom.outsideReason'],
     ['errorCode', 'import.errorCode'],
-    ['result', 'import.result'],
+    // A certification import's report names the cards it left alone (ADR 0050).
+    ['result', 'import.result', 'certifications.report'],
     ['waterType', 'vocabulary.waterType'],
     ['diveMode', 'vocabulary.diveMode'],
     ['decoModel', 'vocabulary.decoModel'],

@@ -6,11 +6,14 @@ import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireAdmin, requireUser } from '../auth/fastify.js';
 import { Problem, problem } from '../http/problems.js';
+import type { CertificationService } from '../certifications/certification-service.js';
 import { DiverError, type DiverActor, type DiverService } from './diver-service.js';
 
 export interface DiverRouteDeps {
   auth: Auth;
   divers: DiverService;
+  /** Releases the card pictures of a deleted Diver (ADR 0050). */
+  certifications: CertificationService;
 }
 
 const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
@@ -95,7 +98,7 @@ const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
 
 const actorOf = (request: FastifyRequest): DiverActor => ({ userId: request.user!.id, isAdmin: request.user!.role === 'admin' });
 
-export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app, { auth, divers }) => {
+export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app, { auth, divers, certifications }) => {
   app.addHook('onRequest', requireUser(auth));
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof DiverError) {
@@ -150,7 +153,9 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
   app.delete('/divers/:id', {
     schema: { summary: 'Delete a Diver without Dives or Devices who is on no Dive', params: IdParams, response: { 204: Type.Null(), ...errors } },
   }, async (request, reply) => {
+    const pictures = await certifications.imageKeysOf(request.params.id);
     await divers.remove(request.user!.id, request.params.id);
+    await certifications.releaseKeys(pictures);
     return reply.code(204).send(null);
   });
 

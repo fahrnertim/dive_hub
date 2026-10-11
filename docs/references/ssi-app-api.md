@@ -343,7 +343,7 @@ a synced dive has been seen:
 | `get_user_data` | profile: name, address, birthday, units | [S] |
 | `get_divelog_vars` | ID → name lists for conditions (weather, entry, water body, current, surface, dive type, special dive, tank) | [S]; fetch at runtime when conditions are sent. Answers without a token [R] (2026-10-08): `logbook_vars.tanktype` is `{ 19: "steel", 20: "alu" }`, `logbook_vars.suit` `{ 85: "other", 86: "shorty", 87: "wetsuit", 88: "semidry", 89: "drysuit" }`; the two tank types are a constant in `ssi-import.ts` |
 | `get_buddies` | buddy list, the same entries as `logbook_buddies` in `get_divelog` ([Buddies](#buddies-checked-2026-10-05)) | [S]; no call to add a buddy is known |
-| `get_ccards` | certifications (card ID `ccard_uid`, course, date, instructor and centre numbers) | [S]; for an import from SSI later |
+| `get_ccards` | certifications (card ID `ccard_uid`, course, date, instructor and centre numbers) | [S]; [R] answers used by the certification import (ADR 0050): the picture of a card is `https://my.divessi.com/cert/<ccard_uid>`, a PNG served without a token (public by card ID) |
 | `get_gear`, `save_gear`, `delete_gear`, `get_gearsets`, `save_gearset` | equipment | [S] |
 | `get_divelog_history`, `set_divelog_history` | the account's totals from before the logbook (`history_scuba_totaldives`, `_since`, `_totaldivetime`, …, the same for freediving) | [R] the read, in the capture of 2026-10-10; the write is a name in the app's code only |
 | `sonar` | the app's social feed (about 830 KB) | [R], capture of 2026-10-10 |

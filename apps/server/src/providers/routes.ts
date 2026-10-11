@@ -18,6 +18,8 @@ import { pushRunRoutes } from './push-run-routes.js';
 import type { PushRunService } from './push-run-service.js';
 import type { PushRow, PushService } from './push-service.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
+import { CertificationError, type CertificationService } from '../certifications/certification-service.js';
+import { replyCertificationError } from '../certifications/routes.js';
 
 export interface ProviderRouteDeps {
   auth: Auth;
@@ -27,6 +29,7 @@ export interface ProviderRouteDeps {
   pushRuns: PushRunService;
   buddies: BuddyService;
   diveImports: DiveImportService;
+  certifications: CertificationService;
 }
 
 const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
@@ -84,6 +87,9 @@ const ProviderView = Type.Object({
     diveSites: Nullable(Type.Object({ import: Nullable(Direction) })),
     buddies: Nullable(Type.Object({ import: Nullable(Direction) }, {
       description: 'find: the account\'s own list of people (SSI: the buddy list), GET /api/connections/{id}/buddies',
+    })),
+    certifications: Nullable(Type.Object({ import: Nullable(Direction) }, {
+      description: 'find: the account\'s certification cards (SSI: get_ccards), POST /api/connections/{id}/certifications/import (ADR 0050)',
     })),
   }),
   notices: Type.Array(Type.Enum(['shows_unconfirmed', 'presents_as_app']), { description: 'Things a client must say: shows_unconfirmed, the Provider shows dives sent this way as unconfirmed; presents_as_app, Dive Hub introduces itself to the Provider as its own app (ADR 0049)' }),
@@ -263,15 +269,17 @@ export function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Sta
       } : null,
       diveSites: c.data.diveSites ? { import: direction(c.data.diveSites.import) } : null,
       buddies: c.data.buddies ? { import: direction(c.data.buddies.import) } : null,
+      certifications: c.data.certifications ? { import: direction(c.data.certifications.import) } : null,
     },
     notices: c.notices, limits: c.limits,
   };
 }
 
-export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, pushRuns, buddies, diveImports }) => {
+export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, pushRuns, buddies, diveImports, certifications }) => {
   app.addHook('onRequest', requireUser(auth));
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof ProviderServiceError) return replyProviderError(error, reply);
+    if (error instanceof CertificationError) return replyCertificationError(error, reply);
     throw error;
   });
 
@@ -374,6 +382,27 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
   }, async (request) => buddies.import(
     { userId: request.user!.id, isAdmin: request.user!.role === 'admin' }, request.params.id, request.body.accounts,
   ));
+
+  app.post('/connections/:id/certifications/import', {
+    schema: {
+      summary: 'Read the account\'s certification cards and bring the Connection\'s Diver up to date (ADR 0050)',
+      description: 'No preview: a new card is created verified_with_agency (read-only apart from notes), a card already here is updated from the '
+        + 'Provider\'s data, a card the User deleted stays deleted (deleted_earlier), a card the Provider no longer lists stays '
+        + '(not_at_provider). Pictures are fetched afterwards by a job: imageState pending, then stored or failed. 400 provider_unsupported '
+        + 'at a Provider without certifications; 404 diver_not_found when the User no longer keeps the Connection\'s Diver.',
+      params: IdParams,
+      response: {
+        200: Type.Object({
+          created: Type.Integer(), updated: Type.Integer(), unchanged: Type.Integer(),
+          items: Type.Array(Type.Object({
+            result: Type.Enum(['created', 'updated', 'unchanged', 'deleted_earlier', 'not_at_provider']),
+            level: Type.String({ description: 'The card\'s course or level, to name it in the report' }),
+            certificationId: Nullable(Type.String({ description: 'The card here; null for deleted_earlier' })),
+          })),
+        }), ...errors,
+      },
+    },
+  }, async (request) => certifications.importFrom(request.user!.id, request.params.id));
 
   const Choice = Type.Enum(['recordings', 'entries'], {
     description: 'recordings: its dives become Recordings, like a file\'s; entries: only logbook entries that fill Dives here',

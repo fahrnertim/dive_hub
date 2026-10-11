@@ -71,6 +71,8 @@ export interface Capabilities {
     diveSites?: { import?: Direction };
     /** `find`: the account's own list of people (SSI's buddy list), through a Connection (ADR 0029). */
     buddies?: { import?: Direction };
+    /** `find`: the account's certification cards, through a Connection (ADR 0050). */
+    certifications?: { import?: Direction };
   };
   /** Things a client must say about this Provider, e.g. that it shows dives sent this way as unconfirmed. */
   notices: ('shows_unconfirmed' | 'presents_as_app')[];
@@ -240,6 +242,28 @@ export interface RemoteBuddy {
   leaderNumber?: string | null;
 }
 
+/** One certification card in the account (ADR 0050): the agency's own record, as typed values. */
+export interface RemoteCertification {
+  /** The Provider's ID of the card (SSI: `ccard_uid`); the key of a re-import. */
+  remoteId: string;
+  agency: string;
+  /** The course or level as the Provider names it. */
+  level: string;
+  courseId: string | null;
+  category: string | null;
+  issuedOn: string | null;
+  expiresOn: string | null;
+  divesAtIssue: number | null;
+  instructorName: string | null;
+  instructorNumber: string | null;
+  centreName: string | null;
+  centreNumber: string | null;
+  centreCity: string | null;
+  centreCountry: string | null;
+  /** Where the card's picture is (public, no sign-in); null when the Provider has none. Only an adapter makes it. */
+  imageUrl: string | null;
+}
+
 /** What Dive Hub sends to find a dive again when an answer is lost: `divehub-<Dive id>`. */
 export const REFERENCE_PREFIX = 'divehub-';
 export const referenceOf = (diveId: string) => `${REFERENCE_PREFIX}${diveId}`;
@@ -354,5 +378,11 @@ export interface ProviderAdapter {
   buddies?: {
     /** The account's own list of people (SSI: the buddy list), read live. */
     find(context: ActionContext): Promise<RemoteBuddy[]>;
+  };
+  certifications?: {
+    /** The account's certification cards, read live. */
+    find(context: ActionContext): Promise<RemoteCertification[]>;
+    /** A card's picture from the URL `find` gave: PNG bytes (no sign-in). Throws a ProviderError. */
+    image(url: string): Promise<{ bytes: Uint8Array; mediaType: string }>;
   };
 }

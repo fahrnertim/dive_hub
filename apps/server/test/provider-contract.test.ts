@@ -5,7 +5,7 @@ import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import type { OutgoingDive } from '../src/providers/provider.js';
 import { createFakeHandover } from './fake-handover-provider.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
-import { computerDive, createFakeSsi, handTypedDive } from './fake-ssi.js';
+import { computerDive, createFakeSsi, fakeCard, handTypedDive } from './fake-ssi.js';
 import { numbersProblems, providerContract, runProblems } from './provider-contract.js';
 import { describe, expect, it } from 'vitest';
 
@@ -19,6 +19,7 @@ const dive: OutgoingDive = {
 
 providerContract('SSI', () => {
   const fake = createFakeSsi({
+    cards: [fakeCard(5_012_047, { uid: '123456N1000000000001-EG', course: 'Open Water Diver', short: 'OWD', courseId: 225, issued: '2023-04-23' })],
     buddies: [{
       owner: 5_012_047, id: 3_786_888, buddy_master_id: 4_989_164, firstname: 'Kai', lastname: 'Lund',
       email: 'kai@example.com', dob: '1980-01-02', phone: '+49 170 000000', city: 'Kiel',

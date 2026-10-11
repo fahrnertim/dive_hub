@@ -1,7 +1,7 @@
 // What admins can do to Users (ADR 0013): change role, disable/enable, end sessions, delete.
 import { eq, inArray, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
-import { original, session, user } from '../db/schema.js';
+import { certification, original, session, user } from '../db/schema.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { PROBLEMS } from '../http/problems.js';
 import { renumber } from '../dives/dive-numbers.js';
@@ -95,7 +95,12 @@ export function createUserAdmin(db: Db, blobs: BlobStore) {
       // Files go after the commit: a failed transaction must not lose files that are still referenced.
       const stillUsed = new Set(fileKeys.originals.length === 0 ? [] : (await db.select({ key: original.storageKey })
         .from(original).where(inArray(original.storageKey, fileKeys.originals))).map((r) => r.key));
-      for (const key of [...fileKeys.originals.filter((k) => !stillUsed.has(k)), ...fileKeys.uploads]) await blobs.delete(key);
+      // The card pictures of the Divers that went (ADR 0050), unless another card or Original has the same file.
+      const pictureKeys = fileKeys.pictures.filter((k) => !stillUsed.has(k));
+      const cardsStill = new Set(pictureKeys.length === 0 ? [] : (await db.select({ key: certification.imageKey })
+        .from(certification).where(inArray(certification.imageKey, pictureKeys))).map((r) => r.key));
+      const pictures = pictureKeys.filter((k) => !cardsStill.has(k));
+      for (const key of [...fileKeys.originals.filter((k) => !stillUsed.has(k)), ...fileKeys.uploads, ...pictures]) await blobs.delete(key);
     },
   };
 }
@@ -133,7 +138,9 @@ async function deleteUserData(tx: Tx, userId: string) {
   await tx.execute(sql`update recording set device_id = null where device_id in (select id from device where diver_id in (select id from doomed_diver))`);
   await tx.execute(sql`delete from device where diver_id in (select id from doomed_diver)`);
   await tx.execute(sql`delete from diver_management where user_id = ${userId}`);
-  await tx.execute(sql`delete from diver where id in (select id from doomed_diver)`);
+  const pictures = (await rows<{ image_key: string }>(sql`select distinct image_key from certification
+    where diver_id in (select id from doomed_diver) and image_key is not null`)).map((r) => r.image_key);
+  await tx.execute(sql`delete from diver where id in (select id from doomed_diver)`); // its certifications cascade
 
   // Originals belong to one User (per-User dedup), so all of theirs go.
   await tx.execute(sql`delete from import_original where import_id in (select id from import where user_id = ${userId})`);
@@ -144,7 +151,7 @@ async function deleteUserData(tx: Tx, userId: string) {
   await renumber(tx, unlinked.map((r) => r.diver_id));
   // Sessions, credentials, invitations and reset links cascade with the user row.
   await tx.delete(user).where(eq(user.id, userId));
-  return { originals, uploads };
+  return { originals, uploads, pictures };
 }
 
 export type UserAdmin = ReturnType<typeof createUserAdmin>;

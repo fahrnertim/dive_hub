@@ -2,7 +2,7 @@
 // ever carries the password, the token or a URL (SSI takes both in the query string).
 import { describe, expect, it } from 'vitest';
 import { createSsiClient, SsiError, type Fetch } from '../src/providers/ssi/ssi-client.js';
-import { createFakeSsi } from './fake-ssi.js';
+import { createFakeSsi, fakeCard, PNG_BYTES } from './fake-ssi.js';
 
 const URL_ = 'https://ssi.invalid/app/a21.php';
 const PASSWORD = 'ssi-password';
@@ -90,5 +90,37 @@ describe('SSI client', () => {
       expect(text).not.toContain('secret-token');
       expect(text).not.toContain('ssi.invalid');
     }
+  });
+
+  describe('certification cards (ADR 0050)', () => {
+    const owd = fakeCard(5_012_047, { uid: '123456N1000000000001-EG', course: 'Open Water Diver', short: 'OWD', courseId: 225, issued: '2023-04-23', dives: 5 });
+
+    it('reads the cards as tidy values and leaves out an entry without a usable card ID', async () => {
+      const fake = createFakeSsi({ cards: [owd, { ...owd, ccard_uid: 'bad id/../x' }, { ...owd, ccard_uid: '' }] });
+      const client = createSsiClient({ url: URL_, fetch: fake.fetch });
+      const { token } = await client.signIn('erika@example.com', PASSWORD);
+      expect(await client.cards(token)).toEqual([{
+        id: '123456N1000000000001-EG', courseName: 'Open Water Diver', courseShort: 'OWD', category: 'scubadiving', courseId: '225', dives: 5,
+        issueDate: '2023-04-23', expireDate: null, instructorName: 'Ida Instructor', instructorNumber: '77001', centreName: 'Blue Hole Divers',
+        centreNumber: '123456', centreCity: 'Dahab', centreCountry: 'Egypt',
+      }]);
+      expect(client.cardImageUrl('123456N1000000000001-EG')).toBe('https://my.divessi.com/cert/123456N1000000000001-EG');
+    });
+
+    it('fetches a picture without a token, and refuses what is no PNG or is too big', async () => {
+      const fake = createFakeSsi({ cards: [owd] });
+      const client = createSsiClient({ url: URL_, fetch: fake.fetch });
+      const url = client.cardImageUrl(owd.ccard_uid);
+      expect((await client.cardImage(url)).bytes).toEqual(PNG_BYTES);
+      expect(fake.calls.at(-1)).toEqual({ what: 'card_image', method: 'GET' });
+      fake.cardImages.set(owd.ccard_uid, { bytes: PNG_BYTES, contentType: 'text/html' });
+      await expect(client.cardImage(url)).rejects.toMatchObject({ reason: 'bad_response' });
+      fake.cardImages.set(owd.ccard_uid, { bytes: new Uint8Array(16).fill(7) });
+      await expect(client.cardImage(url)).rejects.toMatchObject({ reason: 'bad_response' });
+      fake.cardImages.set(owd.ccard_uid, { bytes: new Uint8Array(1_000_001) });
+      await expect(client.cardImage(url)).rejects.toMatchObject({ reason: 'bad_response' });
+      fake.cardImages.set(owd.ccard_uid, { status: 404, bytes: new Uint8Array() });
+      await expect(client.cardImage(url)).rejects.toMatchObject({ reason: 'unavailable' });
+    });
   });
 });

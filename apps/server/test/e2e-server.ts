@@ -22,7 +22,7 @@ import { skippingClock } from '../src/providers/leases.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
-import { computerDive, createFakeSsi, handTypedDive } from './fake-ssi.js';
+import { computerDive, createFakeSsi, fakeCard, handTypedDive } from './fake-ssi.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import { createMerging } from '../src/dives/merging.js';
 import { createDiverService } from '../src/divers/diver-service.js';
@@ -102,6 +102,11 @@ const fakeSsi = createFakeSsi({
     { owner: 5_012_047, id: 3_786_888, buddy_master_id: 4_989_164, firstname: 'Kai', lastname: 'Lund', email: 'kai@example.com', dob: '1980-01-02', phone: '+49 170 000001', city: 'Kiel' },
     { owner: 5_012_047, id: 2_826_964, buddy_master_id: 4_512_484, firstname: 'Mia', lastname: 'Stone', email: 'mia@example.com', dob: '1985-03-04', phone: '+49 170 000002', city: 'Linz' },
   ],
+  // Erika's certification cards (ADR 0050); certifications.spec.ts imports them from the Diver page. Invented values.
+  cards: [
+    fakeCard(5_012_047, { uid: 'E2ECARD-0001', course: 'Open Water Diver', short: 'owd', courseId: 101, issued: '2019-06-15', dives: 9 }),
+    fakeCard(5_012_047, { uid: 'E2ECARD-0002', course: 'Advanced Adventurer', short: 'aa', courseId: 102, issued: '2021-04-02', dives: 40 }),
+  ],
 });
 const quick = <A extends { capabilities: { limits: { pauseMs: number; run: unknown } } }>(adapter: A): A => ({
   ...adapter, capabilities: { ...adapter.capabilities, limits: { pauseMs: 0, run: { pauseMs: 150, maxDives: 100 } } },
@@ -154,7 +159,7 @@ for (const record of [
 ]) fakeSsi.addDive(6_100_200, record);
 
 // Uploads made by the tests are processed in the background, as in the real app.
-const worker = await startWorker(pool, imports, siteImports, aiAccesses, assessments, providers.pushRuns, app.log);
+const worker = await startWorker(pool, imports, siteImports, aiAccesses, assessments, providers.pushRuns, providers.certifications, app.log);
 // Test-only (never in the production app): a browser test changes a dive in an SSI account's logbook, as the User would
 // in SSI's app (ADR 0030: changes taken back). By the account's e-mail and SSI's dive number; only the fields given.
 app.post('/e2e/fake-ssi/dive', { schema: { hide: true } }, async (request) => {

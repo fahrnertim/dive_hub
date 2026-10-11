@@ -45,6 +45,8 @@ export const SSI_CAPABILITIES: Capabilities = {
     diveSites: { import: { operations: ['find', 'list'], findBy: ['position'] } },
     // `find`: the account's buddy list (no call to add an entry is known).
     buddies: { import: { operations: ['find'] } },
+    // `find`: the account's certification cards (`get_ccards`, ADR 0050); no call to change a card is known or wanted.
+    certifications: { import: { operations: ['find'] } },
   },
   notices: ['shows_unconfirmed', 'presents_as_app'],
   limits: { pauseMs: 2000, run: { pauseMs: 5000, maxDives: 100 } },
@@ -95,7 +97,7 @@ function buddiesFor(dive: OutgoingDive, list: SsiBuddy[]) {
  * long it took. Never the token, password or URL. Shows when Dive Hub used an account at SSI.
  */
 export interface SsiCallLog {
-  call: 'authenticate' | 'get_divelog' | 'save_divelog';
+  call: 'authenticate' | 'get_divelog' | 'save_divelog' | 'get_ccards';
   connectionId: string | null;
   /** `ok`, or the reason SSI's client gave (`unavailable`, `signed_out`, …). */
   outcome: 'ok' | SsiError['reason'] | 'error';
@@ -261,6 +263,22 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
     },
     buddies: {
       find: async (ctx) => (await logbookOf(ctx).recent()).buddies.map(({ id, ...b }) => ({ remoteId: String(id), ...b })),
+    },
+    certifications: {
+      find: async (ctx) => (await called('get_ccards', ctx.connectionId, () => client.cards(ctx.access))).map((c) => ({
+        remoteId: c.id, agency: 'SSI', level: c.courseName, courseId: c.courseId, category: c.category, issuedOn: c.issueDate,
+        expiresOn: c.expireDate, divesAtIssue: c.dives, instructorName: c.instructorName, instructorNumber: c.instructorNumber,
+        centreName: c.centreName, centreNumber: c.centreNumber, centreCity: c.centreCity, centreCountry: c.centreCountry,
+        imageUrl: client.cardImageUrl(c.id),
+      })),
+      image: async (url) => {
+        try {
+          return await client.cardImage(url);
+        } catch (error) {
+          if (error instanceof SsiError) throw new ProviderError(error.reason, error.message.slice(0, 300));
+          throw error;
+        }
+      },
     },
   };
 }

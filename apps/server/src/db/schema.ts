@@ -1155,3 +1155,61 @@ export const diverBodyWeight = pgTable(
   },
   (t) => [primaryKey({ columns: [t.diverId, t.date] }), check('diver_body_weight_kg_ck', sql`${t.kg} between 20 and 400`)],
 );
+
+/** How sure a Certification is (ADR 0050): only an import from a Provider's own record is `verified_with_agency`. */
+export const CERTIFICATION_VERIFICATIONS = ['self_declared', 'card_seen', 'verified_with_agency'] as const;
+export type CertificationVerification = (typeof CERTIFICATION_VERIFICATIONS)[number];
+/** Where a Certification's card image is: none (manual card or no image), pending (a job will fetch it), stored, failed. */
+export const CERTIFICATION_IMAGE_STATES = ['none', 'pending', 'stored', 'failed'] as const;
+export type CertificationImageState = (typeof CERTIFICATION_IMAGE_STATES)[number];
+export const certificationVerification = pgEnum('certification_verification', [...CERTIFICATION_VERIFICATIONS]);
+export const certificationImageState = pgEnum('certification_image_state', [...CERTIFICATION_IMAGE_STATES]);
+
+/**
+ * A Diver's certification card (ADR 0050): seen and changed only by the Users who manage the Diver (external Divers have
+ * none); goes with the Diver. `source` and `external_id` (the Provider's card ID) are set for an imported card, which is
+ * the key of a re-import; a deleted card keeps its row so a re-import leaves it deleted.
+ */
+export const certification = pgTable(
+  'certification',
+  {
+    id: id(),
+    diverId: uuid('diver_id').notNull().references(() => diver.id, { onDelete: 'cascade' }),
+    agency: text('agency').notNull(),
+    level: text('level').notNull(),
+    number: text('number'),
+    issuedOn: date('issued_on', { mode: 'string' }),
+    expiresOn: date('expires_on', { mode: 'string' }),
+    divesAtIssue: integer('dives_at_issue'),
+    instructorName: text('instructor_name'),
+    instructorNumber: text('instructor_number'),
+    centreName: text('centre_name'),
+    centreNumber: text('centre_number'),
+    centreCity: text('centre_city'),
+    centreCountry: text('centre_country'),
+    verification: certificationVerification('verification').notNull().default('self_declared'),
+    notes: text('notes'),
+    /** The Provider's ID (`ssi`) for an imported card; null for one typed by hand. */
+    source: text('source'),
+    externalId: text('external_id'),
+    remoteCourseId: text('remote_course_id'),
+    category: text('category'),
+    /** Where the worker fetches the image from; only ever written by an adapter. */
+    imageUrl: text('image_url'),
+    imageKey: text('image_key'),
+    imageSha256: text('image_sha256'),
+    imageBytes: integer('image_bytes'),
+    imageState: certificationImageState('image_state').notNull().default('none'),
+    importedAt: timestamp('imported_at', { withTimezone: true }),
+    version: integer('version').notNull().default(1),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    deletedAt: deletedAt(),
+  },
+  (t) => [
+    index('certification_diver_idx').on(t.diverId),
+    uniqueIndex('certification_card_uq').on(t.diverId, t.source, t.externalId).where(sql`${t.externalId} is not null`),
+    check('certification_source_ck', sql`(${t.source} is null) = (${t.externalId} is null)`),
+    check('certification_dives_ck', sql`${t.divesAtIssue} between 0 and 100000`),
+  ],
+);

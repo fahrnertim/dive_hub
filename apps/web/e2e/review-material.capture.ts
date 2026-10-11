@@ -190,6 +190,21 @@ test('review material', async ({ page, request, browser }) => {
     await capture(page, '04e-divers-body-weight', { full: false, aria: false });
     await page.keyboard.press('Escape');
     await request.delete(`/api/divers/${ownDiver!.id}/body-weights/2026-03-01`, { headers });
+    // A Diver's certification cards (ADR 0050): one typed, one imported from SSI's fake account with its picture.
+    const typed = await (await request.post(`/api/divers/${ownDiver!.id}/certifications`, {
+      headers, data: { agency: 'PADI', level: 'Rescue Diver', issuedOn: '2022-05-01', notes: 'Seen at the dive base', cardSeen: true },
+    })).json() as { id: string };
+    await request.post('/api/connections/ssi', { headers, data: { diverId: ownDiver!.id, login: 'erika@example.com', password: 'ssi-password', keepSignedIn: true } });
+    const connection = ((await (await request.get('/api/connections')).json()) as { id: string; provider: string; diverId: string }[])
+      .find((c) => c.provider === 'ssi' && c.diverId === ownDiver!.id);
+    if (connection) await request.post(`/api/connections/${connection.id}/certifications/import`, { headers });
+    await page.getByRole('button', { name: `Certifications: ${ownDiver!.name}` }).click();
+    await page.getByRole('dialog').getByRole('img', { name: /^Picture of the card/ }).first().waitFor({ timeout: 20_000 }).catch(() => undefined);
+    await capture(page, '04f-divers-certifications', { full: false, aria: false });
+    await page.keyboard.press('Escape');
+    const cards = (await (await request.get(`/api/divers/${ownDiver!.id}/certifications`)).json()) as { id: string }[];
+    for (const c of cards) await request.delete(`/api/divers/${ownDiver!.id}/certifications/${c.id}`, { headers });
+    void typed;
     await page.getByRole('button', { name: 'Codes: Pia Probe' }).click();
     await page.getByRole('button', { name: 'Edit details' }).click();
     await capture(page, '04b-divers-codes-edit', { full: false, aria: false });
@@ -256,6 +271,23 @@ test('review material', async ({ page, request, browser }) => {
     if (want('divers')) {
       await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Geräte' }).waitFor();
       await capture(page, '10-divers-de-phone', { aria: false });
+      // A Diver's certification cards at phone width, in German: a typed and an imported one (ADR 0050), and the form.
+      const [diver] = (await (await request.get('/api/divers')).json()) as { id: string; name: string }[];
+      await request.post(`/api/divers/${diver!.id}/certifications`, {
+        headers, data: { agency: 'PADI', level: 'Advanced Open Water Diver', issuedOn: '2022-05-01', centreName: 'Tauchbasis am See', notes: 'Karte beim Tauchladen gesehen', cardSeen: true },
+      });
+      const connections = (await (await request.get('/api/connections')).json()) as { id: string; provider: string; diverId: string }[];
+      const ssi = connections.find((c) => c.provider === 'ssi' && c.diverId === diver!.id);
+      if (ssi) await request.post(`/api/connections/${ssi.id}/certifications/import`, { headers });
+      await page.getByRole('button', { name: `Zertifizierungen: ${diver!.name}` }).click();
+      await page.getByRole('dialog').getByRole('img', { name: /^Bild der Karte/ }).first().waitFor({ timeout: 20_000 }).catch(() => undefined);
+      await capture(page, '10c-divers-certifications-de-phone', { aria: false });
+      await page.getByRole('dialog').getByRole('button', { name: 'Zertifizierung hinzufügen' }).click();
+      await capture(page, '10d-divers-certification-form-de-phone', { aria: false });
+      await page.keyboard.press('Escape');
+      for (const c of (await (await request.get(`/api/divers/${diver!.id}/certifications`)).json()) as { id: string }[]) {
+        await request.delete(`/api/divers/${diver!.id}/certifications/${c.id}`, { headers });
+      }
       await page.getByRole('button', { name: 'Codes: Pia Probe' }).click();
       await page.getByRole('dialog').getByRole('img').nth(1).waitFor();
       await capture(page, '10a-divers-codes-de-phone', { aria: false });

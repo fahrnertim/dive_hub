@@ -206,6 +206,11 @@ A Diver's weight on a date (one value per date, in kilograms), seen and set only
 _Avoid_: Weight (alone), mass
 _German_: Körpergewicht
 
+**Certification**:
+A card a Diver holds: agency, level and number as text, dates, instructor and dive centre as typed, and a verification state (self-declared, card seen, verified with the agency). Typed by hand or read from a Provider's account (SSI); an imported card is the agency's record and takes only notes. Seen and changed only by the Users who manage the Diver; deleted with it.
+_Avoid_: Licence, brevet (in the code and docs)
+_German_: Zertifizierung
+
 **Lead estimate**:
 A suggestion, computed on request and never stored, of how much lead a Diver should carry in planned conditions: from their own Dives with the same exposure suit, adjusted for the cylinder and the water, else a rule of thumb; always with a range and its reasons, and never a substitute for a weight check.
 _Avoid_: Weight calculator (the tool's name on screen may say so), recommendation, prediction

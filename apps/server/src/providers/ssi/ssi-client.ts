@@ -20,10 +20,19 @@ const APP_PARAMS = {
  */
 export const SSI_APP_USER_AGENT = 'Dart/3.12 (dart:io)';
 export const DEFAULT_SSI_URL = 'https://api.divessi.com/app/a21.php';
+export const DEFAULT_CARD_IMAGE_BASE = 'https://my.divessi.com/cert';
+/** A card's picture is a PNG of about 200 KB (the capture of 2026-10-10); anything over this is not one. */
+export const MAX_CARD_IMAGE_BYTES = 1_000_000;
+const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
 export type Fetch = (url: string, init: {
   method: 'GET' | 'POST'; headers: Record<string, string>; body?: string; signal?: AbortSignal;
-}) => Promise<{ status: number; text(): Promise<string> }>;
+}) => Promise<{
+  status: number; text(): Promise<string>;
+  /** Only read for a card image (ADR 0050). */
+  arrayBuffer?(): Promise<ArrayBuffer>;
+  headers?: { get(name: string): string | null };
+}>;
 
 /** An SSI dive record: a flat object of `odin_user_log_*` fields (about 340 of them). */
 export type SsiRecord = Record<string, unknown>;
@@ -64,6 +73,24 @@ export interface SsiBuddy {
   leaderNumber?: string | null;
 }
 
+/** A certification card of the account (`get_ccards`, ADR 0050); values as SSI gives them, tidied to text. */
+export interface SsiCard {
+  id: string;
+  courseName: string;
+  courseShort: string | null;
+  category: string | null;
+  courseId: string | null;
+  dives: number | null;
+  issueDate: string | null;
+  expireDate: string | null;
+  instructorName: string | null;
+  instructorNumber: string | null;
+  centreName: string | null;
+  centreNumber: string | null;
+  centreCity: string | null;
+  centreCountry: string | null;
+}
+
 export interface SsiLogbook {
   /** Dives that aren't deleted; SSI leaves deleted ones out. */
   dives: SsiRecord[];
@@ -87,12 +114,20 @@ export class SsiError extends Error {
 export interface SsiClient {
   signIn(email: string, password: string): Promise<SsiAccount>;
   logbook(token: string): Promise<SsiLogbook>;
+  /** The account's certification cards (ADR 0050). */
+  cards(token: string): Promise<SsiCard[]>;
+  /** The address of a card's picture, from its card ID. */
+  cardImageUrl(cardId: string): string;
+  /** A card's picture, public by card ID (no token), as PNG bytes; SsiError when it isn't one or is too big. */
+  cardImage(url: string): Promise<{ bytes: Uint8Array; mediaType: string }>;
   /** Creates a dive (`odin_user_log_id: null`) or updates one; returns SSI's dive ID. */
   save(token: string, record: SsiRecord): Promise<{ id: string }>;
 }
 
 export interface SsiClientOptions {
   url?: string | undefined;
+  /** Where cards' pictures are (`<base>/<card ID>`); default `https://my.divessi.com/cert`. */
+  cardImageBase?: string | undefined;
   fetch?: Fetch;
   timeoutMs?: number;
 }
@@ -106,6 +141,7 @@ export function createSsiClient(options: SsiClientOptions): SsiClient {
   const fetchImpl: Fetch = options.fetch ?? ((url, init) => fetch(url, init));
   const base = options.url ?? DEFAULT_SSI_URL;
   const timeoutMs = options.timeoutMs ?? 60_000;
+  const cardImageBase = (options.cardImageBase ?? DEFAULT_CARD_IMAGE_BASE).replace(/\/+$/, '');
 
   async function call(what: string, params: Record<string, string>, body?: SsiRecord): Promise<Record<string, unknown>> {
     const url = `${base}?${new URLSearchParams({ ...APP_PARAMS, what, ...params })}`;
@@ -175,6 +211,49 @@ export function createSsiClient(options: SsiClientOptions): SsiClient {
         }] : [];
       });
       return { dives, sites, buddies };
+    },
+
+    async cards(token) {
+      const data = await call('get_ccards', { token });
+      if (data.authenticated === false) throw new SsiError('signed_out', 'get_ccards');
+      if (!Array.isArray(data.ccard_list)) throw new SsiError('bad_response', 'get_ccards: no ccard_list');
+      const text = (v: unknown) => (typeof v === 'string' && v.trim() !== '' ? v.trim() : typeof v === 'number' && v > 0 ? String(v) : null);
+      const date = (v: unknown) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) && !v.startsWith('0000') ? v.slice(0, 10) : null);
+      return data.ccard_list.filter(isObject).flatMap((c): SsiCard[] => {
+        const id = text(c.ccard_uid);
+        const courseName = text(c.ccard_course_name);
+        // A card ID goes into an address: only what SSI prints on a card.
+        if (!id || !courseName || !/^[A-Za-z0-9._-]{4,64}$/.test(id)) return [];
+        return [{
+          id, courseName, courseShort: text(c.ccard_course_short), category: text(c.ccard_cat), courseId: text(c.ccard_course_id),
+          dives: typeof c.ccard_dives === 'number' && Number.isInteger(c.ccard_dives) && c.ccard_dives >= 0 ? c.ccard_dives : null,
+          issueDate: date(c.ccard_issue_date), expireDate: date(c.ccard_expire_date),
+          instructorName: text(c.ccard_instructor_name), instructorNumber: text(c.ccard_instructor_number),
+          centreName: text(c.ccard_divecenter_name), centreNumber: text(c.ccard_divecenter_number),
+          centreCity: text(c.ccard_divecenter_city), centreCountry: text(c.ccard_divecenter_country),
+        }];
+      });
+    },
+
+    cardImageUrl: (cardId) => `${cardImageBase}/${encodeURIComponent(cardId)}`,
+
+    async cardImage(url) {
+      let response: Awaited<ReturnType<Fetch>>;
+      try {
+        response = await fetchImpl(url, { method: 'GET', headers: { 'User-Agent': SSI_APP_USER_AGENT, Accept: 'image/png' }, signal: AbortSignal.timeout(timeoutMs) });
+      } catch (error) {
+        // The address holds the card ID; keep only the kind of failure.
+        throw new SsiError('unavailable', `card image: ${error instanceof Error ? error.name : 'network error'}`);
+      }
+      if (response.status < 200 || response.status >= 300) throw new SsiError('unavailable', `card image: HTTP ${response.status}`);
+      const type = response.headers?.get('content-type')?.split(';')[0]?.trim().toLowerCase() ?? '';
+      if (type !== 'image/png') throw new SsiError('bad_response', 'card image: not image/png');
+      if (Number(response.headers?.get('content-length') ?? 0) > MAX_CARD_IMAGE_BYTES) throw new SsiError('bad_response', 'card image: too big');
+      if (!response.arrayBuffer) throw new SsiError('bad_response', 'card image: no body');
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      if (bytes.byteLength > MAX_CARD_IMAGE_BYTES) throw new SsiError('bad_response', 'card image: too big');
+      if (bytes.byteLength < PNG_MAGIC.length || PNG_MAGIC.some((b, i) => bytes[i] !== b)) throw new SsiError('bad_response', 'card image: not a PNG');
+      return { bytes, mediaType: 'image/png' };
     },
 
     async save(token, record) {

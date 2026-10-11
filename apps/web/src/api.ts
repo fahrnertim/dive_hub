@@ -143,6 +143,7 @@ export const keys = {
   diverDetails: (id: string) => ['divers', id, 'details'] as const,
   /** A Diver's body weights (ADR 0031); only for the Users who keep the Diver. */
   bodyWeights: (id: string) => ['divers', id, 'body-weights'] as const,
+  certifications: (id: string) => ['divers', id, 'certifications'] as const,
   /** The account's list of people at a Provider; under ['connections']. */
   buddies: (connectionId: string) => ['connections', connectionId, 'buddies'] as const,
   /** What importing the account's dives would do (ADR 0030); under ['connections']. */
@@ -430,6 +431,12 @@ async function fetchBodyWeights(id: string) {
   return unwrap(await api.GET('/api/divers/{id}/body-weights', { params: { path: { id } } }));
 }
 export const bodyWeightsQuery = (id: string) => queryOptions({ queryKey: keys.bodyWeights(id), queryFn: () => fetchBodyWeights(id) });
+async function fetchCertifications(id: string) {
+  return unwrap(await api.GET('/api/divers/{id}/certifications', { params: { path: { id } } }));
+}
+/** A Diver's certification cards, newest first (ADR 0050). */
+export const certificationsQuery = (id: string) => queryOptions({ queryKey: keys.certifications(id), queryFn: () => fetchCertifications(id) });
+export type CertificationView = Awaited<ReturnType<typeof fetchCertifications>>[number];
 
 async function fetchBuddies(connectionId: string) {
   return unwrap(await api.GET('/api/connections/{id}/buddies', { params: { path: { id: connectionId } } })).buddies;

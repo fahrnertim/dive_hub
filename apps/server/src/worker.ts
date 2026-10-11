@@ -4,6 +4,7 @@ import type { FastifyBaseLogger } from 'fastify';
 import { BACKFILL_GAS_FIGURES_TASK, BACKFILL_POSITIONS_TASK, EXPIRE_WAITING_IMPORTS_TASK, FILL_CYLINDERS_TASK, PROCESS_IMPORT_TASK, type ImportService } from './imports/import-service.js';
 import { IMPORT_SITES_TASK, type SiteImportService } from './sites/import/site-import-service.js';
 import { PUSH_RUN_STEP_TASK, type PushRunService } from './providers/push-run-service.js';
+import { CERTIFICATION_IMAGE_TASK, type CertificationService } from './certifications/certification-service.js';
 import type { AiAccessService } from './mcp/access-service.js';
 import type { AssessmentService } from './assessment/assessment-service.js';
 
@@ -14,7 +15,7 @@ const ASSESS_DIVES_TASK = 'assess-dives';
 const PURGE_AI_ACCESS_LOG_TASK = 'purge-ai-access-log';
 
 export async function startWorker(
-  pool: pg.Pool, imports: ImportService, siteImports: SiteImportService, aiAccesses: AiAccessService, assessments: AssessmentService, pushRuns: PushRunService, log: FastifyBaseLogger,
+  pool: pg.Pool, imports: ImportService, siteImports: SiteImportService, aiAccesses: AiAccessService, assessments: AssessmentService, pushRuns: PushRunService, certifications: CertificationService, log: FastifyBaseLogger,
 ): Promise<Runner> {
   // An import still "running" now was cut off when the worker last stopped.
   await siteImports.failInterrupted();
@@ -45,6 +46,13 @@ export async function startWorker(
         const { runId } = payload as { runId: string };
         const next = await pushRuns.step(runId);
         if (next) await helpers.addJob(PUSH_RUN_STEP_TASK, { runId }, { runAt: new Date(Date.now() + next.afterMs), jobKey: `push-run:${runId}`, maxAttempts: 1 });
+      },
+      // One card's picture (ADR 0050); three attempts, the last one ends as `failed`.
+      [CERTIFICATION_IMAGE_TASK]: async (payload, helpers) => {
+        const { certificationId } = payload as { certificationId: string };
+        const final = helpers.job.attempts >= helpers.job.max_attempts;
+        const outcome = await certifications.fetchImage(certificationId, { final });
+        if (outcome === 'failed') log.warn({ certificationId }, 'a certification card picture could not be fetched');
       },
       [EXPIRE_WAITING_IMPORTS_TASK]: async () => {
         const ended = await imports.expireWaiting();

@@ -5,6 +5,7 @@ import {
   api, devicesQuery, diverSearchQuery, diversQuery, externalDiversQuery, keys, meQuery, unwrap, type DeviceView, type DiverView, type ExternalDiverView,
 } from './api.ts';
 import { BodyWeightDialog } from './BodyWeight.tsx';
+import { CertificationsDialog } from './Certifications.tsx';
 import { DiverCodesDialog, TakeCodeDialog } from './DiverCodes.tsx';
 import { deviceName } from './lib/devices.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
@@ -83,6 +84,7 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
   const [renaming, setRenaming] = useState(false);
   const [codes, setCodes] = useState(false);
   const [weight, setWeight] = useState(false);
+  const [certifications, setCertifications] = useState(false);
   const [newName, setNewName] = useState(d.name);
   const all = useQuery(diversQuery());
   const sameName = useSameName();
@@ -133,6 +135,9 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
             <Button variant="quiet" aria-label={t('common.forItem', { action: t('bodyWeight.open'), item: d.name })} onPress={() => setWeight(true)}>
               {t('bodyWeight.open')}
             </Button>
+            <Button variant="quiet" aria-label={t('common.forItem', { action: t('certifications.open'), item: d.name })} onPress={() => setCertifications(true)}>
+              {t('certifications.open')}
+            </Button>
             <Button ref={renameButton} variant="quiet" aria-label={t('common.forItem', { action: t('divers.rename'), item: d.name })} onPress={() => { setNewName(d.name); setRenaming(true); }}>
               {t('divers.rename')}
             </Button>
@@ -148,6 +153,7 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
       <DiveNumbers diver={d} />
       <MutedRules diver={d} />
       {codes && <DiverCodesDialog diverId={d.id} name={d.name} onClose={() => setCodes(false)} />}
+      {certifications && <CertificationsDialog diverId={d.id} name={d.name} onClose={() => setCertifications(false)} />}
       {weight && <BodyWeightDialog diverId={d.id} name={d.name} onClose={() => setWeight(false)} />}
     </li>
   );

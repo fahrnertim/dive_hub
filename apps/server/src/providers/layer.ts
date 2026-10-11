@@ -5,6 +5,7 @@ import type { Db } from '../db/client.js';
 import { createDiverService } from '../divers/diver-service.js';
 import type { SecretBox } from '../secrets/secret-box.js';
 import type { BlobStore } from '../storage/blob-store.js';
+import { createCertificationService } from '../certifications/certification-service.js';
 import { createBuddyService } from './buddy-service.js';
 import { createConnectionService } from './connection-service.js';
 import { createDiveImportService } from './dive-import.js';
@@ -22,7 +23,8 @@ export function createProviderLayer(deps: { db: Db; secrets: SecretBox; blobs: B
   const pushRuns = createPushRunService({ db: deps.db, registry: providers, pushes });
   const buddies = createBuddyService({ registry: providers, connections, divers: createDiverService(deps.db) });
   const diveImports = createDiveImportService({ db: deps.db, blobs: deps.blobs, registry: providers, connections });
-  return { providers, connections, pushes, pushRuns, buddies, diveImports };
+  const certifications = createCertificationService({ db: deps.db, blobs: deps.blobs, registry: providers, connections });
+  return { providers, connections, pushes, pushRuns, buddies, diveImports, certifications };
 }
 
 export type ProviderLayer = ReturnType<typeof createProviderLayer>;
