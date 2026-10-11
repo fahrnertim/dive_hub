@@ -55106,7 +55106,9 @@
                     "beyondCeiling",
                     "withLeftOut",
                     "estimatedSeconds",
-                    "blocked"
+                    "blocked",
+                    "inScope",
+                    "dives"
                   ],
                   "properties": {
                     "provider": {
@@ -55312,6 +55314,71 @@
                           "description": "The first 100, oldest first"
                         }
                       }
+                    },
+                    "inScope": {
+                      "type": "integer",
+                      "description": "How many Dives the request names (those of the list, or the ids found), whatever happens to them"
+                    },
+                    "dives": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "diveId",
+                          "number",
+                          "startsAt",
+                          "siteId",
+                          "siteName",
+                          "action"
+                        ],
+                        "properties": {
+                          "diveId": {
+                            "type": "string"
+                          },
+                          "number": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer"
+                              }
+                            ]
+                          },
+                          "startsAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "siteId": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "siteName": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "action": {
+                            "enum": [
+                              "create",
+                              "update",
+                              "number"
+                            ]
+                          }
+                        }
+                      },
+                      "description": "The Dives a start with these choices would queue, in the order they are sent: at most `limits.maxDives`"
                     }
                   }
                 }

@@ -1,7 +1,7 @@
 // Sending many Dives to SSI from the logbook (ADR 0047), against the e2e server's fake SSI: the dialog says what goes and
 // what is held back, a run shows its progress and its result, and a run stopped by a sign-in need goes on after it.
 import { expect, test } from '@playwright/test';
-import { clearPushRuns, expireSsiTokens, headers, leaveSsi, pushRunSetup, resetDive, signInSsi } from './support.ts';
+import { clearPushRuns, deletableDive, diveNumber, expireSsiTokens, headers, leaveSsi, pushRunSetup, readyForSsi, resetDive, signInSsi } from './support.ts';
 
 test.afterEach(async ({ request }) => {
   await clearPushRuns(request);
@@ -110,8 +110,74 @@ test('a dive changed since it was sent has its own filter, and the send dialog l
   const hint = dialog.locator('small.field-hint', { hasText: 'This replaces the values in SSI: 1 dive.' });
   await expect(hint).toBeVisible();
   expect(await hint.evaluate((el) => getComputedStyle(el).display)).toBe('block');
+  // The choices that change what SSI already holds sit together, under one warning (UI/UX pass C2).
+  const risky = dialog.getByRole('group', { name: 'These change what is already in SSI' });
+  await expect(risky.getByRole('checkbox', { name: /Also update dives changed since they were sent/ })).toBeVisible();
   await dialog.getByRole('link', { name: 'Show these dives in the logbook' }).click();
   await expect(dialog).toBeHidden();
   await expect(page).toHaveURL(/only=changed-since-sent/);
   await leaveSsi(request, dive.id);
+});
+
+test('the dialog says which dives go, lets one be left out, and sends exactly the ticked ones (UI/UX pass C2)', { tag: ['@dives'] }, async ({ page, request }) => {
+  const first = await resetDive(request);
+  const second = await deletableDive(request);
+  const { siteId } = await pushRunSetup(request, first.id, { keepSignedIn: true, siteExternalId: '7099' });
+  await readyForSsi(request, second);
+  await request.put(`/api/dive-sites/${siteId}/external-ids/ssi`, { data: { externalId: '7099' }, headers });
+  await page.goto(`/#/?site=${siteId}`);
+
+  await page.getByRole('button', { name: 'Send to SSI…' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Send dives to SSI' });
+  // The scope is a question the dialog asks: the list as it is now, named, with its size.
+  const scope = dialog.getByRole('radiogroup', { name: /Which dives/ });
+  await expect(scope.getByRole('radio', { name: /The dives in the list now \(2\)/ })).toBeChecked();
+  await expect(scope.getByRole('radio', { name: /Everything not in SSI yet \(\d+\)/ })).not.toBeChecked();
+  await expect(dialog.getByRole('button', { name: 'Send 2 dives' })).toBeEnabled();
+
+  // The dives that go are listed, each with a checkbox; leaving one out changes the button.
+  await dialog.getByRole('button', { name: /Show the 2 dives/ }).click();
+  const list = dialog.getByRole('group', { name: 'Dives to send' });
+  await expect(list.getByRole('checkbox')).toHaveCount(2);
+  await expect(list.getByRole('checkbox', { checked: true })).toHaveCount(2);
+  await list.locator('label').nth(1).click();
+  await expect(dialog.getByRole('button', { name: 'Send 1 dive' })).toBeEnabled();
+  await dialog.getByRole('button', { name: 'Select none' }).click();
+  await expect(dialog.getByRole('button', { name: 'Send 0 dives' })).toBeDisabled();
+  await dialog.getByRole('button', { name: 'Select all' }).click();
+  await list.locator('label').nth(1).click();
+
+  await dialog.getByRole('button', { name: 'Send 1 dive' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.locator('#main').getByText(/Sent 1 of 1 dives to SSI\./)).toBeVisible();
+  const sentStatus = async (id: string) => ((await (await request.get(`/api/dives/${id}/providers/ssi`)).json()) as { current: unknown }).current;
+  // The list is oldest first: the unticked one is the later of the two, and it was not sent.
+  const states = await Promise.all([first.id, second].map(sentStatus));
+  expect(states.filter((s) => s !== null)).toHaveLength(1);
+  await leaveSsi(request, first.id);
+  await leaveSsi(request, second);
+});
+
+test('"everything not in SSI yet" ignores the logbook\'s search, and the choice is the dialog\'s own', { tag: ['@dives'] }, async ({ page, request }) => {
+  const first = await resetDive(request);
+  const second = await deletableDive(request);
+  const { siteId } = await pushRunSetup(request, first.id, { keepSignedIn: true, siteExternalId: '7099' });
+  await readyForSsi(request, second);
+  await request.put(`/api/dive-sites/${siteId}/external-ids/ssi`, { data: { externalId: '7099' }, headers });
+  // A search that finds one of the two dives.
+  const number = await diveNumber(request, first.id);
+  await page.goto(`/#/?q=${number}&site=${siteId}`);
+
+  await page.getByRole('button', { name: 'Send to SSI…' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Send dives to SSI' });
+  await expect(dialog.getByRole('button', { name: 'Send 1 dive' })).toBeEnabled();
+  await dialog.getByText('Everything not in SSI yet').click();
+  await expect(dialog.getByRole('button', { name: 'Send 2 dives' })).toBeEnabled();
+  // Back to the list: the dialog never changed the logbook behind it.
+  await dialog.getByText('The dives in the list now').click();
+  await expect(dialog.getByRole('button', { name: 'Send 1 dive' })).toBeEnabled();
+  await expect(page).toHaveURL(new RegExp(`q=${number}`));
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await leaveSsi(request, first.id);
+  await leaveSsi(request, second);
 });

@@ -118,7 +118,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
                 options={SORT_CHOICES.map((c) => ({ id: c.id, label: t(`logbook.sort.${c.id}`) }))}
               />
             </div>
-            <SendToProvider params={params} />
+            <SendToProvider params={params} filterName={filterName} />
           </div>
           {dives.data && <ShowOnly params={params} counts={dives.data.counts} />}
         </>

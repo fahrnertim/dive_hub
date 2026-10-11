@@ -104,8 +104,16 @@ for (const v of variants) {
         await expect(page.getByRole('dialog').getByRole('link', { name: /SSI test reef/ })).toBeVisible();
         await expectGoodPage(page, title('Logbook'), v);
         await page.keyboard.press('Escape');
-        // A run that stopped for a sign-in need: the reason and the way on stay in the strip.
+        // The site has its SSI ID now: the dialog asks which dives, and lists the ones that go with a checkbox each (slice 25b).
         await request.put(`/api/dive-sites/${siteId}/external-ids/ssi`, { data: { externalId: '7099' }, headers });
+        await page.getByRole('button', { name: v.english ? 'Send to SSI…' : 'An SSI senden…' }).click();
+        const dialog = page.getByRole('dialog');
+        await expect(dialog.getByRole('radiogroup')).toBeVisible();
+        await dialog.getByRole('button', { name: v.english ? 'Show the dive' : 'Den Tauchgang zeigen' }).click();
+        await expect(dialog.getByRole('group', { name: v.english ? 'Dives to send' : 'Zu sendende Tauchgänge' }).getByRole('checkbox')).toHaveCount(1);
+        await expectGoodPage(page, title('Logbook'), v);
+        await page.keyboard.press('Escape');
+        // A run that stopped for a sign-in need: the reason and the way on stay in the strip.
         await expireSsiTokens(request);
         const started = await request.post(`/api/connections/${connectionId}/push-runs`, { data: { dives: { list: { siteId } } }, headers });
         expect(started.status(), await started.text()).toBe(202);

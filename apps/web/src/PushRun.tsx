@@ -1,17 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Label, ProgressBar } from 'react-aria-components';
 import {
   ApiError, cancelPushRun, connectionsQuery, continuePushRun, keys, pushRunActive, pushRunPreviewQuery, pushRunQuery, pushRunsQuery,
-  startPushRun, type ConnectionView, type LogbookParams, type ProviderView, type PushRunChoices, type PushRunDetail, type PushRunView,
+  siteQuery, startPushRun, type ConnectionView, type LogbookParams, type ProviderView, type PushRunChoices, type PushRunDetail, type PushRunView,
 } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
-import { logbookHref, toggled } from './lib/logbook.ts';
+import { logbookHref, toggled, type LogbookFilter } from './lib/logbook.ts';
 import { useProviders } from './lib/providers.ts';
-import { ActionMenu, Button, Checkbox, Dialog, Disclosure, LinkButton, Muted, Notice } from './ui/index.ts';
+import { ActionMenu, Button, Checkbox, Dialog, Disclosure, Icon, LinkButton, Muted, Notice, RadioGroup } from './ui/index.ts';
 
 /** What a run is for, as a Provider-shaped name for texts. */
 const named = (p: ProviderView | undefined, id: string) => ({ id, name: p?.name ?? id });
@@ -35,7 +35,7 @@ function useRunConnections(params: LogbookParams) {
  * "Send to SSI…" in the logbook's toolbar (ADR 0047): one button per Connection whose Provider takes runs and whose Diver
  * the list shows (a menu when there are several). It opens the dialog that says what would go, before anything is sent.
  */
-export function SendToProvider({ params }: { params: LogbookParams }) {
+export function SendToProvider({ params, filterName }: { params: LogbookParams; filterName: (filter: LogbookFilter) => string }) {
   const { t } = useTranslation();
   const options = useRunConnections(params);
   const [open, setOpen] = useState<string | null>(null);
@@ -60,26 +60,63 @@ export function SendToProvider({ params }: { params: LogbookParams }) {
         />
       )}
       {chosen && (
-        <SendDialog connection={chosen.connection} provider={chosen.provider} params={params} onClose={() => { setOpen(null); trigger.current?.focus(); }} />
+        <SendDialog connection={chosen.connection} provider={chosen.provider} params={params} filterName={filterName} onClose={() => { setOpen(null); trigger.current?.focus(); }} />
       )}
     </div>
   );
 }
 
-function SendDialog({ connection, provider, params, onClose }: {
-  connection: ConnectionView; provider: ProviderView | undefined; params: LogbookParams; onClose: () => void;
+/** What the dialog can send: the logbook's list as it is now, every Dive not at the Provider yet, or the ones changed since sent. */
+type Scope = 'list' | 'new' | 'changed';
+const SCOPES: readonly Scope[] = ['list', 'new', 'changed'];
+const NO_CHOICES = { updates: false, updatesRemovingVerification: false, numbers: false };
+const sameList = (a: PushRunChoices['list'], b: PushRunChoices['list']) => a.siteId === b.siteId && a.q === b.q && a.only === b.only;
+
+/** A scope's label with the number of Dives in it and what it is, read together by screen readers. */
+const scopeLabel = (label: string, count: number | undefined, hint: string | undefined): ReactNode => (
+  <span className="radio-text">
+    <span>{label}{count !== undefined && <>{' '}<span className="push-run-scope-count">({count})</span></>}</span>
+    {hint && <span className="field-description">{hint}</span>}
+  </span>
+);
+
+/**
+ * The dialog before a run (ADR 0047), which owns what is sent (UI/UX pass, option A2): it asks which Dives, lists the ones
+ * that would go with a checkbox each, and sends exactly the ticked ones. The logbook behind it is never changed.
+ */
+function SendDialog({ connection, provider, params, filterName, onClose }: {
+  connection: ConnectionView; provider: ProviderView | undefined; params: LogbookParams; filterName: (filter: LogbookFilter) => string; onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const display = useDisplay();
   const errorText = useErrorText();
   const queryClient = useQueryClient();
   const name = provider?.name ?? connection.provider;
-  const [choices, setChoices] = useState<PushRunChoices>({
-    list: { siteId: params.siteId, q: params.q, only: params.only?.join(',') || undefined },
-    updates: false, updatesRemovingVerification: false, numbers: false,
-  });
-  const preview = useQuery(pushRunPreviewQuery(connection.id, choices));
+  const site = useQuery({ ...siteQuery(params.siteId ?? ''), enabled: !!params.siteId });
+  const listNow = { siteId: params.siteId, q: params.q, only: params.only?.join(',') || undefined };
+  const filtered = !!(listNow.siteId || listNow.q || listNow.only);
+  const lists: Record<Scope, PushRunChoices['list']> = { list: listNow, new: { only: 'not-at-provider' }, changed: { only: 'changed-since-sent' } };
+  // A scope that is the list itself is not offered twice.
+  const offered = SCOPES.filter((s) => s === 'list' || !sameList(lists[s], listNow));
+  const [scope, setScope] = useState<Scope>(filtered ? 'list' : 'new');
+  const [choices, setChoices] = useState(NO_CHOICES);
+  // The Dives the User took out of the run (by id); a new scope starts with all of them in.
+  const [left, setLeft] = useState<ReadonlySet<string>>(new Set());
+  const sizes = {
+    list: useQuery(pushRunPreviewQuery(connection.id, { list: lists.list, ...NO_CHOICES })),
+    new: useQuery(pushRunPreviewQuery(connection.id, { list: lists.new, ...NO_CHOICES })),
+    changed: useQuery(pushRunPreviewQuery(connection.id, { list: lists.changed, ...NO_CHOICES })),
+  };
+  const request: PushRunChoices = { list: lists[scope], ...choices };
+  const preview = useQuery(pushRunPreviewQuery(connection.id, request));
+  const p = preview.data;
+  const dives = p?.dives ?? [];
+  const goes = dives.filter((d) => !left.has(d.diveId));
+  const takenOut = dives.length - goes.length;
+  // Taking one out sends the ticked Dives by id; else the list, as the preview counted it.
+  const toSend: PushRunChoices = takenOut > 0 ? { ...request, ids: goes.map((d) => d.diveId) } : request;
   const start = useMutation({
-    mutationFn: () => startPushRun(connection.id, choices),
+    mutationFn: () => startPushRun(connection.id, toSend),
     onSuccess: async (run) => {
       await queryClient.invalidateQueries({ queryKey: keys.pushRuns });
       announce(t('pushRun.started', { count: run.counts.total, name }));
@@ -90,9 +127,13 @@ function SendDialog({ connection, provider, params, onClose }: {
       if (e instanceof ApiError && e.code === 'push_run_active') await queryClient.invalidateQueries({ queryKey: keys.pushRuns });
     },
   });
-  const p = preview.data;
-  const set = (change: Partial<PushRunChoices>) => { start.reset(); setChoices((c) => ({ ...c, ...change })); };
-  const minutes = p ? Math.ceil(p.estimatedSeconds / 60) : 0;
+  const set = (change: Partial<typeof NO_CHOICES>) => { start.reset(); setChoices((c) => ({ ...c, ...change })); };
+  const chooseScope = (next: Scope) => { start.reset(); setLeft(new Set()); setScope(next); };
+  const tick = (diveId: string, on: boolean) => {
+    start.reset();
+    setLeft((l) => { const next = new Set(l); if (on) next.delete(diveId); else next.add(diveId); return next; });
+  };
+  const minutes = p && p.send > 0 ? Math.ceil((p.estimatedSeconds * goes.length) / p.send / 60) : 0;
   const siteGroups = new Map<string, { siteId: string | null; name: string | null; count: number }>();
   for (const d of p?.blocked.dives ?? []) {
     const key = d.siteId ?? '';
@@ -101,10 +142,32 @@ function SendDialog({ connection, provider, params, onClose }: {
     siteGroups.set(key, group);
   }
   const blockedHidden = p ? p.blocked.total - p.blocked.dives.length : 0;
+  const listHint = filtered
+    ? [
+      listNow.siteId && site.data?.name ? t('pushRun.scopeSite', { site: site.data.name }) : null,
+      listNow.q ? t('pushRun.scopeSearch', { q: listNow.q }) : null,
+      ...(params.only ?? []).map(filterName),
+    ].filter(Boolean).join(' · ')
+    : undefined;
+  const hints: Record<Scope, string | undefined> = {
+    list: listHint, new: t('pushRun.scopeNewHint', { name }), changed: t('pushRun.scopeChangedHint', { name }),
+  };
+  const labels: Record<Scope, string> = {
+    list: filtered ? t('pushRun.scopeList') : t('pushRun.scopeAll', { diver: connection.diverName }),
+    new: t('pushRun.scopeNew', { name }), changed: t('pushRun.scopeChanged'),
+  };
+  const updatable = p ? p.counts.update + p.counts.updateRemovingVerification : 0;
+  const showUpdates = !!p && p.counts.update > 0;
+  const showRemoving = !!p && p.counts.updateRemovingVerification > 0;
+  const showNumbers = !!p && p.counts.number > 0;
+  const onChangedList = (lists[scope].only ?? '').split(',').includes('changed-since-sent');
   return (
     <Dialog title={t('pushRun.title', { name })} isOpen onOpenChange={(open) => { if (!open) onClose(); }}>
       <div className="push-run-dialog">
-        <p>{t('pushRun.intro', { name, diver: connection.diverName })}</p>
+        <RadioGroup
+          label={t('pushRun.which', { diver: connection.diverName })} value={scope} onChange={(v) => chooseScope(v as Scope)}
+          options={offered.map((s) => ({ value: s, label: scopeLabel(labels[s], sizes[s].data?.inScope, hints[s]) }))}
+        />
         {preview.isError && <Notice tone="danger">{errorText(preview.error)}</Notice>}
         {!p && !preview.isError && <Muted>{t('pushRun.loading')}</Muted>}
         {p && (
@@ -112,31 +175,58 @@ function SendDialog({ connection, provider, params, onClose }: {
             <p className="push-run-count" aria-live="polite">
               <strong>{p.counts.create > 0 || p.send > 0 ? t('pushRun.new', { count: p.counts.create }) : t('pushRun.nothing')}</strong>
             </p>
-            {p.counts.update > 0 && (
-              <Checkbox isSelected={choices.updates} onChange={(updates) => set({ updates, ...(!updates && { updatesRemovingVerification: false }) })}>
-                <span>{t('pushRun.updates')}<small className="field-hint">{t('pushRun.updatesHint', { count: p.counts.update + p.counts.updateRemovingVerification, name })}</small></span>
-              </Checkbox>
+            {dives.length > 0 && (
+              <Disclosure
+                title={t('pushRun.showDives', { count: dives.length })}
+                summary={takenOut > 0 ? <Muted>{t('pushRun.takenOut', { count: takenOut })}</Muted> : undefined}
+              >
+                <div className="push-run-dives" role="group" aria-label={t('pushRun.divesToSend')}>
+                  <div className="push-run-dives-actions">
+                    <Button size="small" variant="quiet" onPress={() => { start.reset(); setLeft(new Set()); }}>{t('pushRun.selectAll')}</Button>
+                    <Button size="small" variant="quiet" onPress={() => { start.reset(); setLeft(new Set(dives.map((d) => d.diveId))); }}>{t('pushRun.selectNone')}</Button>
+                  </div>
+                  <ul>
+                    {dives.map((d) => (
+                      <li key={d.diveId}>
+                        <Checkbox isSelected={!left.has(d.diveId)} onChange={(on) => tick(d.diveId, on)}>
+                          <span>{d.number ? `#${d.number} ` : ''}{t('pushRun.diveLine', { when: display.dateTime(d.startsAt), site: d.siteName ?? t('pushRun.noSite') })}</span>
+                        </Checkbox>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </Disclosure>
             )}
-            {p.counts.update + p.counts.updateRemovingVerification > 0 && !params.only?.includes('changed-since-sent') && (
-              <Muted>
-                <a href={logbookHref({ ...params, only: toggled(params.only, 'changed-since-sent'), page: undefined })} onClick={onClose}>
-                  {t('pushRun.showChanged')}
-                </a>
-              </Muted>
-            )}
-            {p.counts.updateRemovingVerification > 0 && (
-              <Checkbox isSelected={choices.updatesRemovingVerification} isDisabled={!choices.updates} onChange={(updatesRemovingVerification) => set({ updatesRemovingVerification })}>
-                <span>{t('pushRun.updatesRemoving', { name })}<small className="field-hint">{t('pushRun.updatesRemovingHint', { count: p.counts.updateRemovingVerification })}</small></span>
-              </Checkbox>
-            )}
-            {p.counts.number > 0 && (
-              <>
-                <Checkbox isSelected={choices.numbers} onChange={(numbers) => set({ numbers })}>
-                  <span>{t('pushRun.numbers', { name })}<small className="field-hint">{t('pushRun.numbersHint', { count: p.counts.number })}</small></span>
-                </Checkbox>
-                {p.counts.numberRemovingVerification > 0 && <Muted>{t('pushRun.numbersRemoving', { count: p.counts.numberRemovingVerification, name })}</Muted>}
-                {p.counts.numberTaken > 0 && <Muted>{t('pushRun.numberTaken', { count: p.counts.numberTaken })}</Muted>}
-              </>
+            {(showUpdates || showRemoving || showNumbers) && (
+              <fieldset className="push-run-risky">
+                <legend><Icon name="warning" />{t('pushRun.risky', { name })}</legend>
+                {showUpdates && (
+                  <Checkbox isSelected={choices.updates} onChange={(updates) => set({ updates, ...(!updates && { updatesRemovingVerification: false }) })}>
+                    <span>{t('pushRun.updates')}<small className="field-hint">{t('pushRun.updatesHint', { count: updatable, name })}</small></span>
+                  </Checkbox>
+                )}
+                {updatable > 0 && !onChangedList && (
+                  <Muted>
+                    <a href={logbookHref({ ...params, only: toggled(params.only, 'changed-since-sent'), page: undefined })} onClick={onClose}>
+                      {t('pushRun.showChanged')}
+                    </a>
+                  </Muted>
+                )}
+                {showRemoving && (
+                  <Checkbox isSelected={choices.updatesRemovingVerification} isDisabled={!choices.updates} onChange={(updatesRemovingVerification) => set({ updatesRemovingVerification })}>
+                    <span>{t('pushRun.updatesRemoving', { name })}<small className="field-hint">{t('pushRun.updatesRemovingHint', { count: p.counts.updateRemovingVerification })}</small></span>
+                  </Checkbox>
+                )}
+                {showNumbers && (
+                  <>
+                    <Checkbox isSelected={choices.numbers} onChange={(numbers) => set({ numbers })}>
+                      <span>{t('pushRun.numbers', { name })}<small className="field-hint">{t('pushRun.numbersHint', { count: p.counts.number })}</small></span>
+                    </Checkbox>
+                    {p.counts.numberRemovingVerification > 0 && <Muted>{t('pushRun.numbersRemoving', { count: p.counts.numberRemovingVerification, name })}</Muted>}
+                    {p.counts.numberTaken > 0 && <Muted>{t('pushRun.numberTaken', { count: p.counts.numberTaken })}</Muted>}
+                  </>
+                )}
+              </fieldset>
             )}
             {(p.blocked.total > 0 || p.leftOut.upToDate > 0 || p.beyondCeiling > 0) && (
               <div className="push-run-leftout">
@@ -164,13 +254,13 @@ function SendDialog({ connection, provider, params, onClose }: {
             )}
             {p.withLeftOut > 0 && <Muted>{t('pushRun.withLeftOut', { count: p.withLeftOut, name })}</Muted>}
             {(provider?.notices ?? []).map((n) => <Muted key={n}>{t(`provider.notice.${n}`, { name })}</Muted>)}
-            {p.send > 0 && <Muted>{minutes < 1 ? t('pushRun.estimateShort') : t('pushRun.estimate', { count: minutes })}</Muted>}
+            {goes.length > 0 && <Muted>{minutes < 1 ? t('pushRun.estimateShort') : t('pushRun.estimate', { count: minutes })}</Muted>}
           </>
         )}
         {start.isError && <Notice tone="danger">{errorText(start.error)}</Notice>}
         <div className="form-actions">
-          <Button variant="primary" isPending={start.isPending} isDisabled={!p || p.send === 0} onPress={() => start.mutate()}>
-            {t('pushRun.confirm', { count: p?.send ?? 0 })}
+          <Button variant="primary" isPending={start.isPending} isDisabled={!p || preview.isPlaceholderData || goes.length === 0} onPress={() => start.mutate()}>
+            {t('pushRun.confirm', { count: goes.length })}
           </Button>
           <Button onPress={onClose}>{t('common.cancel')}</Button>
         </div>

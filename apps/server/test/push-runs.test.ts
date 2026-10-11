@@ -23,6 +23,8 @@ type Run = {
 type Preview = {
   counts: Record<string, number>; leftOut: Record<string, number>; send: number; beyondCeiling: number; withLeftOut: number; estimatedSeconds: number;
   limits: { pauseMs: number; maxDives: number }; blocked: { total: number; dives: { diveId: string; unmet: { type: string }[] }[] };
+  inScope: number;
+  dives: { diveId: string; number: number | null; startsAt: string; siteId: string | null; siteName: string | null; action: string }[];
 };
 type Status = { provider: string; current: { remoteId: string; remoteNumber: number | null; upToDate: boolean } | null };
 
@@ -142,6 +144,26 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
     expect(ssi.calls.length).toBe(ssiCalls);
     expect(ledger.dives.size).toBe(dives);
     expect(await json('GET', '/api/push-runs')).toEqual([]);
+  });
+
+  it('names the Dives a start would send, in the order they go, and how many the list holds (UI/UX pass, slice 25b)', async () => {
+    const third = await upload(day(3));
+    const first = await upload(day(1));
+    const second = await upload(day(2));
+    await upload(day(4));
+    const view = (await preview()).json() as Preview;
+    // The ceiling is 3: the oldest three go, and the list says it holds four.
+    expect(view.inScope).toBe(4);
+    expect(view.beyondCeiling).toBe(1);
+    expect(view.dives.map((d) => d.diveId)).toEqual([first, second, third]);
+    expect(view.dives[0]).toMatchObject({ action: 'create', number: expect.any(Number) as number, siteName: null });
+    expect(typeof view.dives[0]!.startsAt).toBe('string');
+    // A Dive held back is not in it; ids of the shown Dives start exactly those.
+    const picked = (await preview({ dives: { ids: [third, first] } })).json() as Preview;
+    expect(picked.dives.map((d) => d.diveId)).toEqual([first, third]);
+    expect(picked.inScope).toBe(2);
+    const created = await started({ dives: { ids: [third, first] } });
+    expect(created.counts.total).toBe(2);
   });
 
   it('sends each Dive once, oldest first, and ends done', async () => {

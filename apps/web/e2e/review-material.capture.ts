@@ -571,6 +571,11 @@ test('review material', async ({ page, request, browser }) => {
       await capture(page, '32-logbook-send-dialog', { full: false });
       await page.keyboard.press('Escape');
       await request.put(`/api/dive-sites/${siteId}/external-ids/ssi`, { headers, data: { externalId: '7099' } });
+      // The dialog that owns the selection (slice 25b): which dives, and the ones that go.
+      await page.getByRole('button', { name: 'Send to SSI…' }).click();
+      await page.getByRole('dialog').getByRole('button', { name: 'Show the dive' }).click();
+      await capture(page, '32b-logbook-send-dialog-dives', { full: false });
+      await page.keyboard.press('Escape');
       await expireSsiTokens(request);
       await request.post(`/api/connections/${connectionId}/push-runs`, { headers, data: { dives: { list: { siteId } } } });
       await page.reload(); await page.getByRole('button', { name: 'Continue' }).waitFor();
@@ -597,6 +602,9 @@ test('review material', async ({ page, request, browser }) => {
       await page.getByRole('button', { name: 'An SSI senden…' }).click();
       await page.getByRole('dialog').getByRole('link', { name: 'Diese Tauchgänge im Logbuch zeigen' }).waitFor();
       await capture(page, '35c-logbook-send-dialog-changed-de-dark-390', { full: false });
+      await page.getByRole('dialog').getByText('Auch Tauchgänge aktualisieren, die seit dem Senden geändert wurden').click();
+      await page.getByRole('dialog').getByRole('button', { name: 'Den Tauchgang zeigen' }).click();
+      await capture(page, '35e-logbook-send-dialog-dives-de-dark-390', { full: false });
       await page.keyboard.press('Escape');
       await setPreferences(request, { language: 'en' });
       await page.emulateMedia({ colorScheme: 'light' });

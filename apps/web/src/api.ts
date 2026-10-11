@@ -597,10 +597,19 @@ export const toolsPlanQuery = (p: ToolsInput) => {
 export type PushRunView = Awaited<ReturnType<typeof fetchPushRuns>>[number];
 export type PushRunDetail = Awaited<ReturnType<typeof fetchPushRun>>;
 export type PushRunPreview = Awaited<ReturnType<typeof fetchPushRunPreview>>;
-/** What a run sends: the logbook's list as it is, and the three choices (unticked unless the User ticks them). */
-export interface PushRunChoices { list: { siteId?: string | undefined; q?: string | undefined; only?: string | undefined }; updates: boolean; updatesRemovingVerification: boolean; numbers: boolean }
+/**
+ * What a run sends: a list (the logbook's, or a scope of the dialog's own) or exactly these Dives (`ids`, when the User
+ * left some out), and the three choices (unticked unless the User ticks them).
+ */
+export interface PushRunChoices {
+  list: { siteId?: string | undefined; q?: string | undefined; only?: string | undefined };
+  ids?: string[] | undefined;
+  updates: boolean; updatesRemovingVerification: boolean; numbers: boolean;
+}
 const pushRunBody = (c: PushRunChoices) => ({
-  dives: { list: { ...(c.list.siteId && { siteId: c.list.siteId }), ...(c.list.q && { q: c.list.q }), ...(c.list.only && { only: c.list.only }) } },
+  dives: c.ids
+    ? { ids: c.ids }
+    : { list: { ...(c.list.siteId && { siteId: c.list.siteId }), ...(c.list.q && { q: c.list.q }), ...(c.list.only && { only: c.list.only }) } },
   updates: c.updates, updatesRemovingVerification: c.updatesRemovingVerification, numbers: c.numbers,
 });
 async function fetchPushRuns() {

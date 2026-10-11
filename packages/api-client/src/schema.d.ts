@@ -12665,6 +12665,19 @@ export interface paths {
                                     unmet: unknown[];
                                 }[];
                             };
+                            /** @description How many Dives the request names (those of the list, or the ids found), whatever happens to them */
+                            inScope: number;
+                            /** @description The Dives a start with these choices would queue, in the order they are sent: at most `limits.maxDives` */
+                            dives: {
+                                diveId: string;
+                                number: null | number;
+                                /** Format: date-time */
+                                startsAt: string;
+                                siteId: null | string;
+                                siteName: null | string;
+                                /** @enum {unknown} */
+                                action: "create" | "update" | "number";
+                            }[];
                         };
                     };
                 };

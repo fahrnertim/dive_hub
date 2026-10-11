@@ -75,6 +75,11 @@ const PreviewView = Type.Object({
       siteName: Nullable(Type.String()), unmet: Type.Array(Unmet),
     }), { description: 'The first 100, oldest first' }),
   }),
+  inScope: Type.Integer({ description: 'How many Dives the request names (those of the list, or the ids found), whatever happens to them' }),
+  dives: Type.Array(Type.Object({
+    diveId: Type.String(), number: Nullable(Type.Integer()), startsAt: DateTime, siteId: Nullable(Type.String()), siteName: Nullable(Type.String()),
+    action: Type.Enum(['create', 'update', 'number']),
+  }), { description: 'The Dives a start with these choices would queue, in the order they are sent: at most `limits.maxDives`' }),
 });
 
 const StartBody = Type.Object({
@@ -163,5 +168,9 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
 
 /** The preview carries Dates (blocked dives' start times) as strings. */
 function runViewOf(preview: Awaited<ReturnType<PushRunService['preview']>>) {
-  return { ...preview, blocked: { ...preview.blocked, dives: preview.blocked.dives.map((d) => ({ ...d, startsAt: d.startsAt.toISOString() })) } };
+  return {
+    ...preview,
+    blocked: { ...preview.blocked, dives: preview.blocked.dives.map((d) => ({ ...d, startsAt: d.startsAt.toISOString() })) },
+    dives: preview.dives.map((d) => ({ ...d, startsAt: d.startsAt.toISOString() })),
+  };
 }

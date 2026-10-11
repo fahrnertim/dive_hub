@@ -224,3 +224,7 @@ Everything above was built as decided. What the code settled, and the few additi
   skipped as `dive_not_found`; a run whose Provider is no longer on this instance stops with `provider_not_connected`.
 - **Client:** the "Send to SSI…" button in the logbook's toolbar opens the dialog; the strip above the list shows progress, the result
   with what was not sent, or the stop with Continue. The e2e pause is 150 ms (the real one is 5 s).
+- **The dialog owns the selection (slice 25b, [UI/UX pass](../research/2026-10-11-ui-ux-pass.md), option A2):** the web dialog no longer
+  sends "the list behind it" unseen. It asks "Which dives of …?" (the logbook's list now, everything not at the Provider yet, or the
+  ones changed since sent, each with its size), lists the Dives that would go with a checkbox each, and sends `ids` when the User took
+  some out. The preview gained `inScope` and `dives` for this; the start body is unchanged. The logbook behind the dialog is never changed.

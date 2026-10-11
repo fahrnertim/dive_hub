@@ -525,13 +525,19 @@ unless the User ticks them.
 
 - **Link "Also update dives changed since they were sent" to the list it would update:** the logbook with the run's `list`
   and `only=changed-since-sent` (the web client's "Show these dives in the logbook", not shown when that filter is already on).
+- **Say which Dives go, and let the User change that before sending:** the preview's `dives` are exactly the Dives a start with
+  these choices queues (the first `limits.maxDives`, in the order they are sent: `diveId`, `number`, `startsAt`, `siteId`,
+  `siteName`, `action`). List them with a checkbox each; when some are taken out, start with `dives.ids` of the ticked ones
+  instead of `dives.list`. `inScope` is how many Dives the request names, whatever happens to them: use it to offer scopes with
+  their sizes (the list as it is now, `only=not-at-provider` without the site and search, `only=changed-since-sent`). Never
+  send a list the User has not been shown.
 - **Must show a preview before anything is sent**, from the preview route (it stores nothing and calls no Provider): how many
   Dives are new (`counts.create`), what is left out and why (`leftOut`, `blocked`, `beyondCeiling`), `withLeftOut` (Dives that
   go without something the Provider can't take), the Provider's `notices`, and the time (`estimatedSeconds`) with the words
   that the User can leave. Offer the three choices **unticked**, each only where it matters: updates (`counts.update`, it
   replaces the Provider's values), updates that remove a verification (only with the first), numbers
-  (`counts.number`; say what `counts.numberRemovingVerification` and `counts.numberTaken` hold back). Send nothing when
-  `send` is 0.
+  (`counts.number`; say what `counts.numberRemovingVerification` and `counts.numberTaken` hold back). Group the three under
+  one warning that they change what the Provider already holds. Send nothing when `send` is 0.
 - **Lead from what is held back to its fix:** `blocked.dives` carry `siteId` and `unmet` (the same requirements as a single
   Dive's status), so group them by site and link to it; Dives without a site to the logbook's "no site" filter.
 - **Must show the run while it goes and after it:** `counts` over `counts.total` as progress, one Stop (`cancel`; the Dive
@@ -546,7 +552,7 @@ unless the User ticks them.
 - **One run per Connection at a time:** `push_run_active` carries the `runId` of the one that goes; show it instead of an error.
   Other codes: `push_run_nothing_to_send`, `push_run_not_found`, `push_run_not_active`, `push_run_not_stopped`. The last five
   runs of a Connection are kept.
-- *Web:* `PushRun.tsx` (`SendToProvider` in the logbook's toolbar, `PushRunStrip` above the list); the ended run's Dismiss is
+- *Web:* `PushRun.tsx` (`SendToProvider` in the logbook's toolbar with its `SendDialog`, which owns the selection; `PushRunStrip` above the list); the ended run's Dismiss is
   kept in the browser per run id.
 
 ### Importing dives from a Provider (SSI)

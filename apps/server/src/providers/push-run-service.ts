@@ -142,7 +142,10 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
     leftOut.numberTaken = numberTaken.length;
     const sendList = ordered.slice(0, run.maxDives);
     leftOut.beyondCeiling = ordered.length - sendList.length;
-    return { adapter, run, pauseMs, options, counts, leftOut, blocked, sendList, withLeftOut: sendList.filter((i) => i.withLeftOut).length };
+    return {
+      adapter, run, pauseMs, options, counts, leftOut, blocked, sendList, withLeftOut: sendList.filter((i) => i.withLeftOut).length,
+      inScope: dives.length + notFound, diveOf: new Map(dives.map((d) => [d.id, d])),
+    };
   }
 
   async function activeRunOf(connectionId: string) {
@@ -198,6 +201,12 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
         counts: a.counts, leftOut: a.leftOut, send: a.sendList.length, beyondCeiling: a.leftOut.beyondCeiling, withLeftOut: a.withLeftOut,
         estimatedSeconds: Math.round(a.sendList.length * (a.pauseMs / 1000 + 4)),
         blocked: { total: a.blocked.length, dives: a.blocked.slice(0, 100) },
+        inScope: a.inScope,
+        // The Dives a start would queue, in the order they go (at most the Provider's ceiling).
+        dives: a.sendList.map((i) => {
+          const d = a.diveOf.get(i.diveId)!;
+          return { diveId: i.diveId, number: d.number, startsAt: d.startsAt, siteId: d.siteId, siteName: d.siteName, action: i.planned.send };
+        }),
       };
     },
 
