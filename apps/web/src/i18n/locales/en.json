@@ -283,7 +283,8 @@
       "noRecording": "No recording",
       "noSite": "No dive site",
       "withFindings": "With findings",
-      "notAtProvider": "Not in {{names}}"
+      "notAtProvider": "Not in {{names}}",
+      "changedSinceSent": "Changed since sent"
     },
     "monthFigures_one": "{{count}} dive · {{time}}",
     "monthFigures_other": "{{count}} dives · {{time}}",
@@ -1067,6 +1068,7 @@
     "new_other": "{{count}} new dives",
     "nothing": "Nothing to send with these choices.",
     "updates": "Also update dives changed since they were sent",
+    "showChanged": "Show these dives in the logbook",
     "updatesHint": "This replaces the values in {{name}}: {{count}} dives.",
     "updatesRemoving": "Also update dives where this removes a verification in {{name}}",
     "updatesRemovingHint": "{{count}} dives.",

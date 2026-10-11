@@ -13,7 +13,7 @@ type Row = {
   gases: { o2: number; he: number }[]; participants: { diverId: string; name: string; role: string }[];
   site: { name: string } | null; findings: number;
 };
-type Counts = { noRecording: number; noSite: number; withFindings: number; notAtProvider: number };
+type Counts = { noRecording: number; noSite: number; withFindings: number; notAtProvider: number; changedSinceSent: number };
 type List = {
   dives: Row[]; total: number; counts: Counts;
   totals: { dives: number; durationSeconds: number; deepestM: number | null; lastDiveAt: string | null };
@@ -105,11 +105,11 @@ describe.skipIf(!(await databaseReachable()))('the logbook list: rows and "show 
 
   it('counts what each filter would show, for the Diver and the search, whatever filters are applied', async () => {
     const all = await list();
-    expect(all.counts).toEqual({ noRecording: 1, noSite: 3, withFindings: 1, notAtProvider: 3 });
+    expect(all.counts).toEqual({ noRecording: 1, noSite: 3, withFindings: 1, notAtProvider: 3, changedSinceSent: 1 });
     expect((await list('?only=no-site,no-recording')).counts).toEqual(all.counts);
-    // Searching narrows the counts: only the Lighthouse dive matches.
-    expect((await list('?q=lighthouse')).counts).toEqual({ noRecording: 0, noSite: 0, withFindings: 0, notAtProvider: 0 });
-    expect((await list(`?diverId=${lena}`)).counts).toEqual({ noRecording: 0, noSite: 0, withFindings: 0, notAtProvider: 0 });
+    // Searching narrows the counts: only the Lighthouse dive matches (the linked one, never sent from here: not up to date).
+    expect((await list('?q=lighthouse')).counts).toEqual({ noRecording: 0, noSite: 0, withFindings: 0, notAtProvider: 0, changedSinceSent: 1 });
+    expect((await list(`?diverId=${lena}`)).counts).toEqual({ noRecording: 0, noSite: 0, withFindings: 0, notAtProvider: 0, changedSinceSent: 0 });
   });
 
   it('shows only the dives that fit every chosen filter', async () => {
@@ -130,7 +130,7 @@ describe.skipIf(!(await databaseReachable()))('the logbook list: rows and "show 
   });
 
   it('has no "not at provider" without a connection', async () => {
-    expect((await list('', other)).counts).toEqual({ noRecording: 0, noSite: 0, withFindings: 0, notAtProvider: 0 });
+    expect((await list('', other)).counts).toEqual({ noRecording: 0, noSite: 0, withFindings: 0, notAtProvider: 0, changedSinceSent: 0 });
   });
 
   it('totals the logbook for the Diver and groups by month while sorted by date', async () => {

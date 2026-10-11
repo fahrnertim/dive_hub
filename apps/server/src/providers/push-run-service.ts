@@ -5,7 +5,7 @@
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { connection, dive, diveSite, pushRun, pushRunItem, type PushRunLeftOut } from '../db/schema.js';
-import { diveListFilter } from '../dives/list-filter.js';
+import { asksFor, diveListFilter } from '../dives/list-filter.js';
 import { managedDiverIds } from '../dives/dive-service.js';
 import { isUniqueViolation } from '../sites/site-service.js';
 import { planItem, orderItems, type PlanOptions, type Planned } from './push-run-plan.js';
@@ -70,7 +70,8 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
         .where(and(inArray(dive.id, ids), eq(dive.diverId, conn.diverId), isNull(dive.deletedAt))).orderBy(...order);
       return { dives: rows, notFound: ids.length - rows.length };
     }
-    const { where } = diveListFilter({ userId, diverIds: [conn.diverId], ...request.list });
+    const changedIds = asksFor(request.list?.only, 'changed-since-sent') ? await pushes.changedSinceSent(userId, [conn.diverId]) : undefined;
+    const { where } = diveListFilter({ userId, diverIds: [conn.diverId], ...request.list, changedIds });
     return { dives: await db.select(base).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(where).orderBy(...order), notFound: 0 };
   }
 

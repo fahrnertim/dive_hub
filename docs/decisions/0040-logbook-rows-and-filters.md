@@ -1,6 +1,6 @@
 ---
 title: "ADR 0040: Logbook rows, \"Show only\" filters and their counts"
-summary: GET /api/dives pages by 25, takes `only` (no-recording, no-site, with-findings, not-at-provider), and returns per-filter counts, the logbook's totals, month figures and, per Dive, Recordings, gas, surface interval, source and Participants.
+summary: GET /api/dives pages by 25, takes `only` (no-recording, no-site, with-findings, not-at-provider, changed-since-sent), and returns per-filter counts, the logbook's totals, month figures and, per Dive, Recordings, gas, surface interval, source and Participants.
 status: accepted
 date: 2026-10-07
 ---
@@ -27,8 +27,18 @@ a Recording". Counts for the chips and the month figures can't be derived by a c
     dive for it (the same rule as `currentRemote`: the newest Push that decides is none, a delete or "gone"). Not
     "Not in SSI", because the API has no Provider of its own: the client names the Provider it knows. "No number" is
     not a filter: numbers are to be calculated.
+  - `changed-since-sent` (added 2026-10-11, slice 22d): at a Provider the User is connected to for the Dive's Diver, the Dive's
+    current remote dive (as in `currentRemote`) is not up to date: the adapter's fingerprint of the outgoing Dive differs from
+    the Push's (a link never sent from here counts too, as in the Send dialog's "also update" count), **or**, only while the
+    Connection follows numbers and the Provider can set a number on an update, the Provider's number differs from the Dive's
+    (owner's decision; [ADR 0048](0048-dive-numbers.md) keeps it a state of its own in a Dive's status). At *any* Provider, like
+    `not-at-provider`; Dives whose update would remove a verification are not set apart (the Send preview says so). The
+    fingerprint is not stored and not SQL, so it is worked out per request for the Diver's Dives that have a confirmed Push at
+    a connected Provider (one outgoing-Dive load each), then used as an id set for the list, the count and a Push run's
+    list; nothing is migrated and it cannot go stale. Revisit with a stored fingerprint comparison if logbooks with many sent
+    Dives make the list slow.
   - `total` and the rows follow the filters.
-- **`counts`** (`noRecording`, `noSite`, `withFindings`, `notAtProvider`): how many Dives each filter would show for the
+- **`counts`** (`noRecording`, `noSite`, `withFindings`, `notAtProvider`, `changedSinceSent`): how many Dives each filter would show for the
   Diver and the search, **whatever filters are applied**, so a pressed chip keeps its number. The client hides a chip
   whose count is 0 (unless pressed).
 - **`totals`** (`dives`, `durationSeconds`, `deepestM`, `lastDiveAt`): the Diver's whole logbook, not narrowed by search,

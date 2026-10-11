@@ -98,7 +98,7 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
   await app.register(userRoutes, { prefix: '/api', ...deps });
   await app.register(accountRoutes, { prefix: '/api', ...deps, passwordResets });
   await app.register(adminRoutes, { prefix: '/api', ...deps, passwordResets, userAdmin: createUserAdmin(deps.db, deps.blobs) });
-  await app.register(apiRoutes, { prefix: '/api', ...deps });
+  await app.register(apiRoutes, { prefix: '/api', ...deps, pushes: deps.providers.pushes });
   await app.register(diveRoutes, { prefix: '/api', ...deps, dives: createDiveService(deps.db), merging: createMerging(deps.db), checks: createLogbookChecks(deps.db), pushes: deps.providers.pushes });
   await app.register(candidateRoutes, { prefix: '/api', ...deps, candidates: createCandidates(deps.db) });
   await app.register(assessmentRoutes, { prefix: '/api', auth: deps.auth, assessments: deps.assessments });

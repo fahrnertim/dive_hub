@@ -7116,12 +7116,12 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(no-recording|no-site|with-findings|not-at-provider)(,(no-recording|no-site|with-findings|not-at-provider))*$"
+              "pattern": "^(no-recording|no-site|with-findings|not-at-provider|changed-since-sent)(,(no-recording|no-site|with-findings|not-at-provider|changed-since-sent))*$"
             },
             "in": "query",
             "name": "only",
             "required": false,
-            "description": "Comma-separated \"show only\" filters, all of which must fit: no-recording (a logbook entry without a Recording), no-site, with-findings (the list’s mark is set), not-at-provider (a Provider the User is connected to for the Diver has no current dive for it)"
+            "description": "Comma-separated \"show only\" filters, all of which must fit: no-recording (a logbook entry without a Recording), no-site, with-findings (the list’s mark is set), not-at-provider (a Provider the User is connected to for the Diver has no current dive for it), changed-since-sent (at a Provider the User is connected to for the Diver, the current dive there is not up to date with the Dive, or its number differs and the Connection follows numbers)"
           },
           {
             "schema": {
@@ -7407,7 +7407,8 @@
                         "noRecording",
                         "noSite",
                         "withFindings",
-                        "notAtProvider"
+                        "notAtProvider",
+                        "changedSinceSent"
                       ],
                       "properties": {
                         "noRecording": {
@@ -7420,6 +7421,9 @@
                           "type": "integer"
                         },
                         "notAtProvider": {
+                          "type": "integer"
+                        },
+                        "changedSinceSent": {
                           "type": "integer"
                         }
                       },
@@ -7561,12 +7565,12 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(no-recording|no-site|with-findings|not-at-provider)(,(no-recording|no-site|with-findings|not-at-provider))*$"
+              "pattern": "^(no-recording|no-site|with-findings|not-at-provider|changed-since-sent)(,(no-recording|no-site|with-findings|not-at-provider|changed-since-sent))*$"
             },
             "in": "query",
             "name": "only",
             "required": false,
-            "description": "Comma-separated \"show only\" filters, all of which must fit: no-recording (a logbook entry without a Recording), no-site, with-findings (the list’s mark is set), not-at-provider (a Provider the User is connected to for the Diver has no current dive for it)"
+            "description": "Comma-separated \"show only\" filters, all of which must fit: no-recording (a logbook entry without a Recording), no-site, with-findings (the list’s mark is set), not-at-provider (a Provider the User is connected to for the Diver has no current dive for it), changed-since-sent (at a Provider the User is connected to for the Diver, the current dive there is not up to date with the Dive, or its number differs and the Connection follows numbers)"
           },
           {
             "schema": {
@@ -50483,7 +50487,7 @@
                           },
                           "only": {
                             "type": "string",
-                            "pattern": "^(no-recording|no-site|with-findings|not-at-provider)(,(no-recording|no-site|with-findings|not-at-provider))*$"
+                            "pattern": "^(no-recording|no-site|with-findings|not-at-provider|changed-since-sent)(,(no-recording|no-site|with-findings|not-at-provider|changed-since-sent))*$"
                           }
                         },
                         "description": "The logbook's list for the Connection's Diver, as GET /api/dives takes siteId, q and only"
@@ -51211,7 +51215,7 @@
                           },
                           "only": {
                             "type": "string",
-                            "pattern": "^(no-recording|no-site|with-findings|not-at-provider)(,(no-recording|no-site|with-findings|not-at-provider))*$"
+                            "pattern": "^(no-recording|no-site|with-findings|not-at-provider|changed-since-sent)(,(no-recording|no-site|with-findings|not-at-provider|changed-since-sent))*$"
                           }
                         },
                         "description": "The logbook's list for the Connection's Diver, as GET /api/dives takes siteId, q and only"

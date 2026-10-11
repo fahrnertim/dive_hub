@@ -554,6 +554,25 @@ test('review material', async ({ page, request, browser }) => {
       await page.keyboard.press('Escape');
       await clearPushRuns(request);
       await leaveSsi(request, dive42);
+      // A dive changed after it was sent (slice 22d): the "Changed since sent" chip, and the dialog's link to it.
+      const changed = await pushRunSetup(request, dive42, { keepSignedIn: true, siteExternalId: '7099' });
+      await request.post(`/api/dives/${dive42}/providers/ssi`, { headers, data: {} });
+      const current = await (await request.get(`/api/dives/${dive42}`)).json() as { version: number };
+      await request.patch(`/api/dives/${dive42}`, { headers, data: { version: current.version, notes: 'Changed after it was sent' } });
+      await page.goto(`/#/?site=${changed.siteId}`); await page.reload();
+      await page.getByRole('button', { name: /^Seit dem Senden geändert \d+$/ }).waitFor();
+      await capture(page, '35b-logbook-changed-since-sent-de-dark-390');
+      await page.getByRole('button', { name: 'An SSI senden…' }).click();
+      await page.getByRole('dialog').getByRole('link', { name: 'Diese Tauchgänge im Logbuch zeigen' }).waitFor();
+      await capture(page, '35c-logbook-send-dialog-changed-de-dark-390', { full: false });
+      await page.keyboard.press('Escape');
+      await setPreferences(request, { language: 'en' });
+      await page.emulateMedia({ colorScheme: 'light' });
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await page.reload(); await page.getByRole('button', { name: /^Changed since sent \d+$/ }).waitFor();
+      await capture(page, '35d-logbook-changed-since-sent');
+      await clearPushRuns(request);
+      await leaveSsi(request, dive42);
       await setPreferences(request, { language: 'en' });
       await page.emulateMedia({ colorScheme: 'light' });
     }

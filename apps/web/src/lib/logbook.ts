@@ -1,7 +1,7 @@
 import type { LogbookParams } from '../api.ts';
 
 /** The "Show only" filters of the logbook (ADR 0040), in the order they are offered and written to the address. */
-export const LOGBOOK_FILTERS = ['no-recording', 'no-site', 'with-findings', 'not-at-provider'] as const;
+export const LOGBOOK_FILTERS = ['no-recording', 'no-site', 'with-findings', 'not-at-provider', 'changed-since-sent'] as const;
 export type LogbookFilter = (typeof LOGBOOK_FILTERS)[number];
 
 /** The filters with this one pressed or released. */

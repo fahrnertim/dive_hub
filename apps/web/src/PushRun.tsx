@@ -9,6 +9,7 @@ import {
 } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
+import { logbookHref, toggled } from './lib/logbook.ts';
 import { useProviders } from './lib/providers.ts';
 import { ActionMenu, Button, Checkbox, Dialog, Disclosure, Muted, Notice } from './ui/index.ts';
 
@@ -115,6 +116,13 @@ function SendDialog({ connection, provider, params, onClose }: {
               <Checkbox isSelected={choices.updates} onChange={(updates) => set({ updates, ...(!updates && { updatesRemovingVerification: false }) })}>
                 <span>{t('pushRun.updates')}<small className="field-hint">{t('pushRun.updatesHint', { count: p.counts.update + p.counts.updateRemovingVerification, name })}</small></span>
               </Checkbox>
+            )}
+            {p.counts.update + p.counts.updateRemovingVerification > 0 && !params.only?.includes('changed-since-sent') && (
+              <Muted>
+                <a href={logbookHref({ ...params, only: toggled(params.only, 'changed-since-sent'), page: undefined })} onClick={onClose}>
+                  {t('pushRun.showChanged')}
+                </a>
+              </Muted>
             )}
             {p.counts.updateRemovingVerification > 0 && (
               <Checkbox isSelected={choices.updatesRemovingVerification} isDisabled={!choices.updates} onChange={(updatesRemovingVerification) => set({ updatesRemovingVerification })}>

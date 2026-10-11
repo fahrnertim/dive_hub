@@ -2,9 +2,9 @@
 // the remote record a Dive has now, works out "outdated" from the adapter's fingerprint, runs one action per Dive and
 // Provider at a time (a lease, leases.ts), deletes at several Providers only once each would, and turns adapter errors
 // into problem codes. What a Provider does with the Dive is the adapter's.
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { dive, push } from '../db/schema.js';
+import { connection, dive, push } from '../db/schema.js';
 import type { ConnectionService } from './connection-service.js';
 import { LeaseBusy, type Leases } from './leases.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
@@ -257,6 +257,34 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
       const loaded = await loadOutgoingDive(db, userId, diveId, { deleted: true });
       const providers = registry.list().filter((a) => a.dives && a.capabilities.data.dives?.export);
       return Promise.all(providers.map((a) => statusAt(userId, a.id, loaded)));
+    },
+
+    /**
+     * The Dives of these Divers that changed since they were sent (the logbook's filter, ADR 0040): at a Provider the User
+     * is connected to for the Diver, a current remote dive that is not up to date, or whose number differs and can be
+     * set by an update (the Connection follows numbers). Worked out from the adapters' fingerprints, so only the Dives
+     * with a confirmed Push at a connected Provider are loaded.
+     */
+    async changedSinceSent(userId: string, diverIds: string[]): Promise<string[]> {
+      if (diverIds.length === 0) return [];
+      const providers = registry.list().filter((a) => a.dives && a.capabilities.data.dives?.export).map((a) => a.id);
+      if (providers.length === 0) return [];
+      const candidates = await db.selectDistinct({ id: dive.id }).from(dive)
+        .innerJoin(push, and(eq(push.diveId, dive.id), eq(push.state, 'confirmed'), isNotNull(push.remoteId), inArray(push.provider, providers)))
+        .innerJoin(connection, and(eq(connection.userId, userId), eq(connection.diverId, dive.diverId), eq(connection.provider, push.provider)))
+        .where(and(inArray(dive.diverId, diverIds), isNull(dive.deletedAt)));
+      const changed: string[] = [];
+      for (const { id } of candidates) {
+        const loaded = await loadOutgoingDive(db, userId, id);
+        for (const provider of providers) {
+          const { connection: conn, current } = await statusAt(userId, provider, loaded);
+          if (conn && current && (!current.upToDate || (current.number?.differs && current.number.canSet))) {
+            changed.push(id);
+            break;
+          }
+        }
+      }
+      return changed;
     },
 
     /** The Provider's dive sites near the Dive, nearest first (to pick its site ID from). */

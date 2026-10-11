@@ -283,7 +283,8 @@
       "noRecording": "Keine Aufzeichnung",
       "noSite": "Kein Tauchplatz",
       "withFindings": "Mit Hinweisen",
-      "notAtProvider": "Nicht in {{names}}"
+      "notAtProvider": "Nicht in {{names}}",
+      "changedSinceSent": "Seit dem Senden geändert"
     },
     "monthFigures_one": "{{count}} Tauchgang · {{time}}",
     "monthFigures_other": "{{count}} Tauchgänge · {{time}}",
@@ -1067,6 +1068,7 @@
     "new_other": "{{count}} neue Tauchgänge",
     "nothing": "Mit diesen Auswahlen gibt es nichts zu senden.",
     "updates": "Auch Tauchgänge aktualisieren, die seit dem Senden geändert wurden",
+    "showChanged": "Diese Tauchgänge im Logbuch zeigen",
     "updatesHint": "Das ersetzt die Werte in {{name}}: {{count}} Tauchgänge.",
     "updatesRemoving": "Auch Tauchgänge aktualisieren, bei denen das eine Bestätigung in {{name}} entfernt",
     "updatesRemovingHint": "{{count}} Tauchgänge.",
@@ -1239,7 +1241,8 @@
       "created": "An {{name}} gesendet als Tauchgang {{number}}.",
       "updated": "In {{name}} aktualisiert.",
       "linked": "Mit {{name}}-Tauchgang {{number}} verknüpft.",
-      "exists": "Ein Tauchgang zur selben Zeit ist schon in {{name}}.",
+      "exists": "Ein Tauchgang zur selben Zeit ist schon in {{name}}."
+,
       "numbered": "Nummer in {{name}} auf {{number}} gesetzt."
     },
     "handedOverResult": "An {{name}} übergeben.",

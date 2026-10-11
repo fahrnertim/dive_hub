@@ -137,9 +137,11 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   `/api/dive-sites` ADR 0022). Keep search, filters, sort and page in the client's navigation state (the web
   client uses the address), so back and reload keep them. *Web:* `lib/logbook.ts`, `lib/sites-list.ts`.
 - **The logbook's rows and "Show only" filters** ([ADR 0040](../decisions/0040-logbook-rows-and-filters.md)): a page is 25
-  Dives. Offer `only` (`no-recording`, `no-site`, `with-findings`, `not-at-provider`; combined with "and") as toggles that
+  Dives. Offer `only` (`no-recording`, `no-site`, `with-findings`, `not-at-provider`, `changed-since-sent`; combined with "and") as toggles that
   show their `counts` (the numbers don't change when a filter is applied) and **hide a filter whose count is 0** unless it
-  is applied. **Name the Provider** in `not-at-provider` (the connected Providers' own names, e.g. "Not in SSI"). With no
+  is applied. **Name the Provider** in `not-at-provider` (the connected Providers' own names, e.g. "Not in SSI"); name
+  `changed-since-sent` "Changed since sent" (it holds Dives at any connected Provider; the count, like the others, is yours to
+  show, and a request with it is slower than the others: it is worked out from the Providers' fingerprints). With no
   result, name the applied filters and offer to show all dives. Show `totals` (the Diver's whole logbook) above the list
   and, while sorted by date, `months` as headings with their dives and time. A row says the Recordings (`recordings: 0`:
   "no recording"), the source (`fromProvider`), gas, the computer's surface interval and `participants`: buddies as
@@ -460,7 +462,8 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
   `removesVerification`. When it differs, say so ("In SSI this is dive 57; here it is dive 42") and, with `canSet`, offer
   "Set number" (`POST /api/dives/{id}/providers/{provider}/number`): only the number changes, as a Push with the action
   `number` (name it in the history); with `removesVerification` ask first. A differing number is **not** "changed since sent":
-  don't offer an update for it. Problems: `provider_number_taken` (409; `existing` names the dive there that has the number and
+  don't offer an update for it (the logbook's `changed-since-sent` filter does include such a Dive while the Connection follows
+  numbers and the Provider can set them on an update, so that list is "what a run with updates and numbers would send"). Problems: `provider_number_taken` (409; `existing` names the dive there that has the number and
   `diveId` the Dive here it is, if any: say so, link to it, keep the notice until dismissed; set that one first),
   `provider_numbers_off`, `provider_number_nothing_to_set` (fetch the status again), and a send's codes. *Web:*
   `ProviderPanel.tsx`, `ProviderDiveNumbers.tsx`.
@@ -520,6 +523,8 @@ The body of the first two is `dives` (exactly one of `list`: the logbook's `site
 takes them, and `ids`, up to 500) and the three choices `updates`, `updatesRemovingVerification` and `numbers`, all false
 unless the User ticks them.
 
+- **Link "Also update dives changed since they were sent" to the list it would update:** the logbook with the run's `list`
+  and `only=changed-since-sent` (the web client's "Show these dives in the logbook", not shown when that filter is already on).
 - **Must show a preview before anything is sent**, from the preview route (it stores nothing and calls no Provider): how many
   Dives are new (`counts.create`), what is left out and why (`leftOut`, `blocked`, `beyondCeiling`), `withLeftOut` (Dives that
   go without something the Provider can't take), the Provider's `notices`, and the time (`estimatedSeconds`) with the words

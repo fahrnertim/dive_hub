@@ -60,3 +60,39 @@ test('a run stopped by a sign-in need goes on after signing in', { tag: ['@dives
   await expect(page.locator('#main').getByText(/Sent 1 of 1 dives to SSI\./)).toBeVisible();
   await leaveSsi(request, dive.id);
 });
+
+test('a dive changed since it was sent has its own filter, and the send dialog links to it', { tag: ['@dives'] }, async ({ page, request }) => {
+  const dive = await resetDive(request);
+  const { siteId } = await pushRunSetup(request, dive.id, { keepSignedIn: true, siteExternalId: '7099' });
+  const sent = await request.post(`/api/dives/${dive.id}/providers/ssi`, { data: {}, headers });
+  expect(sent.ok(), await sent.text()).toBe(true);
+  const chips = page.getByRole('group', { name: 'Show only' });
+  const chip = chips.getByRole('button', { name: /^Changed since sent \d+$/ });
+
+  // Sent and unchanged: nothing to show, so the chip isn't offered.
+  await page.goto(`/#/?site=${siteId}`);
+  await expect(page.getByRole('region', { name: 'Dives' })).toBeVisible();
+  await expect(chip).toHaveCount(0);
+
+  // Changed after it was sent: the chip counts it, and pressing it shows exactly that dive.
+  const now = await (await request.get(`/api/dives/${dive.id}`)).json() as { version: number };
+  const patched = await request.patch(`/api/dives/${dive.id}`, { data: { version: now.version, notes: 'Changed after sending' }, headers });
+  expect(patched.ok(), await patched.text()).toBe(true);
+  await page.reload();
+  await expect(chip).toHaveText('Changed since sent1');
+  await chip.click();
+  await expect(page).toHaveURL(/only=changed-since-sent/);
+  await expect(chip).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('region', { name: 'Dives' }).getByRole('listitem')).toHaveCount(1);
+
+  // The dialog's "also update" choice leads to the list it would update, from an unfiltered logbook.
+  await chip.click();
+  await expect(chip).toHaveAttribute('aria-pressed', 'false');
+  await page.getByRole('button', { name: 'Send to SSI…' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Send dives to SSI' });
+  await expect(dialog.getByRole('checkbox', { name: /Also update dives changed since they were sent/ })).toBeVisible();
+  await dialog.getByRole('link', { name: 'Show these dives in the logbook' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page).toHaveURL(/only=changed-since-sent/);
+  await leaveSsi(request, dive.id);
+});

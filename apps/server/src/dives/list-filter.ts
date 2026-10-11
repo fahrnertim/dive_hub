@@ -3,7 +3,7 @@
 import { and, eq, ilike, inArray, isNull, or, sql, type SQL } from 'drizzle-orm';
 import { dive, diveSite } from '../db/schema.js';
 
-export const DIVE_ONLY = ['no-recording', 'no-site', 'with-findings', 'not-at-provider'] as const;
+export const DIVE_ONLY = ['no-recording', 'no-site', 'with-findings', 'not-at-provider', 'changed-since-sent'] as const;
 export type DiveOnly = (typeof DIVE_ONLY)[number];
 
 /** Findings that differ from guidance and that the User neither dismissed on the Dive nor muted for its Diver. */
@@ -29,18 +29,27 @@ export interface DiveListFilter {
   siteId?: string | undefined;
   q?: string | undefined;
   only?: string | undefined;
+  /**
+   * The Dives that changed since they were sent (`PushService.changedSinceSent`). The adapters' fingerprints are not SQL,
+   * so the caller works them out when this filter or the counts are asked for; without it the filter shows nothing.
+   */
+  changedIds?: string[] | undefined;
 }
+
+/** Whether the list's `only` asks for this filter: the caller then needs to work out what it holds. */
+export const asksFor = (only: string | undefined, filter: DiveOnly) => (only?.split(',') ?? []).includes(filter);
 
 /**
  * `base`: the Diver, the site and the search (the counts follow these but not the chosen filters, so a chip keeps its
  * number once pressed). `filters`: each "show only" condition. `where`: `base` and the chosen filters.
  */
-export function diveListFilter({ userId, diverIds, siteId, q, only }: DiveListFilter) {
+export function diveListFilter({ userId, diverIds, siteId, q, only, changedIds }: DiveListFilter) {
   const filters: Record<DiveOnly, SQL> = {
     'no-recording': NO_RECORDING,
     'no-site': isNull(dive.siteId),
     'with-findings': sql`${FINDINGS_SHOWN} > 0`,
     'not-at-provider': notAtProvider(userId),
+    'changed-since-sent': changedIds?.length ? inArray(dive.id, changedIds) : sql`false`,
   };
   const text = q?.trim();
   let search: SQL | undefined;

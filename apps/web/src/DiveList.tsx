@@ -20,7 +20,10 @@ const ALL = 'all';
 const CIRCLES = 3;
 /** A surface interval is said in a row while the dive before was the same day's. */
 const SAME_DAY_SECONDS = 24 * 3600;
-const COUNT_OF = { 'no-recording': 'noRecording', 'no-site': 'noSite', 'with-findings': 'withFindings', 'not-at-provider': 'notAtProvider' } as const;
+const COUNT_OF = {
+  'no-recording': 'noRecording', 'no-site': 'noSite', 'with-findings': 'withFindings', 'not-at-provider': 'notAtProvider',
+  'changed-since-sent': 'changedSinceSent',
+} as const;
 
 /**
  * The logbook page's head (visual refresh 2): the title and the import button for a returning User, with the hint

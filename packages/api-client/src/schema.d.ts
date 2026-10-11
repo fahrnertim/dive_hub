@@ -2035,7 +2035,7 @@ export interface paths {
                     q?: string;
                     sort?: "startsAt" | "number" | "maxDepth" | "duration";
                     order?: "desc" | "asc";
-                    /** @description Comma-separated "show only" filters, all of which must fit: no-recording (a logbook entry without a Recording), no-site, with-findings (the list’s mark is set), not-at-provider (a Provider the User is connected to for the Diver has no current dive for it) */
+                    /** @description Comma-separated "show only" filters, all of which must fit: no-recording (a logbook entry without a Recording), no-site, with-findings (the list’s mark is set), not-at-provider (a Provider the User is connected to for the Diver has no current dive for it), changed-since-sent (at a Provider the User is connected to for the Diver, the current dive there is not up to date with the Dive, or its number differs and the Connection follows numbers) */
                     only?: string;
                     limit?: number;
                     offset?: number;
@@ -2110,6 +2110,7 @@ export interface paths {
                                 noSite: number;
                                 withFindings: number;
                                 notAtProvider: number;
+                                changedSinceSent: number;
                             };
                             /** @description The Diver’s whole logbook, not narrowed by search, site or filters */
                             totals: {
@@ -2160,7 +2161,7 @@ export interface paths {
                     q?: string;
                     sort?: "startsAt" | "number" | "maxDepth" | "duration";
                     order?: "desc" | "asc";
-                    /** @description Comma-separated "show only" filters, all of which must fit: no-recording (a logbook entry without a Recording), no-site, with-findings (the list’s mark is set), not-at-provider (a Provider the User is connected to for the Diver has no current dive for it) */
+                    /** @description Comma-separated "show only" filters, all of which must fit: no-recording (a logbook entry without a Recording), no-site, with-findings (the list’s mark is set), not-at-provider (a Provider the User is connected to for the Diver has no current dive for it), changed-since-sent (at a Provider the User is connected to for the Diver, the current dive there is not up to date with the Dive, or its number differs and the Connection follows numbers) */
                     only?: string;
                 };
                 header?: never;

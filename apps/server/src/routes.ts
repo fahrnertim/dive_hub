@@ -10,14 +10,17 @@ import {
   importJob, participant, recording, sampleSeries,
 } from './db/schema.js';
 import { downsampleMinMax } from './dives/downsample.js';
-import { DIVE_ONLY, diveListFilter, FINDINGS_SHOWN, type DiveOnly } from './dives/list-filter.js';
+import { asksFor, DIVE_ONLY, diveListFilter, FINDINGS_SHOWN, type DiveOnly } from './dives/list-filter.js';
 import { Problem, problem } from './http/problems.js';
 import type { ImportService } from './imports/import-service.js';
+import type { PushService } from './providers/push-service.js';
 import { UploadTooLargeError } from './storage/blob-store.js';
 
 export interface RouteDeps {
   db: Db;
   imports: ImportService;
+  /** For the logbook's "changed since sent" filter, which needs the adapters' fingerprints. */
+  pushes: PushService;
   maxUploadBytes: number;
   auth: Auth;
 }
@@ -71,7 +74,9 @@ const DiveListQuery = Type.Object({
   only: Type.Optional(Type.String({
     pattern: ONLY_PATTERN,
     description: 'Comma-separated "show only" filters, all of which must fit: no-recording (a logbook entry without a Recording), '
-      + 'no-site, with-findings (the list’s mark is set), not-at-provider (a Provider the User is connected to for the Diver has no current dive for it)',
+      + 'no-site, with-findings (the list’s mark is set), not-at-provider (a Provider the User is connected to for the Diver has no current dive for it), '
+      + 'changed-since-sent (at a Provider the User is connected to for the Diver, the current dive there is not up to date with the Dive, '
+      + 'or its number differs and the Connection follows numbers)',
   })),
   limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200, default: 25 })),
   offset: Type.Optional(Type.Integer({ minimum: 0, default: 0 })),
@@ -79,7 +84,8 @@ const DiveListQuery = Type.Object({
 
 const DiveCounts = Type.Object({
   noRecording: Type.Integer(), noSite: Type.Integer(), withFindings: Type.Integer(), notAtProvider: Type.Integer(),
-}, { description: 'How many Dives each filter would show for the Diver and the search, whatever filters are applied (ADR 0040)' });
+  changedSinceSent: Type.Integer(),
+},{ description: 'How many Dives each filter would show for the Diver and the search, whatever filters are applied (ADR 0040)' });
 
 const DiveSummaryView = Type.Object({
   id: Type.String(),
@@ -279,11 +285,13 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
   });
 
   /** What the list shows and in which order: the Diver, search and filters, shared by the page and a Dive's neighbours (ADR 0042). */
-  const listScope = async (request: FastifyRequest, query: Static<typeof DiveListQuery>) => {
+  const listScope = async (request: FastifyRequest, query: Static<typeof DiveListQuery>, { counts = false } = {}) => {
     const { diverId, siteId, q, only, sort = 'startsAt', order = 'desc' } = query;
     const managed = await managedDiverIds(request);
     const divers = diverId ? managed.filter((id) => id === diverId) : managed;
-    const { filters, base, where } = diveListFilter({ userId: userId(request), diverIds: divers, siteId, q, only });
+    // "Changed since sent" comes from the adapters' fingerprints, not SQL: worked out only when the list needs it.
+    const changedIds = counts || asksFor(only, 'changed-since-sent') ? await deps.pushes.changedSinceSent(userId(request), divers) : undefined;
+    const { filters, base, where } = diveListFilter({ userId: userId(request), diverIds: divers, siteId, q, only, changedIds });
     const column = { startsAt: dive.startsAt, number: dive.number, maxDepth: dive.maxDepthM, duration: dive.durationSeconds }[sort];
     // Dives without a value (no number, no depth) go last either way; the start time breaks ties.
     const direction = order === 'asc' ? sql`asc nulls last` : sql`desc nulls last`;
@@ -299,10 +307,10 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
     },
   }, async (request) => {
     const { limit = 25, offset = 0 } = request.query;
-    const { divers, filters, base, where, orderBy, sort } = await listScope(request, request.query);
+    const { divers, filters, base, where, orderBy, sort } = await listScope(request, request.query, { counts: true });
     if (divers.length === 0) {
       return {
-        dives: [], total: 0, counts: { noRecording: 0, noSite: 0, withFindings: 0, notAtProvider: 0 },
+        dives: [], total: 0, counts: { noRecording: 0, noSite: 0, withFindings: 0, notAtProvider: 0, changedSinceSent: 0 },
         totals: { dives: 0, durationSeconds: 0, deepestM: null, lastDiveAt: null }, months: [],
       };
     }
@@ -316,6 +324,7 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
         noSite: sql<number>`(count(*) filter (where ${filters['no-site']}))::int`,
         withFindings: sql<number>`(count(*) filter (where ${filters['with-findings']}))::int`,
         notAtProvider: sql<number>`(count(*) filter (where ${filters['not-at-provider']}))::int`,
+        changedSinceSent: sql<number>`(count(*) filter (where ${filters['changed-since-sent']}))::int`,
       }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(base),
       db.select({
         dives: count(), durationSeconds: sql<number>`coalesce(sum(${dive.durationSeconds}), 0)`.mapWith(Number),
