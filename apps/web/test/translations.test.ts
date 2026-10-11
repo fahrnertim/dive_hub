@@ -61,6 +61,18 @@ describe.each([['de', de]])('%s translation', (_name, locale) => {
   });
 });
 
+describe('counts in the send dialog and its strip', () => {
+  // "1 Tauchgänge" read wrong (UI/UX pass C3): a text that counts has a singular and a plural form.
+  it.each([['en', en], ['de', de]])('has a singular form for every count, in %s', (_name, locale) => {
+    const texts = flatten(locale as Tree);
+    const counted = [...texts].filter(([key, text]) => key.startsWith('pushRun.') && text.includes('{{count}}') && !/_(one|other)$/.test(key));
+    expect(counted.map(([key]) => key)).toEqual([]);
+    for (const key of [...texts.keys()].filter((k) => k.startsWith('pushRun.') && k.endsWith('_other'))) {
+      expect(texts.has(key.replace(/_other$/, '_one')), key).toBe(true);
+    }
+  });
+});
+
 describe('texts a Provider words itself', () => {
   it.each([['en', en], ['de', de]])('override a text that exists, in %s', (_name, locale) => {
     expect(noStrayOverride).toBe(true);

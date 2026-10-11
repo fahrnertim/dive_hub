@@ -74,6 +74,18 @@ describe('components', () => {
   it('give every table column a header text', () => {
     for (const { path, text } of tsx) expect(text, path).not.toMatch(/head=\{\[[^\]]*(''|"")/);
   });
+
+  it('put the main action before Cancel in a row of form actions, left-aligned (UI/UX pass C14)', () => {
+    for (const { path, text } of tsx) {
+      expect(text, `${path}: dialogs use .form-actions like forms`).not.toContain('dialog-actions');
+      for (const m of text.matchAll(/<div className="form-actions">([\s\S]*?)<\/div>/g)) {
+        const row = m[1] ?? '';
+        const cancel = row.indexOf("t('common.cancel')");
+        const main = row.search(/variant="(primary|danger)"|type="submit"/);
+        if (cancel >= 0 && main >= 0) expect(main, `${path}: Cancel before the main action in ${m[0].slice(0, 80)}`).toBeLessThan(cancel);
+      }
+    }
+  });
 });
 
 describe('icons and motion (ADR 0018)', () => {

@@ -613,6 +613,60 @@ for (const v of variants) {
       }
     });
 
+    // UI/UX pass C1: no dialog is a trap; its close button is in the title row, and the keyboard reaches it.
+    test('every dialog has a close button the keyboard reaches', { tag: ['@divers'] }, async ({ page, request }) => {
+      const name = `Schließen Probe ${v.locale} ${Date.now()}`;
+      const created = await (await request.post('/api/divers', { data: { name }, headers })).json() as { id: string };
+      try {
+        await page.goto('/#/divers');
+        const dialog = page.getByRole('dialog');
+        const close = dialog.getByRole('button', { name: v.english ? 'Close dialog' : 'Dialog schließen' });
+        const openers = [
+          `Codes: ${name}`, `${v.english ? 'Body weight' : 'Körpergewicht'}: ${name}`, `${v.english ? 'Certifications' : 'Zertifizierungen'}: ${name}`,
+        ];
+        for (const opener of openers) {
+          const trigger = page.getByRole('button', { name: opener });
+          await trigger.click();
+          await expect(close).toBeVisible();
+          for (let i = 0; i < 12 && !(await close.evaluate((el) => el === document.activeElement)); i += 1) await page.keyboard.press('Tab');
+          await expect(close).toBeFocused();
+          await page.keyboard.press('Enter');
+          await expect(dialog).toHaveCount(0);
+          await expect(trigger).toBeFocused();
+        }
+        // A question before something is lost (C8), and the confirmation also has a close button.
+        await page.getByRole('button', { name: `${v.english ? 'Delete' : 'Löschen'}: ${name}` }).click();
+        await expect(dialog.getByRole('heading', { name: v.english ? `Delete ${name}?` : `${name} löschen?` })).toBeVisible();
+        await expect(close).toBeVisible();
+        await expectGoodPage(page, title('Divers'), v);
+      } finally {
+        await request.delete(`/api/divers/${created.id}`, { headers });
+      }
+    });
+
+    test('Divers, deleting a diver asks first', { tag: ['@divers'] }, async ({ page, request }) => {
+      const name = `Löschen Probe ${v.locale} ${Date.now()}`;
+      const created = await (await request.post('/api/divers', { data: { name }, headers })).json() as { id: string };
+      try {
+        await page.goto('/#/divers');
+        const row = page.getByRole('listitem').filter({ hasText: name });
+        const dialog = page.getByRole('dialog');
+        await page.getByRole('button', { name: `${v.english ? 'Delete' : 'Löschen'}: ${name}` }).click();
+        // Cancel leaves the diver where it is.
+        await dialog.getByRole('button', { name: v.english ? 'Cancel' : 'Abbrechen' }).click();
+        await expect(dialog).toHaveCount(0);
+        await expect(row).toHaveCount(1);
+        // The main action comes before Cancel (C14).
+        await page.getByRole('button', { name: `${v.english ? 'Delete' : 'Löschen'}: ${name}` }).click();
+        const actions = dialog.locator('.form-actions').getByRole('button');
+        await expect(actions.nth(0)).toHaveText(v.english ? 'Delete' : 'Löschen');
+        await actions.nth(0).click();
+        await expect(row).toHaveCount(0);
+      } finally {
+        await request.delete(`/api/divers/${created.id}`, { headers });
+      }
+    });
+
     test('Divers, an admin merging an external diver',{ tag: ['@divers'] }, async ({ page, request }) => {
       const name = `Merge me ${v.locale} ${Date.now()}`;
       const id = await externalDiver(request, name);

@@ -12,7 +12,7 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, Checkbox, Dialog, Form, DiverAvatar, NumberField, Muted, Notice, PageHeader, Panel, SearchList, Select, Table, TextField, type SearchListItem } from './ui/index.ts';
+import { Button, Checkbox, ConfirmButton, Dialog, Form, DiverAvatar, NumberField, Muted, Notice, PageHeader, Panel, SearchList, Select, Table, TextField, type SearchListItem } from './ui/index.ts';
 
 /** The Divers whose logbooks the User keeps, their Devices (ADR 0016), and the other divers Users dived with (ADR 0028). */
 export function DiversPage() {
@@ -142,14 +142,18 @@ function DiverRow({ diver: d, list, index, count }: { diver: DiverView; list: Re
               {t('divers.rename')}
             </Button>
             {!d.isOwn && empty && (
-              <Button variant="quiet" aria-label={t('common.forItem', { action: t('divers.delete'), item: d.name })} isPending={remove.isPending} onPress={() => remove.mutate()}>
+              <ConfirmButton
+                variant="quiet" aria-label={t('common.forItem', { action: t('divers.delete'), item: d.name })}
+                title={t('divers.deleteTitle', { name: d.name })} body={t('divers.deleteBody', { name: d.name })} confirmLabel={t('divers.delete')}
+                onConfirm={() => remove.mutateAsync()}
+              >
                 {t('divers.delete')}
-              </Button>
+              </ConfirmButton>
             )}
           </span>
         </>
       )}
-      {(rename.error ?? remove.error) && <Notice tone="danger">{errorText(rename.error ?? remove.error)}</Notice>}
+      {rename.error && <Notice tone="danger">{errorText(rename.error)}</Notice>}
       <DiveNumbers diver={d} />
       <MutedRules diver={d} />
       {codes && <DiverCodesDialog diverId={d.id} name={d.name} onClose={() => setCodes(false)} />}
@@ -378,14 +382,18 @@ function OtherDiverRow({ diver: d, list, index, count }: { diver: ExternalDiverV
               </Button>
             )}
             {d.canDelete && !d.inUse && (
-              <Button variant="quiet" aria-label={t('common.forItem', { action: t('divers.delete'), item: d.name })} isPending={remove.isPending} onPress={() => remove.mutate()}>
+              <ConfirmButton
+                variant="quiet" aria-label={t('common.forItem', { action: t('divers.delete'), item: d.name })}
+                title={t('divers.deleteTitle', { name: d.name })} body={t('divers.deleteBody', { name: d.name })} confirmLabel={t('divers.delete')}
+                onConfirm={() => remove.mutateAsync()}
+              >
                 {t('divers.delete')}
-              </Button>
+              </ConfirmButton>
             )}
           </span>
         </>
       )}
-      {(rename.error ?? remove.error) && <Notice tone="danger">{errorText(rename.error ?? remove.error)}</Notice>}
+      {rename.error && <Notice tone="danger">{errorText(rename.error)}</Notice>}
       {merging && <MergeDialog diver={d} onClose={() => setMerging(false)} />}
       {codes && <DiverCodesDialog diverId={d.id} name={d.name} onClose={() => setCodes(false)} />}
     </li>

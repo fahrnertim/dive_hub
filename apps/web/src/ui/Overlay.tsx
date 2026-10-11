@@ -6,15 +6,22 @@ import { useErrorText } from '../lib/display.ts';
 import { Button, type ButtonProps } from './Button.tsx';
 import { Notice } from './Layout.tsx';
 
-/** A modal dialog; focus stays inside and returns to the trigger when it closes. */
+/**
+ * A modal dialog; focus stays inside and returns to the trigger when it closes. Its title row has a close button
+ * (UI/UX pass C1), so a dialog without a Cancel is not a trap on a phone, where the rim to tap is 16 px.
+ */
 export function Dialog({ title, isOpen, onOpenChange, children }: {
   title: ReactNode; isOpen: boolean; onOpenChange: (open: boolean) => void; children: ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <ModalOverlay isOpen={isOpen} onOpenChange={onOpenChange} isDismissable className="modal-overlay">
       <Modal className="modal">
         <AriaDialog className="dialog">
-          <Heading slot="title" className="dialog-title">{title}</Heading>
+          <div className="dialog-head">
+            <Heading slot="title" className="dialog-title">{title}</Heading>
+            <Button variant="quiet" size="small" icon="close" className="dialog-close" aria-label={t('common.closeDialog')} onPress={() => onOpenChange(false)} />
+          </div>
           {children}
         </AriaDialog>
       </Modal>

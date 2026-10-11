@@ -11,7 +11,7 @@ import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
 import { logbookHref, toggled } from './lib/logbook.ts';
 import { useProviders } from './lib/providers.ts';
-import { ActionMenu, Button, Checkbox, Dialog, Disclosure, Muted, Notice } from './ui/index.ts';
+import { ActionMenu, Button, Checkbox, Dialog, Disclosure, LinkButton, Muted, Notice } from './ui/index.ts';
 
 /** What a run is for, as a Provider-shaped name for texts. */
 const named = (p: ProviderView | undefined, id: string) => ({ id, name: p?.name ?? id });
@@ -149,7 +149,7 @@ function SendDialog({ connection, provider, params, onClose }: {
                         {[...siteGroups.values()].map((g) => (
                           <li key={g.siteId ?? 'none'}>
                             {g.siteId
-                              ? <a href={`#/sites/${g.siteId}`}>{t('pushRun.blockedAt', { count: g.count, site: g.name ?? '' })}</a>
+                              ? <a href={`#/sites/${g.siteId}`}>{t('pushRun.blockedAt', { count: g.count, site: g.name ?? '', name })}</a>
                               : <a href="#/?only=no-site">{t('pushRun.blockedNoSite', { count: g.count })}</a>}
                           </li>
                         ))}
@@ -168,11 +168,11 @@ function SendDialog({ connection, provider, params, onClose }: {
           </>
         )}
         {start.isError && <Notice tone="danger">{errorText(start.error)}</Notice>}
-        <div className="dialog-actions">
-          <Button variant="quiet" onPress={onClose}>{t('common.cancel')}</Button>
+        <div className="form-actions">
           <Button variant="primary" isPending={start.isPending} isDisabled={!p || p.send === 0} onPress={() => start.mutate()}>
             {t('pushRun.confirm', { count: p?.send ?? 0 })}
           </Button>
+          <Button onPress={onClose}>{t('common.cancel')}</Button>
         </div>
       </div>
     </Dialog>
@@ -265,12 +265,17 @@ function EndedStrip({ run, name, onDismiss }: { run: PushRunView; name: string; 
   const unsent = run.counts.skipped + run.counts.failed;
   const provider = named(undefined, run.provider);
   const summary = runSummary(t, run, name);
+  // A stop that signing in fixes: "Continue" would fail until then, so the way on comes first.
+  const needsSignIn = run.status === 'stopped' && (run.stopCode === 'provider_sign_in_needed' || run.stopCode === 'provider_wrong_credentials');
   const body = (
     <>
       <div className="push-run-head">
         <p>{summary}{run.status === 'stopped' && run.stopCode && <> {problemText(run.stopCode, { id: provider.id, name })}</>}</p>
         <div className="push-run-actions">
-          {run.status === 'stopped' && <Button size="small" variant="primary" isPending={resume.isPending} onPress={() => resume.mutate()}>{t('pushRun.continue')}</Button>}
+          {needsSignIn && <LinkButton href="#/account" size="small" variant="primary" icon="signIn">{t('pushRun.signIn', { name })}</LinkButton>}
+          {run.status === 'stopped' && (
+            <Button size="small" variant={needsSignIn ? 'secondary' : 'primary'} isPending={resume.isPending} onPress={() => resume.mutate()}>{t('pushRun.continue')}</Button>
+          )}
           <Button size="small" variant="quiet" onPress={onDismiss}>{t('pushRun.dismiss')}</Button>
         </div>
       </div>

@@ -4,7 +4,7 @@
 import {
   ArrowDown, ArrowRightLeft, ArrowUp, BookOpen, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert,
   CircleCheck, CircleUser, CloudDownload, CloudUpload, Copy, Ellipsis, ExternalLink, Image, Info, KeyRound, Link, LogIn, LogOut, MapPin, Merge, Pencil, Plus, QrCode, Scissors, Shield, ShieldOff,
-  Star, Store, Trash, Undo2, Unlink, Upload, User, UserCheck, Users, UserX, Wrench, type LucideIcon,
+  Star, Store, Trash, Undo2, Unlink, Upload, User, UserCheck, Users, UserX, Wrench, X, type LucideIcon,
 } from 'lucide-react';
 
 const ICONS = {
@@ -25,6 +25,8 @@ const ICONS = {
   user: User,
   signOut: LogOut,
   back: ChevronLeft,
+  /** Closing a dialog (UI/UX pass C1). */
+  close: X,
   previous: ChevronLeft,
   next: ChevronRight,
   open: ChevronDown,

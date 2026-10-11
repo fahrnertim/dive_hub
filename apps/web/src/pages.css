@@ -509,7 +509,9 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .logbook-send { flex: 0 0 auto; min-width: 0; display: grid; gap: var(--space-1); }
 .logbook-send-spacer { visibility: hidden; }
 .push-run-dialog { display: grid; gap: var(--space-3); }
-.push-run-dialog .dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-3); margin-top: var(--space-2); }
+.push-run-dialog .form-actions { margin-top: var(--space-2); }
+/* The hint under a choice's label is a line of its own (UI/UX pass C3), not run on after it. */
+.push-run-dialog .field-hint { display: block; margin-top: var(--space-1); font-size: var(--text-sm); color: var(--color-text-muted); font-weight: var(--weight-regular); }
 .push-run-count { margin: 0; font-size: var(--text-md); }
 .push-run-leftout h3 { margin: 0 0 var(--space-1); font-size: var(--text-md); }
 .push-run-leftout ul, .push-run-items { margin: 0; padding-left: var(--space-5); display: grid; gap: var(--space-1); }
@@ -519,7 +521,7 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .push-run-fill { height: 100%; background: var(--color-accent); transition: width var(--duration-fast); }
 .push-run-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); }
 .push-run-head > p { margin: 0; flex: 1 1 16rem; }
-.push-run-actions { display: flex; gap: var(--space-2); }
+.push-run-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .push-run-items { list-style: none; padding-left: 0; }
 @media (prefers-reduced-motion: reduce) { .push-run-fill { transition: none; } }
 @media (max-width: 40rem) { .logbook-send-spacer { display: none; } }

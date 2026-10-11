@@ -115,7 +115,7 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 | `Panel` | A titled area of a page; `narrow` for single forms; `attention` for something waiting for the User. |
 | `Notice` | What just happened: `info`, `success`, `danger` (announced at once). |
 | `Table` | Data tables; numeric columns are right-aligned, header included. The first and last columns line up with the panel's text. A table switches layout by its own width (container query), not the window's: `cards` (tables with an actions column) below 48rem become blocks of label–value lines separated by dividers, and below 22rem the label sits above its value; `stacked` (the Dive sites list) below 40rem becomes two lines per row (`cell-lead` and `cell-main`, then the `cell-sub` cells). Date cells (`date`) don't wrap; e-mail cells (`email`) may break anywhere. |
-| `Dialog` | Modal with focus kept inside, for confirmations that need input (deleting a User). |
+| `Dialog` | Modal with focus kept inside, for confirmations that need input (deleting a User). Its title row has a close button ("Close dialog"), so no dialog is closed only by Esc or a tap on the rim. |
 | `Disclosure` | One line that opens what is behind it (a finding's details, the Dive at a Provider, a Dive's history): the title is the button, with an arrow as the cue; a `summary` stays in sight beside it; the whole line can be pressed. Only the arrow moves. For what most Users need now and then; what waits for the User opens by itself. |
 | `ConfirmButton`, `ConfirmDialog` | An action that is hard to undo asks first, in a dialog that says what will happen. The dialog alone serves menu items. |
 | `ActionMenu` | Secondary actions behind one button ("Recording actions", "More", the account menu). The panel shows only its main action. |
@@ -211,6 +211,9 @@ pointers, no `transition: all`, "…" instead of "...", no line break before "�
   opens focuses its first field, and on closing focus returns to the button that opened it. After an
   item is removed from a list, `refocusAfterRemoval` (`lib/focus.ts`) focuses the next item, else the
   panel heading.
+- **One button order, in forms and dialogs alike: the main action first, then Cancel, left-aligned** (`.form-actions`).
+  The close button in a dialog's title row is the way out of a dialog that has no Cancel. `source-rules.test.ts`
+  fails a row that puts Cancel before a `primary`/`danger`/submit button, and the class `dialog-actions`.
 - **Actions that are hard to undo ask first** (`ConfirmButton`): split off, revoke, disable,
   sign out everywhere, demoting yourself. Easily undone actions offer "Undo" instead (discarding a
   Recording).

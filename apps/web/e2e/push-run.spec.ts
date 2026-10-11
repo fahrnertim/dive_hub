@@ -17,8 +17,17 @@ test('sends the logbook\'s list to SSI: held back first, then sent with progress
   // The site has no SSI ID: SSI can't take the dive, and the dialog says where to fix it.
   await expect(dialog.getByRole('button', { name: 'Send 0 dives' })).toBeDisabled();
   await expect(dialog.getByText('1 held back')).toBeVisible();
-  const siteLink = dialog.getByRole('link', { name: '1 at SSI test reef' });
+  // In the Dive page's words (UI/UX pass C13): which site, and what it needs.
+  const siteLink = dialog.getByRole('link', { name: '1 dive: SSI test reef needs SSI’s ID for the site.' });
   await expect(siteLink).toHaveAttribute('href', `#/sites/${siteId}`);
+  // The close button is in the title row, before everything else; the main action comes before Cancel (C1, C14).
+  await expect(dialog.getByRole('button', { name: 'Close dialog' })).toBeVisible();
+  const actions = dialog.locator('.form-actions').getByRole('button');
+  await expect(actions.nth(0)).toHaveText('Send 0 dives');
+  await expect(actions.nth(1)).toHaveText('Cancel');
+  await dialog.getByRole('button', { name: 'Close dialog' }).click();
+  await expect(dialog).toBeHidden();
+  await page.getByRole('button', { name: 'Send to SSI…' }).click();
   await dialog.getByRole('button', { name: 'Cancel' }).click();
   await expect(dialog).toBeHidden();
 
@@ -54,6 +63,12 @@ test('a run stopped by a sign-in need goes on after signing in', { tag: ['@dives
   // It doesn't time out and doesn't hide behind a toast: the reason, and the way on.
   await expect(page.getByText(/Stopped after 0 of 1 dives to SSI\./)).toBeVisible();
   await expect(page.getByText('SSI wants you to sign in again')).toBeVisible();
+  // The way on is the sign-in, first; "Continue" would fail until then (C4).
+  const signIn = page.getByRole('link', { name: 'Sign in to SSI again' });
+  await expect(signIn).toHaveAttribute('href', '#/account');
+  const actions = page.locator('.push-run-actions').locator('a, button');
+  await expect(actions.nth(0)).toHaveText('Sign in to SSI again');
+  await expect(actions.nth(1)).toHaveText('Continue');
 
   await signInSsi(request, connectionId);
   await page.getByRole('button', { name: 'Continue' }).click();
@@ -91,6 +106,10 @@ test('a dive changed since it was sent has its own filter, and the send dialog l
   await page.getByRole('button', { name: 'Send to SSI…' }).click();
   const dialog = page.getByRole('dialog', { name: 'Send dives to SSI' });
   await expect(dialog.getByRole('checkbox', { name: /Also update dives changed since they were sent/ })).toBeVisible();
+  // The hint is a block of its own under the label, and counts in the singular (C3).
+  const hint = dialog.locator('small.field-hint', { hasText: 'This replaces the values in SSI: 1 dive.' });
+  await expect(hint).toBeVisible();
+  expect(await hint.evaluate((el) => getComputedStyle(el).display)).toBe('block');
   await dialog.getByRole('link', { name: 'Show these dives in the logbook' }).click();
   await expect(dialog).toBeHidden();
   await expect(page).toHaveURL(/only=changed-since-sent/);
