@@ -34,7 +34,7 @@ export function NumberField({ label, description, unit, onInput, placeholder, ..
   return (
     <AriaNumberField {...props} className="field">
       {/* The unit is part of the field's name for screen readers ("Max depth (m)"); visually it follows the input. */}
-      <Label className="field-label">{label}{unit && <span className="visually-hidden"> ({unit})</span>}</Label>
+      <Label className="field-label">{label}{unit && <span className="visually-hidden"> ({unit})</span>}{props.isRequired && <span className="field-required" aria-hidden="true"> *</span>}</Label>
       <Group className="input-group">
         <Input className="input" onInput={onInput} {...(placeholder && { placeholder })} />
         {unit && <span className="input-unit" aria-hidden="true">{unit}</span>}
@@ -92,7 +92,7 @@ export function DateTimeField<T extends DateValue>({ label, description, ...prop
   const message = useMessage();
   return (
     <AriaDateField {...props} className="field" granularity="minute">
-      <Label className="field-label">{label}</Label>
+      <Label className="field-label">{label}{props.isRequired && <span className="field-required" aria-hidden="true"> *</span>}</Label>
       <DateInput className="input date-input">
         {(segment) => <DateSegment segment={segment} className="date-segment" />}
       </DateInput>

@@ -26,7 +26,7 @@ export function TextField({ label, description, placeholder, ...props }: TextFie
   };
   return (
     <AriaTextField {...props} className="field">
-      <Label className="field-label">{label}</Label>
+      <Label className="field-label">{label}{props.isRequired && <span className="field-required" aria-hidden="true"> *</span>}</Label>
       <Input className="input" {...(placeholder !== undefined && { placeholder })} />
       {/* A description that may appear while typing is passed as '' at first: React Aria links the
           description element when the field mounts. */}

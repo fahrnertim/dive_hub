@@ -598,12 +598,12 @@ for (const v of variants) {
         await page.keyboard.press('Escape');
         // A code nobody here has the account of: the question who it is.
         await page.getByRole('button', { name: v.english ? 'Add from a code' : 'Aus Code hinzufügen' }).click();
-        await page.getByRole('textbox', { name: v.english ? 'Text of the code (optional)' : 'Text des Codes (optional)' }).fill(code(`9${account}`));
+        await page.getByRole('textbox', { name: v.english ? 'Text of the code' : 'Text des Codes' }).fill(code(`9${account}`));
         await page.getByRole('button', { name: v.english ? 'Read code' : 'Code lesen' }).click();
         await expect(page.getByRole('radiogroup')).toBeVisible();
         await expectGoodPage(page, title('Divers'), v);
         // And the code of someone already here, with nothing new in it.
-        await page.getByRole('textbox', { name: v.english ? 'Text of the code (optional)' : 'Text des Codes (optional)' }).fill(code(account));
+        await page.getByRole('textbox', { name: v.english ? 'Text of the code' : 'Text des Codes' }).fill(code(account));
         await page.getByRole('button', { name: v.english ? 'Read code' : 'Code lesen' }).click();
         await expect(page.getByRole('button', { name: v.english ? 'Show codes' : 'Codes zeigen' })).toBeVisible();
         await expectGoodPage(page, title('Divers'), v);
@@ -1092,7 +1092,7 @@ test.describe('behaviour', () => {
       await page.getByRole('button', { name: 'Edit dive' }).click();
       await expect(page.getByRole('textbox', { name: 'Lead 1 (kg)' })).toHaveValue('6');
       await expect(page.getByRole('textbox', { name: 'Thickness (mm)' })).toHaveValue('7');
-      await expect(page.getByRole('textbox', { name: 'By how much (optional) (kg)' })).toHaveValue('1');
+      await expect(page.getByRole('textbox', { name: 'By how much (kg)' })).toHaveValue('1');
       await expectGoodPage(page);
       await page.getByRole('button', { name: 'Cancel' }).click();
     } finally {
@@ -1306,6 +1306,44 @@ test.describe('behaviour', () => {
       expect((await page.getByRole('button', { name: 'Cancel' }).boundingBox())!.y).toBeLessThan(bar.y);
     });
   }
+
+  // Slice 25g (C16–C19): required fields marked, what "Same as last dive" copies, rows aligned, no "0 dives".
+  test('required fields carry a mark and the form says what it means (slice 25g, C16)', { tag: ['@sites', '@layout'] }, async ({ page }) => {
+    await page.goto(`/#/sites/${siteId}`);
+    await page.getByRole('button', { name: 'Edit dive site' }).click();
+    const form = page.getByRole('main').locator('form');
+    await expect(form.getByText('* required', { exact: true })).toBeVisible();
+    // Only the name is required on a dive site: one mark, on its label.
+    await expect(form.getByText('*', { exact: true })).toHaveCount(1);
+    await expect(form.locator('label', { hasText: 'Name' }).first()).toContainText('*');
+    // The mark is not part of the field's name.
+    await expect(form.getByRole('textbox', { name: 'Name', exact: true })).toBeVisible();
+  });
+
+  test('"Same as last dive" says what it copies (slice 25g, C17)', { tag: ['@dives'] }, async ({ page, request }) => {
+    await resetDive(request);
+    await page.goto(`/#/dives/${diveId}`);
+    await page.getByRole('button', { name: 'Edit dive' }).click();
+    const button = page.getByRole('button', { name: 'Same as last dive' });
+    await expect(button).toBeVisible();
+    await expect(page.getByText(/cylinders, suit and lead/i)).toBeVisible();
+    await expect(button).toHaveAccessibleDescription(/cylinders, suit and lead/i);
+  });
+
+  test('on the site form Water type and Maximum depth start on one line (slice 25g, C18)', { tag: ['@sites', '@layout'] }, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`/#/sites/${siteId}`);
+    await page.getByRole('button', { name: 'Edit dive site' }).click();
+    const water = (await page.getByRole('button', { name: /Water type/ }).boundingBox())!;
+    const depth = (await page.getByRole('textbox', { name: /^Maximum depth/ }).boundingBox())!;
+    expect(Math.abs(water.y - depth.y), 'the two inputs start on one line').toBeLessThanOrEqual(1);
+  });
+
+  test('the sites list shows a number of dives only above zero (slice 25g, C19)', { tag: ['@sites'] }, async ({ page }) => {
+    await page.goto('/#/sites');
+    await expect(page.getByRole('main').getByRole('link').filter({ hasText: /\S/ }).first()).toBeVisible();
+    await expect(page.getByRole('main').getByText(/^0 dives$/)).toHaveCount(0);
+  });
 
   test('the logbook sorts by a choice and searches; the address keeps both', { tag: ['@dives'] }, async ({ page, request }) => {
     await page.goto('/');

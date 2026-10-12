@@ -110,7 +110,7 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 | `Button` | `primary`: the one main action of a form or panel. `secondary`: other actions. `quiet`: inline, text-like (table actions). `danger`: destructive confirmation. `size="small"` (32 px) for an action inside a row (Add to this dive, pager). |
 | `TextField` | Label, input, description and error. Validation messages come from our translations. |
 | `Checkbox`, `RadioGroup` | Choices. A radio group saves immediately where that is expected (display settings). |
-| `Form` | React Aria's form with native validation on submit. |
+| `Form` | React Aria's form with native validation on submit, and the line "* required" at its top while a field carries the mark (hidden in one-line `form-inline` forms). |
 | `PageHeader` | The page's h1 with optional meta (a dive's date and Diver), a lead sentence and the page's actions. |
 | `Panel` | A titled area of a page; `narrow` for single forms; `attention` for something waiting for the User. |
 | `Notice` | What just happened: `info`, `success`, `danger` (announced at once). |
@@ -223,6 +223,10 @@ pointers, no `transition: all`, "â€¦" instead of "...", no line break before "â€
   (`lib/leave-guard.ts`); leaving the page or cancelling then asks first.
 - **One main action per panel; the rest in a menu** (`ActionMenu`). Tables whose last column
   holds actions use `cards`, so the actions stay in sight on a phone.
+- **Required fields are marked, optional ones are not described.** `isRequired` puts a muted `*` after the label (`aria-hidden`: the
+  field's name is unchanged and the input is `required` for assistive technology) and the form says "* required" once. Don't write
+  "(optional)" in a label. A field sits at the top of its grid cell (`.field` has `align-content: start`), so a hint beside it never
+  pushes its input down. A count of zero is left out of a list row ("0 dives" says nothing).
 - **Buttons beside a field line up with its input** (`form-inline`), not with the bottom of its hint.
 - **States are badges, dead ends lead somewhere**: an empty or not-found page says why and offers the way
   on ("Back to logbook"); a search field only shows when there is something to search.

@@ -165,7 +165,7 @@ export function NewCentre({ siteId, onCreated, onCancel }: { siteId?: string; on
       <Form className="form" onSubmit={submit}>
         <TextField label={t('centres.name')} description={t('centres.nameHint')} name="name" isRequired maxLength={200} autoComplete="off" value={name} onChange={setName} />
         <TextField
-          label={t('centres.ssiNumberOptional')} description={t('centres.ssiNumberHint')} name="ssiNumber" inputMode="numeric" pattern="[0-9]*"
+          label={t('centres.ssiNumber')} description={t('centres.ssiNumberHint')} name="ssiNumber" inputMode="numeric" pattern="[0-9]*"
           maxLength={10} autoComplete="off" value={number} onChange={setNumber}
         />
         <TakenNotice error={create.error} />

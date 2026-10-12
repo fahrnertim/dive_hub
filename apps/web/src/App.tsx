@@ -187,10 +187,8 @@ function Logbook({ params }: { params: LogbookParams }) {
           <RecentImports />
         </>
       ) : (
-        <>
-          {all.data && <ImportPanel />}
-          <DiveList params={params} searchable={false} />
-        </>
+        // The first run is one panel: the import is the only way in, so there is no empty list under it (C23).
+        all.data && <ImportPanel />
       )}
     </ImportProvider>
   );

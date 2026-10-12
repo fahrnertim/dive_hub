@@ -25,7 +25,7 @@ test('a diver is added from the text of a professional’s code, and shows both 
   const others = page.locator('section', { has: page.getByRole('heading', { name: 'Other divers' }) });
   await others.getByRole('button', { name: 'Add from a code' }).click();
   const scan = page.getByRole('dialog', { name: 'Add a diver from an SSI code' });
-  const text = scan.getByRole('textbox', { name: 'Text of the code (optional)' });
+  const text = scan.getByRole('textbox', { name: 'Text of the code' });
 
   // A centre's code is told apart, and nothing of it is taken.
   await text.fill('center;999001;name:Tauchbasis Beispiel');
@@ -70,7 +70,7 @@ test('the code of a diver already here shows what taking it changes', { tag: ['@
   await page.goto('/#/divers');
   await page.getByRole('button', { name: 'Add from a code' }).click();
   const scan = page.getByRole('dialog', { name: 'Add a diver from an SSI code' });
-  await scan.getByRole('textbox', { name: 'Text of the code (optional)' }).fill(CODE);
+  await scan.getByRole('textbox', { name: 'Text of the code' }).fill(CODE);
   await scan.getByRole('button', { name: 'Read code' }).click();
   await expect(scan.getByText(`This is the professional’s code of ${NAME}.`)).toBeVisible();
   await expect(scan.getByRole('listitem').filter({ hasText: 'E-mail' })).toContainText('Not set → pia@example.com');

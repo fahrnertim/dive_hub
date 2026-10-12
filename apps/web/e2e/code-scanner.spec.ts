@@ -126,11 +126,11 @@ test('a centre’s code is read from an image file', { tag: ['@sites'] }, async 
   await expect(page.getByText('This is a diver’s buddy code, not a dive centre’s.')).toBeVisible();
   await expect(page.getByText('No QR code was found in this image.')).toHaveCount(0);
   await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('');
-  await expect(page.getByRole('textbox', { name: 'Text of the centre’s SSI code (optional)' })).toHaveValue('');
+  await expect(page.getByRole('textbox', { name: 'Text of the centre’s SSI code' })).toHaveValue('');
 
   await chooseImage(page, picture(CODE));
   await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue(CENTRE);
-  await expect(page.getByRole('textbox', { name: 'SSI centre number (optional)' })).toHaveValue('700101');
+  await expect(page.getByRole('textbox', { name: 'SSI centre number' })).toHaveValue('700101');
   await expectGoodPage(page, 'Dive centres');
 });
 
@@ -141,7 +141,7 @@ test('a centre’s code is scanned with the camera, and the camera is stopped', 
   await page.getByRole('button', { name: 'Scan with camera' }).click();
   // The dialog closes by itself once the code is read.
   await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue(CENTRE);
-  await expect(page.getByRole('textbox', { name: 'SSI centre number (optional)' })).toHaveValue('700101');
+  await expect(page.getByRole('textbox', { name: 'SSI centre number' })).toHaveValue('700101');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(await page.evaluate(() => (window as unknown as { cameraTracks: MediaStreamTrack[] }).cameraTracks.map((t) => t.readyState))).toEqual(['ended']);
   await expect(page.getByRole('button', { name: 'Scan with camera' })).toBeFocused();

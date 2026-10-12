@@ -1,6 +1,6 @@
 // Our component set (ADR 0014): React Aria for behaviour and accessibility, our tokens for the look.
 // Styles: ./ui.css. Pages use these instead of raw form elements.
-export { Form } from 'react-aria-components';
+export { Form } from './Form.tsx';
 export { Button, LinkButton } from './Button.tsx';
 export { Checkbox, RadioGroup } from './Choice.tsx';
 export { ToggleChip } from './Chip.tsx';

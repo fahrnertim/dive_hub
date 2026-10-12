@@ -88,6 +88,38 @@ describe('components', () => {
   });
 });
 
+// UI/UX pass slice 25g (C16, C18, C23): one convention for forms.
+describe('form conventions (slice 25g)', () => {
+  const locales = files(join(src, 'i18n/locales'), '.json').map((path) => ({ path, text: read(path) }));
+  const ui = (name: string) => read(join(src, 'ui', name));
+
+  it('mark required fields in the field components, and say what the mark means in every form (C16)', () => {
+    for (const name of ['TextField.tsx', 'Fields.tsx']) expect(ui(name), name).toContain('field-required');
+    expect(read(join(src, 'ui/index.ts'))).toContain("export { Form } from './Form.tsx'");
+    expect(ui('Form.tsx')).toContain('form-legend');
+    for (const { path, text } of tsx) {
+      if (!/[\\/]ui[\\/]/.test(path)) expect(text, path).not.toMatch(/\bForm\b[^;\n]*from 'react-aria-components'/);
+    }
+  });
+
+  it('do not write "(optional)" in a label: the required ones carry the mark (C16)', () => {
+    for (const { path, text } of locales) expect(text, path).not.toMatch(/\(optional\)/i);
+  });
+
+  it('let a field start at the top of its row, so a hint beside it does not push the input down (C18)', () => {
+    const rule = css.flatMap(({ text }) => [...text.matchAll(/(?:^|\n)\.field \{([^}]*)\}/g)].map((m) => m[1] ?? '')).join(' ');
+    expect(rule).toMatch(/align-content:\s*start/);
+  });
+
+  it('leave the empty logbook to the import panel, no second panel with a line of its own (C23)', () => {
+    for (const { path, text } of locales) expect(text, path).not.toMatch(/"empty": "(No dives yet|Noch keine Tauchgänge)/);
+  });
+
+  it('say what "Same as last dive" copies (C17)', () => {
+    expect(read(join(src, 'DiveEditForm.tsx'))).toContain("t('cylinders.sameAsLastHint')");
+  });
+});
+
 describe('icons and motion (ADR 0018)', () => {
   it('import Lucide only in ui/Icon.tsx, and use no text glyphs as icons', () => {
     for (const { path, text } of tsx) {

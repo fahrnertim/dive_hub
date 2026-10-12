@@ -50,7 +50,7 @@ test('a dive centre is created from the text of its code, and shows the code', {
 
   await page.getByRole('button', { name: 'New dive centre' }).click();
   // A diver's code is told apart, and nothing of it is taken.
-  const code = page.getByRole('textbox', { name: 'Text of the centre’s SSI code (optional)' });
+  const code = page.getByRole('textbox', { name: 'Text of the centre’s SSI code' });
   await code.fill('buddy;1234567;firstName:Erika;lastName:Example;email:erika@example.com');
   await page.getByRole('button', { name: 'Read code' }).click();
   await expect(page.getByText('This is a diver’s buddy code, not a dive centre’s.')).toBeVisible();
@@ -59,7 +59,7 @@ test('a dive centre is created from the text of its code, and shows the code', {
   await code.fill(CODE);
   await page.getByRole('button', { name: 'Read code' }).click();
   await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue(CENTRE);
-  await expect(page.getByRole('textbox', { name: 'SSI centre number (optional)' })).toHaveValue('700001');
+  await expect(page.getByRole('textbox', { name: 'SSI centre number' })).toHaveValue('700001');
   await expectGoodPage(page, 'Dive centres');
   await page.getByRole('button', { name: 'Create dive centre' }).click();
 
@@ -77,7 +77,7 @@ test('a dive centre is created from the text of its code, and shows the code', {
   await expect(page.getByRole('link', { name: SHOWN })).toBeVisible();
   await page.getByRole('button', { name: 'New dive centre' }).click();
   await page.getByRole('textbox', { name: 'Name' }).fill('Example Divers again');
-  await page.getByRole('textbox', { name: 'SSI centre number (optional)' }).fill('700001');
+  await page.getByRole('textbox', { name: 'SSI centre number' }).fill('700001');
   await page.getByRole('button', { name: 'Create dive centre' }).click();
   await expect(page.getByText('Another dive centre already has this number.')).toBeVisible();
   await expect(page.getByRole('link', { name: `Open ${CENTRE}` })).toBeVisible();

@@ -151,7 +151,7 @@ export function SitesPage({ params }: { params: SitesParams }) {
                 <tr key={s.id}>
                   <td className="cell-main"><a href={`#/sites/${s.id}`}>{s.name}</a></td>
                   <td className="cell-sub">{place(s) || t('common.none')}</td>
-                  <td className="num cell-sub">{t('sites.dives', { count: s.diveCount })}</td>
+                  <td className="num cell-sub">{s.diveCount > 0 && t('sites.dives', { count: s.diveCount })}</td>
                 </tr>
               ))}
             </Table>

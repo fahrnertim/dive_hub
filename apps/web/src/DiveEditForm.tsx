@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CalendarDateTime } from '@internationalized/date';
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, ApiError, keys, unwrap, type DiveValues, type DiveView, type OverridableField } from './api.ts';
 import { CylinderFields, useCylinderProblem } from './Cylinders.tsx';
@@ -80,6 +80,7 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
   // part is still empty, and it fills only those: there is nothing to lose.
   const empty = { cylinders: typedCylinders.length === 0, ...lacks(weighting) };
   const anyEmpty = empty.cylinders || empty.lead || empty.suit;
+  const lastHint = useId();
   const last = useMutation({
     mutationFn: async () => unwrap(await api.GET('/api/dives/{id}/same-as-last', { params: { path: { id: d.id } } })),
     onSuccess: (found) => {
@@ -212,7 +213,8 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
       </div>
       {anyEmpty && (
         <div className="form-actions">
-          <Button isPending={last.isPending} onPress={() => last.mutate()}>{t('cylinders.sameAsLast')}</Button>
+          <Button isPending={last.isPending} onPress={() => last.mutate()} aria-describedby={lastHint}>{t('cylinders.sameAsLast')}</Button>
+          <p className="muted" id={lastHint}>{t('cylinders.sameAsLastHint')}</p>
           {lastHasNone && <Muted>{t('cylinders.lastHasNone')}</Muted>}
         </div>
       )}

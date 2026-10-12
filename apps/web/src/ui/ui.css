@@ -111,7 +111,14 @@
 .form-inline .field { flex: 1 1 16rem; }
 .form-inline .radio-group { margin-right: var(--space-6); }
 
-.field { display: grid; gap: var(--space-1); }
+/* align-content: a field in a row taller than itself (a hint beside it) keeps its input under its label. */
+.field { display: grid; gap: var(--space-1); align-content: start; }
+/* Required fields are the few: a mark after the label, and one line per form that says what it means. A one-field
+   inline form needs neither. */
+.field-required { color: var(--color-text-muted); }
+.form-legend { display: none; margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }
+form:not(.form-inline):has(.field-required) > .form-legend { display: block; }
+.form-inline .field-required { display: none; }
 .field-label { font-size: var(--text-sm); font-weight: var(--weight-medium); }
 .field-description { font-size: var(--text-sm); color: var(--color-text-muted); }
 .field-error { font-size: var(--text-sm); color: var(--color-danger); }

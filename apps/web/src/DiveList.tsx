@@ -69,7 +69,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
   const filters = names((params.only ?? []).map(filterName));
   const nothing = params.only?.length
     ? (params.q ? t('logbook.noMatchBoth', { q: params.q, filters }) : t('logbook.noMatchOnly', { filters }))
-    : params.q ? t('logbook.noMatch', { q: params.q }) : t('logbook.empty');
+    : params.q ? t('logbook.noMatch', { q: params.q }) : t('logbook.noneHere');
   // Reaching the first or last page disables the button just pressed; focus moves to the other one.
   const previous = useRef<HTMLButtonElement>(null);
   const next = useRef<HTMLButtonElement>(null);

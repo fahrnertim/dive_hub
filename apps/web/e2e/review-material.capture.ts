@@ -219,11 +219,11 @@ test('review material', async ({ page, request, browser }) => {
     await capture(page, '04b-divers-codes-edit', { full: false, aria: false });
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Add from a code' }).click();
-    await page.getByRole('textbox', { name: 'Text of the code (optional)' }).fill('buddy;4600003;firstName:Jonas;lastName:Muster;email:jonas@example.com');
+    await page.getByRole('textbox', { name: 'Text of the code' }).fill('buddy;4600003;firstName:Jonas;lastName:Muster;email:jonas@example.com');
     await page.getByRole('button', { name: 'Read code' }).click();
     await page.getByRole('radiogroup').waitFor();
     await capture(page, '04c-divers-code-unknown', { full: false, aria: false });
-    await page.getByRole('textbox', { name: 'Text of the code (optional)' }).fill('buddy;4600002;firstName:Pia;lastName:Probst;email:pia@example.com');
+    await page.getByRole('textbox', { name: 'Text of the code' }).fill('buddy;4600002;firstName:Pia;lastName:Probst;email:pia@example.com');
     await page.getByRole('button', { name: 'Read code' }).click();
     await page.getByRole('button', { name: 'Take over' }).waitFor();
     await capture(page, '04d-divers-code-changes', { full: false, aria: false });
@@ -310,7 +310,7 @@ test('review material', async ({ page, request, browser }) => {
       await capture(page, '10a-divers-codes-de-phone', { aria: false });
       await page.keyboard.press('Escape');
       await page.getByRole('button', { name: 'Aus Code hinzufügen' }).click();
-      await page.getByRole('textbox', { name: 'Text des Codes (optional)' }).fill('buddy;4600003;firstName:Jonas;lastName:Muster;email:jonas@example.com');
+      await page.getByRole('textbox', { name: 'Text des Codes' }).fill('buddy;4600003;firstName:Jonas;lastName:Muster;email:jonas@example.com');
       await page.getByRole('button', { name: 'Code lesen' }).click();
       await page.getByRole('radiogroup').waitFor();
       await capture(page, '10b-divers-code-unknown-de-phone', { aria: false });
