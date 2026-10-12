@@ -10,7 +10,7 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, diveNumber, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, falseStart, forgetDivers, keepFalseStart, mergePair, mergeablePair, tankPodDive,
-  clearPushRuns, expireSsiTokens, leaveLena, leaveSsi, lenaReady, openLine, pushRunSetup, readyForSsi, sendToSsi, setBuddies, setPreferences,
+  clearPushRuns, expireSsiTokens, goneAtSsi, leaveLena, leaveSsi, lenaReady, openLine, pushRunSetup, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
 const out = process.env.REVIEW_OUT ?? 'review-output/';
@@ -819,6 +819,33 @@ test('review material', async ({ page, request, browser }) => {
     await keepFalseStart(request);
     await setPreferences(request, { language: null });
     await page.emulateMedia({ colorScheme: 'light' });
+
+    // A dive deleted in SSI's app (ADR 0051): the check found it; the logbook's strip, the Review page with its two
+    // choices and the Connection's check, then the same in German, dark, on a phone.
+    const goneId = await deletableDive(request);
+    await readyForSsi(request, goneId);
+    await goneAtSsi(request, goneId);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/'); await page.reload();
+    await page.getByRole('link', { name: 'Review them' }).waitFor();
+    await capture(page, '79-logbook-gone-dive-line', { full: false, aria: false });
+    await page.getByRole('link', { name: 'Review them' }).click();
+    await page.getByRole('button', { name: /^Delete here too: / }).waitFor();
+    await capture(page, '79b-review-gone-dive');
+    await page.goto('/#/account?tab=connections');
+    await page.getByRole('button', { name: /^Check for dives deleted in SSI/ }).click();
+    await page.getByRole('link', { name: 'Show them' }).waitFor();
+    await capture(page, '79c-account-gone-check');
+    await setPreferences(request, { language: 'de' });
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/#/review'); await page.reload();
+    await page.getByRole('button', { name: /^Auch hier löschen: / }).waitFor();
+    await capture(page, '79d-review-gone-dive-de-dark-390', { aria: false });
+    await setPreferences(request, { language: null });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await request.post('/e2e/fake-ssi/clear-dives', { data: { email: 'erika@example.com' }, headers });
+    await deletableDive(request);
   }
 
   // Signed out, then signed up through the invitation: the empty logbook and Divers belong to the new account.

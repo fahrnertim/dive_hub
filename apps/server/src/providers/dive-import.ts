@@ -16,6 +16,7 @@ import type { ParsedRecording } from '../imports/parsed-recording.js';
 import { PROCESS_IMPORT_TASK } from '../imports/import-service.js';
 import { deviceDiver, placeRecording } from '../imports/placement.js';
 import { entryMatches } from '../imports/matching.js';
+import { recordFindings } from './gone-dives.js';
 import { probablyNoDive } from '../dives/logbook-check-rules.js';
 import { siteRef } from '../sites/dive-site-link.js';
 import { siteDataAllowed, siteForProvider, siteOutlook, type ProviderSite } from '../sites/provider-sites.js';
@@ -693,6 +694,8 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       const run = await runOf(db, userId, adapter, {
         diverId: row.diverId, connectionId: row.id, mode: row.importMode, windowMinutes: row.importWindowMinutes, choices: {}, context,
       });
+      // Dives whose remote dive isn't in this fresh, complete listing (ADR 0051): stored as findings, nothing else changes.
+      const goneDives = await recordFindings(db, row, parsed);
       const computers = await computersOf(db, run, dives, row.importComputers);
       run.choices = Object.fromEntries(computers.map((c) => [c.key, c.choice]));
       const counts = { total: parsed.length, unreadable: parsed.length - dives.length, ours: 0, linked: 0, deleted: 0, recordings: 0, link: 0, decide: 0, create: 0, noMatch: 0, changed: 0 };
@@ -743,7 +746,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
           else sites.missing += 1;
         }
       }
-      return { mode: row.importMode, windowMinutes: row.importWindowMinutes, computers, counts, sites, sitesAllowed: run.sitesAllowed, decisions, conflicts };
+      return { mode: row.importMode, windowMinutes: row.importWindowMinutes, computers, counts, sites, sitesAllowed: run.sitesAllowed, decisions, conflicts, goneDives };
     },
 
     /**

@@ -433,6 +433,21 @@ export async function sendToSsi(api: APIRequestContext, diveId: string) {
   if (!sent.ok()) throw new Error(`sending to SSI failed: ${sent.status()} ${await sent.text()}`);
 }
 
+/**
+ * A Dive sent to SSI and then deleted in SSI's app (ADR 0051): the Connection's check has found it, so it waits on the
+ * Review page. Needs no import setting. Answers the Dive's number there.
+ */
+export async function goneAtSsi(api: APIRequestContext, diveId: string): Promise<void> {
+  await sendToSsi(api, diveId);
+  const status = await (await api.get(`/api/dives/${diveId}/providers/ssi`)).json() as { current: { remoteId: string } | null };
+  const deleted = await api.post('/e2e/fake-ssi/delete-dive', { data: { email: SSI_ACCOUNT.login, remoteId: status.current!.remoteId }, headers });
+  expect(await deleted.json()).toEqual({ found: true });
+  const me = await (await api.get('/api/me')).json() as { ownDiver: { id: string } };
+  const own = ((await (await api.get('/api/connections')).json()) as Connection[]).find((c) => c.provider === 'ssi' && c.diverId === me.ownDiver.id)!;
+  const checked = await api.post(`/api/connections/${own.id}/gone-dives/check`, { headers });
+  expect(await checked.json()).toMatchObject({ empty: false, gone: 1 });
+}
+
 /** Nobody else on the Dive (ADR 0028): the Participants the buddy tests set are taken off again. */
 export async function clearParticipants(api: APIRequestContext, diveId: string) {
   const dive = await (await api.get(`/api/dives/${diveId}`)).json() as Dive;

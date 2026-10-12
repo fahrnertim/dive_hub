@@ -6,6 +6,7 @@ import {
   type ProviderView,
 } from './api.ts';
 import { useCylinderText } from './Cylinders.tsx';
+import { GoneCheck } from './GoneDives.tsx';
 import { ProviderImportSummary } from './ImportPanel.tsx';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
@@ -89,6 +90,7 @@ export function ProviderDiveImport({ provider: p, connection: c, several }: { pr
           >{pt('timesShow')}</Button>
         </div>
       ) : <DiveTimes provider={p} connection={c} onClose={() => setTiming(false)} />}
+      <GoneCheck provider={p} connection={c} />
     </section>
   );
 }
@@ -149,6 +151,10 @@ function Preview({ provider: p, connection: c, mode, onSettings, onStarted, onCl
   const cylinderText = useCylinderText();
   const queryClient = useQueryClient();
   const preview = useQuery(diveImportPreviewQuery(c.id));
+  // The same read found Dives gone at the Provider and stored them (ADR 0051): the Review page and its strip ask again.
+  useEffect(() => {
+    if (preview.data) void queryClient.invalidateQueries({ queryKey: keys.goneDives });
+  }, [preview.data, queryClient]);
   // Entries with several Dives here: left out unless the User picks one (ADR 0030).
   const [decisions, setDecisions] = useState<Record<string, string>>({});
   // Fields changed both at the Provider and here: Dive Hub's value stays unless the User takes the Provider's.
@@ -211,6 +217,12 @@ function Preview({ provider: p, connection: c, mode, onSettings, onStarted, onCl
   return (
     <div className="provider-import-part">
       <h4>{pt('importPreviewTitle' as 'importPreviewTitle_one', { count: data.counts.total })}</h4>
+      {data.goneDives.gone > 0 && (
+        <Notice tone="info">
+          <p>{pt('goneFound' as 'goneFound_one', { count: data.goneDives.gone })} <a href="#/review">{t('gone.see')}</a></p>
+          {data.goneDives.warning && <p>{pt('goneWarning')}</p>}
+        </Notice>
+      )}
       {data.counts.total === 0 ? <Muted>{pt('importEmpty')}</Muted> : (
         <ul className="import-counts">
           {counted.map((k) => <li key={k}>{pt(`importCount.${k}` as 'importCount.link_one', { count: data.counts[k], n: n.format(data.counts[k]) })}</li>)}

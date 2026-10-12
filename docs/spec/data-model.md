@@ -405,6 +405,14 @@ code), duration. Shown to the User, deleted after 90 days. Reads write no Revisi
 make Dive sites from its site data when Users import dives (ADR 0030, slice 15a). A dive's site is otherwise only found
 by its ID or matched by name and position (and then gets the ID as a reference).
 
+**Gone Dive** (`provider_gone_dive`, ADR 0051) — a finding that a Dive's remote dive is no longer in the Provider's
+logbook: Dive (cascade), provider, Connection (cascade), the remote ID and number it was found under, found at; one per
+Dive and Provider. Written by the import preview and by the Connection's check, from a complete, fresh listing (an empty
+listing writes nothing); removed when the logbook lists the remote dive again, and by the User's choice. Whether a finding
+still waits is worked out on reading (a live Dive; the finding's remote dive is still the Dive's current one, made through
+that Connection), so a Push, a delete or a restore needs no clean-up here. The User's choice, once a second read
+agrees, records a confirmed delete Push with `remoteGone` (ADR 0027); nothing else about the Dive changes.
+
 **Import** — User, Connection (optional for manual upload), Originals, started/finished, status,
 outcome per dive (`created`, `attached`, `updated`, `unchanged`, `duplicate candidate`, `skipped`, `failed`; skipped
 with `deleted_earlier` for a Recording of a deleted Dive, ADR 0026). An upload also has `found` (what the analysis

@@ -12,6 +12,7 @@ import { SITE_SOURCES, SOURCE_INFO } from '../sites/sources.js';
 import type { BuddyService } from './buddy-service.js';
 import type { ConnectionService } from './connection-service.js';
 import type { DiveImportService } from './dive-import.js';
+import type { GoneDiveService } from './gone-dives.js';
 import { SYNCED_FIELDS } from './three-way.js';
 import { FIND_BY, OPERATIONS, type ProviderAdapter, type Requirement } from './provider.js';
 import { pushRunRoutes } from './push-run-routes.js';
@@ -29,6 +30,7 @@ export interface ProviderRouteDeps {
   pushRuns: PushRunService;
   buddies: BuddyService;
   diveImports: DiveImportService;
+  goneDives: GoneDiveService;
   certifications: CertificationService;
 }
 
@@ -275,7 +277,7 @@ export function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Sta
   };
 }
 
-export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, pushRuns, buddies, diveImports, certifications }) => {
+export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, pushRuns, buddies, diveImports, goneDives, certifications }) => {
   app.addHook('onRequest', requireUser(auth));
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof ProviderServiceError) return replyProviderError(error, reply);
@@ -463,6 +465,12 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       + 'cylinder: the tank typed at the Provider, or the Dive\'s only Cylinder in the same values (null: none); '
       + 'lead: the weight typed at the Provider, or the total of the Dive\'s Lead, in kg (null: none)',
   });
+  const GoneSummary = Type.Object({
+    empty: Type.Boolean({ description: 'The Provider\'s logbook came back empty: nothing was compared, and an empty logbook is never a finding' }),
+    compared: Type.Integer({ description: 'Dives compared: live, and sent or linked through this Connection' }),
+    gone: Type.Integer({ description: 'Dives whose remote dive is not in the logbook and wait for the User\'s choice (GET /api/gone-dives)' }),
+    warning: Type.Boolean({ description: 'More than half of at least five compared Dives are gone: say so, and to look at the Provider\'s app first' }),
+  }, { description: 'Dives gone at the Provider (ADR 0051), found by this fresh, complete read; stored, nothing else changes' });
   const Preview = Type.Object({
     mode: Type.Enum([...DIVE_IMPORT_MODES]),
     windowMinutes: Type.Integer(),
@@ -515,6 +523,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       maxDepthM: Nullable(Type.Number()),
       candidates: Type.Array(Candidate, { description: 'The Dives here it may be, closest first' }),
     }), { description: 'Logbook entries with several Dives here in the window: one of them, a new Dive (mode create), or leave it out' }),
+    goneDives: GoneSummary,
   });
 
   const DiveTimes = Type.Object({
@@ -583,6 +592,71 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     });
     return reply.code(202).send(toImportView(created));
   });
+
+  const GoneDivesView = Type.Object({
+    connectionId: Type.String(),
+    provider: Type.String(),
+    diverId: Type.String(),
+    diverName: Type.String(),
+    accountLabel: Type.String(),
+    compared: Type.Integer({ description: 'Dives of this Diver sent or linked through the Connection' }),
+    warning: Type.Boolean({ description: 'More than half of at least five Dives are gone: say to look at the Provider\'s app first' }),
+    dives: Type.Array(Type.Object({
+      diveId: Type.String(),
+      version: Type.Integer({ description: 'The version to send when deleting the Dive (DELETE /api/dives/{id})' }),
+      number: Nullable(Type.Integer()),
+      startsAt: DateTime,
+      utcOffsetSeconds: Nullable(Type.Integer()),
+      utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES]),
+      durationSeconds: Type.Number(),
+      maxDepthM: Nullable(Type.Number()),
+      site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
+      remoteId: Type.String(),
+      remoteNumber: Nullable(Type.Integer()),
+      foundAt: DateTime,
+    })),
+  });
+
+  app.get('/gone-dives', {
+    schema: {
+      summary: 'Dives whose remote dive is gone at a Provider and wait for the User\'s choice (ADR 0051), per Connection; no call to a Provider',
+      description: 'Clients show them with two choices each, "Keep here" and "Delete here too", never a default, never "all". '
+        + 'Both first confirm: POST /api/connections/{id}/gone-dives/confirm. "Delete here too" then deletes the one Dive with its own dialog.',
+      response: { 200: Type.Array(GoneDivesView), ...errors },
+    },
+  }, async (request) => (await goneDives.waiting(request.user!.id)).map((c) => ({
+    ...c, dives: c.dives.map((d) => ({ ...d, startsAt: d.startsAt.toISOString(), foundAt: d.foundAt.toISOString() })),
+  })));
+
+  app.post('/connections/:id/gone-dives/check', {
+    schema: {
+      summary: 'Check the Provider\'s logbook for Dives that are gone there (ADR 0051): one fresh read, stores findings, changes no Dive',
+      description: 'Works whatever the Connection\'s import mode is. One paced action at the Provider. An empty logbook is never a finding (empty true). '
+        + 'The Connection\'s owner only (others: 404).',
+      params: IdParams, response: { 200: GoneSummary, ...errors },
+    },
+  }, async (request) => goneDives.check(request.user!.id, request.params.id));
+
+  app.post('/connections/:id/gone-dives/confirm', {
+    schema: {
+      summary: 'Confirm findings with one more fresh read before the User\'s choice (ADR 0051): gone again, the Dive has no remote dive there from now on',
+      description: 'Send the Dives the User chose. gone: a confirmed delete Push with remoteGone was recorded (the Dive stays here until deleted '
+        + 'or kept). there: the dive is in the logbook after all; nothing was recorded, the finding is gone: tell the User. '
+        + 'not_waiting: no such finding any more. unconfirmed: the logbook came back empty (empty true); nothing was recorded. '
+        + 'Each Dive is under its lease: provider_busy while another action holds one. Never call it for Dives the User didn\'t choose.',
+      params: IdParams,
+      body: Type.Object({
+        diveIds: Type.Array(Type.String({ format: 'uuid' }), { minItems: 1, maxItems: 50 }),
+      }, { additionalProperties: false }),
+      response: {
+        200: Type.Object({
+          empty: Type.Boolean(),
+          results: Type.Array(Type.Object({ diveId: Type.String(), confirmation: Type.Enum(['gone', 'there', 'not_waiting', 'unconfirmed']) })),
+        }),
+        ...errors,
+      },
+    },
+  }, async (request) => goneDives.confirm(request.user!.id, request.params.id, request.body.diveIds));
 
   const SiteDataView = Type.Object({
     provider: Type.String(),

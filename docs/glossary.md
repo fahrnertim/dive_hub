@@ -447,6 +447,11 @@ One User's request to send many Dives of one Diver to one Provider in one go. It
 _Avoid_: Batch, bulk upload, sync, job
 _German_: Sammelübertragung (on screen: "Tauchgänge an SSI senden")
 
+**Gone at a Provider**:
+A Dive whose remote dive (the one it was sent to or linked with through a Connection) is no longer in the Provider's logbook, found by a complete, fresh read of that logbook ([ADR 0051](decisions/0051-dives-gone-at-a-provider.md)). Finding it changes nothing; the User chooses per Dive to keep it here or to delete it here too, and each choice first asks the Provider once more. An empty logbook is never a finding.
+_Avoid_: Orphaned, deleted remotely, out of sync
+_German_: In SSI nicht mehr vorhanden (on screen: "Tauchgänge nicht mehr in SSI")
+
 **Export**:
 A file Dive Hub produces on request (such as UDDF) for the User to take elsewhere.
 _Avoid_: Push, download

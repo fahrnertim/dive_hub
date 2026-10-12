@@ -739,6 +739,21 @@
     "pick": "Mit diesem zusammenführen …",
     "done": "Die beiden Tauchgänge sind jetzt einer."
   },
+  "gone": {
+    "title": "Tauchgänge nicht mehr in {{name}}",
+    "titleDiver": "Tauchgänge nicht mehr in {{name}}: {{diver}}",
+    "intro": "Diese Tauchgänge wurden an {{name}} gesendet oder damit verknüpft, und ihr Eintrag ist nicht mehr in deinem {{name}}-Logbuch. Es wurde nichts geändert. Entscheide für jeden Tauchgang; Dive Hub fragt vorher noch einmal bei {{name}} nach.",
+    "warning": "Mehr als die Hälfte deiner verknüpften Tauchgänge fehlt in {{name}}. Sieh in der App von {{name}} nach, bevor du entscheidest: Das Logbuch dort könnte unvollständig sein.",
+    "delete": "Auch hier löschen",
+    "keep": "Hier behalten",
+    "remoteNumber": "{{name}}-Tauchgang {{number}}",
+    "see": "Anzeigen",
+    "confirmed": "Noch einmal geprüft",
+    "empty": "Dein {{name}}-Logbuch kam leer zurück, deshalb wurde nichts bestätigt und nichts geändert.",
+    "there": "{{dive}} ist doch in deinem {{name}}-Logbuch. Es wurde nichts geändert.",
+    "notWaiting": "{{dive}} wartet nicht mehr auf eine Entscheidung.",
+    "kept": "{{dive}} bleibt hier. Er ist nicht mehr mit {{name}} verknüpft; wenn du ihn erneut sendest, wird er dort neu angelegt."
+  },
   "review": {
     "title": "Durchsicht",
     "parts": "Teile der Durchsicht",
@@ -760,6 +775,8 @@
       "pairs_other": "{{count}} Paare Tauchgänge zur selben Zeit",
       "shortDives_one": "{{count}} Tauchgang, der wahrscheinlich keiner ist",
       "shortDives_other": "{{count}} Tauchgänge, die wahrscheinlich keine sind",
+      "gone_one": "{{count}} Tauchgang nicht mehr in {{name}}",
+      "gone_other": "{{count}} Tauchgänge nicht mehr in {{name}}",
       "go": "Durchsehen"
     }
   },
@@ -1341,6 +1358,12 @@
     "importMinutes_other": "{{count}} Minuten",
     "importPreview": "Zeigen, was der Import tun würde",
     "importReading": "Dein {{name}}-Logbuch wird gelesen …",
+    "goneCheck": "Nach in {{name}} gelöschten Tauchgängen suchen",
+    "goneNone": "Alle verknüpften Tauchgänge sind noch in deinem {{name}}-Logbuch.",
+    "goneEmpty": "Dein {{name}}-Logbuch kam leer zurück, deshalb wurde nichts verglichen. Versuche es später noch einmal.",
+    "goneFound_one": "{{count}} Tauchgang ist nicht mehr in deinem {{name}}-Logbuch. Es wurde nichts geändert.",
+    "goneFound_other": "{{count}} Tauchgänge sind nicht mehr in deinem {{name}}-Logbuch. Es wurde nichts geändert.",
+    "goneWarning": "Das sind mehr als die Hälfte deiner verknüpften Tauchgänge. Sieh zuerst in der App von {{name}} nach: Das Logbuch dort könnte unvollständig sein.",
     "timesShow": "Zeigen, wann jeder Tauchgang angelegt wurde",
     "timesReading": "Dein {{name}}-Logbuch wird gelesen …",
     "timesIntro": "Wie jeder Tauchgang in deinem {{name}}-Logbuch beginnt und entstanden ist. Nichts wird gespeichert oder geändert.",

@@ -907,7 +907,25 @@ export const diveLease = pgTable(
   (t) => [primaryKey({ columns: [t.diveId, t.provider] })],
 );
 
-export const pushRunStatus = pgEnum('push_run_status', ['queued', 'running', 'done', 'cancelled', 'stopped']);
+/**
+ * A Dive whose remote dive was not in the Provider's logbook at a complete, fresh read (ADR 0051): waits for the User's
+ * choice. One per Dive and Provider. Whether it still waits (the Dive is live, this remote dive is still its current
+ * one) is worked out on reading; a later read that lists the dive removes it.
+ */
+export const providerGoneDive = pgTable(
+  'provider_gone_dive',
+  {
+    diveId: uuid('dive_id').notNull().references(() => dive.id, { onDelete: 'cascade' }),
+    provider: text('provider').notNull(),
+    connectionId: uuid('connection_id').notNull().references(() => connection.id, { onDelete: 'cascade' }),
+    remoteId: text('remote_id').notNull(),
+    remoteNumber: integer('remote_number'),
+    foundAt: timestamp('found_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.diveId, t.provider] }), index('provider_gone_dive_connection_idx').on(t.connectionId)],
+);
+
+export const pushRunStatus = pgEnum('push_run_status',['queued', 'running', 'done', 'cancelled', 'stopped']);
 export const pushRunItemState = pgEnum('push_run_item_state', ['waiting', 'sending', 'sent', 'skipped', 'failed']);
 
 /** What a Push run left out when it started, as counts (ADR 0047, 0048). */

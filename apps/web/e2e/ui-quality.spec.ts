@@ -9,7 +9,7 @@ import { dataFile, type PreparedData } from './prepare.ts';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, diveNumber, seededDiveId, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectGoodPage, externalDiver, openLine,
-  clearPushRuns, expireSsiTokens, forgetDivers, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences, falseStart, keepFalseStart, tankPodDive
+  clearPushRuns, expireSsiTokens, forgetDivers, goneAtSsi, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences, falseStart, keepFalseStart, tankPodDive
 } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
@@ -822,6 +822,29 @@ for (const v of variants) {
         await expectGoodPage(page, title('Review'), v);
       } finally {
         await cancelWaitingImports(request);
+      }
+    });
+
+    test('a dive deleted in SSI, waiting on the Review page with its two choices and on the Connection', { tag: ['@dives', '@account'] }, async ({ page, request }) => {
+      const id = await deletableDive(request);
+      await readyForSsi(request, id);
+      const n = await diveNumber(request, id);
+      try {
+        await goneAtSsi(request, id);
+        await page.goto('/#/review');
+        await expect(page.getByRole('heading', { name: v.english ? 'Dives no longer in SSI' : 'Tauchgänge nicht mehr in SSI', level: 2 })).toBeVisible();
+        await expect(page.getByRole('button', { name: v.english ? `Keep here: Dive ${n}` : `Hier behalten: Tauchgang ${n}` })).toBeVisible();
+        await expectGoodPage(page, title('Review'), v);
+        await page.goto('/');
+        await expect(page.getByText(v.english ? /1 dive no longer in SSI/ : /1 Tauchgang nicht mehr in SSI/)).toBeVisible();
+        await expectGoodPage(page, title('Logbook'), v);
+        await page.goto('/#/account?tab=connections');
+        await page.getByRole('button', { name: v.english ? /^Check for dives deleted in SSI/ : /^Nach in SSI gelöschten Tauchgängen suchen/ }).click();
+        await expect(page.locator('#main').getByText(v.english ? /dive is no longer in your SSI logbook/ : /Tauchgang ist nicht mehr in deinem SSI-Logbuch/)).toBeVisible();
+        await expectGoodPage(page, title('My account'), v);
+      } finally {
+        await deletableDive(request);
+        await request.post('/e2e/fake-ssi/clear-dives', { data: { email: 'erika@example.com' }, headers });
       }
     });
 

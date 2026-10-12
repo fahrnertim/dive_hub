@@ -739,6 +739,21 @@
     "pick": "Merge with this dive…",
     "done": "The two dives are one now."
   },
+  "gone": {
+    "title": "Dives no longer in {{name}}",
+    "titleDiver": "Dives no longer in {{name}}: {{diver}}",
+    "intro": "These dives were sent to or linked with {{name}}, and their entry is no longer in your {{name}} logbook. Nothing was changed. Choose for each dive; Dive Hub asks {{name}} once more first.",
+    "warning": "More than half of your linked dives are missing from {{name}}. Look in {{name}}’s app before you decide: its logbook may be incomplete.",
+    "delete": "Delete here too",
+    "keep": "Keep here",
+    "remoteNumber": "{{name}} dive {{number}}",
+    "see": "Show them",
+    "confirmed": "Checked again",
+    "empty": "Your {{name}} logbook came back empty, so nothing was confirmed and nothing was changed.",
+    "there": "{{dive}} is in your {{name}} logbook after all. Nothing was changed.",
+    "notWaiting": "{{dive}} no longer waits for a decision.",
+    "kept": "{{dive}} stays here. It is no longer linked with {{name}}; sending it again creates it there anew."
+  },
   "review": {
     "title": "Review",
     "parts": "Parts of the review",
@@ -760,6 +775,8 @@
       "pairs_other": "{{count}} pairs of dives at the same time",
       "shortDives_one": "{{count}} dive that is probably no dive",
       "shortDives_other": "{{count}} dives that are probably no dives",
+      "gone_one": "{{count}} dive no longer in {{name}}",
+      "gone_other": "{{count}} dives no longer in {{name}}",
       "go": "Review them"
     }
   },
@@ -1340,6 +1357,12 @@
     "importMinutes_other": "{{count}} minutes",
     "importPreview": "Show what the import would do",
     "importReading": "Reading your {{name}} logbook…",
+    "goneCheck": "Check for dives deleted in {{name}}",
+    "goneNone": "All your linked dives are still in your {{name}} logbook.",
+    "goneEmpty": "Your {{name}} logbook came back empty, so nothing was compared. Try again later.",
+    "goneFound_one": "{{count}} dive is no longer in your {{name}} logbook. Nothing was changed.",
+    "goneFound_other": "{{count}} dives are no longer in your {{name}} logbook. Nothing was changed.",
+    "goneWarning": "That is more than half of your linked dives. Look in {{name}}’s app first: its logbook may be incomplete.",
     "timesShow": "Show when each dive was made",
     "timesReading": "Reading your {{name}} logbook…",
     "timesIntro": "How each dive in your {{name}} logbook started and came about. Nothing is saved or changed.",

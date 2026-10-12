@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useProviders } from './lib/providers.ts';
 import { reviewHref, useReviewCounts, useWaiting } from './lib/review.ts';
 import { LinkButton } from './ui/index.ts';
 
@@ -8,12 +9,14 @@ import { LinkButton } from './ui/index.ts';
  */
 export function ReviewStrip() {
   const { t, i18n } = useTranslation();
-  const { recordings, pairs, shortDives, total } = useWaiting();
+  const { recordings, pairs, shortDives, goneAt, total } = useWaiting();
+  const providers = useProviders();
   if (total === 0) return null;
   const parts = [
     ...(recordings > 0 ? [t('review.strip.recordings', { count: recordings })] : []),
     ...(pairs > 0 ? [t('review.strip.pairs', { count: pairs })] : []),
     ...(shortDives > 0 ? [t('review.strip.shortDives', { count: shortDives })] : []),
+    ...Object.entries(goneAt).map(([id, count]) => t('review.strip.gone', { count, name: providers.data?.find((p) => p.id === id)?.name ?? id })),
   ];
   const list = new Intl.ListFormat(i18n.language, { style: 'long', type: 'conjunction' }).format(parts);
   return (

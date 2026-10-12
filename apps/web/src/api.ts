@@ -128,6 +128,8 @@ export const keys = {
   siteImports: ['site-imports'] as const,
   providers: ['providers'] as const,
   connections: ['connections'] as const,
+  /** Dives gone at a Provider, waiting for the User's choice (ADR 0051). */
+  goneDives: ['gone-dives'] as const,
   /** Push runs (ADR 0047): the User's list, one run with its items, and what a start would do. */
   pushRuns: ['push-runs'] as const,
   pushRun: (id: string) => ['push-runs', id] as const,
@@ -451,6 +453,14 @@ async function fetchDiveImportPreview(connectionId: string) {
 /** What importing the account's dives would do now (ADR 0030); reads the Provider, so only when the User asks. */
 export const diveImportPreviewQuery = (connectionId: string) =>
   queryOptions({ queryKey: keys.diveImport(connectionId), queryFn: () => fetchDiveImportPreview(connectionId), staleTime: Infinity, retry: false });
+
+async function fetchGoneDives() {
+  return unwrap(await api.GET('/api/gone-dives'));
+}
+/** Dives whose remote dive is gone at a Provider, per Connection (ADR 0051); stored findings, no call to the Provider. */
+export const goneDivesQuery = () => queryOptions({ queryKey: keys.goneDives, queryFn: fetchGoneDives });
+export type GoneDivesOfConnection = Awaited<ReturnType<typeof fetchGoneDives>>[number];
+export type GoneDiveView = GoneDivesOfConnection['dives'][number];
 
 async function fetchDiveTimes(connectionId: string) {
   return unwrap(await api.GET('/api/connections/{id}/dive-times', { params: { path: { id: connectionId } } }));

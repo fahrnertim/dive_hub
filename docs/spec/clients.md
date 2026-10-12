@@ -571,7 +571,8 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
   and the matching window, 5, 15, 30 or 60 minutes. Explain each choice: Dives here are never overwritten; the Provider
   only fills what they lack. Name the Diver when the User keeps several.
 - **Preview first** (`GET /api/connections/{id}/dive-import`, only on request: it reads the Provider, one paced action;
-  `provider_import_off` while the mode is off). Show:
+  `provider_import_off` while the mode is off). It changes no Dive, but it also looks for Dives gone at the Provider and
+  stores them (`goneDives`, [below](#dives-gone-at-a-provider)). Show:
   - the counts that aren't zero, each with what happens: `recordings` (from a dive computer, like a file), `link`,
     `create`, `decide`, `linked` (filled where still empty), `ours` (sent from Dive Hub, stay), `deleted` (stay deleted),
     `noMatch` (left out because the import only adds), `unreadable`;
@@ -606,6 +607,28 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
   Provider's missing licence and that allowing it is the operator's decision and risk, and send `confirm: true` only after
   the admin ticked that (`provider_site_data_not_confirmed`); show who allowed it and when, and offer stopping it.
   *Web:* `Admin.tsx` (`ProviderSiteData`).
+
+### Dives gone at a Provider
+([ADR 0051](../decisions/0051-dives-gone-at-a-provider.md); `GET /api/gone-dives`,
+`POST /api/connections/{id}/gone-dives/check`, `POST /api/connections/{id}/gone-dives/confirm`, and `goneDives` in the
+import preview.) *Web:* `GoneDives.tsx`, the Review page, the logbook's strip and the Connection.
+- **A check is a read, not a decision.** `check` reads the account's whole logbook once (a paced action; works with the
+  import off) and stores what it finds: `{ empty, compared, gone, warning }`. It changes no Dive. Say "nothing was
+  changed" and link to where the findings wait. `empty` means the logbook came back with no dive: say so and that
+  nothing was compared; never present it as "all your dives are gone". `warning` (more than half of the compared Dives,
+  at least five) is shown as a warning that the account or the Provider may be wrong, before anything is chosen.
+- **The import preview reports it too** (`goneDives`, same shape): say how many there are and where they wait.
+- **Findings** (`GET /api/gone-dives`, per Connection, no call to a Provider) wait under "Needs your decision" on the
+  Review page and as one line in the logbook's strip. Each Dive shows its number, time, depth, duration, site and the
+  number it has at the Provider, and **two choices with no default: "Keep here" and "Delete here too"**.
+- **Both choices confirm first** (`confirm` with `diveIds`, 1 to 50, normally one): one fresh read under the Dive's
+  lease; `confirmation` per Dive is `gone` (recorded: the Dive has no remote dive there from then on), `there` (it is
+  listed after all: nothing was recorded, say so), `not_waiting` (decided elsewhere meanwhile) or `unconfirmed`; `empty`
+  true means nothing was confirmed. `provider_busy` (409) means another action is running on the Dive: say so and offer
+  to try again.
+- **"Delete here too"** then opens the Dive's own delete dialog, one Dive at a time, with its usual words. **Never offer
+  "all"**, never a bulk delete, never delete without that dialog.
+- Only the Connection's owner sees and decides; the findings of another User's Connection are a 404.
 
 ### Logbook checks
 ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md); `GET /api/logbook-checks`, computed each time)

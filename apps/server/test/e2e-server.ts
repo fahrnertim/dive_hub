@@ -171,6 +171,20 @@ app.post('/e2e/fake-ssi/dive', { schema: { hide: true } }, async (request) => {
   return { found: true };
 });
 
+// Test-only: a dive is deleted in SSI's app (ADR 0051): the account's logbook no longer lists it. By the account's
+// e-mail and SSI's dive ID.
+app.post('/e2e/fake-ssi/delete-dive', { schema: { hide: true } }, async (request) => {
+  const { email, remoteId } = request.body as { email: string; remoteId: string };
+  const account = fakeSsi.accounts.find((a) => a.email === email);
+  const record = fakeSsi.dives.get(Number(remoteId));
+  if (!account || !record || record.odin_user_log_user_master_id !== account.accountId) return { found: false };
+  // An account whose logbook would be empty has nothing to compare (an empty logbook is never a finding): another dive stays.
+  const others = [...fakeSsi.dives.entries()].some(([key, d]) => key !== Number(remoteId) && d.odin_user_log_user_master_id === account.accountId && d.odin_user_log_deleted !== 1);
+  if (!others) fakeSsi.addDive(account.accountId, handTypedDive({ at: '2025-07-01 09:00', depthM: 12, minutes: 30, nr: 900 }));
+  fakeSsi.dives.delete(Number(remoteId));
+  return { found: true };
+});
+
 // Test-only: SSI's tokens expire (a Connection that keeps no password then needs a new sign-in).
 app.post('/e2e/fake-ssi/expire-tokens', { schema: { hide: true } }, async () => { fakeSsi.expireTokens(); return { ok: true }; });
 
