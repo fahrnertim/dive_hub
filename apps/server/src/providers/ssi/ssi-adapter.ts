@@ -207,10 +207,12 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         const record = { ...withBuddies(updateRecord(remote, forSsi(dive)), [...ids, ...kept]), odin_user_log_nr: number };
         return { ...(await saveAndReadBack(ctx, record, number)), leftOut };
       },
-      async setNumber(remoteId, number) {
+      async setNumber(remoteId, number, sharedWith) {
         const remote = await byId(remoteId);
         if (!remote) return null;
-        const holder = await holderOf(number, remoteId);
+        // Another dive has it: only the one named (the swap's next step, ADR 0052) may, and only that one.
+        const holders = (await logbook.current()).dives.filter((r) => numberOf(r.odin_user_log_nr) === number && idOf(r.odin_user_log_id) !== remoteId);
+        const holder = holders.find((r) => idOf(r.odin_user_log_id) !== sharedWith);
         if (holder) return { result: 'taken', by: remoteDive(holder) };
         // SSI's own record back with only the number changed: nothing of Dive Hub's newer values goes along.
         const record = { ...writableRecord(remote), odin_user_log_nr: number };
@@ -219,6 +221,10 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         const stored = after.dives.find((r) => idOf(r.odin_user_log_id) === id);
         if (!stored || numberOf(stored.odin_user_log_nr) !== number) throw new ProviderError('not_stored', 'save_divelog: SSI answered, but the dive does not have the number saved');
         return { result: 'set', remoteNumber: number };
+      },
+      async heldNumbers() {
+        // The logbook as SSI has it now: a preview's read is the next save's too (kept for a minute, as for any action).
+        return (await logbook.recent()).dives.map(remoteDive);
       },
       async remove(remoteId) {
         const remote = await byId(remoteId);

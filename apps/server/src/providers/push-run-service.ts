@@ -9,6 +9,7 @@ import { asksFor, diveListFilter } from '../dives/list-filter.js';
 import { managedDiverIds } from '../dives/dive-service.js';
 import { isUniqueViolation } from '../sites/site-service.js';
 import { planItem, orderItems, type PlanOptions, type Planned } from './push-run-plan.js';
+import type { RemoteDive } from './provider.js';
 import type { PushService } from './push-service.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 
@@ -28,6 +29,10 @@ export interface PushRunRequest {
   updates?: boolean | undefined;
   updatesRemovingVerification?: boolean | undefined;
   numbers?: boolean | undefined;
+  /** Confirmed once: number changes that can remove a verification (ADR 0052). */
+  numbersRemovingVerification?: boolean | undefined;
+  /** With `ids`: also the Dives here whose number at the Provider the named ones want, and so on (ADR 0052). */
+  withHolders?: boolean | undefined;
 }
 
 /** What stops a run at once: the account needs the User, not another try. */
@@ -66,9 +71,29 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
     const order = [asc(dive.startsAt), asc(dive.id)];
     if (request.ids) {
       const ids = [...new Set(request.ids)];
-      const rows = await db.select(base).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId))
-        .where(and(inArray(dive.id, ids), eq(dive.diverId, conn.diverId), isNull(dive.deletedAt))).orderBy(...order);
-      return { dives: rows, notFound: ids.length - rows.length };
+      const select = (wanted: string[]) => db.select(base).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId))
+        .where(and(inArray(dive.id, wanted), eq(dive.diverId, conn.diverId), isNull(dive.deletedAt))).orderBy(...order);
+      const rows = await select(ids);
+      if (!request.withHolders || rows.length === 0) return { dives: rows, notFound: ids.length - rows.length };
+      // The Dives in their way (ADR 0052): whoever has, at the Provider, the number one of the set wants, again and again.
+      const known = new Map<string, { number: number | null; remote: number | null }>();
+      const everyDive = await db.select({ id: dive.id, number: dive.number }).from(dive).where(and(eq(dive.diverId, conn.diverId), isNull(dive.deletedAt)));
+      const current = await pushes.currentOf(everyDive.map((d) => d.id));
+      for (const d of everyDive) known.set(d.id, { number: d.number, remote: current.get(d.id)?.get(conn.provider)?.remoteNumber ?? null });
+      const inSet = new Set(rows.map((r) => r.id));
+      const queue = [...inSet];
+      while (queue.length > 0) {
+        const wanted = known.get(queue.shift()!)?.number;
+        if (wanted == null) continue;
+        for (const [id, d] of known) {
+          // A holder with no number of its own here, or already at it, can't move out of the way: it stays out of the set.
+          if (d.remote !== wanted || inSet.has(id) || d.number === null || d.number === d.remote) continue;
+          inSet.add(id);
+          queue.push(id);
+        }
+      }
+      const all = await select([...inSet]);
+      return { dives: all, notFound: ids.length - rows.length };
     }
     const changedIds = asksFor(request.list?.only, 'changed-since-sent') ? await pushes.changedSinceSent(userId, [conn.diverId]) : undefined;
     const { where } = diveListFilter({ userId, diverIds: [conn.diverId], ...request.list, changedIds });
@@ -88,19 +113,22 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
     const { adapter, exports, run, pauseMs } = runner(conn.provider);
     const options: PlanOptions = {
       updates: !!request.updates, updatesRemovingVerification: !!request.updatesRemovingVerification, numbers: !!request.numbers,
-      canUpdate: exports.operations.includes('update'),
+      numbersRemovingVerification: !!request.numbersRemovingVerification, canUpdate: exports.operations.includes('update'),
     };
     const { dives, notFound } = await scope(userId, conn, request);
     const leftOut: PushRunLeftOut = {
       upToDate: 0, requirementsUnmet: 0, updateNotChosen: 0, removesVerification: 0, updateUnsupported: 0, beyondCeiling: 0, notFound,
-      numberNotChosen: 0, numberTaken: 0,
+      numberNotChosen: 0, numberTaken: 0, numberHeldAtProvider: 0,
     };
     const counts = {
       create: 0, update: 0, updateRemovingVerification: 0, upToDate: 0, requirementsUnmet: 0, updateUnsupported: 0, notFound,
-      number: 0, numberRemovingVerification: 0, numberTaken: 0,
+      number: 0, numberRemovingVerification: 0, numberTaken: 0, numberHeldAtProvider: 0,
     };
     const blocked: { diveId: string; number: number | null; startsAt: Date; siteId: string | null; siteName: string | null; unmet: Status['unmet'] }[] = [];
-    const candidates: { diveId: string; startsAt: Date; planned: Exclude<Planned, { leftOut: unknown }>; withLeftOut: boolean }[] = [];
+    /** `along`: the number an update carries with it (its own save), shown in the plan though no item of its own. */
+    const candidates: {
+      diveId: string; startsAt: Date; planned: Exclude<Planned, { leftOut: unknown }>; withLeftOut: boolean; along: { from: number | null; to: number } | null;
+    }[] = [];
     const numberOnly: { diveId: string; startsAt: Date; planned: { send: 'number'; wanted: number; held: number | null } }[] = [];
     const held = new Map<string, number | null>();
 
@@ -119,7 +147,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
         counts.number++;
         if (current.number.removesVerification) counts.numberRemovingVerification++;
         // Whether these could be ordered doesn't depend on the run's choices.
-        const asNumber = planItem(status, { ...options, updates: false, updatesRemovingVerification: true, numbers: true });
+        const asNumber = planItem(status, { ...options, updates: false, numbers: true, numbersRemovingVerification: true });
         if ('send' in asNumber && asNumber.send === 'number') numberOnly.push({ diveId: d.id, startsAt: d.startsAt, planned: asNumber });
       }
       const planned = planItem(status, options);
@@ -128,23 +156,59 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
           removes_verification: 'removesVerification', update_unsupported: 'updateUnsupported' } as const;
         leftOut[key[planned.leftOut]]++;
         if (planned.numberNotChosen) leftOut.numberNotChosen++;
-      } else candidates.push({ diveId: d.id, startsAt: d.startsAt, planned, withLeftOut: status.unmet.length > 0 });
+      } else {
+        const along = planned.send === 'update' && current?.number?.differs && current.number.canSet
+          ? { from: current.remoteNumber, to: current.number.wanted } : null;
+        candidates.push({ diveId: d.id, startsAt: d.startsAt, planned, withLeftOut: status.unmet.length > 0, along });
+      }
     }
 
-    // Where the numbers of dives already there matter for the order: every current remote dive of the Diver here.
+    // Where the numbers of dives already there matter for the order: every current remote dive of the Diver here, and,
+    // for a run that sets numbers, the Provider's logbook once, so that holders only there are known before the start.
+    const fixed = new Set<number>();
+    const holders = new Map<number, RemoteDive>();
     if (numberOnly.length > 0) {
       const all = await db.select({ id: dive.id }).from(dive).where(eq(dive.diverId, conn.diverId));
-      for (const [diveId, byProvider] of await pushes.currentOf(all.map((r) => r.id))) held.set(diveId, byProvider.get(conn.provider)?.remoteNumber ?? null);
-      counts.numberTaken = orderItems(numberOnly, held).numberTaken.length;
+      const knownRemote = new Set<string>();
+      for (const [diveId, byProvider] of await pushes.currentOf(all.map((r) => r.id))) {
+        const remote = byProvider.get(conn.provider);
+        held.set(diveId, remote?.remoteNumber ?? null);
+        if (remote?.remoteId) knownRemote.add(remote.remoteId);
+      }
+      if (options.numbers) {
+        // A Provider that can't be read now (signed out, down) leaves the preview as before: the send finds a holder as it did.
+        const read = await pushes.heldNumbers(userId, conn.diverId, conn.provider).catch(() => null);
+        for (const r of read ?? []) {
+          if (r.number === null || knownRemote.has(r.remoteId)) continue;
+          fixed.add(r.number);
+          holders.set(r.number, r);
+        }
+      }
+      const ordering = orderItems(numberOnly, held, fixed);
+      counts.numberTaken = ordering.numberTaken.length;
+      counts.numberHeldAtProvider = ordering.numberHeld.length;
     }
-    const { ordered, numberTaken } = orderItems(candidates, held);
-    // Taken numbers only leave out the run's own number items; the count above is for the preview's whole picture.
+    const { ordered, numberTaken, numberHeld, shares } = orderItems(candidates, held, fixed);
+    // Taken numbers only leave out the run's own number items; the counts above are for the preview's whole picture.
     leftOut.numberTaken = numberTaken.length;
+    leftOut.numberHeldAtProvider = numberHeld.length;
     const sendList = ordered.slice(0, run.maxDives);
     leftOut.beyondCeiling = ordered.length - sendList.length;
+    const diveOf = new Map(dives.map((d) => [d.id, d]));
+    // Every number the run would set, in the order it goes (ADR 0052): the User sees it before anything is sent.
+    type NumberStep = { diveId: string; number: number | null; from: number | null; to: number; sharesWith: string | null; with: 'number' | 'update' };
+    const numberPlan = sendList.flatMap((i): NumberStep[] => {
+      const number = diveOf.get(i.diveId)?.number ?? null;
+      if (i.planned.send === 'number') return [{ diveId: i.diveId, number, from: i.planned.held, to: i.planned.wanted, sharesWith: shares.get(i.diveId) ?? null, with: 'number' }];
+      return i.along ? [{ diveId: i.diveId, number, from: i.along.from, to: i.along.to, sharesWith: null, with: 'update' }] : [];
+    });
+    const heldAtProvider = numberHeld.map((i) => {
+      const wanted = (i.planned as { wanted: number }).wanted;
+      return { diveId: i.diveId, number: diveOf.get(i.diveId)?.number ?? null, wanted, holder: holders.get(wanted) ?? null };
+    });
     return {
       adapter, run, pauseMs, options, counts, leftOut, blocked, sendList, withLeftOut: sendList.filter((i) => i.withLeftOut).length,
-      inScope: dives.length + notFound, diveOf: new Map(dives.map((d) => [d.id, d])),
+      inScope: dives.length + notFound, diveOf, numberPlan, heldAtProvider, shares,
     };
   }
 
@@ -173,6 +237,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
     return {
       id: row.id, connectionId: row.connectionId, provider: row.provider, diverId: row.diverId, status: row.status, stopCode: row.stopCode,
       updates: row.updates, updatesRemovingVerification: row.updatesRemovingVerification, numbers: row.numbers,
+      numbersRemovingVerification: row.numbersRemovingVerification,
       cancelRequested: row.cancelRequestedAt !== null, counts, leftOut: row.leftOut, pauseMs,
       createdAt: row.createdAt, startedAt: row.startedAt, finishedAt: row.finishedAt, dismissedAt: row.dismissedAt,
     };
@@ -202,6 +267,10 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
         estimatedSeconds: Math.round(a.sendList.length * (a.pauseMs / 1000 + 4)),
         blocked: { total: a.blocked.length, dives: a.blocked.slice(0, 100) },
         inScope: a.inScope,
+        // Every number a start would set, in the order they go; the dive each shares a number with for one save, if any.
+        numberPlan: a.numberPlan,
+        // Number changes held back because a dive only at the Provider has the number (the logbook was read for this).
+        heldAtProvider: a.heldAtProvider.slice(0, 100),
         // The Dives a start would queue, in the order they go (at most the Provider's ceiling).
         dives: a.sendList.map((i) => {
           const d = a.diveOf.get(i.diveId)!;
@@ -223,10 +292,11 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
         created = await db.transaction(async (tx) => {
           const [row] = await tx.insert(pushRun).values({
             userId, connectionId: conn.id, provider: conn.provider, diverId: conn.diverId, updates: a.options.updates,
-            updatesRemovingVerification: a.options.updatesRemovingVerification, numbers: a.options.numbers, leftOut: a.leftOut,
+            updatesRemovingVerification: a.options.updatesRemovingVerification, numbers: a.options.numbers,
+            numbersRemovingVerification: a.options.numbersRemovingVerification, leftOut: a.leftOut,
           }).returning();
           await tx.insert(pushRunItem).values(a.sendList.map((i, position) => ({
-            runId: row!.id, diveId: i.diveId, position, action: i.planned.send,
+            runId: row!.id, diveId: i.diveId, position, action: i.planned.send, sharesWithDiveId: a.shares.get(i.diveId) ?? null,
           })));
           await queueStep(tx, row!.id);
           return row!;
@@ -252,7 +322,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
       const row = await ownRun(userId, runId);
       const items = await db.select({
         diveId: pushRunItem.diveId, position: pushRunItem.position, action: pushRunItem.action, state: pushRunItem.state,
-        outcome: pushRunItem.outcome, reason: pushRunItem.reason,
+        outcome: pushRunItem.outcome, reason: pushRunItem.reason, sharesWithDiveId: pushRunItem.sharesWithDiveId,
         number: dive.number, startsAt: dive.startsAt, siteName: diveSite.name,
       }).from(pushRunItem).innerJoin(dive, eq(dive.id, pushRunItem.diveId)).leftJoin(diveSite, eq(diveSite.id, dive.siteId))
         .where(eq(pushRunItem.runId, runId)).orderBy(asc(pushRunItem.position));
@@ -310,11 +380,11 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
       if (!run || (run.status !== 'queued' && run.status !== 'running')) return null;
       if (run.cancelRequestedAt) { await finish(runId, 'cancelled'); return null; }
       await db.update(pushRun).set({ status: 'running', startedAt: run.startedAt ?? new Date() }).where(eq(pushRun.id, runId));
-      const [item] = await db.execute<{ dive_id: string; action: string; attempts: number; position: number }>(sql`
+      const [item] = await db.execute<{ dive_id: string; action: string; attempts: number; position: number; shares_with_dive_id: string | null }>(sql`
         update push_run_item set state = 'sending', attempts = attempts + 1
         where run_id = ${runId}::uuid and dive_id = (
           select dive_id from push_run_item where run_id = ${runId}::uuid and state = 'waiting' order by position limit 1 for update skip locked)
-        returning dive_id, action, attempts, position`).then((r) => r.rows);
+        returning dive_id, action, attempts, position, shares_with_dive_id`).then((r) => r.rows);
       if (!item) {
         await finish(runId, 'done');
         return null;
@@ -333,11 +403,11 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
           const exports = runner(run.provider).exports;
           const planned = planItem(await pushes.status(run.userId, diveId, run.provider), {
             updates: run.updates, updatesRemovingVerification: run.updatesRemovingVerification, numbers: run.numbers,
-            canUpdate: exports.operations.includes('update'),
+            numbersRemovingVerification: run.numbersRemovingVerification, canUpdate: exports.operations.includes('update'),
           });
           if ('leftOut' in planned) await skip(planned.leftOut);
           else if (planned.send === 'number') {
-            const { push } = await pushes.setNumber(run.userId, diveId, run.provider);
+            const { push } = await pushes.setNumber(run.userId, diveId, run.provider, { sharesWithDiveId: item.shares_with_dive_id ?? undefined });
             await settle({ state: 'sent', outcome: 'numbered', pushId: push.id });
           } else {
             const sent = await pushes.send(run.userId, diveId, run.provider);

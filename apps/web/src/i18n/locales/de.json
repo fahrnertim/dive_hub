@@ -486,7 +486,7 @@
     "provider_not_sent": "Dieser Tauchgang ist nicht in {{name}}.",
     "provider_dive_gone": "Der Tauchgang wurde in {{name}} gelöscht. Sende ihn erneut, um ihn dort neu anzulegen.",
     "provider_busy": "Dieser Tauchgang wird gerade an {{name}} gesendet. Warte einen Moment.",
-    "provider_number_taken": "Ein anderer Tauchgang in {{name}} hat diese Nummer. Ändere zuerst die Nummer dieses Tauchgangs.",
+    "provider_number_taken": "Ein anderer Tauchgang in {{name}} hat diese Nummer. Er muss zuerst weichen.",
     "provider_numbers_off": "In {{name}} werden Tauchgänge nicht wie in Dive Hub nummeriert. Schalte das zuerst in der Verbindung ein.",
     "provider_number_nothing_to_set": "Es gibt keine Nummer zu setzen: Die Nummer in {{name}} ist dieselbe, oder dieser Tauchgang hat keine.",
     "push_run_active": "Für diese Verbindung läuft schon ein Versand. Warte, bis er fertig ist, oder stoppe ihn.",
@@ -1128,10 +1128,10 @@
     "numbers": "Auch die Nummer von Tauchgängen setzen, die schon in {{name}} sind und eine andere Nummer haben",
     "numbersHint_one": "{{count}} Tauchgang.",
     "numbersHint_other": "{{count}} Tauchgänge.",
-    "numbersRemoving_one": "{{count}} davon verliert in {{name}} eine Bestätigung und wird nur mit der Bestätigungs-Auswahl oben gesendet.",
-    "numbersRemoving_other": "{{count}} davon verlieren in {{name}} eine Bestätigung und werden nur mit der Bestätigungs-Auswahl oben gesendet.",
-    "numberTaken_one": "{{count}} Nummernänderung lässt sich nicht ordnen (Tauchgänge, die Nummern tauschen); setze sie auf ihrer eigenen Seite.",
-    "numberTaken_other": "{{count}} Nummernänderungen lassen sich nicht ordnen (Tauchgänge, die Nummern tauschen); setze sie auf ihren eigenen Seiten.",
+    "numbersRemoving_one": "{{count}} davon kann in {{name}} eine Verifizierung verlieren. Du bestätigst das beim Senden.",
+    "numbersRemoving_other": "{{count}} davon können in {{name}} eine Verifizierung verlieren. Du bestätigst das beim Senden.",
+    "numberTaken_one": "{{count}} Nummernänderung wartet auf einen Tauchgang, den dieser Lauf nicht bewegt; setze sie auf seiner Seite, oder dort mit den Tauchgängen im Weg.",
+    "numberTaken_other": "{{count}} Nummernänderungen warten auf Tauchgänge, die dieser Lauf nicht bewegt; setze sie auf ihren Seiten, oder dort mit den Tauchgängen im Weg.",
     "leftOut": "Ausgelassen",
     "upToDate_one": "{{count}} schon auf dem neuesten Stand in {{name}}.",
     "upToDate_other": "{{count}} schon auf dem neuesten Stand in {{name}}.",
@@ -1179,8 +1179,28 @@
       "removes_verification": "Aktualisieren würde eine Bestätigung entfernen.",
       "update_unsupported": "{{name}} nimmt keine Aktualisierung an.",
       "dive_not_found": "Vor dem Senden gelöscht.",
-      "number_taken": "Seine Nummer will ein anderer Tauchgang; setze sie auf seiner Seite."
-    }
+      "number_taken": "Seine Nummer hat ein Tauchgang, den dieser Lauf nicht bewegt."
+    },
+    "numberPlan_one": "Die Nummer, die gesetzt wird",
+    "numberPlan_other": "Die {{count}} Nummern, die gesetzt werden, der Reihe nach",
+    "numberStep": "Tauchgang {{number}}: {{from}} → {{to}} in {{name}}",
+    "numberWithUpdate": "geht mit der Aktualisierung",
+    "numberShares": "Erster Schritt eines Tausches: {{name}} hat die Nummer {{to}} für einen Speichervorgang doppelt, bis Tauchgang {{other}} weiterzieht.",
+    "heldAtProvider_one": "{{count}} Nummernänderung wird zurückgehalten: Ein Tauchgang, der nur in {{name}} ist, hat die Nummer.",
+    "heldAtProvider_other": "{{count}} Nummernänderungen werden zurückgehalten: Tauchgänge, die nur in {{name}} sind, haben die Nummern.",
+    "heldLine": "Tauchgang {{wanted}} in {{name}}, {{when}}",
+    "heldImport": "Tauchgänge aus {{name}} importieren, damit sie hier Tauchgänge sind",
+    "verificationTitle": "Nummern ändern, die eine Verifizierung entfernen können?",
+    "verificationBody_one": "{{count}} Tauchgang kann die Verifizierung verlieren, die ein Tauchcenter ihm in {{name}} gegeben hat. Nur die Nummern ändern sich.",
+    "verificationBody_other": "{{count}} Tauchgänge können die Verifizierung verlieren, die ein Tauchcenter ihnen in {{name}} gegeben hat. Nur die Nummern ändern sich.",
+    "chainTitle": "Nummer mit den Tauchgängen im Weg setzen in {{name}}",
+    "chainConfirm_one": "{{count}} Nummer setzen",
+    "chainConfirm_other": "{{count}} Nummern setzen",
+    "chainNothing": "Es lässt sich nichts setzen: Ein Tauchgang mit der Nummer kann so nicht bewegt werden.",
+    "chainBlocked_one": "{{count}} Nummernänderung wartet auf einen Tauchgang, den das nicht bewegen kann.",
+    "chainBlocked_other": "{{count}} Nummernänderungen warten auf Tauchgänge, die das nicht bewegen kann.",
+    "sharedReport_one": "{{count}} Nummer wurde gesetzt, während ein anderer Tauchgang sie noch hatte, für einen Speichervorgang; er zog gleich danach weiter.",
+    "sharedReport_other": "{{count}} Nummern wurden gesetzt, während andere Tauchgänge sie noch hatten, je für einen Speichervorgang; sie zogen gleich danach weiter."
   },
   "provider": {
     "someService": "der Dienst",
@@ -1310,8 +1330,7 @@
       "created": "An {{name}} gesendet als Tauchgang {{number}}.",
       "updated": "In {{name}} aktualisiert.",
       "linked": "Mit {{name}}-Tauchgang {{number}} verknüpft.",
-      "exists": "Ein Tauchgang zur selben Zeit ist schon in {{name}}."
-,
+      "exists": "Ein Tauchgang zur selben Zeit ist schon in {{name}}.",
       "numbered": "Nummer in {{name}} auf {{number}} gesetzt."
     },
     "handedOverResult": "An {{name}} übergeben.",
@@ -1476,7 +1495,10 @@
     "fillDetails": "Angaben bei Tauchern ergänzen, die schon hier sind",
     "detailsFilled_one": "Angaben bei {{count}} Taucher ergänzt.",
     "detailsFilled_other": "Angaben bei {{count}} Tauchern ergänzt.",
-    "nothingToFill": "Nichts zu ergänzen: Diese Taucher haben schon, was bei {{name}} steht."
+    "nothingToFill": "Nichts zu ergänzen: Diese Taucher haben schon, was bei {{name}} steht.",
+    "chain": "Nummer mit den Tauchgängen im Weg setzen",
+    "heldOnlyThere": "Dieser Tauchgang ist nur in {{name}}, nicht in deinem Logbuch.",
+    "heldImport": "Tauchgänge aus {{name}} importieren"
   },
   "providers": {
     "ssi": {

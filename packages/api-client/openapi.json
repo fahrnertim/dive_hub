@@ -55406,7 +55406,8 @@
     },
     "/api/connections/{id}/push-runs/preview": {
       "post": {
-        "summary": "What a Push run would do: counts per case, what is held back and why, the limits and the time. Stores nothing and calls no Provider",
+        "summary": "What a Push run would do: counts per case, what is held back and why, every number it would set, the limits and the time. Stores nothing",
+        "description": "It calls the Provider once (a read of its logbook) only where `numbers` is chosen and a number differs, to name the dives only there that hold a wanted number.",
         "requestBody": {
           "required": true,
           "content": {
@@ -55465,6 +55466,16 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Also set the number of Dives already there whose number differs (ADR 0048)"
+                  },
+                  "numbersRemovingVerification": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Confirmed once for the run: set numbers where that can remove a verification at the Provider (ADR 0052). Not what updatesRemovingVerification is for"
+                  },
+                  "withHolders": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "With dives.ids: also the Dives here whose number at the Provider the named ones want, and so on, so that a taken number is freed by a run (ADR 0052)"
                   }
                 }
               }
@@ -55501,6 +55512,8 @@
                     "estimatedSeconds",
                     "blocked",
                     "inScope",
+                    "numberPlan",
+                    "heldAtProvider",
                     "dives"
                   ],
                   "properties": {
@@ -55537,7 +55550,8 @@
                         "notFound",
                         "number",
                         "numberRemovingVerification",
-                        "numberTaken"
+                        "numberTaken",
+                        "numberHeldAtProvider"
                       ],
                       "properties": {
                         "create": {
@@ -55571,7 +55585,11 @@
                         },
                         "numberTaken": {
                           "type": "integer",
-                          "description": "Of those, the ones that can't be ordered"
+                          "description": "Of those, the ones that wait for a dive the run doesn't move"
+                        },
+                        "numberHeldAtProvider": {
+                          "type": "integer",
+                          "description": "Of those, the ones a dive only at the Provider holds the number of; known only when `numbers` is chosen (the logbook is read for it)"
                         }
                       },
                       "description": "What is there, whatever the choices say"
@@ -55587,7 +55605,8 @@
                         "beyondCeiling",
                         "notFound",
                         "numberNotChosen",
-                        "numberTaken"
+                        "numberTaken",
+                        "numberHeldAtProvider"
                       ],
                       "properties": {
                         "upToDate": {
@@ -55617,7 +55636,11 @@
                         },
                         "numberTaken": {
                           "type": "integer",
-                          "description": "Number changes that can't be ordered (dives swapping numbers); set them from their own pages"
+                          "description": "Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages"
+                        },
+                        "numberHeldAtProvider": {
+                          "type": "integer",
+                          "description": "Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052)"
                         }
                       },
                       "description": "What the run left out when it was planned, as counts"
@@ -55711,6 +55734,164 @@
                     "inScope": {
                       "type": "integer",
                       "description": "How many Dives the request names (those of the list, or the ids found), whatever happens to them"
+                    },
+                    "numberPlan": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "diveId",
+                          "number",
+                          "from",
+                          "to",
+                          "sharesWith",
+                          "with"
+                        ],
+                        "properties": {
+                          "diveId": {
+                            "type": "string"
+                          },
+                          "number": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer",
+                                "description": "The Dive's number here"
+                              }
+                            ]
+                          },
+                          "from": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer",
+                                "description": "Its number at the Provider now"
+                              }
+                            ]
+                          },
+                          "to": {
+                            "type": "integer",
+                            "description": "The number it gets there"
+                          },
+                          "sharesWith": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "The Dive that still holds `to`: this first step of a swap or cycle makes the number twice for one save"
+                              }
+                            ]
+                          },
+                          "with": {
+                            "enum": [
+                              "number",
+                              "update"
+                            ],
+                            "description": "number: a save of its own; update: goes with the dive's update"
+                          }
+                        }
+                      },
+                      "description": "Every number a start would set, in the order they go, so the User sees them before anything is sent (ADR 0052)"
+                    },
+                    "heldAtProvider": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "diveId",
+                          "number",
+                          "wanted",
+                          "holder"
+                        ],
+                        "properties": {
+                          "diveId": {
+                            "type": "string"
+                          },
+                          "number": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer"
+                              }
+                            ]
+                          },
+                          "wanted": {
+                            "type": "integer"
+                          },
+                          "holder": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "remoteId",
+                                  "number",
+                                  "startsAt",
+                                  "maxDepthM",
+                                  "durationMinutes"
+                                ],
+                                "properties": {
+                                  "remoteId": {
+                                    "type": "string"
+                                  },
+                                  "number": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "integer"
+                                      }
+                                    ]
+                                  },
+                                  "startsAt": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  "maxDepthM": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "number"
+                                      }
+                                    ]
+                                  },
+                                  "durationMinutes": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "number"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "description": "The dive at the Provider that has the number (local time as it keeps it); a dive only there"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "Number changes held back by a dive only at the Provider, the first 100; lead to the import"
                     },
                     "dives": {
                       "type": "array",
@@ -56275,6 +56456,16 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Also set the number of Dives already there whose number differs (ADR 0048)"
+                  },
+                  "numbersRemovingVerification": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Confirmed once for the run: set numbers where that can remove a verification at the Provider (ADR 0052). Not what updatesRemovingVerification is for"
+                  },
+                  "withHolders": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "With dives.ids: also the Dives here whose number at the Provider the named ones want, and so on, so that a taken number is freed by a run (ADR 0052)"
                   }
                 }
               }
@@ -56309,6 +56500,7 @@
                     "updates",
                     "updatesRemovingVerification",
                     "numbers",
+                    "numbersRemovingVerification",
                     "cancelRequested",
                     "counts",
                     "leftOut",
@@ -56467,6 +56659,9 @@
                     "numbers": {
                       "type": "boolean"
                     },
+                    "numbersRemovingVerification": {
+                      "type": "boolean"
+                    },
                     "cancelRequested": {
                       "type": "boolean",
                       "description": "Stop was asked for; the Dive being sent is finished first"
@@ -56509,7 +56704,8 @@
                         "beyondCeiling",
                         "notFound",
                         "numberNotChosen",
-                        "numberTaken"
+                        "numberTaken",
+                        "numberHeldAtProvider"
                       ],
                       "properties": {
                         "upToDate": {
@@ -56539,7 +56735,11 @@
                         },
                         "numberTaken": {
                           "type": "integer",
-                          "description": "Number changes that can't be ordered (dives swapping numbers); set them from their own pages"
+                          "description": "Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages"
+                        },
+                        "numberHeldAtProvider": {
+                          "type": "integer",
+                          "description": "Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052)"
                         }
                       },
                       "description": "What the run left out when it was planned, as counts"
@@ -57047,6 +57247,7 @@
                       "updates",
                       "updatesRemovingVerification",
                       "numbers",
+                      "numbersRemovingVerification",
                       "cancelRequested",
                       "counts",
                       "leftOut",
@@ -57205,6 +57406,9 @@
                       "numbers": {
                         "type": "boolean"
                       },
+                      "numbersRemovingVerification": {
+                        "type": "boolean"
+                      },
                       "cancelRequested": {
                         "type": "boolean",
                         "description": "Stop was asked for; the Dive being sent is finished first"
@@ -57247,7 +57451,8 @@
                           "beyondCeiling",
                           "notFound",
                           "numberNotChosen",
-                          "numberTaken"
+                          "numberTaken",
+                          "numberHeldAtProvider"
                         ],
                         "properties": {
                           "upToDate": {
@@ -57277,7 +57482,11 @@
                           },
                           "numberTaken": {
                             "type": "integer",
-                            "description": "Number changes that can't be ordered (dives swapping numbers); set them from their own pages"
+                            "description": "Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages"
+                          },
+                          "numberHeldAtProvider": {
+                            "type": "integer",
+                            "description": "Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052)"
                           }
                         },
                         "description": "What the run left out when it was planned, as counts"
@@ -57365,6 +57574,7 @@
                         "updates",
                         "updatesRemovingVerification",
                         "numbers",
+                        "numbersRemovingVerification",
                         "cancelRequested",
                         "counts",
                         "leftOut",
@@ -57523,6 +57733,9 @@
                         "numbers": {
                           "type": "boolean"
                         },
+                        "numbersRemovingVerification": {
+                          "type": "boolean"
+                        },
                         "cancelRequested": {
                           "type": "boolean",
                           "description": "Stop was asked for; the Dive being sent is finished first"
@@ -57565,7 +57778,8 @@
                             "beyondCeiling",
                             "notFound",
                             "numberNotChosen",
-                            "numberTaken"
+                            "numberTaken",
+                            "numberHeldAtProvider"
                           ],
                           "properties": {
                             "upToDate": {
@@ -57595,7 +57809,11 @@
                             },
                             "numberTaken": {
                               "type": "integer",
-                              "description": "Number changes that can't be ordered (dives swapping numbers); set them from their own pages"
+                              "description": "Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages"
+                            },
+                            "numberHeldAtProvider": {
+                              "type": "integer",
+                              "description": "Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052)"
                             }
                           },
                           "description": "What the run left out when it was planned, as counts"
@@ -57659,6 +57877,7 @@
                               "action",
                               "state",
                               "outcome",
+                              "sharesWithDiveId",
                               "reason",
                               "dive"
                             ],
@@ -57698,6 +57917,17 @@
                                       "linked",
                                       "numbered"
                                     ]
+                                  }
+                                ]
+                              },
+                              "sharesWithDiveId": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "description": "A number change that took the number this Dive still held, for one save (a swap or cycle, ADR 0052)"
                                   }
                                 ]
                               },
@@ -58222,6 +58452,7 @@
                     "updates",
                     "updatesRemovingVerification",
                     "numbers",
+                    "numbersRemovingVerification",
                     "cancelRequested",
                     "counts",
                     "leftOut",
@@ -58380,6 +58611,9 @@
                     "numbers": {
                       "type": "boolean"
                     },
+                    "numbersRemovingVerification": {
+                      "type": "boolean"
+                    },
                     "cancelRequested": {
                       "type": "boolean",
                       "description": "Stop was asked for; the Dive being sent is finished first"
@@ -58422,7 +58656,8 @@
                         "beyondCeiling",
                         "notFound",
                         "numberNotChosen",
-                        "numberTaken"
+                        "numberTaken",
+                        "numberHeldAtProvider"
                       ],
                       "properties": {
                         "upToDate": {
@@ -58452,7 +58687,11 @@
                         },
                         "numberTaken": {
                           "type": "integer",
-                          "description": "Number changes that can't be ordered (dives swapping numbers); set them from their own pages"
+                          "description": "Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages"
+                        },
+                        "numberHeldAtProvider": {
+                          "type": "integer",
+                          "description": "Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052)"
                         }
                       },
                       "description": "What the run left out when it was planned, as counts"
@@ -58970,6 +59209,7 @@
                     "updates",
                     "updatesRemovingVerification",
                     "numbers",
+                    "numbersRemovingVerification",
                     "cancelRequested",
                     "counts",
                     "leftOut",
@@ -59128,6 +59368,9 @@
                     "numbers": {
                       "type": "boolean"
                     },
+                    "numbersRemovingVerification": {
+                      "type": "boolean"
+                    },
                     "cancelRequested": {
                       "type": "boolean",
                       "description": "Stop was asked for; the Dive being sent is finished first"
@@ -59170,7 +59413,8 @@
                         "beyondCeiling",
                         "notFound",
                         "numberNotChosen",
-                        "numberTaken"
+                        "numberTaken",
+                        "numberHeldAtProvider"
                       ],
                       "properties": {
                         "upToDate": {
@@ -59200,7 +59444,11 @@
                         },
                         "numberTaken": {
                           "type": "integer",
-                          "description": "Number changes that can't be ordered (dives swapping numbers); set them from their own pages"
+                          "description": "Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages"
+                        },
+                        "numberHeldAtProvider": {
+                          "type": "integer",
+                          "description": "Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052)"
                         }
                       },
                       "description": "What the run left out when it was planned, as counts"
@@ -59717,6 +59965,7 @@
                     "updates",
                     "updatesRemovingVerification",
                     "numbers",
+                    "numbersRemovingVerification",
                     "cancelRequested",
                     "counts",
                     "leftOut",
@@ -59875,6 +60124,9 @@
                     "numbers": {
                       "type": "boolean"
                     },
+                    "numbersRemovingVerification": {
+                      "type": "boolean"
+                    },
                     "cancelRequested": {
                       "type": "boolean",
                       "description": "Stop was asked for; the Dive being sent is finished first"
@@ -59917,7 +60169,8 @@
                         "beyondCeiling",
                         "notFound",
                         "numberNotChosen",
-                        "numberTaken"
+                        "numberTaken",
+                        "numberHeldAtProvider"
                       ],
                       "properties": {
                         "upToDate": {
@@ -59947,7 +60200,11 @@
                         },
                         "numberTaken": {
                           "type": "integer",
-                          "description": "Number changes that can't be ordered (dives swapping numbers); set them from their own pages"
+                          "description": "Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages"
+                        },
+                        "numberHeldAtProvider": {
+                          "type": "integer",
+                          "description": "Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052)"
                         }
                       },
                       "description": "What the run left out when it was planned, as counts"

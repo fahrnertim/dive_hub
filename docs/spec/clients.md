@@ -464,9 +464,13 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
   `number` (name it in the history); with `removesVerification` ask first. A differing number is **not** "changed since sent":
   don't offer an update for it (the logbook's `changed-since-sent` filter does include such a Dive while the Connection follows
   numbers and the Provider can set them on an update, so that list is "what a run with updates and numbers would send"). Problems: `provider_number_taken` (409; `existing` names the dive there that has the number and
-  `diveId` the Dive here it is, if any: say so, link to it, keep the notice until dismissed; set that one first),
+  `diveId` the Dive here it is, if any: say so, link to it, keep the notice until dismissed). **Lead out of it**
+  ([ADR 0052](../decisions/0052-freeing-dive-numbers.md)): with `diveId`, offer "Set the number with the dives in its
+  way": the run preview and start with `dives.ids` = [the Dive], `withHolders: true`, `numbers: true` and
+  `numbersRemovingVerification: true`, showing the preview's `numberPlan` first; without `diveId` (a dive only at the
+  Provider) say so and lead to the Connection's import. "Set number" itself stays one save and still refuses.
   `provider_numbers_off`, `provider_number_nothing_to_set` (fetch the status again), and a send's codes. *Web:*
-  `ProviderPanel.tsx`, `ProviderDiveNumbers.tsx`.
+  `ProviderPanel.tsx`, `ProviderDiveNumbers.tsx`, `NumberChain.tsx`.
 - **Show where the Dive is there:** not there yet, or its dive number there and when it was sent, with "changed since
   sent" when `current.upToDate` is false. Offer "Send to SSI", or "Update in SSI" when the Provider offers `update`.
   A Provider with `delivery: handed_over` gives no ID back: say when it was handed over, and that sending again adds
@@ -521,7 +525,21 @@ Provider; the client only asks, shows and reports. A Provider takes runs when `G
 `GET /api/push-runs/{id}` (with the items), `POST /api/push-runs/{id}/cancel`, `POST /api/push-runs/{id}/dismiss` and `POST /api/push-runs/{id}/continue` (202).
 The body of the first two is `dives` (exactly one of `list`: the logbook's `siteId`, `q` and `only` as `GET /api/dives`
 takes them, and `ids`, up to 500) and the three choices `updates`, `updatesRemovingVerification` and `numbers`, all false
-unless the User ticks them.
+unless the User ticks them. Two more ([ADR 0052](../decisions/0052-freeing-dive-numbers.md)): `numbersRemovingVerification`
+(false until the User confirmed, **once per run**, number changes that can remove a verification; `updatesRemovingVerification`
+no longer covers them) and `withHolders` (with `ids`: also the Dives here whose number at the Provider the named ones want,
+repeatedly).
+
+- **Show every number a run sets before it starts** (ADR 0052): the preview's `numberPlan`, in the order they go: `diveId`,
+  `number` (the Dive's), `from` (at the Provider now), `to`, `with` (`number`: a save of its own; `update`: it goes with the
+  Dive's update), and `sharesWith` (the Dive that still holds `to`: the first step of a swap or cycle makes the number twice
+  for one save, so say that, and that the other dive moves on right after). Preview with `numbersRemovingVerification` as if
+  confirmed, so the list is whole, and ask for the confirmation (naming `counts.numberRemovingVerification`) when starting.
+- **Name a number held by a dive only at the Provider** (`heldAtProvider`, `counts.numberHeldAtProvider`,
+  `leftOut.numberHeldAtProvider`: known only when `numbers` is chosen, as the preview then reads the Provider's logbook once):
+  the wanted number and the holder's time, and lead to the Connection's import. Nothing there is renumbered.
+- **A run stopped between the two saves of a swap** leaves one pair sharing a number at the Provider until it goes on or the
+  next run is made; items with `sharesWithDiveId` that were `sent` say so in the report.
 
 - **Link "Also update dives changed since they were sent" to the list it would update:** the logbook with the run's `list`
   and `only=changed-since-sent` (the web client's "Show these dives in the logbook", not shown when that filter is already on).
@@ -531,7 +549,8 @@ unless the User ticks them.
   instead of `dives.list`. `inScope` is how many Dives the request names, whatever happens to them: use it to offer scopes with
   their sizes (the list as it is now, `only=not-at-provider` without the site and search, `only=changed-since-sent`). Never
   send a list the User has not been shown.
-- **Must show a preview before anything is sent**, from the preview route (it stores nothing and calls no Provider): how many
+- **Must show a preview before anything is sent**, from the preview route (it stores nothing; it reads the Provider's logbook
+  once where `numbers` is chosen and a number differs, nothing otherwise): how many
   Dives are new (`counts.create`), what is left out and why (`leftOut`, `blocked`, `beyondCeiling`), `withLeftOut` (Dives that
   go without something the Provider can't take), the Provider's `notices`, and the time (`estimatedSeconds`) with the words
   that the User can leave. Offer the three choices **unticked**, each only where it matters: updates (`counts.update`, it

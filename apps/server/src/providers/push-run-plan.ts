@@ -18,6 +18,8 @@ export interface PlanOptions {
   updates: boolean;
   updatesRemovingVerification: boolean;
   numbers: boolean;
+  /** The run was confirmed for number changes that can remove a verification (ADR 0052). */
+  numbersRemovingVerification: boolean;
   /** The Provider updates dives at all. */
   canUpdate: boolean;
 }
@@ -44,7 +46,8 @@ export function planItem(status: PlanStatus, options: PlanOptions): Planned {
   const number = current.number;
   if (number?.differs && number.canSet) {
     if (!options.numbers) return out(base, true);
-    if (number.removesVerification && !options.updatesRemovingVerification) return out('removes_verification', false);
+    // Its own confirmation, asked once per run (ADR 0052); the tick for updates is no part of it.
+    if (number.removesVerification && !options.numbersRemovingVerification) return out('removes_verification', false);
     return { send: 'number', wanted: number.wanted, held: current.remoteNumber };
   }
   return out(base);
@@ -58,25 +61,47 @@ export interface Orderable {
 
 /**
  * Number changes first, each when its number is free (the highest wanted first among those that can go, so numbers
- * moving up go from the top and numbers moving down from the bottom); then creates and updates, oldest first. A number
- * change that never becomes free (dives swapping numbers among themselves) comes back as `numberTaken`.
- * `held` is the number each Dive Hub knows to be at the Provider, by Dive.
+ * moving up go from the top and numbers moving down from the bottom); then creates and updates, oldest first.
+ *
+ * Dives that only move among themselves (a swap, a cycle) are broken at one dive (ADR 0052): it goes first and
+ * `shares` says which dive holds the number it takes, for the length of that save; the rest then follow by the free
+ * rule, so at most one pair shares a number at any moment and none does at the end. A change that waits for a dive the
+ * run doesn't move comes back as `numberTaken`; one whose number a dive only at the Provider holds (`fixed`) as
+ * `numberHeld`. `held` is the number each Dive Hub knows to be at the Provider, by Dive.
  */
-export function orderItems<T extends Orderable>(items: T[], held: Map<string, number | null>): { ordered: T[]; numberTaken: T[] } {
-  const numbers = items.filter((i) => i.planned.send === 'number');
+export function orderItems<T extends Orderable>(
+  items: T[], held: Map<string, number | null>, fixed: ReadonlySet<number> = new Set(),
+): { ordered: T[]; numberTaken: T[]; numberHeld: T[]; shares: Map<string, string> } {
+  const wanted = (i: T) => (i.planned as { wanted: number }).wanted;
+  const all = items.filter((i) => i.planned.send === 'number');
+  const numberHeld = all.filter((i) => fixed.has(wanted(i)));
   const rest = items.filter((i) => i.planned.send !== 'number')
     .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime() || a.diveId.localeCompare(b.diveId));
   const now = new Map(held);
-  const wanted = (i: T) => (i.planned as { wanted: number }).wanted;
-  const free = (i: T) => ![...now].some(([diveId, number]) => diveId !== i.diveId && number === wanted(i));
+  const holderOf = (i: T) => [...now].filter(([diveId, number]) => diveId !== i.diveId && number === wanted(i)).map(([diveId]) => diveId).sort((a, b) => a.localeCompare(b))[0];
   const ordered: T[] = [];
-  let waiting = numbers;
+  const shares = new Map<string, string>();
+  let waiting = all.filter((i) => !fixed.has(wanted(i)));
+  /** The items that wait for each other in a ring back to `start`, or null when `start` is not in one. */
+  const ringOf = (start: T) => {
+    const path: T[] = [];
+    let at: T | undefined = start;
+    while (at && !path.includes(at)) {
+      path.push(at);
+      const holder: string | undefined = holderOf(at);
+      at = waiting.find((w) => w.diveId === holder);
+    }
+    return at === start ? path : null;
+  };
   for (;;) {
-    const next = waiting.filter(free).sort((a, b) => wanted(b) - wanted(a) || a.diveId.localeCompare(b.diveId))[0];
+    const sorted = [...waiting].sort((a, b) => wanted(b) - wanted(a) || a.diveId.localeCompare(b.diveId));
+    const free = sorted.find((i) => holderOf(i) === undefined);
+    const next = free ?? sorted.find((i) => ringOf(i));
     if (!next) break;
+    if (!free) shares.set(next.diveId, holderOf(next)!);
     ordered.push(next);
     now.set(next.diveId, wanted(next));
     waiting = waiting.filter((i) => i !== next);
   }
-  return { ordered: [...ordered, ...rest], numberTaken: waiting };
+  return { ordered: [...ordered, ...rest], numberTaken: waiting, numberHeld, shares };
 }

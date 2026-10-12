@@ -112,6 +112,8 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
     const { dives } = await json<{ dives: { id: string }[] }>('GET', `/api/dives?limit=100&diverId=${diverId}`);
     for (const d of dives) await call('DELETE', `/api/dives/${d.id}`, { version: await version(d.id) });
     ledger.dives.clear();
+    ledger.numberSaves.length = 0;
+    ledger.heldReads = 0;
     ledger.down = false;
     if (!ledger.tokens.size) ledger.tokens.set('ledger-token-1', { accountId: 'l-5', label: 'Ledger of Erika' });
     await follow(false);
@@ -510,7 +512,7 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
       const { a, b, older } = await threeBehind();
       const view = (await preview()).json() as Preview;
       expect(view.counts).toMatchObject({ number: 2, create: 1, numberTaken: 0 });
-      const created = await started({ dives: all, numbers: true, updatesRemovingVerification: true });
+      const created = await started({ dives: all, numbers: true, numbersRemovingVerification: true });
       expect(created.counts.total).toBe(3);
       await runToEnd(created.id);
       const done = await run(created.id);
@@ -540,32 +542,152 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
       expect(view.send).toBe(1);
     });
 
-    it('leaves out Dives that swap numbers among themselves', async () => {
+    /** Dives sent as 1 and 2 (each the other's number there): `ids` = [a, b]; a wants 1 and has 2, b wants 2 and has 1. */
+    const swapped = async () => {
       await follow(true);
       const a = await upload(day(1));
       const b = await upload(day(2));
       await send(a);
       await send(b);
-      // As if each had been given the other's number: a wants 1 and has 2, b wants 2 and has 1.
+      const remoteA = (await statusOf(a)).current!.remoteId;
+      const remoteB = (await statusOf(b)).current!.remoteId;
+      ledger.renumber(remoteA, 2);
+      ledger.renumber(remoteB, 1);
       await t.db.update(push).set({ remoteNumber: 2 }).where(eq(push.diveId, a));
       await t.db.update(push).set({ remoteNumber: 1 }).where(eq(push.diveId, b));
-      const view = (await preview({ dives: all, numbers: true, updatesRemovingVerification: true })).json() as Preview;
-      expect(view.counts).toMatchObject({ number: 2, numberTaken: 2 });
-      expect(view.send).toBe(0);
-      expect(view.leftOut.numberTaken).toBe(2);
+      return { a, b, remoteA, remoteB };
+    };
+    const confirmed = { dives: all, numbers: true, numbersRemovingVerification: true };
+
+    it('breaks a swap: the plan shows each number, one shares a number for one save, and none is left twice (ADR 0052)', async () => {
+      const { a, b } = await swapped();
+      const view = (await preview(confirmed)).json() as Preview & { numberPlan: { diveId: string; from: number; to: number; sharesWith: string | null }[] };
+      expect(view.counts).toMatchObject({ number: 2, numberTaken: 0, numberHeldAtProvider: 0 });
+      expect(view.send).toBe(2);
+      // b (wanting 2, which a has) goes first, sharing it with a; then a takes the number b left.
+      expect(view.numberPlan).toEqual([
+        expect.objectContaining({ diveId: b, from: 1, to: 2, sharesWith: a }),
+        expect.objectContaining({ diveId: a, from: 2, to: 1, sharesWith: null }),
+      ]);
+      const created = await started(confirmed);
+      await runToEnd(created.id);
+      const done = await run(created.id);
+      expect(done.items.map((i) => [i.diveId, i.state, i.outcome])).toEqual([[b, 'sent', 'numbered'], [a, 'sent', 'numbered']]);
+      expect(ledger.numberSaves.map((s) => s.shared)).toEqual([true, false]);
+      expect(ledgerNumbers()).toEqual([1, 2]);
     });
 
-    it('skips a number a dive only at the ledger holds, and goes on', async () => {
+    it('breaks a cycle of three with one shared save', async () => {
+      await follow(true);
+      const ids = [await upload(day(1)), await upload(day(2)), await upload(day(3))];
+      for (const id of ids) await send(id);
+      const remotes = await Promise.all(ids.map(async (id) => (await statusOf(id)).current!.remoteId));
+      // Each has the number the next one wants: 1 has 2, 2 has 3, 3 has 1.
+      const rotated = [2, 3, 1];
+      remotes.forEach((r, i) => ledger.renumber(r, rotated[i]!));
+      for (const [i, id] of ids.entries()) await t.db.update(push).set({ remoteNumber: rotated[i]! }).where(eq(push.diveId, id));
+      const created = await started(confirmed);
+      expect(created.counts.total).toBe(3);
+      await runToEnd(created.id);
+      expect((await run(created.id)).counts.sent).toBe(3);
+      expect(ledger.numberSaves.filter((s) => s.shared)).toHaveLength(1);
+      expect(ledgerNumbers()).toEqual([1, 2, 3]);
+      expect(ledger.numberSaves[0]!.shared).toBe(true);
+    });
+
+    it('a run stopped after the shared save is finished by the next run, from the numbers alone', async () => {
+      const { a, b } = await swapped();
+      const first = await started(confirmed);
+      expect(await ctx.providers.pushRuns.step(first.id)).not.toBeNull();
+      await call('POST', `/api/push-runs/${first.id}/cancel`);
+      // Now two dives hold number 2 at the ledger, as the report says it can until the run goes on.
+      expect(ledgerNumbers()).toEqual([2, 2]);
+      const again = await started(confirmed);
+      expect(again.counts.total).toBe(1);
+      await runToEnd(again.id);
+      expect((await run(again.id)).items.map((i) => i.diveId)).toEqual([a]);
+      expect(ledgerNumbers()).toEqual([1, 2]);
+      expect((await statusOf(b)).current!.remoteNumber).toBe(2);
+    });
+
+    it('does not take a number a dive of the ledger has that the run does not move', async () => {
+      await follow(true);
+      const a = await upload(day(2));
+      const b = await upload(day(3));
+      await send(a);
+      await send(b);
+      await upload(day(1));
+      // a wants 2 (b's), but only a is named: b is a Dive here, not in the run, so nothing is shared.
+      const view = (await preview({ dives: { ids: [a] }, numbers: true, numbersRemovingVerification: true })).json() as Preview;
+      expect(view.counts).toMatchObject({ number: 1, numberTaken: 1 });
+      expect(view.send).toBe(0);
+    });
+
+    it('names a number a dive only at the ledger holds before the start, and leaves its dive out', async () => {
       await follow(true);
       const a = await upload(day(2));
       await send(a);
       await upload(day(1));
       ledger.seedRemote({ number: 2, startsAt: '2025-01-01T09:00:00Z' });
-      const created = await started({ dives: all, numbers: true, updatesRemovingVerification: true });
+      const view = (await preview(confirmed)).json() as Preview & { heldAtProvider: { diveId: string; wanted: number; holder: { number: number; startsAt: string } }[] };
+      expect(ledger.heldReads).toBe(1);
+      expect(view.counts).toMatchObject({ numberHeldAtProvider: 1 });
+      expect(view.heldAtProvider).toEqual([expect.objectContaining({ diveId: a, wanted: 2, holder: expect.objectContaining({ number: 2, startsAt: '2025-01-01 09:00' }) })]);
+      const created = await started(confirmed);
+      await runToEnd(created.id);
+      const done = await run(created.id);
+      expect(done.status).toBe('done');
+      expect(done.items.find((i) => i.diveId === a)).toBeUndefined();
+      expect(done.leftOut.numberHeldAtProvider).toBe(1);
+    });
+
+    it('reads the ledger only for a run that sets numbers', async () => {
+      await follow(true);
+      await send(await upload(day(2)));
+      await upload(day(1));
+      await preview({ dives: all });
+      expect(ledger.heldReads).toBe(0);
+      await preview({ dives: all, numbers: true });
+      expect(ledger.heldReads).toBe(1);
+    });
+
+    it('still skips a number that was taken between the preview and the send', async () => {
+      await follow(true);
+      const a = await upload(day(2));
+      await send(a);
+      await upload(day(1));
+      const created = await started(confirmed);
+      ledger.seedRemote({ number: 2, startsAt: '2025-01-01T09:00:00Z' });
       await runToEnd(created.id);
       const done = await run(created.id);
       expect(done.status).toBe('done');
       expect(done.items.find((i) => i.diveId === a)).toMatchObject({ action: 'number', state: 'skipped', reason: 'number_taken' });
+    });
+
+    it('with holders, one Dive\'s chain is the dives in its way, in order; without, the holder is named as taken', async () => {
+      const { a, b } = await threeBehind();
+      const alone = (await preview({ dives: { ids: [a] }, numbers: true, numbersRemovingVerification: true })).json() as Preview;
+      expect(alone).toMatchObject({ send: 0, counts: { numberTaken: 1 } });
+      const chain = (await preview({ dives: { ids: [a] }, numbers: true, numbersRemovingVerification: true, withHolders: true })).json() as
+        Preview & { numberPlan: { diveId: string; from: number; to: number }[] };
+      expect(chain.numberPlan).toEqual([expect.objectContaining({ diveId: b, from: 2, to: 3 }), expect.objectContaining({ diveId: a, from: 1, to: 2 })]);
+      const created = await started({ dives: { ids: [a] }, numbers: true, numbersRemovingVerification: true, withHolders: true });
+      await runToEnd(created.id);
+      expect(ledgerNumbers()).toEqual([2, 3]);
+    });
+
+    it('lets a number be shared only with the dive named, whatever else holds it', async () => {
+      await follow(true);
+      const a = await upload(day(1));
+      const b = await upload(day(2));
+      await send(a);
+      await send(b);
+      const remoteA = (await statusOf(a)).current!.remoteId;
+      const remoteB = (await statusOf(b)).current!.remoteId;
+      const open = ledger.adapter.dives!.open({ connectionId: 'x', accountId: 'l-5', access: 'ledger-token-1' });
+      // a takes b's number: refused when it names a dive that is not the holder, allowed when it names b.
+      expect(await open.setNumber!(remoteA, 2, 'someone-else')).toMatchObject({ result: 'taken', by: { remoteId: remoteB } });
+      expect(await open.setNumber!(remoteA, 2, remoteB)).toEqual({ result: 'set', remoteNumber: 2 });
     });
 
     it('updates a changed Dive and sets its number in one save', async () => {

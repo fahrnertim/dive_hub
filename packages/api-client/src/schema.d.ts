@@ -12610,7 +12610,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** What a Push run would do: counts per case, what is held back and why, the limits and the time. Stores nothing and calls no Provider */
+        /**
+         * What a Push run would do: counts per case, what is held back and why, every number it would set, the limits and the time. Stores nothing
+         * @description It calls the Provider once (a read of its logbook) only where `numbers` is chosen and a number differs, to name the dives only there that hold a wanted number.
+         */
         post: {
             parameters: {
                 query?: never;
@@ -12650,6 +12653,16 @@ export interface paths {
                          * @default false
                          */
                         numbers?: boolean;
+                        /**
+                         * @description Confirmed once for the run: set numbers where that can remove a verification at the Provider (ADR 0052). Not what updatesRemovingVerification is for
+                         * @default false
+                         */
+                        numbersRemovingVerification?: boolean;
+                        /**
+                         * @description With dives.ids: also the Dives here whose number at the Provider the named ones want, and so on, so that a taken number is freed by a run (ADR 0052)
+                         * @default false
+                         */
+                        withHolders?: boolean;
                     };
                 };
             };
@@ -12680,8 +12693,10 @@ export interface paths {
                                 number: number;
                                 /** @description Of those, the ones that need updatesRemovingVerification as well */
                                 numberRemovingVerification: number;
-                                /** @description Of those, the ones that can't be ordered */
+                                /** @description Of those, the ones that wait for a dive the run doesn't move */
                                 numberTaken: number;
+                                /** @description Of those, the ones a dive only at the Provider holds the number of; known only when `numbers` is chosen (the logbook is read for it) */
+                                numberHeldAtProvider: number;
                             };
                             /** @description What the run left out when it was planned, as counts */
                             leftOut: {
@@ -12694,8 +12709,10 @@ export interface paths {
                                 notFound: number;
                                 /** @description Dives whose number differs and that a run with numbers would set */
                                 numberNotChosen: number;
-                                /** @description Number changes that can't be ordered (dives swapping numbers); set them from their own pages */
+                                /** @description Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages */
                                 numberTaken: number;
+                                /** @description Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052) */
+                                numberHeldAtProvider: number;
                             };
                             /** @description How many a start with these choices queues */
                             send: number;
@@ -12718,6 +12735,33 @@ export interface paths {
                             };
                             /** @description How many Dives the request names (those of the list, or the ids found), whatever happens to them */
                             inScope: number;
+                            /** @description Every number a start would set, in the order they go, so the User sees them before anything is sent (ADR 0052) */
+                            numberPlan: {
+                                diveId: string;
+                                number: null | number;
+                                from: null | number;
+                                /** @description The number it gets there */
+                                to: number;
+                                sharesWith: null | string;
+                                /**
+                                 * @description number: a save of its own; update: goes with the dive's update
+                                 * @enum {unknown}
+                                 */
+                                with: "number" | "update";
+                            }[];
+                            /** @description Number changes held back by a dive only at the Provider, the first 100; lead to the import */
+                            heldAtProvider: {
+                                diveId: string;
+                                number: null | number;
+                                wanted: number;
+                                holder: null | {
+                                    remoteId: string;
+                                    number: null | number;
+                                    startsAt: null | string;
+                                    maxDepthM: null | number;
+                                    durationMinutes: null | number;
+                                };
+                            }[];
                             /** @description The Dives a start with these choices would queue, in the order they are sent: at most `limits.maxDives` */
                             dives: {
                                 diveId: string;
@@ -12861,6 +12905,16 @@ export interface paths {
                          * @default false
                          */
                         numbers?: boolean;
+                        /**
+                         * @description Confirmed once for the run: set numbers where that can remove a verification at the Provider (ADR 0052). Not what updatesRemovingVerification is for
+                         * @default false
+                         */
+                        numbersRemovingVerification?: boolean;
+                        /**
+                         * @description With dives.ids: also the Dives here whose number at the Provider the named ones want, and so on, so that a taken number is freed by a run (ADR 0052)
+                         * @default false
+                         */
+                        withHolders?: boolean;
                     };
                 };
             };
@@ -12882,6 +12936,7 @@ export interface paths {
                             updates: boolean;
                             updatesRemovingVerification: boolean;
                             numbers: boolean;
+                            numbersRemovingVerification: boolean;
                             /** @description Stop was asked for; the Dive being sent is finished first */
                             cancelRequested: boolean;
                             counts: {
@@ -12902,8 +12957,10 @@ export interface paths {
                                 notFound: number;
                                 /** @description Dives whose number differs and that a run with numbers would set */
                                 numberNotChosen: number;
-                                /** @description Number changes that can't be ordered (dives swapping numbers); set them from their own pages */
+                                /** @description Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages */
                                 numberTaken: number;
+                                /** @description Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052) */
+                                numberHeldAtProvider: number;
                             };
                             /** @description Pause between two Dives; 0 when this instance no longer has the Provider */
                             pauseMs: number;
@@ -13026,6 +13083,7 @@ export interface paths {
                             updates: boolean;
                             updatesRemovingVerification: boolean;
                             numbers: boolean;
+                            numbersRemovingVerification: boolean;
                             /** @description Stop was asked for; the Dive being sent is finished first */
                             cancelRequested: boolean;
                             counts: {
@@ -13046,8 +13104,10 @@ export interface paths {
                                 notFound: number;
                                 /** @description Dives whose number differs and that a run with numbers would set */
                                 numberNotChosen: number;
-                                /** @description Number changes that can't be ordered (dives swapping numbers); set them from their own pages */
+                                /** @description Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages */
                                 numberTaken: number;
+                                /** @description Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052) */
+                                numberHeldAtProvider: number;
                             };
                             /** @description Pause between two Dives; 0 when this instance no longer has the Provider */
                             pauseMs: number;
@@ -13105,6 +13165,7 @@ export interface paths {
                             updates: boolean;
                             updatesRemovingVerification: boolean;
                             numbers: boolean;
+                            numbersRemovingVerification: boolean;
                             /** @description Stop was asked for; the Dive being sent is finished first */
                             cancelRequested: boolean;
                             counts: {
@@ -13125,8 +13186,10 @@ export interface paths {
                                 notFound: number;
                                 /** @description Dives whose number differs and that a run with numbers would set */
                                 numberNotChosen: number;
-                                /** @description Number changes that can't be ordered (dives swapping numbers); set them from their own pages */
+                                /** @description Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages */
                                 numberTaken: number;
+                                /** @description Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052) */
+                                numberHeldAtProvider: number;
                             };
                             /** @description Pause between two Dives; 0 when this instance no longer has the Provider */
                             pauseMs: number;
@@ -13145,6 +13208,7 @@ export interface paths {
                                 /** @enum {unknown} */
                                 state: "waiting" | "sending" | "sent" | "skipped" | "failed";
                                 outcome: null | ("created" | "updated" | "linked" | "numbered");
+                                sharesWithDiveId: null | string;
                                 reason: null | string;
                                 dive: {
                                     number: null | number;
@@ -13273,6 +13337,7 @@ export interface paths {
                             updates: boolean;
                             updatesRemovingVerification: boolean;
                             numbers: boolean;
+                            numbersRemovingVerification: boolean;
                             /** @description Stop was asked for; the Dive being sent is finished first */
                             cancelRequested: boolean;
                             counts: {
@@ -13293,8 +13358,10 @@ export interface paths {
                                 notFound: number;
                                 /** @description Dives whose number differs and that a run with numbers would set */
                                 numberNotChosen: number;
-                                /** @description Number changes that can't be ordered (dives swapping numbers); set them from their own pages */
+                                /** @description Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages */
                                 numberTaken: number;
+                                /** @description Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052) */
+                                numberHeldAtProvider: number;
                             };
                             /** @description Pause between two Dives; 0 when this instance no longer has the Provider */
                             pauseMs: number;
@@ -13424,6 +13491,7 @@ export interface paths {
                             updates: boolean;
                             updatesRemovingVerification: boolean;
                             numbers: boolean;
+                            numbersRemovingVerification: boolean;
                             /** @description Stop was asked for; the Dive being sent is finished first */
                             cancelRequested: boolean;
                             counts: {
@@ -13444,8 +13512,10 @@ export interface paths {
                                 notFound: number;
                                 /** @description Dives whose number differs and that a run with numbers would set */
                                 numberNotChosen: number;
-                                /** @description Number changes that can't be ordered (dives swapping numbers); set them from their own pages */
+                                /** @description Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages */
                                 numberTaken: number;
+                                /** @description Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052) */
+                                numberHeldAtProvider: number;
                             };
                             /** @description Pause between two Dives; 0 when this instance no longer has the Provider */
                             pauseMs: number;
@@ -13572,6 +13642,7 @@ export interface paths {
                             updates: boolean;
                             updatesRemovingVerification: boolean;
                             numbers: boolean;
+                            numbersRemovingVerification: boolean;
                             /** @description Stop was asked for; the Dive being sent is finished first */
                             cancelRequested: boolean;
                             counts: {
@@ -13592,8 +13663,10 @@ export interface paths {
                                 notFound: number;
                                 /** @description Dives whose number differs and that a run with numbers would set */
                                 numberNotChosen: number;
-                                /** @description Number changes that can't be ordered (dives swapping numbers); set them from their own pages */
+                                /** @description Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages */
                                 numberTaken: number;
+                                /** @description Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052) */
+                                numberHeldAtProvider: number;
                             };
                             /** @description Pause between two Dives; 0 when this instance no longer has the Provider */
                             pauseMs: number;

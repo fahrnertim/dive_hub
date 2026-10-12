@@ -12,7 +12,8 @@ import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
 import { logbookHref, toggled, type LogbookFilter } from './lib/logbook.ts';
 import { useProviders } from './lib/providers.ts';
 import { accountHref } from './lib/account-tabs.ts';
-import { ActionMenu, Button, Checkbox, Dialog, Disclosure, Icon, LinkButton, Muted, Notice, RadioGroup } from './ui/index.ts';
+import { HeldAtProvider, NumberPlanList } from './NumberChain.tsx';
+import { ActionMenu, Button, Checkbox, ConfirmButton, Dialog, Disclosure, Icon, LinkButton, Muted, Notice, RadioGroup } from './ui/index.ts';
 
 /** What a run is for, as a Provider-shaped name for texts. */
 const named = (p: ProviderView | undefined, id: string) => ({ id, name: p?.name ?? id });
@@ -70,7 +71,7 @@ export function SendToProvider({ params, filterName }: { params: LogbookParams; 
 /** What the dialog can send: the logbook's list as it is now, every Dive not at the Provider yet, or the ones changed since sent. */
 type Scope = 'list' | 'new' | 'changed';
 const SCOPES: readonly Scope[] = ['list', 'new', 'changed'];
-const NO_CHOICES = { updates: false, updatesRemovingVerification: false, numbers: false };
+const NO_CHOICES = { updates: false, updatesRemovingVerification: false, numbers: false, numbersRemovingVerification: false };
 const sameList = (a: PushRunChoices['list'], b: PushRunChoices['list']) => a.siteId === b.siteId && a.q === b.q && a.only === b.only;
 
 /** A scope's label with the number of Dives in it and what it is, read together by screen readers. */
@@ -108,7 +109,8 @@ function SendDialog({ connection, provider, params, filterName, onClose }: {
     new: useQuery(pushRunPreviewQuery(connection.id, { list: lists.new, ...NO_CHOICES })),
     changed: useQuery(pushRunPreviewQuery(connection.id, { list: lists.changed, ...NO_CHOICES })),
   };
-  const request: PushRunChoices = { list: lists[scope], ...choices };
+  // Numbers are previewed as if confirmed: the dialog lists every number, and asks once before sending where a verification can go.
+  const request: PushRunChoices = { list: lists[scope], ...choices, numbersRemovingVerification: choices.numbers };
   const preview = useQuery(pushRunPreviewQuery(connection.id, request));
   const p = preview.data;
   const dives = p?.dives ?? [];
@@ -224,6 +226,12 @@ function SendDialog({ connection, provider, params, filterName, onClose }: {
                       <span>{t('pushRun.numbers', { name })}<small className="field-hint">{t('pushRun.numbersHint', { count: p.counts.number })}</small></span>
                     </Checkbox>
                     {p.counts.numberRemovingVerification > 0 && <Muted>{t('pushRun.numbersRemoving', { count: p.counts.numberRemovingVerification, name })}</Muted>}
+                    {choices.numbers && p.numberPlan.length > 0 && (
+                      <Disclosure title={t('pushRun.numberPlan', { count: p.numberPlan.length })}>
+                        <NumberPlanList plan={p.numberPlan} name={name} />
+                      </Disclosure>
+                    )}
+                    {choices.numbers && <HeldAtProvider held={p.heldAtProvider} name={name} onNavigate={onClose} />}
                     {p.counts.numberTaken > 0 && <Muted>{t('pushRun.numberTaken', { count: p.counts.numberTaken })}</Muted>}
                   </>
                 )}
@@ -260,9 +268,20 @@ function SendDialog({ connection, provider, params, filterName, onClose }: {
         )}
         {start.isError && <Notice tone="danger">{errorText(start.error)}</Notice>}
         <div className="form-actions">
-          <Button variant="primary" isPending={start.isPending} isDisabled={!p || preview.isPlaceholderData || goes.length === 0} onPress={() => start.mutate()}>
-            {t('pushRun.confirm', { count: goes.length })}
-          </Button>
+          {choices.numbers && !!p && p.counts.numberRemovingVerification > 0 ? (
+            // Asked once per run (ADR 0052), with the count; the numbers are in the dialog behind it.
+            <ConfirmButton
+              variant="primary" tone="primary" isDisabled={preview.isPlaceholderData || goes.length === 0}
+              title={t('pushRun.verificationTitle', { name })} body={t('pushRun.verificationBody', { count: p.counts.numberRemovingVerification, name })}
+              confirmLabel={t('pushRun.confirm', { count: goes.length })} onConfirm={() => start.mutateAsync()}
+            >
+              {t('pushRun.confirm', { count: goes.length })}
+            </ConfirmButton>
+          ) : (
+            <Button variant="primary" isPending={start.isPending} isDisabled={!p || preview.isPlaceholderData || goes.length === 0} onPress={() => start.mutate()}>
+              {t('pushRun.confirm', { count: goes.length })}
+            </Button>
+          )}
           <Button onPress={onClose}>{t('common.cancel')}</Button>
         </div>
       </div>
@@ -418,12 +437,21 @@ function EndedStrip({ run, name, onDismiss, dismissError }: { run: PushRunView; 
       </div>
       {resume.isError && <Notice tone="danger">{errorText(resume.error)}</Notice>}
       {dismissError && <Notice tone="danger">{errorText(dismissError)}</Notice>}
+      {run.numbers && <SharedSteps id={run.id} />}
       {unsent > 0 && <Disclosure title={t('pushRun.details', { count: unsent })}><RunItems id={run.id} name={name} provider={provider} /></Disclosure>}
     </>
   );
   return run.status === 'stopped'
     ? <Notice tone="danger">{body}</Notice>
     : <div className="strip push-run-strip push-run-ended">{body}</div>;
+}
+
+/** What a swap or cycle did (ADR 0052): numbers set while another dive still had them, for one save each. Said plainly, as it can be seen at the Provider. */
+function SharedSteps({ id }: { id: string }) {
+  const { t } = useTranslation();
+  const run = useQuery(pushRunQuery(id));
+  const count = (run.data?.items ?? []).filter((i) => i.state === 'sent' && i.sharesWithDiveId).length;
+  return count > 0 ? <Muted>{t('pushRun.sharedReport', { count })}</Muted> : null;
 }
 
 /** Every Dive of a run that was not sent, with the reason. Read only when the list is opened. */

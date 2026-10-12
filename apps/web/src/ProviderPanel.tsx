@@ -10,6 +10,7 @@ import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
 import { exporting, typedSiteId, useNames, useProviders, useProviderText, waitsForUser } from './lib/providers.ts';
 import { accountHref } from './lib/account-tabs.ts';
+import { NumberChainDialog } from './NumberChain.tsx';
 import { Badge, Button, ConfirmButton, Dialog, Disclosure, Muted, Notice, SearchList, type SearchListItem } from './ui/index.ts';
 
 type Existing = { remoteId: string; number: number | null; startsAt: string | null; maxDepthM: number | null; durationMinutes: number | null };
@@ -42,6 +43,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
   const status = useQuery(providerStatusQuery(d.id, p.id));
   const [existing, setExisting] = useState<Existing | null>(null);
   const [verificationRemoved, setVerificationRemoved] = useState(false);
+  const [chainOpen, setChainOpen] = useState(false);
   const can = (op: (typeof exports.operations)[number]) => exports.operations.includes(op);
   const refresh = async (next?: ProviderStatusView) => {
     if (next) queryClient.setQueryData(keys.providerStatus(d.id, p.id), next);
@@ -141,7 +143,18 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
           {setNumber.error instanceof ApiError && setNumber.error.details.diveId && (
             <> <a href={`#/dives/${setNumber.error.details.diveId}`}>{pt('numberHolder', { date: setNumber.error.details.existing?.startsAt ?? '' })}</a></>
           )}
+          {/* A holder that is a Dive here: the run for the dives in its way (ADR 0052). Only at the Provider: the import. */}
+          {setNumber.error instanceof ApiError && setNumber.error.code === 'provider_number_taken' && (
+            <p>
+              {setNumber.error.details.diveId
+                ? <Button size="small" onPress={() => setChainOpen(true)}>{pt('chain')}</Button>
+                : <><span>{pt('heldOnlyThere')}</span> <a href={accountHref('connections')}>{pt('heldImport')}</a></>}
+            </p>
+          )}
         </Notice>
+      )}
+      {chainOpen && s.connection && (
+        <NumberChainDialog connectionId={s.connection.id} diveId={d.id} name={p.name} onClose={() => setChainOpen(false)} />
       )}
 
       {ready && !signInNeeded && s.current?.updateRemovesVerification && can('update') && (

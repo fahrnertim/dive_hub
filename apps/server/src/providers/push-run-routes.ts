@@ -16,7 +16,8 @@ const LeftOut = Type.Object({
   upToDate: Type.Integer(), requirementsUnmet: Type.Integer(), updateNotChosen: Type.Integer(), removesVerification: Type.Integer(),
   updateUnsupported: Type.Integer(), beyondCeiling: Type.Integer(), notFound: Type.Integer(),
   numberNotChosen: Type.Integer({ description: 'Dives whose number differs and that a run with numbers would set' }),
-  numberTaken: Type.Integer({ description: 'Number changes that can\'t be ordered (dives swapping numbers); set them from their own pages' }),
+  numberTaken: Type.Integer({ description: 'Number changes that wait for a dive the run doesn\'t move (a Dive here left out, or one with no number); set them from their own pages' }),
+  numberHeldAtProvider: Type.Integer({ description: 'Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052)' }),
 }, { description: 'What the run left out when it was planned, as counts' });
 
 const RunView = Type.Object({
@@ -29,6 +30,7 @@ const RunView = Type.Object({
   updates: Type.Boolean(),
   updatesRemovingVerification: Type.Boolean(),
   numbers: Type.Boolean(),
+  numbersRemovingVerification: Type.Boolean(),
   cancelRequested: Type.Boolean({ description: 'Stop was asked for; the Dive being sent is finished first' }),
   counts: Type.Object({ total: Type.Integer(), waiting: Type.Integer(), sent: Type.Integer(), skipped: Type.Integer(), failed: Type.Integer() }),
   leftOut: LeftOut,
@@ -45,6 +47,7 @@ const ItemView = Type.Object({
   action: Type.Enum(['create', 'update', 'number']),
   state: Type.Enum(['waiting', 'sending', 'sent', 'skipped', 'failed']),
   outcome: Nullable(Type.Enum(['created', 'updated', 'linked', 'numbered'])),
+  sharesWithDiveId: Nullable(Type.String({ description: 'A number change that took the number this Dive still held, for one save (a swap or cycle, ADR 0052)' })),
   reason: Nullable(Type.String({
     description: 'skipped: exists, requirements_unmet, up_to_date, update_not_chosen, removes_verification, update_unsupported, dive_not_found, number_taken. failed: a problem code',
   })),
@@ -62,7 +65,8 @@ const PreviewView = Type.Object({
     requirementsUnmet: Type.Integer(), updateUnsupported: Type.Integer(), notFound: Type.Integer(),
     number: Type.Integer({ description: 'Dives already there whose number differs and can be set, whether or not they are also updated' }),
     numberRemovingVerification: Type.Integer({ description: 'Of those, the ones that need updatesRemovingVerification as well' }),
-    numberTaken: Type.Integer({ description: 'Of those, the ones that can\'t be ordered' }),
+    numberTaken: Type.Integer({ description: 'Of those, the ones that wait for a dive the run doesn\'t move' }),
+    numberHeldAtProvider: Type.Integer({ description: 'Of those, the ones a dive only at the Provider holds the number of; known only when `numbers` is chosen (the logbook is read for it)' }),
   }, { description: 'What is there, whatever the choices say' }),
   leftOut: LeftOut,
   send: Type.Integer({ description: 'How many a start with these choices queues' }),
@@ -77,6 +81,19 @@ const PreviewView = Type.Object({
     }), { description: 'The first 100, oldest first' }),
   }),
   inScope: Type.Integer({ description: 'How many Dives the request names (those of the list, or the ids found), whatever happens to them' }),
+  numberPlan: Type.Array(Type.Object({
+    diveId: Type.String(), number: Nullable(Type.Integer({ description: 'The Dive\'s number here' })),
+    from: Nullable(Type.Integer({ description: 'Its number at the Provider now' })), to: Type.Integer({ description: 'The number it gets there' }),
+    sharesWith: Nullable(Type.String({ description: 'The Dive that still holds `to`: this first step of a swap or cycle makes the number twice for one save' })),
+    with: Type.Enum(['number', 'update'], { description: 'number: a save of its own; update: goes with the dive\'s update' }),
+  }), { description: 'Every number a start would set, in the order they go, so the User sees them before anything is sent (ADR 0052)' }),
+  heldAtProvider: Type.Array(Type.Object({
+    diveId: Type.String(), number: Nullable(Type.Integer()), wanted: Type.Integer(),
+    holder: Nullable(Type.Object({
+      remoteId: Type.String(), number: Nullable(Type.Integer()), startsAt: Nullable(Type.String()), maxDepthM: Nullable(Type.Number()),
+      durationMinutes: Nullable(Type.Number()),
+    }, { description: 'The dive at the Provider that has the number (local time as it keeps it); a dive only there' })),
+  }), { description: 'Number changes held back by a dive only at the Provider, the first 100; lead to the import' }),
   dives: Type.Array(Type.Object({
     diveId: Type.String(), number: Nullable(Type.Integer()), startsAt: DateTime, siteId: Nullable(Type.String()), siteName: Nullable(Type.String()),
     action: Type.Enum(['create', 'update', 'number']),
@@ -95,6 +112,12 @@ const StartBody = Type.Object({
   updates: Type.Optional(Type.Boolean({ default: false, description: 'Also update Dives changed since they were sent (replaces the Provider\'s values)' })),
   updatesRemovingVerification: Type.Optional(Type.Boolean({ default: false, description: 'Also update (or set the number of) Dives where that removes a verification at the Provider' })),
   numbers: Type.Optional(Type.Boolean({ default: false, description: 'Also set the number of Dives already there whose number differs (ADR 0048)' })),
+  numbersRemovingVerification: Type.Optional(Type.Boolean({
+    default: false, description: 'Confirmed once for the run: set numbers where that can remove a verification at the Provider (ADR 0052). Not what updatesRemovingVerification is for',
+  })),
+  withHolders: Type.Optional(Type.Boolean({
+    default: false, description: 'With dives.ids: also the Dives here whose number at the Provider the named ones want, and so on, so that a taken number is freed by a run (ADR 0052)',
+  })),
 });
 
 const time = (d: Date | null) => d?.toISOString() ?? null;
@@ -111,7 +134,10 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
   const userId = (request: { user?: object | null | undefined }) => (request.user as { id: string }).id;
   const requestOf = (body: Static<typeof StartBody>) => {
     const { list, ids } = body.dives;
-    return { ...(list && { list }), ...(ids && { ids }), updates: body.updates, updatesRemovingVerification: body.updatesRemovingVerification, numbers: body.numbers };
+    return {
+      ...(list && { list }), ...(ids && { ids }), updates: body.updates, updatesRemovingVerification: body.updatesRemovingVerification, numbers: body.numbers,
+      numbersRemovingVerification: body.numbersRemovingVerification, withHolders: body.withHolders,
+    };
   };
   // Exactly one of list and ids: checked here, as the validator would drop properties of a union's other branch.
   const oneOfListAndIds = (body: Static<typeof StartBody>) => !!body.dives.list !== !!body.dives.ids;
@@ -119,7 +145,8 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
 
   app.post('/connections/:id/push-runs/preview', {
     schema: {
-      summary: 'What a Push run would do: counts per case, what is held back and why, the limits and the time. Stores nothing and calls no Provider',
+      summary: 'What a Push run would do: counts per case, what is held back and why, every number it would set, the limits and the time. Stores nothing',
+      description: 'It calls the Provider once (a read of its logbook) only where `numbers` is chosen and a number differs, to name the dives only there that hold a wanted number.',
       params: IdParams, body: StartBody, response: { 200: PreviewView, ...errors },
     },
   }, async (request, reply) => {

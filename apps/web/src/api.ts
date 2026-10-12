@@ -615,12 +615,17 @@ export interface PushRunChoices {
   list: { siteId?: string | undefined; q?: string | undefined; only?: string | undefined };
   ids?: string[] | undefined;
   updates: boolean; updatesRemovingVerification: boolean; numbers: boolean;
+  /** Confirmed once for the run: numbers that can remove a verification (ADR 0052). */
+  numbersRemovingVerification: boolean;
+  /** With `ids`: also the Dives in their way (a Dive's chain, ADR 0052). */
+  withHolders?: boolean | undefined;
 }
 const pushRunBody = (c: PushRunChoices) => ({
   dives: c.ids
     ? { ids: c.ids }
     : { list: { ...(c.list.siteId && { siteId: c.list.siteId }), ...(c.list.q && { q: c.list.q }), ...(c.list.only && { only: c.list.only }) } },
   updates: c.updates, updatesRemovingVerification: c.updatesRemovingVerification, numbers: c.numbers,
+  numbersRemovingVerification: c.numbersRemovingVerification, ...(c.withHolders && { withHolders: true }),
 });
 async function fetchPushRuns() {
   return unwrap(await api.GET('/api/push-runs'));
@@ -638,7 +643,7 @@ export const pushRunsQuery = () => queryOptions({
 });
 /** One run with its items; the list above has the progress, this has what happened to each Dive. */
 export const pushRunQuery = (id: string) => queryOptions({ queryKey: keys.pushRun(id), queryFn: () => fetchPushRun(id) });
-/** What a run with these choices would do, from Dive Hub's data alone. */
+/** What a run with these choices would do: Dive Hub's data, and one read of the Provider's logbook where numbers are chosen. */
 export const pushRunPreviewQuery = (connectionId: string, choices: PushRunChoices) => queryOptions({
   queryKey: keys.pushRunPreview(connectionId, choices), queryFn: () => fetchPushRunPreview(connectionId, choices), placeholderData: keepPreviousData, staleTime: 0,
 });

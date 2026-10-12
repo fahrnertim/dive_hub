@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { orderItems, planItem, type PlanOptions, type PlanStatus } from '../src/providers/push-run-plan.js';
 
-const options = (o: Partial<PlanOptions> = {}): PlanOptions => ({ updates: false, updatesRemovingVerification: false, numbers: false, canUpdate: true, ...o });
+const options = (o: Partial<PlanOptions> = {}): PlanOptions => ({
+  updates: false, updatesRemovingVerification: false, numbers: false, numbersRemovingVerification: false, canUpdate: true, ...o,
+});
 const there = (c: Partial<NonNullable<PlanStatus['current']>> = {}): PlanStatus => ({
   unmet: [], current: { upToDate: true, updateRemovesVerification: false, remoteNumber: 5, number: null, ...c },
 });
@@ -39,10 +41,12 @@ describe('planItem', () => {
     expect(planItem(status, options({ numbers: true }))).toEqual({ send: 'number', wanted: 3, held: 5 });
     expect(planItem(status, options())).toEqual({ leftOut: 'update_not_chosen', numberNotChosen: true });
   });
-  it('needs the second choice where a number change can remove a verification', () => {
+  it('needs the run\'s confirmation where a number change can remove a verification', () => {
     const status = there({ number: differing(true) });
     expect(planItem(status, options({ numbers: true }))).toEqual({ leftOut: 'removes_verification', numberNotChosen: false });
-    expect(planItem(status, options({ numbers: true, updatesRemovingVerification: true }))).toEqual({ send: 'number', wanted: 3, held: 5 });
+    // The tick for updates is not the confirmation for numbers (ADR 0052).
+    expect(planItem(status, options({ numbers: true, updatesRemovingVerification: true }))).toEqual({ leftOut: 'removes_verification', numberNotChosen: false });
+    expect(planItem(status, options({ numbers: true, numbersRemovingVerification: true }))).toEqual({ send: 'number', wanted: 3, held: 5 });
   });
   it('never sets a number where the Connection does not follow, the number is the same or cannot be set', () => {
     expect(planItem(there({ number: null }), options({ numbers: true }))).toEqual({ leftOut: 'up_to_date', numberNotChosen: false });
@@ -61,10 +65,42 @@ describe('orderItems', () => {
     const down = orderItems([number('a', 1, 2), number('b', 2, 3), number('c', 3, 4)], new Map([['a', 2], ['b', 3], ['c', 4]]));
     expect(down.ordered.map((i) => i.diveId)).toEqual(['a', 'b', 'c']);
   });
-  it('leaves out Dives that only swap numbers among themselves', () => {
-    const { ordered, numberTaken } = orderItems([number('a', 2, 1), number('b', 1, 2)], new Map([['a', 1], ['b', 2]]));
+  it('breaks a swap: the dive with the higher number goes first, sharing the number with the one that holds it', () => {
+    const { ordered, numberTaken, shares } = orderItems([number('a', 2, 1), number('b', 1, 2)], new Map([['a', 1], ['b', 2]]));
+    expect(ordered.map((i) => i.diveId)).toEqual(['a', 'b']);
+    expect(shares).toEqual(new Map([['a', 'b']]));
+    expect(numberTaken).toEqual([]);
+  });
+  it('breaks a cycle of three once, and the rest follow by the free-number rule', () => {
+    // a wants b's number (2), b wants c's (3), c wants a's (1).
+    const items = [number('a', 2, 1), number('b', 3, 2), number('c', 1, 3)];
+    const { ordered, shares, numberTaken } = orderItems(items, new Map([['a', 1], ['b', 2], ['c', 3]]));
+    expect(shares.size).toBe(1);
+    expect(numberTaken).toEqual([]);
+    expect(ordered).toHaveLength(3);
+    // No step but the first one shares a number: replay the order and look for a number held twice before each save.
+    const held = new Map([['a', 1], ['b', 2], ['c', 3]]);
+    ordered.forEach((item, step) => {
+      const wanted = (item.planned as { wanted: number }).wanted;
+      const holders = [...held].filter(([id, n]) => id !== item.diveId && n === wanted).map(([id]) => id);
+      expect(holders).toEqual(step === 0 ? [shares.get(item.diveId)] : []);
+      held.set(item.diveId, wanted);
+    });
+    const finalNumbers = [...held.values()];
+    expect(new Set(finalNumbers).size).toBe(finalNumbers.length);
+  });
+  it('does not share a number with a dive the run cannot move', () => {
+    // a wants 2, which d holds and d is not in the run: nothing to share with that would end well.
+    const { ordered, numberTaken, shares } = orderItems([number('a', 2, 1)], new Map([['a', 1], ['d', 2]]));
     expect(ordered).toEqual([]);
-    expect(numberTaken.map((i) => i.diveId).sort()).toEqual(['a', 'b']);
+    expect(numberTaken.map((i) => i.diveId)).toEqual(['a']);
+    expect(shares.size).toBe(0);
+  });
+  it('leaves out a number a dive only at the Provider holds, and reports it apart', () => {
+    const { ordered, numberTaken, numberHeld } = orderItems([number('a', 2, 1)], new Map([['a', 1]]), new Set([2]));
+    expect(ordered).toEqual([]);
+    expect(numberTaken).toEqual([]);
+    expect(numberHeld.map((i) => i.diveId)).toEqual(['a']);
   });
   it('puts creates and updates after the number changes, oldest first', () => {
     const { ordered } = orderItems([create('late', 9), number('a', 2, 1), create('early', 3)], new Map([['a', 1]]));

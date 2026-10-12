@@ -204,9 +204,16 @@ export interface DiveExportAction {
   update?(remoteId: string, dive: OutgoingDive, previous: Record<string, unknown> | null, number?: number | null): Promise<Delivered | null>;
   /**
    * With `numbers.set` holding `update` (ADR 0048): changes only the number of the remote dive. `taken` saves nothing
-   * and names the dive that holds the number; null when the remote dive is gone.
+   * and names the dive that holds the number; null when the remote dive is gone. With `sharedWith` (ADR 0052, the
+   * first step of a swap or cycle in a run) the number is saved although that one dive holds it, and `taken` is
+   * answered when any other dive does.
    */
-  setNumber?(remoteId: string, number: number): Promise<{ result: 'set'; remoteNumber: number } | { result: 'taken'; by: RemoteDive } | null>;
+  setNumber?(remoteId: string, number: number, sharedWith?: string): Promise<{ result: 'set'; remoteNumber: number } | { result: 'taken'; by: RemoteDive } | null>;
+  /**
+   * The dives of the Provider's logbook as they are now, read afresh (ADR 0052): the numbers held there, including by
+   * dives Dive Hub doesn't know. Offered by a Provider that has `numbers` and can read its logbook.
+   */
+  heldNumbers?(): Promise<RemoteDive[]>;
   /** `gone`: it was already deleted at the Provider. */
   remove?(remoteId: string): Promise<'deleted' | 'gone'>;
   /**

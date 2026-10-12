@@ -486,7 +486,7 @@
     "provider_not_sent": "This dive isn’t in {{name}}.",
     "provider_dive_gone": "The dive was deleted in {{name}}. Send it again to create it there anew.",
     "provider_busy": "This dive is being sent to {{name}} right now. Wait a moment.",
-    "provider_number_taken": "Another dive in {{name}} has that number. Change the number of that dive first.",
+    "provider_number_taken": "Another dive in {{name}} has that number. It has to move first.",
     "provider_numbers_off": "Dives aren’t numbered as in Dive Hub in {{name}}. Turn it on in the connection first.",
     "provider_number_nothing_to_set": "There is no number to set: the number in {{name}} is the same, or this dive has none.",
     "push_run_active": "A run is already sending dives to this connection. Wait for it to finish or stop it.",
@@ -1128,10 +1128,10 @@
     "numbers": "Also set the number of dives already in {{name}} whose number differs",
     "numbersHint_one": "{{count}} dive.",
     "numbersHint_other": "{{count}} dives.",
-    "numbersRemoving_one": "{{count}} of them loses a verification in {{name}} and is sent only with the verification choice above.",
-    "numbersRemoving_other": "{{count}} of them lose a verification in {{name}} and are sent only with the verification choice above.",
-    "numberTaken_one": "{{count}} number change can’t be put in an order (dives swapping numbers); set it from its own page.",
-    "numberTaken_other": "{{count}} number changes can’t be put in an order (dives swapping numbers); set them from their own pages.",
+    "numbersRemoving_one": "{{count}} of them can lose a verification in {{name}}. You confirm that when you send.",
+    "numbersRemoving_other": "{{count}} of them can lose a verification in {{name}}. You confirm that when you send.",
+    "numberTaken_one": "{{count}} number change waits for a dive that this run doesn’t move; set it from its own page, or from there with the dives in its way.",
+    "numberTaken_other": "{{count}} number changes wait for a dive that this run doesn’t move; set them from their own pages, or from there with the dives in their way.",
     "leftOut": "Left out",
     "upToDate_one": "{{count}} already up to date in {{name}}.",
     "upToDate_other": "{{count}} already up to date in {{name}}.",
@@ -1179,8 +1179,28 @@
       "removes_verification": "Updating would remove a verification.",
       "update_unsupported": "{{name}} can’t take an update.",
       "dive_not_found": "Deleted before it was sent.",
-      "number_taken": "Its number is wanted by another dive; set it from its page."
-    }
+      "number_taken": "Its number is held by a dive that this run doesn’t move."
+    },
+    "numberPlan_one": "The number it sets",
+    "numberPlan_other": "The {{count}} numbers it sets, in order",
+    "numberStep": "Dive {{number}}: {{from}} → {{to}} in {{name}}",
+    "numberWithUpdate": "goes with the update",
+    "numberShares": "First step of a swap: {{name}} has the number {{to}} twice for one save, until dive {{other}} moves on.",
+    "heldAtProvider_one": "{{count}} number change is held back: a dive that is only in {{name}} has the number.",
+    "heldAtProvider_other": "{{count}} number changes are held back: dives that are only in {{name}} have the numbers.",
+    "heldLine": "Dive {{wanted}} in {{name}}, {{when}}",
+    "heldImport": "Import the dives from {{name}} to make them dives here",
+    "verificationTitle": "Change numbers that can remove a verification?",
+    "verificationBody_one": "{{count}} dive can lose the verification a dive center gave it in {{name}}. Only the numbers change.",
+    "verificationBody_other": "{{count}} dives can lose the verification a dive center gave them in {{name}}. Only the numbers change.",
+    "chainTitle": "Set the number with the dives in its way in {{name}}",
+    "chainConfirm_one": "Set {{count}} number",
+    "chainConfirm_other": "Set {{count}} numbers",
+    "chainNothing": "Nothing can be set: a dive that has the number is not one this can move.",
+    "chainBlocked_one": "{{count}} number change waits for a dive this can’t move.",
+    "chainBlocked_other": "{{count}} number changes wait for dives this can’t move.",
+    "sharedReport_one": "{{count}} number was set while another dive still had it, for one save; that dive moved on right after.",
+    "sharedReport_other": "{{count}} numbers were set while another dive still had them, for one save each; that dive moved on right after."
   },
   "provider": {
     "someService": "the service",
@@ -1475,7 +1495,10 @@
     "fillDetails": "Fill in details of divers already here",
     "detailsFilled_one": "Details filled in for {{count}} diver.",
     "detailsFilled_other": "Details filled in for {{count}} divers.",
-    "nothingToFill": "Nothing to fill in: these divers already have what {{name}} says."
+    "nothingToFill": "Nothing to fill in: these divers already have what {{name}} says.",
+    "chain": "Set the number with the dives in its way",
+    "heldOnlyThere": "That dive is only in {{name}}, not in your logbook.",
+    "heldImport": "Import the dives from {{name}}"
   },
   "providers": {
     "ssi": {

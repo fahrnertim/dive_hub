@@ -18,6 +18,10 @@ export interface FakeLedger {
   refuseDelete: boolean;
   /** Makes every token invalid, as when they expire. */
   expireTokens(): void;
+  /** Every number the ledger saved by "set number", in order; `shared` when another dive had it at that moment (ADR 0052). */
+  numberSaves: { remoteId: string; number: number; shared: boolean }[];
+  /** How many times the logbook's numbers were read (the preview's and a start's read). */
+  heldReads: number;
   /** Puts a dive there that Dive Hub doesn't know (one only at the Provider), under the account of the sign-in token. */
   seedRemote(entry: { number: number; startsAt: string }): string;
   /** Changes the number of a dive there, as the Provider's own app would. */
@@ -51,6 +55,8 @@ export function createFakeLedger(): FakeLedger {
     dives: new Map(),
     down: false,
     refuseDelete: false,
+    numberSaves: [],
+    heldReads: 0,
     expireTokens: () => fake.tokens.clear(),
     seedRemote: ({ number, startsAt }) => {
       const remoteId = `L${nextId++}`;
@@ -113,13 +119,20 @@ export function createFakeLedger(): FakeLedger {
               if (wanted != null && !holderOf(kept.accountId, wanted, remoteId)) kept.number = wanted;
               return delivered(remoteId, dive);
             },
-            async setNumber(remoteId, number) {
+            async setNumber(remoteId, number, sharedWith) {
               const kept = mine(remoteId);
               if (!kept) return null;
-              const holder = holderOf(kept.accountId, number, remoteId);
-              if (holder) return { result: 'taken', by: remoteDive(holder[0], holder[1]) };
+              const holders = [...fake.dives.entries()].filter(([id, d]) => d.accountId === kept.accountId && d.number === number && id !== remoteId);
+              const other = holders.find(([id]) => id !== sharedWith);
+              if (other) return { result: 'taken', by: remoteDive(other[0], other[1]) };
               kept.number = number;
+              fake.numberSaves.push({ remoteId, number, shared: holders.length > 0 });
               return { result: 'set', remoteNumber: number };
+            },
+            async heldNumbers() {
+              const { accountId } = account(ctx.access);
+              fake.heldReads += 1;
+              return [...fake.dives.entries()].filter(([, d]) => d.accountId === accountId).map(([id, d]) => remoteDive(id, d));
             },
             async remove(remoteId) {
               if (!mine(remoteId)) return 'gone';

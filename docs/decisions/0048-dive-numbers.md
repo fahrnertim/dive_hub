@@ -95,7 +95,9 @@ reads the logbook before every save anyway). This doesn't depend on whether SSI 
 - **On an update:** the values go, the number there stays, and it shows "number differs".
 - **On "Set number":** refused (`provider_number_taken`), naming the dive that holds the number (its number and start
   there, and the Dive here if Dive Hub knows it). Nothing is saved there. The User sets that one first; a Push run
-  does many in the right order (ADR 0047, amended below).
+  does many in the right order (ADR 0047, amended below). *Amended by [ADR 0052](0052-freeing-dive-numbers.md): a
+  swap or cycle inside a run goes through one shared number for one save, and a Dive's page can start the run for the
+  dives in its way; this lone refusal stays.*
 - **Dives that are only at the Provider keep their numbers.** Nothing renumbers what Dive Hub doesn't know. Where the
   setting is turned on, the client says so and points to the import (ADR 0030), which makes them Dives here.
 
@@ -145,7 +147,9 @@ show who holds a taken number and lead there.
   the Connection that Dive Hub knows holds its number (so numbers moving up go from the highest down, numbers moving
   down from the lowest up). Dives that only swap numbers among themselves can't be ordered: they are left out and
   reported (`number_taken`), and go one by one from their pages, through a free number. A number held by a dive only
-  at the Provider is found when the item is sent: skipped with `number_taken`.
+  at the Provider is found when the item is sent: skipped with `number_taken`. *Amended by
+  [ADR 0052](0052-freeing-dive-numbers.md): swaps and cycles are broken at one dive (shared number), and a holder
+  only at the Provider is found by one read of its logbook when the run is previewed.*
 - The ceiling counts every item, so a logbook that moved by one after an old Dive was added takes several runs; a
   create waits behind the changes that free its number.
 - The details (the plan's function, the preview's counts, the run's columns, the tests) are in ADR 0047 and its

@@ -1,9 +1,15 @@
 ---
 title: Freeing Dive numbers at a Provider - what happens today, six strategies judged, a recommendation
 summary: When "Set number" or a Push run meets a number another dive at the Provider holds, Dive Hub only names the holder. The cases that really occur (a shift, a swap, a cycle, a holder that is a Dive here, a holder only at the Provider), the six strategies judged against them, and a recommendation that amends ADR 0048 without ever making a duplicate. The owner's questions are at the end.
-status: proposed
+status: decided
 date: 2026-10-12
 ---
+
+> **Decided the same day ([ADR 0052](../decisions/0052-freeing-dive-numbers.md)).** The owner's answers differ from the
+> recommendation below in two points: **no scratch number** (SSI itself accepts a duplicate, so a swap goes through one
+> *shared* number for one save, inside a run only, and no action ever ends with a duplicate) and **ask once per run**
+> for verifications (`numbersRemovingVerification`). Chain from one Dive's page as a separate action with a preview:
+> as recommended. Remote-only holders: the import lead only (no 4b, no 6). Strategy 5 (the fresh read) was built.
 
 # Freeing Dive numbers at a Provider
 

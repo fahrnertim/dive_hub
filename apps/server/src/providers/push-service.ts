@@ -382,7 +382,9 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
      * Connection doesn't follow, when the Provider sets no numbers on an update, when there is nothing to set, and
      * when another dive at the Provider has the number (`provider_number_taken`, naming it).
      */
-    async setNumber(userId: string, diveId: string, provider: string): Promise<{ result: 'set'; push: PushRow }> {
+    async setNumber(
+      userId: string, diveId: string, provider: string, options: { sharesWithDiveId?: string | undefined } = {},
+    ): Promise<{ result: 'set'; push: PushRow }> {
       const { adapter, dives, exports } = exporter(provider);
       const loaded = await loadOutgoingDive(db, userId, diveId);
       const { row } = loaded;
@@ -407,7 +409,9 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
           });
           throw problem;
         };
-        const outcome = await dives.open(ctx).setNumber!(current.remoteId!, row.number!).catch((error: unknown) => failed(error));
+        // A swap's first step (ADR 0052, from a run): the one dive whose number this takes for the length of the save.
+        const sharesWith = options.sharesWithDiveId ? currentRemote(await pushesOf(options.sharesWithDiveId, adapter.id))?.remoteId ?? undefined : undefined;
+        const outcome = await dives.open(ctx).setNumber!(current.remoteId!, row.number!, sharesWith).catch((error: unknown) => failed(error));
         if (!outcome) {
           await record(adapter, { ...base, action: 'number', state: 'failed', errorCode: 'provider_dive_gone', remoteGone: true });
           throw new ProviderServiceError('provider_dive_gone', named(adapter));
@@ -426,6 +430,19 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
           }),
         };
       }));
+    },
+
+    /**
+     * The dives at the Provider with their numbers, read afresh (ADR 0052), for the preview of a run that sets numbers:
+     * holders only there are named before anything is sent. Null where the Provider can't be read this way.
+     */
+    async heldNumbers(userId: string, diverId: string, provider: string): Promise<RemoteDive[] | null> {
+      const { adapter, dives } = exporter(provider);
+      const conn = await connectionOrThrow(userId, diverId, adapter);
+      return connections.withAccess(conn, async (ctx) => {
+        const read = dives.open(ctx).heldNumbers;
+        return read ? read() : null;
+      });
     },
 
     /** The remote dive each of these Dives has now, per Provider (Dives without any are left out). No access check. */

@@ -939,6 +939,8 @@ export interface PushRunLeftOut {
   notFound: number;
   numberNotChosen: number;
   numberTaken: number;
+  /** Number changes whose number a dive only at the Provider holds (ADR 0052). */
+  numberHeldAtProvider: number;
 }
 
 /**
@@ -957,6 +959,8 @@ export const pushRun = pgTable(
     updates: boolean('updates').notNull(),
     updatesRemovingVerification: boolean('updates_removing_verification').notNull(),
     numbers: boolean('numbers').notNull().default(false),
+    /** Confirmed once for the run: number changes that can remove a verification (ADR 0052). */
+    numbersRemovingVerification: boolean('numbers_removing_verification').notNull().default(false),
     leftOut: jsonb('left_out').$type<PushRunLeftOut>().notNull(),
     /** Failures in a row; the second stops the run. */
     consecutiveFailures: integer('consecutive_failures').notNull().default(0),
@@ -984,6 +988,8 @@ export const pushRunItem = pgTable(
     position: integer('position').notNull(),
     /** `create`, `update` or `number`. */
     action: text('action').notNull(),
+    /** A `number` item that takes the number another Dive of the run still holds, for one save (ADR 0052). */
+    sharesWithDiveId: uuid('shares_with_dive_id').references(() => dive.id, { onDelete: 'set null' }),
     state: pushRunItemState('state').notNull().default('waiting'),
     /** `created`, `updated`, `linked` or `numbered`. */
     outcome: text('outcome'),
