@@ -237,8 +237,11 @@ test('review material', async ({ page, request, browser }) => {
     await askMcp(request, access.key, 'logbook_get_dive', { dive_id: '00000000-0000-7000-8000-000000000000' });
     await askMcp(request, access.key, 'logbook_stats', { group_by: 'year' });
     await page.goto('/#/account'); await page.getByRole('heading', { name: 'My account' }).waitFor(); await page.locator('table').first().waitFor();
-    await page.getByRole('region', { name: 'What was read' }).waitFor();
     await capture(page, '05-account');
+    await page.goto('/#/account?tab=connections'); await page.getByRole('heading', { name: 'SSI', exact: true }).waitFor();
+    await capture(page, '05c-account-connections');
+    await page.goto('/#/account?tab=ai'); await page.getByRole('region', { name: 'What was read' }).waitFor();
+    await capture(page, '05d-account-ai-access');
     await page.getByRole('textbox', { name: 'Name' }).fill('VS Code at the dive centre');
     await page.getByRole('button', { name: 'Create AI access' }).click();
     await page.getByRole('button', { name: 'Copy: Key' }).waitFor();
@@ -318,7 +321,7 @@ test('review material', async ({ page, request, browser }) => {
       await capture(page, '11-admin-de-phone', { aria: false });
     }
     if (want('account')) {
-      await page.goto('/#/account'); await page.getByRole('region', { name: 'Was gelesen wurde' }).waitFor();
+      await page.goto('/#/account?tab=ai'); await page.getByRole('region', { name: 'Was gelesen wurde' }).waitFor();
       await capture(page, '11b-account-de-phone', { aria: false });
     }
     await setPreferences(request, { language: null });
@@ -517,7 +520,7 @@ test('review material', async ({ page, request, browser }) => {
     await setPreferences(request, { language: 'en' });
     // Changing the hash doesn't reload the app, which keeps the language it had: reload to take the new one.
     if (want('account')) {
-      await page.goto('/#/account'); await page.reload(); await page.getByRole('button', { name: 'Connect to SSI' }).waitFor();
+      await page.goto('/#/account?tab=connections'); await page.reload(); await page.getByRole('button', { name: 'Connect to SSI' }).waitFor();
       await capture(page, '24-account-ssi-connect');
     }
     await connectSsi(request);
@@ -570,7 +573,7 @@ test('review material', async ({ page, request, browser }) => {
       await capture(page, '30-dive-ssi-de-dark-390', { aria: false });
     }
     if (want('account')) {
-      await page.goto('/#/account'); await page.reload(); await page.getByText('Verbunden, Passwort gespeichert').waitFor();
+      await page.goto('/#/account?tab=connections'); await page.reload(); await page.getByText('Verbunden, Passwort gespeichert').waitFor();
       await capture(page, '31-account-ssi-de-dark-390', { aria: false });
     }
     // Sending many dives (ADR 0047): the dialog with a dive held back, and a run stopped by a sign-in need; German on a dark phone.
@@ -656,7 +659,7 @@ test('review material', async ({ page, request, browser }) => {
     await setPreferences(request, { language: 'en' });
     await lenaReady(request);
     if (want('account')) {
-      await page.goto('/#/account'); await page.reload();
+      await page.goto('/#/account?tab=connections'); await page.reload();
       const section = page.getByRole('region', { name: 'Dives of Lena from SSI' });
       await section.getByRole('button', { name: 'Show what the import would do' }).click();
       await section.getByRole('radiogroup', { name: /^SSI dive 15: / }).waitFor();
@@ -674,7 +677,7 @@ test('review material', async ({ page, request, browser }) => {
       await setPreferences(request, { language: 'de' });
       await page.emulateMedia({ colorScheme: 'dark' });
       await page.setViewportSize({ width: 390, height: 844 });
-      await page.goto('/#/account'); await page.reload();
+      await page.goto('/#/account?tab=connections'); await page.reload();
       const section = page.getByRole('region', { name: 'Tauchgänge von Lena aus SSI' });
       await section.getByRole('button', { name: 'Zeigen, was der Import tun würde' }).click();
       await section.getByRole('radiogroup', { name: /^SSI-Tauchgang 15: / }).waitFor();

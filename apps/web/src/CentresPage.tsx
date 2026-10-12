@@ -7,7 +7,7 @@ import { announce } from './lib/announce.ts';
 import { useErrorText } from './lib/display.ts';
 import { usePageTitle } from './lib/page.ts';
 import {
-  ActionMenu, Button, ConfirmDialog, Dialog, Disclosure, Form, Icon, Muted, Notice, PageHeader, Panel, QrCode, SearchList, TextField,
+  ActionMenu, BackLink, Button, ConfirmDialog, Dialog, Disclosure, Form, Icon, Muted, Notice, PageHeader, Panel, QrCode, SearchList, TextField,
   type SearchListItem,
 } from './ui/index.ts';
 
@@ -228,7 +228,7 @@ export function CentrePage({ id }: { id: string }) {
     },
   });
 
-  const back = <p><a href="#/centres" className="back-link"><Icon name="back" />{t('centres.back')}</a></p>;
+  const back = { href: '#/centres', label: t('centres.back') };
   if (centre.isPending) return <Muted>{t('common.loading')}</Muted>;
   if (notFound) {
     return (
@@ -243,14 +243,14 @@ export function CentrePage({ id }: { id: string }) {
       </>
     );
   }
-  if (centre.error) return <>{back}<Notice tone="danger">{errorText(centre.error)}</Notice></>;
+  if (centre.error) return <><BackLink {...back} /><Notice tone="danger">{errorText(centre.error)}</Notice></>;
   const c = centre.data;
   const ssi = ssiNumber(c);
 
   return (
     <>
-      {back}
       <PageHeader
+        back={back}
         title={<span translate="no">{c.displayName}</span>}
         actions={editing !== 'name' && (
           <>

@@ -11,6 +11,7 @@ import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
 import { logbookHref, toggled, type LogbookFilter } from './lib/logbook.ts';
 import { useProviders } from './lib/providers.ts';
+import { accountHref } from './lib/account-tabs.ts';
 import { ActionMenu, Button, Checkbox, Dialog, Disclosure, Icon, LinkButton, Muted, Notice, RadioGroup } from './ui/index.ts';
 
 /** What a run is for, as a Provider-shaped name for texts. */
@@ -408,7 +409,7 @@ function EndedStrip({ run, name, onDismiss, dismissError }: { run: PushRunView; 
       <div className="push-run-head">
         <p>{summary}{run.status === 'stopped' && run.stopCode && <> {problemText(run.stopCode, { id: provider.id, name })}</>}</p>
         <div className="push-run-actions">
-          {needsSignIn && <LinkButton href="#/account" size="small" variant="primary" icon="signIn">{t('pushRun.signIn', { name })}</LinkButton>}
+          {needsSignIn && <LinkButton href={accountHref('connections')} size="small" variant="primary" icon="signIn">{t('pushRun.signIn', { name })}</LinkButton>}
           {run.status === 'stopped' && (
             <Button size="small" variant={needsSignIn ? 'secondary' : 'primary'} isPending={resume.isPending} onPress={() => resume.mutate()}>{t('pushRun.continue')}</Button>
           )}

@@ -15,6 +15,7 @@ import { ReviewLinks, ReviewStrip } from './ReviewStrip.tsx';
 import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
 import { useFocusOnNavigate, useTypingMark } from './lib/page.ts';
+import { accountHref, accountTab } from './lib/account-tabs.ts';
 import { reviewTab, useWaiting } from './lib/review.ts';
 import { ActionMenu, BrandMark, ErrorBoundary, Icon, Muted, Notice, PageHeader } from './ui/index.ts';
 
@@ -33,7 +34,7 @@ const SiteImportPage = lazy(() => import('./SiteImportPage.tsx').then((m) => ({ 
 
 /**
  * Minimal hash routing: "#/" (logbook, "#/?diver=<id>" for one Diver, "#/?site=<id>" for one Dive site),
- * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers" ("?certifications=own|<diver id>": that Diver's certifications open), "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/centres", "#/centres/<id>", "#/tools" ("?o2=32&depth=30&…"), "#/tools/plan" ("?mix=32&lv=20x20&dv=…"), "#/account", "#/admin", "#/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
+ * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers" ("?certifications=own|<diver id>": that Diver's certifications open), "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/centres", "#/centres/<id>", "#/tools" ("?o2=32&depth=30&…"), "#/tools/plan" ("?mix=32&lv=20x20&dv=…"), "#/account" ("?tab=connections|ai"), "#/admin", "#/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
  */
 function useRoute(): string {
   const [route, setRoute] = useState(() => location.hash.slice(1) || '/');
@@ -118,7 +119,9 @@ function Navigation({ route, me }: { route: string; me: Me }) {
           icon="account"
           label={<>{me.user.name}<span className="visually-hidden">{t('nav.accountMenu')}</span></>}
           actions={[
-            { id: 'account', label: t('nav.account'), href: '#/account', icon: 'user' },
+            { id: 'account', label: t('nav.account'), href: accountHref('account'), icon: 'user' },
+            // Where a Provider is connected is found here, not by knowing it is a part of the account page (UI review C10).
+            { id: 'connections', label: t('nav.connections'), href: accountHref('connections'), icon: 'link' },
             // The own Diver's cards are a section of the Divers page; this is only a link to it (ADR 0050).
             { id: 'certifications', label: t('nav.myCertifications'), href: '#/divers?certifications=own', icon: 'certification' },
             // Rare and for one role: not in the bar (UI redesign 5.1).
@@ -145,7 +148,7 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   const params = new URLSearchParams(query);
   const diveId = /^\/dives\/([\w-]+)$/.exec(path!)?.[1];
   if (diveId) return <DiveDetail key={diveId} id={diveId} recordingId={params.get('recording') ?? undefined} list={listOfDiveAddress(params)} />;
-  if (route === '/account') return <AccountPage />;
+  if (path === '/account') return <AccountPage tab={accountTab(params)} />;
   if (path === '/divers') return <DiversPage open={params.get('certifications') ?? undefined} />;
   if (path === '/review') return <ReviewPage tab={reviewTab(params)} />;
   if (path === '/sites') return <SitesPage params={sitesParams(params)} />;
@@ -174,6 +177,7 @@ function Logbook({ params }: { params: LogbookParams }) {
   return (
     <ImportProvider>
       <LogbookHeader importAction={returning && <ImportFilesButton />} />
+      <ReviewLinks />
       <DeletedNotices />
       <ReviewStrip />
       <PushRunStrip />
@@ -181,13 +185,11 @@ function Logbook({ params }: { params: LogbookParams }) {
         <>
           <DiveList params={params} />
           <RecentImports />
-          <ReviewLinks />
         </>
       ) : (
         <>
           {all.data && <ImportPanel />}
           <DiveList params={params} searchable={false} />
-          <ReviewLinks />
         </>
       )}
     </ImportProvider>

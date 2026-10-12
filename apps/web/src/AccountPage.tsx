@@ -7,23 +7,33 @@ import { LANGUAGES } from './i18n/index.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
+import { ACCOUNT_TABS, accountHref, type AccountTab } from './lib/account-tabs.ts';
 import { usePageTitle } from './lib/page.ts';
 import { AiAccess } from './AiAccess.tsx';
 import { Connections } from './Connections.tsx';
 import { Button, ConfirmButton, Form, Notice, PageHeader, Panel, RadioGroup, Table, TextField } from './ui/index.ts';
 
 /** The signed-in User's own account: display settings, password, and where they're signed in. */
-export function AccountPage() {
+export function AccountPage({ tab }: { tab: AccountTab }) {
   const { t } = useTranslation();
   usePageTitle(t('account.title'));
   return (
     <>
       <PageHeader title={t('account.title')} />
-      <DisplaySettings />
-      <ChangePassword />
-      <Sessions />
-      <Connections />
-      <AiAccess />
+      <nav className="subnav" aria-label={t('account.parts')}>
+        {ACCOUNT_TABS.map((id) => (
+          <a key={id} href={accountHref(id)} {...(id === tab && { 'aria-current': 'page' as const })}>{t(`account.tab.${id}`)}</a>
+        ))}
+      </nav>
+      {tab === 'account' && (
+        <>
+          <DisplaySettings />
+          <ChangePassword />
+          <Sessions />
+        </>
+      )}
+      {tab === 'connections' && <Connections />}
+      {tab === 'ai' && <AiAccess />}
     </>
   );
 }

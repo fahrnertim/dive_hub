@@ -65,7 +65,7 @@ test('a run stopped by a sign-in need goes on after signing in', { tag: ['@dives
   await expect(page.getByText('SSI wants you to sign in again')).toBeVisible();
   // The way on is the sign-in, first; "Continue" would fail until then (C4).
   const signIn = page.getByRole('link', { name: 'Sign in to SSI again' });
-  await expect(signIn).toHaveAttribute('href', '#/account');
+  await expect(signIn).toHaveAttribute('href', '#/account?tab=connections');
   const actions = page.locator('.push-run-actions').locator('a, button');
   await expect(actions.nth(0)).toHaveText('Sign in to SSI again');
   await expect(actions.nth(1)).toHaveText('Continue');

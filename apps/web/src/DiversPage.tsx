@@ -59,7 +59,7 @@ function Divers({ open }: { open: string | undefined }) {
       <Form className="form-inline" onSubmit={submit}>
         <TextField
           label={t('divers.add')} name="name" isRequired maxLength={100} autoComplete="off" value={name} onChange={setName}
-          description={sameName(divers.data, name) ?? ''}
+          description={sameName(divers.data, name) ?? t('divers.addHint')}
         />
         <Button type="submit" icon="add" isPending={create.isPending}>{t('divers.create')}</Button>
       </Form>

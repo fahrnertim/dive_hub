@@ -50,7 +50,7 @@ test('deletes a dive after asking, offers Undo, and restores it from the deleted
   await expect(panel).toContainText(/Deleted .*2026/);
   await panel.getByRole('button', { name: /^Restore: .*2026/ }).click();
   await expect(panel).toHaveCount(0);
-  await page.getByRole('link', { name: '‹ Logbook' }).click();
+  await page.getByRole('main').getByRole('link', { name: 'Logbook' }).click();
   await expect(diveRow(page, n)).toBeVisible();
   await diveRow(page, n).click();
   await expect(page.locator('.history > li').first()).toContainText('Restored');
@@ -80,7 +80,7 @@ test('keeps a dive in SSI when asked to, reminds about it, and deletes it there 
   await expect(panel.getByRole('button', { name: /^Restore: .*2026/ })).toBeFocused();
   await expect(page.locator('#main').getByText('A dive you deleted is still in SSI.')).toHaveCount(0);
   await panel.getByRole('button', { name: /^Restore: .*2026/ }).click();
-  await page.getByRole('link', { name: '‹ Logbook' }).click();
+  await page.getByRole('main').getByRole('link', { name: 'Logbook' }).click();
   await expect(diveRow(page, n)).toBeVisible();
 });
 

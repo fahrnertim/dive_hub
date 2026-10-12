@@ -24,7 +24,10 @@ export function ReviewStrip() {
   );
 }
 
-/** Under the logbook: the other parts of the Review page, for those who look for them there. Nothing while they are empty. */
+/**
+ * Above the logbook's list: the other parts of the Review page, always there for those who look for them (UI review C9).
+ * What was decided is a link only while there is something in it; the Imports and the deleted dives are always one.
+ */
 export function ReviewLinks() {
   const { t } = useTranslation();
   const { decided, deleted } = useReviewCounts();
@@ -32,7 +35,7 @@ export function ReviewLinks() {
     <nav className="review-links" aria-label={t('review.title')}>
       <a href={reviewHref('imports')}>{t('review.tab.imports')}</a>
       {decided > 0 && <a href={reviewHref('decided')}>{t('review.tab.decided')} ({decided})</a>}
-      {deleted > 0 && <a href={reviewHref('deleted')}>{t('review.tab.deleted')} ({deleted})</a>}
+      <a href={reviewHref('deleted')}>{t('review.tab.deleted')}{deleted > 0 && <> ({deleted})</>}</a>
     </nav>
   );
 }

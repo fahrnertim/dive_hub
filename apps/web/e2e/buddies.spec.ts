@@ -17,7 +17,7 @@ test('adds a buddy from the SSI buddy list on the account page', { tag: ['@accou
   await clearParticipants(request, dive.id);
   await forgetDivers(request, 'Kai Lund');
   await connectSsi(request);
-  await page.goto('/#/account');
+  await page.goto('/#/account?tab=connections');
   const panel = page.locator('section', { has: page.getByRole('heading', { name: 'SSI', exact: true }) });
   await panel.getByRole('button', { name: /^Show your SSI buddy list/ }).click();
   const list = panel.locator('section', { has: page.getByRole('heading', { name: 'Your SSI buddy list' }) });

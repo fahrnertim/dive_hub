@@ -31,17 +31,28 @@ export function Panel({ title, children, narrow, actions, level = 2, attention }
  * sentence, and the page's actions beside it. Sections follow as panels. Single forms (sign-in, setup)
  * use a narrow `Panel level={1}` instead.
  */
-export function PageHeader({ title, meta, lead, actions }: { title: ReactNode; meta?: ReactNode; lead?: ReactNode; actions?: ReactNode }) {
+export function PageHeader({ title, meta, lead, actions, back }: { title: ReactNode; meta?: ReactNode; lead?: ReactNode; actions?: ReactNode; back?: { href: string; label: string } }) {
   return (
-    <div className="page-head">
-      <div className="page-head-text">
-        <h1>{title}</h1>
-        {meta}
-        {lead && <p className="muted">{lead}</p>}
+    <>
+      {back && <BackLink {...back} />}
+      <div className="page-head">
+        <div className="page-head-text">
+          <h1>{title}</h1>
+          {meta}
+          {lead && <p className="muted">{lead}</p>}
+        </div>
+        {actions && <div className="page-actions">{actions}</div>}
       </div>
-      {actions && <div className="page-actions">{actions}</div>}
-    </div>
+    </>
   );
+}
+
+/**
+ * The way up from a page of a list or a part of the app, above the title: one place and one look on every page
+ * (UI review C15). A page with a header passes it as `back`; a page without one (not found, an error) uses this.
+ */
+export function BackLink({ href, label }: { href: string; label: string }) {
+  return <p><a href={href} className="back-link"><Icon name="back" />{label}</a></p>;
 }
 
 /** A short state next to a value ("done", "edited"). Neutral unless it reports success or failure. */

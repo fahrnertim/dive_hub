@@ -9,6 +9,7 @@ import { showDiveCodes } from './CentresPage.tsx';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
 import { exporting, typedSiteId, useNames, useProviders, useProviderText, waitsForUser } from './lib/providers.ts';
+import { accountHref } from './lib/account-tabs.ts';
 import { Badge, Button, ConfirmButton, Dialog, Disclosure, Muted, Notice, SearchList, type SearchListItem } from './ui/index.ts';
 
 type Existing = { remoteId: string; number: number | null; startsAt: string | null; maxDepthM: number | null; durationMinutes: number | null };
@@ -84,7 +85,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
     // Nothing sent and nothing to send with: one line pointing to where to connect.
     return (
       <Line title={p.name}>
-        <p className="muted">{pt('notConnected', { diver: diverName ?? '' })} <a href="#/account">{pt('goConnect')}</a></p>
+        <p className="muted">{pt('notConnected', { diver: diverName ?? '' })} <a href={accountHref('connections')}>{pt('goConnect')}</a></p>
         {s.current && <SentState provider={p} status={s} />}
       </Line>
     );
@@ -106,7 +107,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
       <div className="provider-body">
 
       {signInNeeded && (
-        <Notice tone="danger">{pt('signInNeeded')} <a href="#/account">{pt('goSignIn')}</a></Notice>
+        <Notice tone="danger">{pt('signInNeeded')} <a href={accountHref('connections')}>{pt('goSignIn')}</a></Notice>
       )}
       <Requirements provider={p} dive={d} status={s} />
 

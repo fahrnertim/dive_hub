@@ -24,7 +24,7 @@ import { SitePicker } from './SitePicker.tsx';
 import { Participants } from './Participants.tsx';
 import { ProviderPanels } from './ProviderPanel.tsx';
 import { DiveCodes } from './CentresPage.tsx';
-import { ActionMenu, Button, ConfirmDialog, Dialog, ErrorBoundary, Icon, Muted, Notice, PageHeader, Panel, Select } from './ui/index.ts';
+import { ActionMenu, BackLink, Button, ConfirmDialog, Dialog, ErrorBoundary, Icon, Muted, Notice, PageHeader, Panel, Select } from './ui/index.ts';
 
 /** One Dive (ADR 0015): its values with Overrides marked, notes, Recordings, and its history. */
 export function DiveDetail({ id, recordingId, list = '' }: { id: string; recordingId?: string | undefined; list?: string }) {
@@ -73,7 +73,7 @@ export function DiveDetail({ id, recordingId, list = '' }: { id: string; recordi
   if (dive.error) {
     return (
       <>
-        <p><a href={logbook} className="back-link"><Icon name="back" />{t('dive.back')}</a></p>
+        <BackLink href={logbook} label={t('dive.back')} />
         <Notice tone="danger">{errorText(dive.error)}</Notice>
       </>
     );
@@ -85,7 +85,7 @@ export function DiveDetail({ id, recordingId, list = '' }: { id: string; recordi
   return (
     <>
       <div className="dive-trail">
-        <a href={logbook} className="back-link"><Icon name="back" />{t('dive.back')}</a>
+        <BackLink href={logbook} label={t('dive.back')} />
         <Neighbours n={neighbours.data} list={list} />
       </div>
       <div className="dive-head">

@@ -43,7 +43,7 @@ test('a recording that doesn\'t clearly fit is put aside, brought back and added
   await expect(page.getByRole('heading', { name: 'Recordings without a dive' })).toHaveCount(0);
   // The Discard button is gone; focus is on the way back.
   await expect(page.getByRole('button', { name: 'Undo' })).toBeFocused();
-  await expect(page.getByRole('link', { name: 'Logbook', exact: true })).toBeVisible(); // no count while nothing waits
+  await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Logbook', exact: true })).toBeVisible(); // no count while nothing waits
   await page.getByRole('link', { name: 'Decided' }).click();
   await page.getByRole('button', { name: 'Decide again' }).click();
   await page.getByRole('link', { name: /^To decide/ }).click();
@@ -51,7 +51,7 @@ test('a recording that doesn\'t clearly fit is put aside, brought back and added
   await page.getByRole('button', { name: /^Add to Dive \d+:/ }).click();
   await expect(page.getByText('Nothing waits for your decision.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Review', level: 1 })).toBeFocused(); // nothing left to decide
-  await page.getByRole('link', { name: '‹ Logbook' }).click();
+  await page.getByRole('main').getByRole('link', { name: 'Logbook' }).click();
   await expect(page.getByText(/needs? your decision/)).toHaveCount(0);
   await page.getByRole('link', { name: 'Jan 15, 2026, 11:00 AM (UTC+2)' }).click();
   await expect(page.getByRole('tab', { name: /\(777\)/ })).toBeVisible();
@@ -75,7 +75,7 @@ test('a recording that belongs elsewhere is split off into its own dive', { tag:
 test('a second Diver gets a dive and a device; the logbook can show one Diver', { tag: ['@divers', '@dives'] }, async ({ page }) => {
   await page.goto('/#/divers');
   await page.getByRole('textbox', { name: 'Add a Diver' }).fill('Mia');
-  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await page.getByRole('button', { name: 'Add logbook' }).click();
   // The first list: the Divers with a logbook. Other specs on this server may have left divers in the second.
   await expect(page.locator('.diver-list').first()).toContainText('Mia');
 

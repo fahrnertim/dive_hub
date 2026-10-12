@@ -17,7 +17,7 @@ test('an admin switches AI access on; a User creates one, uses its key, reads th
   await request.put('/api/admin/ai-access', { data: { enabled: false }, headers });
 
   // Off: the account page says so and offers nothing to create.
-  await page.goto('/#/account');
+  await page.goto('/#/account?tab=ai');
   const panel = page.locator('section', { has: page.getByRole('heading', { name: 'AI access', exact: true }) });
   await expect(panel.getByText('AI access is switched off on this Dive Hub.')).toBeVisible();
   await expect(panel.getByRole('button', { name: 'Create AI access' })).toHaveCount(0);
@@ -30,7 +30,7 @@ test('an admin switches AI access on; a User creates one, uses its key, reads th
   await expect(admin.getByText(/Switched on by Erika/)).toBeVisible();
 
   // On: what the AI provider gets is said before anything can be created.
-  await page.goto('/#/account');
+  await page.goto('/#/account?tab=ai');
   await expect(panel.getByRole('heading', { name: 'What your AI provider gets' })).toBeVisible();
   await expect(panel.getByText('the names of the people you dived with, which is other people’s data')).toBeVisible();
   await expect(panel.getByText('You have no AI access yet.')).toBeVisible();

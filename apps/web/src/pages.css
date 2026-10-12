@@ -419,7 +419,7 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .candidate-title { font-weight: var(--weight-semibold); font-size: var(--text-md); }
 .candidate-facts { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); overflow-wrap: anywhere; }
 .diff { background: var(--color-accent-soft); color: var(--color-text); border-radius: var(--radius-sm); padding-inline: var(--space-1); font-weight: var(--weight-semibold); }
-.review-links { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin-top: var(--space-4); font-size: var(--text-sm); }
+.review-links { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin-block: var(--space-2) var(--space-4); font-size: var(--text-sm); }
 
 /* A verification code (ADR 0043). The code itself is black on white in both themes: a scanner needs that contrast. */
 .code-figures { display: flex; flex-wrap: wrap; gap: var(--space-5); margin-bottom: var(--space-4); }

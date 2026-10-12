@@ -6,7 +6,7 @@ import { E2E_BASE_URL, SSI_ACCOUNT, connectSsi, disconnectSsi, editElsewhere, ex
 test('connects a Diver to SSI, signs in again with another choice, and disconnects', { tag: ['@account'] }, async ({ page, request }) => {
   await resetDive(request);
   await disconnectSsi(request);
-  await page.goto('/#/account');
+  await page.goto('/#/account?tab=connections');
   const panel = page.locator('section', { has: page.getByRole('heading', { name: 'SSI', exact: true }) });
   await expect(panel.getByText('SSI has no official interface for this')).toBeVisible();
   await panel.getByRole('textbox', { name: 'SSI e-mail' }).fill(SSI_ACCOUNT.login);

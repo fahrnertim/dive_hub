@@ -28,8 +28,7 @@ export function SiteImportPage() {
   usePageTitle(t('siteImport.title'));
   return (
     <>
-      <p><a href="#/admin" className="back-link"><Icon name="back" />{t('nav.admin')}</a></p>
-      <PageHeader title={t('siteImport.title')} lead={t('siteImport.intro')} />
+      <PageHeader title={t('siteImport.title')} lead={t('siteImport.intro')} back={{ href: '#/admin', label: t('nav.admin') }} />
       <StartImport />
       <LatestImports />
     </>

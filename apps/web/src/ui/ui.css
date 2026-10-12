@@ -335,6 +335,7 @@
 }
 
 /* Previous and next dive, beside the way back to the logbook (UI redesign 2.4). */
+.dive-trail > p { margin: 0; }
 .dive-trail { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); margin-bottom: var(--space-3); }
 .neighbours { display: flex; align-items: center; gap: var(--space-3); }
 .neighbour { display: inline-flex; align-items: center; gap: var(--space-1); }

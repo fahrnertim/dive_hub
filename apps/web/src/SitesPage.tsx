@@ -16,7 +16,7 @@ import { useProviders, useProviderText } from './lib/providers.ts';
 import type { ProviderView } from './api.ts';
 import { SiteHistory } from './SiteHistory.tsx';
 import { SiteCentres } from './CentresPage.tsx';
-import { ActionMenu, Button, Checkbox, ConfirmDialog, Icon, Muted, Notice, PageHeader, Panel, Select, Table, TextField } from './ui/index.ts';
+import { ActionMenu, BackLink, Button, Checkbox, ConfirmDialog, Icon, Muted, Notice, PageHeader, Panel, Select, Table, TextField } from './ui/index.ts';
 
 /** "Egypt · Red Sea": where a site is, in words. */
 function useSitePlace() {
@@ -214,7 +214,7 @@ export function SitePage({ id }: { id: string }) {
     },
   });
 
-  const back = <p><a href="#/sites" className="back-link"><Icon name="back" />{t('sites.back')}</a></p>;
+  const back = { href: '#/sites', label: t('sites.back') };
   if (site.isPending || mergedInto) return <Muted>{t('common.loading')}</Muted>;
   if (notFound) {
     return (
@@ -229,14 +229,14 @@ export function SitePage({ id }: { id: string }) {
       </>
     );
   }
-  if (site.error) return <>{back}<Notice tone="danger">{errorText(site.error)}</Notice></>;
+  if (site.error) return <><BackLink {...back} /><Notice tone="danger">{errorText(site.error)}</Notice></>;
   const s = site.data;
   const deletable = s.canDelete && !s.inUse;
 
   return (
     <>
-      {back}
       <PageHeader
+        back={back}
         title={s.name}
         meta={place(s) && <p className="title-meta">{place(s)}</p>}
         actions={!editing && (

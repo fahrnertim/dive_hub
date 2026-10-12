@@ -108,7 +108,7 @@ test('lists two dives at the same time on the logbook, keeps them apart when tol
     await expect(dialog).toHaveCount(0);
     await expect(main.getByRole('button', { name: /^They are two dives: Dive \d+ and Dive \d+$/ })).toHaveCount(0);
     await expect(page.getByText('Nothing waits for your decision.')).toBeVisible();
-    await page.getByRole('link', { name: '‹ Logbook' }).click();
+    await page.getByRole('main').getByRole('link', { name: 'Logbook' }).click();
     await expect(diveRows(page).filter({ hasText: new RegExp(`Number ${n}(?!\\d)`) })).toHaveCount(1);
   } finally {
     await mergePair(request);

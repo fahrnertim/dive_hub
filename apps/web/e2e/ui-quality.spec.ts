@@ -414,7 +414,7 @@ for (const v of variants) {
     test('my account, AI access: none yet, then a new key shown once', { tag: ['@account'] }, async ({ page, request }) => {
       await aiAccessReady(request);
       try {
-        await page.goto('/#/account');
+        await page.goto('/#/account?tab=ai');
         await expect(page.getByText(v.english ? 'You have no AI access yet.' : 'Du hast noch keinen KI-Zugang.')).toBeVisible();
         await expectGoodPage(page, title('My account'), v);
         // A long name, as someone might type it.
@@ -433,7 +433,7 @@ for (const v of variants) {
         const access = await createAiAccess(request, `Editor on the desk ${v.locale}`, true);
         await askMcp(request, access.key, 'logbook_search_dives', { query: 'wreck', limit: 5, sort: 'depth' });
         await askMcp(request, access.key, 'logbook_get_dive', { dive_id: '00000000-0000-7000-8000-000000000000' });
-        await page.goto('/#/account');
+        await page.goto('/#/account?tab=ai');
         await expect(page.getByRole('region', { name: v.english ? 'What was read' : 'Was gelesen wurde' }).getByText('logbook_get_dive').first()).toBeVisible();
         await expectGoodPage(page, title('My account'), v);
       } finally {
@@ -443,7 +443,7 @@ for (const v of variants) {
 
     test('my account, connected to SSI, signing in again', { tag: ['@account'] }, async ({ page, request }) => {
       await connectSsi(request);
-      await page.goto('/#/account');
+      await page.goto('/#/account?tab=connections');
       await page.getByRole('button', { name: v.english ? /^Sign in again: / : /^Neu anmelden: / }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
       await expectGoodPage(page, title('My account'), v);
@@ -498,7 +498,7 @@ for (const v of variants) {
 
     test('my account, the SSI buddy list', { tag: ['@account'] }, async ({ page, request }) => {
       await connectSsi(request);
-      await page.goto('/#/account');
+      await page.goto('/#/account?tab=connections');
       await page.getByRole('button', { name: v.english ? /^Show your SSI buddy list/ : /^Deine SSI-Buddyliste zeigen/ }).click();
       await expect(page.getByRole('row', { name: /Mia Stone/ })).toBeVisible();
       await expectGoodPage(page, title('My account'), v);
@@ -509,7 +509,7 @@ for (const v of variants) {
     test('my account, importing dives from SSI: the preview, then the outcome', { tag: ['@account'] }, async ({ page, request }) => {
       await lenaReady(request);
       try {
-        await page.goto('/#/account');
+        await page.goto('/#/account?tab=connections');
         const section = page.getByRole('region', { name: v.english ? 'Dives of Lena from SSI' : 'Tauchgänge von Lena aus SSI' });
         await section.getByRole('button', { name: v.english ? 'Show what the import would do' : 'Zeigen, was der Import tun würde' }).click();
         await expect(section.getByRole('radiogroup', { name: v.english ? /^SSI dive 15: / : /^SSI-Tauchgang 15: / })).toBeVisible();
@@ -525,7 +525,7 @@ for (const v of variants) {
     test('my account, the times of the dives at SSI', { tag: ['@account'] }, async ({ page, request }) => {
       await lenaReady(request);
       try {
-        await page.goto('/#/account');
+        await page.goto('/#/account?tab=connections');
         const section = page.getByRole('region', { name: v.english ? 'Dives of Lena from SSI' : 'Tauchgänge von Lena aus SSI' });
         await section.getByRole('button', { name: v.english ? 'Show when each dive was made' : 'Zeigen, wann jeder Tauchgang angelegt wurde' }).click();
         await expect(section.getByRole('region', { name: v.english ? 'Dives in SSI with start and origin' : 'Tauchgänge in SSI mit Beginn und Herkunft' })).toBeVisible();
@@ -538,7 +538,7 @@ for (const v of variants) {
     test('my account, importing from SSI: a dive changed both here and in SSI', { tag: ['@account'] }, async ({ page, request }) => {
       try {
         await conflictForLena(request, `${v.locale}-${uniqueWord()}`);
-        await page.goto('/#/account');
+        await page.goto('/#/account?tab=connections');
         const section = page.getByRole('region', { name: v.english ? 'Dives of Lena from SSI' : 'Tauchgänge von Lena aus SSI' });
         await section.getByRole('button', { name: v.english ? 'Show what the import would do' : 'Zeigen, was der Import tun würde' }).click();
         await expect(section.getByRole('heading', { name: v.english ? 'Changed in both places' : 'An beiden Stellen geändert' })).toBeVisible();
@@ -551,7 +551,7 @@ for (const v of variants) {
     test('my account, connecting an SSI account a buddy here already has', { tag: ['@account'] }, async ({ page, request }) => {
       await lenaClaimable(request);
       try {
-        await page.goto('/#/account');
+        await page.goto('/#/account?tab=connections');
         const panel = page.locator('section', { has: page.getByRole('heading', { name: 'SSI', exact: true }) });
         await panel.getByRole('button', { name: v.english ? /Diver$/ : /Taucher$/ }).click();
         await page.getByRole('option', { name: 'Lena', exact: true }).click();
@@ -906,7 +906,7 @@ test.describe('behaviour', () => {
     ['logbook', () => '/', ['@dives']], ['dive', () => `/#/dives/${diveId}`, ['@dives']], ['Divers', () => '/#/divers', ['@divers']],
     ['Dive sites', () => '/#/sites', ['@sites']], ['a dive site', () => `/#/sites/${siteId}`, ['@sites']],
     ['an imported dive site', () => `/#/sites/${importedSiteId}`, ['@sites']],
-    ['Dive centres', () => '/#/centres', ['@sites']], ['Tools', () => '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', ['@tools']], ['a gas plan', () => '/#/tools/plan?water=fresh&lv=20x15,12x10&dv=Tim~12~200~20~&dv=Ann~10~200~15~', ['@tools']], ['a dive centre', () => `/#/centres/${centreId}`, ['@sites']], ['account', () => '/#/account', ['@account']],
+    ['Dive centres', () => '/#/centres', ['@sites']], ['Tools', () => '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', ['@tools']], ['a gas plan', () => '/#/tools/plan?water=fresh&lv=20x15,12x10&dv=Tim~12~200~20~&dv=Ann~10~200~15~', ['@tools']], ['a dive centre', () => `/#/centres/${centreId}`, ['@sites']], ['account', () => '/#/account', ['@account']], ['account connections', () => '/#/account?tab=connections', ['@account']], ['account AI access', () => '/#/account?tab=ai', ['@account']],
     ['Review', () => '/#/review', ['@dives']], ['admin', () => '/#/admin', ['@admin']], ['site import', () => '/#/admin/site-imports', ['@admin', '@sites']],
   ];
   for (const [name, path, tag] of sweep) {
@@ -925,7 +925,7 @@ test.describe('behaviour', () => {
   }
 
   test('text at 200 % still fits: nothing scrolls sideways (WCAG 1.4.4)', { tag: ['@layout'] }, async ({ page }) => {
-    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/centres', `/#/centres/${centreId}`, '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', '/#/review', '/#/account', '/#/admin', '/#/admin/site-imports']) {
+    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/centres', `/#/centres/${centreId}`, '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', '/#/review', '/#/account', '/#/account?tab=connections', '/#/account?tab=ai', '/#/admin', '/#/admin/site-imports']) {
       await page.goto(path);
       await page.getByRole('heading', { level: 1 }).waitFor();
       await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
@@ -1189,6 +1189,70 @@ test.describe('behaviour', () => {
     await field.fill('erika');
     await expect(field).toHaveAccessibleDescription(/You already have a Diver called Erika/);
     await field.fill('');
+  });
+
+  test('adding a Diver and adding someone you dived with say the difference (slice 25e, C22)', { tag: ['@divers'] }, async ({ page }) => {
+    await page.goto('/#/divers');
+    const logbooks = page.locator('section', { has: page.getByRole('heading', { name: 'Logbooks you keep' }) });
+    const field = logbooks.getByRole('textbox', { name: 'Add a Diver' });
+    await expect(field).toHaveAccessibleDescription(/logbook/i);
+    await expect(logbooks.getByRole('button', { name: 'Add logbook' })).toBeVisible();
+    await expect(page.locator('section', { has: page.getByRole('heading', { name: 'Other divers' }) }).getByRole('button', { name: 'Add buddy' })).toBeVisible();
+  });
+
+  test('the account page has its parts as tabs in the address, and the profile menu links the connections (slice 25e, C10)', { tag: ['@account'] }, async ({ page }) => {
+    await page.goto('/#/account');
+    const parts = page.getByRole('navigation', { name: 'Parts of the account' });
+    await expect(parts.getByRole('link', { name: 'Account' })).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByRole('heading', { name: 'Where you’re signed in' })).toBeVisible();
+    // Connections and AI access are not on the first part: the page is not one long scroll.
+    await expect(page.getByRole('heading', { name: 'AI access' })).toHaveCount(0);
+
+    await parts.getByRole('link', { name: 'Connections' }).click();
+    await expect(page).toHaveURL(/#\/account\?tab=connections$/);
+    await expect(parts.getByRole('link', { name: 'Connections' })).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByRole('heading', { name: 'Where you’re signed in' })).toHaveCount(0);
+    await page.reload();
+    await expect(parts.getByRole('link', { name: 'Connections' })).toHaveAttribute('aria-current', 'page');
+
+    await parts.getByRole('link', { name: 'AI access' }).click();
+    await expect(page).toHaveURL(/#\/account\?tab=ai$/);
+    await expect(page.getByRole('heading', { name: 'AI access' }).first()).toBeVisible();
+
+    // The profile menu goes straight to the connections.
+    await page.goto('/');
+    await page.getByRole('button', { name: /, account$/ }).click();
+    await page.getByRole('menuitem', { name: 'Connections' }).click();
+    await expect(page).toHaveURL(/#\/account\?tab=connections$/);
+    await expect(page.getByRole('heading', { name: 'My account', level: 1 })).toBeVisible();
+  });
+
+  test('Imports and Deleted dives are linked from the logbook, even with nothing waiting (slice 25e, C9)', { tag: ['@dives'] }, async ({ page }) => {
+    await page.goto('/');
+    await expect(diveRows(page).first()).toBeVisible();
+    const more = page.getByRole('main').getByRole('navigation', { name: 'Review' });
+    await expect(more.getByRole('link', { name: 'Imports' })).toHaveAttribute('href', '#/review?tab=imports');
+    await expect(more.getByRole('link', { name: 'Deleted dives' })).toHaveAttribute('href', '#/review?tab=deleted');
+    // Above the list, not below it: they are found without scrolling past the Dives.
+    const link = await more.boundingBox();
+    const list = await diveRows(page).first().boundingBox();
+    expect(link!.y).toBeLessThan(list!.y);
+    await more.getByRole('link', { name: 'Deleted dives' }).click();
+    await expect(page.getByRole('heading', { name: 'Deleted dives', level: 2 })).toBeVisible();
+  });
+
+  test('the way back sits above the title on every page that has one (slice 25e, C15)', { tag: ['@dives', '@sites'] }, async ({ page }) => {
+    for (const [url, back] of [
+      [`/#/dives/${diveId}`, 'Logbook'], [`/#/sites/${siteId}`, 'Dive sites'], [`/#/centres/${centreId}`, 'Dive centres'], ['/#/review', 'Logbook'],
+    ] as const) {
+      await page.goto(url);
+      const link = page.getByRole('main').getByRole('link', { name: back, exact: true }).first();
+      const title = page.getByRole('main').getByRole('heading', { level: 1 });
+      await expect(title).toBeVisible();
+      const [l, h] = [await link.boundingBox(), await title.boundingBox()];
+      expect(l!.y + l!.height, url).toBeLessThanOrEqual(h!.y + 1);
+      expect(l!.x, url).toBeLessThanOrEqual(h!.x + 1);
+    }
   });
 
   test('the logbook sorts by a choice and searches; the address keeps both', { tag: ['@dives'] }, async ({ page, request }) => {

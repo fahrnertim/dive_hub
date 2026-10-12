@@ -17,7 +17,7 @@ export function ReviewPage({ tab }: { tab: ReviewTab }) {
   usePageTitle(t('review.title'));
   return (
     <>
-      <PageHeader title={t('review.title')} meta={<p className="back"><a href="#/">‹ {t('nav.logbook')}</a></p>} />
+      <PageHeader title={t('review.title')} back={{ href: '#/', label: t('nav.logbook') }} />
       <nav className="subnav" aria-label={t('review.parts')}>
         {REVIEW_TABS.map((id) => (
           <a key={id} href={reviewHref(id)} {...(id === tab && { 'aria-current': 'page' as const })}>

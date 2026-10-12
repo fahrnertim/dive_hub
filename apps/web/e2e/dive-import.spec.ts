@@ -11,7 +11,7 @@ test('imports Lena\'s SSI dives from her Connection: the setting, the preview, a
   // As for a new Connection: the import is off.
   await request.patch(`/api/connections/${connectionId}`, { data: { diveImport: { mode: 'off', windowMinutes: 15 } }, headers });
   try {
-    await page.goto('/#/account');
+    await page.goto('/#/account?tab=connections');
     const section = page.getByRole('region', { name: 'Dives of Lena from SSI' });
     await expect(section.getByRole('radio', { name: /^Nothing/ })).toBeChecked();
     await expect(section.getByRole('button', { name: 'Show what the import would do' })).toHaveCount(0);
@@ -61,7 +61,7 @@ test('shows when each of Lena\'s SSI dives was made, whatever the import setting
   const { connectionId } = await lenaReady(request);
   await request.patch(`/api/connections/${connectionId}`, { data: { diveImport: { mode: 'off', windowMinutes: 15 } }, headers });
   try {
-    await page.goto('/#/account');
+    await page.goto('/#/account?tab=connections');
     const section = page.getByRole('region', { name: 'Dives of Lena from SSI' });
     await section.getByRole('button', { name: 'Show when each dive was made' }).click();
     const table = section.getByRole('region', { name: 'Dives in SSI with start and origin' });
@@ -96,7 +96,7 @@ test('takes back a change made in SSI\'s app when asked, where the dive was chan
   try {
     const stamp = uniqueWord();
     const diveId = await conflictForLena(request, stamp);
-    await page.goto('/#/account');
+    await page.goto('/#/account?tab=connections');
     const section = page.getByRole('region', { name: 'Dives of Lena from SSI' });
     await section.getByRole('button', { name: 'Show what the import would do' }).click();
     const conflict = section.getByRole('radiogroup', { name: /: notes$/ });
@@ -116,7 +116,7 @@ test('takes back a change made in SSI\'s app when asked, where the dive was chan
 test('a buddy imported earlier is claimed by connecting their own SSI account, after a question', { tag: ['@account'] }, async ({ page, request }) => {
   await lenaClaimable(request);
   try {
-    await page.goto('/#/account');
+    await page.goto('/#/account?tab=connections');
     const panel = page.locator('section', { has: page.getByRole('heading', { name: 'SSI', exact: true }) });
     await panel.getByRole('button', { name: /Diver$/ }).click();
     await page.getByRole('option', { name: 'Lena', exact: true }).click();
