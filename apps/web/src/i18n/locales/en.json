@@ -284,6 +284,7 @@
       "lowestNumber": "Lowest number first"
     },
     "showOnly": "Show only",
+    "filterAndSort": "Filter and sort",
     "only": {
       "noRecording": "No recording",
       "noSite": "No dive site",

@@ -228,7 +228,7 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
           )}
         </Notice>
       )}
-      <div className="form-actions">
+      <div className="form-actions form-actions-sticky">
         <Button type="submit" variant="primary" icon="save" isPending={save.isPending}>{t('dive.save')}</Button>
         <Button onPress={cancel}>{t('common.cancel')}</Button>
       </div>

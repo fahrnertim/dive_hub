@@ -173,6 +173,18 @@
 .logbook-toolbar { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-3) var(--space-4); margin-bottom: var(--space-4); }
 .logbook-search { flex: 1 1 16rem; max-width: 24rem; }
 .logbook-choice { flex: 0 1 14rem; min-width: min(100%, 11rem); }
+/* On a phone the first Dive is on the first screen (C11): the totals are one tight row, the search is the only open control,
+   and Diver, sort, Send and the chips sit behind "Filter and sort". */
+@media (max-width: 40rem) {
+  /* The totals close the list on a phone: two by two. */
+  .logbook-totals { margin: var(--space-5) 0 0; padding-top: var(--space-4); border-top: 1px solid var(--color-border); }
+  .logbook-totals dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3) var(--space-4); }
+  .logbook-toolbar { margin-bottom: var(--space-3); }
+  .logbook-search { flex-basis: 100%; max-width: none; }
+  .logbook-more { margin-bottom: var(--space-3); }
+  .logbook-more .logbook-toolbar { padding-top: var(--space-3); }
+  .logbook-more .logbook-choice { flex: 1 1 100%; }
+}
 .logbook-range { margin: 0 0 var(--space-2); }
 .logbook-nothing { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
 .logbook-nothing > p { margin: 0; }

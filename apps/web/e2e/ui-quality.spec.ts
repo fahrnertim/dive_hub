@@ -62,6 +62,13 @@ for (const v of variants) {
   test.describe(v.name, { tag: v.axe ? [] : ['@full'] }, () => {
     test.use({ locale: v.locale, colorScheme: v.colorScheme, viewport: v.viewport });
     const title = (english: string) => (v.english ? english : undefined);
+    /** On a phone the logbook's choices sit behind "Filter and sort" (slice 25f): open it where it is shut. */
+    const openChoices = async (page: Page) => {
+      if (v.viewport.width > 640) return;
+      const trigger = page.getByRole('button', { name: v.english ? /Filter and sort/ : /Filtern und sortieren/ });
+      await expect(trigger).toBeVisible();
+      if (await trigger.getAttribute('aria-expanded') === 'false') await trigger.click();
+    };
 
     test('logbook', { tag: ['@dives'] }, async ({ page, request }) => {
       await resetDive(request);
@@ -77,10 +84,12 @@ for (const v of variants) {
       try {
         await page.goto('/');
         await expect(diveRows(page).first()).toBeVisible();
+        await openChoices(page);
         await expect(page.getByRole('group', { name: v.english ? 'Show only' : 'Nur anzeigen' })).toBeVisible();
         await expectGoodPage(page, title('Logbook'), v);
         // A filter pressed, and sorted by depth: no month headings, the day with its year.
         await page.goto('/#/?sort=maxDepth&only=no-recording');
+        await openChoices(page);
         await expect(page.getByRole('button', { name: v.english ? /^No recording \d+$/ : /^Keine Aufzeichnung \d+$/ })).toHaveAttribute('aria-pressed', 'true');
         await expect(diveRows(page).first()).toBeVisible();
         await expectGoodPage(page, title('Logbook'), v);
@@ -100,6 +109,7 @@ for (const v of variants) {
         // The test reef has no SSI site ID: the dialog names what is held back and links to the site.
         const { connectionId, siteId } = await pushRunSetup(request, diveId, { keepSignedIn: false, siteExternalId: null });
         await page.goto(`/#/?site=${siteId}`);
+        await openChoices(page);
         await page.getByRole('button', { name: v.english ? 'Send to SSI…' : 'An SSI senden…' }).click();
         await expect(page.getByRole('dialog').getByRole('link', { name: /SSI test reef/ })).toBeVisible();
         await expectGoodPage(page, title('Logbook'), v);
@@ -1254,6 +1264,48 @@ test.describe('behaviour', () => {
       expect(l!.x, url).toBeLessThanOrEqual(h!.x + 1);
     }
   });
+
+  // Slice 25f (C11, C12): on a phone the first Dive is on the first screen, and Save stays in view while a Dive is edited.
+  for (const size of [{ width: 390, height: 844 }, { width: 320, height: 640 }]) {
+    test(`on a ${size.width} px phone the first Dive is on the first screen (slice 25f, C11)`, { tag: ['@dives', '@layout'] }, async ({ page }) => {
+      await page.setViewportSize(size);
+      await page.goto('/');
+      const first = diveRows(page).first();
+      await expect(first).toBeVisible();
+      const bar = (await page.getByRole('navigation', { name: 'Main' }).boundingBox())!;
+      const row = (await first.boundingBox())!;
+      // The title line of the first Dive sits above the navigation bar, without scrolling.
+      expect(row.y + 48, 'the first Dive starts above the bar').toBeLessThanOrEqual(bar.y);
+      // Search stays where it is; the rest of the choices are behind one control that says what is active.
+      await expect(page.getByRole('searchbox', { name: 'Search' })).toBeVisible();
+      const filter = page.getByRole('button', { name: /Filter and sort/ });
+      await expect(filter).toHaveAttribute('aria-expanded', 'false');
+      await expect(page.getByRole('button', { name: /Sort by$/ })).toBeHidden();
+      await filter.click();
+      await expect(page.getByRole('button', { name: /Sort by$/ })).toBeVisible();
+      // The control stays reachable by keyboard and the page doesn't scroll sideways.
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    });
+
+    test(`on a ${size.width} px phone Save is in view while a Dive is edited (slice 25f, C12)`, { tag: ['@dives', '@layout'] }, async ({ page, request }) => {
+      await resetDive(request);
+      await page.setViewportSize(size);
+      await page.goto(`/#/dives/${diveId}`);
+      await page.getByRole('button', { name: 'Edit dive' }).click();
+      const save = page.getByRole('button', { name: 'Save' });
+      await expect(save).toBeVisible();
+      // The first field has focus (the keyboard would be open): the bar has stepped aside, Save is on the screen.
+      await expect(page.getByRole('button', { name: 'Cancel' })).toBeInViewport({ ratio: 1 });
+      await expect(save).toBeInViewport({ ratio: 1 });
+      // Focus on a button: the bar is back, and Save is above it, not under it.
+      await save.focus();
+      const bar = (await page.getByRole('navigation', { name: 'Main' }).boundingBox())!;
+      const box = (await save.boundingBox())!;
+      expect(box.y, 'Save is on the screen').toBeGreaterThanOrEqual(0);
+      expect(box.y + box.height, 'Save is above the bar, not under it').toBeLessThanOrEqual(bar.y + 1);
+      expect((await page.getByRole('button', { name: 'Cancel' }).boundingBox())!.y).toBeLessThan(bar.y);
+    });
+  }
 
   test('the logbook sorts by a choice and searches; the address keeps both', { tag: ['@dives'] }, async ({ page, request }) => {
     await page.goto('/');

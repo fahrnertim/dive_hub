@@ -285,7 +285,8 @@
   .app-header-inner { gap: var(--space-2) var(--space-3); }
   /* The navigation is a bar at the bottom of the screen (UI redesign 5.3): the thumb reaches it, the header keeps the
      brand and the account, and three sections no longer wrap to a second row. Same landmark as on a wide screen. */
-  .app-nav { position: fixed; inset: auto 0 0 0; z-index: 5; gap: 0; flex: none; background: var(--color-surface);
+  :root { --bar-height: 5rem; }
+  .app-nav { position: fixed; inset: auto 0 0 0; z-index: 5; gap: 0; flex: none; background: var(--color-surface); min-height: var(--bar-height);
     border-top: 1px solid var(--color-border); padding-bottom: env(safe-area-inset-bottom, 0px); }
   .app-nav a { flex: 1 1 0; min-width: 0; flex-direction: column; justify-content: center; gap: var(--space-1); text-align: center;
     padding: var(--space-2) var(--space-1); border-bottom: none; border-top: 2px solid transparent; font-size: var(--text-sm);
@@ -306,6 +307,10 @@
   .app-main { padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px)); }
   .app-header-inner { padding-top: calc(var(--space-3) + env(safe-area-inset-top, 0px)); }
   .panel { padding: var(--space-5) var(--space-4); }
+  /* A long form's Save and Cancel stay in view at its foot, above the bar (UI/UX pass C12); with the keyboard open the bar is gone. */
+  .form-actions-sticky { position: sticky; bottom: calc(var(--bar-height) + env(safe-area-inset-bottom, 0px)); z-index: 1;
+    padding-block: var(--space-3); background: var(--color-surface); border-top: 1px solid var(--color-border); }
+  html[data-typing] .form-actions-sticky { bottom: 0; }
   .copy-field { flex-direction: column; }
   /* On a phone the button wraps under the field anyway; no alignment margin. */
   .form-inline > :not(.field):not(.radio-group) { margin-top: 0; }

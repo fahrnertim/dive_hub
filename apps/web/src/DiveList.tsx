@@ -8,12 +8,13 @@ import {
   diveHref, listQuery, LOGBOOK_FILTERS, logbookHref, mixName, monthGroups, SORT_CHOICES, sortChoice, toggled, type LogbookFilter, type MonthFigures,
 } from './lib/logbook.ts';
 import { useAddressSearch } from './lib/address-search.ts';
+import { useNarrow } from './lib/narrow.ts';
 import { usePageTitle } from './lib/page.ts';
 import { useNames, useProviders } from './lib/providers.ts';
 import { SendToProvider } from './PushRun.tsx';
 import { ProfileSketch } from './ProfileSketch.tsx';
 import { sketchScale } from './lib/sketch.ts';
-import { Avatar, Button, DiverAvatar, Icon, Muted, Notice, PageHeader, Panel, Select, TextField, ToggleChip } from './ui/index.ts';
+import { Avatar, Button, DiverAvatar, Disclosure, Icon, Muted, Notice, PageHeader, Panel, Select, TextField, ToggleChip } from './ui/index.ts';
 
 const ALL = 'all';
 /** A stack shows this many circles, then "+2". */
@@ -31,8 +32,10 @@ const COUNT_OF = {
  */
 export function LogbookHeader({ importAction }: { importAction?: ReactNode }) {
   const { t } = useTranslation();
+  const narrow = useNarrow();
   usePageTitle(t('logbook.title'));
-  return <PageHeader title={t('logbook.title')} lead={importAction && t('import.dropAnywhere')} actions={importAction} />;
+  // Dropping files is for a pointer; on a phone the hint would only push the first Dive down (C11).
+  return <PageHeader title={t('logbook.title')} lead={importAction && !narrow ? t('import.dropAnywhere') : undefined} actions={importAction} />;
 }
 
 /**
@@ -86,41 +89,63 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
   }, [view, dives.data, dives.isPlaceholderData, range, nothing, total]);
 
   const byDate = (params.sort ?? 'startsAt') === 'startsAt';
+  const narrow = useNarrow();
+  const choices = (
+    <>
+      {several && (
+        <div className="logbook-choice">
+          <Select
+            label={t('divers.filter')}
+            value={params.diverId ?? ALL}
+            onChange={(v) => { location.hash = logbookHref({ ...params, diverId: !v || v === ALL ? undefined : v, page: undefined }); }}
+            options={[{ id: ALL, label: t('divers.allDivers') }, ...(divers.data ?? []).map((d) => ({ id: d.id, label: d.name }))]}
+          />
+        </div>
+      )}
+      <div className="logbook-choice">
+        <Select
+          label={t('logbook.sortBy')}
+          value={sortChoice(params)}
+          onChange={(id) => {
+            const choice = SORT_CHOICES.find((c) => c.id === id);
+            location.hash = logbookHref({ ...params, sort: choice?.sort, order: choice?.order, page: undefined });
+          }}
+          options={SORT_CHOICES.map((c) => ({ id: c.id, label: t(`logbook.sort.${c.id}`) }))}
+        />
+      </div>
+      <SendToProvider params={params} filterName={filterName} />
+    </>
+  );
+  const showOnly = dives.data && <ShowOnly params={params} counts={dives.data.counts} />;
+  // On a phone the totals close the list instead of opening it: the Dives come first (C11).
+  const totals = searchable && dives.data && dives.data.totals.dives > 0 && <Totals totals={dives.data.totals} />;
+  // What the collapsed control says is set: a sort other than the default, one Diver, the filters.
+  const active = [
+    params.sort && t(`logbook.sort.${sortChoice(params)}`),
+    params.diverId && nameOf.get(params.diverId),
+    filters,
+  ].filter(Boolean).join(' · ');
   return (
     <Panel>
       {params.siteId && <SiteFilter params={params} />}
       {/* Nothing to count, search or sort before the first dive (visual refresh 8). */}
       {searchable && (
         <>
-          {dives.data && dives.data.totals.dives > 0 && <Totals totals={dives.data.totals} />}
+          {!narrow && totals}
+          {/* On a phone only the search stays in sight; the other choices sit behind one control that says what is set (C11). */}
           <div className="logbook-toolbar">
             <div className="logbook-search" ref={search}>
               <TextField label={t('logbook.search')} description={t('logbook.searchHint')} type="search" value={text} onChange={setText} autoComplete="off" />
             </div>
-            {several && (
-              <div className="logbook-choice">
-                <Select
-                  label={t('divers.filter')}
-                  value={params.diverId ?? ALL}
-                  onChange={(v) => { location.hash = logbookHref({ ...params, diverId: !v || v === ALL ? undefined : v, page: undefined }); }}
-                  options={[{ id: ALL, label: t('divers.allDivers') }, ...(divers.data ?? []).map((d) => ({ id: d.id, label: d.name }))]}
-                />
-              </div>
-            )}
-            <div className="logbook-choice">
-              <Select
-                label={t('logbook.sortBy')}
-                value={sortChoice(params)}
-                onChange={(id) => {
-                  const choice = SORT_CHOICES.find((c) => c.id === id);
-                  location.hash = logbookHref({ ...params, sort: choice?.sort, order: choice?.order, page: undefined });
-                }}
-                options={SORT_CHOICES.map((c) => ({ id: c.id, label: t(`logbook.sort.${c.id}`) }))}
-              />
-            </div>
-            <SendToProvider params={params} filterName={filterName} />
+            {!narrow && choices}
           </div>
-          {dives.data && <ShowOnly params={params} counts={dives.data.counts} />}
+          {!narrow && showOnly}
+          {narrow && (
+            <Disclosure className="logbook-more" title={t('logbook.filterAndSort')} summary={active && <span className="meta">{active}</span>}>
+              <div className="logbook-toolbar">{choices}</div>
+              {showOnly}
+            </Disclosure>
+          )}
         </>
       )}
       {dives.isPending && <Muted>{t('common.loading')}</Muted>}
@@ -171,6 +196,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
           )}
         </>
       )}
+      {narrow && totals}
     </Panel>
   );
 }

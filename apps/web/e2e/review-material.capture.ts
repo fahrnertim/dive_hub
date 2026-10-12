@@ -602,6 +602,9 @@ test('review material', async ({ page, request, browser }) => {
       await page.setViewportSize({ width: 390, height: 844 });
       await page.reload(); await page.getByRole('button', { name: 'Fortsetzen' }).waitFor();
       await capture(page, '34-logbook-run-stopped-de-dark-390');
+      // On a phone Send sits behind "Filter and sort" (slice 25f); with a filter set the control says what is on.
+      await page.getByRole('button', { name: /Filtern und sortieren/ }).click();
+      await capture(page, '34b-logbook-choices-open-de-dark-390', { full: false });
       await page.getByRole('button', { name: 'An SSI senden…' }).click();
       await page.getByRole('dialog').waitFor();
       await capture(page, '35-logbook-send-dialog-de-dark-390', { full: false });
@@ -625,6 +628,7 @@ test('review material', async ({ page, request, browser }) => {
       const current = await (await request.get(`/api/dives/${dive42}`)).json() as { version: number };
       await request.patch(`/api/dives/${dive42}`, { headers, data: { version: current.version, notes: 'Changed after it was sent' } });
       await page.goto(`/#/?site=${changed.siteId}`); await page.reload();
+      await page.getByRole('button', { name: /Filtern und sortieren/ }).click();
       await page.getByRole('button', { name: /^Seit dem Senden geändert \d+$/ }).waitFor();
       await capture(page, '35b-logbook-changed-since-sent-de-dark-390');
       await page.getByRole('button', { name: 'An SSI senden…' }).click();
