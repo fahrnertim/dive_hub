@@ -106,3 +106,21 @@ Nothing new: `dives.list(context)` without `recent`. A Provider without `list` h
 - A Dive deleted in SSI is found only when the User previews an import or runs the check. Nothing notices by itself.
 - The plausibility rule (empty, more than half) is a guess; SSI's failure modes for `get_divelog` beyond the ones the
   client refuses aren't known.
+
+## As built (2026-10-12)
+- **Schema:** `provider_gone_dive` (migration 0037), one row per Dive and Provider; cascade on the Dive and the Connection.
+  Whether a finding waits is worked out on reading (live Dive, the finding's remote dive is still the Dive's current one,
+  made through that Connection), so Pushes, deletes and restores need no clean-up there.
+- **Server:** `providers/gone-dive-rules.ts` (pure comparison, the `empty` and warning rules; `GONE_WARNING_MIN = 5`) and
+  `providers/gone-dives.ts` (`recordFindings`, used by the import preview and the check; `check`, `waiting`, `confirm`).
+  `confirm` takes the Dives' leases (`provider_busy` when held), reads once and records a confirmed delete Push with
+  `remoteGone` or removes the finding. An empty read confirms nothing (`empty: true`).
+- **Routes:** `GET /api/gone-dives` (findings of all the User's Connections in one answer, no Provider call, instead of one
+  GET per Connection), `POST /api/connections/{id}/gone-dives/check`, `POST /api/connections/{id}/gone-dives/confirm`
+  (`diveIds`, 1 to 50), and `goneDives` in the import preview. The confirm answer names each Dive's outcome
+  `confirmation` (`gone`, `there`, `not_waiting`, `unconfirmed`), not `result`: the translations test requires an English
+  text for every enum property of that name.
+- **Web:** `GoneDives.tsx` (Review page sections, the Connection's check), a line in the logbook's strip. "Delete here too"
+  opens the Dive's own delete dialog; no "all" anywhere.
+- **Not built:** a schedule or job, a Provider other than SSI (any adapter that declares `list` gets the check), pruning
+  of old findings (they are filtered on read).
