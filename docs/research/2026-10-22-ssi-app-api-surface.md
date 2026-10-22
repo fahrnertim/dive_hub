@@ -218,14 +218,19 @@ no key of `toJson` is left out, and a value that is empty is sent as `null` (282
 
 ## The two error interceptors [R]
 
-- **`ServerMaintenanceInterceptor`** skips `what=ai_proxy` and every request whose host starts with `training.`.
-  For the rest, when the response status is **503** it marks the server as in maintenance and logs "Error in
-  ServerMaintenanceInterceptor"; the app then shows its maintenance state. A client of Dive Hub's kind should treat 503
-  from `a21.php` as "SSI is down, retry later", not as a rejected dive. (The compare value is read from the
-  response; 503 is [?] — the constant is `0x1f7`.)
-- **`UnauthenticatedInterceptor`** looks at the response **body**: when it is JSON with `"status": 401` it logs "logout
-  because of 401", clears the session and shows `session_expired`. So an expired sign-in can come as a **JSON
-  `status` of 401**, possibly under HTTP 200 [?] — a client must check the body, not only the HTTP status.
+- **`ServerMaintenanceInterceptor`** runs after the response arrives. It does nothing for `what=ai_proxy` or a host
+  starting with `training.`. For the rest it reads the **HTTP status code**: on **503** it calls
+  `HomeService.showServerMaintenance()` (once: a flag keeps it from repeating); on any other status, if the maintenance
+  view is showing, it calls `hideServerMaintenance()` and clears the flag. The response is always passed on unchanged;
+  an exception inside only logs "Error in ServerMaintenanceInterceptor". The 503 is the raw constant `0x1f7` compared
+  with the status code, so it is certain. The maintenance view is not a retry: the next call that returns anything
+  other than 503 ends it. A client should treat 503 from `a21.php` as "SSI is down, retry later", not as a rejected dive.
+- **`UnauthenticatedInterceptor`** runs after the response, on **every** host and call, and ignores the HTTP status.
+  When the decoded body is a JSON object with a `status` key whose value is the number **401**, it calls
+  `AuthenticationService.logout()`, logs "logout because of 401", and shows the `session_expired` message as an error
+  snackbar (guarded by an `isSnackbarOpen` flag that resets after a delay, so it shows once). The response is passed on
+  unchanged. So an expired sign-in is a **body** `{"status": 401, …}`, whatever HTTP status carries it; a client must
+  check the body of every JSON response, not only the HTTP status. What else the body holds is not visible in the code.
 - **`DefaultParametersInterceptor`** adds the fixed parameters to every call (`token` from the session — the strings
   `signup` and `get_translations` appear in the same method, so the token is probably handled differently for them [?] —, `ssiapp`, `lang`, `version`/`appVersion`, `context`, `s`, `device`, `deviceName`,
   `manufacturer`, `osVersion`, `platform`, `brand=SSI`); it matches the
@@ -235,7 +240,7 @@ no key of `toJson` is left out, and a value that is empty is sent as `null` (282
 
 1. **Which fields the server requires.** The app sends the whole row (above); what the server rejects needs test saves
    (writes to the owner's account; the owner decides).
-2. **Exact shape of an error body** (the `status` 401 body and the 503 case) — needs a captured response.
+2. **What a 503 or a `status` 401 response looks like on the wire** (other keys, HTTP code of the 401) — needs a captured response; the code only tests the status code and the `status` key.
 3. **Hosts** of the course, firmware and AI calls.
 4. **`training.divessi.com`:** whether it is the course server (the interceptors treat a `training.` host specially, which
    points that way).
