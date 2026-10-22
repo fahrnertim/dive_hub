@@ -899,6 +899,32 @@ else plans with the SAC sent or 20 L/min, and no logbook value of theirs is in t
 - `outside_limits` gives the `reason` and `levelIndex` and no numbers.
 The MCP tool `planning_gas_plan` returns the same with `assumptions`, `controlling_diver` and the notice.
 
+#### Lead estimate
+
+([ADR 0031](../decisions/0031-lead-suit-cylinders-and-lead-estimate.md).) `GET /api/divers/{id}/lead-estimate` computes on request and
+stores nothing. It takes the planned conditions: `water` (`fresh`, `salt`, `brackish`), `suit` (`none`, `skin`, `wetsuit`, `semidry`,
+`drysuit`) with `suitThicknessMm` (wetsuit and semidry only), `suitHood` and `suitUndergarment` (drysuit only; else `suit_invalid`),
+`cylinders` as JSON in the query (`[{volumeL, material?}]`, 1 to 4, from the catalogue; a twin set as one volume), and `unit`
+(`kg`, the default, or `lb`: every amount in the answer is in it, rounded to 0.5 kg or whole pounds, so don't convert again).
+Only a User who keeps the Diver's logbook may ask; anyone else gets `diver_not_found` (404), as for body weights.
+A client **must**:
+- **Never present the number as certain:** call it a starting point, and show `range` with `total`, always.
+- **Always show the weight check** (`weightCheck.steps`: `eye_level_empty_bc` = float at eye level with an empty BC,
+  `neutral_at_5m_at_reserve` = neutral at 5 m with the cylinder at `weightCheck.reserveBar`), in every state, also when there is no
+  number. The answer is a start for it, never a substitute.
+- **Show the reasons:** `basis` (`dives`: the Dives it rests on, each `diveId` to link, with `carried`, what it `needed` after its
+  feedback and its `weight`; `rule_of_thumb`: the rule, and the `personalOffset` from the Diver's other suits where there is one),
+  and each of `adjustments` (`cylinder`, `water`, `personal_offset`) with its amount and reason. Say how many Dives it rests on,
+  and show `confidence` as words (`low` is the rule of thumb).
+- **Say what is missing** (`missing`: `body_weight`, `cylinder_material`, `cylinder`, `suit_thickness`, `suit_undergarment`) and
+  where to add it. With `total` and `range` both `null` there is no number: no Dive with this suit and no body weight; lead
+  to the body weight, never show 0.
+- **Say what was left out:** `leftOut.noWaterType` Dives with lead and a suit were not used because their site has no water type
+  (ADR 0025); lead to the site.
+- **Say which reserve it is for** (`reserve.bar`, `fromDives`: the median of the Diver's logged end pressures, else 50 bar).
+- Body weight stays with the Users who keep the Diver (ADR 0028): the answer holds none, and a client puts it in no other
+  view. Fill nothing in automatically from the answer; the User enters the lead they carry.
+
 ## The MCP endpoint
 
 An LLM client is an API client Dive Hub can't make follow this contract, so the endpoint carries the rules itself

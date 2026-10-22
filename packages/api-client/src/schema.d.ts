@@ -9537,6 +9537,194 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/divers/{id}/lead-estimate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How much lead a Diver should carry in planned conditions: a starting point with a range and its reasons (ADR 0031)
+         * @description From the Diver's own Dives with the same suit set-up, adjusted for the cylinder and the water, else a rule of thumb from their body weight. Only for a User who keeps the Diver's logbook; others get 404 `diver_not_found`, as for body weights. Never certain: the answer always carries `range`, `basis`, `adjustments`, `missing` and the `weightCheck`; `total` and `range` are null when there is no Dive with the suit and no body weight. Nothing is stored. 400 `suit_invalid` for a thickness on a suit that has none, or an undergarment under anything but a drysuit.
+         */
+        get: {
+            parameters: {
+                query: {
+                    water: "fresh" | "salt" | "brackish";
+                    /** @description `none` is a dive without a suit */
+                    suit: "none" | "skin" | "wetsuit" | "semidry" | "drysuit";
+                    /** @description Wetsuit or semidry only */
+                    suitThicknessMm?: number;
+                    suitHood?: boolean;
+                    /** @description Drysuit only */
+                    suitUndergarment?: "light" | "medium" | "heavy";
+                    /** @description JSON: [{"volumeL": litres, "material": "aluminium" | "steel" | "carbon" (optional)}], 1 to 4; the catalogue gives both */
+                    cylinders: string;
+                    /** @description The unit of every amount in the answer, rounded to 0.5 kg or 1 lb (ADR 0014) */
+                    unit?: "kg" | "lb";
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {unknown} */
+                            unit: "kg" | "lb";
+                            total: null | number;
+                            range: null | {
+                                low: number;
+                                high: number;
+                            };
+                            /** @enum {unknown} */
+                            confidence: "low" | "medium" | "high";
+                            basis: null | ({
+                                /** @enum {string} */
+                                kind: "dives";
+                                dives: {
+                                    /** @description Link to the Dive: GET /dives/{id} */
+                                    diveId: string;
+                                    /** Format: date-time */
+                                    startsAt: string;
+                                    number: null | number;
+                                    /** @description In the answer's `unit` */
+                                    carried: number;
+                                    /** @description What it needed: carried, corrected by its feedback; in the answer's `unit` */
+                                    needed: number;
+                                    /** @description How much it counts: felt right twice, older Dives less */
+                                    weight: number;
+                                }[];
+                                /** @description In the answer's `unit` */
+                                personal: number;
+                            } | {
+                                /** @enum {string} */
+                                kind: "rule_of_thumb";
+                                /** @description In the answer's `unit` */
+                                rule: number;
+                                personalOffset: null | number;
+                                offsetFromSuits: number;
+                            });
+                            /** @description Each is part of the total; show them with their reason */
+                            adjustments: ({
+                                /** @enum {string} */
+                                kind: "cylinder";
+                                /** @description In the answer's `unit` */
+                                amount: number;
+                            } | {
+                                /** @enum {string} */
+                                kind: "water";
+                                /** @description In the answer's `unit` */
+                                amount: number;
+                                /** @enum {unknown} */
+                                water: "fresh" | "salt" | "brackish";
+                            } | {
+                                /** @enum {string} */
+                                kind: "personal_offset";
+                                /** @description In the answer's `unit` */
+                                amount: number;
+                            })[];
+                            /** @description What the answer had to assume or couldn't use; tell the User where to add it */
+                            missing: ({
+                                /** @enum {string} */
+                                kind: "body_weight";
+                            } | {
+                                /** @enum {string} */
+                                kind: "cylinder_material";
+                                diveIds: string[];
+                                planned: boolean;
+                            } | {
+                                /** @enum {string} */
+                                kind: "cylinder";
+                                diveIds: string[];
+                            } | {
+                                /** @enum {string} */
+                                kind: "suit_thickness";
+                            } | {
+                                /** @enum {string} */
+                                kind: "suit_undergarment";
+                            })[];
+                            reserve: {
+                                /** @description The cylinder pressure the estimate is for: neutral at 5 m with this much left */
+                                bar: number;
+                                /** @description The median of the Diver's logged end pressures, else 50 bar */
+                                fromDives: boolean;
+                            };
+                            leftOut: {
+                                /** @description Dives with lead and a suit that could not be used: no site, or a site without a water type (ADR 0025) */
+                                noWaterType: number;
+                            };
+                            /** @description The estimate is a starting point, never a substitute for this */
+                            weightCheck: {
+                                /** @description Always both, in this order; clients show them with every answer */
+                                steps: ("eye_level_empty_bc" | "neutral_at_5m_at_reserve")[];
+                                /** @description The pressure for the second step: the same as `reserve.bar` */
+                                reserveBar: number;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_data_not_confirmed";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                            /** @description The Provider a provider_* code is about (ADR 0027) */
+                            provider?: string;
+                            /** @description Its name, to put into the translated text */
+                            providerName?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_data_not_confirmed";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                            /** @description The Provider a provider_* code is about (ADR 0027) */
+                            provider?: string;
+                            /** @description Its name, to put into the translated text */
+                            providerName?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/dive-sites": {
         parameters: {
             query?: never;

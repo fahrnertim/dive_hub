@@ -40573,6 +40573,791 @@
         }
       }
     },
+    "/api/divers/{id}/lead-estimate": {
+      "get": {
+        "summary": "How much lead a Diver should carry in planned conditions: a starting point with a range and its reasons (ADR 0031)",
+        "description": "From the Diver's own Dives with the same suit set-up, adjusted for the cylinder and the water, else a rule of thumb from their body weight. Only for a User who keeps the Diver's logbook; others get 404 `diver_not_found`, as for body weights. Never certain: the answer always carries `range`, `basis`, `adjustments`, `missing` and the `weightCheck`; `total` and `range` are null when there is no Dive with the suit and no body weight. Nothing is stored. 400 `suit_invalid` for a thickness on a suit that has none, or an undergarment under anything but a drysuit.",
+        "parameters": [
+          {
+            "schema": {
+              "enum": [
+                "fresh",
+                "salt",
+                "brackish"
+              ]
+            },
+            "in": "query",
+            "name": "water",
+            "required": true
+          },
+          {
+            "schema": {
+              "enum": [
+                "none",
+                "skin",
+                "wetsuit",
+                "semidry",
+                "drysuit"
+              ]
+            },
+            "in": "query",
+            "name": "suit",
+            "required": true,
+            "description": "`none` is a dive without a suit"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "in": "query",
+            "name": "suitThicknessMm",
+            "required": false,
+            "description": "Wetsuit or semidry only"
+          },
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "suitHood",
+            "required": false
+          },
+          {
+            "schema": {
+              "enum": [
+                "light",
+                "medium",
+                "heavy"
+              ]
+            },
+            "in": "query",
+            "name": "suitUndergarment",
+            "required": false,
+            "description": "Drysuit only"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "cylinders",
+            "required": true,
+            "description": "JSON: [{\"volumeL\": litres, \"material\": \"aluminium\" | \"steel\" | \"carbon\" (optional)}], 1 to 4; the catalogue gives both"
+          },
+          {
+            "schema": {
+              "enum": [
+                "kg",
+                "lb"
+              ],
+              "default": "kg"
+            },
+            "in": "query",
+            "name": "unit",
+            "required": false,
+            "description": "The unit of every amount in the answer, rounded to 0.5 kg or 1 lb (ADR 0014)"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "unit",
+                    "total",
+                    "range",
+                    "confidence",
+                    "basis",
+                    "adjustments",
+                    "missing",
+                    "reserve",
+                    "leftOut",
+                    "weightCheck"
+                  ],
+                  "properties": {
+                    "unit": {
+                      "enum": [
+                        "kg",
+                        "lb"
+                      ]
+                    },
+                    "total": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number",
+                          "description": "Rounded to 0.5 kg or 1 lb. Null when it can't be told: no body weight and no Dive with this suit"
+                        }
+                      ]
+                    },
+                    "range": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "low",
+                            "high"
+                          ],
+                          "properties": {
+                            "low": {
+                              "type": "number"
+                            },
+                            "high": {
+                              "type": "number"
+                            }
+                          },
+                          "description": "Always shown with the total; null together with it"
+                        }
+                      ]
+                    },
+                    "confidence": {
+                      "enum": [
+                        "low",
+                        "medium",
+                        "high"
+                      ]
+                    },
+                    "basis": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "kind",
+                                "dives",
+                                "personal"
+                              ],
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "dives"
+                                  ]
+                                },
+                                "dives": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "required": [
+                                      "diveId",
+                                      "startsAt",
+                                      "number",
+                                      "carried",
+                                      "needed",
+                                      "weight"
+                                    ],
+                                    "properties": {
+                                      "diveId": {
+                                        "type": "string",
+                                        "description": "Link to the Dive: GET /dives/{id}"
+                                      },
+                                      "startsAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                      },
+                                      "number": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "type": "integer"
+                                          }
+                                        ]
+                                      },
+                                      "carried": {
+                                        "type": "number",
+                                        "description": "In the answer's `unit`"
+                                      },
+                                      "needed": {
+                                        "type": "number",
+                                        "description": "What it needed: carried, corrected by its feedback; in the answer's `unit`"
+                                      },
+                                      "weight": {
+                                        "type": "number",
+                                        "description": "How much it counts: felt right twice, older Dives less"
+                                      }
+                                    }
+                                  }
+                                },
+                                "personal": {
+                                  "type": "number",
+                                  "description": "In the answer's `unit`"
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "kind",
+                                "rule",
+                                "personalOffset",
+                                "offsetFromSuits"
+                              ],
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "rule_of_thumb"
+                                  ]
+                                },
+                                "rule": {
+                                  "type": "number",
+                                  "description": "In the answer's `unit`"
+                                },
+                                "personalOffset": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "number",
+                                      "description": "In the answer's `unit`"
+                                    }
+                                  ]
+                                },
+                                "offsetFromSuits": {
+                                  "type": "integer"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "adjustments": {
+                      "type": "array",
+                      "items": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind",
+                              "amount"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "cylinder"
+                                ]
+                              },
+                              "amount": {
+                                "type": "number",
+                                "description": "In the answer's `unit`"
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind",
+                              "amount",
+                              "water"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "water"
+                                ]
+                              },
+                              "amount": {
+                                "type": "number",
+                                "description": "In the answer's `unit`"
+                              },
+                              "water": {
+                                "enum": [
+                                  "fresh",
+                                  "salt",
+                                  "brackish"
+                                ]
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind",
+                              "amount"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "personal_offset"
+                                ]
+                              },
+                              "amount": {
+                                "type": "number",
+                                "description": "In the answer's `unit`"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      "description": "Each is part of the total; show them with their reason"
+                    },
+                    "missing": {
+                      "type": "array",
+                      "items": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "body_weight"
+                                ]
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind",
+                              "diveIds",
+                              "planned"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "cylinder_material"
+                                ]
+                              },
+                              "diveIds": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "planned": {
+                                "type": "boolean"
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind",
+                              "diveIds"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "cylinder"
+                                ]
+                              },
+                              "diveIds": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "suit_thickness"
+                                ]
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "suit_undergarment"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      "description": "What the answer had to assume or couldn't use; tell the User where to add it"
+                    },
+                    "reserve": {
+                      "type": "object",
+                      "required": [
+                        "bar",
+                        "fromDives"
+                      ],
+                      "properties": {
+                        "bar": {
+                          "type": "number",
+                          "description": "The cylinder pressure the estimate is for: neutral at 5 m with this much left"
+                        },
+                        "fromDives": {
+                          "type": "boolean",
+                          "description": "The median of the Diver's logged end pressures, else 50 bar"
+                        }
+                      }
+                    },
+                    "leftOut": {
+                      "type": "object",
+                      "required": [
+                        "noWaterType"
+                      ],
+                      "properties": {
+                        "noWaterType": {
+                          "type": "integer",
+                          "description": "Dives with lead and a suit that could not be used: no site, or a site without a water type (ADR 0025)"
+                        }
+                      }
+                    },
+                    "weightCheck": {
+                      "type": "object",
+                      "required": [
+                        "steps",
+                        "reserveBar"
+                      ],
+                      "properties": {
+                        "steps": {
+                          "type": "array",
+                          "items": {
+                            "enum": [
+                              "eye_level_empty_bc",
+                              "neutral_at_5m_at_reserve"
+                            ]
+                          },
+                          "description": "Always both, in this order; clients show them with every answer"
+                        },
+                        "reserveBar": {
+                          "type": "number",
+                          "description": "The pressure for the second step: the same as `reserve.bar`"
+                        }
+                      },
+                      "description": "The estimate is a starting point, never a substitute for this"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "import_not_waiting",
+                        "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "gas_not_breathable",
+                        "body_weight_not_found",
+                        "certification_not_found",
+                        "certification_changed",
+                        "certification_read_only",
+                        "certification_image_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "check_not_found",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "centre_not_found",
+                        "centre_changed",
+                        "centre_not_deletable",
+                        "centre_external_id_taken",
+                        "code_not_recognised",
+                        "code_not_a_person",
+                        "diver_choice_needed",
+                        "diver_has_other_account",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_not_stored",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_number_taken",
+                        "provider_numbers_off",
+                        "provider_number_nothing_to_set",
+                        "provider_unsupported",
+                        "push_run_active",
+                        "push_run_nothing_to_send",
+                        "push_run_not_found",
+                        "push_run_not_active",
+                        "push_run_going",
+                        "push_run_not_stopped",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "import_not_waiting",
+                        "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "gas_not_breathable",
+                        "body_weight_not_found",
+                        "certification_not_found",
+                        "certification_changed",
+                        "certification_read_only",
+                        "certification_image_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "check_not_found",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "centre_not_found",
+                        "centre_changed",
+                        "centre_not_deletable",
+                        "centre_external_id_taken",
+                        "code_not_recognised",
+                        "code_not_a_person",
+                        "diver_choice_needed",
+                        "diver_has_other_account",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_not_stored",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_number_taken",
+                        "provider_numbers_off",
+                        "provider_number_nothing_to_set",
+                        "provider_unsupported",
+                        "push_run_active",
+                        "push_run_nothing_to_send",
+                        "push_run_not_found",
+                        "push_run_not_active",
+                        "push_run_going",
+                        "push_run_not_stopped",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/dive-sites": {
       "get": {
         "summary": "One page of the instance's Dive sites, with how many match; with latitude and longitude only those nearby, nearest first",
