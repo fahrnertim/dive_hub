@@ -1,7 +1,7 @@
 ---
 title: A local, interactive development cycle
-summary: What Claude Code offers (Oct 2026) for a supervised feature cycle on a subscription (clarify, agree a design, then implement, check, review and fix in a loop) and how to route models per phase without breaking the prompt cache. Compares six setups and the process frameworks (Superpowers, Spec Kit, OpenSpec, BMAD). Recommends two sessions: a design session on the default model that ends in a brief, and a build session whose skill pins Sonnet, with fresh-context reviewers pinned per kind of review, at most 3 fix rounds and the stops of ADR 0054. Proposed as ADR 0055.
-status: proposed
+summary: What Claude Code offers (Oct 2026) for a supervised feature cycle on a subscription (clarify, agree a design, then implement, check, review and fix in a loop) and how to route models per phase without breaking the prompt cache. Compares six setups and the process frameworks (Superpowers, Spec Kit, OpenSpec, BMAD). Recommended project-made /design and /build skills (option C); the owner chose Superpowers as a plugin instead (option E), with its doc folders and its TDD, drafted as ADR 0055.
+status: decided
 date: 2026-10-23
 ---
 
@@ -28,6 +28,11 @@ supervised. The unattended path of [ADR 0054](../decisions/0054-unattended-imple
 - The evidence for process steps is thin. Most of the gain from repair loops comes in the first 3 to 4 rounds.
 - Anthropic's own guidance warns that a reviewer asked to find gaps will find some, even when the work is sound. The loop therefore needs a scope rule for findings, evidence on each finding, and a cap.
 - The smallest working version reuses what we have: the backlog format, `pnpm check`, the edit hook, `architecture-review`, the `STOP:` convention and the protected list. It adds two skills, one reviewer and a guide.
+
+**Owner's choice (2026-10-23, after this note):** Superpowers, option E below, rather than the recommended C. It is
+installed as the marketplace plugin, with its own `docs/superpowers/` folders and its `test-driven-development` in place
+of mattpocock `tdd`. The reasons: a maintained, more worked-out loop and updates from upstream. The overrides and the
+install slice are in [ADR 0055](../decisions/0055-local-dev-cycle.md). The analysis below is unchanged.
 
 Web research was done by the `researcher` subagent (Sonnet) on 2026-10-23 against the Claude Code docs, which cite
 versions up to v2.1.305. The three claims the recommendation rests on were re-read in the source by the session:
@@ -218,7 +223,7 @@ The owner can interrupt at any time (Esc), as in any session.
 | New moving parts | none | none | 2 skills, 1 subagent, a guide | as C plus an implementer protocol | a foreign process, its hooks, its file layout (`openspec/`, `specs/`) beside ours | scripts or a flag |
 | Fit with our docs | full | full | full (backlog brief, ADRs, spec) | full | overlaps ADRs, backlog and spec | n/a |
 
-**Recommendation: C.**
+**Recommendation of this note: C** (the owner chose E, see the top).
 - It meets all five wishes.
 - It keeps every context small and switches the model only where the context is small.
 - It reuses the backlog format, so a brief agreed locally can later run unattended.

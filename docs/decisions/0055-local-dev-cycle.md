@@ -1,180 +1,169 @@
 ---
-title: "ADR 0055: A local, supervised development cycle"
-summary: A feature goes through two sessions. /design on the default model asks question rounds and writes an agreed brief in docs/backlog/. /build, pinned to Sonnet, implements, checks and runs two fresh-context reviewers (architecture on Opus, brief on Sonnet), with at most 3 fix rounds, the stops of ADR 0054, an owner prompt for protected paths and a review log in the brief. Models are routed by session and subagent, never by a switch mid-session. The unattended path of ADR 0054 stays built and off.
+title: "ADR 0055: Feature work with Superpowers"
+summary: Local feature work follows obra/superpowers, installed as the marketplace plugin and enabled in the project settings. The flow is brainstorming, a design doc, writing-plans, then subagent-driven development in a fresh session, with its TDD, per-task review, fix loop, final review and branch finish. Designs and plans live in docs/superpowers/, as the plugin ships it. Our gates, ADRs, spec, architecture-review and the owner's merge stay. Overrides cover frontmatter, ADR drafts, test rules, review checklists, finishing a branch and protected paths. Superpowers' TDD replaces mattpocock tdd. The unattended path of ADR 0054 stays built and off.
 status: proposed
 date: 2026-10-23
 ---
 
-# ADR 0055: A local, supervised development cycle
+# ADR 0055: Feature work with Superpowers
 
 ## Status
-Proposed – 2026-10-23. Drafted by an agent; the owner accepts it (or doesn't).
+Proposed – 2026-10-23. Drafted by an agent after the owner's choices of 2026-10-23 (below); the owner accepts it
+(or doesn't). Nothing is installed yet: the install is the next slice.
 
 ## Context
-The owner wants a feature cycle that runs locally in Claude Code on the subscription:
-- the owner describes a feature in a sentence or two;
-- the agent researches and asks clarifying questions;
-- the design is agreed before code;
-- a loop runs: implement, check, independent review, fix, until clean or a stop;
-- a model is picked per phase without the owner choosing each time.
+The owner wants a local feature cycle in Claude Code on the subscription:
+- a feature described in a sentence or two;
+- research and clarifying questions;
+- an agreed design before code;
+- a loop of implement, check, independent review and fix;
+- the model picked per task automatically.
 
-The [research note](../research/2026-10-23-dev-cycle-research.md) found three things:
+The [research note](../research/2026-10-23-dev-cycle-research.md) compared six setups. It first recommended project-made
+`/design` and `/build` skills (option C). Superpowers (option E) does the same with a more worked-out loop and is
+maintained upstream. After seeing what it would change, the owner chose it on 2026-10-23:
 
-1. **The building blocks are stable** in Claude Code: skills and subagents that pin a `model`, hooks that can allow, deny
-   or ask, and subagents that can be resumed.
-2. **Model routing is decided by the prompt cache.** Each model has its own cache, so a switch inside a session re-reads the whole context
-   uncached, and `opusplan` does this on every plan toggle. A subagent on another model leaves the main cache alone.
-3. **The evidence for process steps is thin.** Repair loops gain most in the first 3 to 4 rounds, and a reviewer asked to
-   find gaps finds some even in sound work.
+- **Install form:** the marketplace plugin, not copied skills.
+- **Docs:** Superpowers' own folders (`docs/superpowers/specs/`, `docs/superpowers/plans/`).
+- **Tests first:** Superpowers' `test-driven-development` replaces our `tdd` (mattpocock).
 
-What exists already:
-- the backlog's hand-over format ([ADR 0054](0054-unattended-implementation.md));
-- `pnpm check` ([ADR 0023](0023-faster-checks.md));
-- the edit hook and the module rules ([ADR 0053](0053-module-boundaries.md));
-- the `architecture-review` subagent;
-- the `STOP:` hand-back and the protected list (`PROTECTED` in `scripts/agent-lib.mjs`);
-- the cost rules of [ADR 0039](0039-working-economically.md).
+Superpowers' source was read at commit `2ce8aa1` (2026-10-21) for this ADR. Not every bundled file is read yet; that
+is the install slice's first step.
 
 ## Decision
 
-### Two sessions per feature
-| Phase | Where | Model | Ends with |
+### Install
+- Superpowers (`obra/superpowers`, MIT) as the **plugin** `superpowers@claude-plugins-official`.
+- It is enabled for this project in `.claude/settings.json`, so a fresh clone gets the same setup. The setting
+  (`enabledPlugins`) is to be confirmed against the docs in the install slice.
+- The installed version and commit are recorded in [docs/skills.md](../skills.md).
+- This is an **exception** to the rule in docs/skills.md that skills are copied and pinned. An update is accepted only
+  after its changed files are read, as any skill is vetted. If the plugin cannot be kept from updating itself, the
+  owner reads the release notes on each update instead. Which of the two applies is found out in the install slice.
+
+### The flow
+| Step | Superpowers skill | Session | Output |
 |---|---|---|---|
-| 1. Request | the owner types `/design <a sentence or two>` in a fresh session | default (Opus 5.5) | — |
-| 2. Research and questions | same session; `code-search` (Haiku) and `researcher` (Sonnet) for breadth | default; subagents as defined | question rounds answered |
-| 3. Design agreement | same session | default | the brief and any drafts committed (docs only); the owner's explicit yes |
-| 4. Build loop | the owner types `/build docs/backlog/NNNN-x.md` as the **first** message of a fresh session | Sonnet (the skill pins it) | a clean branch and a hand-over, or `STOP: <reason>` |
-| 5. Merge | the owner | — | merged, or sent back |
+| 1. Feature in a sentence or two | `brainstorming` (starts itself) | design session, default model (Opus 5.5) | questions to the owner, one at a time |
+| 2. Design agreed | `brainstorming` | same | `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`, committed; plus the documents below where they apply |
+| 3. Plan | `writing-plans` | same | `docs/superpowers/plans/…`: 2–5 minute tasks with files, signatures, tests and checks |
+| 4. Build loop | `subagent-driven-development` (or `executing-plans`), `test-driven-development`, `requesting-code-review`, `receiving-code-review`, `verification-before-completion` | a **fresh** session, given the plan's path | a branch with one commit per task, each reviewed |
+| 5. Finish | `finishing-a-development-branch` | same | the branch kept or pushed as a PR; the owner merges |
 
-The model follows the kind of work automatically:
-- `/design` runs on the session default.
-- `/build` pins `model: sonnet`. Its loop runs inside one turn, so only the small first request is a model switch.
-- When a stop hands back and the owner answers, the session default (Opus) takes that judgement call. Running `/build` again goes back to Sonnet.
-- Nothing switches models in the middle of a long context.
+Steps 1 to 3 end the design session, which follows the one-slice-per-session rule of
+[ADR 0039](0039-working-economically.md). The hand-over prompt for the build session is the plan's path and
+"execute it with subagent-driven-development".
 
-### Phase 2: question rounds
-The agent:
-- finds facts itself (code, ADRs, outside sources) and asks the owner only for decisions;
-- asks the whole frontier of open decisions in one round, numbered, each with its recommended answer, worded so that "yes" accepts it (the method of mattpocock's `grilling`, proposed for installing);
-- repeats until no branch of the design is left assumed.
+**Models.** Superpowers picks the model for each subagent it dispatches, and its rule is followed as shipped:
+- the cheapest tier for transcription-like tasks;
+- a standard tier for integration work;
+- the most capable model for design and the final review;
+- a mid tier at least for reviewers;
+- a model one tier up for fix rounds 4 and 5.
 
-Planning is skipped for a change whose diff fits in one sentence, as Anthropic's guidance says. Such a change is an ordinary supervised slice.
+Our `researcher` (Sonnet) and `code-search` (Haiku) stay. The main session runs on the default model. No model is
+switched in the middle of a session, because a switch re-reads the whole context uncached (research note, section 1).
 
-### Phase 3: what is recorded where
-- **The brief** is a backlog task, `docs/backlog/NNNN-short-name.md`, in the hand-over format with one more section, `## Design`. It holds:
-  - the modules touched and their interfaces and seams (codebase-design vocabulary);
-  - data and API changes, and client duties;
-  - the tests;
-  - an end-to-end check of "done";
-  - what is out of scope.
-- **Other changes:**
-  - behaviour goes into `docs/spec/`;
-  - new terms go into `docs/glossary.md`;
-  - a new API duty goes into `docs/spec/clients.md`;
-  - a decision that is hard to reverse, surprising and a real trade-off becomes an **ADR draft** with `status: proposed`.
-    The owner accepts it; the cycle never accepts an ADR.
-- **Agreement:** on the owner's explicit yes the agent sets the brief to `status: ready` and commits the documents. A
-  brief agreed this way can later run unattended under ADR 0054 without rewriting.
+### What stays ours
+- **Gates.** The edit hook, `pnpm check` (also as the pre-commit hook, so it runs on every task commit), `pnpm check:full`
+  before a push, CI ([ADR 0023](0023-faster-checks.md), [ADR 0053](0053-module-boundaries.md)).
+- **Architecture review.** The `architecture-review` subagent runs once before a branch is finished. It does not run
+  before every task commit. This changes AGENTS.md's "before a code commit" to "before finishing a branch".
+- **Records.**
+  - Behaviour of the product goes into `docs/spec/`.
+  - New terms go into `docs/glossary.md`.
+  - A new API duty goes into `docs/spec/clients.md`.
+  - A decision that is hard to reverse, surprising and a real trade-off becomes an **ADR draft** with `status: proposed`,
+    linked from the design doc. The owner accepts every ADR.
+- **The rest.** Rule #1, and the working-economically rules.
+- **The owner's merge.** Nothing merges itself.
 
-### Phase 4: the build loop
-1. Read the brief and AGENTS.md. Create the branch `feature/NNNN-short-name` from `main`.
-2. Implement with tests first. Run `pnpm check` until it is green.
-3. **Review**: two read-only subagents run in parallel, each in a fresh context. Each gets the brief's path, the base commit and its checklist, and nothing of the session's reasoning.
-   - `architecture-review` (`model: opus`): standards, meaning ADR 0053, the baselines, the ADRs the diff touches, AGENTS.md.
-   - `brief-review` (new, `model: sonnet`): requirements that are missing, work nobody asked for, requirements implemented wrongly. It quotes the brief line for each.
-   - Both report their axis separately and use the severities *blocker*, *should fix* and *consider*.
-   - A finding without `path:line` and the rule, ADR or brief line it breaks doesn't count.
-   - Reviewers flag only what affects correctness, an accepted decision or the brief. "No findings" is a valid answer.
-4. **Fix rounds**:
-   - Only *blocker* and *should fix* enter a round; *consider* goes to the log.
-   - A round is the fix, `pnpm check`, then a **scoped re-review** of the fix diff only. The same reviewer is resumed with `SendMessage`. It answers ADDRESSED or NOT ADDRESSED per finding, plus any new breakage in the fix diff. Points outside the fix go to the log and don't extend the loop.
-   - The implementer may **dispute** a finding with evidence. A disputed finding is not fixed and not dropped: it goes to the owner with both sides.
-5. **Commit** on the branch when the loop is clean. Append the **review log** to the brief, then write the hand-over. The log holds, per round, the findings, what was done, the disputes and the tokens (`node scripts/token-report.mjs`).
+### Overrides (recorded in docs/skills.md; our rules win)
+1. **Frontmatter.** Design docs and plans under `docs/superpowers/` get our frontmatter (`title`, `summary`, `status`,
+   `date`) above Superpowers' own header. `docs/index.md` lists the two folders, not each file.
+2. **Working files.** `.superpowers/` (briefs, reports and review diffs of a run) is gitignored. What is worth keeping
+   from a run goes into the plan or the design doc.
+3. **Tests first.** Superpowers' `test-driven-development` replaces mattpocock `tdd`. `codebase-design` stays, without
+   its "used by tdd" note. Our test rules in [docs/development.md](../development.md) win over the skill's examples:
+   tests against a real PostgreSQL, one `vi.fn`, no `vi.mock`, browser tests with an area tag.
+4. **Review checklists.**
+   - Task reviewers get, as the plan's "Global Constraints", the rules of ADR 0053 and the ADRs the plan touches.
+   - The final whole-branch review is followed by `architecture-review`.
+   - A finding counts only with `path:line` and the rule, ADR or plan line it breaks.
+5. **Finishing a branch.** Only "keep the branch" or "push and open a PR" are offered. A local merge is never chosen.
+6. **ADRs and stops.**
+   - A finding parked "with a ruling" at the fix-loop cap goes into the finish summary, so the owner sees every ruling.
+   - A task that would change an accepted ADR stops and hands back. This uses the `STOP: <reason>` convention of
+     [ADR 0054](0054-unattended-implementation.md).
+7. **Protected paths.**
+   - The owner's four groups are migrations and `db/schema.ts`, auth, providers, and `docs/decisions/**`.
+   - In an interactive session, an edit of one of them asks the owner. It is never silent, even in auto mode or by a
+     subagent. This is a `PreToolUse` hook answering *ask*, next to the unattended hook that denies.
 
-### Stops (the build turn ends with `STOP: <reason>` as its last line)
-1. **Three fix rounds** are done and findings are still open.
-2. **A round closed no finding** (no progress).
-3. **`pnpm check` failed three times** on the same problem (ADR 0054's cap).
-4. **An ADR would have to change**, the brief is unclear or contradicts the code, or a choice is the owner's.
+### Relation to ADR 0054 and the backlog
+- The unattended path stays built and off.
+- `docs/backlog/` keeps its format for unattended tasks. A Superpowers plan is not a backlog task. Joining the two needs
+  an ADR of its own.
+- The review rounds per task that Superpowers logs are the evidence the ladder's step 3 asks for ("review findings the
+  owner mostly agrees with").
 
-Before stopping, the agent commits what is sound and writes the review log, as ADR 0054's runner does.
+### The install slice (next session)
+1. Read every file the plugin bundles at the version to be installed: `hooks/` (`session-start`, `run-hook.cmd`),
+   `scripts/`, `index.js`, `package.json`, and every skill's scripts and prompts, among them brainstorming's Node server.
+   Record the result in the decisions log of docs/skills.md.
+2. Install the plugin and enable it in `.claude/settings.json`.
+3. Write the overrides into docs/skills.md, gitignore `.superpowers/`, and remove `.claude/skills/tdd` with its
+   `skills-lock.json` entry.
+4. Add the interactive *ask* hook for protected paths, with tests in `scripts/agent-lib.test.mjs`.
+5. Change AGENTS.md: point feature work to this ADR, and say "before finishing a branch" for the architecture review.
+   AGENTS.md is at 3,993 of 4,000 characters, so something must be shortened first.
+6. Update the model table in docs/agents/working-economically.md.
 
-### Protected paths: the owner is asked
-The list is ADR 0054's `PROTECTED`. That covers migrations and `db/schema.ts`, auth, providers, `docs/decisions/**`, and
-the harness and what decides "green".
-
-**In `/build`:**
-- A `PreToolUse` hook declared by the skill answers **ask** for an edit of a protected path, so the owner approves or refuses each one. It works the same way in auto mode.
-- An edit the owner refuses becomes a stop.
-- `docs/decisions/**` is never edited in `/build`. A needed ADR change is stop 4.
-
-**In `/design`:** ADR drafts and spec changes are written with the owner present. The ADR stays `proposed` until the owner accepts it.
-
-The unattended hook (`AGENT_UNATTENDED=1`, deny) is unchanged.
-
-### Relation to ADR 0054
-This ADR doesn't move the ladder and doesn't enable the unattended workflow (built, off).
-- It is step 1, supervised slices, with the review loop of step 3 run under the owner's eyes.
-- Its review logs are the evidence that step 2 and step 3 need before anyone moves up. Their criteria are "PRs that need few review rounds" and "review findings the owner mostly agrees with".
-- Pinning `architecture-review` to Opus also changes the reviewer of an unattended run, which ADR 0054 left on `inherit`.
-  That sentence of ADR 0054 is amended when this ADR is accepted.
-
-### The first slice
-Build:
-- the two skills `/design` and `/build`;
-- the `brief-review` subagent;
-- the model pin on `architecture-review`;
-- the `ask` hook in `/build`;
-- `docs/agents/dev-cycle.md`;
-- the `## Design` and `## Review log` sections in the backlog README;
-- one line in AGENTS.md;
-- `grilling`, installed if the owner approves.
-
-**Done** when one small real feature has gone from `/design` to a merged branch with all of these true:
-- at most 3 rounds;
-- a filled review log;
-- `token-report` shows the build turn on Sonnet and the reviewers on their models;
-- the protected-path prompt fired in a test edit;
-- the owner agrees with most findings.
-
-The tokens per phase go into a dated research note.
-
-**What waits:**
-- an Opus orchestrator with Sonnet implementer subagents (when build sessions pass about 200,000 tokens);
-- a token budget enforced by a hook;
-- a Stop hook or `/goal` loop;
-- rounds per brief in the drift report;
-- dynamic workflows and agent teams (preview, experimental).
+**Done** when the plugin is active in a fresh session, `/usage` shows its startup text, and the *ask* hook fires on a
+test edit of `db/schema.ts`. Then one small real feature goes through all five steps to a branch you review. Its tokens
+(`node scripts/token-report.mjs`), review rounds and the share of findings you agreed with go into a dated research note.
 
 ## Consequences
-**Cost.**
-- Each phase starts with a small context.
-- Each subagent pays a cold start, a prefix of about 47,500 tokens. Subagents were 4.4 % of the measured cost.
-- One build switches models once, at its first small request.
-- Implementation, most of the requests, runs on Sonnet: half of Opus at list prices. The ratio on a plan is not published.
+**What it gives.** A maintained loop with the most worked-out review handling of the options compared:
+- a fresh implementer per task;
+- two verdicts per task, on the spec and on code quality;
+- fix rounds that resume the implementer;
+- a stronger model from round 4;
+- rulings at the cap.
 
-**The owner's work.** It moves to the question rounds, the brief and the merge. A vague brief now ends in a stop instead of a guess.
+Models are picked per dispatch without the owner.
 
-**Risks.**
-- A design misread by Sonnet. The brief and the Opus architecture review answer it, and ADR 0039's quality signals watch for it. Among them: more findings on Sonnet slices.
-- Reviewers inventing work. The scope rule, the evidence rule, the cap and the owner's reading of the log answer it.
+**What it costs.**
+- A second design record (`docs/superpowers/`) beside ADRs and research notes, kept consistent through override 1 and
+  the ADR drafts.
+- A startup text in every session from the plugin's hook.
+- Many more fresh contexts: each subagent pays a prefix of about 47,500 tokens before it reads anything, and
+  subagents were 4.4 % of the measured cost so far. The trial feature is compared with the median of earlier slices.
+- `pnpm check` runs on every task commit.
+- A plugin that updates itself would bring hook code nobody has read. The update rule above is the answer, and how it is
+  enforced is found out in the install slice.
 
-**Untried at the time of writing.** Two documented behaviours are checked in the first slice:
-- whether a skill's `model` holds for a whole agentic turn;
-- how a skill's `hooks` are scoped.
-
-If the model pin doesn't hold, `/design` ends by printing `claude --model sonnet "/build <brief>"` for the owner to paste.
+**Superpowers' choices that differ from the research note, accepted with the plugin:**
+- **Round cap.** The cap is 5 fix rounds, not 3. The research found most of the gain in the first 3 to 4 rounds.
+- **Planning for small changes.** `brainstorming` starts on most requests, including small ones; it has a branch for
+  "quick, clear tasks".
+- **Worktrees.** It prefers a git worktree per feature (see question 2).
 
 **Considered:**
-- `opusplan`: an uncached switch per toggle, and the design context is carried into the build.
-- A single session in which the owner switches models: what we have today.
-- Installing Superpowers, Spec Kit, OpenSpec or BMAD: a second documentation and process system beside ours.
-- Agent teams and dynamic workflows: experimental or preview, several times the tokens.
+- Project-made skills (`/design`, `/build`; the research note's option C).
+- Copied Superpowers skills without the plugin.
+- Keeping the docs in our own formats.
+- Keeping mattpocock `tdd`.
+
+The owner chose otherwise on 2026-10-23.
 
 ## Owner's questions
-1. **Install `grilling`** (mattpocock/skills, MIT, one 2 KB `SKILL.md`, no scripts, vetted 2026-10-23)? Or write its question-round rules into `/design` and install nothing?
-2. **Pin `architecture-review` to Opus.** This also changes the unattended runner's reviewer, which amends one sentence of ADR 0054. Or keep `inherit` and pass `model: opus` per call from `/build`?
-3. **Protected paths in `/build`.** *Ask* the owner per edit (proposed: a schema change needs a yes, not a new session)? Or stop and hand back as the unattended path does? Should the harness group (`.claude/`, `scripts/check*`, `package.json`, …) be asked too, or only the owner's four groups?
-4. **`status: ready`.** May the agent set it on your explicit yes in `/design`, or do you set it by hand?
-5. **Effort.** Keep the default (medium) everywhere, or raise `/design` and `architecture-review` to high? On the 5.5 models a change of effort keeps the cache.
-6. **Branch and commit.** Should `/build` create `feature/NNNN-…` and commit there for you to merge (proposed)? Or leave the changes uncommitted for your review?
+1. **Round cap.** Keep Superpowers' 5 rounds, or override it to 3 as the ladder said?
+2. **Worktrees.** A second checkout needs its own `pnpm install`, and the browser tests need their own ports and test
+   database; neither is tried on Windows. Until a trial shows it works, should the branch stay in the main checkout?
+3. **Protected-path prompt.** Only the four groups above, or also the harness (`.claude/`, `scripts/check*`,
+   `package.json`, …) as in ADR 0054?
+4. **`architecture-review`.** Keep `inherit`, or pin it to Opus so a session started on Sonnet still gets an Opus
+   review? Pinning changes the reviewer of unattended runs too, which amends one sentence of ADR 0054.
+5. **Plugin updates.** Read the changed files before each update (stricter, needs the update kept off), or read only the
+   release notes?
