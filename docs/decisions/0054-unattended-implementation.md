@@ -163,6 +163,13 @@ Switching off is: set `AGENT_SCHEDULE_ENABLED` to anything but `true`, or disabl
   late by a request.
 - A run costs about as much as a supervised session plus a full check (about 10 minutes of CI time) and one
   cold start of the context (about 18,000 tokens before the task is read, measured 2026-10-23).
+- **Model: Sonnet** (`model: sonnet` in the runner's definition). The owner's subscription usage is almost all Sonnet
+  (`/usage` on 2026-10-23: 94 %), the task is straightforward implementation against a written task
+  ([ADR 0039](0039-working-economically.md), point 4), and a larger default model would draw the limit down faster.
+  The `architecture-review` subagent keeps `inherit`, i.e. the model the CLI starts with.
+- **Rollout: built, not enabled** (owner, 2026-10-23, to avoid extra cost for now). Nothing runs until the secret is
+  added and someone presses "Run workflow"; the schedule stays off. Enabling is a separate decision, after the
+  cost of one run is known.
 - Not decided: auto-merge (step 4), the agent review loop (step 3), cost per merged PR as a report column (needs the
   PR list; add when there are PRs), and an owner cadence for reading code (a habit, not a mechanism).
 - Not tried at the time of writing: a full run on GitHub (it needs the secret and the merged workflow); the pieces

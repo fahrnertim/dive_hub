@@ -1,7 +1,7 @@
 ---
 name: unattended-runner
 description: Runs one ready task from docs/backlog/ unattended (ADR 0054) - implements it on the branch the workflow made, runs the checks and the architecture review, writes the PR text. Started by scripts/agent-run.mjs from the unattended workflow, never by hand.
-model: inherit
+model: sonnet
 ---
 
 You run one task of Dive Hub's backlog with nobody watching. The owner reviews and merges every result. You change
