@@ -223,3 +223,42 @@ what `pnpm check` runs.
   other spec files.
 - *Dropped after measuring:* taking `@layout` off the width sweep (the sweep is 22 s of worker time), and not
   building the web client when no web file changed (`vite build` takes 0.6 s).
+
+## Amendment 2026-10-22: lint, module boundaries, CI and a git hook
+Why: the rules for code quality and module boundaries lived in prose, and nothing failed when they were broken
+([guardrails research](../research/2026-10-22-agent-guardrails.md)). Asked by the owner on 2026-10-22, without
+refactoring code yet.
+
+- **A new step, "lint and module boundaries"** (`lint` in `STEPS`, after the typecheck), run by
+  `scripts/check-lint.mjs`:
+  - ESLint (`eslint.config.mjs`): typescript-eslint's recommended rules and `sonarjs/cognitive-complexity` at 15.
+  - dependency-cruiser (`.dependency-cruiser.cjs`): no cycles (type imports count), `db/` imports no domain module,
+    route files don't import `drizzle-orm`, `ui/` imports no page ([ADR 0053](0053-module-boundaries.md), proposed).
+  - `pnpm check` lints the changed files (dependency-cruiser follows their imports, so a new cycle through them is
+    found); `pnpm check:full` and `pnpm lint` lint everything. Like the other steps it records its green run.
+  - Changed lint configuration or baselines lint everything and run no test. `.github/` and `.githooks/` are quiet.
+- **Baselines; only new problems fail.** The problems of 2026-10-22 are in `eslint-suppressions.json` (ESLint's bulk
+  suppressions, 84: 50 functions over the complexity budget, 34 others) and `.dependency-cruiser-known-violations.json`
+  (23). **A baseline may only shrink:**
+  - ESLint fails when a suppressed problem no longer occurs; dependency-cruiser's run over everything does the same
+    for a known violation. `pnpm lint:baseline` takes fixed problems out and never adds one.
+  - A baseline with an entry that is new or counts more than at `HEAD` fails, also when another entry went at the same
+    time (a fixed problem can't be swapped for a new one). In CI the comparison is with the base of the pull request
+    or the commit before a push (`BASELINE_REF`; after a force-push, the commit before `HEAD`).
+  - A change to `.claude/hooks/lint-file.mjs` runs the check script's tests and lints everything (the rest of
+    `.claude/` stays quiet).
+  - Thresholds are not raised to make something pass.
+- **Only problems are printed** ([ADR 0039](0039-working-economically.md)): nothing when all is well, no full reports.
+- **CI** (`.github/workflows/check.yml`) runs `pnpm check:full` on every push to `main` and every pull request,
+  with PostgreSQL 18 as a service and Playwright's Chromium, cached by Playwright's version
+  (`PLAYWRIGHT_CHANNEL=chromium`; on a laptop the tests keep using the installed Edge). This is the "something that
+  runs it unattended" the amendment of 2026-10-08 waited for; whether the full check by hand before a push can now go
+  is left to the owner once CI has run green for a while.
+- **A pre-commit git hook** (`.githooks/pre-commit`) runs `pnpm check`. Installed per clone with `pnpm hooks:install`
+  (`core.hooksPath`); not with `prepare`, because the Docker build has no `.git`. The pre-push hook considered on
+  2026-10-08 stays rejected: CI runs the full check instead.
+- **After every edit by an agent**, a Claude Code PostToolUse hook (`.claude/hooks/lint-file.mjs`) runs the same lint on
+  the edited file (about 5 s) and returns problems to the agent.
+- *Considered:* Biome (faster, but no cognitive-complexity rule with SonarJS's definition and no bulk suppressions);
+  eslint-plugin-boundaries instead of dependency-cruiser (see ADR 0053); type-aware ESLint rules (slower on every
+  edit; can come later).

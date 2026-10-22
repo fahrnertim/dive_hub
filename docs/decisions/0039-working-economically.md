@@ -56,3 +56,11 @@ short section in AGENTS.md. Not decided: shortening `docs/index.md` (expected sa
   compaction triggered.
 - `autoCompactWindow` and the subagent definitions were taken from Claude Code's documentation (2.1.287) and
   not tried before this ADR; the first sessions show whether they act as described.
+
+## Amendment 2026-10-22: tooling in the agent loop stays quiet
+With the guardrails of [ADR 0023](0023-faster-checks.md)'s amendment of 2026-10-22, tools run inside a session:
+
+- **Hooks and check steps print only problems**, nothing when all is well, and never a full report. The edit hook
+  (`.claude/hooks/lint-file.mjs`) costs no context on a clean edit and about 5 s of waiting.
+- **The `architecture-review` subagent runs on the default model** (point 4: review stays there), once per slice
+  that changes code, and returns findings only. Its fresh context is the point; it is not used for search.

@@ -62,9 +62,12 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 
 | Task | Command |
 |---|---|
-| **Checks while working** | `pnpm check` (`npx pnpm@12.8.1 check`): typecheck, the unit tests whose imports changed, and the browser tests of the areas touched, picked from git's changed files ([ADR 0023](decisions/0023-faster-checks.md)). `--dry` shows the plan; `--files a,b` plans for given paths; `--base <ref>` compares with another commit. A Dive sites change takes about 1½ min. |
+| **Checks while working** | `pnpm check` (`npx pnpm@12.8.1 check`): typecheck, lint and module boundaries of the changed files, the unit tests whose imports changed, and the browser tests of the areas touched, picked from git's changed files ([ADR 0023](decisions/0023-faster-checks.md)). `--dry` shows the plan; `--files a,b` plans for given paths; `--base <ref>` compares with another commit. A Dive sites change takes about 1½ min. |
 | **Checks before a commit** | `pnpm check` again, green on the commit's final state. It runs everything by itself when the change touches shared code. |
-| **Checks before a push or a release** | `pnpm check:full`: everything (about 10 min in October 2026). Nothing else runs the whole suite: there is no CI yet. |
+| **Checks before a push or a release** | `pnpm check:full`: everything (about 10 min in October 2026). CI (`.github/workflows/check.yml`) runs the same on every push to `main` and every pull request, with PostgreSQL as a service and Playwright's Chromium (cached) instead of Edge. |
+| **Git hook** | `pnpm hooks:install` once per clone: sets `core.hooksPath` to `.githooks/`, whose `pre-commit` runs `pnpm check` on the working tree (not only what is staged), so with only documentation changed it passes at once. |
+| **Lint and module boundaries** | `pnpm lint` checks every file: ESLint (`eslint.config.mjs`: typescript-eslint's recommended rules, cognitive complexity at most 15) and dependency-cruiser (`.dependency-cruiser.cjs`: no cycles, `db/` imports no domain module, route files don't import `drizzle-orm`, `ui/` imports no page; [ADR 0053](decisions/0053-module-boundaries.md), proposed). Problems that existed on 2026-10-22 are in `eslint-suppressions.json` (84) and `.dependency-cruiser-known-violations.json` (23): only new ones fail, and both may only shrink. After fixing one, `pnpm lint:baseline` takes it out; the check fails until then. Prints only problems. Also runs after every edit by Claude Code (`.claude/hooks/lint-file.mjs`, about 5 s). |
+| **Architecture review** | The `architecture-review` subagent (`.claude/agents/architecture-review.md`) reviews a slice's diff against ADR 0053, the ADRs it touches and the baselines, read-only, before the commit. |
 | All tests | `pnpm test` (DB tests create and drop their own database; skipped if PostgreSQL is unreachable). Web tests (`apps/web/test`) cover units/formatting and translation completeness. |
 | New UI text | Add the key to `en.json` and `de.json` (tests fail otherwise); use `t('…')`, `<Trans>` for markup |
 | New API error | Add a code to `PROBLEMS` in `problems.ts`, regenerate the API client, add `errors.<code>` to both translations |
@@ -102,6 +105,8 @@ Garmin's official SDK automatically when present ([samples](../samples/README.md
 
 - **TypeScript 7** (native compiler) type-checks everything. `packages/api-client` also has
   **TypeScript 5.9** because `openapi-typescript` needs the JavaScript compiler API that TS 7 dropped.
+  For the same reason the root has **TypeScript 6.0** for the lint tools (typescript-eslint supports up to 6.0);
+  `packageExtensions` in `pnpm-workspace.yaml` hands it to dependency-cruiser, which doesn't declare it.
 - **TypeBox 1.x** (`typebox` package) is used with `@fastify/type-provider-typebox` 6. `drizzle-typebox`
   still targets `@sinclair/typebox` 0.34, so API schemas are written by hand for now (ADR 0009).
 - **Drizzle 0.45** (stable 0.x API, `relations()` style); 1.0 is in beta.
