@@ -1,6 +1,6 @@
 ---
 title: "ADR 0053: Module boundaries"
-summary: The server in three layers (routes → services → db, every query in a service, vocabulary.ts below db); the imports between its domain modules as an enforced allow-list in .dependency-cruiser.cjs, changed there without a new ADR; the web client's shared components import no page; no import cycles. Checked by dependency-cruiser against a baseline of the 7 violations left. Fixes done - the runtime cycle diver-service ↔ merge through DiverError, db/schema.ts importing from sites/, and the three server type cycles.
+summary: The server in three layers (routes → services → db, every query in a service, vocabulary.ts below db); the imports between its domain modules as an enforced allow-list in .dependency-cruiser.cjs, changed there without a new ADR; the web client's shared components import no page; no import cycles. Checked by dependency-cruiser against a baseline of the 6 violations left. Fixes done - the runtime cycle diver-service ↔ merge through DiverError, db/schema.ts importing from sites/, the three server type cycles, and the queries out of routes.ts.
 status: accepted
 date: 2026-10-22
 ---
@@ -76,7 +76,7 @@ No import cycle, not even through a type import, in either app.
   allows; `ui/` imports no page. It runs in `pnpm check` (changed files), `pnpm check:full`, CI and
   after every edit by an agent ([ADR 0023](0023-faster-checks.md), amendment of 2026-10-22).
 - The violations of 2026-10-22 are in `.dependency-cruiser-known-violations.json`: 23 found, 22 left once
-  `vocabulary.ts` was allowed below `db/`. 19 left after the DiverError fix, 10 after moving the import types down to `db/import-types.ts`, 7 after the three type cycles. Only new ones fail; the file may only shrink. After fixing one,
+  `vocabulary.ts` was allowed below `db/`. 19 left after the DiverError fix, 10 after moving the import types down to `db/import-types.ts`, 7 after the three type cycles, 6 after the queries left `routes.ts`. Only new ones fail; the file may only shrink. After fixing one,
   `pnpm lint:baseline` takes it out.
 - The `architecture-review` subagent (`.claude/agents/architecture-review.md`) reviews each slice against this ADR.
 
@@ -89,7 +89,10 @@ No import cycle, not even through a type import, in either app.
    `MAX_DEPTH_M`, `ASCENT_RATE_M_PER_MIN` and `SAFETY_STOP` moved into `planning/gas-plan.ts`; `tidyName` moved to
    `divers/diver-name.ts`; their callers import them from the new homes. The `buddy-service` ↔ `diver-service`
    cycle was not type-only: `diver-service` imported the function `tidyName`.
-4. Queries out of the 6 route files, the largest first (`routes.ts`, `dives/routes.ts`).
+4. Queries out of the 6 route files, the largest first (`routes.ts`, `dives/routes.ts`). **`routes.ts` done 2026-10-22 (7 → 6):**
+   the list, neighbours and samples queries moved to `dives/logbook-service.ts`; the Import reads (`recentImports`,
+   `findImport`, `decisionsOf`) to `imports/import-service.ts`; the managed-Diver lookup is `managedDiverIds` of
+   `dives/dive-service.ts`. Five route files left, `dives/routes.ts` next.
 5. `api.ts` ↔ `lib/logbook.ts` in the web client.
 
 ## Owner's answers (2026-10-22)

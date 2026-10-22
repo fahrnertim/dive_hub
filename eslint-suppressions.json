@@ -136,9 +136,6 @@
     }
   },
   "apps/server/src/routes.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 4
-    },
     "no-useless-escape": {
       "count": 2
     }

@@ -1,0 +1,170 @@
+// The logbook's reads for the API (ADR 0017, 0040, 0042): the list of Dives with its counts, totals and months, the
+// neighbours of one Dive in that list, and a Recording's sample series. Who may see what is decided by the caller, which
+// passes the Divers the User manages.
+import { and, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import type { Db } from '../db/client.js';
+import { PARTICIPANT_ROLES, dive, diveAssessment, diveSite, diver, participant, recording, sampleSeries } from '../db/schema.js';
+import { diveListFilter, FINDINGS_SHOWN } from './list-filter.js';
+
+export const DIVE_SORTS = ['startsAt', 'number', 'maxDepth', 'duration'] as const;
+export type DiveSort = (typeof DIVE_SORTS)[number];
+
+/** What the list shows and in which order: the Diver, search and filters, shared by the page and a Dive's neighbours (ADR 0042). */
+export interface ListScope {
+  userId: string;
+  diverIds: string[];
+  siteId?: string | undefined;
+  q?: string | undefined;
+  only?: string | undefined;
+  /** The Dives that changed since they were sent; see `DiveListFilter`. */
+  changedIds?: string[] | undefined;
+  sort?: DiveSort | undefined;
+  order?: 'asc' | 'desc' | undefined;
+}
+
+/** The local month of a Dive, as the logbook groups it: an unknown offset keeps the wall-clock time as it is. */
+const LOCAL_MONTH = sql<string>`to_char("dive"."starts_at" at time zone 'UTC' + make_interval(secs => coalesce("dive"."utc_offset_seconds", 0)), 'YYYY-MM')`;
+
+const ROLE_ORDER = Object.fromEntries(PARTICIPANT_ROLES.map((r, i) => [r, i]));
+
+export interface RowExtras {
+  recordings: number;
+  gases: { o2: number; he: number }[];
+  surfaceIntervalSeconds: number | null;
+  participants: { diverId: string; name: string; role: (typeof PARTICIPANT_ROLES)[number] }[];
+  profile: { depthsM: number[]; spanSeconds: number; ascentBands: [number, number, 1 | 2 | 3][] } | null;
+}
+
+/** The stored sketch, only while it is of the Dive's current Primary recording (a change is assessed again shortly). */
+const sketchOfDive = (
+  d: typeof dive.$inferSelect,
+  a: { recordingId: string | null; profile: { depthsM: number[]; spanSeconds: number } | null; ascentBands: [number, number, 1 | 2 | 3][] } | undefined,
+): RowExtras['profile'] =>
+  a?.profile && a.recordingId === d.primaryRecordingId ? { ...a.profile, ascentBands: a.ascentBands } : null;
+
+export function createLogbookService(db: Db) {
+  const scopeOf = ({ userId, diverIds, siteId, q, only, changedIds, sort = 'startsAt', order = 'desc' }: ListScope) => {
+    const { filters, base, where } = diveListFilter({ userId, diverIds, siteId, q, only, changedIds });
+    const column = { startsAt: dive.startsAt, number: dive.number, maxDepth: dive.maxDepthM, duration: dive.durationSeconds }[sort];
+    // Dives without a value (no number, no depth) go last either way; the start time breaks ties.
+    const direction = order === 'asc' ? sql`asc nulls last` : sql`desc nulls last`;
+    const orderBy = [sql`${column} ${direction}`, desc(dive.startsAt), desc(dive.id)];
+    return { filters, base, where, orderBy };
+  };
+
+  /** A page of the list, with the counts of each filter, the Diver's whole-logbook totals and the months of the page. Needs at least one Diver. */
+  async function listDives(scope: ListScope, { limit, offset }: { limit: number; offset: number }) {
+    const { diverIds, sort = 'startsAt' } = scope;
+    const { filters, base, where, orderBy } = scopeOf(scope);
+    const [rows, [counted], [counts], [totals]] = await Promise.all([
+      db.select({ d: dive, siteName: diveSite.name, findings: FINDINGS_SHOWN }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(where)
+        .orderBy(...orderBy)
+        .limit(limit).offset(offset),
+      db.select({ n: count() }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(where),
+      db.select({
+        noRecording: sql<number>`(count(*) filter (where ${filters['no-recording']}))::int`,
+        noSite: sql<number>`(count(*) filter (where ${filters['no-site']}))::int`,
+        withFindings: sql<number>`(count(*) filter (where ${filters['with-findings']}))::int`,
+        notAtProvider: sql<number>`(count(*) filter (where ${filters['not-at-provider']}))::int`,
+        changedSinceSent: sql<number>`(count(*) filter (where ${filters['changed-since-sent']}))::int`,
+      }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(base),
+      db.select({
+        dives: count(), durationSeconds: sql<number>`coalesce(sum(${dive.durationSeconds}), 0)`.mapWith(Number),
+        deepestM: sql<number | null>`max(${dive.maxDepthM})`, lastDiveAt: sql<Date | null>`max(${dive.startsAt})`.mapWith((v) => (v ? new Date(v) : null)),
+      }).from(dive).where(and(inArray(dive.diverId, diverIds), isNull(dive.deletedAt))),
+    ]);
+
+    const pageIds = rows.map((r) => r.d.id);
+    const primaryIds = rows.flatMap((r) => (r.d.primaryRecordingId ? [r.d.primaryRecordingId] : []));
+    const [recordingCounts, primaries, people, assessments] = pageIds.length === 0 ? [[], [], [], []] : await Promise.all([
+      db.select({ diveId: recording.diveId, n: count() }).from(recording)
+        .where(and(inArray(recording.diveId, pageIds), isNull(recording.deletedAt))).groupBy(recording.diveId),
+      primaryIds.length === 0 ? [] : db.select({ id: recording.id, summary: recording.summary }).from(recording).where(inArray(recording.id, primaryIds)),
+      db.select({ diveId: participant.diveId, diverId: participant.diverId, name: diver.name, role: participant.role }).from(participant)
+        .innerJoin(diver, eq(diver.id, participant.diverId)).where(and(inArray(participant.diveId, pageIds), isNull(diver.deletedAt))),
+      db.select({ diveId: diveAssessment.diveId, recordingId: diveAssessment.recordingId, profile: diveAssessment.profile, ascentBands: diveAssessment.ascentBands })
+        .from(diveAssessment).where(inArray(diveAssessment.diveId, pageIds)),
+    ]);
+    const recordingsOf = new Map(recordingCounts.map((c) => [c.diveId, c.n]));
+    const summaryOf = new Map(primaries.map((p) => [p.id, p.summary]));
+    const primary = (d: typeof dive.$inferSelect) => (d.primaryRecordingId ? summaryOf.get(d.primaryRecordingId) : undefined);
+    const assessmentOf = new Map(assessments.map((a) => [a.diveId, a]));
+    const peopleOf = new Map<string, typeof people>();
+    for (const p of people.toSorted((a, b) => ROLE_ORDER[a.role]! - ROLE_ORDER[b.role]! || a.name.localeCompare(b.name))) {
+      peopleOf.set(p.diveId, [...(peopleOf.get(p.diveId) ?? []), p]);
+    }
+
+    // The months of this page, with every matching Dive of each month (not only this page's share).
+    let months: { month: string; dives: number; durationSeconds: number }[] = [];
+    if (sort === 'startsAt' && rows.length > 0) {
+      const monthOf = (d: typeof dive.$inferSelect) => new Date(d.startsAt.getTime() + (d.utcOffsetSeconds ?? 0) * 1000).toISOString().slice(0, 7);
+      const onPage = [...new Set(rows.map((r) => monthOf(r.d)))];
+      const sums = await db.select({ month: LOCAL_MONTH, dives: count(), durationSeconds: sql<number>`sum(${dive.durationSeconds})`.mapWith(Number) })
+        .from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(and(where, sql`${LOCAL_MONTH} in ${onPage}`)).groupBy(LOCAL_MONTH);
+      const byMonth = new Map(sums.map((m) => [m.month, m]));
+      months = onPage.flatMap((month) => byMonth.get(month) ?? []);
+    }
+
+    return {
+      rows: rows.map((r) => ({
+        d: r.d, siteName: r.siteName, findings: r.findings,
+        extras: {
+          recordings: recordingsOf.get(r.d.id) ?? 0,
+          gases: (primary(r.d)?.gases ?? []).map(({ o2, he }) => ({ o2, he })),
+          surfaceIntervalSeconds: primary(r.d)?.surfaceIntervalSeconds ?? null,
+          participants: (peopleOf.get(r.d.id) ?? []).map(({ diverId, name, role }) => ({ diverId, name, role })),
+          profile: sketchOfDive(r.d, assessmentOf.get(r.d.id)),
+        } satisfies RowExtras,
+      })),
+      total: counted?.n ?? 0,
+      counts: counts!,
+      totals: totals!,
+      months,
+    };
+  }
+
+  /** The id of this Dive when one of these Divers owns it and it is not deleted; undefined otherwise. */
+  async function ownDiveId(diveId: string, diverIds: string[]) {
+    if (diverIds.length === 0) return undefined;
+    const [own] = await db.select({ id: dive.id }).from(dive)
+      .where(and(eq(dive.id, diveId), inArray(dive.diverId, diverIds), isNull(dive.deletedAt)));
+    return own?.id;
+  }
+
+  /** The Dives before and after one in the list's order; the position and neighbours are null when the list does not show it. */
+  async function neighbours(diveId: string, scope: ListScope) {
+    const { where, orderBy } = scopeOf(scope);
+    const window = sql`over (order by ${sql.join(orderBy, sql`, `)})`;
+    const shown = db.select({
+      id: dive.id,
+      position: sql<number>`(row_number() ${window})::int`.as('position'),
+      previous: sql<string | null>`lag(${dive.id}) ${window}`.as('previous'),
+      next: sql<string | null>`lead(${dive.id}) ${window}`.as('next'),
+    }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(where).as('shown');
+    const [[row], [counted]] = await Promise.all([
+      db.select().from(shown).where(eq(shown.id, diveId)),
+      db.select({ n: count() }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(where),
+    ]);
+    return { previous: row?.previous ?? null, next: row?.next ?? null, position: row?.position ?? null, total: counted?.n ?? 0 };
+  }
+
+  /** The id of this Recording when it is on a Dive of one of these Divers and not deleted; undefined otherwise. */
+  async function ownRecordingId(recordingId: string, diverIds: string[]) {
+    if (diverIds.length === 0) return undefined;
+    const [rec] = await db.select({ id: recording.id }).from(recording)
+      .innerJoin(dive, eq(dive.id, recording.diveId))
+      .where(and(eq(recording.id, recordingId), inArray(dive.diverId, diverIds), isNull(recording.deletedAt)));
+    return rec?.id;
+  }
+
+  /** The Recording's stored sample series, all or only these channels. */
+  const samplesOf = (recordingId: string, channels?: string[]) =>
+    db.select().from(sampleSeries).where(and(
+      eq(sampleSeries.recordingId, recordingId),
+      ...(channels?.length ? [inArray(sampleSeries.channel, channels)] : []),
+    ));
+
+  return { listDives, ownDiveId, neighbours, ownRecordingId, samplesOf };
+}
+
+export type LogbookService = ReturnType<typeof createLogbookService>;

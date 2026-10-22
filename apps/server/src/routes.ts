@@ -1,4 +1,3 @@
-import { and, count, desc, eq, ilike, inArray, isNull, or, sql, type SQL } from 'drizzle-orm';
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
@@ -6,11 +5,12 @@ import type { Auth } from './auth/auth.js';
 import { requireUser } from './auth/fastify.js';
 import type { Db } from './db/client.js';
 import {
-  DIVE_KINDS, IMPORT_ERROR_CODES, OUTCOME_REASONS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive, diveAssessment, diveSite, diver, diverManagement, duplicateCandidate,
-  importJob, participant, recording, sampleSeries,
+  DIVE_KINDS, IMPORT_ERROR_CODES, OUTCOME_REASONS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive, importJob,
 } from './db/schema.js';
 import { downsampleMinMax } from './dives/downsample.js';
-import { asksFor, DIVE_ONLY, diveListFilter, FINDINGS_SHOWN, type DiveOnly } from './dives/list-filter.js';
+import { managedDiverIds } from './dives/dive-service.js';
+import { asksFor, DIVE_ONLY } from './dives/list-filter.js';
+import { DIVE_SORTS, type LogbookService, type RowExtras } from './dives/logbook-service.js';
 import { Problem, problem } from './http/problems.js';
 import type { ImportService } from './imports/import-service.js';
 import type { PushService } from './providers/push-service.js';
@@ -19,6 +19,7 @@ import { UploadTooLargeError } from './storage/blob-store.js';
 export interface RouteDeps {
   db: Db;
   imports: ImportService;
+  logbook: LogbookService;
   /** For the logbook's "changed since sent" filter, which needs the adapters' fingerprints. */
   pushes: PushService;
   maxUploadBytes: number;
@@ -63,7 +64,6 @@ export const ImportView = Type.Object({
 });
 
 /** The logbook list (ADR 0017, 0040): a page of Dives, sorted, searched, narrowed by "show only" filters, with the total. */
-const DIVE_SORTS = ['startsAt', 'number', 'maxDepth', 'duration'] as const;
 const ONLY_PATTERN = `^(${DIVE_ONLY.join('|')})(,(${DIVE_ONLY.join('|')}))*$`;
 const DiveListQuery = Type.Object({
   diverId: Type.Optional(Type.String({ format: 'uuid', description: 'Only this Diver\'s Dives' })),
@@ -165,19 +165,11 @@ export const toImportView = (j: typeof importJob.$inferSelect): Static<typeof Im
  * An Import's outcome is stored once; a Duplicate candidate is decided later. Adds the current
  * decision (and the Dive the Recording went to) so the client doesn't show a stale "needs your decision".
  */
-async function withDecisions(db: Db, rows: (typeof importJob.$inferSelect)[]) {
+async function withDecisions(imports: ImportService, rows: (typeof importJob.$inferSelect)[]) {
   const views = rows.map(toImportView);
   const ids = views.flatMap((v) => v.outcome.filter((o) => o.result === 'duplicate-candidate' && o.recordingId).map((o) => o.recordingId!));
   if (ids.length === 0) return views;
-  const decided = await db.select({
-    recordingId: duplicateCandidate.recordingId, resolution: duplicateCandidate.resolution, createdAt: duplicateCandidate.createdAt,
-    diveId: recording.diveId,
-  }).from(duplicateCandidate)
-    .innerJoin(recording, eq(recording.id, duplicateCandidate.recordingId))
-    .where(inArray(duplicateCandidate.recordingId, ids))
-    .orderBy(duplicateCandidate.createdAt);
-  // The latest candidate per Recording wins (a discarded one may be reopened as a new candidate).
-  const byRecording = new Map(decided.map((d) => [d.recordingId, d]));
+  const byRecording = await imports.decisionsOf(ids);
   for (const v of views) {
     v.outcome = v.outcome.map((o) => {
       const d = o.result === 'duplicate-candidate' && o.recordingId ? byRecording.get(o.recordingId) : undefined;
@@ -189,26 +181,6 @@ async function withDecisions(db: Db, rows: (typeof importJob.$inferSelect)[]) {
   return views;
 }
 
-/** The local month of a Dive, as the logbook groups it: an unknown offset keeps the wall-clock time as it is. */
-const LOCAL_MONTH = sql<string>`to_char("dive"."starts_at" at time zone 'UTC' + make_interval(secs => coalesce("dive"."utc_offset_seconds", 0)), 'YYYY-MM')`;
-
-const ROLE_ORDER = Object.fromEntries(PARTICIPANT_ROLES.map((r, i) => [r, i]));
-
-interface RowExtras {
-  recordings: number;
-  gases: { o2: number; he: number }[];
-  surfaceIntervalSeconds: number | null;
-  participants: Static<typeof DiveSummaryView>['participants'];
-  profile: Static<typeof DiveSummaryView>['profile'];
-}
-
-/** The stored sketch, only while it is of the Dive's current Primary recording (a change is assessed again shortly). */
-const sketchOfDive = (
-  d: typeof dive.$inferSelect,
-  a: { recordingId: string | null; profile: { depthsM: number[]; spanSeconds: number } | null; ascentBands: [number, number, 1 | 2 | 3][] } | undefined,
-): RowExtras['profile'] =>
-  a?.profile && a.recordingId === d.primaryRecordingId ? { ...a.profile, ascentBands: a.ascentBands } : null;
-
 const toDiveSummary = (d: typeof dive.$inferSelect, siteName: string | null, findings: number, extras: RowExtras): Static<typeof DiveSummaryView> => ({
   findings, ...extras, fromProvider: d.fromProvider,
   site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null,
@@ -217,16 +189,14 @@ const toDiveSummary = (d: typeof dive.$inferSelect, siteName: string | null, fin
 });
 
 export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps) => {
-  const { db, imports } = deps;
+  const { db, imports, logbook } = deps;
 
   // Every logbook route needs a signed-in User and only shows what that User may see.
   app.addHook('onRequest', requireUser(deps.auth));
   const userId = (request: FastifyRequest) => request.user!.id;
 
   /** Divers the signed-in User manages; all logbook reads are scoped to them. */
-  const managedDiverIds = async (request: FastifyRequest) =>
-    (await db.select({ id: diverManagement.diverId }).from(diverManagement)
-      .where(eq(diverManagement.userId, userId(request)))).map((r) => r.id);
+  const managedDivers = async (request: FastifyRequest) => [...await managedDiverIds(db, userId(request))];
 
   app.post('/imports', {
     schema: {
@@ -249,17 +219,14 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
   app.get('/imports', {
     schema: { summary: 'Recent Imports of the signed-in User', response: { 200: Type.Array(ImportView) } },
   }, async (request) => {
-    const rows = await db.select().from(importJob).where(eq(importJob.userId, userId(request)))
-      .orderBy(desc(importJob.createdAt)).limit(50);
-    return withDecisions(db, rows);
+    return withDecisions(imports, await imports.recentImports(userId(request)));
   });
 
   app.get('/imports/:id', {
     schema: { summary: 'One Import with its outcome', params: IdParams, response: { 200: ImportView, 404: Problem } },
   }, async (request, reply) => {
-    const [row] = await db.select().from(importJob)
-      .where(and(eq(importJob.id, request.params.id), eq(importJob.userId, userId(request))));
-    return row ? (await withDecisions(db, [row]))[0]! : reply.code(404).send(problem('import_not_found'));
+    const row = await imports.findImport(userId(request), request.params.id);
+    return row ? (await withDecisions(imports, [row]))[0]! : reply.code(404).send(problem('import_not_found'));
   });
 
   app.post('/imports/:id/start', {
@@ -286,17 +253,12 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
 
   /** What the list shows and in which order: the Diver, search and filters, shared by the page and a Dive's neighbours (ADR 0042). */
   const listScope = async (request: FastifyRequest, query: Static<typeof DiveListQuery>, { counts = false } = {}) => {
-    const { diverId, siteId, q, only, sort = 'startsAt', order = 'desc' } = query;
-    const managed = await managedDiverIds(request);
+    const { diverId, siteId, q, only, sort, order } = query;
+    const managed = await managedDivers(request);
     const divers = diverId ? managed.filter((id) => id === diverId) : managed;
     // "Changed since sent" comes from the adapters' fingerprints, not SQL: worked out only when the list needs it.
     const changedIds = counts || asksFor(only, 'changed-since-sent') ? await deps.pushes.changedSinceSent(userId(request), divers) : undefined;
-    const { filters, base, where } = diveListFilter({ userId: userId(request), diverIds: divers, siteId, q, only, changedIds });
-    const column = { startsAt: dive.startsAt, number: dive.number, maxDepth: dive.maxDepthM, duration: dive.durationSeconds }[sort];
-    // Dives without a value (no number, no depth) go last either way; the start time breaks ties.
-    const direction = order === 'asc' ? sql`asc nulls last` : sql`desc nulls last`;
-    const orderBy = [sql`${column} ${direction}`, desc(dive.startsAt), desc(dive.id)];
-    return { divers, filters, base, where, orderBy, sort };
+    return { userId: userId(request), diverIds: divers, siteId, q, only, changedIds, sort, order };
   };
 
   app.get('/dives', {
@@ -307,73 +269,19 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
     },
   }, async (request) => {
     const { limit = 25, offset = 0 } = request.query;
-    const { divers, filters, base, where, orderBy, sort } = await listScope(request, request.query, { counts: true });
-    if (divers.length === 0) {
+    const scope = await listScope(request, request.query, { counts: true });
+    if (scope.diverIds.length === 0) {
       return {
         dives: [], total: 0, counts: { noRecording: 0, noSite: 0, withFindings: 0, notAtProvider: 0, changedSinceSent: 0 },
         totals: { dives: 0, durationSeconds: 0, deepestM: null, lastDiveAt: null }, months: [],
       };
     }
-    const [rows, [counted], [counts], [totals]] = await Promise.all([
-      db.select({ d: dive, siteName: diveSite.name, findings: FINDINGS_SHOWN }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(where)
-        .orderBy(...orderBy)
-        .limit(limit).offset(offset),
-      db.select({ n: count() }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(where),
-      db.select({
-        noRecording: sql<number>`(count(*) filter (where ${filters['no-recording']}))::int`,
-        noSite: sql<number>`(count(*) filter (where ${filters['no-site']}))::int`,
-        withFindings: sql<number>`(count(*) filter (where ${filters['with-findings']}))::int`,
-        notAtProvider: sql<number>`(count(*) filter (where ${filters['not-at-provider']}))::int`,
-        changedSinceSent: sql<number>`(count(*) filter (where ${filters['changed-since-sent']}))::int`,
-      }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(base),
-      db.select({
-        dives: count(), durationSeconds: sql<number>`coalesce(sum(${dive.durationSeconds}), 0)`.mapWith(Number),
-        deepestM: sql<number | null>`max(${dive.maxDepthM})`, lastDiveAt: sql<Date | null>`max(${dive.startsAt})`.mapWith((v) => (v ? new Date(v) : null)),
-      }).from(dive).where(and(inArray(dive.diverId, divers), isNull(dive.deletedAt))),
-    ]);
-
-    const pageIds = rows.map((r) => r.d.id);
-    const primaryIds = rows.flatMap((r) => (r.d.primaryRecordingId ? [r.d.primaryRecordingId] : []));
-    const [recordingCounts, primaries, people, assessments] = pageIds.length === 0 ? [[], [], [], []] : await Promise.all([
-      db.select({ diveId: recording.diveId, n: count() }).from(recording)
-        .where(and(inArray(recording.diveId, pageIds), isNull(recording.deletedAt))).groupBy(recording.diveId),
-      primaryIds.length === 0 ? [] : db.select({ id: recording.id, summary: recording.summary }).from(recording).where(inArray(recording.id, primaryIds)),
-      db.select({ diveId: participant.diveId, diverId: participant.diverId, name: diver.name, role: participant.role }).from(participant)
-        .innerJoin(diver, eq(diver.id, participant.diverId)).where(and(inArray(participant.diveId, pageIds), isNull(diver.deletedAt))),
-      db.select({ diveId: diveAssessment.diveId, recordingId: diveAssessment.recordingId, profile: diveAssessment.profile, ascentBands: diveAssessment.ascentBands })
-        .from(diveAssessment).where(inArray(diveAssessment.diveId, pageIds)),
-    ]);
-    const recordingsOf = new Map(recordingCounts.map((c) => [c.diveId, c.n]));
-    const summaryOf = new Map(primaries.map((p) => [p.id, p.summary]));
-    const primary = (d: typeof dive.$inferSelect) => (d.primaryRecordingId ? summaryOf.get(d.primaryRecordingId) : undefined);
-    const assessmentOf = new Map(assessments.map((a) => [a.diveId, a]));
-    const peopleOf = new Map<string, typeof people>();
-    for (const p of people.toSorted((a, b) => ROLE_ORDER[a.role]! - ROLE_ORDER[b.role]! || a.name.localeCompare(b.name))) {
-      peopleOf.set(p.diveId, [...(peopleOf.get(p.diveId) ?? []), p]);
-    }
-
-    // The months of this page, with every matching Dive of each month (not only this page's share).
-    let months: Static<typeof DiveListView>['months'] = [];
-    if (sort === 'startsAt' && rows.length > 0) {
-      const monthOf = (d: typeof dive.$inferSelect) => new Date(d.startsAt.getTime() + (d.utcOffsetSeconds ?? 0) * 1000).toISOString().slice(0, 7);
-      const onPage = [...new Set(rows.map((r) => monthOf(r.d)))];
-      const sums = await db.select({ month: LOCAL_MONTH, dives: count(), durationSeconds: sql<number>`sum(${dive.durationSeconds})`.mapWith(Number) })
-        .from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(and(where, sql`${LOCAL_MONTH} in ${onPage}`)).groupBy(LOCAL_MONTH);
-      const byMonth = new Map(sums.map((m) => [m.month, m]));
-      months = onPage.flatMap((month) => byMonth.get(month) ?? []);
-    }
-
+    const { rows, total, counts, totals, months } = await logbook.listDives(scope, { limit, offset });
     return {
-      dives: rows.map((r) => toDiveSummary(r.d, r.siteName, r.findings, {
-        recordings: recordingsOf.get(r.d.id) ?? 0,
-        gases: (primary(r.d)?.gases ?? []).map(({ o2, he }) => ({ o2, he })),
-        surfaceIntervalSeconds: primary(r.d)?.surfaceIntervalSeconds ?? null,
-        participants: (peopleOf.get(r.d.id) ?? []).map(({ diverId, name, role }) => ({ diverId, name, role })),
-        profile: sketchOfDive(r.d, assessmentOf.get(r.d.id)),
-      })),
-      total: counted?.n ?? 0,
-      counts: counts!,
-      totals: { ...totals!, lastDiveAt: totals!.lastDiveAt?.toISOString() ?? null },
+      dives: rows.map((r) => toDiveSummary(r.d, r.siteName, r.findings, r.extras)),
+      total,
+      counts,
+      totals: { ...totals, lastDiveAt: totals.lastDiveAt?.toISOString() ?? null },
       months,
     };
   });
@@ -388,26 +296,10 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
       response: { 200: DiveNeighboursView, 404: Problem },
     },
   }, async (request, reply) => {
-    const managed = await managedDiverIds(request);
-    const [own] = managed.length === 0 ? [] : await db.select({ id: dive.id }).from(dive)
-      .where(and(eq(dive.id, request.params.id), inArray(dive.diverId, managed), isNull(dive.deletedAt)));
-    if (!own) return reply.code(404).send(problem('dive_not_found'));
-    const { where, orderBy } = await listScope(request, request.query);
-    const window = sql`over (order by ${sql.join(orderBy, sql`, `)})`;
-    const shown = db.select({
-      id: dive.id,
-      position: sql<number>`(row_number() ${window})::int`.as('position'),
-      previous: sql<string | null>`lag(${dive.id}) ${window}`.as('previous'),
-      next: sql<string | null>`lead(${dive.id}) ${window}`.as('next'),
-    }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(where).as('shown');
-    const [[row], [counted]] = await Promise.all([
-      db.select().from(shown).where(eq(shown.id, own.id)),
-      db.select({ n: count() }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(where),
-    ]);
-    return {
-      previous: row?.previous ? { id: row.previous } : null, next: row?.next ? { id: row.next } : null,
-      position: row?.position ?? null, total: counted?.n ?? 0,
-    };
+    const ownId = await logbook.ownDiveId(request.params.id, await managedDivers(request));
+    if (!ownId) return reply.code(404).send(problem('dive_not_found'));
+    const { previous, next, position, total } = await logbook.neighbours(ownId, await listScope(request, request.query));
+    return { previous: previous ? { id: previous } : null, next: next ? { id: next } : null, position, total };
   });
 
   app.get('/recordings/:id/samples', {
@@ -416,19 +308,13 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
       params: IdParams, querystring: SamplesQuery, response: { 200: SamplesView, 404: Problem },
     },
   }, async (request, reply) => {
-    const divers = await managedDiverIds(request);
-    const [rec] = divers.length === 0 ? [] : await db.select({ id: recording.id }).from(recording)
-      .innerJoin(dive, eq(dive.id, recording.diveId))
-      .where(and(eq(recording.id, request.params.id), inArray(dive.diverId, divers), isNull(recording.deletedAt)));
-    if (!rec) return reply.code(404).send(problem('recording_not_found'));
+    const recordingId = await logbook.ownRecordingId(request.params.id, await managedDivers(request));
+    if (!recordingId) return reply.code(404).send(problem('recording_not_found'));
     const wanted = request.query.channels?.split(',').map((c) => c.trim()).filter(Boolean);
-    const rows = await db.select().from(sampleSeries).where(and(
-      eq(sampleSeries.recordingId, rec.id),
-      ...(wanted?.length ? [inArray(sampleSeries.channel, wanted)] : []),
-    ));
+    const rows = await logbook.samplesOf(recordingId, wanted);
     const maxPoints = request.query.maxPoints ?? 2000;
     return {
-      recordingId: rec.id,
+      recordingId,
       series: rows.map((s) => {
         const reduced = downsampleMinMax(s.offsetsMs, s.values, maxPoints);
         return { channel: s.channel, offsetsMs: reduced.offsets, values: reduced.values };

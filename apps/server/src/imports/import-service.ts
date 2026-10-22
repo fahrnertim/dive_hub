@@ -1,7 +1,7 @@
-import { and, eq, isNull, lt, sql, type SQL } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, lt, sql, type SQL } from 'drizzle-orm';
 import type { Readable } from 'node:stream';
 import type { Db } from '../db/client.js';
-import { DIVE_KINDS, importJob, importOriginal, original, recording, type DiveKind, type ImportFound, type ImportOutcome } from '../db/schema.js';
+import { DIVE_KINDS, duplicateCandidate, importJob, importOriginal, original, recording, type DiveKind, type ImportFound, type ImportOutcome } from '../db/schema.js';
 import { fillMissingCylinders } from '../dives/cylinders.js';
 import type { Actor } from '../dives/revisions.js';
 import { positionColumns } from '../sites/dive-site-link.js';
@@ -184,6 +184,31 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
     return cancelled ?? null;
   }
 
+  /** The User's latest Imports, newest first. */
+  const recentImports = (userId: string) =>
+    db.select().from(importJob).where(eq(importJob.userId, userId)).orderBy(desc(importJob.createdAt)).limit(50);
+
+  /** One of the User's Imports; undefined when there is none, or it is another User's. */
+  async function findImport(userId: string, importId: string) {
+    const [row] = await db.select().from(importJob).where(and(eq(importJob.id, importId), eq(importJob.userId, userId)));
+    return row;
+  }
+
+  /**
+   * What has been decided since about the Duplicate candidates of these Recordings, the latest candidate per Recording
+   * (a discarded one may be reopened as a new candidate), with the Dive its Recording is on.
+   */
+  async function decisionsOf(recordingIds: string[]) {
+    const decided = await db.select({
+      recordingId: duplicateCandidate.recordingId, resolution: duplicateCandidate.resolution, createdAt: duplicateCandidate.createdAt,
+      diveId: recording.diveId,
+    }).from(duplicateCandidate)
+      .innerJoin(recording, eq(recording.id, duplicateCandidate.recordingId))
+      .where(inArray(duplicateCandidate.recordingId, recordingIds))
+      .orderBy(duplicateCandidate.createdAt);
+    return new Map(decided.map((d) => [d.recordingId, d]));
+  }
+
   /** Worker task: Imports nobody answered for seven days are ended, so no upload lies here for good. Returns how many. */
   async function expireWaiting(now = new Date()): Promise<number> {
     return (await endWaiting(lt(importJob.createdAt, new Date(now.getTime() - CHOICE_WAIT_DAYS * 86_400_000)), 'choice_expired')).length;
@@ -308,7 +333,7 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
   /** Dives imported before Cylinders were kept get them from their tank pod's data (ADR 0045). Returns how many. */
   const fillCylinders = () => fillMissingCylinders(db);
 
-  return { createImport, processImport, startImport, cancelImport, expireWaiting, backfillPositions, backfillGasFigures, fillCylinders };
+  return { createImport, processImport, startImport, cancelImport, recentImports, findImport, decisionsOf, expireWaiting, backfillPositions, backfillGasFigures, fillCylinders };
 }
 
 export type ImportService = ReturnType<typeof createImportService>;
