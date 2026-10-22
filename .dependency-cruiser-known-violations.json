@@ -1,0 +1,667 @@
+[
+  {
+    "type": "dependency",
+    "from": "apps/server/src/db/schema.ts",
+    "to": "apps/server/src/sites/import/import-plan.ts",
+    "unresolvedTo": "../sites/import/import-plan.js",
+    "dependencyTypes": [
+      "local",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "db-imports-no-domain-module"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/server/src/db/schema.ts",
+    "to": "apps/server/src/sites/import/site-source.ts",
+    "unresolvedTo": "../sites/import/site-source.js",
+    "dependencyTypes": [
+      "local",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "db-imports-no-domain-module"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/server/src/db/schema.ts",
+    "to": "apps/server/src/sites/sources.ts",
+    "unresolvedTo": "../sites/sources.js",
+    "dependencyTypes": [
+      "local",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "db-imports-no-domain-module"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/server/src/db/schema.ts",
+    "to": "apps/server/src/vocabulary.ts",
+    "unresolvedTo": "../vocabulary.js",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "db-imports-no-domain-module"
+    }
+  },
+  {
+    "type": "cycle",
+    "from": "apps/server/src/db/client.ts",
+    "to": "apps/server/src/db/schema.ts",
+    "unresolvedTo": "./schema.js",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-cycles"
+    },
+    "cycle": [
+      {
+        "name": "apps/server/src/db/schema.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/sites/import/import-plan.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/sites/site-service.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/db/client.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "apps/server/src/db/schema.ts",
+    "to": "apps/server/src/sites/import/import-plan.ts",
+    "unresolvedTo": "../sites/import/import-plan.js",
+    "dependencyTypes": [
+      "local",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-cycles"
+    },
+    "cycle": [
+      {
+        "name": "apps/server/src/sites/import/import-plan.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/sites/site-service.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/db/schema.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "apps/server/src/db/schema.ts",
+    "to": "apps/server/src/sites/import/site-source.ts",
+    "unresolvedTo": "../sites/import/site-source.js",
+    "dependencyTypes": [
+      "local",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-cycles"
+    },
+    "cycle": [
+      {
+        "name": "apps/server/src/sites/import/site-source.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/sites/site-service.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/db/schema.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "apps/server/src/divers/diver-service.ts",
+    "to": "apps/server/src/divers/merge.ts",
+    "unresolvedTo": "./merge.js",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-cycles"
+    },
+    "cycle": [
+      {
+        "name": "apps/server/src/divers/merge.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/divers/diver-service.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "apps/server/src/divers/diver-service.ts",
+    "to": "apps/server/src/providers/buddy-service.ts",
+    "unresolvedTo": "../providers/buddy-service.js",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-cycles"
+    },
+    "cycle": [
+      {
+        "name": "apps/server/src/providers/buddy-service.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/divers/diver-service.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "apps/server/src/dives/revisions.ts",
+    "to": "apps/server/src/db/client.ts",
+    "unresolvedTo": "../db/client.js",
+    "dependencyTypes": [
+      "local",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-cycles"
+    },
+    "cycle": [
+      {
+        "name": "apps/server/src/db/client.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/db/schema.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/sites/import/import-plan.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/sites/site-service.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/dives/revisions.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "apps/server/src/dives/revisions.ts",
+    "to": "apps/server/src/db/schema.ts",
+    "unresolvedTo": "../db/schema.js",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-cycles"
+    },
+    "cycle": [
+      {
+        "name": "apps/server/src/db/schema.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/sites/import/import-plan.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/sites/site-service.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/dives/revisions.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "apps/server/src/planning/bottom-time.ts",
+    "to": "apps/server/src/planning/gas-plan.ts",
+    "unresolvedTo": "./gas-plan.js",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-cycles"
+    },
+    "cycle": [
+      {
+        "name": "apps/server/src/planning/gas-plan.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/planning/bottom-time.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "apps/server/src/providers/buddy-service.ts",
+    "to": "apps/server/src/providers/connection-service.ts",
+    "unresolvedTo": "./connection-service.js",
+    "dependencyTypes": [
+      "local",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-cycles"
+    },
+    "cycle": [
+      {
+        "name": "apps/server/src/providers/connection-service.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/divers/diver-service.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/providers/buddy-service.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "apps/server/src/providers/connection-service.ts",
+    "to": "apps/server/src/divers/merge.ts",
+    "unresolvedTo": "../divers/merge.js",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-cycles"
+    },
+    "cycle": [
+      {
+        "name": "apps/server/src/divers/merge.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/divers/diver-service.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/providers/buddy-service.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/providers/connection-service.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "apps/server/src/sites/import/import-plan.ts",
+    "to": "apps/server/src/sites/import/site-source.ts",
+    "unresolvedTo": "./site-source.js",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-cycles"
+    },
+    "cycle": [
+      {
+        "name": "apps/server/src/sites/import/site-source.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/sites/site-service.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/db/client.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/db/schema.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/sites/import/import-plan.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "apps/server/src/sites/import/site-source.ts",
+    "to": "apps/server/src/sites/site-service.ts",
+    "unresolvedTo": "../site-service.js",
+    "dependencyTypes": [
+      "local",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-cycles"
+    },
+    "cycle": [
+      {
+        "name": "apps/server/src/sites/site-service.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/server/src/sites/import/site-source.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "apps/web/src/api.ts",
+    "to": "apps/web/src/lib/logbook.ts",
+    "unresolvedTo": "./lib/logbook.ts",
+    "dependencyTypes": [
+      "local",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "no-cycles"
+    },
+    "cycle": [
+      {
+        "name": "apps/web/src/lib/logbook.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      },
+      {
+        "name": "apps/web/src/api.ts",
+        "dependencyTypes": [
+          "local",
+          "type-only",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "dependency",
+    "from": "apps/server/src/dives/routes.ts",
+    "to": "apps/server/node_modules/drizzle-orm/index.cjs",
+    "unresolvedTo": "drizzle-orm",
+    "dependencyTypes": [
+      "npm",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "routes-use-no-drizzle"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/server/src/planning/routes.ts",
+    "to": "apps/server/node_modules/drizzle-orm/index.cjs",
+    "unresolvedTo": "drizzle-orm",
+    "dependencyTypes": [
+      "npm",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "routes-use-no-drizzle"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/server/src/routes.ts",
+    "to": "apps/server/node_modules/drizzle-orm/index.cjs",
+    "unresolvedTo": "drizzle-orm",
+    "dependencyTypes": [
+      "npm",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "routes-use-no-drizzle"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/server/src/users/account-routes.ts",
+    "to": "apps/server/node_modules/drizzle-orm/index.cjs",
+    "unresolvedTo": "drizzle-orm",
+    "dependencyTypes": [
+      "npm",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "routes-use-no-drizzle"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/server/src/users/admin-routes.ts",
+    "to": "apps/server/node_modules/drizzle-orm/index.cjs",
+    "unresolvedTo": "drizzle-orm",
+    "dependencyTypes": [
+      "npm",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "routes-use-no-drizzle"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/server/src/users/routes.ts",
+    "to": "apps/server/node_modules/drizzle-orm/index.cjs",
+    "unresolvedTo": "drizzle-orm",
+    "dependencyTypes": [
+      "npm",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "routes-use-no-drizzle"
+    }
+  }
+]

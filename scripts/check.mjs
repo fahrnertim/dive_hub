@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// The checks for what changed (ADR 0023): typecheck, the unit tests whose imports changed, and the
-// browser tests of the areas touched. `pnpm check` while working and before a commit; `pnpm check:full` before a
+// The checks for what changed (ADR 0023): typecheck, lint and module boundaries of the changed files (amendment of
+// 2026-10-22), the unit tests whose imports changed, and the browser tests of the areas touched. `pnpm check` while working and before a commit; `pnpm check:full` before a
 // push or a release (ADR 0023, amendment of 2026-10-08).
 //   pnpm check                 changes since each step's last green run, or since the last commit when none is recorded
 //   pnpm check --base main     changes since another commit or branch (--base HEAD: all uncommitted changes)
@@ -13,7 +13,8 @@ import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { relative } from 'node:path';
 import { readFileSync } from 'node:fs';
-import { FULL_ONLY, QUIET, STEPS, TAGS, changedSince, forBrowserTests, fullPlan, greenRun, planSteps, recordGreen, snapshot } from './check-lib.mjs';
+import { FULL_ONLY, QUIET, STEPS, TAGS, changedSince, forBrowserTests, fullPlan, greenRun, lintTargets, planSteps, recordGreen, snapshot } from './check-lib.mjs';
+import { lint } from './check-lint.mjs';
 
 const args = process.argv.slice(2);
 
@@ -82,6 +83,17 @@ function unitTests(app, level) {
 /** The steps to run: [name, command or function, the step in STEPS it completes (or null)]. */
 const steps = [];
 if (plan.typecheck) steps.push(['typecheck', pnpm('typecheck'), 'typecheck']);
+// ESLint and dependency-cruiser against their baselines; only problems are printed (ADR 0039).
+const lintFiles = since.lint.changed;
+const lintTargetsNow = lintTargets(lintFiles);
+if (plan.lint === 'all' || (plan.lint === 'changed' && lintTargetsNow.eslint.length + lintTargetsNow.deps.length > 0)) {
+  const runLint = () => {
+    const problems = lint(plan.lint === 'all' ? { all: true } : { files: lintFiles });
+    if (problems) console.log(problems);
+    return problems ? 1 : 0;
+  };
+  steps.push([`lint and module boundaries (${plan.lint === 'all' ? 'all' : `${new Set([...lintTargetsNow.eslint, ...lintTargetsNow.deps]).size} changed file(s)`})`, runLint, 'lint']);
+}
 if (plan.scripts) steps.push(['check script tests', 'node --test scripts/check-lib.test.mjs', 'scripts']);
 if (plan.server !== 'none') steps.push([`server tests (${plan.server})`, unitTests('server', plan.server), 'server']);
 if (plan.web !== 'none') steps.push([`web unit tests (${plan.web})`, unitTests('web', plan.web), 'web']);
@@ -100,7 +112,7 @@ if (records) for (const step of STEPS) if (!planned.has(step)) recordGreen(step,
 
 /** "3 changed file(s) since …": one line when every step counts from the same base, else a line per base. */
 function bases() {
-  const names = { typecheck: 'typecheck', scripts: 'check script tests', server: 'server tests', web: 'web unit tests', e2e: 'browser tests' };
+  const names = { typecheck: 'typecheck', lint: 'lint', scripts: 'check script tests', server: 'server tests', web: 'web unit tests', e2e: 'browser tests' };
   const byBase = new Map();
   for (const step of STEPS) {
     const text = `${since[step].changed.length} changed file(s) since ${since[step].from}`;

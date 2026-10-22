@@ -6,7 +6,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
-import { changedSince, forBrowserTests, greenRun, planFor, planSteps, recordGreen, snapshot } from './check-lib.mjs';
+import { baselineGrowth, baselineSize, changedSince, forBrowserTests, greenRun, lintTargets, planFor, planSteps, recordGreen, snapshot } from './check-lib.mjs';
 
 /** A git repository with one commit holding `files`. */
 function repository(files) {
@@ -89,13 +89,65 @@ test('a page runs the typecheck, the web tests related to it and its areas with 
 });
 
 test('documentation runs nothing; shared code of an app runs its tests and every browser test; an unknown path everything', () => {
-  assert.deepEqual(planFor(['docs/index.md', 'README.md']), { typecheck: false, scripts: false, server: 'none', web: 'none', e2e: 'none', areas: new Set(), specs: new Set(), notes: [] });
+  assert.deepEqual(planFor(['docs/index.md', 'README.md']), { typecheck: false, lint: 'none', scripts: false, server: 'none', web: 'none', e2e: 'none', areas: new Set(), specs: new Set(), notes: [] });
 
   const shared = planFor(['apps/web/src/api.ts']);
   assert.deepEqual([shared.server, shared.web, shared.e2e], ['none', 'all', 'all']);
 
   const unknown = planFor(['pnpm-lock.yaml']);
-  assert.deepEqual([unknown.typecheck, unknown.server, unknown.web, unknown.e2e], [true, 'all', 'all', 'all']);
+  assert.deepEqual([unknown.typecheck, unknown.lint, unknown.server, unknown.web, unknown.e2e], [true, 'all', 'all', 'all', 'all']);
+});
+
+test('a changed source file is linted itself; the CI workflow and the git hooks run nothing', () => {
+  assert.equal(planFor(['apps/web/src/SitesPage.tsx']).lint, 'changed');
+  assert.equal(planFor(['apps/server/test/dive-list.test.ts']).lint, 'changed');
+  assert.deepEqual(planFor(['.github/workflows/check.yml', '.githooks/pre-commit']), planFor([]));
+});
+
+test('the lint configuration and its baselines lint everything and run no tests', () => {
+  for (const path of ['eslint.config.mjs', 'eslint-suppressions.json', '.dependency-cruiser.cjs', '.dependency-cruiser-known-violations.json']) {
+    const plan = planFor([path]);
+    assert.deepEqual([plan.lint, plan.typecheck, plan.server, plan.web, plan.e2e], ['all', false, 'none', 'none', 'none'], path);
+  }
+});
+
+test('ESLint gets the TypeScript files it covers; dependency-cruiser the sources of both apps', () => {
+  const targets = lintTargets(['apps/web/src/SitesPage.tsx', 'apps/server/src/routes.ts', 'apps/server/test/dive-list.test.ts',
+    'apps/web/e2e/sites.spec.ts', 'apps/web/src/pages.css', 'apps/web/src/i18n/locales/en.json', 'scripts/check.mjs', 'docs/index.md', 'packages/api-client/src/index.ts']);
+  assert.deepEqual(targets.eslint, ['apps/web/src/SitesPage.tsx', 'apps/server/src/routes.ts', 'apps/server/test/dive-list.test.ts', 'apps/web/e2e/sites.spec.ts', 'packages/api-client/src/index.ts']);
+  assert.deepEqual(targets.deps, ['apps/web/src/SitesPage.tsx', 'apps/server/src/routes.ts']);
+});
+
+test('a baseline may only shrink: more suppressions or known violations than before fail', () => {
+  const suppressions = (count) => JSON.stringify({ 'apps/a.ts': { 'sonarjs/cognitive-complexity': { count } } });
+  const known = (n) => JSON.stringify(Array.from({ length: n }, () => ({ type: 'module', from: 'a', to: 'b', rule: { name: 'no-cycles' } })));
+  assert.equal(baselineSize(suppressions(3)), 3);
+  assert.equal(baselineSize(known(2)), 2);
+  assert.equal(baselineSize(null), 0);
+
+  assert.deepEqual(baselineGrowth([['eslint-suppressions.json', suppressions(3), suppressions(2)]]), []);
+  assert.deepEqual(baselineGrowth([['eslint-suppressions.json', suppressions(3), suppressions(4)], ['known.json', known(2), known(2)]]),
+    ['eslint-suppressions.json has new entries: apps/a.ts (sonarjs/cognitive-complexity): fix the new problems instead of adding them to the baseline']);
+  // A baseline that didn't exist before has nothing to grow from.
+  assert.deepEqual(baselineGrowth([['known.json', null, known(5)]]), []);
+});
+
+test('a baseline may not swap a fixed problem for a new one, even at the same size', () => {
+  const suppressions = (entries) => JSON.stringify(Object.fromEntries(entries.map(([file, rule, count]) => [file, { [rule]: { count } }])));
+  const known = (pairs) => JSON.stringify(pairs.map(([from, to]) => ({ type: 'module', from, to, rule: { severity: 'error', name: 'no-cycles' } })));
+
+  assert.deepEqual(baselineGrowth([['eslint-suppressions.json', suppressions([['a.ts', 'r', 1]]), suppressions([['b.ts', 'r', 1]])]]),
+    ['eslint-suppressions.json has new entries: b.ts (r): fix the new problems instead of adding them to the baseline']);
+  assert.deepEqual(baselineGrowth([['known.json', known([['a', 'b']]), known([['c', 'd']])]]),
+    ['known.json has new entries: no-cycles: c → d: fix the new problems instead of adding them to the baseline']);
+  // Fewer of the same problem is a shrink.
+  assert.deepEqual(baselineGrowth([['eslint-suppressions.json', suppressions([['a.ts', 'r', 3]]), suppressions([['a.ts', 'r', 2]])]]), []);
+});
+
+test('a change to the edit hook runs the check script tests and lints everything', () => {
+  const plan = planFor(['.claude/hooks/lint-file.mjs']);
+  assert.deepEqual([plan.scripts, plan.lint, plan.server, plan.e2e], [true, 'all', 'none', 'none']);
+  assert.equal(planFor(['.claude/hooks/guard-memory.mjs']).scripts, false);
 });
 
 test('a changed check script runs its own tests', () => {
@@ -107,12 +159,14 @@ test('each step is planned from the files changed since its own green run', () =
   // The server tests passed after the server change; the browser tests have not passed since before it.
   const plan = planSteps({
     typecheck: ['apps/web/src/DiversPage.tsx'],
+    lint: [],
     scripts: [],
     server: [],
     web: ['apps/web/src/DiversPage.tsx'],
     e2e: ['apps/server/src/sites/routes.ts', 'apps/web/src/DiversPage.tsx', 'apps/web/e2e/sites.spec.ts'],
   });
   assert.equal(plan.typecheck, true);
+  assert.equal(plan.lint, 'none');
   assert.equal(plan.scripts, false);
   assert.equal(plan.server, 'none');
   assert.equal(plan.web, 'changed');
@@ -122,11 +176,11 @@ test('each step is planned from the files changed since its own green run', () =
 });
 
 test('a note about running more is given only for the steps it widened', () => {
-  const plan = planSteps({ typecheck: [], scripts: [], server: ['apps/web/src/api.ts'], web: [], e2e: [] });
+  const plan = planSteps({ typecheck: [], lint: [], scripts: [], server: ['apps/web/src/api.ts'], web: [], e2e: [] });
   assert.equal(plan.e2e, 'none');
   assert.deepEqual(plan.notes, []);
 
-  const widened = planSteps({ typecheck: [], scripts: [], server: [], web: [], e2e: ['apps/web/src/api.ts'] });
+  const widened = planSteps({ typecheck: [], lint: [], scripts: [], server: [], web: [], e2e: ['apps/web/src/api.ts'] });
   assert.equal(widened.e2e, 'all');
   assert.deepEqual(widened.notes, ['apps/web/src/api.ts is shared web code, so all web tests and all browser tests run']);
 });

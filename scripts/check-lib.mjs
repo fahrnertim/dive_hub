@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 /** The steps that each remember their own green run, in the order they run. */
-export const STEPS = ['typecheck', 'scripts', 'server', 'web', 'e2e'];
+export const STEPS = ['typecheck', 'lint', 'scripts', 'server', 'web', 'e2e'];
 
 /** Browser test areas (tags in apps/web/e2e) by source path; first match wins. */
 const AREAS = [
@@ -61,7 +61,7 @@ const AREAS = [
   [/^apps\/server\/test\/zip\.ts$/, ['@admin', '@sites']],
 ];
 /** Paths that change no behaviour: no tests. */
-export const QUIET = /^(docs\/|samples\/|\.claude\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|skills-lock\.json$|\.gitignore$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$|apps\/server\/test\/fixtures\/write-assessment-fixture\.ts$|apps\/server\/test\/fixtures\/write-suunto-fixture\.ts$|apps\/server\/test\/fixtures\/write-merge-fixture\.ts$|apps\/server\/test\/fixtures\/write-account-export-fixture\.ts$|scripts\/token-report\.mjs$)/;
+export const QUIET = /^(docs\/|samples\/|\.claude\/|\.github\/|\.githooks\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|skills-lock\.json$|\.gitignore$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$|apps\/server\/test\/fixtures\/write-assessment-fixture\.ts$|apps\/server\/test\/fixtures\/write-suunto-fixture\.ts$|apps\/server\/test\/fixtures\/write-merge-fixture\.ts$|apps\/server\/test\/fixtures\/write-account-export-fixture\.ts$|scripts\/token-report\.mjs$)/;
 
 /** The area tags a browser test can have; a test with none of them would run only in the full check. */
 export const TAGS = ['@dives', '@divers', '@sites', '@account', '@admin', '@layout', '@tools'];
@@ -70,19 +70,32 @@ export const TAGS = ['@dives', '@divers', '@sites', '@account', '@admin', '@layo
 export const FULL_ONLY = '@full';
 
 /** The plan that runs everything (`pnpm check:full`). */
-export const fullPlan = () => ({ typecheck: true, scripts: true, server: 'all', web: 'all', e2e: 'all', areas: new Set(), specs: new Set(), notes: [] });
+export const fullPlan = () => ({ typecheck: true, lint: 'all', scripts: true, server: 'all', web: 'all', e2e: 'all', areas: new Set(), specs: new Set(), notes: [] });
 
 /**
  * What a set of changed files asks for. Unknown paths count as "everything": when in doubt, run more.
  * `notes` say why more than the changed area runs: `{ text, steps }`, with the steps the note widened.
  */
 export function planFor(changed) {
-  const plan = { typecheck: false, scripts: false, server: 'none', web: 'none', e2e: 'none', areas: new Set(), specs: new Set(), notes: [] };
+  const plan = { typecheck: false, lint: 'none', scripts: false, server: 'none', web: 'none', e2e: 'none', areas: new Set(), specs: new Set(), notes: [] };
   const more = (key, level) => { if (plan[key] !== 'all') plan[key] = level; };
 
   for (const path of changed) {
+    // The edit hook runs the lint of the check script: its tests and a lint of everything.
+    if (path === '.claude/hooks/lint-file.mjs') {
+      plan.scripts = true;
+      plan.lint = 'all';
+      continue;
+    }
     if (QUIET.test(path)) continue;
+    // The lint rules and their baselines change what every file is checked against, and nothing else.
+    if (LINT_CONFIG.test(path)) {
+      plan.lint = 'all';
+      plan.notes.push({ text: `${path} is lint configuration, so every file is linted`, steps: ['lint'] });
+      continue;
+    }
     plan.typecheck = true;
+    more('lint', 'changed');
     const spec = /^apps\/web\/e2e\/([\w-]+\.spec\.ts)$/.exec(path);
     if (spec) { more('e2e', 'some'); plan.specs.add(spec[1]); continue; }
     if (/^apps\/web\/test\//.test(path)) { more('web', 'changed'); continue; }
@@ -117,8 +130,8 @@ export function planFor(changed) {
     }
     // The check script has tests of its own.
     if (/^scripts\/check/.test(path)) plan.scripts = true;
-    Object.assign(plan, { server: 'all', web: 'all', e2e: 'all' });
-    plan.notes.push({ text: `${path} is shared or unknown, so everything runs`, steps: ['server', 'web', 'e2e'] });
+    Object.assign(plan, { lint: 'all', server: 'all', web: 'all', e2e: 'all' });
+    plan.notes.push({ text: `${path} is shared or unknown, so everything runs`, steps: ['lint', 'server', 'web', 'e2e'] });
   }
   return plan;
 }
@@ -132,6 +145,7 @@ export function planSteps(changedByStep) {
   const notes = STEPS.flatMap((step) => plans[step].notes.filter((note) => note.steps.includes(step)).map((note) => note.text));
   return {
     typecheck: plans.typecheck.typecheck,
+    lint: plans.lint.lint,
     scripts: plans.scripts.scripts,
     server: plans.server.server,
     web: plans.web.web,
@@ -140,6 +154,58 @@ export function planSteps(changedByStep) {
     specs: plans.e2e.specs,
     notes: [...new Set(notes)],
   };
+}
+
+/** The lint configuration and the baselines of what it found before (research note 2026-10-22-agent-guardrails). */
+export const LINT_CONFIG = /^(eslint\.config\.mjs|eslint-suppressions\.json|\.dependency-cruiser\.cjs|\.dependency-cruiser-known-violations\.json)$/;
+/** The baselines: problems that existed when the rules came, which may only shrink. */
+export const BASELINES = ['eslint-suppressions.json', '.dependency-cruiser-known-violations.json'];
+const ESLINT_FILES = /^(apps\/[\w-]+\/(src|test)\/|apps\/web\/e2e\/|packages\/[\w-]+\/src\/).*\.tsx?$/;
+const DEPS_FILES = /^apps\/(server|web)\/src\/.*\.tsx?$/;
+
+/** Of the changed files, those ESLint checks and those dependency-cruiser starts from (tests aside). */
+export function lintTargets(changed) {
+  return {
+    eslint: changed.filter((path) => ESLINT_FILES.test(path)),
+    deps: changed.filter((path) => DEPS_FILES.test(path) && !/\.(test|spec)\.tsx?$/.test(path)),
+  };
+}
+
+/** Entries in a baseline (ESLint's suppressions: the counts; dependency-cruiser's known violations: the list). */
+export function baselineSize(text) {
+  if (!text) return 0;
+  const data = JSON.parse(text);
+  if (Array.isArray(data)) return data.length;
+  return Object.values(data).flatMap((rules) => Object.values(rules)).reduce((sum, rule) => sum + rule.count, 0);
+}
+
+/** A baseline's entries by key with their counts: ESLint's file and rule, dependency-cruiser's rule, from and to. */
+function baselineEntries(text) {
+  const entries = new Map();
+  if (!text) return entries;
+  const data = JSON.parse(text);
+  if (Array.isArray(data)) {
+    for (const v of data) {
+      const key = `${v.rule.name}: ${v.from} → ${v.to}`;
+      entries.set(key, (entries.get(key) ?? 0) + 1);
+    }
+  } else {
+    for (const [file, rules] of Object.entries(data)) for (const [rule, { count }] of Object.entries(rules)) entries.set(`${file} (${rule})`, count);
+  }
+  return entries;
+}
+
+/**
+ * `[path, before, now]` per baseline (texts, null when absent) → a message for each one with an entry that is new
+ * or counts more than before. Comparing sizes alone would let a fixed problem be swapped for a new one.
+ */
+export function baselineGrowth(baselines) {
+  return baselines.flatMap(([path, before, now]) => {
+    if (before === null) return [];
+    const was = baselineEntries(before);
+    const grown = [...baselineEntries(now)].filter(([key, count]) => count > (was.get(key) ?? 0)).map(([key]) => key);
+    return grown.length > 0 ? [`${path} has new entries: ${grown.join(', ')}: fix the new problems instead of adding them to the baseline`] : [];
+  });
 }
 
 const git = (args, cwd, env) => execFileSync('git', ['-c', 'core.quotepath=off', ...args], { cwd, env: { ...process.env, ...env }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();

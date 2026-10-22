@@ -1,0 +1,79 @@
+# The full check on every push and pull request (ADR 0023, amendment of 2026-10-22): the gate that nothing
+# merges past. Same command as on a laptop: pnpm check:full.
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      # Same image as compose.dev.yaml; the tests create a database per file and per e2e server.
+      postgres:
+        image: postgres:18.0-alpine
+        env:
+          POSTGRES_USER: divehub
+          POSTGRES_PASSWORD: divehub-dev
+          POSTGRES_DB: divehub
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U divehub"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      DATABASE_URL: postgres://divehub:divehub-dev@127.0.0.1:5432/divehub
+      # Playwright's own Chromium (cached below); on a laptop the tests use the installed Edge.
+      PLAYWRIGHT_CHANNEL: chromium
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The lint baselines may only shrink: they are compared with the base of the pull request, or with the
+          # commit before the push (BASELINE_REF), so the history must be there.
+          fetch-depth: 0
+      - name: Baseline to compare with
+        run: echo "BASELINE_REF=${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}" >> "$GITHUB_ENV"
+
+      # pnpm's version comes from packageManager in package.json.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Playwright version
+        id: playwright
+        run: echo "version=$(pnpm --filter @dive-hub/web exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: browsers
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - name: Install Chromium
+        if: steps.browsers.outputs.cache-hit != 'true'
+        run: pnpm --filter @dive-hub/web exec playwright install --with-deps chromium
+      - name: Chromium's system libraries
+        if: steps.browsers.outputs.cache-hit == 'true'
+        run: pnpm --filter @dive-hub/web exec playwright install-deps chromium
+
+      - run: pnpm check:full
+
+      - name: Browser test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: apps/web/test-results/
+          retention-days: 7
+          if-no-files-found: ignore

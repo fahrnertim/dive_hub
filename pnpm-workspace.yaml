@@ -9,3 +9,10 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - lucide-react@1.51.0
+
+# dependency-cruiser parses TypeScript only when it can load the compiler, which it doesn't declare. TypeScript 7 has
+# no compiler API, so the lint tools get the root's TypeScript 6 (research note 2026-10-22-agent-guardrails).
+packageExtensions:
+  dependency-cruiser:
+    peerDependencies:
+      typescript: '>=5 <7'
