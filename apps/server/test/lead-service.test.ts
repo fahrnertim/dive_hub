@@ -1,7 +1,7 @@
 // The lead service answers for a User who keeps the Diver's logbook and for nobody else (ADR 0053): the route passes ids only.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
-import { user } from '../src/db/schema.js';
+import { diver, user } from '../src/db/schema.js';
 import { createLeadService } from '../src/lead/service.js';
 import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, signIn, type TestDatabase } from './support.js';
 
@@ -37,5 +37,11 @@ describe.skipIf(!(await databaseReachable()))('lead service', () => {
     const own = await lead.estimate(annId, annDiver, plan, 'kg');
     expect(own).toMatchObject({ estimate: { unit: 'kg' }, noWaterType: 0 });
     expect(await lead.estimate(otherId, annDiver, plan, 'kg')).toBeNull();
+  });
+
+  it('says nothing for a deleted Diver, though the User still has a management row for it', async () => {
+    await t.db.update(diver).set({ deletedAt: new Date() }).where(eq(diver.id, annDiver));
+    expect(await lead.estimate(annId, annDiver, plan, 'kg')).toBeNull();
+    await t.db.update(diver).set({ deletedAt: null }).where(eq(diver.id, annDiver));
   });
 });

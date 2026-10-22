@@ -2,7 +2,8 @@
 // water and Cylinders, and the latest body weight, as the engine's plain data. Read only; nothing is stored.
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { cylinder, dive, diveSite, diver, diverBodyWeight, diverManagement, lead } from '../db/schema.js';
+import { cylinder, dive, diveSite, diverBodyWeight, lead } from '../db/schema.js';
+import { managedDiverIds } from '../dives/dive-service.js';
 import { leadTotalKg, suitOf, weightingFeedbackOf } from '../dives/weighting.js';
 import { estimateLead } from './estimate.js';
 import type { EstimateDive, LeadEstimate, LeadUnit, PlannedConditions } from './types.js';
@@ -18,14 +19,6 @@ export interface LeadEstimateAnswer {
   dives: Map<string, DiveReference>;
   /** Dives with lead and a suit that no estimate can use because their site has no water type (or they have no site). */
   noWaterType: number;
-}
-
-/** Whether the User keeps the Diver's logbook (and the Diver is not deleted): the only ones who may ask. */
-export async function managesDiver(db: Db, userId: string, diverId: string): Promise<boolean> {
-  const [row] = await db.select({ id: diverManagement.diverId }).from(diverManagement)
-    .innerJoin(diver, eq(diver.id, diverManagement.diverId))
-    .where(and(eq(diverManagement.userId, userId), eq(diverManagement.diverId, diverId), isNull(diver.deletedAt)));
-  return row !== undefined;
 }
 
 export async function leadEstimateOf(
@@ -67,7 +60,7 @@ export async function leadEstimateOf(
 export function createLeadService(db: Db) {
   return {
     estimate: async (userId: string, diverId: string, plan: PlannedConditions, unit: LeadUnit): Promise<LeadEstimateAnswer | null> =>
-      (await managesDiver(db, userId, diverId)) ? leadEstimateOf(db, diverId, plan, unit) : null,
+      (await managedDiverIds(db, userId, { live: true })).has(diverId) ? leadEstimateOf(db, diverId, plan, unit) : null,
   };
 }
 

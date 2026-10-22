@@ -145,9 +145,12 @@ export async function participantsOf(tx: Tx | Db, diveId: string) {
     || a.name.localeCompare(b.name) || a.diverId.localeCompare(b.diverId));
 }
 
-/** Divers the User manages. */
-export async function managedDiverIds(tx: Tx | Db, userId: string): Promise<Set<string>> {
-  const rows = await tx.select({ id: diverManagement.diverId }).from(diverManagement).where(eq(diverManagement.userId, userId));
+/** Divers the User manages: the one lookup behind "does this User manage this Diver". Deleted Divers keep their rows, so `live` leaves them out. */
+export async function managedDiverIds(tx: Tx | Db, userId: string, options: { live?: boolean } = {}): Promise<Set<string>> {
+  const rows = options.live
+    ? await tx.select({ id: diverManagement.diverId }).from(diverManagement)
+      .innerJoin(diver, eq(diver.id, diverManagement.diverId)).where(and(eq(diverManagement.userId, userId), isNull(diver.deletedAt)))
+    : await tx.select({ id: diverManagement.diverId }).from(diverManagement).where(eq(diverManagement.userId, userId));
   return new Set(rows.map((r) => r.id));
 }
 
