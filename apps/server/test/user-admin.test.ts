@@ -85,7 +85,10 @@ describe.skipIf(!(await databaseReachable()))('managing Users', () => {
       inject('PATCH', `/api/users/${ids.promoted}`, adminCookie, { role: 'user' }),
       inject('PATCH', `/api/users/${adminId}`, second, { role: 'user' }),
     ]);
-    expect(results.map((r) => r.statusCode).sort()).toEqual([200, 409]);
+    // The loser is either stopped by the last-admin guard (409) or, if the winner committed first, is no longer an admin (403).
+    const codes = results.map((r) => r.statusCode).sort();
+    expect(codes[0]).toBe(200);
+    expect([403, 409]).toContain(codes[1]);
     const admins = await t.db.execute(sql`select count(*)::int as n from "user" where role = 'admin'`);
     expect((admins.rows[0] as { n: number }).n).toBe(1);
     // Restore: the original admin stays admin for the following tests.
