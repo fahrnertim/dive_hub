@@ -1,6 +1,6 @@
 ---
 title: "ADR 0053: Module boundaries"
-summary: The server in three layers (routes → services → db, every query in a service, vocabulary.ts below db); the imports between its domain modules as an enforced allow-list in .dependency-cruiser.cjs, changed there without a new ADR; the web client's shared components import no page; no import cycles. Checked by dependency-cruiser against a baseline of the 1 violation left. Fixes done - the runtime cycle diver-service ↔ merge through DiverError, db/schema.ts importing from sites/, the three server type cycles, and the queries out of all six route files.
+summary: The server in three layers (routes → services → db, every query in a service, vocabulary.ts below db); the imports between its domain modules as an enforced allow-list in .dependency-cruiser.cjs, changed there without a new ADR; the web client's shared components import no page; no import cycles. Checked by dependency-cruiser against an empty baseline (0 violations). Fixes done - the web cycle api.ts ↔ lib/logbook.ts (the LogbookParams type moved to lib/), the runtime cycle diver-service ↔ merge through DiverError, db/schema.ts importing from sites/, the three server type cycles, and the queries out of all six route files.
 status: accepted
 date: 2026-10-22
 ---
@@ -65,7 +65,7 @@ touch them.
 ### Web client
 - `ui/` (shared components) imports no page (a component file at the top of `apps/web/src`).
 - Pages import `ui/`, `lib/`, `design/`, `i18n/` and `api.ts`; `lib/` imports no page.
-- `api.ts` ↔ `lib/logbook.ts` is the one cycle; `api.ts` should not need `lib/`.
+- `api.ts` imports `lib/` only for types and constants, never the other way: `lib/` imports no `api.ts` (the `LogbookParams` type now lives in `lib/logbook.ts`; done 2026-10-23, no cycle is left).
 
 ### No cycles
 No import cycle, not even through a type import, in either app.
@@ -76,7 +76,7 @@ No import cycle, not even through a type import, in either app.
   allows; `ui/` imports no page. It runs in `pnpm check` (changed files), `pnpm check:full`, CI and
   after every edit by an agent ([ADR 0023](0023-faster-checks.md), amendment of 2026-10-22).
 - The violations of 2026-10-22 are in `.dependency-cruiser-known-violations.json`: 23 found, 22 left once
-  `vocabulary.ts` was allowed below `db/`. 19 left after the DiverError fix, 10 after moving the import types down to `db/import-types.ts`, 7 after the three type cycles, 6 after the queries left `routes.ts`, 5 after `dives/routes.ts`, 4 after `planning/routes.ts`, 3 after `users/routes.ts`, 2 after `users/account-routes.ts`, 1 after `users/admin-routes.ts` (the web cycle `api.ts` ↔ `lib/logbook.ts`). Only new ones fail; the file may only shrink. After fixing one,
+  `vocabulary.ts` was allowed below `db/`. 19 left after the DiverError fix, 10 after moving the import types down to `db/import-types.ts`, 7 after the three type cycles, 6 after the queries left `routes.ts`, 5 after `dives/routes.ts`, 4 after `planning/routes.ts`, 3 after `users/routes.ts`, 2 after `users/account-routes.ts`, 1 after `users/admin-routes.ts`, 0 after the web cycle `api.ts` ↔ `lib/logbook.ts`: the file is now `[]` and stays so. Any new violation fails; the file may only shrink. After fixing one,
   `pnpm lint:baseline` takes it out.
 - The `architecture-review` subagent (`.claude/agents/architecture-review.md`) reviews each slice against this ADR.
 
@@ -102,7 +102,7 @@ No import cycle, not even through a type import, in either app.
    `users/session-service.ts` (tested in `test/session-service.test.ts`), which comes in through `AccountRouteDeps`. **`users/admin-routes.ts` done 2026-10-23 (2 → 1):** the user list and the can-be-reset check moved to `users/user-admin.ts` (`list`, `assertCanReset`; tested in `test/user-admin-reads.test.ts`), so the file holds no `db`. No route file imports `drizzle-orm` any more.
    **`routes.ts` and `lead/routes.ts` done 2026-10-23 (baseline stays 1):** `routes.ts` takes the managed-Diver lookup from `logbook.managedDivers` (`dives/logbook-service.ts`, tested in `test/dive-reads.test.ts`) and holds no `db`; `lead/routes.ts` calls the new `createLeadService` (`lead/service.ts`, `estimate(userId, diverId, plan, unit)`, null for a Diver the User doesn't manage; tested in `test/lead-service.test.ts`), so its 404 now comes after the input checks. With that the rule `routes-use-no-db-client` (route files don't import `db/client.js`; `db/schema.js` stays allowed for its value lists) is in `.dependency-cruiser.cjs`, with no baseline entries.
    **Follow-up, not yet done:** `managesDiver` (`lead/service.ts`) and `managedDiverIds` (`dives/dive-service.ts`) both answer "does this User manage this Diver"; fold them into one lookup in a later slice.
-5. `api.ts` ↔ `lib/logbook.ts` in the web client.
+5. **`api.ts` ↔ `lib/logbook.ts` done 2026-10-23 (1 → 0):** `LogbookParams` moved from `api.ts` into `lib/logbook.ts`, which no longer imports `api.ts`; `api.ts` and the pages import the type from there. The known-violations baseline is empty.
 
 ## Owner's answers (2026-10-22)
 - **routes → services → db, strictly**: small read-only routes don't keep their queries.

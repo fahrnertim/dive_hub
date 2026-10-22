@@ -2,7 +2,7 @@ import { createApiClient, type paths } from '@dive-hub/api-client';
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import { createAuthClient } from 'better-auth/client';
 import { SITES_PAGE, type SitesParams } from './lib/sites-list.ts';
-import type { LogbookFilter, neighbourParams } from './lib/logbook.ts';
+import type { LogbookParams, neighbourParams } from './lib/logbook.ts';
 import { BOTTOM_TIME_RULES, type ToolsParams } from './lib/tools.ts';
 
 export const api = createApiClient();
@@ -220,18 +220,6 @@ export const importsQuery = () =>
     refetchInterval: (q) => (q.state.data?.some((i) => i.status === 'pending' || i.status === 'processing') ? 1000 : false),
   });
 
-/** What the logbook shows (ADR 0017); it lives in the address, e.g. "#/?sort=maxDepth&page=2". */
-export interface LogbookParams {
-  diverId?: string | undefined;
-  /** Only Dives at this Dive site. */
-  siteId?: string | undefined;
-  q?: string | undefined;
-  sort?: 'startsAt' | 'number' | 'maxDepth' | 'duration' | undefined;
-  order?: 'asc' | 'desc' | undefined;
-  /** "Show only" (ADR 0040): all of them must fit. */
-  only?: LogbookFilter[] | undefined;
-  page?: number | undefined;
-}
 export const PAGE_SIZE = 25;
 
 /** One page of the logbook. The previous page stays on screen while the next one loads. */

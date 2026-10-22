@@ -1,5 +1,3 @@
-import type { LogbookParams } from '../api.ts';
-
 /** The "Show only" filters of the logbook (ADR 0040), in the order they are offered and written to the address. */
 export const LOGBOOK_FILTERS = ['no-recording', 'no-site', 'with-findings', 'not-at-provider', 'changed-since-sent'] as const;
 export type LogbookFilter = (typeof LOGBOOK_FILTERS)[number];
@@ -7,6 +5,19 @@ export type LogbookFilter = (typeof LOGBOOK_FILTERS)[number];
 /** The filters with this one pressed or released. */
 export function toggled(only: readonly LogbookFilter[] | undefined, filter: LogbookFilter): LogbookFilter[] {
   return only?.includes(filter) ? only.filter((f) => f !== filter) : [...(only ?? []), filter];
+}
+
+/** What the logbook shows (ADR 0017); it lives in the address, e.g. "#/?sort=maxDepth&page=2". */
+export interface LogbookParams {
+  diverId?: string | undefined;
+  /** Only Dives at this Dive site. */
+  siteId?: string | undefined;
+  q?: string | undefined;
+  sort?: 'startsAt' | 'number' | 'maxDepth' | 'duration' | undefined;
+  order?: 'asc' | 'desc' | undefined;
+  /** "Show only" (ADR 0040): all of them must fit. */
+  only?: LogbookFilter[] | undefined;
+  page?: number | undefined;
 }
 
 /** The settings as a query string; defaults are left out. */

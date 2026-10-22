@@ -5,11 +5,11 @@ import type { TFunction } from 'i18next';
 import { Label, ProgressBar } from 'react-aria-components';
 import {
   ApiError, cancelPushRun, connectionsQuery, continuePushRun, dismissPushRun, keys, pushRunActive, pushRunPreviewQuery, pushRunQuery, pushRunsQuery,
-  siteQuery, startPushRun, type ConnectionView, type LogbookParams, type ProviderView, type PushRunChoices, type PushRunDetail, type PushRunView,
+  siteQuery, startPushRun, type ConnectionView, type ProviderView, type PushRunChoices, type PushRunDetail, type PushRunView,
 } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
-import { logbookHref, toggled, type LogbookFilter } from './lib/logbook.ts';
+import { logbookHref, toggled, type LogbookFilter, type LogbookParams } from './lib/logbook.ts';
 import { useProviders } from './lib/providers.ts';
 import { accountHref } from './lib/account-tabs.ts';
 import { HeldAtProvider, NumberPlanList } from './NumberChain.tsx';

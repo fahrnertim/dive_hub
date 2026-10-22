@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { connectionsQuery, divesQuery, diversQuery, PAGE_SIZE, siteQuery, type DiveSummary, type LogbookPage, type LogbookParams } from './api.ts';
+import { connectionsQuery, divesQuery, diversQuery, PAGE_SIZE, siteQuery, type DiveSummary, type LogbookPage } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import {
-  diveHref, listQuery, LOGBOOK_FILTERS, logbookHref, mixName, monthGroups, SORT_CHOICES, sortChoice, toggled, type LogbookFilter, type MonthFigures,
+  diveHref, listQuery, LOGBOOK_FILTERS, logbookHref, mixName, monthGroups, SORT_CHOICES, sortChoice, toggled, type LogbookFilter, type LogbookParams, type MonthFigures,
 } from './lib/logbook.ts';
 import { useAddressSearch } from './lib/address-search.ts';
 import { useNarrow } from './lib/narrow.ts';
