@@ -164,11 +164,29 @@ test('review material', async ({ page, request, browser }) => {
       await page.getByRole('button', { name: 'Edit dive' }).click(); await page.getByRole('textbox', { name: 'Lead 1' }).scrollIntoViewIfNeeded();
       await capture(page, '03k-dive-suit-and-lead-form-phone', { aria: false });
       await page.getByRole('button', { name: 'Cancel' }).click();
+      // The hint (slice 20d) asks with the site's water type: a site, and the estimate as the server gives it.
+      const hintSite = (await (await request.post('/api/dive-sites', { data: { name: 'Hint reef', waterType: 'salt' }, headers })).json()) as { id: string };
+      {
+        const v = ((await (await request.get(`/api/dives/${id}`)).json()) as { version: number }).version;
+        await request.patch(`/api/dives/${id}`, { data: { version: v, siteId: hintSite.id }, headers });
+      }
+      await page.route('**/api/divers/*/lead-estimate*', (route) => route.fulfill({ json: {
+        confidence: 'high', total: 8, range: { low: 7, high: 9 }, reserve: { bar: 50, fromDives: false }, adjustments: [], missing: [], leftOut: { noWaterType: 0 },
+        weightCheck: { reserveBar: 50, steps: ['eye_level_empty_bc', 'neutral_at_5m_at_reserve'] },
+        basis: { kind: 'dives', personal: 8, dives: [{ diveId: '00000000-0000-4000-8000-000000000001', startsAt: '2026-03-01T09:00:00Z', number: 12, carried: 8, needed: 8, weight: 2 }] },
+      } }));
+      await page.reload(); await page.getByRole('button', { name: 'Edit dive' }).click(); await page.getByRole('textbox', { name: 'Lead 1' }).scrollIntoViewIfNeeded();
+      await page.getByTestId('lead-hint').waitFor();
+      await capture(page, '03l-dive-lead-hint-form-phone', { aria: false });
+      await page.getByRole('button', { name: 'Cancel' }).click();
       await page.setViewportSize({ width: 1280, height: 900 });
       await capture(page, '03j-dive-suit-and-lead');
       await page.getByRole('button', { name: 'Edit dive' }).click(); await page.getByRole('textbox', { name: 'Lead 1' }).scrollIntoViewIfNeeded();
       await capture(page, '03k-dive-suit-and-lead-form');
+      await page.getByTestId('lead-hint').waitFor();
+      await capture(page, '03l-dive-lead-hint-form', { aria: false });
       await page.getByRole('button', { name: 'Cancel' }).click();
+      await page.unroute('**/api/divers/*/lead-estimate*');
       await page.setViewportSize({ width: 390, height: 844 });
     }
     await page.setViewportSize({ width: 1280, height: 900 });

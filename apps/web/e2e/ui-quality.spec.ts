@@ -1165,6 +1165,36 @@ test.describe('behaviour', () => {
     }
   });
 
+  test('the lead hint sits between the suit and the lead, and fills nothing in', { tag: ['@dives'] }, async ({ page, request }) => {
+    const earlier = await tankPodDive(request);
+    const diveId = await seededDiveId(request);
+    const send = { headers: { origin: E2E_BASE_URL } };
+    const set = async (id: string, values: object) => {
+      const { version } = (await (await request.get(`/api/dives/${id}`)).json()) as { version: number };
+      expect((await request.patch(`/api/dives/${id}`, { data: { version, ...values }, ...send })).status()).toBe(200);
+    };
+    const site = (await (await request.post('/api/dive-sites', { data: { name: 'Hint reef', waterType: 'salt' }, ...send })).json()) as { id: string };
+    const nothing = { lead: [], weightingFeedback: null, suit: null, siteId: null };
+    await set(earlier, { siteId: site.id, suit: { type: 'wetsuit', thicknessMm: 5, hood: false }, lead: [{ amountKg: 8 }], weightingFeedback: { felt: 'right' } });
+    await set(diveId, { siteId: site.id, cylinders: [{ volumeL: 12, material: 'steel', gas: { o2: 21, he: 0 } }] });
+    try {
+      await page.goto(`/#/dives/${diveId}`);
+      await page.getByRole('button', { name: 'Edit dive' }).click();
+      await page.getByRole('button', { name: /Suit$/ }).click();
+      await page.getByRole('option', { name: 'Wetsuit', exact: true }).click();
+      await page.getByRole('textbox', { name: 'Thickness (mm)' }).fill('5');
+      await page.getByRole('button', { name: /Hood$/ }).click();
+      await page.getByRole('option', { name: 'Without hood', exact: true }).click();
+      await expect(page.getByTestId('lead-hint')).toContainText('Last time with this suit: 8 kg, felt right.');
+      await expectGoodPage(page);
+      await page.getByRole('button', { name: 'Cancel' }).click();
+    } finally {
+      await set(earlier, nothing);
+      await set(diveId, { ...nothing, cylinders: [] });
+      await request.delete(`/api/dive-sites/${site.id}`, send);
+    }
+  });
+
   test('the logbook comes first; files dropped anywhere on the page are imported', { tag: ['@dives'] }, async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Logbook', level: 1 })).toBeVisible();

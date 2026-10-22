@@ -1567,6 +1567,13 @@
     }
   },
   "weighting": {
+    "hint": {
+      "right": "Letztes Mal mit diesem Anzug: {{carried}}, fühlte sich richtig an.",
+      "needed": "Letztes Mal mit diesem Anzug: {{carried}}, gebraucht wurden {{needed}}.",
+      "open": "Diesen Tauchgang öffnen",
+      "notFilled": "Daraus wird nichts eingetragen.",
+      "calculator": "Startwert und Spanne für diese Bedingungen"
+    },
     "title": "Anzug und Blei",
     "addFirst": "Anzug und Blei eintragen",
     "suit": "Anzug",

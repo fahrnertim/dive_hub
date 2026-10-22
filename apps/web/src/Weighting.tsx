@@ -1,5 +1,6 @@
 // A Dive's exposure suit, Lead and weighting feedback (ADR 0031): in words on the dive page and in its history, and
 // as a group of fields in the Dive's form.
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDisplay } from './lib/display.ts';
 import {
@@ -35,7 +36,7 @@ export function useWeightingText() {
 }
 
 /** Suit, lead and how the weighting felt in the Dive's form. Nothing here is required: what is left empty stays unknown. */
-export function WeightingFields({ draft, onChange, autoFocus }: { draft: WeightingDraft; onChange: (next: WeightingDraft) => void; autoFocus?: boolean }) {
+export function WeightingFields({ draft, onChange, autoFocus, hint }: { draft: WeightingDraft; onChange: (next: WeightingDraft) => void; autoFocus?: boolean; hint?: ReactNode }) {
   const { t } = useTranslation();
   const display = useDisplay();
   const { units } = display;
@@ -72,6 +73,7 @@ export function WeightingFields({ draft, onChange, autoFocus }: { draft: Weighti
           />
         )}
       </div>
+      {hint}
       {draft.lead.map((e, i) => (
         <div key={e.key} className="lead-row">
           <NumberField

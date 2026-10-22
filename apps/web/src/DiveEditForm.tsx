@@ -11,6 +11,7 @@ import { useLeaveGuard } from './lib/leave-guard.ts';
 import { useFormatValue } from './lib/dive-values.ts';
 import { draftOfWeighting, emptyLead, fromLastDive as weightingFromLastDive, lacks, sameWeighting, weightingOfDraft } from './lib/weighting.ts';
 import { depthFromDisplay, depthIn, temperatureFromDisplay, temperatureIn } from './lib/units.ts';
+import { LeadHint } from './LeadHint.tsx';
 import { WeightingFields } from './Weighting.tsx';
 import { Badge, Button, DateTimeField, Form, Muted, Notice, NumberField, TextArea } from './ui/index.ts';
 
@@ -220,7 +221,10 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
       )}
       {last.error && <Notice tone="danger">{errorText(last.error)}</Notice>}
       <CylinderFields dive={d} drafts={cylinders} onChange={setCylinders} autoFocus={focus === 'cylinders'} />
-      <WeightingFields draft={weighting} onChange={setWeighting} autoFocus={focus === 'weighting'} />
+      <WeightingFields
+        draft={weighting} onChange={setWeighting} autoFocus={focus === 'weighting'}
+        hint={<LeadHint diveId={d.id} diverId={d.diverId} water={d.waterType} weighting={weighting} cylinders={typedCylinders} />}
+      />
       <TextArea autoFocus={focus === 'notes'} label={t('dive.notes')} value={notes} onChange={setNotes} maxLength={20_000} />
       {save.error && (
         <Notice tone="danger">

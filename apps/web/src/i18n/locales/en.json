@@ -1567,6 +1567,13 @@
     }
   },
   "weighting": {
+    "hint": {
+      "right": "Last time with this suit: {{carried}}, felt right.",
+      "needed": "Last time with this suit: {{carried}}, needed {{needed}}.",
+      "open": "Open that dive",
+      "notFilled": "Nothing is filled in from this.",
+      "calculator": "Starting point and range for these conditions"
+    },
     "title": "Suit and lead",
     "addFirst": "Add suit and lead",
     "suit": "Suit",
