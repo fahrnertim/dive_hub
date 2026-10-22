@@ -2,14 +2,12 @@
 // the gas down to the ascent pressure of a gas rule (ADR 0033), and which one binds. An estimate from the Diver's own input and settings, not advice;
 // the dive computer and training govern. Air and nitrox 21 to 40 % only, no-stop only, at most 40 m.
 import { ambientPressureBar, modMetres, type Conditions, type GasMix } from './gas.js';
-import { planGas, type GasRule } from './gas-plan.js';
+import { ASCENT_RATE_M_PER_MIN, MAX_DEPTH_M, planGas, SAFETY_STOP, type GasRule } from './gas-plan.js';
 import { ndlMinutes } from './ndl.js';
 import { otu, oxygenLimitMinutes } from './oxygen.js';
 
-/** Deeper than this is never answered (ADR 0032). */
-export const MAX_DEPTH_M = 40;
-export const ASCENT_RATE_M_PER_MIN = 9;
-export const SAFETY_STOP = { depthM: 5, minutes: 3 };
+// The limits live in gas-plan.ts, the lower of the two; re-exported for the callers of this file.
+export { ASCENT_RATE_M_PER_MIN, MAX_DEPTH_M, SAFETY_STOP };
 
 export type Limit = 'ndl' | 'oxygen' | 'gas';
 

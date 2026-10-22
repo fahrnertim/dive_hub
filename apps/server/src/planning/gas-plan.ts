@@ -2,9 +2,13 @@
 // from their Cylinder and SAC - end, rock bottom, the ascent pressure of the chosen rule. Limits from the Diver's own input
 // and settings, not advice; the dive computer and training govern. Air and nitrox 21 to 40 %, at most 40 m.
 import { pressureForLitres, surfaceLitres } from '../dives/real-gas.js';
-import { ASCENT_RATE_M_PER_MIN, MAX_DEPTH_M, SAFETY_STOP } from './bottom-time.js';
 import { ambientPressureBar, modMetres, type Conditions, type GasMix } from './gas.js';
 import { DESCENT_RATE_M_PER_MIN } from './ndl.js';
+
+/** Deeper than this is never answered (ADR 0032). */
+export const MAX_DEPTH_M = 40;
+export const ASCENT_RATE_M_PER_MIN = 9;
+export const SAFETY_STOP = { depthM: 5, minutes: 3 };
 
 /** Never ascend below this with the default rule (ADR 0033). */
 export const MIN_ASCENT_BAR = 50;

@@ -2,6 +2,7 @@
 // imported as external Divers. Kept are a name, the person's account at the Provider and what their code there says
 // (first and last name, e-mail, leader number: ADR 0043); whatever else the Provider has about them (birth date,
 // phone, address) stays there. The list as it is answered holds only names and accounts.
+import { tidyName } from '../divers/diver-name.js';
 import type { DiverActor, DiverDetails, DiverService } from '../divers/diver-service.js';
 import type { ConnectionService } from './connection-service.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
@@ -14,16 +15,7 @@ export interface Buddy {
   diver: { id: string; name: string } | null;
 }
 
-/**
- * A name as a Diver's name: one a Provider keeps all in lower case (or all in capitals) gets a capital at the start of
- * each part ("samuel dreier" → "Samuel Dreier", "anna-lena" → "Anna-Lena"). A name with mixed case ("McEowen",
- * "van der Berg") was typed with care and stays as it is.
- */
-export function tidyName(name: string): string {
-  const trimmed = name.trim().replace(/\s+/g, ' ');
-  if (trimmed !== trimmed.toLocaleLowerCase() && trimmed !== trimmed.toLocaleUpperCase()) return trimmed;
-  return trimmed.toLocaleLowerCase().replace(/(^|[\s\-'’])(\p{L})/gu, (_m, before: string, letter: string) => before + letter.toLocaleUpperCase());
-}
+export { tidyName };
 
 export function createBuddyService(deps: { registry: ProviderRegistry; connections: ConnectionService; divers: DiverService }) {
   const { registry, connections, divers } = deps;

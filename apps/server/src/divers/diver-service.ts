@@ -12,7 +12,7 @@ import { renumber } from '../dives/dive-numbers.js';
 import { writeRevision } from '../dives/revisions.js';
 import { DiverError } from './diver-error.js';
 import { mergeExternalDiver } from './merge.js';
-import { tidyName } from '../providers/buddy-service.js';
+import { tidyName } from './diver-name.js';
 import type { DiverSource } from '../providers/provider.js';
 
 /** The signed-in User as far as shared Divers care (as for Dive sites). */
