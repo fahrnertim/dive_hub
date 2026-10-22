@@ -60,8 +60,9 @@ describe('pressure', () => {
 describe('duration', () => {
   it('shows minutes, and hours plus minutes from one hour on', () => {
     expect(plain(formatDuration(45 * 60 + 20, 'en'))).toBe('45 min');
-    expect(plain(formatDuration(65 * 60, 'en'))).toBe('1 hr 5 min');
-    expect(plain(formatDuration(65 * 60, 'de'))).toBe('1 Std. 5 Min.');
+    // Newer locale data (Node 24.22, ICU 78) puts a comma between the units in Intl.DurationFormat.
+    expect(plain(formatDuration(65 * 60, 'en'))).toMatch(/^1 hr,? 5 min$/);
+    expect(plain(formatDuration(65 * 60, 'de'))).toMatch(/^1 Std\.,? 5 Min\.$/);
   });
 
   it('lets Intl.DurationFormat word it where the browser has it', () => {

@@ -91,7 +91,8 @@ test('"Show only" narrows the logbook: the chips keep their counts, live in the 
   await expect(noRecording).toBeFocused();
   await expect(diveRows(page)).toHaveCount(shown(counts.noRecording));
   await expect(diveRows(page).filter({ hasText: 'No recording' })).toHaveCount(shown(counts.noRecording));
-  await expect(page.getByText(new RegExp(`^1–${shown(counts.noRecording)} of ${counts.noRecording} dives?$`))).toBeVisible();
+  // In the page, not the screen readers' announcer, which says the same words while it lasts.
+  await expect(page.locator('#main').getByText(new RegExp(`^1–${shown(counts.noRecording)} of ${counts.noRecording} dives?$`))).toBeVisible();
 
   // A reload keeps the filter; the count stays what it was.
   await page.reload();

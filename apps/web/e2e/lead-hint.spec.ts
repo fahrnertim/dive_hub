@@ -37,7 +37,9 @@ test.beforeAll(async ({ request }) => {
 });
 test.afterAll(async ({ request }) => {
   await setPreferences(request, { language: null, units: null });
-  await patchDive(request, earlierId, { ...NOTHING, siteId: earlierSiteBefore });
+  // Only what beforeAll set: the tank pod dive keeps its Cylinder, which other specs read.
+  const { cylinders: _kept, ...setBefore } = NOTHING;
+  await patchDive(request, earlierId, { ...setBefore, siteId: earlierSiteBefore });
   await patchDive(request, diveId, { ...NOTHING, siteId: null });
   expect((await request.delete(`/api/dive-sites/${siteId}`, { headers })).status()).toBeLessThan(300);
 });

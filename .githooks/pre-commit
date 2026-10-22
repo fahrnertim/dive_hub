@@ -1,0 +1,4 @@
+#!/bin/sh
+# Runs the check by what changed before every commit (ADR 0023). Installed per clone with `pnpm hooks:install`
+# (sets core.hooksPath to .githooks). A commit of documentation only runs nothing and passes at once.
+exec pnpm check
