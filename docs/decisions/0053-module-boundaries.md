@@ -1,6 +1,6 @@
 ---
 title: "ADR 0053: Module boundaries"
-summary: The server in three layers (routes → services → db, every query in a service, vocabulary.ts below db); the imports between its domain modules as an enforced allow-list in .dependency-cruiser.cjs, changed there without a new ADR; the web client's shared components import no page; no import cycles. Checked by dependency-cruiser against a baseline of the 2 violations left. Fixes done - the runtime cycle diver-service ↔ merge through DiverError, db/schema.ts importing from sites/, the three server type cycles, and the queries out of routes.ts, dives/routes.ts, planning/routes.ts and users/routes.ts.
+summary: The server in three layers (routes → services → db, every query in a service, vocabulary.ts below db); the imports between its domain modules as an enforced allow-list in .dependency-cruiser.cjs, changed there without a new ADR; the web client's shared components import no page; no import cycles. Checked by dependency-cruiser against a baseline of the 1 violation left. Fixes done - the runtime cycle diver-service ↔ merge through DiverError, db/schema.ts importing from sites/, the three server type cycles, and the queries out of all six route files.
 status: accepted
 date: 2026-10-22
 ---
@@ -25,8 +25,8 @@ found what grew without it, and agent-written code is known to add coupling unle
     uses the other while loading.
 - **The database layer reaches up:** `db/schema.ts` imports from `sites/import/import-plan.ts`,
   `sites/import/site-source.ts`, `sites/sources.ts` (types) and `vocabulary.ts` (the `WATER_TYPES` values).
-- **Route files query the database** in 6 files: `routes.ts`, `dives/routes.ts`, `planning/routes.ts`,
-  `users/routes.ts`, `users/account-routes.ts`, `users/admin-routes.ts`. The other route files call services.
+- **Route files queried the database** in 6 files: `routes.ts`, `dives/routes.ts`, `planning/routes.ts`,
+  `users/routes.ts`, `users/account-routes.ts`, `users/admin-routes.ts` (all moved out, see step 4). The other route files call services.
 - The web client's shared components (`ui/`) import no page today.
 
 ## Decision
@@ -76,7 +76,7 @@ No import cycle, not even through a type import, in either app.
   allows; `ui/` imports no page. It runs in `pnpm check` (changed files), `pnpm check:full`, CI and
   after every edit by an agent ([ADR 0023](0023-faster-checks.md), amendment of 2026-10-22).
 - The violations of 2026-10-22 are in `.dependency-cruiser-known-violations.json`: 23 found, 22 left once
-  `vocabulary.ts` was allowed below `db/`. 19 left after the DiverError fix, 10 after moving the import types down to `db/import-types.ts`, 7 after the three type cycles, 6 after the queries left `routes.ts`, 5 after `dives/routes.ts`, 4 after `planning/routes.ts`, 3 after `users/routes.ts`, 2 after `users/account-routes.ts`. Only new ones fail; the file may only shrink. After fixing one,
+  `vocabulary.ts` was allowed below `db/`. 19 left after the DiverError fix, 10 after moving the import types down to `db/import-types.ts`, 7 after the three type cycles, 6 after the queries left `routes.ts`, 5 after `dives/routes.ts`, 4 after `planning/routes.ts`, 3 after `users/routes.ts`, 2 after `users/account-routes.ts`, 1 after `users/admin-routes.ts` (the web cycle `api.ts` ↔ `lib/logbook.ts`). Only new ones fail; the file may only shrink. After fixing one,
   `pnpm lint:baseline` takes it out.
 - The `architecture-review` subagent (`.claude/agents/architecture-review.md`) reviews each slice against this ADR.
 
@@ -89,7 +89,7 @@ No import cycle, not even through a type import, in either app.
    `MAX_DEPTH_M`, `ASCENT_RATE_M_PER_MIN` and `SAFETY_STOP` moved into `planning/gas-plan.ts`; `tidyName` moved to
    `divers/diver-name.ts`; their callers import them from the new homes. The `buddy-service` ↔ `diver-service`
    cycle was not type-only: `diver-service` imported the function `tidyName`.
-4. Queries out of the 6 route files, the largest first (`routes.ts`, `dives/routes.ts`). **`routes.ts` done 2026-10-22 (7 → 6):**
+4. Queries out of the 6 route files, the largest first (`routes.ts`, `dives/routes.ts`) — **all done**. **`routes.ts` done 2026-10-22 (7 → 6):**
    the list, neighbours and samples queries moved to `dives/logbook-service.ts`; the Import reads (`recentImports`,
    `findImport`, `decisionsOf`) to `imports/import-service.ts`; the managed-Diver lookup is `managedDiverIds` of
    `dives/dive-service.ts`.
@@ -99,11 +99,10 @@ No import cycle, not even through a type import, in either app.
    `planning/planning-service.ts` (`bottomTime`, `gasPlan` take the User's id; tested in `test/planning-service.test.ts`), which
    comes in through `PlanningRouteDeps`. **`users/routes.ts` done 2026-10-23 (4 → 3):** the own-Diver and preferences reads and the preferences save moved to the new
    `users/profile-service.ts` (tested in `test/profile-service.test.ts`), which comes in through `UserRouteDeps`. **`users/account-routes.ts` done 2026-10-23 (3 → 2):** the own-session list, sign-out of one and sign-out of the others moved to the new
-   `users/session-service.ts` (tested in `test/session-service.test.ts`), which comes in through `AccountRouteDeps`. One route file left
-   (`users/admin-routes.ts`). **In the last route-file slice**, once none of them needs `db`, add a rule
-   `routes-use-no-db-client` (route files don't import `db/client.js`; `db/schema.js` stays allowed for its value lists)
-   with an empty baseline, and amend this ADR: it would have caught a route handing `db` to query helpers, which the
-   `drizzle-orm` rule does not. Adding it earlier would grow the baseline by about six entries.
+   `users/session-service.ts` (tested in `test/session-service.test.ts`), which comes in through `AccountRouteDeps`. **`users/admin-routes.ts` done 2026-10-23 (2 → 1):** the user list and the can-be-reset check moved to `users/user-admin.ts` (`list`, `assertCanReset`; tested in `test/user-admin-reads.test.ts`), so the file holds no `db`. No route file imports `drizzle-orm` any more.
+   **Still open:** the rule `routes-use-no-db-client` (route files don't import `db/client.js`; `db/schema.js` stays allowed for its value lists)
+   is not added yet: `routes.ts` and `lead/routes.ts` still import `Db` to hand it to query helpers (`managedDiverIds`, `managesDiver`,
+   `leadEstimateOf`), which is what the rule is for and the `drizzle-orm` rule misses. Both get a service first, then the rule goes in with an empty baseline.
 5. `api.ts` ↔ `lib/logbook.ts` in the web client.
 
 ## Owner's answers (2026-10-22)

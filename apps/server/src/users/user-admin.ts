@@ -1,5 +1,5 @@
 // What admins can do to Users (ADR 0013): change role, disable/enable, end sessions, delete.
-import { eq, inArray, sql } from 'drizzle-orm';
+import { asc, eq, inArray, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { certification, original, session, user } from '../db/schema.js';
 import type { BlobStore } from '../storage/blob-store.js';
@@ -8,7 +8,7 @@ import { renumber } from '../dives/dive-numbers.js';
 import type { Role } from './invitations.js';
 
 export class UserAdminError extends Error {
-  constructor(readonly code: 'user_not_found' | 'last_admin' | 'not_yourself' | 'confirmation_mismatch') {
+  constructor(readonly code: 'user_not_found' | 'user_disabled' | 'last_admin' | 'not_yourself' | 'confirmation_mismatch') {
     super(PROBLEMS[code]);
   }
 }
@@ -42,6 +42,18 @@ export function createUserAdmin(db: Db, blobs: BlobStore) {
   };
 
   return {
+    /** Every User of this instance, oldest first. */
+    async list(): Promise<UserRow[]> {
+      return db.select().from(user).orderBy(asc(user.createdAt));
+    },
+
+    /** Throws unless the User exists and is enabled: a reset link is only for a User who can sign in. */
+    async assertCanReset(userId: string): Promise<void> {
+      const [target] = await db.select({ banned: user.banned }).from(user).where(eq(user.id, userId));
+      if (!target) throw new UserAdminError('user_not_found');
+      if (target.banned) throw new UserAdminError('user_disabled');
+    },
+
     async setRole(userId: string, role: Role): Promise<UserRow> {
       return db.transaction(async (tx) => {
         const { target, otherAdmins } = await lock(tx, userId);

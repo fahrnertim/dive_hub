@@ -1,27 +1,23 @@
 // Admins manage Users (ADR 0013): list, role, disable/enable, end sessions, reset link, delete.
-import { asc, eq } from 'drizzle-orm';
 import type { FastifyPluginAsyncTypebox, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireAdmin, requireUser } from '../auth/fastify.js';
-import type { Db } from '../db/client.js';
-import { user } from '../db/schema.js';
 import { problem } from '../http/problems.js';
 import type { PasswordResets } from './password-resets.js';
 import { UserAdminError, type UserAdmin } from './user-admin.js';
 import { IdParams, LinkView, Problem, RoleSchema, UserView, toUserView } from './views.js';
 
 export interface AdminRouteDeps {
-  db: Db;
   auth: Auth;
   userAdmin: UserAdmin;
   passwordResets: PasswordResets;
   baseUrl: string;
 }
 
-const STATUS: Record<UserAdminError['code'], number> = { user_not_found: 404, last_admin: 409, not_yourself: 409, confirmation_mismatch: 400 };
+const STATUS: Record<UserAdminError['code'], number> = { user_not_found: 404, user_disabled: 409, last_admin: 409, not_yourself: 409, confirmation_mismatch: 400 };
 
-export const adminRoutes: FastifyPluginAsyncTypebox<AdminRouteDeps> = async (scope, { db, auth, userAdmin, passwordResets, baseUrl }) => {
+export const adminRoutes: FastifyPluginAsyncTypebox<AdminRouteDeps> = async (scope, { auth, userAdmin, passwordResets, baseUrl }) => {
   const app = scope.withTypeProvider<TypeBoxTypeProvider>();
   app.addHook('onRequest', requireUser(auth));
   app.addHook('onRequest', requireAdmin);
@@ -34,7 +30,7 @@ export const adminRoutes: FastifyPluginAsyncTypebox<AdminRouteDeps> = async (sco
 
   app.get('/users', {
     schema: { summary: 'All Users of this instance (admins only)', response: { 200: Type.Array(UserView) } },
-  }, async () => (await db.select().from(user).orderBy(asc(user.createdAt))).map(toUserView));
+  }, async () => (await userAdmin.list()).map(toUserView));
 
   app.patch('/users/:id', {
     schema: {
@@ -67,9 +63,7 @@ export const adminRoutes: FastifyPluginAsyncTypebox<AdminRouteDeps> = async (sco
       params: IdParams, response: { 201: LinkView, ...errors },
     },
   }, async (request, reply) => {
-    const [target] = await db.select({ banned: user.banned }).from(user).where(eq(user.id, request.params.id));
-    if (!target) return reply.code(404).send(problem('user_not_found'));
-    if (target.banned) return reply.code(409).send(problem('user_disabled'));
+    await userAdmin.assertCanReset(request.params.id);
     const { reset, token } = await passwordResets.issue(request.params.id, request.user!.id);
     // In the URL fragment, which browsers never send to the server or in Referer.
     return reply.code(201).send({ url: `${baseUrl}/#/reset/${token}`, expiresAt: reset.expiresAt.toISOString() });
