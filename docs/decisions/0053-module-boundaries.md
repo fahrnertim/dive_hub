@@ -95,7 +95,11 @@ No import cycle, not even through a type import, in either app.
    `dives/dive-service.ts`.
    **`dives/routes.ts` done 2026-10-22 (6 → 5):** the managed-Dive lookup, the Recordings and site of a view, the previous Dive,
    a Dive's version, the deleted list and a Dive's Revisions moved to `dives/logbook-service.ts` (tested in
-   `test/dive-reads.test.ts`). Four route files left, `planning/routes.ts` next.
+   `test/dive-reads.test.ts`); its services come in through `DiveRouteDeps`, so the file no longer holds `db`. Four route files
+   left, `planning/routes.ts` next. **In the last route-file slice**, once none of them needs `db`, add a rule
+   `routes-use-no-db-client` (route files don't import `db/client.js`; `db/schema.js` stays allowed for its value lists)
+   with an empty baseline, and amend this ADR: it would have caught a route handing `db` to query helpers, which the
+   `drizzle-orm` rule does not. Adding it earlier would grow the baseline by about six entries.
 5. `api.ts` ↔ `lib/logbook.ts` in the web client.
 
 ## Owner's answers (2026-10-22)

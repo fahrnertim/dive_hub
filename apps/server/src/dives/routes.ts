@@ -5,7 +5,6 @@ import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
-import type { Db } from '../db/client.js';
 import {
   CYLINDER_MATERIALS, LEAD_PLACEMENTS, OVERRIDABLE_FIELDS, SUIT_TYPES, SUIT_UNDERGARMENTS, WEIGHTING_FELT, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive,
   type RecordingSummary,
@@ -13,9 +12,9 @@ import {
 import { Problem, problem } from '../http/problems.js';
 import { DECO_MODELS, DIVE_MODES, GAS_CIRCUITS, SITE_WATER_TYPES, WATER_TYPES } from '../vocabulary.js';
 import { CYLINDER_CATALOGUE } from './cylinder-catalogue.js';
-import { CylinderError, cylindersOf, withoutPressures } from './cylinders.js';
-import { DiveError, participantsOf, type DiveService } from './dive-service.js';
-import { WeightingError, leadOf, leadTotalKg, suitOf, weightingFeedbackOf } from './weighting.js';
+import { CylinderError, withoutPressures } from './cylinders.js';
+import { DiveError, type DiveService } from './dive-service.js';
+import { WeightingError, leadTotalKg, suitOf, weightingFeedbackOf } from './weighting.js';
 import type { Merging } from './merging.js';
 import type { LogbookService } from './logbook-service.js';
 import { LOGBOOK_CHECK_RULES } from './logbook-check-rules.js';
@@ -35,7 +34,6 @@ import { ProviderServiceError } from '../providers/registry.js';
 import { replyProviderError } from '../providers/routes.js';
 
 export interface DiveRouteDeps {
-  db: Db;
   auth: Auth;
   dives: DiveService;
   logbook: LogbookService;
@@ -380,7 +378,7 @@ const DeleteProblem = Type.Object({
 /** Deleted Dives listed at most (newest deletion first). */
 const DELETED_SHOWN = 100;
 
-export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { db, auth, dives, logbook, divers, centres, merging, checks, pushes, assessments }) => {
+export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { auth, dives, logbook, divers, centres, merging, checks, pushes, assessments }) => {
   app.addHook('onRequest', requireUser(auth));
   // Whatever changed a Dive may change its findings and those of the dives around it (ADR 0036): brought up to date
   // before the answer goes out, so the client's next read sees them. A failure here never fails the change itself.
@@ -403,9 +401,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   const view = async (row: typeof dive.$inferSelect): Promise<Static<typeof DiveView>> => {
     const { recordings: recs, site } = await logbook.recordingsAndSite(row);
     const primary = recs.find(({ r }) => r.id === row.primaryRecordingId)?.r;
-    const cylinders = await cylindersOf(db, row.id);
+    const { cylinders, lead } = await logbook.partsOf(row.id);
     const { sac, missing: sacMissing } = sacOfDive(row, cylinders);
-    const lead = await leadOf(db, row.id);
     return {
       id: row.id,
       diverId: row.diverId,
@@ -437,7 +434,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       suit: suitOf(row),
       sac,
       sacMissing,
-      participants: await participantsOf(db, row.id),
+      participants: await logbook.participantsOfDive(row.id),
       verificationCodes: [
         ...(await centres.codesOfDive(row.id)).map((c) => ({ kind: 'centre' as const, diver: null, ...c })),
         ...(await divers.professionalCodesOfDive(row.id)).map((c) => ({ kind: 'professional' as const, centre: null, ...c })),
@@ -513,10 +510,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     if (!row) return reply.code(404).send(problem('dive_not_found'));
     const previous = await logbook.previousDive(row);
     if (!previous) return { diveId: null, cylinders: [], lead: [], suit: null };
-    return {
-      diveId: previous.id, cylinders: (await cylindersOf(db, previous.id)).map(withoutPressures),
-      lead: await leadOf(db, previous.id), suit: suitOf(previous),
-    };
+    const { cylinders, lead } = await logbook.partsOf(previous.id);
+    return { diveId: previous.id, cylinders: cylinders.map(withoutPressures), lead, suit: suitOf(previous) };
   });
 
   app.put('/dives/:id/participants', {

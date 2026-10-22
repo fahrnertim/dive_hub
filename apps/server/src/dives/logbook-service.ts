@@ -1,11 +1,14 @@
 // The logbook's reads for the API (ADR 0017, 0040, 0042, 0053): the list of Dives with its counts, totals and months, the
 // neighbours of one Dive in that list, a Recording's sample series, and the reads behind a Dive's own routes (the Dive
-// a User manages, its Recordings and site, the Dive before it, its version, the deleted Dives, its Revisions). Who may see what is decided by the caller, which
+// a User manages, its Recordings and site, the Dive before it, its Cylinders, Lead and Participants, its version, the deleted Dives, its Revisions). Who may see what is decided by the caller, which
 // passes the Divers the User manages.
 import { and, count, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { PARTICIPANT_ROLES, device, dive, diveAssessment, diveSite, diver, diverManagement, importJob, participant, recording, revision, sampleSeries, user } from '../db/schema.js';
+import { cylindersOf } from './cylinders.js';
+import { participantsOf } from './dive-service.js';
 import { diveListFilter, FINDINGS_SHOWN } from './list-filter.js';
+import { leadOf } from './weighting.js';
 
 export const DIVE_SORTS = ['startsAt', 'number', 'maxDepth', 'duration'] as const;
 export type DiveSort = (typeof DIVE_SORTS)[number];
@@ -195,6 +198,14 @@ export function createLogbookService(db: Db) {
     return previous;
   }
 
+  /** A Dive's Cylinders and Lead, each in its order. */
+  async function partsOf(diveId: string) {
+    return { cylinders: await cylindersOf(db, diveId), lead: await leadOf(db, diveId) };
+  }
+
+  /** A Dive's Participants with their names (ADR 0028). */
+  const participantsOfDive = (diveId: string) => participantsOf(db, diveId);
+
   /** The stored version of a Dive, whether it is deleted or not. */
   async function versionOf(id: string) {
     const [row] = await db.select({ version: dive.version }).from(dive).where(eq(dive.id, id));
@@ -236,7 +247,7 @@ export function createLogbookService(db: Db) {
       .orderBy(desc(revision.at), desc(revision.id)).limit(200);
   }
 
-  return { listDives, ownDiveId, neighbours, ownRecordingId, samplesOf, findManagedDive, recordingsAndSite, previousDive, versionOf, deletedDives, revisionsOfDive };
+  return { listDives, ownDiveId, neighbours, ownRecordingId, samplesOf, findManagedDive, recordingsAndSite, previousDive, partsOf, participantsOfDive, versionOf, deletedDives, revisionsOfDive };
 }
 
 export type LogbookService = ReturnType<typeof createLogbookService>;
