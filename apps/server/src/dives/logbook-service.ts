@@ -1,9 +1,10 @@
-// The logbook's reads for the API (ADR 0017, 0040, 0042): the list of Dives with its counts, totals and months, the
-// neighbours of one Dive in that list, and a Recording's sample series. Who may see what is decided by the caller, which
+// The logbook's reads for the API (ADR 0017, 0040, 0042, 0053): the list of Dives with its counts, totals and months, the
+// neighbours of one Dive in that list, a Recording's sample series, and the reads behind a Dive's own routes (the Dive
+// a User manages, its Recordings and site, the Dive before it, its version, the deleted Dives, its Revisions). Who may see what is decided by the caller, which
 // passes the Divers the User manages.
-import { and, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { PARTICIPANT_ROLES, dive, diveAssessment, diveSite, diver, participant, recording, sampleSeries } from '../db/schema.js';
+import { PARTICIPANT_ROLES, device, dive, diveAssessment, diveSite, diver, diverManagement, importJob, participant, recording, revision, sampleSeries, user } from '../db/schema.js';
 import { diveListFilter, FINDINGS_SHOWN } from './list-filter.js';
 
 export const DIVE_SORTS = ['startsAt', 'number', 'maxDepth', 'duration'] as const;
@@ -164,7 +165,78 @@ export function createLogbookService(db: Db) {
       ...(channels?.length ? [inArray(sampleSeries.channel, channels)] : []),
     ));
 
-  return { listDives, ownDiveId, neighbours, ownRecordingId, samplesOf };
+  /** The Dive if the User manages its Diver and it isn't deleted. */
+  async function findManagedDive(userId: string, id: string) {
+    const [row] = await db.select({ d: dive }).from(dive)
+      .innerJoin(diverManagement, and(eq(diverManagement.diverId, dive.diverId), eq(diverManagement.userId, userId)))
+      .where(and(eq(dive.id, id), isNull(dive.deletedAt)));
+    return row?.d;
+  }
+
+  /** A Dive's live Recordings with their Device and sample channels, earliest first, and its Dive site. */
+  async function recordingsAndSite(row: typeof dive.$inferSelect) {
+    const recordings = await db.select({
+      r: recording,
+      d: device,
+      channels: sql<string[]>`coalesce((select array_agg(channel order by channel) from ${sampleSeries} where ${sampleSeries.recordingId} = ${recording.id}), '{}')`,
+    }).from(recording).leftJoin(device, eq(device.id, recording.deviceId))
+      .where(and(eq(recording.diveId, row.id), isNull(recording.deletedAt))).orderBy(recording.startsAt);
+    const [site] = row.siteId
+      ? await db.select({ id: diveSite.id, name: diveSite.name, waterType: diveSite.waterType }).from(diveSite).where(eq(diveSite.id, row.siteId))
+      : [];
+    return { recordings, site };
+  }
+
+  /** The Dive of the same Diver just before this one, not counting deleted ones. */
+  async function previousDive(row: typeof dive.$inferSelect) {
+    const [previous] = await db.select().from(dive)
+      .where(and(eq(dive.diverId, row.diverId), isNull(dive.deletedAt), lt(dive.startsAt, row.startsAt)))
+      .orderBy(desc(dive.startsAt), desc(dive.id)).limit(1);
+    return previous;
+  }
+
+  /** The stored version of a Dive, whether it is deleted or not. */
+  async function versionOf(id: string) {
+    const [row] = await db.select({ version: dive.version }).from(dive).where(eq(dive.id, id));
+    return row?.version;
+  }
+
+  /** The deleted Dives of the Divers the User manages, most recently deleted first; where a merge or move sent each. */
+  async function deletedDives(userId: string, limit: number) {
+    const rows = await db.select({ d: dive, siteName: diveSite.name }).from(dive)
+      .innerJoin(diverManagement, and(eq(diverManagement.diverId, dive.diverId), eq(diverManagement.userId, userId)))
+      .leftJoin(diveSite, eq(diveSite.id, dive.siteId))
+      .where(isNotNull(dive.deletedAt))
+      .orderBy(desc(dive.deletedAt), desc(dive.id)).limit(limit);
+    // Why it is gone, when it wasn't deleted by hand: the latest Revision names the Dive it went into.
+    const last = rows.length === 0 ? [] : await db.selectDistinctOn([revision.entityId], { id: revision.entityId, changes: revision.changes })
+      .from(revision).where(and(eq(revision.entityType, 'dive'), inArray(revision.entityId, rows.map((r) => r.d.id))))
+      .orderBy(revision.entityId, desc(revision.at), desc(revision.id));
+    const went = (id: string, key: 'mergedInto' | 'movedTo') => {
+      const to = last.find((r) => r.id === id)?.changes[key]?.to;
+      return typeof to === 'string' ? to : null;
+    };
+    return rows.map(({ d, siteName }) => ({ d, siteName, mergedInto: went(d.id, 'mergedInto'), movedTo: went(d.id, 'movedTo') }));
+  }
+
+  /** The Revisions of a Dive and of its Recordings, newest first (at most 200), with the name of who made each. */
+  async function revisionsOfDive(diveId: string) {
+    const recIds = (await db.select({ id: recording.id }).from(recording).where(eq(recording.diveId, diveId))).map((r) => r.id);
+    return db.select({
+      r: revision,
+      userName: user.name,
+      uploadName: importJob.uploadName,
+    }).from(revision)
+      .leftJoin(user, and(eq(revision.actorType, 'user'), sql`${user.id}::text = ${revision.actorId}`))
+      .leftJoin(importJob, and(eq(revision.actorType, 'import'), sql`${importJob.id}::text = ${revision.actorId}`))
+      .where(or(
+        and(eq(revision.entityType, 'dive'), eq(revision.entityId, diveId)),
+        ...(recIds.length ? [and(eq(revision.entityType, 'recording'), inArray(revision.entityId, recIds))] : []),
+      ))
+      .orderBy(desc(revision.at), desc(revision.id)).limit(200);
+  }
+
+  return { listDives, ownDiveId, neighbours, ownRecordingId, samplesOf, findManagedDive, recordingsAndSite, previousDive, versionOf, deletedDives, revisionsOfDive };
 }
 
 export type LogbookService = ReturnType<typeof createLogbookService>;

@@ -1,6 +1,5 @@
 // One Dive: its values (with Overrides), Recordings, editing, Primary recording, history (ADR 0015); its water
 // type from its site, and whether the computer was set to other water (ADR 0025).
-import { and, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
@@ -8,7 +7,7 @@ import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import type { Db } from '../db/client.js';
 import {
-  CYLINDER_MATERIALS, LEAD_PLACEMENTS, OVERRIDABLE_FIELDS, SUIT_TYPES, SUIT_UNDERGARMENTS, WEIGHTING_FELT, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, device, dive, diveSite, diverManagement, importJob, recording, revision, sampleSeries, user,
+  CYLINDER_MATERIALS, LEAD_PLACEMENTS, OVERRIDABLE_FIELDS, SUIT_TYPES, SUIT_UNDERGARMENTS, WEIGHTING_FELT, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive,
   type RecordingSummary,
 } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
@@ -18,6 +17,7 @@ import { CylinderError, cylindersOf, withoutPressures } from './cylinders.js';
 import { DiveError, participantsOf, type DiveService } from './dive-service.js';
 import { WeightingError, leadOf, leadTotalKg, suitOf, weightingFeedbackOf } from './weighting.js';
 import type { Merging } from './merging.js';
+import { createLogbookService } from './logbook-service.js';
 import { LOGBOOK_CHECK_RULES } from './logbook-check-rules.js';
 import type { LogbookChecks } from './logbook-checks.js';
 import { valuesFromRecording, type DiveValues } from './dive-values.js';
@@ -395,26 +395,14 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
 
   const centres = createCentreService(db);
   const divers = createDiverService(db);
+  const logbook = createLogbookService(db);
 
   /** The Dive if the signed-in User manages its Diver. */
-  const findDive = async (request: FastifyRequest, id: string) => {
-    const [row] = await db.select({ d: dive }).from(dive)
-      .innerJoin(diverManagement, and(eq(diverManagement.diverId, dive.diverId), eq(diverManagement.userId, request.user!.id)))
-      .where(and(eq(dive.id, id), isNull(dive.deletedAt)));
-    return row?.d;
-  };
+  const findDive = (request: FastifyRequest, id: string) => logbook.findManagedDive(request.user!.id, id);
 
   const view = async (row: typeof dive.$inferSelect): Promise<Static<typeof DiveView>> => {
-    const recs = await db.select({
-      r: recording,
-      d: device,
-      channels: sql<string[]>`coalesce((select array_agg(channel order by channel) from ${sampleSeries} where ${sampleSeries.recordingId} = ${recording.id}), '{}')`,
-    }).from(recording).leftJoin(device, eq(device.id, recording.deviceId))
-      .where(and(eq(recording.diveId, row.id), isNull(recording.deletedAt))).orderBy(recording.startsAt);
+    const { recordings: recs, site } = await logbook.recordingsAndSite(row);
     const primary = recs.find(({ r }) => r.id === row.primaryRecordingId)?.r;
-    const [site] = row.siteId
-      ? await db.select({ id: diveSite.id, name: diveSite.name, waterType: diveSite.waterType }).from(diveSite).where(eq(diveSite.id, row.siteId))
-      : [];
     const cylinders = await cylindersOf(db, row.id);
     const { sac, missing: sacMissing } = sacOfDive(row, cylinders);
     const lead = await leadOf(db, row.id);
@@ -523,9 +511,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   }, async (request, reply) => {
     const row = await findDive(request, request.params.id);
     if (!row) return reply.code(404).send(problem('dive_not_found'));
-    const [previous] = await db.select().from(dive)
-      .where(and(eq(dive.diverId, row.diverId), isNull(dive.deletedAt), lt(dive.startsAt, row.startsAt)))
-      .orderBy(desc(dive.startsAt), desc(dive.id)).limit(1);
+    const previous = await logbook.previousDive(row);
     if (!previous) return { diveId: null, cylinders: [], lead: [], suit: null };
     return {
       diveId: previous.id, cylinders: (await cylindersOf(db, previous.id)).map(withoutPressures),
@@ -685,8 +671,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     const asked = candidate ? candidate.bothAt.filter((provider) => alsoAt.includes(provider)) : [];
     if (asked.length > 0) {
       const leaving = candidate!.keeps === otherId ? request.params.id : otherId;
-      const [row] = await db.select({ version: dive.version }).from(dive).where(eq(dive.id, leaving));
-      if (row?.version !== (leaving === otherId ? otherVersion : version)) return reply.code(409).send(problem('dive_changed'));
+      if (await logbook.versionOf(leaving) !== (leaving === otherId ? otherVersion : version)) return reply.code(409).send(problem('dive_changed'));
       const { copies, failure } = await pushes.removeAt(userId, leaving, asked);
       if (failure) return replyProviderError(failure, reply, { providers: asked.map((provider) => ({ provider, copy: copies.find((c) => c.provider === provider)?.copy ?? 'kept' as const })) });
     }
@@ -742,26 +727,14 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       response: { 200: Type.Object({ dives: Type.Array(DeletedDiveView) }) },
     },
   }, async (request) => {
-    const rows = await db.select({ d: dive, siteName: diveSite.name }).from(dive)
-      .innerJoin(diverManagement, and(eq(diverManagement.diverId, dive.diverId), eq(diverManagement.userId, request.user!.id)))
-      .leftJoin(diveSite, eq(diveSite.id, dive.siteId))
-      .where(isNotNull(dive.deletedAt))
-      .orderBy(desc(dive.deletedAt), desc(dive.id)).limit(DELETED_SHOWN);
+    const rows = await logbook.deletedDives(request.user!.id, DELETED_SHOWN);
     const remote = await pushes.currentOf(rows.map((r) => r.d.id));
-    // Why it is gone, when it wasn't deleted by hand: the Revision that deleted it names the Dive it went into.
-    const last = rows.length === 0 ? [] : await db.selectDistinctOn([revision.entityId], { id: revision.entityId, changes: revision.changes })
-      .from(revision).where(and(eq(revision.entityType, 'dive'), inArray(revision.entityId, rows.map((r) => r.d.id))))
-      .orderBy(revision.entityId, desc(revision.at), desc(revision.id));
-    const went = (id: string, key: 'mergedInto' | 'movedTo') => {
-      const to = last.find((r) => r.id === id)?.changes[key]?.to;
-      return typeof to === 'string' ? to : null;
-    };
     return {
-      dives: rows.map(({ d, siteName }) => ({
+      dives: rows.map(({ d, siteName, mergedInto, movedTo }) => ({
         id: d.id, diverId: d.diverId, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(),
         utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
         site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null,
-        deletedAt: d.deletedAt!.toISOString(), mergedInto: went(d.id, 'mergedInto'), movedTo: went(d.id, 'movedTo'),
+        deletedAt: d.deletedAt!.toISOString(), mergedInto, movedTo,
         stillAt: [...(remote.get(d.id)?.entries() ?? [])].map(([provider, p]) => ({ provider, remoteNumber: p.remoteNumber })),
       })),
     };
@@ -787,19 +760,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   }, async (request, reply) => {
     const row = await findDive(request, request.params.id);
     if (!row) return reply.code(404).send(problem('dive_not_found'));
-    const recIds = (await db.select({ id: recording.id }).from(recording).where(eq(recording.diveId, row.id))).map((r) => r.id);
-    const rows = await db.select({
-      r: revision,
-      userName: user.name,
-      uploadName: importJob.uploadName,
-    }).from(revision)
-      .leftJoin(user, and(eq(revision.actorType, 'user'), sql`${user.id}::text = ${revision.actorId}`))
-      .leftJoin(importJob, and(eq(revision.actorType, 'import'), sql`${importJob.id}::text = ${revision.actorId}`))
-      .where(or(
-        and(eq(revision.entityType, 'dive'), eq(revision.entityId, row.id)),
-        ...(recIds.length ? [and(eq(revision.entityType, 'recording'), inArray(revision.entityId, recIds))] : []),
-      ))
-      .orderBy(desc(revision.at), desc(revision.id)).limit(200);
+    const rows = await logbook.revisionsOfDive(row.id);
     return rows.map(({ r, userName, uploadName }) => ({
       id: r.id, at: r.at.toISOString(),
       actor: { type: r.actorType, id: r.actorId, name: r.actorType === 'user' ? userName : r.actorType === 'import' ? uploadName : null },
