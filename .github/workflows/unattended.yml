@@ -1,0 +1,215 @@
+# Unattended implementation (ADR 0054): picks one `ready` task of docs/backlog/, lets Claude Code build it on a
+# branch, checks the result and opens a pull request for the owner. Nothing merges by itself.
+#
+# Start it from the Actions tab ("Run workflow"; a task id is optional) or switch the weekday schedule on with the
+# repository variable AGENT_SCHEDULE_ENABLED=true. Secret: ANTHROPIC_API_KEY (repository secret, of a key with a
+# spend limit). One run at a time, never cancelled half way.
+name: unattended
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: Task id (file name in docs/backlog/ without .md). Empty means the next ready task.
+        required: false
+  schedule:
+    - cron: '17 5 * * 1-5'
+
+concurrency:
+  group: unattended
+  cancel-in-progress: false
+
+# Branch and pull request only; the agent itself gets no token (checkout keeps no credentials).
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write # creating the labels `agent` and `needs-owner`
+  actions: write # starting check.yml on the branch: a pull request opened with this token starts no workflow itself
+
+jobs:
+  run:
+    if: github.event_name != 'schedule' || vars.AGENT_SCHEDULE_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    services:
+      # Same as check.yml: the tests create a database per file and per e2e server.
+      postgres:
+        image: postgres:18.0-alpine
+        env:
+          POSTGRES_USER: divehub
+          POSTGRES_PASSWORD: divehub-dev
+          POSTGRES_DB: divehub
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U divehub"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      DATABASE_URL: postgres://divehub:divehub-dev@127.0.0.1:5432/divehub
+      PLAYWRIGHT_CHANNEL: chromium
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # The guard and the PR text run from this copy, made before the agent starts: what the agent writes into
+      # scripts/ cannot weaken them, and code the agent changed never runs with the push token.
+      - name: Trusted copy of the scripts
+        run: |
+          mkdir -p "$RUNNER_TEMP/trusted"
+          cp scripts/agent-lib.mjs scripts/agent-task.mjs "$RUNNER_TEMP/trusted/"
+          echo "OUT=$RUNNER_TEMP/agent-out" >> "$GITHUB_ENV"
+
+      - name: Pick the task
+        id: pick
+        env:
+          TASK_INPUT: ${{ inputs.task }}
+        run: |
+          if task=$(node scripts/agent-task.mjs next ${TASK_INPUT:+--task "$TASK_INPUT"}); then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "file=$(echo "$task" | node -p 'JSON.parse(require("fs").readFileSync(0,"utf8")).file')"
+              echo "branch=$(echo "$task" | node -p 'JSON.parse(require("fs").readFileSync(0,"utf8")).branch')"
+              echo "budget=$(echo "$task" | node -p 'JSON.parse(require("fs").readFileSync(0,"utf8")).budget')"
+              echo "title=$(echo "$task" | node -p 'JSON.parse(require("fs").readFileSync(0,"utf8")).title')"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "No ready task without a branch."
+          fi
+
+      - uses: pnpm/action-setup@v4
+        if: steps.pick.outputs.found == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.pick.outputs.found == 'true'
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: steps.pick.outputs.found == 'true'
+      - name: Chromium for the browser tests
+        if: steps.pick.outputs.found == 'true'
+        run: pnpm --filter @dive-hub/web exec playwright install --with-deps chromium
+
+      # The pinned version: an unattended run does not update itself.
+      - name: Claude Code
+        if: steps.pick.outputs.found == 'true'
+        run: npm install --global @anthropic-ai/claude-code@2.1.308
+
+      - name: Branch, task in progress
+        if: steps.pick.outputs.found == 'true'
+        run: |
+          git config user.name "dive-hub-agent"
+          git config user.email "dive-hub-agent@users.noreply.github.com"
+          git checkout -b "${{ steps.pick.outputs.branch }}"
+          node scripts/agent-task.mjs set-status "${{ steps.pick.outputs.file }}" in-progress
+          git commit -am "Start ${{ steps.pick.outputs.file }} (unattended run)"
+
+      # Exit 10 is a stop (budget, three failed checks, protected path, hand-back): not a failure of the job.
+      - name: Run the task
+        id: agent
+        if: steps.pick.outputs.found == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set +e
+          node scripts/agent-run.mjs --task "${{ steps.pick.outputs.file }}" --budget "${{ steps.pick.outputs.budget }}" --out "$OUT"
+          code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          [ "$code" = 0 ] || [ "$code" = 10 ]
+
+      # Everything the agent left goes on the branch before it is looked at, so the guard sees all of it.
+      - name: Commit what the agent left
+        if: always() && steps.pick.outputs.found == 'true' && steps.agent.outcome != 'skipped'
+        run: |
+          git add -A -- . ':!.agent'
+          git diff --cached --quiet || git commit -m "Work left uncommitted when the run ended"
+
+      # The key is reachable by the commands the agent runs (pnpm, tests): a leak into the diff, a commit message
+      # or the run's output ends the run here, before anything is pushed or uploaded.
+      - name: Secret scan
+        id: scan
+        if: always() && steps.pick.outputs.found == 'true' && steps.agent.outcome != 'skipped'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          leaked=false
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            git log -p origin/main..HEAD | grep -qF -- "$ANTHROPIC_API_KEY" && leaked=true
+            grep -rqF -- "$ANTHROPIC_API_KEY" "$OUT" .agent 2>/dev/null && leaked=true
+          fi
+          echo "leaked=$leaked" >> "$GITHUB_OUTPUT"
+          if [ "$leaked" = true ]; then
+            rm -rf "$OUT" .agent
+            echo "::error::The API key is in the diff or in the run's output. Nothing was pushed or uploaded. Rotate the key."
+            exit 1
+          fi
+
+      - name: Protected paths
+        id: guard
+        if: always() && steps.pick.outputs.found == 'true' && steps.agent.outcome != 'skipped' && steps.scan.outputs.leaked != 'true'
+        run: |
+          set +e
+          node "$RUNNER_TEMP/trusted/agent-task.mjs" guard origin/main
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+
+      # The gate of check.yml, on the branch as the agent left it. Not run when the run already stopped.
+      - name: pnpm check:full
+        id: full
+        if: always() && steps.agent.outputs.code == '0' && steps.guard.outputs.code == '0'
+        continue-on-error: true
+        env:
+          BASELINE_REF: origin/main
+        run: pnpm check:full
+
+      - name: Task done
+        if: steps.agent.outputs.code == '0' && steps.guard.outputs.code == '0' && steps.full.outcome == 'success'
+        run: |
+          node "$RUNNER_TEMP/trusted/agent-task.mjs" set-status "${{ steps.pick.outputs.file }}" done
+          git commit -am "Mark ${{ steps.pick.outputs.file }} done"
+
+      - name: Push and open the pull request
+        id: pr
+        if: always() && steps.pick.outputs.found == 'true' && steps.agent.outcome != 'skipped' && steps.scan.outputs.leaked != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.pick.outputs.branch }}
+          TASK_FILE: ${{ steps.pick.outputs.file }}
+          TITLE: ${{ steps.pick.outputs.title }}
+        run: |
+          check="not run"
+          case "${{ steps.full.outcome }}" in success) check=green;; failure) check=red;; esac
+          # A run that ended abnormally (the runner failed, the job timed out) has no stop reason of its own.
+          code="${{ steps.agent.outputs.code }}"
+          if [ "$code" != 0 ] && [ ! -f "$OUT/stop.txt" ]; then
+            mkdir -p "$OUT"
+            echo "the run ended abnormally (exit code ${code:-none})" > "$OUT/stop.txt"
+          fi
+          node "$RUNNER_TEMP/trusted/agent-task.mjs" pr-body "$TASK_FILE" "$OUT" "$check" "$RUN_URL" > "$OUT/pr-body.md"
+          # Anything but a finished run with the guard clean and the full check green is the owner's to look at.
+          stopped=false
+          [ -f "$OUT/stop.txt" ] && stopped=true
+          [ "${{ steps.guard.outputs.code }}" = 0 ] || stopped=true
+          [ "$check" = green ] || stopped=true
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" "HEAD:refs/heads/${BRANCH}"
+          gh label create agent --color 5319e7 --description "Opened by an unattended run" --force
+          gh label create needs-owner --color d93f0b --description "An unattended run stopped; the owner decides" --force
+          if [ "$stopped" = true ]; then
+            gh pr create --draft --head "$BRANCH" --title "Agent (stopped): ${TITLE}" --body-file "$OUT/pr-body.md" --label agent --label needs-owner
+          else
+            gh pr create --head "$BRANCH" --title "Agent: ${TITLE}" --body-file "$OUT/pr-body.md" --label agent
+            gh workflow run check.yml --ref "$BRANCH"
+          fi
+
+      # Only for diagnosing a run: the events of the agent and its summary. After the secret scan, which removes them if
+      # the key is in them.
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.pick.outputs.found == 'true' && steps.scan.outputs.leaked != 'true'
+        with:
+          name: agent-run
+          path: ${{ runner.temp }}/agent-out/
+          retention-days: 7
+          if-no-files-found: ignore

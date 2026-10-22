@@ -13,3 +13,6 @@ apps/web/test-results/
 apps/web/playwright-report/
 apps/web/e2e/.state/
 apps/web/review-output/
+
+# Unattended runs (ADR 0054): the agent's PR text and output
+.agent/

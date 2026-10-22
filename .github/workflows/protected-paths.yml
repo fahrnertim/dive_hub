@@ -1,0 +1,25 @@
+# A pull request from an unattended run (label `agent`, or a branch `agent/*`) must not change a protected path
+# (ADR 0054). The check script comes from the base branch, so the pull request cannot loosen its own gate.
+name: protected-paths
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    if: contains(github.event.pull_request.labels.*.name, 'agent') || startsWith(github.head_ref, 'agent/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: The base branch's version of the guard
+        run: git checkout "origin/${{ github.base_ref }}" -- scripts/agent-lib.mjs scripts/agent-task.mjs
+      - name: Protected paths
+        run: node scripts/agent-task.mjs guard "origin/${{ github.base_ref }}"

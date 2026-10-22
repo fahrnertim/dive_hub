@@ -94,7 +94,7 @@ if (plan.lint === 'all' || (plan.lint === 'changed' && lintTargetsNow.eslint.len
   };
   steps.push([`lint and module boundaries (${plan.lint === 'all' ? 'all' : `${new Set([...lintTargetsNow.eslint, ...lintTargetsNow.deps]).size} changed file(s)`})`, runLint, 'lint']);
 }
-if (plan.scripts) steps.push(['check script tests', 'node --test scripts/check-lib.test.mjs', 'scripts']);
+if (plan.scripts) steps.push(['check script tests', 'node --test scripts/check-lib.test.mjs scripts/agent-lib.test.mjs', 'scripts']);
 if (plan.server !== 'none') steps.push([`server tests (${plan.server})`, unitTests('server', plan.server), 'server']);
 if (plan.web !== 'none') steps.push([`web unit tests (${plan.web})`, unitTests('web', plan.web), 'web']);
 if (plan.e2e !== 'none') {

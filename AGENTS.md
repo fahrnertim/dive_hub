@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Instructions for AI coding agents (any tool) working in this repository.
+Instructions for AI coding agents (any tool) in this repository.
 
 ## Rule #1: all project knowledge lives in this repository
 
@@ -28,16 +28,18 @@ Start at [docs/index.md](docs/index.md); it lists every document.
 
 - Markdown with YAML frontmatter (`title`, `summary`, `status`, `date`); relative links, not `[[wikilinks]]`.
 - Record significant decisions as ADRs; don't re-litigate accepted ones without a new ADR.
-- **Checks** ([ADR 0023](docs/decisions/0023-faster-checks.md)): `pnpm check` while working and before a commit (what changed
-  since its last green run: types, lint, module boundaries, tests), `pnpm check:full` before a push (CI runs it too),
+- **Checks** ([ADR 0023](docs/decisions/0023-faster-checks.md)): `pnpm check` while working and before a commit (only what changed
+  since its last green run), `pnpm check:full` before a push (CI runs it too),
   the review capture (`REVIEW_AREAS`) only when UI changed. `pnpm check --failed` reruns failed browser tests.
   A docs-only commit needs no check. A new page or module gets its path in `scripts/check-lib.mjs`; a browser test an area tag.
 - **Gates** ([research](docs/research/2026-10-22-agent-guardrails.md)): an edit hook lints each file; run `pnpm hooks:install`
-  once per clone (pre-commit check). Fix what they report: never grow a baseline
-  (`eslint-suppressions.json`, the depcruise known violations) or raise a threshold. After a fix, `pnpm lint:baseline`.
+  once per clone (pre-commit check). Fix what they report; never grow a baseline
+  or raise a threshold. After a fix, `pnpm lint:baseline`.
   Module rules: [ADR 0053](docs/decisions/0053-module-boundaries.md). Before a code commit, run the `architecture-review` subagent.
+- **Unattended runs** ([ADR 0054](docs/decisions/0054-unattended-implementation.md)): tasks in `docs/backlog/`; a run follows
+  `.claude/agents/unattended-runner.md` and never touches protected paths (`scripts/agent-lib.mjs`).
 - A new duty for API clients (something to show, ask, format or send) updates the [client contract](docs/spec/clients.md).
-- Keep this file short; details belong in `docs/`.
+- Keep this file short.
 
 ## Skills
 
@@ -58,5 +60,5 @@ Context is most of a session's cost ([ADR 0039](docs/decisions/0039-working-econ
   `docs/index.md` and the glossary are searched, not read through.
 - **Keep long output out of the conversation**: filter it or write it to a file.
 - **Research and broad searches go to a subagent** on a smaller model; implementation and checks stay in the session.
-- **Never saved on**: a green `pnpm check` before a code commit, `pnpm check:full` before a push, tests first, reading
-  an ADR in full before changing what it decided, reviewing screenshots when UI changed, reading the code around an edit.
+- **Never saved on**: the checks before a commit or push, tests first, reading an ADR before changing it, reviewing UI
+  screenshots, reading the code around an edit.
