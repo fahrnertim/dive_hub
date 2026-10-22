@@ -488,6 +488,31 @@ test('review material', async ({ page, request, browser }) => {
     await capture(page, `${prefix}-tools-plan-no-fit`, { aria: false, axe });
     await page.goto('/#/tools?o2=40&depth=36&he=0'); await page.locator('.tools-answer .notice').first().waitFor();
     await capture(page, `${prefix}-tools-outside`, { aria: false, axe });
+    // The lead calculator: empty, with no number (no body weight in the review data), and the two answers as the server gives them.
+    const leadUrl = '/#/tools/lead?lw=salt&suit=wetsuit&mm=5&hood=0&cyl=11.1%7Ealuminium';
+    const base = { unit: 'kg', reserve: { bar: 50, fromDives: false }, leftOut: { noWaterType: 0 }, weightCheck: { steps: ['eye_level_empty_bc', 'neutral_at_5m_at_reserve'], reserveBar: 50 } };
+    await page.goto('/#/tools/lead'); await page.reload(); await page.getByRole('heading', { level: 1 }).waitFor();
+    await capture(page, `${prefix}-tools-lead`, { aria: false, axe });
+    await page.goto(leadUrl); await page.getByText(/^(No number yet|Noch keine Zahl)$/).waitFor();
+    await capture(page, `${prefix}-tools-lead-no-number`, { aria: false, axe });
+    const answer = async (body: object) => {
+      await page.unroute('**/api/divers/*/lead-estimate*');
+      await page.route('**/api/divers/*/lead-estimate*', (route) => route.fulfill({ json: body }));
+      await page.goto(leadUrl); await page.reload(); await page.getByTestId('lead-total').waitFor();
+    };
+    await answer({
+      ...base, confidence: 'low', total: 6.5, range: { low: 5, high: 8 }, basis: { kind: 'rule_of_thumb', rule: 6, personalOffset: 1, offsetFromSuits: 2 },
+      adjustments: [{ kind: 'personal_offset', amount: 1 }, { kind: 'cylinder', amount: 1.5 }, { kind: 'water', amount: -2, water: 'salt' }],
+      missing: [{ kind: 'cylinder_material', diveIds: [], planned: true }, { kind: 'suit_thickness' }],
+    });
+    await capture(page, `${prefix}-tools-lead-rule`, { aria: false, axe });
+    await answer({
+      ...base, confidence: 'high', total: 8, range: { low: 7, high: 9.5 }, reserve: { bar: 55, fromDives: true },
+      basis: { kind: 'dives', personal: 7, dives: [{ diveId: sitedDive, startsAt: '2026-03-01T09:00:00Z', number: 12, carried: 8, needed: 9, weight: 2 }, { diveId: sitedDive, startsAt: '2025-03-01T09:00:00Z', number: null, carried: 7, needed: 7, weight: 1 }] },
+      adjustments: [{ kind: 'cylinder', amount: 1 }, { kind: 'water', amount: 0.5, water: 'salt' }], missing: [{ kind: 'cylinder', diveIds: [sitedDive] }], leftOut: { noWaterType: 2 },
+    });
+    await capture(page, `${prefix}-tools-lead-dives`, { aria: false, axe });
+    await page.unroute('**/api/divers/*/lead-estimate*');
   };
   const pagesOf = async (prefix: string, de: boolean, axe = false) => { await sitePages(prefix, de, axe); await toolsPages(prefix, axe); };
   await page.setViewportSize({ width: 1280, height: 900 });

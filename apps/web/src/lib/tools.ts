@@ -2,8 +2,22 @@
 // whatever the User's units are; the page converts. Nothing is stored. A gas plan's levels and Divers live there too
 // (ADR 0033), never another Diver's logbook values: a Diver is named by id, and the server looks up the SAC of one the User manages.
 
+import type { CylinderMaterial } from './cylinders.ts';
+import { SUIT_TYPES, SUIT_UNDERGARMENTS, type SuitType, type SuitUndergarment } from './weighting.ts';
+
 export const TOOLS_WATERS = ['salt', 'fresh', 'en13319'] as const;
 export type ToolsWater = (typeof TOOLS_WATERS)[number];
+
+/** The lead calculator's own waters (ADR 0031): the lead estimate knows three, and not EN 13319. */
+export const LEAD_WATERS = ['salt', 'fresh', 'brackish'] as const;
+export type LeadWater = (typeof LEAD_WATERS)[number];
+export const LEAD_MATERIALS: readonly CylinderMaterial[] = ['aluminium', 'steel', 'carbon'];
+
+/** A planned Cylinder; an empty volume is NaN. */
+export interface LeadCylinder {
+  volumeL: number;
+  material?: CylinderMaterial | undefined;
+}
 
 /** Where the gas ends (ADR 0033); a single bottom time knows the first three only. */
 export const TOOLS_RULES = ['rock_bottom', 'reserve', 'ascent_pressure', 'halves', 'thirds', 'sixths'] as const;
@@ -29,12 +43,12 @@ export interface PlanDiver {
   diverId?: string | undefined;
 }
 
-/** The parts of the Tools page: gas numbers and a bottom time (`#/tools`), and the gas plan (`#/tools/plan`). */
-export type Tool = 'gas' | 'plan';
+/** The parts of the Tools page: gas numbers and a bottom time (`#/tools`), the gas plan (`#/tools/plan`) and the lead calculator (`#/tools/lead`). */
+export type Tool = 'gas' | 'plan' | 'lead';
 
 export interface ToolsParams {
   /** The part of the page; without, gas numbers and a bottom time. */
-  tool?: 'plan' | undefined;
+  tool?: 'plan' | 'lead' | undefined;
   /** Oxygen and helium in percent. */
   o2?: number | undefined;
   he?: number | undefined;
@@ -65,7 +79,26 @@ export interface ToolsParams {
   divers?: PlanDiver[] | undefined;
   /** The gas plan's own mix: oxygen in percent, air when empty. Not the mix of "Your dive" (`o2`). */
   mix?: number | undefined;
+  /** The lead calculator: the Diver (empty: the User's own), the water, the suit and the planned Cylinders. */
+  diver?: string | undefined;
+  leadWater?: LeadWater | undefined;
+  suit?: SuitType | undefined;
+  /** Millimetres; wetsuit and semidry only. */
+  thicknessMm?: number | undefined;
+  hood?: boolean | undefined;
+  undergarment?: SuitUndergarment | undefined;
+  cylinders?: LeadCylinder[] | undefined;
 }
+
+const oneOf = <T extends string>(list: readonly T[], raw: string | null): T | undefined => (raw !== null && (list as readonly string[]).includes(raw) ? (raw as T) : undefined);
+
+/** `litres~material`; what is empty stays empty. */
+const cylinderText = (c: LeadCylinder) => `${Number.isFinite(c.volumeL) ? c.volumeL : ''}~${c.material ?? ''}`;
+const cylinderOf = (text: string): LeadCylinder => {
+  const [volume, material] = text.split('~');
+  const volumeL = finite(volume);
+  return { volumeL: volumeL !== undefined && volumeL > 0 ? volumeL : Number.NaN, material: oneOf(LEAD_MATERIALS, material ?? null) };
+};
 
 const NUMBERS = ['o2', 'he', 'depth', 'altitude', 'volume', 'pressure', 'sac', 'bar', 'gf', 'pw', 'pc', 'dr', 'ar', 'mix'] as const;
 
@@ -95,8 +128,15 @@ const diverOf = (text: string): PlanDiver[] => {
 const OWN = {
   gas: ['o2', 'he', 'depth', 'volume', 'pressure', 'sac', 'gf', 'pw', 'narcotic'],
   plan: ['mix', 'dr', 'ar', 'levels', 'divers'],
+  lead: ['diver', 'leadWater', 'suit', 'thicknessMm', 'hood', 'undergarment', 'cylinders'],
 } as const satisfies Record<Tool, readonly (keyof ToolsParams)[]>;
 const SHARED = ['water', 'altitude', 'rule', 'bar', 'pc'] as const satisfies readonly (keyof ToolsParams)[];
+/** The lead calculator shares none of the gas settings. */
+const sharedOf = (tool: Tool): readonly (keyof ToolsParams)[] => (tool === 'lead' ? [] : SHARED);
+
+function pickDefined(from: ToolsParams): ToolsParams {
+  return Object.fromEntries(Object.entries(from).filter(([, v]) => v !== undefined));
+}
 
 function pick(from: ToolsParams, keys: readonly (keyof ToolsParams)[]): ToolsParams {
   const result: ToolsParams = {};
@@ -113,7 +153,7 @@ export function keepToolsParams(p: ToolsParams): void {
 /** The address of a part from the one shown: the settings both share as they are now, and the part's own inputs as it last had them. */
 export function toolsTabHref(current: ToolsParams, tool: Tool, last: ToolsParams = kept[tool] ?? {}): string {
   if ((current.tool ?? 'gas') === tool) return toolsHref(current);
-  return toolsHref({ ...pick(last, OWN[tool]), ...pick(current, SHARED), ...(tool === 'plan' && { tool }) });
+  return toolsHref({ ...pick(last, OWN[tool]), ...pick(current, sharedOf(tool)), ...(tool !== 'gas' && { tool }) });
 }
 
 /** The page's address for these inputs; what is empty is left out. */
@@ -125,8 +165,17 @@ export function toolsHref(p: ToolsParams): string {
   if (p.narcotic === false) query.set('narcotic', '0');
   if (p.levels?.length) query.set('lv', levelsText(p.levels));
   for (const d of p.divers ?? []) query.append('dv', diverText(d));
+  if (p.tool === 'lead') {
+    if (p.diver) query.set('diver', p.diver);
+    if (p.leadWater) query.set('lw', p.leadWater);
+    if (p.suit) query.set('suit', p.suit);
+    if (p.thicknessMm !== undefined && Number.isFinite(p.thicknessMm)) query.set('mm', String(p.thicknessMm));
+    if (p.hood !== undefined) query.set('hood', p.hood ? '1' : '0');
+    if (p.undergarment) query.set('ug', p.undergarment);
+    for (const c of p.cylinders ?? []) query.append('cyl', cylinderText(c));
+  }
   const text = query.toString();
-  const base = p.tool === 'plan' ? '#/tools/plan' : '#/tools';
+  const base = p.tool === 'plan' ? '#/tools/plan' : p.tool === 'lead' ? '#/tools/lead' : '#/tools';
   return text ? `${base}?${text}` : base;
 }
 
@@ -149,6 +198,20 @@ export function toolsParams(query: URLSearchParams, tool: Tool = 'gas'): ToolsPa
   if (levels.length > 0) result.levels = levels;
   const divers = query.getAll('dv').flatMap(diverOf);
   if (divers.length > 0) result.divers = divers;
+  if (tool === 'lead') {
+    const cylinders = query.getAll('cyl').slice(0, 4).map(cylinderOf);
+    const thickness = finite(query.get('mm') ?? undefined);
+    const hood = query.get('hood');
+    return {
+      tool: 'lead',
+      ...(query.get('diver') && { diver: query.get('diver')! }),
+      ...pickDefined({
+        leadWater: oneOf(LEAD_WATERS, query.get('lw')), suit: oneOf(SUIT_TYPES, query.get('suit')),
+        thicknessMm: thickness !== undefined && thickness > 0 ? thickness : undefined, hood: hood === '1' ? true : hood === '0' ? false : undefined,
+        undergarment: oneOf(SUIT_UNDERGARMENTS, query.get('ug')), cylinders: cylinders.length > 0 ? cylinders : undefined,
+      }),
+    };
+  }
   const plan = tool === 'plan' || result.levels !== undefined || result.divers !== undefined;
   return { ...pick(result, [...SHARED, ...OWN[plan ? 'plan' : 'gas']]), ...(plan && { tool: 'plan' as const }) };
 }

@@ -295,6 +295,9 @@ commit. [Prompt B](#prompt-b-the-lead-estimate-and-the-tools-page-slice-20) belo
 | **20d** | web, dive form | hint on the dive form from the same endpoint ("last time with this suit: 8 kg, felt right"); nothing filled in automatically | browser test `@dives`; hint absent when no history | 20b |
 | **20e** | MCP | `planning_lead_estimate` tool (ADR 0035): same inputs, answers range, reasons and the weight-check advice in every result; closing docs: amend ADR 0031, data model, glossary, architecture, index; mark Prompt B done | MCP tool test; docs consistent | 20b |
 
+Status: 20a, 20b and 20c are built (20c: the Lead part of the Tools page at `#/tools/lead`, `ToolsLead.tsx`, browser tests in
+`e2e/tools-lead.spec.ts`, ui-quality case, review capture `REVIEW_AREAS=tools`).
+
 Rules for every sub-slice: follow [AGENTS.md](../../AGENTS.md) (skills first, `pnpm check` while working, one slice one
 session, hand-over prompt at the end, commit only when the owner says so). 20c, 20d and 20e don't depend on each other and
 can go in any order after 20b. 20a and 20b are server work and suit Sonnet without further design; 20c is where review of the

@@ -2136,7 +2136,7 @@
   },
   "tools": {
     "title": "Tools",
-    "lead": "Gas numbers, a bottom time and a gas plan for a dive you are planning.",
+    "lead": "Gas numbers, a bottom time, a gas plan and a lead estimate for a dive you are planning.",
     "notice": "These are an estimate, not advice: limits worked out from what you enter and your settings. Your dive computer and your training govern, and no model guarantees safety.",
     "mix": {
       "oxygen": "Oxygen",
@@ -2355,7 +2355,65 @@
     "parts": "Tools",
     "tab": {
       "gas": "Gas and bottom time",
-      "plan": "Gas plan"
+      "plan": "Gas plan",
+      "lead": "Lead"
+    },
+    "leadCalc": {
+      "conditions": "Planned conditions",
+      "diver": "Diver",
+      "water": "Water",
+      "choose": "Choose",
+      "answer": "Lead estimate",
+      "empty": "Choose the water, the suit and the size of at least one cylinder to get a starting point for {{name}}.",
+      "startingPoint": "Starting point",
+      "range": "Range {{low}} to {{high}}",
+      "notCertain": "A starting point, not a certain number: check it with the weight check below.",
+      "noNumber": "No number yet",
+      "noNumberBody": "{{name}} has no dive with this suit and no body weight on record, so there is nothing to start from. Add a body weight for a rule-of-thumb start, or log a dive with this suit and its lead.",
+      "addBodyWeight": "Add body weight on the Divers page",
+      "confidence": "Confidence: {{level}}",
+      "level": {
+        "low": "low",
+        "medium": "medium",
+        "high": "high"
+      },
+      "basisDives_one": "Based on {{count}} of {{name}}’s dives with this suit:",
+      "basisDives_other": "Based on {{count}} of {{name}}’s dives with this suit:",
+      "diveLabel": "{{date}}",
+      "diveLabelNumbered": "Dive {{number}}, {{date}}",
+      "diveLine": "carried {{carried}}, needed {{needed}}",
+      "basisRule": "No dive with this suit. A rule of thumb for the body weight gives {{rule}}, a first guess.",
+      "basisOffset_one": "Moved by {{offset}}: the {{count}} other suit with dives needed more or less than the rule.",
+      "basisOffset_other": "Moved by {{offset}}: the {{count}} other suits with dives needed more or less than the rule.",
+      "adjustments": "What was added for these conditions",
+      "cylinder": "Cylinder: {{amount}}",
+      "cylinderReason": "Its buoyancy when nearly empty, at the reserve below.",
+      "waterAdjustment": "Water, {{water}}: {{amount}}",
+      "waterReason": "The density of the water changes how much weight a diver needs.",
+      "offset": "Your usual difference: {{amount}}",
+      "offsetReason": "How your dives with other suits compare with the rule of thumb.",
+      "reserve": "For neutral buoyancy at 5 m with {{pressure}} left in the cylinder ({{source}}).",
+      "reserveFromDives": "the median of your logged end pressures",
+      "reserveAssumed": "assumed, as no end pressure is logged",
+      "missing": "What is missing",
+      "missingBodyWeight": "{{name}} has no body weight, so the rule of thumb could not be used.",
+      "missingMaterialPlanned": "The material of the planned cylinder is not chosen; its buoyancy is a guess without it.",
+      "missingMaterialDives_one": "{{count}} dive used has a cylinder without a material:",
+      "missingMaterialDives_other": "{{count}} dives used have a cylinder without a material:",
+      "missingCylinder_one": "{{count}} dive used has no cylinder logged; the planned one was assumed:",
+      "missingCylinder_other": "{{count}} dives used have no cylinder logged; the planned one was assumed:",
+      "missingThickness": "The thickness of the suit is not given; enter it above for a closer estimate.",
+      "missingUndergarment": "The undergarment is not given; choose it above for a closer estimate.",
+      "leftOut_one": "{{count}} dive with lead and a suit was left out because its site has no water type. Add the water type to the site.",
+      "leftOut_other": "{{count}} dives with lead and a suit were left out because their site has no water type. Add the water type to the site.",
+      "openDive": "Open dive {{n}}",
+    "toSites": "Go to the sites",
+      "check": "Weight check",
+      "checkIntro": "Check your weight in the water before the dive. The estimate is only where to start.",
+      "step": {
+        "eye_level_empty_bc": "Float at eye level with an empty BC.",
+        "neutral_at_5m_at_reserve": "Hover neutral at 5 m with {{pressure}} left in the cylinder."
+      }
     }
   }
 }

@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { toolsHref, toolsParams, toolsTabHref } from '../src/lib/tools.ts';
 
-const of = (query: string, tool?: 'gas' | 'plan') => toolsParams(new URLSearchParams(query), tool);
+const of = (query: string, tool?: 'gas' | 'plan' | 'lead') => toolsParams(new URLSearchParams(query), tool);
 
 describe('the address of a part of Tools', () => {
   it('names the plan in its path and nothing for gas numbers', () => {
@@ -26,5 +26,30 @@ describe('the address of a part of Tools', () => {
     expect(toolsTabHref({ o2: 32, pc: 1.5 }, 'plan', plan)).toBe('#/tools/plan?pc=1.5&mix=32&lv=20x20');
     expect(toolsTabHref(plan, 'plan', {})).toBe(toolsHref(plan));
     expect(toolsTabHref({ o2: 32 }, 'plan', {})).toBe('#/tools/plan');
+  });
+});
+
+describe('the address of the lead calculator', () => {
+  const lead = {
+    tool: 'lead' as const, diver: 'd1', leadWater: 'salt' as const, suit: 'wetsuit' as const, thicknessMm: 5, hood: true,
+    cylinders: [{ volumeL: 12, material: 'steel' as const }, { volumeL: Number.NaN }],
+  };
+
+  it('keeps the Diver, water, suit and Cylinders, and reads them back', () => {
+    const href = toolsHref(lead);
+    expect(href).toBe('#/tools/lead?diver=d1&lw=salt&suit=wetsuit&mm=5&hood=1&cyl=12%7Esteel&cyl=%7E');
+    expect(of(href.split('?')[1]!, 'lead')).toEqual(lead);
+  });
+
+  it('leaves out what is empty and ignores values it does not know', () => {
+    expect(toolsHref({ tool: 'lead' })).toBe('#/tools/lead');
+    expect(of('lw=lava&suit=cloak&ug=thick&mm=-1&cyl=x~wood', 'lead')).toEqual({ tool: 'lead', cylinders: [{ volumeL: Number.NaN }] });
+    expect(toolsHref({ tool: 'lead', hood: false, undergarment: 'heavy' })).toBe('#/tools/lead?hood=0&ug=heavy');
+  });
+
+  it('shares no gas settings with the other parts and keeps its own inputs between parts', () => {
+    expect(of('lw=fresh&water=fresh&o2=32', 'lead')).toEqual({ tool: 'lead', leadWater: 'fresh' });
+    expect(toolsTabHref({ o2: 32, water: 'fresh' }, 'lead', lead)).toBe(toolsHref(lead));
+    expect(toolsTabHref(lead, 'gas', { o2: 32 })).toBe('#/tools?o2=32');
   });
 });

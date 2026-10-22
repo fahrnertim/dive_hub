@@ -2136,7 +2136,7 @@
   },
   "tools": {
     "title": "Werkzeuge",
-    "lead": "Gaswerte, eine Grundzeit und ein Gasplan für einen geplanten Tauchgang.",
+    "lead": "Gaswerte, eine Grundzeit, ein Gasplan und eine Bleischätzung für einen geplanten Tauchgang.",
     "notice": "Das ist eine Schätzung, kein Rat: Grenzen, errechnet aus deinen Eingaben und Einstellungen. Dein Tauchcomputer und deine Ausbildung gelten, und kein Modell garantiert Sicherheit.",
     "mix": {
       "oxygen": "Sauerstoff",
@@ -2355,7 +2355,65 @@
     "parts": "Werkzeuge",
     "tab": {
       "gas": "Gas und Grundzeit",
-      "plan": "Gasplan"
+      "plan": "Gasplan",
+      "lead": "Blei"
+    },
+    "leadCalc": {
+      "conditions": "Geplante Bedingungen",
+      "diver": "Taucher",
+      "water": "Wasser",
+      "choose": "Auswählen",
+      "answer": "Bleischätzung",
+      "empty": "Wähle das Wasser, den Anzug und die Größe von mindestens einer Flasche, um einen Ausgangswert für {{name}} zu erhalten.",
+      "startingPoint": "Ausgangswert",
+      "range": "Bereich {{low}} bis {{high}}",
+      "notCertain": "Ein Ausgangswert, keine sichere Zahl: Prüfe ihn mit dem Gewichtscheck unten.",
+      "noNumber": "Noch keine Zahl",
+      "noNumberBody": "{{name}} hat keinen Tauchgang mit diesem Anzug und kein Körpergewicht eingetragen, daher gibt es keinen Ausgangspunkt. Trage ein Körpergewicht ein für einen Startwert nach Faustregel, oder logge einen Tauchgang mit diesem Anzug und seinem Blei.",
+      "addBodyWeight": "Körpergewicht auf der Taucherseite eintragen",
+      "confidence": "Verlässlichkeit: {{level}}",
+      "level": {
+        "low": "gering",
+        "medium": "mittel",
+        "high": "hoch"
+      },
+      "basisDives_one": "Gestützt auf {{count}} Tauchgang von {{name}} mit diesem Anzug:",
+      "basisDives_other": "Gestützt auf {{count}} Tauchgänge von {{name}} mit diesem Anzug:",
+      "diveLabel": "{{date}}",
+      "diveLabelNumbered": "Tauchgang {{number}}, {{date}}",
+      "diveLine": "getragen {{carried}}, gebraucht {{needed}}",
+      "basisRule": "Kein Tauchgang mit diesem Anzug. Eine Faustregel für das Körpergewicht ergibt {{rule}}, eine erste Annahme.",
+      "basisOffset_one": "Um {{offset}} verschoben: Der {{count}} andere Anzug mit Tauchgängen brauchte mehr oder weniger als die Faustregel.",
+      "basisOffset_other": "Um {{offset}} verschoben: Die {{count}} anderen Anzüge mit Tauchgängen brauchten mehr oder weniger als die Faustregel.",
+      "adjustments": "Was für diese Bedingungen dazukommt",
+      "cylinder": "Flasche: {{amount}}",
+      "cylinderReason": "Ihr Auftrieb, wenn sie fast leer ist, bei der Reserve unten.",
+      "waterAdjustment": "Wasser, {{water}}: {{amount}}",
+      "waterReason": "Die Dichte des Wassers ändert, wie viel Gewicht man braucht.",
+      "offset": "Dein üblicher Unterschied: {{amount}}",
+      "offsetReason": "Wie deine Tauchgänge mit anderen Anzügen zur Faustregel passen.",
+      "reserve": "Für neutralen Auftrieb auf 5 m mit {{pressure}} in der Flasche ({{source}}).",
+      "reserveFromDives": "Median deiner geloggten Enddrücke",
+      "reserveAssumed": "angenommen, da kein Enddruck geloggt ist",
+      "missing": "Was fehlt",
+      "missingBodyWeight": "{{name}} hat kein Körpergewicht, die Faustregel ließ sich daher nicht anwenden.",
+      "missingMaterialPlanned": "Das Material der geplanten Flasche ist nicht gewählt; ihr Auftrieb ist ohne es geschätzt.",
+      "missingMaterialDives_one": "{{count}} verwendeter Tauchgang hat eine Flasche ohne Material:",
+      "missingMaterialDives_other": "{{count}} verwendete Tauchgänge haben eine Flasche ohne Material:",
+      "missingCylinder_one": "{{count}} verwendeter Tauchgang hat keine Flasche geloggt; die geplante wurde angenommen:",
+      "missingCylinder_other": "{{count}} verwendete Tauchgänge haben keine Flasche geloggt; die geplante wurde angenommen:",
+      "missingThickness": "Die Dicke des Anzugs fehlt; trage sie oben ein für eine genauere Schätzung.",
+      "missingUndergarment": "Die Unterwäsche fehlt; wähle sie oben für eine genauere Schätzung.",
+      "leftOut_one": "{{count}} Tauchgang mit Blei und Anzug blieb unberücksichtigt, weil sein Platz keine Wasserart hat. Trage die Wasserart beim Platz ein.",
+      "leftOut_other": "{{count}} Tauchgänge mit Blei und Anzug blieben unberücksichtigt, weil ihr Platz keine Wasserart hat. Trage die Wasserart beim Platz ein.",
+      "openDive": "Tauchgang {{n}} öffnen",
+    "toSites": "Zu den Tauchplätzen",
+      "check": "Gewichtscheck",
+      "checkIntro": "Prüfe dein Gewicht vor dem Tauchgang im Wasser. Die Schätzung ist nur der Ausgangspunkt.",
+      "step": {
+        "eye_level_empty_bc": "Mit leerem Jacket auf Augenhöhe schwimmen.",
+        "neutral_at_5m_at_reserve": "Auf 5 m neutral schweben mit {{pressure}} in der Flasche."
+      }
     }
   }
 }

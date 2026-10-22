@@ -73,6 +73,19 @@ export function useCylinderProblem() {
   };
 }
 
+/** A catalogue entry in words: "Steel 12 L, 232 bar". */
+export function useCatalogueName() {
+  const { t } = useTranslation();
+  const display = useDisplay();
+  return (c: CatalogueCylinder) => {
+    const pressure = display.pressure(c.workingPressureBar);
+    if (c.tradeName) return t('cylinders.catalogueNamed', { name: c.tradeName, volume: display.volume(c.volumeL), pressure });
+    const material = t(`vocabulary.cylinderMaterial.${c.material}`);
+    return c.twin ? t('cylinders.catalogueTwin', { material, volume: display.volume(c.volumeL / 2), pressure })
+      : t('cylinders.catalogueEntry', { material, volume: display.volume(c.volumeL), pressure });
+  };
+}
+
 /** The Cylinders in the Dive's form. */
 export function CylinderFields({ dive: d, drafts, onChange, autoFocus }: {
   dive: DiveView; drafts: CylinderDraft[]; onChange: (next: CylinderDraft[]) => void; autoFocus?: boolean;
@@ -83,13 +96,7 @@ export function CylinderFields({ dive: d, drafts, onChange, autoFocus }: {
   const { units } = display;
   const catalogue = useQuery(cylinderCatalogueQuery());
 
-  const entryName = (c: CatalogueCylinder) => {
-    const pressure = display.pressure(c.workingPressureBar);
-    if (c.tradeName) return t('cylinders.catalogueNamed', { name: c.tradeName, volume: display.volume(c.volumeL), pressure });
-    const material = t(`vocabulary.cylinderMaterial.${c.material}`);
-    return c.twin ? t('cylinders.catalogueTwin', { material, volume: display.volume(c.volumeL / 2), pressure })
-      : t('cylinders.catalogueEntry', { material, volume: display.volume(c.volumeL), pressure });
-  };
+  const entryName = useCatalogueName();
   // The tank pods of the Dive's Recordings: one option per pressure series.
   const pods = d.recordings.flatMap((r, n) => {
     const device = r.device ? deviceName(r.device.manufacturer, r.device.product) : t('dive.recordingN', { n: n + 1 });

@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { diversQuery, toolsBottomTimeQuery, toolsGasQuery, toolsPlanQuery, type ToolsBottomTime, type ToolsGas } from './api.ts';
+import { diversQuery, leadEstimateQuery, toolsBottomTimeQuery, toolsGasQuery, toolsPlanQuery, type ToolsBottomTime, type ToolsGas } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { usePageTitle } from './lib/page.ts';
 import { keepToolsParams, replaceToolsAddress, RULES_WITH_BAR, TOOLS_RULES, TOOLS_WATERS, toolsTabHref, type Tool, type ToolsParams } from './lib/tools.ts';
+import { LeadSection } from './ToolsLead.tsx';
 import { PlanSection, RuleExplanation } from './ToolsPlan.tsx';
 import { depthFromDisplay, depthIn, pressureFromDisplay, pressureIn } from './lib/units.ts';
 import { Checkbox, Disclosure, Muted, NumberField, Notice, PageHeader, Select } from './ui/index.ts';
@@ -20,7 +21,7 @@ const SETTINGS = {
   gas: ['water', 'altitude', 'rule', 'bar', 'sac', 'gf', 'pw', 'pc', 'narcotic'],
   plan: ['water', 'altitude', 'rule', 'bar', 'pc', 'dr', 'ar'],
 } as const;
-const TOOLS: readonly Tool[] = ['gas', 'plan'];
+const TOOLS: readonly Tool[] = ['gas', 'plan', 'lead'];
 
 const num = (v: number) => (Number.isNaN(v) ? undefined : v);
 
@@ -38,6 +39,9 @@ export function ToolsPage({ params }: { params: ToolsParams }) {
   const gas = useQuery(toolsGasQuery(params));
   const bottom = useQuery(toolsBottomTimeQuery(params, own, !divers.isPending));
   const plan = useQuery(toolsPlanQuery(params));
+  const { units } = useDisplay();
+  const leadDiver = params.diver ?? own;
+  const lead = useQuery(leadEstimateQuery(params, leadDiver, units === 'imperial' ? 'lb' : 'kg'));
   const tool = params.tool ?? 'gas';
   useEffect(() => keepToolsParams(params));
   return (
@@ -55,8 +59,10 @@ export function ToolsPage({ params }: { params: ToolsParams }) {
           <GasSection params={params} gas={gas} />
           <BottomTimeSection params={params} bottom={bottom} />
         </>
-      ) : (
+      ) : tool === 'plan' ? (
         <PlanSection params={params} plan={plan} managed={divers.data ?? []} settings={<Settings params={params} tool="plan" />} />
+      ) : (
+        <LeadSection params={params} estimate={lead} managed={divers.data ?? []} diverId={leadDiver} />
       )}
     </>
   );
@@ -101,7 +107,7 @@ function Inputs({ params, assumed }: { params: ToolsParams; assumed: ToolsBottom
  * The rarely changed settings of a part, in a collapsible: both parts share water, altitude, the gas rule and the
  * contingency ppO2 (they travel with the address to the other part); the rest belongs to one of them.
  */
-function Settings({ params, tool, used }: { params: ToolsParams; tool: Tool; used?: ToolsBottomTime['used'] | undefined }) {
+function Settings({ params, tool, used }: { params: ToolsParams; tool: 'gas' | 'plan'; used?: ToolsBottomTime['used'] | undefined }) {
   const { t } = useTranslation();
   const display = useDisplay();
   const { units } = display;

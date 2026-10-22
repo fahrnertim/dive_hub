@@ -603,6 +603,30 @@ export const toolsPlanQuery = (p: ToolsInput) => {
   });
 };
 
+/** The lead estimate (ADR 0031): computed on request for a Diver the User keeps, in the unit the User counts in. */
+export type LeadEstimate = Awaited<ReturnType<typeof fetchLeadEstimate>>;
+async function fetchLeadEstimate(p: ToolsInput, diverId: string, unit: 'kg' | 'lb') {
+  return unwrap(await api.GET('/api/divers/{id}/lead-estimate', {
+    params: {
+      path: { id: diverId },
+      query: defined({
+        water: p.leadWater!, suit: p.suit!, suitThicknessMm: p.suit === 'wetsuit' || p.suit === 'semidry' ? p.thicknessMm : undefined,
+        suitHood: p.suit && p.suit !== 'none' ? p.hood : undefined, suitUndergarment: p.suit === 'drysuit' ? p.undergarment : undefined,
+        cylinders: JSON.stringify((p.cylinders ?? []).map((c) => defined({ volumeL: c.volumeL, material: c.material }))), unit,
+      }),
+    },
+  }));
+}
+/** Needs a Diver, the water, the suit and Cylinders with a volume each; the suit's details may stay empty (the answer says so). */
+export const leadEstimateQuery = (p: ToolsInput, diverId: string | undefined, unit: 'kg' | 'lb') => {
+  const enabled = diverId !== undefined && p.leadWater !== undefined && p.suit !== undefined
+    && (p.cylinders?.length ?? 0) > 0 && p.cylinders!.every((c) => c.volumeL > 0);
+  return queryOptions({
+    queryKey: ['tools', 'lead', p, diverId, unit] as const, queryFn: () => fetchLeadEstimate(p, diverId!, unit), enabled, retry: false,
+    ...(enabled && { placeholderData: keepPreviousData }),
+  });
+};
+
 /** Sending many Dives to a Provider (ADR 0047). */
 export type PushRunView = Awaited<ReturnType<typeof fetchPushRuns>>[number];
 export type PushRunDetail = Awaited<ReturnType<typeof fetchPushRun>>;

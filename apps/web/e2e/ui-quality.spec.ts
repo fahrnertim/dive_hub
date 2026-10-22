@@ -263,6 +263,48 @@ for (const v of variants) {
       await expectGoodPage(page, title('Tools'), v);
     });
 
+    test('Tools: the lead calculator with no history, a rule of thumb only, and based on dives', { tag: ['@tools'] }, async ({ page }) => {
+      // The answers are the server's (lead-estimate-routes.test.ts); here the page in each state, so the data stays untouched.
+      const base = {
+        unit: 'kg', confidence: 'low', missing: [], reserve: { bar: 50, fromDives: false }, leftOut: { noWaterType: 0 },
+        weightCheck: { steps: ['eye_level_empty_bc', 'neutral_at_5m_at_reserve'], reserveBar: 50 },
+      };
+      const rule = {
+        ...base, total: 6.5, range: { low: 5, high: 8 }, basis: { kind: 'rule_of_thumb', rule: 6, personalOffset: 1, offsetFromSuits: 2 },
+        adjustments: [{ kind: 'personal_offset', amount: 1 }, { kind: 'cylinder', amount: 1.5 }, { kind: 'water', amount: -2, water: 'fresh' }],
+        missing: [{ kind: 'body_weight' }, { kind: 'cylinder_material', diveIds: [], planned: true }, { kind: 'suit_thickness' }],
+      };
+      const dives = {
+        ...base, total: 8, range: { low: 7, high: 9.5 }, confidence: 'high', reserve: { bar: 55, fromDives: true },
+        basis: { kind: 'dives', personal: 7, dives: [{ diveId, startsAt: '2026-03-01T09:00:00Z', number: 12, carried: 8, needed: 9, weight: 2 }, { diveId, startsAt: '2025-03-01T09:00:00Z', number: null, carried: 7, needed: 7, weight: 1 }] },
+        adjustments: [{ kind: 'cylinder', amount: 1 }, { kind: 'water', amount: 0.5, water: 'salt' }],
+        missing: [{ kind: 'cylinder', diveIds: [diveId] }], leftOut: { noWaterType: 2 },
+      };
+      const none = { ...base, total: null, range: null, basis: null, adjustments: [], missing: [{ kind: 'body_weight' }] };
+      const answer = async (body: object) => {
+        await page.route('**/api/divers/*/lead-estimate*', (route) => route.fulfill({ json: body }));
+      };
+      const url = '/#/tools/lead?lw=salt&suit=wetsuit&mm=5&hood=0&cyl=11.1%7Ealuminium';
+      await page.goto('/#/tools/lead');
+      await expect(page.getByRole('heading', { level: 2, name: /^(Weight check|Gewichtscheck)$/ })).toBeVisible();
+      await expectGoodPage(page, title('Tools'), v);
+      await answer(none);
+      await page.goto(url);
+      await expect(page.getByRole('link', { name: /^(Add body weight on the Divers page|Körpergewicht auf der Taucherseite eintragen)$/ })).toBeVisible();
+      await expectGoodPage(page, title('Tools'), v);
+      await page.unroute('**/api/divers/*/lead-estimate*');
+      await answer(rule);
+      await page.reload();
+      await expect(page.getByTestId('lead-total')).toBeVisible();
+      await expectGoodPage(page, title('Tools'), v);
+      await page.unroute('**/api/divers/*/lead-estimate*');
+      await answer(dives);
+      await page.reload();
+      await expect(page.getByTestId('lead-total')).toBeVisible();
+      await expect(page.getByRole('link', { name: /^(Dive 12|Tauchgang 12)/ })).toBeVisible();
+      await expectGoodPage(page, title('Tools'), v);
+    });
+
     test('the code scanner, without a camera', { tag: ['@sites'] }, async ({ page }) => {
       // The same answer in every browser the tests run in: no camera.
       await page.addInitScript(() => {
@@ -939,7 +981,7 @@ test.describe('behaviour', () => {
     ['logbook', () => '/', ['@dives']], ['dive', () => `/#/dives/${diveId}`, ['@dives']], ['Divers', () => '/#/divers', ['@divers']],
     ['Dive sites', () => '/#/sites', ['@sites']], ['a dive site', () => `/#/sites/${siteId}`, ['@sites']],
     ['an imported dive site', () => `/#/sites/${importedSiteId}`, ['@sites']],
-    ['Dive centres', () => '/#/centres', ['@sites']], ['Tools', () => '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', ['@tools']], ['a gas plan', () => '/#/tools/plan?water=fresh&lv=20x15,12x10&dv=Tim~12~200~20~&dv=Ann~10~200~15~', ['@tools']], ['a dive centre', () => `/#/centres/${centreId}`, ['@sites']], ['account', () => '/#/account', ['@account']], ['account connections', () => '/#/account?tab=connections', ['@account']], ['account AI access', () => '/#/account?tab=ai', ['@account']],
+    ['Dive centres', () => '/#/centres', ['@sites']], ['Tools', () => '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', ['@tools']], ['a gas plan', () => '/#/tools/plan?water=fresh&lv=20x15,12x10&dv=Tim~12~200~20~&dv=Ann~10~200~15~', ['@tools']], ['the lead calculator', () => '/#/tools/lead?lw=salt&suit=wetsuit&mm=5&hood=0&cyl=11.1%7Ealuminium', ['@tools']], ['a dive centre', () => `/#/centres/${centreId}`, ['@sites']], ['account', () => '/#/account', ['@account']], ['account connections', () => '/#/account?tab=connections', ['@account']], ['account AI access', () => '/#/account?tab=ai', ['@account']],
     ['Review', () => '/#/review', ['@dives']], ['admin', () => '/#/admin', ['@admin']], ['site import', () => '/#/admin/site-imports', ['@admin', '@sites']],
   ];
   for (const [name, path, tag] of sweep) {
@@ -958,7 +1000,7 @@ test.describe('behaviour', () => {
   }
 
   test('text at 200 % still fits: nothing scrolls sideways (WCAG 1.4.4)', { tag: ['@layout'] }, async ({ page }) => {
-    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/centres', `/#/centres/${centreId}`, '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', '/#/review', '/#/account', '/#/account?tab=connections', '/#/account?tab=ai', '/#/admin', '/#/admin/site-imports']) {
+    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/centres', `/#/centres/${centreId}`, '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', '/#/tools/lead?lw=salt&suit=wetsuit&mm=5&hood=0&cyl=11.1%7Ealuminium', '/#/review', '/#/account', '/#/account?tab=connections', '/#/account?tab=ai', '/#/admin', '/#/admin/site-imports']) {
       await page.goto(path);
       await page.getByRole('heading', { level: 1 }).waitFor();
       await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
