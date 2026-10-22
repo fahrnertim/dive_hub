@@ -34,20 +34,6 @@
   },
   {
     "type": "dependency",
-    "from": "apps/server/src/planning/routes.ts",
-    "to": "apps/server/node_modules/drizzle-orm/index.cjs",
-    "unresolvedTo": "drizzle-orm",
-    "dependencyTypes": [
-      "npm",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "routes-use-no-drizzle"
-    }
-  },
-  {
-    "type": "dependency",
     "from": "apps/server/src/users/account-routes.ts",
     "to": "apps/server/node_modules/drizzle-orm/index.cjs",
     "unresolvedTo": "drizzle-orm",

@@ -1,20 +1,18 @@
 // The Tools page's gas numbers and bottom time (ADR 0032, slice 21): computed on request, nothing stored. They are
 // limits from the Diver's own input and settings, not advice; clients must show the assumptions (docs/spec/clients.md).
-import { eq } from 'drizzle-orm';
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
 import { Value } from 'typebox/value';
 import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
-import type { Db } from '../db/client.js';
-import { diverManagement } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
-import { PLAN_RULES, planGasPlan } from './plan-service.js';
-import { BOTTOM_TIME_RULES, PLANNING_WATERS, gasNumbers, planBottomTime } from './service.js';
+import type { PlanningService } from './planning-service.js';
+import { PLAN_RULES } from './plan-service.js';
+import { BOTTOM_TIME_RULES, PLANNING_WATERS, gasNumbers } from './service.js';
 
 export interface PlanningRouteDeps {
-  db: Db;
   auth: Auth;
+  planning: PlanningService;
 }
 
 const Fraction = Type.Number({ minimum: 0, maximum: 100 });
@@ -126,7 +124,6 @@ const BottomTimeView = Type.Object({
 });
 
 export const planningRoutes: FastifyPluginAsyncTypebox<PlanningRouteDeps> = async (app, deps) => {
-  const { db } = deps;
   app.addHook('onRequest', requireUser(deps.auth));
 
   app.get('/tools/gas', {
@@ -147,9 +144,7 @@ export const planningRoutes: FastifyPluginAsyncTypebox<PlanningRouteDeps> = asyn
       querystring: BottomTimeQuery, response: { 200: BottomTimeView, 400: Problem, 404: Problem },
     },
   }, async (request, reply) => {
-    const managed = (await db.select({ id: diverManagement.diverId }).from(diverManagement)
-      .where(eq(diverManagement.userId, request.user!.id))).map((r) => r.id);
-    const answer = await planBottomTime(db, managed, request.query);
+    const answer = await deps.planning.bottomTime(request.user!.id, request.query);
     if (answer.ok) return answer.value;
     return reply.code(answer.code === 'diver_not_found' || answer.code === 'site_not_found' ? 404 : 400).send(problem(answer.code));
   });
@@ -168,9 +163,7 @@ export const planningRoutes: FastifyPluginAsyncTypebox<PlanningRouteDeps> = asyn
     let parsedDivers: unknown;
     try { parsedLevels = JSON.parse(levels); parsedDivers = JSON.parse(divers); } catch { return reply.code(400).send(problem('invalid_input')); }
     if (!Value.Check(PlanLevels, parsedLevels) || !Value.Check(PlanDivers, parsedDivers)) return reply.code(400).send(problem('invalid_input'));
-    const managed = (await db.select({ id: diverManagement.diverId }).from(diverManagement)
-      .where(eq(diverManagement.userId, request.user!.id))).map((r) => r.id);
-    const answer = await planGasPlan(db, managed, { ...rest, levels: parsedLevels, divers: parsedDivers });
+    const answer = await deps.planning.gasPlan(request.user!.id, { ...rest, levels: parsedLevels, divers: parsedDivers });
     if (answer.ok) return answer.value as { status: 'ok' | 'outside_limits' };
     return reply.code(answer.code === 'diver_not_found' || answer.code === 'site_not_found' ? 404 : 400).send(problem(answer.code));
   });
