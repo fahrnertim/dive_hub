@@ -1,16 +1,15 @@
 ---
 title: "ADR 0053: Module boundaries"
-summary: Proposed. The server in three layers (routes → services → db) and the imports between its domain modules as found on 2026-10-22; the web client's shared components import no page; no import cycles. Checked by dependency-cruiser against a baseline of today's 23 violations. First fix - the runtime cycle diver-service ↔ merge through DiverError.
-status: proposed
+summary: The server in three layers (routes → services → db, every query in a service, vocabulary.ts below db); the imports between its domain modules as an enforced allow-list in .dependency-cruiser.cjs, changed there without a new ADR; the web client's shared components import no page; no import cycles. Checked by dependency-cruiser against a baseline of the 22 violations left. First fix - the runtime cycle diver-service ↔ merge through DiverError.
+status: accepted
 date: 2026-10-22
 ---
 
 # ADR 0053: Module boundaries
 
 ## Status
-Proposed – 2026-10-22, drafted by an agent in the guardrails slice for the owner to accept, change or reject.
-Until then the rules below are checked (`.dependency-cruiser.cjs`), but the allowed imports between domain
-modules are a record of today, not yet a decision.
+Accepted – 2026-10-22 by the owner, with the answers under "Owner's answers". Drafted by an agent in the
+guardrails slice.
 
 ## Context
 The module structure was never written down. The [guardrails research](../research/2026-10-22-agent-guardrails.md)
@@ -30,40 +29,33 @@ found what grew without it, and agent-written code is known to add coupling unle
   `users/routes.ts`, `users/account-routes.ts`, `users/admin-routes.ts`. The other route files call services.
 - The web client's shared components (`ui/`) import no page today.
 
-## Decision (proposed)
+## Decision
 
 ### Server layers
 **routes → services → db.** A module's route file (`*routes*.ts`) parses the request, checks access, calls the
 module's service and shapes the answer. A service (`*-service.ts` and the module's other files) holds the domain
 logic and the queries. `db/` (schema, client, migrations) is the bottom layer.
 
-- Route files don't import `drizzle-orm`: a query in a route moves to the module's service.
+- Route files don't import `drizzle-orm`: every query lives in a service, with no exception for small or
+  read-only routes. A query in a route moves to the module's service.
 - `db/` imports no domain module. The types `db/schema.ts` needs from `sites` move to `db/` or to a types file
-  under `db/`; for `vocabulary.ts` the owner chooses (see open questions).
+  under `db/`.
+- `vocabulary.ts` (the value lists, such as `WATER_TYPES`, used by the schema's enums and checks and by the API)
+  is a layer below `db/`: `db/` may import it, and it imports nothing of the server.
 - `http/` (problem answers, shared route helpers), `auth/`, `storage/`, `secrets/` and `vocabulary.ts` are shared
   infrastructure that any module may import.
 - `app.ts`, `main.ts`, `worker.ts` and `scripts/` assemble the modules and may import any of them.
 
 ### Imports between domain modules
-As found on 2026-10-22 (directory level; "type" means type imports only; the shared infrastructure above and `db/`
-left out). An import not in this table needs a change of this ADR.
+An enforced allow-list: `MODULE_IMPORTS` in `.dependency-cruiser.cjs` names, for each domain module (a folder of
+`apps/server/src` that isn't shared infrastructure or `db/`), the other domain modules it may import, at directory
+level; `name:type` allows type imports only. It started as the imports found on 2026-10-22. An import between
+modules that isn't listed fails the check.
 
-| Module | Imports |
-|---|---|
-| assessment | imports |
-| centres | divers (type), dives, providers, sites |
-| certifications | dives, providers |
-| divers | centres, certifications, dives, providers |
-| dives | assessment (type), centres, divers, imports, providers, sites |
-| fit | imports, suunto |
-| imports | dives, fit, sites, suunto |
-| lead | dives |
-| mcp | assessment, dives, planning, sites |
-| planning | dives |
-| providers | certifications, divers, dives, imports, sites, routes (the root `routes.ts`) |
-| sites | dives, providers |
-| suunto | imports |
-| users | dives |
+The list is kept in that file, not in this ADR. A new import between modules, or a new module, adds its entry
+there in the same commit, with the reason in the commit message: an ordinary, reviewed change that needs **no new
+ADR**. Changing the rules themselves (the layers, the shared infrastructure, no cycles) still does. Removing an
+entry once an import is gone is always welcome.
 
 Several pairs import each other at directory level (dives ↔ divers, dives ↔ providers, dives ↔ sites,
 divers ↔ providers, imports ↔ dives, fit ↔ imports). They are not file cycles, but each is a candidate for a seam:
@@ -79,13 +71,13 @@ touch them.
 No import cycle, not even through a type import, in either app.
 
 ### How it is checked
-- dependency-cruiser (`.dependency-cruiser.cjs`): no cycles; `db/` imports no domain module; route files don't
-  import `drizzle-orm`; `ui/` imports no page. It runs in `pnpm check` (changed files), `pnpm check:full`, CI and
+- dependency-cruiser (`.dependency-cruiser.cjs`): no cycles; `db/` imports no domain module (only
+  `vocabulary.ts`); route files don't import `drizzle-orm`; domain modules import only what `MODULE_IMPORTS`
+  allows; `ui/` imports no page. It runs in `pnpm check` (changed files), `pnpm check:full`, CI and
   after every edit by an agent ([ADR 0023](0023-faster-checks.md), amendment of 2026-10-22).
-- The 23 violations of 2026-10-22 are in `.dependency-cruiser-known-violations.json`. Only new ones fail; the
-  file may only shrink. After fixing one, `pnpm lint:baseline` takes it out.
-- The table of imports between domain modules is not yet a rule. Once accepted, it can become one (an allow-list
-  in `.dependency-cruiser.cjs`), so that a new import between modules fails until this ADR lists it.
+- The violations of 2026-10-22 are in `.dependency-cruiser-known-violations.json`: 23 found, 22 left once
+  `vocabulary.ts` was allowed below `db/`. Only new ones fail; the file may only shrink. After fixing one,
+  `pnpm lint:baseline` takes it out.
 - The `architecture-review` subagent (`.claude/agents/architecture-review.md`) reviews each slice against this ADR.
 
 ### Order of fixing (each its own small slice, tests first)
@@ -97,17 +89,17 @@ No import cycle, not even through a type import, in either app.
 4. Queries out of the 6 route files, the largest first (`routes.ts`, `dives/routes.ts`).
 5. `api.ts` ↔ `lib/logbook.ts` in the web client.
 
-## Open questions for the owner
-- Is **routes → services → db** the right shape, or should small read-only routes keep their queries?
-- May `db/` import `vocabulary.ts` (value lists used in the schema's enums and checks), making it a layer below
-  `db/`? The check counts it as a violation for now.
-- Should the table of imports between domain modules become an enforced allow-list now, or after the pairs above
-  are untangled?
+## Owner's answers (2026-10-22)
+- **routes → services → db, strictly**: small read-only routes don't keep their queries.
+- **`db/` may import `vocabulary.ts`**, a layer below `db/`; its known violation left the baseline.
+- **The imports between domain modules are an enforced allow-list now**, kept in `.dependency-cruiser.cjs` and
+  changed there without a new ADR.
 
 ## Consequences
 - An agent gets a failing check, not a sentence to remember, when it crosses a boundary.
 - Fixing a violation means shrinking the baseline in the same change; `pnpm check` fails until it does.
-- The table must be kept when modules change: a new module or a new import between modules changes this ADR.
+- A new module or a new import between modules fails the check until `MODULE_IMPORTS` lists it, so each one is a
+  visible line in a diff, not a drift nobody saw.
 - Considered: eslint-plugin-boundaries (its element types fit the web client better than the server's folders, and
   ESLint would then carry two jobs); writing the rules only in this ADR (prose that nothing enforces is what the
   research found missing).

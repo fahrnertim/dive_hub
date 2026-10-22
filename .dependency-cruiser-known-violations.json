@@ -45,20 +45,6 @@
     }
   },
   {
-    "type": "dependency",
-    "from": "apps/server/src/db/schema.ts",
-    "to": "apps/server/src/vocabulary.ts",
-    "unresolvedTo": "../vocabulary.js",
-    "dependencyTypes": [
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "db-imports-no-domain-module"
-    }
-  },
-  {
     "type": "cycle",
     "from": "apps/server/src/db/client.ts",
     "to": "apps/server/src/db/schema.ts",

@@ -93,7 +93,7 @@ export function lint({ all = false, files = [], cwd = process.cwd() } = {}) {
     const now = dependencyViolations(cwd, everything ? SOURCES : targets.deps);
     const fresh = now.filter((v) => !knownKeys.has(key(v)));
     if (fresh.length > 0) {
-      problems.push(`New dependency violations (rules in .dependency-cruiser.cjs, proposed ADR 0053):\n${[...new Map(fresh.map((v) => [key(v), describe(v)])).values()].map((line) => `  ${line}`).join('\n')}`);
+      problems.push(`New dependency violations (rules in .dependency-cruiser.cjs, ADR 0053):\n${[...new Map(fresh.map((v) => [key(v), describe(v)])).values()].map((line) => `  ${line}`).join('\n')}`);
     }
     if (everything) {
       const nowKeys = new Set(now.map(key));

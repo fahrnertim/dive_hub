@@ -14,9 +14,10 @@ no installs, no formatting. Bash is for reading only: `git diff`, `git log`, `gi
 where the diff alone doesn't show what it does.
 
 **What to check, in this order:**
-1. **Module boundaries** ([ADR 0053](../../docs/decisions/0053-module-boundaries.md), proposed until the owner
-   accepts it): routes → services → db; route files don't query the database; `db/` imports no domain module;
-   imports between domain modules only as the ADR lists them; `apps/web/src/ui/` imports no page; no new cycle,
+1. **Module boundaries** ([ADR 0053](../../docs/decisions/0053-module-boundaries.md)): routes → services → db; route
+   files don't query the database; `db/` imports no domain module (only `vocabulary.ts`); imports between domain
+   modules only as `MODULE_IMPORTS` in `.dependency-cruiser.cjs` lists them, and a new entry there needs a reason
+   in the commit message and should not be a shortcut past a service or a seam; `apps/web/src/ui/` imports no page; no new cycle,
    not even through a type import. Run `node scripts/check-lint.mjs <changed files>` for the mechanical part, then
    judge what it can't see: logic in the wrong layer, a new module that should have been part of an existing
    one, a seam with only one adapter, a shallow module (codebase-design vocabulary).

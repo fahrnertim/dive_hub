@@ -233,7 +233,8 @@ refactoring code yet.
   `scripts/check-lint.mjs`:
   - ESLint (`eslint.config.mjs`): typescript-eslint's recommended rules and `sonarjs/cognitive-complexity` at 15.
   - dependency-cruiser (`.dependency-cruiser.cjs`): no cycles (type imports count), `db/` imports no domain module,
-    route files don't import `drizzle-orm`, `ui/` imports no page ([ADR 0053](0053-module-boundaries.md), proposed).
+    route files don't import `drizzle-orm`, `ui/` imports no page ([ADR 0053](0053-module-boundaries.md); accepted the
+    same day, which added the allow-list of imports between domain modules).
   - `pnpm check` lints the changed files (dependency-cruiser follows their imports, so a new cycle through them is
     found); `pnpm check:full` and `pnpm lint` lint everything. Like the other steps it records its green run.
   - Changed lint configuration or baselines lint everything and run no test. `.github/` and `.githooks/` are quiet.
