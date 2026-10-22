@@ -54,7 +54,7 @@ later. No code is written and nothing was sent to SSI. Markers as in the [SSI re
 | `/APP_CACHE_GEAR.zip`, `/APP_CACHE_CENTER.zip`, `/APP_CACHE_SITES.zip` | first-install caches, no sign-in | [R] |
 | `/firmware/…`, `/firmware_test/…`, `/firmware_dev/…` | firmware update checks for SSI's own dive computers (`update_check/`, `languages/`) | [R] names; host not read [?] |
 | `/api/aia/chat`, `/api/aia/ping` | the course AI chat; carries a fixed bearer token in the app (not recorded here) | [R] names; host not read [?] |
-| the course server (probably `training.divessi.com`, polled 41 times in the capture) | one URL with `method=<Name>&type=u&rest=p`; see below | [R] names; the host is a guess [?] |
+| the course server (`training.divessi.com`, polled 41 times in the capture) | one URL with `method=<Name>&type=u&rest=p`; see below | [R] names and host (answered 200 in the capture) |
 | `my.divessi.com` | pictures, downloads, certificate pictures (`/cert/<ccard_uid>`), web pages (help, privacy, imprint, delete account, online diver check) | [R] |
 | `cdn.divessi.com` | icons, campaign and blog images | [R] |
 | `nominatim.openstreetmap.org` | place search | name in code [R] |
@@ -179,6 +179,15 @@ here" [?], so a client must not treat every 404 from `a21.php` as an error. Size
 170 KB, `get_videolist` 240 KB; `home`, `get_insurance`, `get_user_badges`, `get_ccards`, `get_buddies` and `get_gear` are
 small (1.8–8 KB). `events` answered 200 and 404.
 
+**An expired or missing token, seen on the wire [R]:** `get_available_courses` answered twice with **HTTP 404** and the body
+`{"status":401,"message":"Error","result":"No Valid Token supplied"}`, then 200 after sign-in. So the 401 of the
+[interceptor](#the-two-error-interceptors-r) travels under an HTTP **404**, and a client must read the body.
+Most `a21.php` answers are plain objects without a `status` key (`get_buddies`: `user_buddies`; `save_divelog`:
+`success`, `result`); `get_available_courses` (200) and the course server answer in an envelope
+`{"status":200,"message":"Success","result":…}`. **`training.divessi.com` is the course server** [R]: `GetUserProgress` and
+`GetBookmarks` answered 200 there. HTTP statuses in the capture: 0 (4), 200 (328), 204, 206, 301 (31), 400 (1), 403 (25,
+the bare `/app/` URL), 404 (10); **no 503**, so the maintenance answer's body is unseen.
+
 ## What this means for Dive Hub
 
 - **The app writes** dives, their verification (`divelog_verify`), buddies, gear and gear sets and their images,
@@ -240,11 +249,11 @@ no key of `toJson` is left out, and a value that is empty is sent as `null` (282
 
 1. **Which fields the server requires.** The app sends the whole row (above); what the server rejects needs test saves
    (writes to the owner's account; the owner decides).
-2. **What a 503 or a `status` 401 response looks like on the wire** (other keys, HTTP code of the 401) — needs a captured response; the code only tests the status code and the `status` key.
-3. **Hosts** of the course, firmware and AI calls.
-4. **`training.divessi.com`:** whether it is the course server (the interceptors treat a `training.` host specially, which
-   points that way).
-5. **Types and nullability** of other `json_data` bodies (profile, buddies, gear, sites): same method as for the dive.
+2. **The maintenance (503) answer's body** is unseen; the capture has none. The 401 body is known (above).
+3. **Hosts** of the firmware and AI calls.
+4. **Other write bodies** not read yet: images and text (gear image, site description and images, profile image), e-mail and
+   password change, divecomputer, divelog history, sonar reaction, privacy policy, feedback, signup, course uploads. The ones
+   read are in [the write bodies note](2026-10-22-ssi-write-bodies.md).
 
 ## Tooling notes
 
