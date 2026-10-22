@@ -2,8 +2,7 @@
 // where each value came from. Computed on request, nothing stored; any Diver of the instance can be named by id (ADR 0028),
 // and only of a Diver the User manages a logbook value is read: the others plan with what is typed or the default. Limits from the Diver's own input and settings, not advice.
 import type { Db } from '../db/client.js';
-import { ASCENT_RATE_M_PER_MIN } from './bottom-time.js';
-import { planGas, type GasRule } from './gas-plan.js';
+import { ASCENT_RATE_M_PER_MIN, planGas, type GasRule } from './gas-plan.js';
 import { DESCENT_RATE_M_PER_MIN } from './ndl.js';
 import { DEFAULT_PLANNING_SAC_LPM, planningSac } from './planning-sac.js';
 import { DEFAULT_PPO2, diveSacs, recentDiveEnd, siteWaterOf, type PlanningError, type PlanningWaterName } from './service.js';

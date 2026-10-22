@@ -15,8 +15,6 @@ export interface Buddy {
   diver: { id: string; name: string } | null;
 }
 
-export { tidyName };
-
 export function createBuddyService(deps: { registry: ProviderRegistry; connections: ConnectionService; divers: DiverService }) {
   const { registry, connections, divers } = deps;
 

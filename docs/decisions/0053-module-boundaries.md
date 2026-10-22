@@ -86,8 +86,8 @@ No import cycle, not even through a type import, in either app.
 2. **`db/schema.ts` without imports from `sites/` (done 2026-10-22, 19 → 10):** `SiteImportCounts`, `ImportArea`,
    `ImportedValues` and `ImportSource` moved down to `db/import-types.ts`; the `sites/` files re-export them.
 3. **The three server type cycles (done 2026-10-22, 10 → 7):** `site-source.ts` takes `Position` from `vocabulary.ts`; the limits
-   `MAX_DEPTH_M`, `ASCENT_RATE_M_PER_MIN` and `SAFETY_STOP` moved into `planning/gas-plan.ts` (`bottom-time.ts` re-exports
-   them); `tidyName` moved to `divers/diver-name.ts` (`buddy-service.ts` re-exports it). The `buddy-service` ↔ `diver-service`
+   `MAX_DEPTH_M`, `ASCENT_RATE_M_PER_MIN` and `SAFETY_STOP` moved into `planning/gas-plan.ts`; `tidyName` moved to
+   `divers/diver-name.ts`; their callers import them from the new homes. The `buddy-service` ↔ `diver-service`
    cycle was not type-only: `diver-service` imported the function `tidyName`.
 4. Queries out of the 6 route files, the largest first (`routes.ts`, `dives/routes.ts`).
 5. `api.ts` ↔ `lib/logbook.ts` in the web client.

@@ -6,8 +6,6 @@ import { ASCENT_RATE_M_PER_MIN, MAX_DEPTH_M, planGas, SAFETY_STOP, type GasRule 
 import { ndlMinutes } from './ndl.js';
 import { otu, oxygenLimitMinutes } from './oxygen.js';
 
-// The limits live in gas-plan.ts, the lower of the two; re-exported for the callers of this file.
-export { ASCENT_RATE_M_PER_MIN, MAX_DEPTH_M, SAFETY_STOP };
 
 export type Limit = 'ndl' | 'oxygen' | 'gas';
 

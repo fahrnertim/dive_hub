@@ -1,6 +1,6 @@
 // Names taken from a Provider's list of people (ADR 0029): tidied only when typed all in one case.
 import { describe, expect, it } from 'vitest';
-import { tidyName } from '../src/providers/buddy-service.js';
+import { tidyName } from '../src/divers/diver-name.js';
 
 describe('tidyName', () => {
   it('capitalizes each part of a name typed all in lower case or all in capitals', () => {
