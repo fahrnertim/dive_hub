@@ -3,12 +3,10 @@ import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
 import type { Auth } from './auth/auth.js';
 import { requireUser } from './auth/fastify.js';
-import type { Db } from './db/client.js';
 import {
   DIVE_KINDS, IMPORT_ERROR_CODES, OUTCOME_REASONS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive, importJob,
 } from './db/schema.js';
 import { downsampleMinMax } from './dives/downsample.js';
-import { managedDiverIds } from './dives/dive-service.js';
 import { asksFor, DIVE_ONLY } from './dives/list-filter.js';
 import { DIVE_SORTS, type LogbookService, type RowExtras } from './dives/logbook-service.js';
 import { Problem, problem } from './http/problems.js';
@@ -17,7 +15,6 @@ import type { PushService } from './providers/push-service.js';
 import { UploadTooLargeError } from './storage/blob-store.js';
 
 export interface RouteDeps {
-  db: Db;
   imports: ImportService;
   logbook: LogbookService;
   /** For the logbook's "changed since sent" filter, which needs the adapters' fingerprints. */
@@ -189,14 +186,14 @@ const toDiveSummary = (d: typeof dive.$inferSelect, siteName: string | null, fin
 });
 
 export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps) => {
-  const { db, imports, logbook } = deps;
+  const { imports, logbook } = deps;
 
   // Every logbook route needs a signed-in User and only shows what that User may see.
   app.addHook('onRequest', requireUser(deps.auth));
   const userId = (request: FastifyRequest) => request.user!.id;
 
   /** Divers the signed-in User manages; all logbook reads are scoped to them. */
-  const managedDivers = async (request: FastifyRequest) => [...await managedDiverIds(db, userId(request))];
+  const managedDivers = async (request: FastifyRequest) => await logbook.managedDivers(userId(request));
 
   app.post('/imports', {
     schema: {

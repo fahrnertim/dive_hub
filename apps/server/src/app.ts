@@ -22,6 +22,7 @@ import { createDiverService } from './divers/diver-service.js';
 import { certificationRoutes } from './certifications/routes.js';
 import { diverRoutes } from './divers/routes.js';
 import { leadRoutes } from './lead/routes.js';
+import { createLeadService } from './lead/service.js';
 import { createPlanningService } from './planning/planning-service.js';
 import { planningRoutes } from './planning/routes.js';
 import { apiRoutes } from './routes.js';
@@ -114,7 +115,7 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
   await app.register(diverRoutes, { prefix: '/api', ...deps, divers, certifications: deps.providers.certifications });
   await app.register(certificationRoutes, { prefix: '/api', auth: deps.auth, certifications: deps.providers.certifications });
   await app.register(planningRoutes, { prefix: '/api', auth: deps.auth, planning: createPlanningService(deps.db) });
-  await app.register(leadRoutes, { prefix: '/api', ...deps });
+  await app.register(leadRoutes, { prefix: '/api', auth: deps.auth, lead: createLeadService(deps.db) });
   await app.register(siteRoutes, { prefix: '/api', ...deps, sites: createSiteService(deps.db) });
   await app.register(centreRoutes, { prefix: '/api', ...deps, centres, divers });
   await app.register(siteImportRoutes, { prefix: '/api', ...deps });

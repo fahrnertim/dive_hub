@@ -6,7 +6,7 @@ import { and, count, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'd
 import type { Db } from '../db/client.js';
 import { PARTICIPANT_ROLES, device, dive, diveAssessment, diveSite, diver, diverManagement, importJob, participant, recording, revision, sampleSeries, user } from '../db/schema.js';
 import { cylindersOf } from './cylinders.js';
-import { participantsOf } from './dive-service.js';
+import { managedDiverIds, participantsOf } from './dive-service.js';
 import { diveListFilter, FINDINGS_SHOWN } from './list-filter.js';
 import { leadOf } from './weighting.js';
 
@@ -47,6 +47,8 @@ const sketchOfDive = (
   a?.profile && a.recordingId === d.primaryRecordingId ? { ...a.profile, ascentBands: a.ascentBands } : null;
 
 export function createLogbookService(db: Db) {
+  /** The Divers the User manages: every logbook read is scoped to them. */
+  const managedDivers = async (userId: string) => [...await managedDiverIds(db, userId)];
   const scopeOf = ({ userId, diverIds, siteId, q, only, changedIds, sort = 'startsAt', order = 'desc' }: ListScope) => {
     const { filters, base, where } = diveListFilter({ userId, diverIds, siteId, q, only, changedIds });
     const column = { startsAt: dive.startsAt, number: dive.number, maxDepth: dive.maxDepthM, duration: dive.durationSeconds }[sort];
@@ -247,7 +249,7 @@ export function createLogbookService(db: Db) {
       .orderBy(desc(revision.at), desc(revision.id)).limit(200);
   }
 
-  return { listDives, ownDiveId, neighbours, ownRecordingId, samplesOf, findManagedDive, recordingsAndSite, previousDive, partsOf, participantsOfDive, versionOf, deletedDives, revisionsOfDive };
+  return { managedDivers, listDives, ownDiveId, neighbours, ownRecordingId, samplesOf, findManagedDive, recordingsAndSite, previousDive, partsOf, participantsOfDive, versionOf, deletedDives, revisionsOfDive };
 }
 
 export type LogbookService = ReturnType<typeof createLogbookService>;

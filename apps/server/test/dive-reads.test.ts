@@ -86,4 +86,12 @@ describe.skipIf(!(await databaseReachable()))('reads of one Dive', () => {
     expect(await logbook.participantsOfDive(id.first)).toEqual([{ diverId: expect.any(String), name: 'Bo', role: 'buddy' }]);
     expect(await logbook.participantsOfDive(id.second)).toEqual([]);
   });
+
+  it('lists the Divers a User manages, none for anyone else', async () => {
+    const own = await logbook.managedDivers(annId);
+    expect(own).toHaveLength(1);
+    expect(await logbook.managedDivers(otherId)).toHaveLength(1);
+    expect(await logbook.managedDivers(otherId)).not.toEqual(own);
+    expect(await logbook.managedDivers('00000000-0000-4000-8000-000000000000')).toEqual([]);
+  });
 });

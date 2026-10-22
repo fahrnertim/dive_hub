@@ -5,17 +5,16 @@ import { Type } from 'typebox';
 import { Value } from 'typebox/value';
 import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
-import type { Db } from '../db/client.js';
 import { CYLINDER_MATERIALS, SUIT_TYPES, SUIT_UNDERGARMENTS } from '../db/schema.js';
 import type { Suit } from '../dives/weighting.js';
 import { Problem, problem } from '../http/problems.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
-import { leadEstimateOf, managesDiver } from './service.js';
+import type { LeadService } from './service.js';
 import type { EstimateBasis } from './types.js';
 
 export interface LeadRouteDeps {
-  db: Db;
   auth: Auth;
+  lead: LeadService;
 }
 
 /** The weight check every answer asks for: what to do, as codes clients translate (research note, "Safety"). */
@@ -94,7 +93,6 @@ const EstimateView = Type.Object({
 });
 
 export const leadRoutes: FastifyPluginAsyncTypebox<LeadRouteDeps> = async (app, deps) => {
-  const { db } = deps;
   app.addHook('onRequest', requireUser(deps.auth));
 
   app.get('/divers/:id/lead-estimate', {
@@ -110,7 +108,6 @@ export const leadRoutes: FastifyPluginAsyncTypebox<LeadRouteDeps> = async (app, 
       response: { 200: EstimateView, 400: Problem, 404: Problem },
     },
   }, async (request, reply) => {
-    if (!(await managesDiver(db, request.user!.id, request.params.id))) return reply.code(404).send(problem('diver_not_found'));
     const { water, suit, suitThicknessMm, suitHood, suitUndergarment, cylinders, unit = 'kg' } = request.query;
     if ((suitThicknessMm !== undefined && suit !== 'wetsuit' && suit !== 'semidry') || (suitUndergarment !== undefined && suit !== 'drysuit')) {
       return reply.code(400).send(problem('suit_invalid'));
@@ -120,9 +117,10 @@ export const leadRoutes: FastifyPluginAsyncTypebox<LeadRouteDeps> = async (app, 
     if (!Value.Check(PlannedCylinders, planned)) return reply.code(400).send(problem('invalid_input'));
 
     const plannedSuit: Suit = { type: suit, thicknessMm: suitThicknessMm ?? null, hood: suitHood ?? null, undergarment: suitUndergarment ?? null };
-    const answer = await leadEstimateOf(db, request.params.id, {
+    const answer = await deps.lead.estimate(request.user!.id, request.params.id, {
       water, suit: plannedSuit, cylinders: planned.map((c) => ({ volumeL: c.volumeL, material: c.material ?? null })),
     }, unit);
+    if (!answer) return reply.code(404).send(problem('diver_not_found'));
     const { estimate } = answer;
 
     const basis = estimate.basis && withDiveLinks(estimate.basis, answer.dives);

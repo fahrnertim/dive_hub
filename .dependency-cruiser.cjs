@@ -72,6 +72,13 @@ module.exports = {
       to: { path: 'node_modules/drizzle-orm/' },
     },
     {
+      name: 'routes-use-no-db-client',
+      severity: 'error',
+      comment: 'Route files do not touch the database client; a service holds it (db/schema.js stays allowed for its value lists; ADR 0053).',
+      from: { path: '^apps/server/src/.*routes[^/]*[.]ts$' },
+      to: { path: '^apps/server/src/db/client[.]ts$' },
+    },
+    {
       name: 'ui-imports-no-page',
       severity: 'error',
       comment: 'Shared components (apps/web/src/ui) must not depend on a page (a component file at the top of apps/web/src).',

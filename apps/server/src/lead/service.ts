@@ -62,3 +62,13 @@ export async function leadEstimateOf(
     noWaterType: dives.filter((d) => d.leadKg !== null && d.suit !== null && d.water === null).length,
   };
 }
+
+/** The lead estimate for a User: null unless they keep the Diver's logbook, so a route holds no query. */
+export function createLeadService(db: Db) {
+  return {
+    estimate: async (userId: string, diverId: string, plan: PlannedConditions, unit: LeadUnit): Promise<LeadEstimateAnswer | null> =>
+      (await managesDiver(db, userId, diverId)) ? leadEstimateOf(db, diverId, plan, unit) : null,
+  };
+}
+
+export type LeadService = ReturnType<typeof createLeadService>;

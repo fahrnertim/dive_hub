@@ -72,7 +72,7 @@ No import cycle, not even through a type import, in either app.
 
 ### How it is checked
 - dependency-cruiser (`.dependency-cruiser.cjs`): no cycles; `db/` imports no domain module (only
-  `vocabulary.ts`); route files don't import `drizzle-orm`; domain modules import only what `MODULE_IMPORTS`
+  `vocabulary.ts`); route files don't import `drizzle-orm` or `db/client`; domain modules import only what `MODULE_IMPORTS`
   allows; `ui/` imports no page. It runs in `pnpm check` (changed files), `pnpm check:full`, CI and
   after every edit by an agent ([ADR 0023](0023-faster-checks.md), amendment of 2026-10-22).
 - The violations of 2026-10-22 are in `.dependency-cruiser-known-violations.json`: 23 found, 22 left once
@@ -100,9 +100,7 @@ No import cycle, not even through a type import, in either app.
    comes in through `PlanningRouteDeps`. **`users/routes.ts` done 2026-10-23 (4 → 3):** the own-Diver and preferences reads and the preferences save moved to the new
    `users/profile-service.ts` (tested in `test/profile-service.test.ts`), which comes in through `UserRouteDeps`. **`users/account-routes.ts` done 2026-10-23 (3 → 2):** the own-session list, sign-out of one and sign-out of the others moved to the new
    `users/session-service.ts` (tested in `test/session-service.test.ts`), which comes in through `AccountRouteDeps`. **`users/admin-routes.ts` done 2026-10-23 (2 → 1):** the user list and the can-be-reset check moved to `users/user-admin.ts` (`list`, `assertCanReset`; tested in `test/user-admin-reads.test.ts`), so the file holds no `db`. No route file imports `drizzle-orm` any more.
-   **Still open:** the rule `routes-use-no-db-client` (route files don't import `db/client.js`; `db/schema.js` stays allowed for its value lists)
-   is not added yet: `routes.ts` and `lead/routes.ts` still import `Db` to hand it to query helpers (`managedDiverIds`, `managesDiver`,
-   `leadEstimateOf`), which is what the rule is for and the `drizzle-orm` rule misses. Both get a service first, then the rule goes in with an empty baseline.
+   **`routes.ts` and `lead/routes.ts` done 2026-10-23 (baseline stays 1):** `routes.ts` takes the managed-Diver lookup from `logbook.managedDivers` (`dives/logbook-service.ts`, tested in `test/dive-reads.test.ts`) and holds no `db`; `lead/routes.ts` calls the new `createLeadService` (`lead/service.ts`, `estimate(userId, diverId, plan, unit)`, null for a Diver the User doesn't manage; tested in `test/lead-service.test.ts`), so its 404 now comes after the input checks. With that the rule `routes-use-no-db-client` (route files don't import `db/client.js`; `db/schema.js` stays allowed for its value lists) is in `.dependency-cruiser.cjs`, with no baseline entries.
 5. `api.ts` ↔ `lib/logbook.ts` in the web client.
 
 ## Owner's answers (2026-10-22)
