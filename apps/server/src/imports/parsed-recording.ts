@@ -1,5 +1,6 @@
 // What every file format's adapter delivers (ADR 0003, ADR 0037): one Recording in our own model, whatever the file was.
 import type { RecordingSummary, UtcOffsetSource } from '../db/schema.js';
+import type { Position } from '../vocabulary.js';
 
 export interface ParsedDevice {
   manufacturer: string;
@@ -21,11 +22,7 @@ export interface ParsedEvent {
   data: Record<string, unknown>;
 }
 
-/** WGS84 degrees. */
-export interface Position {
-  latitude: number;
-  longitude: number;
-}
+export type { Position };
 
 export interface ParsedRecording {
   device: ParsedDevice | undefined;

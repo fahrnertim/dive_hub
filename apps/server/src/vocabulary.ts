@@ -39,3 +39,13 @@ export const COMPUTER_EVENTS = [
   'safety_stop_mandatory', 'deep_stop_started', 'deep_stop_broken', 'tank_pressure_low',
 ] as const;
 export type ComputerEvent = (typeof COMPUTER_EVENTS)[number];
+
+/** WGS84 degrees. */
+export interface Position {
+  latitude: number;
+  longitude: number;
+}
+
+/** Sources a Site import fetches from, in the order a run asks them (ADR 0021). */
+export const IMPORT_SOURCES = ['osm', 'wikidata', 'ssi'] as const;
+export type ImportSource = (typeof IMPORT_SOURCES)[number];

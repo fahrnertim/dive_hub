@@ -5,7 +5,7 @@ import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, ne, or, sql, typ
 import type { Db, Tx } from '../db/client.js';
 import { dive, diveCentreSite, diveSite, diveSiteExternalId, revision, siteImport } from '../db/schema.js';
 import { writeRevision, type Changes } from '../dives/revisions.js';
-import type { SiteWaterType } from '../vocabulary.js';
+import type { Position, SiteWaterType } from '../vocabulary.js';
 import { IMPORTED_FIELDS, type ImportedValues } from './import/site-source.js';
 import { revisionKey, SOURCE_INFO, typedId, type SiteSource } from './sources.js';
 
@@ -25,11 +25,7 @@ export function isUniqueViolation(error: unknown, constraint?: string): boolean 
   return false;
 }
 
-/** WGS84 degrees. */
-export interface Position {
-  latitude: number;
-  longitude: number;
-}
+export type { Position };
 
 /** The signed-in User as far as sites care: who they are and whether they are an admin. */
 export interface SiteActor {

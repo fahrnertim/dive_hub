@@ -1,9 +1,6 @@
 // Types of the Site import that the schema stores as JSON (ADR 0021, 0025). They live here, below the domain
 // modules, so db/ imports nothing of sites/ (ADR 0053); sites/ re-exports them under their old homes.
-import type { SiteWaterType } from '../vocabulary.js';
-
-/** The Sources a Site import fetches from. `IMPORT_SOURCES` in sites/sources.ts lists the same values. */
-export type ImportSource = 'osm' | 'wikidata' | 'ssi';
+import type { Position, SiteWaterType } from '../vocabulary.js';
 
 /** Where to import: one country (ISO 3166-1 alpha-2), a box in degrees, or everywhere. */
 export type ImportArea =
@@ -14,8 +11,7 @@ export type ImportArea =
 /** The site fields a Source can fill; null where it has nothing. */
 export interface ImportedValues {
   name: string | null;
-  /** WGS84 degrees. */
-  position: { latitude: number; longitude: number } | null;
+  position: Position | null;
   country: string | null;
   waterBody: string | null;
   description: string | null;
