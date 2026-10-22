@@ -254,7 +254,22 @@ no key of `toJson` is left out, and a value that is empty is sent as `null` (282
 - **The app has no handling for a limit.** It has no 429 branch, no `Retry-After` reading and no back-off; any non-2xx fails
   that sync (`requireSuccessful`). Its only own pacing is a **queue**: each sync runs in a named serial queue (`Main`, `Queue2`,
   `Queue3`), one at a time per queue, each sync has a **timeout** and an **update rate** (a minimum time between downloads,
-  kept as `Last…` timestamps), and an upload sends **one record per call**. The values of the timeouts and rates were not read.
+  kept as `Last…` timestamps), and an upload sends **one record per call**. The values are below.
+
+**The app's own pacing, with values [R]:**
+
+| What | Value |
+|---|---|
+| Default timeout of a sync | 60 s (longer for: dive logbook, sites and home 600 s; translations 240 s; dive centres and sonar 120 s; events 20 s) |
+| Default minimum time between downloads (`updateRate`) | 24 h |
+| Other rates | dive logbook, gear, gear sets, certificates, achievements and cue cards 1 h; news 8 h; buddies 12 h; centre affiliations, wildlife and supported dive computers 72 h; gear reference data 336 h (14 days); course sync trigger 15 min |
+| Retry after a failed sync | one retry (`attempt` 2) after **250 ms**; a second failure ends it [?: the branch that skips the retry for one error type was not identified] |
+| Uploads | one record per call, for the rows marked `needsUpload`; gear image upload waits **2 s** (`Future.delayed`) [?: where exactly] |
+| Triggers | changes to the sync state are debounced by 1 s; a "dive verify" reminder is scheduled 48 h after an upload |
+
+So a normal app session sends few calls: the logbook at most once an hour, most lists once a day or less. That is **far
+below** what a script doing a push run sends; the app's pacing is a courtesy of its design, not a server limit.
+
 - **So the safe pace is the app's own:** serial calls, one record per save, no parallel bursts. That fits the push-run rule in
   [ADR 0047](../decisions/0047-push-runs.md) ("two failures in a row stop the run" is what would catch a throttle).
 - **A real limit can only be found by testing it**, which would risk the owner's account; not done and not recommended.
