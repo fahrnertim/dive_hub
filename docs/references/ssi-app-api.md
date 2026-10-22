@@ -218,7 +218,7 @@ From `ownFields()` in `apps/server/src/ssi/ssi-record.ts`. On an update, a field
 | `odin_user_log_depthDataset`, `_tempDataset`, `_gfSurfDataset`, `_gfnowDataset`, `_diveSamples` | Primary recording's samples | JSON **strings**; see below |
 
 Not sent (null): rating, air temperature, visibility, weight, tank, pressures, conditions other than water type, the
-leader number (`odin_user_log_leader_nr`), dive centre, gear, wildlife, surface interval. For the **surface interval**, one project says seconds and another says minutes [?].
+leader number (`odin_user_log_leader_nr`), dive centre, gear, wildlife, surface interval. The **surface interval** (`odin_user_log_si_before`) is in minutes: the app's code takes it only from 3 to 1440 and makes seconds of it by × 60 [R] ([research note](../research/2026-10-22-ssi-app-opportunities.md#2-the-surface-interval-is-in-minutes-r)).
 `odin_user_log_confirmed` / `_verified` can't be set: SSI derives them from a dive centre's confirmation, so dives
 sent this way show as **unconfirmed** [S].
 
@@ -235,14 +235,16 @@ A JSON string holding an array, one object per **5 s** [S]:
 | `te` | temperature, °C (may be null) | last reading |
 | `ndl` | no-deco limit, min, at most 99 | last reading (s → min), else 99 |
 | `gs`, `gn` | GF at surface, GF now (%) | 0.0 |
-| `a` | alarm bits | 0 |
+| `a` | Mares alarm bits [R] | 0 |
 | `mf` | phase bits: dive `0x08000000`, at depth `0x00010000` (from 8.5 m down until above 6 m), surfaced `0x04000000` (≤ 1 m) [S] | |
-| `o`, `dr` | obligation, deco required | false |
-| `rv` | always 3.0; the app's chart is said to hang without it [S] | 3.0 |
-| `pressure` | tank pressure, bar; left out when unknown [S] | not sent yet (no tank channel) |
+| `o`, `dr` | open circuit, deco required [R] (`o` is not "obligation") | false |
+| `rv` | record version, 3.0 as the app writes it [R]; the app's chart is said to hang without it [S] | 3.0 |
+| `pr` | tank pressure as `{"t": <tank index>, "v": <value>}` [R]; the community's `pressure` key is not one the app reads | not sent yet |
 
 **Types matter** [S]: the app reads `d`, `s`, `te`, `gs`, `gn` and `rv` as floating-point numbers, and an integer there
-reportedly breaks the dive's view. JavaScript's `JSON.stringify` writes `0.0` as `0`, so Dive Hub writes this string
+reportedly breaks the dive's view. App 5.0.43's decoder takes any JSON number there [R], so this may hold only for an older
+version or another reader [?]. The app's sample record has 37 keys in all (CNS, heart rate, gas mix, deco stops, …):
+[research note](../research/2026-10-22-ssi-app-opportunities.md#1-the-sample-record-odin_user_log_divesamples-r). JavaScript's `JSON.stringify` writes `0.0` as `0`, so Dive Hub writes this string
 itself (`samplesJson()`).
 
 ### Buddies (checked 2026-10-05)
@@ -462,6 +464,7 @@ From the research note. Record the result here with date and app version, and tu
     has it by default; its effect with another value is unknown.
 - [ ] The first Push runs ([ADR 0047](../decisions/0047-push-runs.md)): does SSI refuse anything when 100 dives go
   5 s apart (a save, or the logbook read after it)? Record the `SSI call` line's `detail` and the count that went.
-- [ ] Surface interval: seconds or minutes. Log a dive in the app with a known surface interval (e.g. 1 h 30 min),
+- [ ] Surface interval: seconds or minutes. The app's code says minutes [R] (2026-10-22, see above); this check would confirm
+  it on a real record. Log a dive in the app with a known surface interval (e.g. 1 h 30 min),
   run `round-trip.ts read`, and look at the dive's surface interval key in `samples/private/ssi/` (90 = minutes,
   5400 = seconds).
