@@ -10,22 +10,10 @@ import {
 import { managedDiverIds } from '../dives/dive-service.js';
 import { renumber } from '../dives/dive-numbers.js';
 import { writeRevision } from '../dives/revisions.js';
+import { DiverError } from './diver-error.js';
 import { mergeExternalDiver } from './merge.js';
 import { tidyName } from '../providers/buddy-service.js';
 import type { DiverSource } from '../providers/provider.js';
-
-export class DiverError extends Error {
-  constructor(
-    readonly code:
-      | 'diver_not_found' | 'own_diver' | 'diver_not_empty' | 'device_not_found' | 'diver_in_use' | 'diver_not_deletable'
-      | 'diver_not_editable' | 'diver_external_id_taken' | 'diver_external_id_connected' | 'invalid_input' | 'diver_not_external'
-      | 'diver_choice_needed' | 'diver_has_other_account' | 'code_not_recognised' | 'code_not_a_person' | 'body_weight_not_found',
-    /** The Diver that already has an account (`diver_external_id_taken`), so a client can offer to use it instead. */
-    readonly diver?: { id: string; name: string },
-  ) {
-    super(code);
-  }
-}
 
 /** The signed-in User as far as shared Divers care (as for Dive sites). */
 export interface DiverActor {

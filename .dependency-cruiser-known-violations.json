@@ -174,36 +174,6 @@
   {
     "type": "cycle",
     "from": "apps/server/src/divers/diver-service.ts",
-    "to": "apps/server/src/divers/merge.ts",
-    "unresolvedTo": "./merge.js",
-    "dependencyTypes": [
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "no-cycles"
-    },
-    "cycle": [
-      {
-        "name": "apps/server/src/divers/merge.ts",
-        "dependencyTypes": [
-          "local",
-          "import"
-        ]
-      },
-      {
-        "name": "apps/server/src/divers/diver-service.ts",
-        "dependencyTypes": [
-          "local",
-          "import"
-        ]
-      }
-    ]
-  },
-  {
-    "type": "cycle",
-    "from": "apps/server/src/divers/diver-service.ts",
     "to": "apps/server/src/providers/buddy-service.ts",
     "unresolvedTo": "../providers/buddy-service.js",
     "dependencyTypes": [
@@ -358,90 +328,6 @@
         "name": "apps/server/src/planning/bottom-time.ts",
         "dependencyTypes": [
           "local",
-          "import"
-        ]
-      }
-    ]
-  },
-  {
-    "type": "cycle",
-    "from": "apps/server/src/providers/buddy-service.ts",
-    "to": "apps/server/src/providers/connection-service.ts",
-    "unresolvedTo": "./connection-service.js",
-    "dependencyTypes": [
-      "local",
-      "type-only",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "no-cycles"
-    },
-    "cycle": [
-      {
-        "name": "apps/server/src/providers/connection-service.ts",
-        "dependencyTypes": [
-          "local",
-          "type-only",
-          "import"
-        ]
-      },
-      {
-        "name": "apps/server/src/divers/diver-service.ts",
-        "dependencyTypes": [
-          "local",
-          "import"
-        ]
-      },
-      {
-        "name": "apps/server/src/providers/buddy-service.ts",
-        "dependencyTypes": [
-          "local",
-          "import"
-        ]
-      }
-    ]
-  },
-  {
-    "type": "cycle",
-    "from": "apps/server/src/providers/connection-service.ts",
-    "to": "apps/server/src/divers/merge.ts",
-    "unresolvedTo": "../divers/merge.js",
-    "dependencyTypes": [
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "no-cycles"
-    },
-    "cycle": [
-      {
-        "name": "apps/server/src/divers/merge.ts",
-        "dependencyTypes": [
-          "local",
-          "import"
-        ]
-      },
-      {
-        "name": "apps/server/src/divers/diver-service.ts",
-        "dependencyTypes": [
-          "local",
-          "import"
-        ]
-      },
-      {
-        "name": "apps/server/src/providers/buddy-service.ts",
-        "dependencyTypes": [
-          "local",
-          "import"
-        ]
-      },
-      {
-        "name": "apps/server/src/providers/connection-service.ts",
-        "dependencyTypes": [
-          "local",
-          "type-only",
           "import"
         ]
       }

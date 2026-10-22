@@ -7,7 +7,7 @@ import { and, eq } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { connection, diver, diverExternalId } from '../db/schema.js';
 import { managedDiverIds } from '../dives/dive-service.js';
-import { DiverError } from '../divers/diver-service.js';
+import { DiverError } from '../divers/diver-error.js';
 import { externalDiver, mergeExternalDiver, participations } from '../divers/merge.js';
 import type { SecretBox } from '../secrets/secret-box.js';
 import { TurnTimeout, type Leases } from './leases.js';

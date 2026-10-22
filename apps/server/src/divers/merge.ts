@@ -5,7 +5,7 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { Tx } from '../db/client.js';
 import { device, dive, diver, diverExternalId, diverManagement, participant } from '../db/schema.js';
 import { writeRevision, type Actor } from '../dives/revisions.js';
-import { DiverError } from './diver-service.js';
+import { DiverError } from './diver-error.js';
 
 /** An external Diver: live, and no User keeps it. Null otherwise. */
 export async function externalDiver(tx: Tx, id: string) {

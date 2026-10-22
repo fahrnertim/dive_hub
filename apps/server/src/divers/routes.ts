@@ -7,7 +7,8 @@ import type { Auth } from '../auth/auth.js';
 import { requireAdmin, requireUser } from '../auth/fastify.js';
 import { Problem, problem } from '../http/problems.js';
 import { NO_CERTIFICATIONS, type CertificationService } from '../certifications/certification-service.js';
-import { DiverError, type DiverActor, type DiverService } from './diver-service.js';
+import { DiverError } from './diver-error.js';
+import type { DiverActor, DiverService } from './diver-service.js';
 
 export interface DiverRouteDeps {
   auth: Auth;
