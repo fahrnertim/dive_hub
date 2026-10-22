@@ -245,6 +245,20 @@ no key of `toJson` is left out, and a value that is empty is sent as `null` (282
   `manufacturer`, `osVersion`, `platform`, `brand=SSI`); it matches the
   [reference's list](../references/ssi-app-api.md). `training.` hosts are treated apart from `a21.php`.
 
+## Rate limits: what can and cannot be known [R]
+
+- **The server tells nothing.** In the capture, no answer from `api.divessi.com`, `training.divessi.com`, `my.divessi.com` or
+  `cdn.divessi.com` carries a rate-limit header (`Retry-After`, `X-RateLimit-*`); the servers are Apache, only `cdn` sits
+  behind CloudFront. No 429 appears (the HTTP statuses were 200, 204, 206, 301, 400, 403, 404). The capture's busiest second had 4 calls to
+  `a21.php`, over 39 calls in about 7 minutes: that is only what the real app did without a problem, not a limit.
+- **The app has no handling for a limit.** It has no 429 branch, no `Retry-After` reading and no back-off; any non-2xx fails
+  that sync (`requireSuccessful`). Its only own pacing is a **queue**: each sync runs in a named serial queue (`Main`, `Queue2`,
+  `Queue3`), one at a time per queue, each sync has a **timeout** and an **update rate** (a minimum time between downloads,
+  kept as `Last…` timestamps), and an upload sends **one record per call**. The values of the timeouts and rates were not read.
+- **So the safe pace is the app's own:** serial calls, one record per save, no parallel bursts. That fits the push-run rule in
+  [ADR 0047](../decisions/0047-push-runs.md) ("two failures in a row stop the run" is what would catch a throttle).
+- **A real limit can only be found by testing it**, which would risk the owner's account; not done and not recommended.
+
 ## What is still open
 
 1. **Which fields the server requires.** The app sends the whole row (above); what the server rejects needs test saves
