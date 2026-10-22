@@ -1,6 +1,6 @@
 ---
 title: "ADR 0053: Module boundaries"
-summary: The server in three layers (routes → services → db, every query in a service, vocabulary.ts below db); the imports between its domain modules as an enforced allow-list in .dependency-cruiser.cjs, changed there without a new ADR; the web client's shared components import no page; no import cycles. Checked by dependency-cruiser against a baseline of the 4 violations left. Fixes done - the runtime cycle diver-service ↔ merge through DiverError, db/schema.ts importing from sites/, the three server type cycles, and the queries out of routes.ts, dives/routes.ts and planning/routes.ts.
+summary: The server in three layers (routes → services → db, every query in a service, vocabulary.ts below db); the imports between its domain modules as an enforced allow-list in .dependency-cruiser.cjs, changed there without a new ADR; the web client's shared components import no page; no import cycles. Checked by dependency-cruiser against a baseline of the 3 violations left. Fixes done - the runtime cycle diver-service ↔ merge through DiverError, db/schema.ts importing from sites/, the three server type cycles, and the queries out of routes.ts, dives/routes.ts, planning/routes.ts and users/routes.ts.
 status: accepted
 date: 2026-10-22
 ---
@@ -76,7 +76,7 @@ No import cycle, not even through a type import, in either app.
   allows; `ui/` imports no page. It runs in `pnpm check` (changed files), `pnpm check:full`, CI and
   after every edit by an agent ([ADR 0023](0023-faster-checks.md), amendment of 2026-10-22).
 - The violations of 2026-10-22 are in `.dependency-cruiser-known-violations.json`: 23 found, 22 left once
-  `vocabulary.ts` was allowed below `db/`. 19 left after the DiverError fix, 10 after moving the import types down to `db/import-types.ts`, 7 after the three type cycles, 6 after the queries left `routes.ts`, 5 after `dives/routes.ts`, 4 after `planning/routes.ts`. Only new ones fail; the file may only shrink. After fixing one,
+  `vocabulary.ts` was allowed below `db/`. 19 left after the DiverError fix, 10 after moving the import types down to `db/import-types.ts`, 7 after the three type cycles, 6 after the queries left `routes.ts`, 5 after `dives/routes.ts`, 4 after `planning/routes.ts`, 3 after `users/routes.ts`. Only new ones fail; the file may only shrink. After fixing one,
   `pnpm lint:baseline` takes it out.
 - The `architecture-review` subagent (`.claude/agents/architecture-review.md`) reviews each slice against this ADR.
 
@@ -97,8 +97,9 @@ No import cycle, not even through a type import, in either app.
    a Dive's version, the deleted list and a Dive's Revisions moved to `dives/logbook-service.ts` (tested in
    `test/dive-reads.test.ts`); its services come in through `DiveRouteDeps`, so the file no longer holds `db`. **`planning/routes.ts` done 2026-10-23 (5 → 4):** the managed-Diver lookup moved into the new
    `planning/planning-service.ts` (`bottomTime`, `gasPlan` take the User's id; tested in `test/planning-service.test.ts`), which
-   comes in through `PlanningRouteDeps`. Three route files left (`users/routes.ts`, `users/account-routes.ts`,
-   `users/admin-routes.ts`). **In the last route-file slice**, once none of them needs `db`, add a rule
+   comes in through `PlanningRouteDeps`. **`users/routes.ts` done 2026-10-23 (4 → 3):** the own-Diver and preferences reads and the preferences save moved to the new
+   `users/profile-service.ts` (tested in `test/profile-service.test.ts`), which comes in through `UserRouteDeps`. Two route files left
+   (`users/account-routes.ts`, `users/admin-routes.ts`). **In the last route-file slice**, once none of them needs `db`, add a rule
    `routes-use-no-db-client` (route files don't import `db/client.js`; `db/schema.js` stays allowed for its value lists)
    with an empty baseline, and amend this ADR: it would have caught a route handing `db` to query helpers, which the
    `drizzle-orm` rule does not. Adding it earlier would grow the baseline by about six entries.

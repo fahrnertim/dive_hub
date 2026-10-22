@@ -43,6 +43,7 @@ import { accountRoutes } from './users/account-routes.js';
 import { adminRoutes } from './users/admin-routes.js';
 import type { Invitations } from './users/invitations.js';
 import { createPasswordResets } from './users/password-resets.js';
+import { createProfileService } from './users/profile-service.js';
 import { userRoutes } from './users/routes.js';
 import type { Setup } from './users/setup.js';
 import { createUserAdmin } from './users/user-admin.js';
@@ -99,7 +100,7 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
 
   await app.register(authHandler, { auth: deps.auth });
   const passwordResets = createPasswordResets(deps.db);
-  await app.register(userRoutes, { prefix: '/api', ...deps });
+  await app.register(userRoutes, { prefix: '/api', ...deps, profiles: createProfileService(deps.db) });
   await app.register(accountRoutes, { prefix: '/api', ...deps, passwordResets });
   await app.register(adminRoutes, { prefix: '/api', ...deps, passwordResets, userAdmin: createUserAdmin(deps.db, deps.blobs) });
   const logbook = createLogbookService(deps.db);

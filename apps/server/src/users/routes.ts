@@ -1,21 +1,19 @@
 // Users: who am I, first-admin setup, invitations (ADR 0011, 0012).
-import { eq, and } from 'drizzle-orm';
 import type { FastifyPluginAsyncTypebox, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
 import { APIError } from 'better-auth/api';
 import type { Auth } from '../auth/auth.js';
 import { authHeaders, forwardCookies, requireAdmin, requireUser } from '../auth/fastify.js';
-import type { Db } from '../db/client.js';
-import { diver, diverManagement, userPreference } from '../db/schema.js';
 import { EmailTakenError, invitationStatus, type InvitationRow, type Invitations, type Role } from './invitations.js';
+import type { ProfileService } from './profile-service.js';
 import type { Setup } from './setup.js';
 import { problem } from '../http/problems.js';
 import { DateTime, IdParams, LinkView, Password, PreferencesView, Problem, RoleSchema, Token, UserView, toUserView } from './views.js';
 
 export interface UserRouteDeps {
-  db: Db;
   auth: Auth;
+  profiles: ProfileService;
   setup: Setup;
   invitations: Invitations;
   baseUrl: string;
@@ -40,7 +38,7 @@ const toInvitationView = (i: InvitationRow): Static<typeof InvitationView> => ({
   expiresAt: i.expiresAt.toISOString(), status: invitationStatus(i),
 });
 
-export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, { db, auth, setup, invitations, baseUrl }) => {
+export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, { auth, profiles, setup, invitations, baseUrl }) => {
   /** Creates the User through Better Auth (which hashes the password), then signs them in. */
   async function createAndSignIn(
     request: FastifyRequest, reply: FastifyReply,
@@ -128,14 +126,7 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
       schema: { summary: 'The signed-in User and their own Diver', response: { 200: MeView } },
     }, async (request) => {
       const me = request.user!;
-      const [own] = await db.select({ id: diver.id, name: diver.name }).from(diverManagement)
-        .innerJoin(diver, eq(diver.id, diverManagement.diverId))
-        .where(and(eq(diverManagement.userId, me.id), eq(diverManagement.isOwn, true)));
-      const [prefs] = await db.select().from(userPreference).where(eq(userPreference.userId, me.id));
-      return {
-        user: toUserView(me), ownDiver: own!,
-        preferences: { language: prefs?.language ?? null, units: prefs?.units ?? null },
-      };
+      return { user: toUserView(me), ...(await profiles.read(me.id)) };
     });
 
     signedIn.patch('/me/preferences', {
@@ -145,10 +136,7 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
         response: { 200: PreferencesView },
       },
     }, async (request) => {
-      const changes = { ...request.body, updatedAt: new Date() };
-      const [saved] = await db.insert(userPreference).values({ userId: request.user!.id, ...changes })
-        .onConflictDoUpdate({ target: userPreference.userId, set: changes }).returning();
-      return { language: saved!.language, units: saved!.units };
+      return profiles.savePreferences(request.user!.id, request.body);
     });
 
     // --- Admins ----------------------------------------------------------------------------------
