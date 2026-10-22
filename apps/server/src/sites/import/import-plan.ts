@@ -4,6 +4,7 @@
 // only while it still equals what the import last brought, so whatever a User changed stays.
 // Hand-made sites are never changed: they get the ID as a reference, and the Source's values are kept
 // beside it so the site page can offer them ("Use SSI's data").
+import type { SiteImportCounts } from '../../db/import-types.js';
 import type { Position } from '../site-service.js';
 import { IMPORT_SOURCES, type ImportSource, type SiteSource } from '../sources.js';
 import { FIELD_PRECEDENCE, IMPORTED_FIELDS, inBox, type ImportArea, type ImportedValues, type SourceSite } from './site-source.js';
@@ -49,21 +50,7 @@ export interface PlannedUpdate {
   offers: ImportSource[];
 }
 
-export interface SiteImportCounts {
-  created: number;
-  updated: number;
-  unchanged: number;
-  kept: number;
-  linked: number;
-  skippedNoName: number;
-  skippedDeleted: number;
-  skippedMerged: number;
-  /** New places left out because the admin chose not to create sites (ADR 0025). */
-  skippedNew: number;
-  /** Hand-made sites whose page now offers a Source's data. */
-  offered: number;
-  gone: number;
-}
+export type { SiteImportCounts };
 
 export interface SiteImportPlan {
   creates: PlannedCreate[];

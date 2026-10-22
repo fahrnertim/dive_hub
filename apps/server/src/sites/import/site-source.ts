@@ -1,26 +1,10 @@
 // What a Site import asks of an open Source (ADR 0021): the dive sites of an area, as plain values.
 // One adapter per Source (Overpass for OpenStreetMap, the Wikidata Query Service); tests replay recorded answers.
-import type { SiteWaterType } from '../../vocabulary.js';
+import type { ImportArea, ImportedValues } from '../../db/import-types.js';
 import type { Position } from '../site-service.js';
 import type { ImportSource } from '../sources.js';
 
-/** Where to import: one country (ISO 3166-1 alpha-2), a box in degrees, or everywhere. */
-export type ImportArea =
-  | { kind: 'country'; country: string }
-  | { kind: 'box'; south: number; west: number; north: number; east: number }
-  | { kind: 'world' };
-
-/** The site fields a Source can fill; null where it has nothing. */
-export interface ImportedValues {
-  name: string | null;
-  position: Position | null;
-  country: string | null;
-  waterBody: string | null;
-  description: string | null;
-  maxDepthM: number | null;
-  /** Only SSI knows it (ADR 0025). Missing in values stored before it existed: read as null. */
-  waterType: SiteWaterType | null;
-}
+export type { ImportArea, ImportedValues };
 
 export const IMPORTED_FIELDS = ['name', 'position', 'country', 'waterBody', 'description', 'maxDepthM', 'waterType'] as const satisfies readonly (keyof ImportedValues)[];
 export type ImportedField = (typeof IMPORTED_FIELDS)[number];

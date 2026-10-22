@@ -1,6 +1,6 @@
 ---
 title: "ADR 0053: Module boundaries"
-summary: The server in three layers (routes → services → db, every query in a service, vocabulary.ts below db); the imports between its domain modules as an enforced allow-list in .dependency-cruiser.cjs, changed there without a new ADR; the web client's shared components import no page; no import cycles. Checked by dependency-cruiser against a baseline of the 19 violations left. First fix done - the runtime cycle diver-service ↔ merge through DiverError.
+summary: The server in three layers (routes → services → db, every query in a service, vocabulary.ts below db); the imports between its domain modules as an enforced allow-list in .dependency-cruiser.cjs, changed there without a new ADR; the web client's shared components import no page; no import cycles. Checked by dependency-cruiser against a baseline of the 10 violations left. Fixes done - the runtime cycle diver-service ↔ merge through DiverError, and db/schema.ts importing from sites/.
 status: accepted
 date: 2026-10-22
 ---
@@ -76,15 +76,15 @@ No import cycle, not even through a type import, in either app.
   allows; `ui/` imports no page. It runs in `pnpm check` (changed files), `pnpm check:full`, CI and
   after every edit by an agent ([ADR 0023](0023-faster-checks.md), amendment of 2026-10-22).
 - The violations of 2026-10-22 are in `.dependency-cruiser-known-violations.json`: 23 found, 22 left once
-  `vocabulary.ts` was allowed below `db/`. 19 left after the DiverError fix. Only new ones fail; the file may only shrink. After fixing one,
+  `vocabulary.ts` was allowed below `db/`. 19 left after the DiverError fix, 10 after moving the import types down to `db/import-types.ts`. Only new ones fail; the file may only shrink. After fixing one,
   `pnpm lint:baseline` takes it out.
 - The `architecture-review` subagent (`.claude/agents/architecture-review.md`) reviews each slice against this ADR.
 
 ### Order of fixing (each its own small slice, tests first)
 1. **The runtime cycle (done 2026-10-22, 22 → 19):** move `DiverError` to `divers/diver-error.ts`; `diver-service.ts` and `merge.ts` both
    import it from there.
-2. `db/schema.ts` without imports from `sites/` (move `SiteImportCounts`, `ImportArea`, `ImportedValues`,
-   `ImportSource` down).
+2. **`db/schema.ts` without imports from `sites/` (done 2026-10-22, 19 → 10):** `SiteImportCounts`, `ImportArea`,
+   `ImportedValues` and `ImportSource` moved down to `db/import-types.ts`; the `sites/` files re-export them.
 3. The type cycles in `providers/` ↔ `divers/` and `planning/bottom-time` ↔ `planning/gas-plan`.
 4. Queries out of the 6 route files, the largest first (`routes.ts`, `dives/routes.ts`).
 5. `api.ts` ↔ `lib/logbook.ts` in the web client.

@@ -21,11 +21,9 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import type { SiteImportCounts } from '../sites/import/import-plan.js';
-import type { ImportArea, ImportedValues } from '../sites/import/site-source.js';
-import type { ImportSource } from '../sites/sources.js';
 import { WATER_TYPES, type DecoModel, type DiveMode, type GasCircuit, type SiteWaterType, type WaterType } from '../vocabulary.js';
 import { user } from './auth-schema.js';
+import type { ImportArea, ImportedValues, ImportSource, SiteImportCounts } from './import-types.js';
 
 export * from './auth-schema.js';
 
