@@ -44,7 +44,7 @@ const AREAS = [
   [/^apps\/web\/src\/lib\/providers\.ts$/, ['@dives', '@account']],
   [/^apps\/web\/src\/Admin\.tsx$/, ['@admin']],
   // The Tools page (ADR 0032): gas numbers and bottom time; its server computation and the MCP tool that answers the same.
-  [/^apps\/web\/src\/Tools(Page|Plan|PlanProfile)\.tsx$|^apps\/web\/src\/ProfilePlot\.tsx$|^apps\/web\/src\/lib\/tools\.ts$|^apps\/server\/src\/planning\/|^apps\/server\/src\/mcp\/tools-planning(-gas-plan)?.ts$/, ['@tools']],
+  [/^apps\/web\/src\/Tools(Page|Plan|PlanProfile)\.tsx$|^apps\/web\/src\/ProfilePlot\.tsx$|^apps\/web\/src\/lib\/tools\.ts$|^apps\/server\/src\/planning\/|^apps\/server\/src\/lead\/|^apps\/server\/src\/mcp\/tools-planning(-gas-plan)?.ts$/, ['@tools']],
   // AI accesses to the MCP endpoint (ADR 0035): on the account page, their switch on the admin page.
   [/^apps\/web\/src\/AiAccess\.tsx$|^apps\/web\/src\/lib\/ai-access\.ts$/, ['@account', '@admin']],
   [/^apps\/server\/src\/mcp\//, ['@account', '@admin']],

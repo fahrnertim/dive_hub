@@ -272,9 +272,36 @@ All made by the owner on 2026-10-06, each as recommended; written down as [ADR 0
 1. **Slice A (19): logging lead, suit, Cylinders and feedback.** Needs nothing new; gives the estimate its history and the
    SSI import 45 weights at once. Smallest thing to learn from: whether Users log feedback at all.
 2. **Slice B (20): the lead estimate and the Tools page.** Needs A's values (and some dives logged with them).
+   Split on 2026-10-13 into five slices by area, below ([Slice B split](#slice-b-split-by-area)).
 3. **Later:** Equipment items (gear per Dive, service records) → gear buoyancy as differences and regression; sending lead
    and Cylinders to SSI; gas planning on the same Cylinders and the Recordings' SAC; the dive planner combining the tools
    around a planned dive.
+
+## Slice B split by area
+
+Decided 2026-10-13 (owner): slice 20 is built as five smaller slices, each touching one area, each its own session and
+commit. [Prompt B](#prompt-b-the-lead-estimate-and-the-tools-page-slice-20) below stays the source for *what* is built
+(factors, estimator, safety, tests); each sub-slice takes only its part. Everything is decided; don't re-litigate it.
+
+    20a engine ──> 20b API ──┬──> 20c Tools page (web)
+                             ├──> 20d hint on the dive form (web)
+                             └──> 20e MCP tool
+
+| Slice | Area | Builds | Done when | Needs |
+|---|---|---|---|---|
+| **20a** | server, pure code | `src/lead/estimate.ts` and its types: physics (cylinder buoyancy at reserve, water 1000/1025/1012), rule of thumb per suit, anchor and adjust (weighted median, feedback amounts, two-year half-life, range, personal offset), rounding 0.5 kg / 1 lb. Input is plain data (the Diver's dives, body weight, planned conditions); no database, no HTTP | unit tests pass, test-first, incl. scenario 5's numbers, unknown water left out, 0 lead, no history with and without body weight, imperial rounding | slice A |
+| **20b** | server, API | `GET /api/divers/{id}/lead-estimate` (loads the Diver's dives and Cylinders, calls 20a; total, range, basis with dive links, adjustments, what was missing; nothing stored); only managing Users; OpenAPI and error codes; [clients.md](../spec/clients.md) duties (range, reasons, weight-check advice, never certain) | API tests over HTTP incl. authorization and a Diver without body weight | 20a |
+| **20c** | web | Tools page: navigation entry (path in `scripts/check-lib.mjs`, area tag `@tools`), calculator form (Diver, water, suit, Cylinders from the catalogue), answer with range, the dives it rests on, each adjustment, the weight-check advice always visible; en and de; empty states | browser tests and ui-quality cases (no history, rule of thumb only, based on N dives) at 390 px and in German; review capture `REVIEW_AREAS=tools` | 20b |
+| **20d** | web, dive form | hint on the dive form from the same endpoint ("last time with this suit: 8 kg, felt right"); nothing filled in automatically | browser test `@dives`; hint absent when no history | 20b |
+| **20e** | MCP | `planning_lead_estimate` tool (ADR 0035): same inputs, answers range, reasons and the weight-check advice in every result; closing docs: amend ADR 0031, data model, glossary, architecture, index; mark Prompt B done | MCP tool test; docs consistent | 20b |
+
+Rules for every sub-slice: follow [AGENTS.md](../../AGENTS.md) (skills first, `pnpm check` while working, one slice one
+session, hand-over prompt at the end, commit only when the owner says so). 20c, 20d and 20e don't depend on each other and
+can go in any order after 20b. 20a and 20b are server work and suit Sonnet without further design; 20c is where review of the
+screenshots matters most.
+
+Before 20a: the rule-of-thumb numbers are still unchecked against PADI's printed table (see "Still to check"). Build them as
+named constants with their source in a comment, so a later correction is one edit.
 
 ## Sources
 
