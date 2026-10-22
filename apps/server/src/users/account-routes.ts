@@ -1,20 +1,18 @@
 // A User's own account: password reset links, signed-in sessions (ADR 0013).
 // Changing one's own password is Better Auth's POST /api/auth/change-password.
-import { and, desc, eq, gt, ne, sql } from 'drizzle-orm';
 import type { FastifyPluginAsyncTypebox, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { authHeaders, forwardCookies, requireUser } from '../auth/fastify.js';
-import type { Db } from '../db/client.js';
-import { session } from '../db/schema.js';
 import { problem } from '../http/problems.js';
 import type { PasswordResets } from './password-resets.js';
+import type { SessionService } from './session-service.js';
 import { DateTime, IdParams, Password, Problem, Token, UserView, toUserView } from './views.js';
 
 export interface AccountRouteDeps {
-  db: Db;
   auth: Auth;
   passwordResets: PasswordResets;
+  sessions: SessionService;
 }
 
 const SessionView = Type.Object({
@@ -27,7 +25,7 @@ const SessionView = Type.Object({
   current: Type.Boolean({ description: 'The session this request came with' }),
 });
 
-export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async (app, { db, auth, passwordResets }) => {
+export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async (app, { auth, passwordResets, sessions }) => {
   // --- Public: using a password reset link ---------------------------------------------------------
 
   app.post('/password-resets/lookup', {
@@ -62,31 +60,22 @@ export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async 
   await app.register(async (scope) => {
     const signedIn = scope.withTypeProvider<TypeBoxTypeProvider>();
     signedIn.addHook('onRequest', requireUser(auth));
-    const mine = (userId: string) => and(eq(session.userId, userId), gt(session.expiresAt, sql`now()`));
 
     signedIn.get('/me/sessions', {
       schema: { summary: 'Where the signed-in User is signed in', response: { 200: Type.Array(SessionView) } },
-    }, async (request) => {
-      const rows = await db.select().from(session).where(mine(request.user!.id)).orderBy(desc(session.updatedAt));
-      // Never the token: it would let page scripts read what the HttpOnly cookie hides.
-      return rows.map((s) => ({
-        id: s.id, createdAt: s.createdAt.toISOString(), lastActiveAt: s.updatedAt?.toISOString() ?? null,
-        expiresAt: s.expiresAt.toISOString(), ipAddress: s.ipAddress, userAgent: s.userAgent, current: s.id === request.sessionId,
-      }));
-    });
+    }, async (request) => sessions.list(request.user!.id, request.sessionId));
 
     signedIn.delete('/me/sessions/:id', {
       schema: { summary: 'Sign out one session (the current one too)', params: IdParams, response: { 204: Type.Null(), 404: Problem } },
     }, async (request, reply) => {
-      const deleted = await db.delete(session)
-        .where(and(eq(session.id, request.params.id), eq(session.userId, request.user!.id))).returning({ id: session.id });
-      return deleted.length > 0 ? reply.code(204).send(null) : reply.code(404).send(problem('session_not_found'));
+      const deleted = await sessions.end(request.user!.id, request.params.id);
+      return deleted ? reply.code(204).send(null) : reply.code(404).send(problem('session_not_found'));
     });
 
     signedIn.delete('/me/sessions', {
       schema: { summary: 'Sign out every other session', response: { 204: Type.Null() } },
     }, async (request, reply) => {
-      await db.delete(session).where(and(eq(session.userId, request.user!.id), ne(session.id, request.sessionId!)));
+      await sessions.endOthers(request.user!.id, request.sessionId!);
       return reply.code(204).send(null);
     });
   });
