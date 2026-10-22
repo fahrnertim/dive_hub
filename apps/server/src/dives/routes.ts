@@ -17,7 +17,7 @@ import { CylinderError, cylindersOf, withoutPressures } from './cylinders.js';
 import { DiveError, participantsOf, type DiveService } from './dive-service.js';
 import { WeightingError, leadOf, leadTotalKg, suitOf, weightingFeedbackOf } from './weighting.js';
 import type { Merging } from './merging.js';
-import { createLogbookService } from './logbook-service.js';
+import type { LogbookService } from './logbook-service.js';
 import { LOGBOOK_CHECK_RULES } from './logbook-check-rules.js';
 import type { LogbookChecks } from './logbook-checks.js';
 import { valuesFromRecording, type DiveValues } from './dive-values.js';
@@ -26,8 +26,8 @@ import { SAC_MISSING, sacOfDive } from './sac.js';
 import { waterMismatch } from './water.js';
 import { recordingPosition } from '../sites/dive-site-link.js';
 import { PositionSchema } from '../sites/routes.js';
-import { createCentreService } from '../centres/centre-service.js';
-import { createDiverService } from '../divers/diver-service.js';
+import type { CentreService } from '../centres/centre-service.js';
+import type { DiverService } from '../divers/diver-service.js';
 import { VerificationCodeView } from '../centres/routes.js';
 import type { PushService } from '../providers/push-service.js';
 import type { AssessmentService } from '../assessment/assessment-service.js';
@@ -38,6 +38,9 @@ export interface DiveRouteDeps {
   db: Db;
   auth: Auth;
   dives: DiveService;
+  logbook: LogbookService;
+  divers: DiverService;
+  centres: CentreService;
   /** Merging two Dives and moving one to another Diver (ADR 0038). */
   merging: Merging;
   /** What in a logbook can't be right as it stands (ADR 0038). */
@@ -377,7 +380,7 @@ const DeleteProblem = Type.Object({
 /** Deleted Dives listed at most (newest deletion first). */
 const DELETED_SHOWN = 100;
 
-export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { db, auth, dives, merging, checks, pushes, assessments }) => {
+export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { db, auth, dives, logbook, divers, centres, merging, checks, pushes, assessments }) => {
   app.addHook('onRequest', requireUser(auth));
   // Whatever changed a Dive may change its findings and those of the dives around it (ADR 0036): brought up to date
   // before the answer goes out, so the client's next read sees them. A failure here never fails the change itself.
@@ -393,9 +396,6 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     throw error;
   });
 
-  const centres = createCentreService(db);
-  const divers = createDiverService(db);
-  const logbook = createLogbookService(db);
 
   /** The Dive if the signed-in User manages its Diver. */
   const findDive = (request: FastifyRequest, id: string) => logbook.findManagedDive(request.user!.id, id);
