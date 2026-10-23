@@ -2,6 +2,7 @@
 // It answers like the real one as far as the community projects describe it (docs/research/2026-10-04-ssi-api.md),
 // including what SSI does to stored values: minutes only, serial numbers without leading zeros.
 import type { Fetch, SsiRecord } from '../src/providers/ssi/ssi-client.js';
+import { DIVE_ROW } from '../src/providers/ssi/ssi-dive-row.js';
 
 export interface FakeSsiAccount {
   email: string;
@@ -201,6 +202,9 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
         const record = JSON.parse(new URLSearchParams(init.body ?? '').get('json_data') ?? '{}') as SsiRecord;
         const stored: SsiRecord = {
           ...record,
+          // Our assumption of SSI's read side: booleans come back as 1/0 (Task 5 of the foundation plan checks it).
+          ...Object.fromEntries(DIVE_ROW.filter(([key, type]) => type === 'bool' && typeof record[key] === 'boolean')
+            .map(([key]) => [key, record[key] === true ? 1 : 0])),
           // SSI keeps minutes and drops leading zeros of serial numbers.
           odin_user_log_datetime: typeof record.odin_user_log_datetime === 'string' ? record.odin_user_log_datetime.slice(0, 16) : null,
           odin_user_log_divecomputer_serial_nr: typeof record.odin_user_log_divecomputer_serial_nr === 'string'

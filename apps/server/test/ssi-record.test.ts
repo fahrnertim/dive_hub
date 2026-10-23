@@ -1,8 +1,9 @@
 // A Dive as SSI's dive record (ADR 0024), and the secrets kept for SSI: pure, no database.
 import { describe, expect, it } from 'vitest';
 import { createSecretBox, parseEncryptionKey } from '../src/secrets/secret-box.js';
+import { SENT_KEYS } from '../src/providers/ssi/ssi-dive-row.js';
 import {
-  compareReadBack, createRecord, deleteRecord, fingerprint, localTime, resample, samplesJson, updateRecord, type DiveForSsi,
+  compareReadBack, createRecord, deleteRecord, fingerprint, localTime, resample, samplesJson, updateRecord, writableRecord, type DiveForSsi,
 } from '../src/providers/ssi/ssi-record.js';
 
 const dive = (over: Partial<DiveForSsi> = {}): DiveForSsi => ({
@@ -55,7 +56,7 @@ describe('profile', () => {
 
   it('writes decimals where SSI\'s app expects them, also for whole numbers', () => {
     const json = samplesJson(samples.slice(0, 1));
-    expect(json).toBe('[{"n":1,"t":0,"d":0.0,"s":0.0,"te":26.0,"ndl":99,"gs":0.0,"gn":0.0,"a":0,"mf":201326592,"o":false,"dr":false,"rv":3.0}]');
+    expect(json).toBe('[{"n":1,"t":0,"d":0.0,"s":0.0,"te":26.0,"ndl":99,"gs":0.0,"gn":0.0,"a":0,"mf":201326592,"o":true,"dr":false,"rv":3.0}]');
     expect(JSON.parse(json)).toHaveLength(1);
   });
 
@@ -76,15 +77,41 @@ describe('records', () => {
       odin_user_log_divetime: 30, odin_user_log_depth_m: 18.5, odin_user_log_depth_ft: 60.6, odin_user_log_avg_depth_m: 12.3,
       odin_user_log_watertemp_c: 24, odin_user_log_watertemp_max_c: 26.5, odin_user_log_var_watertype_id: 5,
       odin_user_log_dive_sites_id: 3314, odin_user_log_comment: 'Turtle',
-      odin_user_log_ean: 1, odin_user_log_ean_percent: 32, odin_user_log_gf_set: '40 / 85',
+      odin_user_log_ean: true, odin_user_log_ean_percent: 32, odin_user_log_gf_set: '40 / 85',
       odin_user_log_divecomputer_serial_nr: '0034567890', odin_user_log_divecomputer_manufacturer: 'garmin',
       odin_user_log_divecomputer_name: 'Descent Mk3', odin_user_log_divecomputer_dive_ref: 'divehub-abc',
-      odin_user_log_pos_start_latitude: 27.29, odin_user_log_deleted: 0, odin_user_log_confirmed: null,
+      odin_user_log_pos_start_latitude: 27.29, odin_user_log_deleted: false, odin_user_log_confirmed: null,
       odin_user_log_buddy_ids: [], odin_user_log_xr_deco3_ean_o2: null, odin_user_log_ccr_bailout03_end_psi: null,
       odin_user_log_frddisc_VWT_TIME: null,
     });
     expect(JSON.parse(r.odin_user_log_depthDataset as string)).toHaveLength(365);
     expect(typeof r.odin_user_log_diveSamples).toBe('string');
+  });
+
+  it('a new dive has exactly the keys the app sends, with its booleans false', () => {
+    const r = createRecord(dive(), ids);
+    expect(Object.keys(r).sort()).toEqual([...SENT_KEYS].sort());
+    expect(r).toMatchObject({ odin_user_log_deleted: false, odin_user_log_apple_watch: false, odin_user_log_dive_on_own_risk: false });
+  });
+
+  it("an update sends exactly the app's keys: SSI's values for the extended data and the gear note, booleans as booleans", () => {
+    const remote = {
+      odin_user_log_gear_details: 'note', log_extended_data_latitude: 1.5, log_extended_data_longitude: 2.5, log_extended_data_conservatism: 2,
+      log_extended_data_decomodel: 'zhl', log_extended_data_libdivecomputer_identifier_base64: 'abc',
+      odin_user_log_ean: '1', odin_user_log_deleted: 0, odin_user_log_apple_watch: true, not_in_the_row: 1,
+    };
+    const r = writableRecord(remote);
+    expect(Object.keys(r).sort()).toEqual([...SENT_KEYS].sort());
+    expect(r).toMatchObject({
+      odin_user_log_gear_details: 'note', log_extended_data_latitude: 1.5, log_extended_data_longitude: 2.5, log_extended_data_conservatism: 2,
+      log_extended_data_decomodel: 'zhl', log_extended_data_libdivecomputer_identifier_base64: 'abc',
+      odin_user_log_ean: true, odin_user_log_deleted: false, odin_user_log_apple_watch: true, odin_user_log_rating: null,
+    });
+    expect(r).not.toHaveProperty('not_in_the_row');
+  });
+
+  it('reads the two freediving fields SSI names with a stray x_', () => {
+    expect(writableRecord({ x_odin_user_log_frd_suit: 3 }).odin_user_log_frd_suit).toBe(3);
   });
 
   it("sends the Dive site's water type: fresh and salt by SSI's IDs, nothing for brackish or none (ADR 0025)", () => {
@@ -94,7 +121,7 @@ describe('records', () => {
   });
 
   it('air is EAN 0 with 0 %', () => {
-    expect(createRecord(dive({ gases: [{ o2: 21, he: 0 }] }), ids)).toMatchObject({ odin_user_log_ean: 0, odin_user_log_ean_percent: 0 });
+    expect(createRecord(dive({ gases: [{ o2: 21, he: 0 }] }), ids)).toMatchObject({ odin_user_log_ean: false, odin_user_log_ean_percent: 0 });
   });
 
   it('an update keeps what was edited in the SSI app, puts our values on top, and sends nothing read-only', () => {
@@ -113,7 +140,7 @@ describe('records', () => {
 
   it('a delete re-sends SSI\'s record marked deleted', () => {
     const remote = { ...createRecord(dive(), ids), odin_user_log_id: 27_000_001 };
-    expect(deleteRecord(remote)).toMatchObject({ odin_user_log_id: 27_000_001, odin_user_log_deleted: 1, odin_user_log_depth_m: 18.5 });
+    expect(deleteRecord(remote)).toMatchObject({ odin_user_log_id: 27_000_001, odin_user_log_deleted: true, odin_user_log_depth_m: 18.5 });
   });
 
   it('the fingerprint changes with what is sent, and only with that', () => {
