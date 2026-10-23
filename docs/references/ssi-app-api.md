@@ -1,8 +1,8 @@
 ---
 title: SSI app API (MySSI)
-summary: SSI's private, undocumented app API as Dive Hub uses it - endpoint, sign-in, reading the logbook, saving (create, update, delete), when Dive Hub calls SSI (only on User actions, each call logged), SSI's app's own sync and its 60-second wait (not caused by Dive Hub), the dive record and its samples, buddies (entry IDs of the account's buddy list, checked 2026-10-05; the buddy QR code), the site list (checked 2026-10-05), a dive as SSI returns it and how the import reads it (2026-10-06), quirks, and what to do when SSI changes it. Each fact is marked with where it comes from.
+summary: SSI's private, undocumented app API as Dive Hub uses it - endpoint, how every answer is read (signed out, maintenance), sign-in, reading the logbook, saving (create, update, delete), when Dive Hub calls SSI (only on User actions, each call logged), SSI's app's own sync and its 60-second wait (not caused by Dive Hub), the dive record and its samples, buddies (entry IDs of the account's buddy list, checked 2026-10-05; the buddy QR code), the site list (checked 2026-10-05), a dive as SSI returns it and how the import reads it (2026-10-06), quirks, and what to do when SSI changes it. Each fact is marked with where it comes from ([T] tested on the owner's account, [R] read in the app's code or seen on the wire, [S] community report).
 status: living
-date: 2026-10-06
+date: 2026-10-23
 url: https://api.divessi.com/app/a21.php
 ---
 
@@ -16,15 +16,16 @@ Target ([ADR 0024](../decisions/0024-ssi-target-via-app-api.md)). How it was fou
 describe it: [SSI API research](../research/2026-10-04-ssi-api.md).
 
 This page records what Dive Hub relies on, so that when something breaks there is one place to compare against.
-Keep it current: when SSI changes something, or the owner's checks confirm or refute a line, change the line and its marker.
+Keep it current with `ssi-client.ts` and `ssi-transport.ts`: when SSI changes something, or the owner's checks confirm or refute a line, change the line and its marker.
 
 Markers:
-- **[R]**: confirmed against the real SSI with the owner's account (`round-trip.ts`, below), with date and app version,
-  or for the site list (no account needed) against a download, with date.
+- **[T]**: tested on the owner's account (`round-trip.ts`, below), with date and app version; the site list (no account
+  needed) against a download, with date. Newer [T] claims link their [research note](../research/2026-10-23-ssi-foundation-checks.md).
+- **[R]**: read in the app's code or seen on the wire (a capture or a log), with date and app version where known.
 - **[S]**: reported by a community project (see the research note), not yet confirmed by us.
 - **[?]**: open; the projects disagree or nobody checked.
 
-As of 2026-10-05 the site list, sending, the profile chart, updating, deleting and what a dive's buddy IDs are [R]; the other account checks are pending.
+As of 2026-10-05 the site list, sending, the profile chart, updating, deleting and what a dive's buddy IDs are [T]; the other account checks are pending. Entries dated before 2026-10-23 that were confirmed with the owner's account are marked [T]; those from the app's code or a capture stay [R].
 
 ## What Dive Hub uses
 
@@ -41,12 +42,16 @@ As of 2026-10-05 the site list, sending, the profile chart, updating, deleting a
     are sent doesn't decide whether a save is stored (below).
 - **The User-Agent is the app's**, `Dart/3.12 (dart:io)` ([ADR 0049](../decisions/0049-ssi-app-user-agent.md)); until
   2026-10-10 it was Dive Hub's own, `DiveHub (+<project URL>; <DIVEHUB_CONTACT>)`.
-- The answer is HTTP 200 with JSON, also for refusals [S]. Anything else (an HTTP error, HTML) counts as
-  "unavailable" (`ssi_unavailable`).
+- The answer is HTTP 200 with JSON, also for refusals [S]. Every call goes through `ssi-transport.ts`, which reads the
+  answer the same way each time [R] (the app's code; not every case seen on the wire):
+  - a body `status` of 401 or `'401'` is signed out, under any HTTP status;
+  - `authenticated: false` is signed out too, except on `authenticate`, where it is wrong credentials;
+  - HTTP 503 is `maintenance` (shown to users as unavailable); any other non-2xx is unavailable;
+  - a non-JSON answer (HTML) is `bad_response`.
 
 ### Saves only from the app's User-Agent (2026-10-10)
 
-Found with the owner's account on 2026-10-10 [R]; the decision is [ADR 0049](../decisions/0049-ssi-app-user-agent.md).
+Found with the owner's account on 2026-10-10 [T]; the decision is [ADR 0049](../decisions/0049-ssi-app-user-agent.md).
 - **What SSI does to another client:** a save is answered as a create that worked,
   `{ ok: "added to Log", error: "", temp_id: "", odin_user_log_id: "9…" }`, with a nine-digit dive ID (as a string)
   that exists nowhere. This is the answer to an update too, where a stored one answers with the dive's own ID wrapped in
@@ -60,14 +65,14 @@ Found with the owner's account on 2026-10-10 [R]; the decision is [ADR 0049](../
 - **The record is not it:** the app's own save (347 keys; booleans as `true`/`false`, the start as
   `2026-08-07T16:05:00.000`) and Dive Hub's (341 keys; `0`/`1`, `2026-08-07 16:05`) were both stored with the app's
   User-Agent. The app sends six keys Dive Hub doesn't: `odin_user_log_gear_details`, `log_extended_data_latitude`,
-  `_longitude`, `_conservatism`, `_decomodel`, `_libdivecomputer_identifier_base64`.
+  `_longitude`, `_conservatism`, `_decomodel`, `_libdivecomputer_identifier_base64`. Since 2026-10-23 Dive Hub sends these six too (it sends every key of the app's row, below).
 - **A fresh sign-in** with Dive Hub's own User-Agent answered `authenticated: false` on its first `get_divelog`
   (`round-trip.ts read`, 2026-10-09), while the Connection's older token still read.
 - **`internalPk` is not the dive number:** the app saved the owner's dive number 89 with `internalPk: 86`. Dive Hub
   sends the number in both on a create.
 - **Dive Hub's side:** such an answer is the error `not_stored` (`provider_not_stored`), for an update or delete by the
   other ID, for a create by the dive missing from the read right after. Migration `0033` marks the Pushes of those days.
-- **Confirmed in use:** with the app's User-Agent, the owner's sends from Dive Hub arrive at SSI again (2026-10-10) [R].
+- **Confirmed in use:** with the app's User-Agent, the owner's sends from Dive Hub arrive at SSI again (2026-10-10) [T].
 - **The owner asked SSI** for a supported way on 2026-10-10 (an interface or partner programme, leave for a client
   that says who it is, or another way to bring dives with a profile into MySSI). No answer yet.
 
@@ -90,7 +95,11 @@ How the app's calls were read (2026-10-10), for the next time SSI's answers chan
 - Every later call sends `token=<token>`.
   - There's no refresh token or OAuth, and no 2FA or captcha has been seen [S].
   - **The token's lifetime is unknown [?]**: reports range from "hours" to months.
-  - An expired token answers `{ authenticated: false, … }` (HTTP 200).
+  - How an expired token is answered is **not known [?]**. A kept token was still accepted when it was 0.3 h and when it
+    was 3.3 h old (2026-10-23, app 5.0.43): HTTP 200, a normal logbook answer with no `status` and no `authenticated` key
+    [T] ([research](../research/2026-10-23-ssi-foundation-checks.md#does-an-expired-token-read-as-ssi-unavailable)).
+    Dive Hub treats a body `status` 401 and `authenticated: false` as signed out (above); that is not yet seen for an
+    expired token.
 
 ### Reading the logbook: `what=get_divelog`
 
@@ -172,22 +181,36 @@ Read from the app's compiled code and one capture; details in the
 ### Saving: `what=save_divelog`
 
 - `POST …&what=save_divelog&token=…`, `Content-Type: application/x-www-form-urlencoded`, body `json_data=<the record as JSON>` [S].
-- **Create:** `odin_user_log_id: null`. **Update:** the existing ID. **Delete:** an update with `odin_user_log_deleted: 1`
-  (SSI hides the dive; there's no way back in the app) [S].
-- Answer to a **create**: `{ ok: "added to Log", error: "", odin_user_log_id: <id> }` [R]. Dive Hub takes the dive ID
+- **Create:** `odin_user_log_id: null`. **Update:** the existing ID. **Delete:** an update with `odin_user_log_deleted: true`
+  (SSI hides the dive; there's no way back in the app). A delete with `true` removed the dive from the logbook
+  (2026-10-23, app 5.0.43) [T] ([research](../research/2026-10-23-ssi-foundation-checks.md#does-the-full-record-with-booleans-go-through-and-does-a-delete-with-true-work-after-the-fixes)).
+- Answer to a **create**: `{ ok: "added to Log", error: "", odin_user_log_id: <id> }` [T]. Dive Hub takes the dive ID
   from it; without one, the create counts as refused (`provider_refused`).
+  - A create got the dive ID and number of an earlier dive that had been deleted with the same date and time
+    (2026-10-23, app 5.0.43) [T] ([research](../research/2026-10-23-ssi-foundation-checks.md#open-a-create-got-the-id-of-an-earlier-deleted-dive)).
+    SSI may revive such a dive instead of making a new one; the cause is not known [?].
 - Answer to an **update**: the same answer **wrapped in `success`**:
-  `{ success: { ok: "updated", error: "", temp_id: "", odin_user_log_id: <id> }, result: … }` [R] (owner's dive #90,
+  `{ success: { ok: "updated", error: "", temp_id: "", odin_user_log_id: <id> }, result: … }` [T] (owner's dive #90,
   2026-10-06, from the server log; the community projects' unwrapped answer [S] was wrong for it). Dive Hub reads the ID
   and the error from `success` when it is an object. Until 2026-10-06 it looked only at the top level and refused every
   update SSI had in fact stored: Pushes `provider_refused`, the Dive "changed since sent", the dive at SSI not known as
   sent by Dive Hub. Sending again records it: confirmed with the fix on the owner's dive #90 (2026-10-06, update confirmed,
   read back with no differences). A **delete** goes through the same save and is read the same way; its answer hasn't
   been seen yet [?].
-- **The whole record goes every time**: about 340 keys, unused ones `null` [S]. Whether SSI accepts a partial record is untested.
-  - An update re-sends SSI's current record (from `get_divelog`) with Dive Hub's values on top, so values edited in
-    the app (rating, buddies, …) survive.
+- **The whole record goes every time**: every key of the app's own row, unused ones `null`. `ssi-dive-row.ts` declares
+  the app's 345 keys and their types [R]; `ssi-record.ts` builds the empty and the writable record from it. Dive Hub also
+  sends `odin_user_log_date` and `odin_user_log_entry_time`. Whether SSI accepts a partial record is untested.
+  - **An update that omits a key can clear it at SSI** [T] (2026-10-23, app 5.0.43): leaving out
+    `odin_user_log_gear_details` cleared the gear note; the equipment list (`odin_user_log_gear`) survived
+    ([research](../research/2026-10-23-ssi-foundation-checks.md#does-an-update-that-omits-a-key-keep-its-value)). So an update
+    re-sends SSI's current record (from `get_divelog`) with Dive Hub's values on top, and the gear note and the five
+    `log_extended_data_*` keys go with it; values edited in the app (rating, buddies, …) survive.
   - Read-only keys of the read side (`updates`, `app_version`, …) are left out.
+  - **Booleans go as JSON booleans** (`true`/`false`), as the app sends them [R]; until 2026-10-23 Dive Hub sent `0`/`1`.
+    SSI stored the full record with booleans as sent, with no read-back differences, and returns the four booleans
+    (`odin_user_log_deleted`, `_apple_watch`, `_dive_on_own_risk`, `_ean`) as the numbers `0`/`1` (2026-10-23, app 5.0.43)
+    [T] ([research](../research/2026-10-23-ssi-foundation-checks.md#does-the-full-record-with-booleans-go-through-and-does-a-delete-with-true-work-after-the-fixes)).
+    The import reads booleans in every form SSI gives them.
 - SSI's dive number (`odin_user_log_nr`) is the client's choice: Dive Hub takes the highest in the logbook + 1, or Dive Hub's own number on a create when the Connection follows numbers and it is free (ADR 0048) [S].
   Planned ([ADR 0048](../decisions/0048-dive-numbers.md), slice 22b): the Dive's own number where the Connection is
   set to follow and no dive in SSI's logbook has it; whether an update can change it is an owner's check below.
@@ -206,7 +229,7 @@ From `ownFields()` in `apps/server/src/ssi/ssi-record.ts`. On an update, a field
 | `odin_user_log_var_watertype_id` | the Dive site's water type (ADR 0025) | 4 fresh, 5 salt, brackish nothing [S] (one project had them swapped) |
 | `odin_user_log_dive_sites_id` | the Dive site's SSI site ID | required by Dive Hub; the web form refuses a dive without one [S] |
 | `odin_user_log_comment` | notes | |
-| `odin_user_log_buddy_ids` | the Participants (buddies, guides, instructors) | entry IDs of the User's buddy list, as numbers, found by the Diver's SSI account (`buddy_master_id`); one not in the list is left out. On update, IDs set in SSI's app stay ([ADR 0029](../decisions/0029-push-requirements-and-buddies.md)) [R] |
+| `odin_user_log_buddy_ids` | the Participants (buddies, guides, instructors) | entry IDs of the User's buddy list, as numbers, found by the Diver's SSI account (`buddy_master_id`); one not in the list is left out. On update, IDs set in SSI's app stay ([ADR 0029](../decisions/0029-push-requirements-and-buddies.md)) [T] |
 | `odin_user_log_ean`, `_ean_percent` | first gas | 1 + O₂ % for nitrox; 0 + 0 for air [S] |
 | `odin_user_log_gf_set` (`"40 / 85"`), `_gf_set_1`, `_gf_set_2` | GF low / high | |
 | `odin_user_log_cns_start`, `_cns_end` | the Recording's CNS | |
@@ -218,7 +241,7 @@ From `ownFields()` in `apps/server/src/ssi/ssi-record.ts`. On an update, a field
 | `odin_user_log_depthDataset`, `_tempDataset`, `_gfSurfDataset`, `_gfnowDataset`, `_diveSamples` | Primary recording's samples | JSON **strings**; see below |
 
 Not sent (null): rating, air temperature, visibility, weight, tank, pressures, conditions other than water type, the
-leader number (`odin_user_log_leader_nr`), dive centre, gear, wildlife, surface interval. The **surface interval** (`odin_user_log_si_before`) is in minutes: the app's code takes it only from 3 to 1440 and makes seconds of it by × 60 [R] ([research note](../research/2026-10-22-ssi-app-opportunities.md#2-the-surface-interval-is-in-minutes-r)).
+leader number (`odin_user_log_leader_nr`), dive centre, wildlife, surface interval; gear is not filled, and an update keeps SSI's gear note and list. The **surface interval** (`odin_user_log_si_before`) is in minutes: the app's code takes it only from 3 to 1440 and makes seconds of it by × 60 [R] ([research note](../research/2026-10-22-ssi-app-opportunities.md#2-the-surface-interval-is-in-minutes-r)).
 `odin_user_log_confirmed` / `_verified` can't be set: SSI derives them from a dive centre's confirmation, so dives
 sent this way show as **unconfirmed** [S].
 
@@ -237,7 +260,7 @@ A JSON string holding an array, one object per **5 s** [S]:
 | `gs`, `gn` | GF at surface, GF now (%) | 0.0 |
 | `a` | Mares alarm bits [R] | 0 |
 | `mf` | phase bits: dive `0x08000000`, at depth `0x00010000` (from 8.5 m down until above 6 m), surfaced `0x04000000` (≤ 1 m) [S] | |
-| `o`, `dr` | open circuit, deco required [R] (`o` is not "obligation") | false |
+| `o`, `dr` | open circuit, deco required [R] (`o` is not "obligation") | `o: true`, as the app writes open circuit (stored by SSI, 2026-10-23, [T], see the [research note](../research/2026-10-23-ssi-foundation-checks.md)); `dr` false |
 | `rv` | record version, 3.0 as the app writes it [R]; the app's chart is said to hang without it [S] | 3.0 |
 | `pr` | tank pressure as `{"t": <tank index>, "v": <value>}` [R]; the community's `pressure` key is not one the app reads | not sent yet |
 
@@ -250,18 +273,18 @@ itself (`samplesJson()`).
 ### Buddies (checked 2026-10-05)
 
 Read once from the owner's account through Dive Hub's own Connection (a temporary read-only check that printed IDs and
-initials only; 8 buddy-list entries, 5 dives with buddies) [R]:
-- **A dive's `odin_user_log_buddy_ids` holds entry IDs from the account's buddy list, not SSI accounts** [R]. Example:
+initials only; 8 buddy-list entries, 5 dives with buddies) [T]:
+- **A dive's `odin_user_log_buddy_ids` holds entry IDs from the account's buddy list, not SSI accounts** [T]. Example:
   dive #90 had `[3786888, 2826964]`; those are the `id`s of two entries in `logbook_buddies`, whose SSI accounts
   (`buddy_master_id`) are 4989164 and 4512484.
-- The IDs are **JSON numbers** [R]. `localBuddyIds` reads as `null` [R] (the app's own field; divesend sends `[]` on create [S]).
+- The IDs are **JSON numbers** [T]. `localBuddyIds` reads as `null` [T] (the app's own field; divesend sends `[]` on create [S]).
 - `logbook_buddies[]` entries have the keys `id`, `master_id`, `buddy_master_id`, `firstname`, `lastname`, `forename`,
   `nickname`, `dob`, `email`, `phone` (some also `mobile_c`, `phone_c`), `address`, `city`, `country`, `comment`,
-  `image`, `image_timestamp`, `leader_nr`, `leader_active`, `confirmed`, `favorite`, `deleted`, `added` [R].
+  `image`, `image_timestamp`, `leader_nr`, `leader_active`, `confirmed`, `favorite`, `deleted`, `added` [T].
 - **`master_id` equals `buddy_master_id`** in every entry: both are the buddy's SSI account. Nothing in an entry names
-  the account whose list it is in [R].
+  the account whose list it is in [T].
 - Every entry in the owner's list had an SSI account; whether the list can hold people without one is [?].
-- `odin_user_log_leader_nr` was `""` on every dive with buddies [R].
+- `odin_user_log_leader_nr` was `""` on every dive with buddies [T].
 - **What Dive Hub keeps of an entry** (since [ADR 0043](../decisions/0043-dive-centres-and-ssi-verification-codes.md#as-built-slice-3)):
   `buddy_master_id`, `firstname`, `lastname`, `email` and `leader_nr`, the parts of the person's buddy code. An empty
   `leader_nr` or `0` is read as "no leader number"; what SSI writes for someone who is not a professional was not
@@ -286,12 +309,12 @@ initials only; 8 buddy-list entries, 5 dives with buddies) [R]:
   [ADR 0043](../decisions/0043-dive-centres-and-ssi-verification-codes.md).
 - Still open: whether another account's list gives the same person **another** entry `id` (a row per pair of accounts)
   or the same one [?]; how to add an entry (no call is known [S]). Buddy IDs set by Dive Hub are accepted and show on
-  the dive in the app [R] (owner, 2026-10-06).
+  the dive in the app [T] (owner, 2026-10-06).
 
 ### A dive as SSI returns it (checked 2026-10-06)
 
 Dive Hub's upload #91 (Garmin Descent Mk3, 74 min) read back through the owner's Connection, field types and computer
-fields only [R]:
+fields only [T]:
 - **SSI adds its own:** a device record (`log_user_divecomputer_id`, `odin_user_log_divecomputer_id`,
   `log_divecomputer_archive_id`, `log_divecomputer_updated`), sync bookkeeping (`updates`, `odin_user_log_last_sync`,
   `odin_user_log_transferDate`, `app_version` = the client label sent), and IDs of its own side tables
@@ -314,7 +337,7 @@ a synced dive has been seen:
 - *From a dive computer:* a profile (`odin_user_log_diveSamples`, else `_depthDataset` and `_tempDataset`, 5 s apart) and
   a serial number with a manufacturer (`odin_user_log_divecomputer_serial_nr`, `_manufacturer`; the product from `_ref`,
   `_name` or `_productname`; the manufacturer in lower case, as FIT files name it). `_imported` alone counts for nothing.
-- *Older records* (SSI's iOS app 4.1.203, early 2025; seen on a Mares Puck 4's dives, 2026-10-06) [R]: serial number,
+- *Older records* (SSI's iOS app 4.1.203, early 2025; seen on a Mares Puck 4's dives, 2026-10-06) [T]: serial number,
   manufacturer and name empty; the computer only in `odin_user_log_divecomputer_ref` as "Manufacturer Model_Serial"
   ("Mares Puck4_2418005226"), read as the same Device the newer shape names. Newer records (app 4.1.231) fill all of them,
   with `divecomputer_ref` the model alone ("Puck4"). Both keep the profile in `depthDataset` and `tempDataset`, not in
@@ -331,7 +354,7 @@ a synced dive has been seen:
 - Read as the dive's one tank ([ADR 0045](../decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md#ssis-tank-as-built)):
   `_tank_vol_l`, `_pressure_start_bar`, `_pressure_end_bar` (0 counts as none; the `_psi` and `_cuft` twins aren't read)
   and `_var_tanktype_id` (19 steel, 20 aluminium). In the owner's logbook (127 dives, 2026-10-08): both pressures and a
-  volume on 13, a volume and a type only on 8, none on 106 [R].
+  volume on 13, a volume and a type only on 8, none on 106 [T].
 - Kept: each dive's record as received, as one JSON Original; the buddy list itself never (only entry → account, on the
   Import), and of `logbook_sites` each site's name, position, country (alpha-2) and water type (`bow`: salt or fresh;
   artificial or missing is none, as in the site list). The private flag isn't read (owner, 2026-10-06).
@@ -343,7 +366,7 @@ a synced dive has been seen:
 | Call | What | Note |
 |---|---|---|
 | `get_user_data` | profile: name, address, birthday, units | [S] |
-| `get_divelog_vars` | ID → name lists for conditions (weather, entry, water body, current, surface, dive type, special dive, tank) | [S]; fetch at runtime when conditions are sent. Answers without a token [R] (2026-10-08): `logbook_vars.tanktype` is `{ 19: "steel", 20: "alu" }`, `logbook_vars.suit` `{ 85: "other", 86: "shorty", 87: "wetsuit", 88: "semidry", 89: "drysuit" }`; the two tank types are a constant in `ssi-import.ts` |
+| `get_divelog_vars` | ID → name lists for conditions (weather, entry, water body, current, surface, dive type, special dive, tank) | [S]; fetch at runtime when conditions are sent. Answers without a token [T] (2026-10-08): `logbook_vars.tanktype` is `{ 19: "steel", 20: "alu" }`, `logbook_vars.suit` `{ 85: "other", 86: "shorty", 87: "wetsuit", 88: "semidry", 89: "drysuit" }`; the two tank types are a constant in `ssi-import.ts` |
 | `get_buddies` | buddy list, the same entries as `logbook_buddies` in `get_divelog` ([Buddies](#buddies-checked-2026-10-05)) | [S]; no call to add a buddy is known |
 | `get_ccards` | certifications (card ID `ccard_uid`, course, date, instructor and centre numbers) | [S]; [R] answers used by the certification import (ADR 0050): the picture of a card is `https://my.divessi.com/cert/<ccard_uid>`, a PNG served without a token (public by card ID) |
 | `get_gear`, `save_gear`, `delete_gear`, `get_gearsets`, `save_gearset` | equipment | [S] |
@@ -355,14 +378,14 @@ a synced dive has been seen:
 ## The site list: `APP_CACHE_SITES.zip`
 
 Used by the admin's SSI site import ([ADR 0025](../decisions/0025-ssi-site-import-and-site-water-type.md)), at the
-operator's risk: **SSI gives no licence for it**, and the EU database right protects it (ADR 0024). Checked [R] on
+operator's risk: **SSI gives no licence for it**, and the EU database right protects it (ADR 0024). Checked [T] on
 2026-10-05 against one download into `samples/private/` (git-ignored, never committed, nothing derived from it kept).
 
-- `GET https://api.divessi.com/app/APP_CACHE_SITES.zip`, **no sign-in**. Answer: `200`, `application/zip`, 2.5 MB [R].
-- One file inside, `sites.json`, 19 MB [R]:
+- `GET https://api.divessi.com/app/APP_CACHE_SITES.zip`, **no sign-in**. Answer: `200`, `application/zip`, 2.5 MB [T].
+- One file inside, `sites.json`, 19 MB [T]:
   `{ created, divesites_total, divesites_locked_total, divesites_deleted_total, divesites: [...] }`.
-  On 2026-10-04: 24,510 entries in `divesites` (36,639 total, 24,468 locked, 333,914 deleted) [R].
-- Per site [R]:
+  On 2026-10-04: 24,510 entries in `divesites` (36,639 total, 24,468 locked, 333,914 deleted) [T].
+- Per site [T]:
 
   | Key | What | Dive Hub |
   |---|---|---|
@@ -392,8 +415,10 @@ SSI is a Provider ([ADR 0027](../decisions/0027-providers-as-adapters.md)): ever
 
 | File | Part |
 |---|---|
-| `apps/server/src/providers/ssi/ssi-client.ts` | the calls; errors as reasons (`wrong_credentials`, `signed_out`, `refused`, `unavailable`, `bad_response`), never with a URL |
-| `apps/server/src/providers/ssi/ssi-record.ts` | Dive → record, samples, update and delete records, read-back comparison, fingerprint |
+| `apps/server/src/providers/ssi/ssi-transport.ts` | makes every call; reads the answer: body `status` 401 / `authenticated: false` signed out, 503 `maintenance`, other non-2xx unavailable, non-JSON `bad_response` |
+| `apps/server/src/providers/ssi/ssi-client.ts` | the calls; errors as reasons (`wrong_credentials`, `signed_out`, `refused`, `unavailable`, `maintenance`, `bad_response`), never with a URL |
+| `apps/server/src/providers/ssi/ssi-dive-row.ts` | the app's 345 keys and their types |
+| `apps/server/src/providers/ssi/ssi-record.ts` | Dive → record (the empty and the writable record are built from `ssi-dive-row.ts`), samples, update and delete records, read-back comparison, fingerprint |
 | `apps/server/src/providers/ssi/ssi-adapter.ts` | SSI's capabilities and requirements, sign-in, the logbook read (kept two minutes after a save), the ±2 min match, SSI's dive numbers, the SSI site ID, buddies as buddy-list entries; SSI's record as typed values |
 | `apps/server/src/providers/ssi/ssi-import.ts` | SSI's dives for an import (ADR 0030): evidence, local start, values, profile, computer, site, buddies as SSI accounts; the logbook's context |
 | `apps/server/src/providers/dive-import.ts` | generic: importing a Provider's dives (settings, preview, start, the worker's run) |
@@ -420,21 +445,22 @@ SSI is a Provider ([ADR 0027](../decisions/0027-providers-as-adapters.md)): ever
 
 ## Owner's checks (pending)
 
-From the research note. Record the result here with date and app version, and turn [S] into [R]:
+From the research note. Record the result here with date and app version, and turn [S] into [T]:
 - [ ] In-app terms of use: any clause on automated access or third-party apps. Not checked (2026-10-05): the owner
   doesn't know of any. It affects the risk for each User's SSI account (SSI could block it), not whether the code works.
-- [x] A dive sent from Dive Hub shows in the app and its profile chart renders [R] (owner, 2026-10-05, app 5.0.34 on
+- [x] A dive sent from Dive Hub shows in the app and its profile chart renders [T] (owner, 2026-10-05, app 5.0.34 on
   Android).
-- [x] Update and delete show in the app [R] (owner, 2026-10-05, app 5.0.34 on Android).
-- [x] The create answer contains `odin_user_log_id` [R]: sending stored SSI's dive ID, which updating and deleting used.
+- [x] Update and delete show in the app [T] (owner, 2026-10-05, app 5.0.34 on Android).
+- [x] The create answer contains `odin_user_log_id` [T]: sending stored SSI's dive ID, which updating and deleting used.
 - [ ] Token lifetime: still valid one day after connecting (owner, 2026-10-05). Check again after a week
-  (`round-trip.ts token`, or whether the Connection asks to sign in again).
+  (`round-trip.ts token`, or whether the Connection asks to sign in again). Expired-token answer: still open after
+  0.3 h and 3.3 h (2026-10-23, `round-trip.ts expired`, [research](../research/2026-10-23-ssi-foundation-checks.md)); rerun with an older token.
 - [ ] Side effects: after an API sign-in, is the phone still signed in? A "new sign-in" e-mail? 2FA in the account settings?
-- [x] What a dive's buddy IDs are: entry IDs from the account's buddy list, as numbers [R] (owner, 2026-10-05; see
+- [x] What a dive's buddy IDs are: entry IDs from the account's buddy list, as numbers [T] (owner, 2026-10-05; see
   [Buddies](#buddies-checked-2026-10-05)).
-- [x] Buddies sent from Dive Hub show on the dive in the app [R] (owner, 2026-10-06, slice 14).
+- [x] Buddies sent from Dive Hub show on the dive in the app [T] (owner, 2026-10-06, slice 14).
 - [ ] Same person, two accounts: compare the entry `id` of one shared buddy in both lists (per pair, or one ID).
-- [x] Private sites in the logbook read [R] (owner's account, 2026-10-06, `logbook_sites` downloaded raw through the
+- [x] Private sites in the logbook read [T] (owner's account, 2026-10-06, `logbook_sites` downloaded raw through the
   Connection): 4 of 26 entries are private (`odin_dive_sites_is_private: 1`, `odin_dive_sites_is_private_owner` = the
   owner's own SSI account). None of the 4 is in the public zip, three of them older than it: private sites stay out of
   the public list, and the zip's 43 are likely older ones that got published. The flag isn't read: once an admin allows
@@ -450,7 +476,7 @@ From the research note. Record the result here with date and app version, and tu
 - Dive numbers ([ADR 0048](../decisions/0048-dive-numbers.md)), asked 2026-10-09. Run with `round-trip.ts number`
   (it needs `SSI_SITE_ID`; it makes and deletes throwaway dives in 2000; `--pause` waits for Enter between steps)
   ([what it does and what each result switches](../research/2026-10-09-dive-numbers.md#owners-checks-the-builds-first-step)).
-  Run on 2026-10-10 with the owner's account, from a temporary panel in Dive Hub with the Connection's own sign-in [R]:
+  Run on 2026-10-10 with the owner's account, from a temporary panel in Dive Hub with the Connection's own sign-in [T]:
   - [x] An update with another `odin_user_log_nr` changes the number: a dive created as 92 and saved again with 94
     read back as 94. `internalPk` doesn't have to follow: it reads back `null` whatever was sent. Not looked at: the
     number in the app's own view. So SSI's adapter sets numbers on an update and with "Set number".
