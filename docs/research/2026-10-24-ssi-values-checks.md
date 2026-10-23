@@ -55,5 +55,5 @@ Two throwaway dives dated 2000-01-02, noted "Dive Hub test", sent by key name wi
 
 ## For the code and the docs
 
-- Seconds for `si_before`, in code (8142f3b) and in [the reference](../references/ssi-app-api.md). ADR 0057 says minutes and is proposed: it needs the owner's correction. The plan's original value line is kept, with a correction beside it; the opportunities note's section 2 and the decompilation review carry a correction pointer.
+- Seconds for `si_before`, in code (8142f3b) and in [the reference](../references/ssi-app-api.md). ADR 0057 said minutes; the owner had it corrected to seconds on 2026-10-24. The plan's original value line is kept, with a correction beside it; the opportunities note's section 2 and the decompilation review carry a correction pointer.
 - Still open: the limit of 180 to 86 400 s [R], and a visible heart rate line (needs a varying series).
