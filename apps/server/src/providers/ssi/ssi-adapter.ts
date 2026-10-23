@@ -43,7 +43,7 @@ export const SSI_CAPABILITIES: Capabilities = {
     },
     // `find`: the sites of the User's logbook; `list`: SSI's whole site list for the admin's Site import (ssi-sites.ts).
     diveSites: { import: { operations: ['find', 'list'], findBy: ['position'] } },
-    // `find`: the account's buddy list (no call to add an entry is known).
+    // `save_buddy` is known (piece 5 adds entries); `find` is all this piece uses.
     buddies: { import: { operations: ['find'] } },
     // `find`: the account's certification cards (`get_ccards`, ADR 0050); no call to change a card is known or wanted.
     certifications: { import: { operations: ['find'] } },
