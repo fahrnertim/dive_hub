@@ -74,8 +74,9 @@ export function createSsiTransport(options: { url: string; fetch: Fetch; timeout
         throw new SsiError('unavailable', `${what}: ${error instanceof Error ? error.name : 'network error'}`);
       }
       const data = parseJson(text);
-      // The app reads a body status 401 as signed out under any HTTP status, and a false `authenticated` the same
-      // (except while signing in, where it means a refused password, which the caller decides).
+      // The app reads a body status 401 as signed out under any HTTP status. A false `authenticated` is read the
+      // same here, kept from the community report [S]; the app itself reads only `status` 401. While signing in
+      // it means a refused password, which the caller decides.
       if (isObject(data) && (data.status === 401 || data.status === '401')) throw new SsiError('signed_out', what);
       if (what !== 'authenticate' && isObject(data) && data.authenticated === false) throw new SsiError('signed_out', what);
       if (response.status === 503) throw new SsiError('maintenance', `${what}: HTTP 503`);

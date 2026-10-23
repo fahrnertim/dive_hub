@@ -209,7 +209,7 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
         const record = JSON.parse(new URLSearchParams(init.body ?? '').get('json_data') ?? '{}') as SsiRecord;
         const stored: SsiRecord = {
           ...record,
-          // Our assumption of SSI's read side: booleans come back as 1/0 (Task 5 of the foundation plan checks it).
+          // Our assumption of SSI's read side: booleans come back as 1/0 [T] (docs/research/2026-10-23-ssi-foundation-checks.md).
           ...Object.fromEntries(DIVE_ROW.filter(([key, type]) => type === 'bool' && typeof record[key] === 'boolean')
             .map(([key]) => [key, record[key] === true ? 1 : 0])),
           // SSI keeps minutes and drops leading zeros of serial numbers.

@@ -1,7 +1,7 @@
 // A Dive as SSI's dive record (ADR 0024). Pure: no database, no network. Field names and quirks come from
-// the community projects' captures (docs/research/2026-10-04-ssi-api.md); the code is our own.
+// the app's own dive row (ssi-dive-row.ts); the code is our own.
 //
-// SSI expects the whole record on every save (about 340 keys, unused ones null). A create sends our values
+// SSI expects the whole record on every save (the app's 345 keys plus date and entry time, unused ones null). A create sends our values
 // on top of empty defaults; an update re-sends SSI's current record with our values on top, so fields
 // edited in the app survive; a delete re-sends it with `deleted` set.
 import { createHash } from 'node:crypto';
@@ -103,7 +103,8 @@ export function resample(samples: DiveForSsi['samples'], durationSeconds: number
       ndl: ndlSeconds === null ? 99 : Math.max(0, Math.min(99, Math.floor(ndlSeconds / 60))),
       gs: 0, gn: 0, a: 0,
       mf: FLAG_DIVE | (atDepth ? FLAG_AT_DEPTH : 0) | (d <= 1 ? FLAG_SURFACED : 0),
-      // Open circuit, as the app sets it for every sample of a dive without a rebreather.
+      // Open circuit, as the app sets it for every sample of a dive without a rebreather. Every dive is open
+      // circuit for now; dive type (and rebreathers) come in piece 2, and this must change then.
       o: true, dr: false, rv: 3,
     });
     previous = d;
@@ -202,7 +203,7 @@ export function writableRecord(remote: SsiRecord): SsiRecord {
   const booleans = new Set(DIVE_ROW.filter(([, type]) => type === 'bool').map(([key]) => key));
   for (const key of SENT_KEYS) {
     const alias = READ_ALIASES[key];
-    if (key in remote) record[key] = remote[key];
+    if (key in remote) record[key] = remote[key] ?? null;
     if ((record[key] === null || record[key] === undefined) && alias && alias in remote) record[key] = remote[alias];
     if (booleans.has(key)) record[key] = asBool(record[key]);
   }

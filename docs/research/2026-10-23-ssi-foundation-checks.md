@@ -11,7 +11,7 @@ Run on 2026-10-23 with SSI app version 5.0.43 on the owner's account. The first 
 
 ## Does an update that omits a key keep its value?
 
-- Sent: a create with Dive Hub's own keys; the dive was dated 2000-01-01 (a throwaway). The owner then added a free-text gear note and one equipment item (BCD) in the MySSI app and synced. Then today's `updateRecord` sent an update that changed the notes and did not include `odin_user_log_gear_details`.
+- Sent: a create with the keys Dive Hub's record had at the time (before the foundation fixes; it did not carry every key of the app's row, and `odin_user_log_gear_details` was not among them); the dive was dated 2000-01-01 (a throwaway). The owner then added a free-text gear note (`odin_user_log_gear_details`) and one equipment item (BCD, `odin_user_log_gear`) in the MySSI app and synced. Then today's `updateRecord` sent an update that changed `odin_user_log_comment` (the notes) and did not include `odin_user_log_gear_details`.
 - Stored at SSI: before the update `odin_user_log_gear_details` was set and `odin_user_log_gear` held 1 item. After it, `odin_user_log_gear_details` was not set; `odin_user_log_gear` still held 1 item.
 - Result [T]: an update that omits `odin_user_log_gear_details` clears it at SSI. The equipment list survived.
 - Also changed between the two reads, besides the keys we meant to change: `odin_user_log_watertemp_max_f` and `log_extended_data_hashedidentifier` (new values), and the bookkeeping keys (last sync, updates, updated timestamps). The two values are noted, not explained (open).
@@ -23,7 +23,7 @@ Run on 2026-10-23 with SSI app version 5.0.43 on the owner's account. The first 
 - Stored: yes. The read back right after the create showed no difference between what was sent and what SSI stored (the script's read-back comparison printed an empty list).
 - Booleans [T]: SSI returns the four as the numbers `0`/`1` (all four read `0` here). The fake SSI already stores `true`/`false` as `1`/`0`, so it needed no change.
 - Delete with `true` [T]: the dive was deleted; it was no longer in the logbook.
-- For the code: the full record with JSON booleans is accepted and stored as sent. The read side still has to take `0`/`1` (and other forms) for booleans.
+- For the code: the full record with JSON booleans is accepted and stored as sent. The read side takes `0`/`1` (and other forms) for booleans (the code at e86d669 does).
 
 ### Open: a create got the ID of an earlier deleted dive
 

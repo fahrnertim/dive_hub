@@ -42,12 +42,13 @@ As of 2026-10-05 the site list, sending, the profile chart, updating, deleting a
     are sent doesn't decide whether a save is stored (below).
 - **The User-Agent is the app's**, `Dart/3.12 (dart:io)` ([ADR 0049](../decisions/0049-ssi-app-user-agent.md)); until
   2026-10-10 it was Dive Hub's own, `DiveHub (+<project URL>; <DIVEHUB_CONTACT>)`.
-- The answer is HTTP 200 with JSON, also for refusals [S]. Every call goes through `ssi-transport.ts`, which reads the
+- The answer is HTTP 200 with JSON, also for refusals [S]. Every call to the app API goes through `ssi-transport.ts`, which reads the
   answer the same way each time [R] (the app's code; not every case seen on the wire):
   - a body `status` of 401 or `'401'` is signed out, under any HTTP status;
-  - `authenticated: false` is signed out too, except on `authenticate`, where it is wrong credentials;
-  - HTTP 503 is `maintenance` (shown to users as unavailable); any other non-2xx is unavailable;
-  - a non-JSON answer (HTML) is `bad_response`.
+  - HTTP 503 is `maintenance` (shown to users as unavailable); any other non-2xx is unavailable (also when the body is HTML);
+  - a non-JSON answer (HTML) under a 2xx status is `bad_response`.
+  - Kept from the community report, not read in the app [S]: `authenticated: false` is signed out too, except on
+    `authenticate`, where it is wrong credentials. The app reads only `status` 401.
 
 ### Saves only from the app's User-Agent (2026-10-10)
 
@@ -182,7 +183,7 @@ Read from the app's compiled code and one capture; details in the
 
 - `POST …&what=save_divelog&token=…`, `Content-Type: application/x-www-form-urlencoded`, body `json_data=<the record as JSON>` [S].
 - **Create:** `odin_user_log_id: null`. **Update:** the existing ID. **Delete:** an update with `odin_user_log_deleted: true`
-  (SSI hides the dive; there's no way back in the app). A delete with `true` removed the dive from the logbook
+  (SSI hides the dive; there's no way back in the app) [S]. A delete with `true` removed the dive from the logbook
   (2026-10-23, app 5.0.43) [T] ([research](../research/2026-10-23-ssi-foundation-checks.md#does-the-full-record-with-booleans-go-through-and-does-a-delete-with-true-work-after-the-fixes)).
 - Answer to a **create**: `{ ok: "added to Log", error: "", odin_user_log_id: <id> }` [T]. Dive Hub takes the dive ID
   from it; without one, the create counts as refused (`provider_refused`).
@@ -218,7 +219,7 @@ Read from the app's compiled code and one capture; details in the
 
 ### The dive record: the fields Dive Hub fills
 
-From `ownFields()` in `apps/server/src/ssi/ssi-record.ts`. On an update, a field Dive Hub has no value for keeps SSI's value.
+From `ownFields()` in `apps/server/src/providers/ssi/ssi-record.ts`. On an update, a field Dive Hub has no value for keeps SSI's value.
 
 | SSI key | From | Notes |
 |---|---|---|
