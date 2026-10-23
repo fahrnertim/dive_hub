@@ -1,7 +1,7 @@
 ---
 title: "Plan: SSI foundation (piece 1 of the SSI app alignment)"
 summary: Piece 1 of the SSI app alignment design - one declaration of SSI's dive row (345 keys and types) that builds the empty and the writable record, booleans sent as booleans, `o` in samples as open circuit, one transport with the app's envelope rules (a body `status 401` is signed out, 503 is maintenance), the owner's checks for omitted keys and an expired token, and the [T] marker in the SSI reference.
-status: open
+status: done
 date: 2026-10-23
 ---
 
