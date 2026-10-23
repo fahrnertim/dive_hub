@@ -2,7 +2,7 @@
 title: Agent skills
 summary: Which agent skills the project uses, which were considered and rejected, and why.
 status: living
-date: 2026-10-08
+date: 2026-10-23
 ---
 
 # Agent skills
@@ -21,14 +21,24 @@ that fit it, also for familiar tools (14 of them were never loaded in the first 
 - Install at project level, copied and pinned: `npx skills add <owner/repo> -s <skill> --copy`
   (files land in `.claude/skills/`, the version is pinned in `skills-lock.json`).
 - Project-specific adjustments go under [Overrides](#overrides), never into the skill files.
+- **Exception: Superpowers** ([ADR 0055](decisions/0055-local-dev-cycle.md)) is a plugin, not copied skills:
+  `claude plugin install superpowers@claude-plugins-official --scope project`, enabled in `.claude/settings.json`
+  (`enabledPlugins`). It updates itself with the official marketplace (the default, kept by the owner on 2026-10-23); the
+  owner reads its release notes on each update. Telemetry off: `SUPERPOWERS_DISABLE_TELEMETRY=1` in the settings' `env`.
+  - On the owner's machine `autoUpdates: false` (user-level `~/.claude.json`) stops all background updates, so there the
+    plugin changes only by `claude plugin update superpowers@claude-plugins-official`.
+  - Windows: the install record keeps the project path with its drive letter's case, and a session started as `D:\…`
+    doesn't find one made as `d:\…` ("enabled in project settings but isn't installed" in `--debug-file`). Install once
+    from each spelling a session uses (done for `d:` and `D:` on 2026-10-23).
+  - A fresh clone: run the install command once; `enabledPlugins` alone only names the plugin.
 
 ## Installed
 
 | Skill | Source | For | Since |
 |---|---|---|---|
 | domain-modeling | mattpocock/skills | glossary and ADRs | 2026-10-02 |
-| tdd | mattpocock/skills | test-first development | 2026-10-02 |
-| codebase-design | mattpocock/skills | module/interface vocabulary (used by tdd) | 2026-10-02 |
+| superpowers (plugin, 15 skills) | obra/superpowers v7.0.0 (bb92a77) | feature work: brainstorming, plans, subagent-driven development, test-first, review, debugging ([ADR 0055](decisions/0055-local-dev-cycle.md)) | 2026-10-23 |
+| codebase-design | mattpocock/skills | module/interface vocabulary | 2026-10-02 |
 | vitest | antfu/skills | unit and integration tests | 2026-10-02 |
 | vite | antfu/skills | web client build | 2026-10-02 |
 | pnpm | antfu/skills | monorepo, workspaces | 2026-10-02 |
@@ -66,8 +76,35 @@ Where a skill and this project disagree, these rules win. They lived in AGENTS.m
 - **domain-modeling**: the glossary is `docs/glossary.md` (not root `GLOSSARY.md`);
   ADRs go in `docs/decisions/` using our [template](decisions/template.md)
   (not `docs/adr/`). Its "offer ADRs sparingly" criteria apply.
-- **tdd**, **codebase-design**: same paths — glossary is `docs/glossary.md`, ADRs are in
+- **codebase-design**: same paths — glossary is `docs/glossary.md`, ADRs are in
   `docs/decisions/`. Test and interface names use the glossary's terms.
+- **superpowers** (plugin, [ADR 0055](decisions/0055-local-dev-cycle.md); AGENTS.md and these rules win, as its own
+  `using-superpowers` says user instructions do):
+  1. **Frontmatter.** Design docs (`docs/superpowers/specs/`) and plans (`docs/superpowers/plans/`) get our frontmatter
+     (`title`, `summary`, `status`, `date`) above Superpowers' header. `docs/index.md` lists the folders, not each file.
+     A decision that is hard to reverse, surprising and a real trade-off becomes an ADR draft (`status: proposed`) linked
+     from the design doc; behaviour goes into `docs/spec/`, new terms into the glossary, API duties into `docs/spec/clients.md`.
+  2. **Working files.** `.superpowers/` is gitignored; what is worth keeping from a run goes into the plan or design doc.
+  3. **Tests first.** `test-driven-development` replaces mattpocock `tdd`. Our test rules win over its `npm test`,
+     `jest.fn` and `vi.mock` examples: tests against a real PostgreSQL, at most one `vi.fn`, no `vi.mock`, browser tests
+     carry an area tag; commands are `pnpm check` and the ones in [development.md](development.md). `pnpm`, never `npm`,
+     wherever a skill says `npm install` or `npm test`.
+  4. **Reviews.** The plan's "Global Constraints" name the rules of [ADR 0053](decisions/0053-module-boundaries.md) and
+     the ADRs the plan touches, so task reviewers check them. After the final whole-branch review, the
+     `architecture-review` subagent runs. A finding counts only with `path:line` and the rule, ADR or plan line it breaks.
+  5. **Finishing a branch.** Offer only "keep the branch" or "push and open a PR"; never merge locally. The owner merges.
+     Before a push: `pnpm check:full`.
+  6. **Rulings and stops.** The fix loop keeps its cap of 5 rounds (owner, 2026-10-23). Every finding parked "with a
+     ruling" at the cap goes into the finish summary. A task that would change an accepted ADR stops with
+     `STOP: <reason>` ([ADR 0054](decisions/0054-unattended-implementation.md)) and hands back.
+  7. **Protected paths.** An edit of migrations or `db/schema.ts`, auth, providers or `docs/decisions/**` asks the owner,
+     also in auto mode and from subagents (`.claude/hooks/ask-protected.mjs`).
+  8. **Worktrees.** Branch in the main checkout; decline `using-git-worktrees` until a trial shows a second checkout
+     works on Windows (own `pnpm install`, ports, test database; owner, 2026-10-23).
+  9. **Writing skills.** `writing-skills` puts personal skills in `~/.claude/skills/`; we don't. A new project skill
+     is proposed to the owner and lives in the repository; project conventions go into `docs/`, not into a skill.
+  10. **Diagnosing.** `diagnosing-superpowers` keeps its workspace in `~/.superpowers/`; filing an issue or sharing a
+      bundle needs the owner's yes, as the skill itself says.
 - **vercel-react-best-practices**: our web client is a Vite SPA, not Next.js. Ignore the
   `server-*` rules (React Server Components, server actions).
 - **tanstack-query-best-practices**: community skill, not from TanStack; official docs win on conflict.
@@ -219,3 +256,4 @@ Details and commands: [skills vetting](research/2026-10-02-agent-skills-vetting.
 | 2026-10-08 | caffeinelabs/skills `extension-qr-code`, tippyentertainment/skills `qr-code-scanner-tracking` | rejected | The first (24.7k installs) is for the Caffeine AI platform: a fixed hook from the vendor's own npm package that loads jsQR from a CDN at run time. The second designs scan tracking for marketing (tracking URLs, who scanned where) for a vendor's agent platform, no licence |
 | 2026-10-08 | `npx skills find` for "qr code scanner", "qr code", "barcode scanner", "barcode detection", "camera getusermedia", "webcam capture", "media devices camera", "image upload decode" (the scanner) | see above | The rest: native apps (iOS Vision, Tauri, Salesforce and Power Platform mobile), video and screen recording, vendor skills (Zoho, Syncfusion), bug hunting; davidcastagnetoa `webrtc_media_devices` (5 installs) and derushio `mediapipe-camera-input` (3) not read. The decoder is the library `qr` (ADR 0043) |
 | 2026-10-23 | `npx skills find` for "code review loop", "spec driven development", "brainstorming design", "subagent driven development", "model routing" (local dev cycle, [research note](research/2026-10-23-dev-cycle-research.md)) | obra/superpowers chosen by the owner as a plugin (install is the next slice, [ADR 0055](decisions/0055-local-dev-cycle.md)); nothing installed yet | Read in full: mattpocock/skills `grilling` (5beb35b; `SKILL.md` and `agents/openai.yaml` only, no scripts), not needed once Superpowers' `brainstorming` asks the questions; `grill-with-docs` and mattpocock `code-review` (it expects his issue-tracker setup) not needed. obra/superpowers (2ce8aa1) `brainstorming` bundles a Node server and shell scripts, `subagent-driven-development` bash scripts and 9–20 KB prompts, and as a plugin a SessionStart hook; read in part for the comparison; every bundled file is read before the install. addyosmani/agent-skills (aeac41d) `spec-driven-development` and `interview-me` overlap our backlog brief and ADRs |
+| 2026-10-23 | obra/superpowers v7.0.0 (commit bb92a77), plugin `superpowers@claude-plugins-official` | installed at project scope (owner chose it, [ADR 0055](decisions/0055-local-dev-cycle.md)); mattpocock `tdd` removed | MIT, Jesse Vincent. The marketplace pins bb92a77; the installed copy matches the clone that was read. **Every bundled file read:** `plugin.json`; `hooks/hooks.json` (one SessionStart hook on startup, clear and compact) with `run-hook.cmd` (a cmd/bash polyglot that finds Git Bash and exits silently without it) and `session-start` (prints `using-superpowers/SKILL.md` as startup context; no network); `index.js` and `package.json` (OpenCode and Pi only, not loaded by Claude Code); the repository's `scripts/` (maintainer release tools, never run on install); all 15 skills with their prompts, references and scripts. SDD and executing-plans scripts: local git and file work in `.superpowers/`; `task-done` runs a test command the caller gives. Brainstorming's `server.cjs`: no dependencies, 127.0.0.1 on a random port, a 32-byte key per session, origin check, path guards, 4-hour idle stop; opens a browser only with `BRAINSTORM_OPEN`. **Finding:** its page loads a logo from `primeradiant.com` with the version in the URL, which works as a usage ping; off with `SUPERPOWERS_DISABLE_TELEMETRY=1`, set in the project settings. Other URLs are documentation links only; `diagnosing-superpowers` uses `gh`/curl to search issues and asks before filing. Overrides needed (above): `npm`/`jest`/`vi.mock` examples, the local merge in finishing, worktree setup with `npm install`, personal skills in `~/.claude/skills/`. Owner's answers to ADR 0055's questions: 5 rounds, main checkout, the four groups only, `architecture-review` stays `inherit`, updates follow the marketplace and the owner reads release notes |

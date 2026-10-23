@@ -9,7 +9,8 @@ date: 2026-10-23
 
 ## Status
 Proposed – 2026-10-23. Drafted by an agent after the owner's choices of 2026-10-23 (below); the owner accepts it
-(or doesn't). Nothing is installed yet: the install is the next slice.
+(or doesn't). Installed on 2026-10-23 (v7.0.0, commit bb92a77; the install slice, steps 1–6 below), with the
+owner's answers to the questions at the end.
 
 ## Context
 The owner wants a local feature cycle in Claude Code on the subscription:
@@ -34,12 +35,14 @@ is the install slice's first step.
 
 ### Install
 - Superpowers (`obra/superpowers`, MIT) as the **plugin** `superpowers@claude-plugins-official`.
-- It is enabled for this project in `.claude/settings.json`, so a fresh clone gets the same setup. The setting
-  (`enabledPlugins`) is to be confirmed against the docs in the install slice.
+- It is enabled for this project in `.claude/settings.json` (`enabledPlugins`, written by
+  `claude plugin install … --scope project`), so a fresh clone gets the same setup.
 - The installed version and commit are recorded in [docs/skills.md](../skills.md).
 - This is an **exception** to the rule in docs/skills.md that skills are copied and pinned. An update is accepted only
   after its changed files are read, as any skill is vetted. If the plugin cannot be kept from updating itself, the
-  owner reads the release notes on each update instead. Which of the two applies is found out in the install slice.
+  owner reads the release notes on each update instead. Found in the install slice: auto-update can be turned off per
+  marketplace (`extraKnownMarketplaces` with `autoUpdate: false`); the owner chose to keep it on and read the release
+  notes (question 5).
 
 ### The flow
 | Step | Superpowers skill | Session | Output |
@@ -101,7 +104,8 @@ switched in the middle of a session, because a switch re-reads the whole context
      subagent. This is a `PreToolUse` hook answering *ask*, next to the unattended hook that denies.
 
 ### Relation to ADR 0054 and the backlog
-- The unattended path stays built and off.
+- The unattended path stays built and off. Its workflow installs no plugins, so `enabledPlugins` loads nothing there
+  (a named plugin that isn't installed is skipped); installing Superpowers on the runner would need this ADR amended.
 - `docs/backlog/` keeps its format for unattended tasks. A Superpowers plan is not a backlog task. Joining the two needs
   an ADR of its own.
 - The review rounds per task that Superpowers logs are the evidence the ladder's step 3 asks for ("review findings the
@@ -167,3 +171,12 @@ The owner chose otherwise on 2026-10-23.
    review? Pinning changes the reviewer of unattended runs too, which amends one sentence of ADR 0054.
 5. **Plugin updates.** Read the changed files before each update (stricter, needs the update kept off), or read only the
    release notes?
+
+### Answers (owner, 2026-10-23)
+1. **Round cap:** Superpowers' 5 rounds stay.
+2. **Worktrees:** the branch stays in the main checkout until a trial shows a second checkout works (override 8 in
+   docs/skills.md).
+3. **Protected-path prompt:** the four groups only (`OWNER_PATHS` in `scripts/agent-lib.mjs`,
+   `.claude/hooks/ask-protected.mjs`). Edits made through a shell command are not seen by it, as with the unattended hook.
+4. **`architecture-review`:** stays `inherit`; ADR 0054 is unchanged.
+5. **Plugin updates:** auto-update stays on; the owner reads the release notes. An update may bring unread hook code.

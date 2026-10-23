@@ -6,18 +6,24 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 /**
+ * The owner's four groups: data, access, provider integrations and decisions. An interactive session asks the
+ * owner before an edit of one of them (ADR 0055, `.claude/hooks/ask-protected.mjs`).
+ */
+export const OWNER_PATHS = [
+  /^apps\/server\/drizzle\//,
+  /^apps\/server\/src\/db\/schema\.ts$/,
+  /^apps\/server\/src\/auth\//,
+  /^apps\/server\/src\/providers\//,
+  /^docs\/decisions\//,
+];
+
+/**
  * Paths an unattended run never changes (ADR 0054). One list for the runner's own check and for the CI job, so
  * they cannot disagree. The first group is the owner's decision; the second is the harness an agent could
  * loosen to get its own work through.
  */
 export const PROTECTED = [
-  // Data, access and provider integrations.
-  /^apps\/server\/drizzle\//,
-  /^apps\/server\/src\/db\/schema\.ts$/,
-  /^apps\/server\/src\/auth\//,
-  /^apps\/server\/src\/providers\//,
-  // Decisions.
-  /^docs\/decisions\//,
+  ...OWNER_PATHS,
   // The harness: gates, baselines, and the agent's own rules.
   /^\.github\//,
   /^\.claude\//,
@@ -36,7 +42,9 @@ export const PROTECTED = [
   /(^|\/)(vitest|playwright)\.config\.[cm]?[jt]s$/,
 ];
 
-export const protectedHits = (files) => files.map((f) => f.replace(/\\/g, '/')).filter((f) => PROTECTED.some((re) => re.test(f)));
+const hits = (patterns) => (files) => files.map((f) => f.replaceAll('\\', '/')).filter((f) => patterns.some((re) => re.test(f)));
+export const protectedHits = hits(PROTECTED);
+export const ownerHits = hits(OWNER_PATHS);
 
 export const STATUSES = ['draft', 'ready', 'in-progress', 'done'];
 export const RISKS = ['low', 'medium', 'high'];

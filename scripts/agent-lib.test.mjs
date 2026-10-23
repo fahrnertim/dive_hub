@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { DEFAULT_BUDGET, buildPrBody, changedFiles, createMonitor, handBack, parseTask, pickTask, protectedHits, readBacklog, setStatus, weighted } from './agent-lib.mjs';
+import { DEFAULT_BUDGET, buildPrBody, changedFiles, createMonitor, handBack, ownerHits, parseTask, pickTask, protectedHits, readBacklog, setStatus, weighted } from './agent-lib.mjs';
 
 const task = (name, header) => parseTask(`---\n${header}\n---\nbody\n`, `docs/backlog/${name}.md`);
 
@@ -144,4 +144,48 @@ test('changedFiles names the old path of a renamed file, so a moved protected fi
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('ownerHits names only the owner\'s four groups, not the harness (ADR 0055)', () => {
+  const owner = [
+    'apps/server/drizzle/0012_x.sql', 'apps/server/src/db/schema.ts', 'apps/server/src/auth/index.ts',
+    'apps/server/src/providers/ssi/client.ts', 'docs/decisions/0055-x.md',
+  ];
+  assert.deepEqual(ownerHits(owner), owner);
+  assert.deepEqual(ownerHits(['.claude/settings.json', 'AGENTS.md', 'package.json', 'scripts/check-lib.mjs', 'apps/server/src/db/client.ts']), []);
+  assert.deepEqual(ownerHits(['apps\\server\\src\\db\\schema.ts']), ['apps/server/src/db/schema.ts']);
+  // Every owner path is also protected in unattended runs.
+  assert.deepEqual(protectedHits(owner), owner);
+});
+
+// The interactive hook, run as Claude Code runs it: tool input on stdin, the decision as JSON on stdout.
+const askHook = (toolInput, env = {}) => {
+  const root = path.resolve(import.meta.dirname, '..');
+  const out = execFileSync(process.execPath, [path.join(root, '.claude/hooks/ask-protected.mjs')], {
+    input: typeof toolInput === 'string' ? toolInput : JSON.stringify({ tool_name: 'Edit', tool_input: toolInput, cwd: root }),
+    env: { ...process.env, CLAUDE_PROJECT_DIR: root, AGENT_UNATTENDED: '', ...env },
+    encoding: 'utf8',
+  });
+  return out.trim() ? JSON.parse(out).hookSpecificOutput : null;
+};
+
+test('ask-protected asks the owner before an edit of db/schema.ts, relative or absolute', () => {
+  const root = path.resolve(import.meta.dirname, '..');
+  for (const file of ['apps/server/src/db/schema.ts', path.join(root, 'apps/server/src/db/schema.ts')]) {
+    const out = askHook({ file_path: file });
+    assert.equal(out.hookEventName, 'PreToolUse');
+    assert.equal(out.permissionDecision, 'ask');
+    assert.match(out.permissionDecisionReason, /apps\/server\/src\/db\/schema\.ts/);
+  }
+  assert.equal(askHook({ notebook_path: 'docs/decisions/x.ipynb' })?.permissionDecision, 'ask');
+});
+
+test('ask-protected stays silent for other files, for the harness, and in unattended runs (the deny hook acts there)', () => {
+  assert.equal(askHook({ file_path: 'apps/server/src/dives/routes.ts' }), null);
+  assert.equal(askHook({ file_path: '.claude/settings.json' }), null);
+  assert.equal(askHook({ file_path: 'apps/server/src/db/schema.ts' }, { AGENT_UNATTENDED: '1' }), null);
+});
+
+test('ask-protected asks when it cannot read the tool input, rather than letting the edit through', () => {
+  assert.equal(askHook('not json')?.permissionDecision, 'ask');
 });

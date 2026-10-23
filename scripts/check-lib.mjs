@@ -88,7 +88,8 @@ export function planFor(changed) {
       continue;
     }
     // The scripts of unattended implementation have tests of their own, and nothing else reads them.
-    if (/^scripts\/(agent|drift)/.test(path)) { plan.scripts = true; continue; }
+    // So have the protected-path hooks (agent-lib.test.mjs runs them).
+    if (/^scripts\/(agent|drift)/.test(path) || /^\.claude\/hooks\/(ask|guard)-protected\.mjs$/.test(path)) { plan.scripts = true; continue; }
     if (QUIET.test(path)) continue;
     // The lint rules and their baselines change what every file is checked against, and nothing else.
     if (LINT_CONFIG.test(path)) {

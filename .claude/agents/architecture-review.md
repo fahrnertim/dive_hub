@@ -1,6 +1,6 @@
 ---
 name: architecture-review
-description: Fresh-context architecture review of a slice before its commit - checks the slice's diff against the module boundaries (ADR 0053), the ADRs the diff touches and the lint and dependency baselines. Read-only; returns findings and changes nothing. Use once per slice that changes code, after pnpm check is green.
+description: Fresh-context architecture review before a branch is finished (ADR 0055; for a one-commit slice, before its commit) - checks the branch's diff against the module boundaries (ADR 0053), the ADRs the diff touches and the lint and dependency baselines. Read-only; returns findings and changes nothing. Use once per branch or slice that changes code, after pnpm check is green.
 tools: Read, Grep, Glob, Bash
 model: inherit
 ---
