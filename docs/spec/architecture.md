@@ -380,7 +380,7 @@ Implemented:
 Deliberate simplifications, to revisit:
 - **Sending runs in the request** (two logbook reads and a save, seconds), not as a worker job.
 - **One process:** the "one action per Dive" guard lives in memory.
-- **Not sent yet:** conditions other than water type, tank and pressures, buddies, gear, photos. QR payload, the SSI
+- **Not sent yet:** conditions other than water type, buddies, gear, photos. QR payload, the SSI
   site import and an import from SSI come later (ADR 0024).
 - **A Diver's External ID** is set only by connecting; a clash with another Diver is refused (`ssi_account_taken`)
   instead of proposing to link the two.
@@ -498,7 +498,7 @@ Implemented:
 What is left of the slice 10–12 simplifications:
 - **Sending and deleting at a Provider run in the request**, not as worker jobs (unchanged; with batch sending or importing).
 - ~~**One process:** pacing and the Dive lock live in memory.~~ Leases in PostgreSQL since slice 13a.
-- **Not sent yet:** conditions other than water type, tanks and pressures, gear, photos; QR payload and importing from
+- **Not sent yet:** conditions other than water type, gear, photos; QR payload and importing from
   SSI come later. Buddies are sent since slice 14.
 - ~~**A Diver's External ID** is still set only by connecting.~~ Also by hand since slice 14 (a clash names the Diver
   that has it instead of proposing to link).

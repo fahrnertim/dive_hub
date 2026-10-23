@@ -1,7 +1,7 @@
 ---
 title: "Plan: everything a dive has on both sides, both ways (piece 2 of the SSI app alignment)"
 summary: Piece 2 of the SSI app alignment design - one ProviderDive core shared by import and export with a per-field direction declaration; Dive Hub sends SSI the dive type, the tank of a one-Cylinder Dive, the lead, the surface interval, heart rate, and tank pressure, CNS and heart rate in the samples; the SSI import reads the same back into the Recording it makes; the owner checks a freedive and the pressure curve in SSI's app.
-status: ready
+status: done
 date: 2026-10-23
 ---
 
@@ -39,7 +39,7 @@ tsx for the check script.
   - Dive type: apnea 6, CCR 8, SCR 4, two or more gases 2, else 0. Read back: 6 and 7 apnea, 8 and 9 CCR, 4 and 5 SCR, 0 to 3 open circuit.
   - Tank: one Cylinder only; tank type 19 steel, 20 aluminium.
   - Lead: `weight_kg` and `weight_lb`.
-  - Surface interval: `si_before` in minutes; the app accepts only 3 to 1440 [R].
+  - Surface interval: `si_before` in minutes; the app accepts only 3 to 1440 [R]. (Corrected by the check on 2026-10-24: seconds, 180 to 86 400; see the [research note](../../research/2026-10-24-ssi-values-checks.md).)
   - Samples: tank pressure `pr: {t, v}`, heart rate `hb`, CNS `cn`; `o` is "open circuit".
 - Values from a Recording stay send-only on a Dive that has one ([design](../specs/2026-10-23-ssi-app-alignment-design.md), "Values from a Recording"). This piece adds no field to the three-way comparison (`SYNCED_FIELDS`). Tank and lead are already in it.
 - ADR 0057 is proposed; don't edit it. A task that would change an accepted ADR stops with `STOP: <reason>`.
