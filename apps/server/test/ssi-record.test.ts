@@ -65,6 +65,54 @@ describe('profile', () => {
   it('is empty without a depth series', () => {
     expect(resample({}, 600)).toEqual([]);
   });
+
+  const withChannels = dive().samples;
+  const channels = {
+    ...withChannels,
+    tankPressure: { offsetsMs: [0, 1_820_000], values: [200, 50] },
+    heartRate: { offsetsMs: [0, 600_000], values: [70.4, 90.6] },
+    cns: { offsetsMs: [0, 600_000], values: [1.2, 3.7] },
+  };
+
+  it('carries tank pressure, heart rate and CNS where the Recording has them', () => {
+    const s = resample(channels, 1_820);
+    expect(s[0]).toMatchObject({ pr: { t: 0, v: 200 }, hb: 70, cn: 1 });
+    expect(s[182]!.pr!.v).toBeCloseTo(125, 0);
+    expect(s[130]).toMatchObject({ hb: 91, cn: 4 });
+    expect(s.at(-1)!.pr).toEqual({ t: 0, v: 50 });
+  });
+
+  it('leaves the keys out without a series', () => {
+    const plain = resample(dive().samples, 1_820);
+    const json = samplesJson(plain);
+    expect(json).not.toMatch(/"pr"|"hb"|"cn"/);
+    const fields = ownFields(dive());
+    expect(fields.odin_user_log_tankPressureDataset).toBeNull();
+    expect(fields.odin_user_log_heartRateDataset).toBeNull();
+  });
+
+  it('a series that ends early holds its last value', () => {
+    const early = resample({ ...withChannels, tankPressure: { offsetsMs: [0, 600_000], values: [200, 150] } }, 1_820);
+    expect(early[200]!.pr!.v).toBe(150);
+    expect(early.at(-1)!.pr!.v).toBe(150);
+  });
+
+  it('a rebreather dive is not open circuit', () => {
+    const flags = (diveMode: DiveForSsi['diveMode']) =>
+      JSON.parse(String(ownFields(dive({ diveMode })).odin_user_log_diveSamples)).map((s: { o: boolean }) => s.o);
+    expect(flags('ccr').every((o: boolean) => o === false)).toBe(true);
+    expect(flags('scr').every((o: boolean) => o === false)).toBe(true);
+    expect(flags('open_circuit').every((o: boolean) => o === true)).toBe(true);
+    expect(flags('apnea').every((o: boolean) => o === true)).toBe(true);
+  });
+
+  it('writes the new keys with decimals where the app expects them', () => {
+    const json = samplesJson(resample(channels, 1_820).slice(0, 1));
+    expect(json).toContain('"rv":3.0,"pr":{"t":0,"v":200.0},"hb":70,"cn":1}');
+    const fields = ownFields(dive({ samples: channels }));
+    expect(String(fields.odin_user_log_tankPressureDataset).startsWith('[200.0,')).toBe(true);
+    expect(String(fields.odin_user_log_heartRateDataset).startsWith('[70.0,')).toBe(true);
+  });
 });
 
 describe('records', () => {

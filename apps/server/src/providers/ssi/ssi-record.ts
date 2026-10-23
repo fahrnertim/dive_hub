@@ -84,10 +84,28 @@ const FLAG_SURFACED = 0x04000000;
 export interface SsiSample {
   n: number; t: number; d: number; s: number; te: number | null; ndl: number;
   gs: number; gn: number; a: number; mf: number; o: boolean; dr: boolean; rv: number;
+  /** Tank pressure (bar) of tank `t`, heart rate (bpm) and CNS (%), where the Recording has them. */
+  pr?: { t: number; v: number }; hb?: number; cn?: number;
 }
 
-/** The profile on SSI's 5 s grid: depth interpolated, temperature and NDL held from the last reading. */
-export function resample(samples: DiveForSsi['samples'], durationSeconds: number): SsiSample[] {
+/** Tank pressure, heart rate and CNS at `t`, each only where the Recording has the series. */
+function vitals(samples: DiveForSsi['samples'], t: number): Pick<SsiSample, 'pr' | 'hb' | 'cn'> {
+  const pressure = valueAt(samples.tankPressure, t, 'linear');
+  const heartRate = valueAt(samples.heartRate, t, 'hold');
+  const cns = valueAt(samples.cns, t, 'hold');
+  return {
+    // The first tank; whether the app counts from 0 is unconfirmed.
+    ...(pressure === null ? {} : { pr: { t: 0, v: round(pressure, 1) } }),
+    ...(heartRate === null ? {} : { hb: Math.round(heartRate) }),
+    ...(cns === null ? {} : { cn: Math.round(cns) }),
+  };
+}
+
+/**
+ * The profile on SSI's 5 s grid: depth and tank pressure interpolated, temperature, NDL, heart rate and CNS held from
+ * the last reading. A series that ends early holds its last value. `closedCircuit` is a rebreather dive.
+ */
+export function resample(samples: DiveForSsi['samples'], durationSeconds: number, closedCircuit = false): SsiSample[] {
   const depth = samples.depth;
   if (!depth || depth.offsetsMs.length === 0) return [];
   const end = Math.max(durationSeconds * 1000, depth.offsetsMs[depth.offsetsMs.length - 1]!);
@@ -108,9 +126,9 @@ export function resample(samples: DiveForSsi['samples'], durationSeconds: number
       ndl: ndlSeconds === null ? 99 : Math.max(0, Math.min(99, Math.floor(ndlSeconds / 60))),
       gs: 0, gn: 0, a: 0,
       mf: FLAG_DIVE | (atDepth ? FLAG_AT_DEPTH : 0) | (d <= 1 ? FLAG_SURFACED : 0),
-      // Open circuit, as the app sets it for every sample of a dive without a rebreather. Every dive is open
-      // circuit for now; dive type (and rebreathers) come in piece 2, and this must change then.
-      o: true, dr: false, rv: 3,
+      // Open circuit, as the app sets it for every sample of a dive without a rebreather.
+      o: !closedCircuit, dr: false, rv: 3,
+      ...vitals(samples, t),
     });
     previous = d;
   }
@@ -121,16 +139,21 @@ export function resample(samples: DiveForSsi['samples'], durationSeconds: number
 export function samplesJson(samples: SsiSample[]): string {
   return `[${samples.map((s) =>
     `{"n":${s.n},"t":${s.t},"d":${decimal(s.d)},"s":${decimal(s.s)},"te":${decimal(s.te)},"ndl":${s.ndl},`
-    + `"gs":${decimal(s.gs)},"gn":${decimal(s.gn)},"a":${s.a},"mf":${s.mf},"o":${s.o},"dr":${s.dr},"rv":${decimal(s.rv)}}`).join(',')}]`;
+    + `"gs":${decimal(s.gs)},"gn":${decimal(s.gn)},"a":${s.a},"mf":${s.mf},"o":${s.o},"dr":${s.dr},"rv":${decimal(s.rv)}`
+    + `${s.pr ? `,"pr":{"t":${s.pr.t},"v":${decimal(s.pr.v)}}` : ''}${s.hb === undefined ? '' : `,"hb":${s.hb}`}${s.cn === undefined ? '' : `,"cn":${s.cn}`}}`).join(',')}]`;
 }
 const listJson = (values: (number | null)[]) => `[${values.map(decimal).join(',')}]`;
+
+/** One value per sample, or null when no sample has the value. */
+const dataset = (samples: SsiSample[], pick: (s: SsiSample) => number | undefined) =>
+  samples.some((s) => pick(s) !== undefined) ? listJson(samples.map((s) => pick(s) ?? null)) : null;
 
 const WATER_TYPE_IDS: Partial<Record<SiteWaterType, number>> = { fresh: 4, salt: 5 };
 
 /** Fields of SSI's record that Dive Hub fills from the Dive. On an update, null leaves SSI's value. */
 export function ownFields(d: DiveForSsi): SsiRecord {
   const time = localTime(d.startsAt, d.utcOffsetSeconds);
-  const samples = resample(d.samples, d.durationSeconds);
+  const samples = resample(d.samples, d.durationSeconds, d.diveMode === 'ccr' || d.diveMode === 'scr');
   const gas = d.gases[0];
   const nitrox = gas !== undefined && gas.he === 0 && gas.o2 > 21;
   const minutes = Math.round(d.durationSeconds / 60);
@@ -193,6 +216,8 @@ export function ownFields(d: DiveForSsi): SsiRecord {
     odin_user_log_divecomputer_imported: d.device ? true : null,
     odin_user_log_depthDataset: samples.length ? listJson(samples.map((s) => s.d)) : null,
     odin_user_log_tempDataset: samples.length ? listJson(samples.map((s) => s.te)) : null,
+    odin_user_log_tankPressureDataset: dataset(samples, (s) => s.pr?.v),
+    odin_user_log_heartRateDataset: dataset(samples, (s) => s.hb),
     odin_user_log_gfSurfDataset: samples.length ? listJson(samples.map((s) => s.gs)) : null,
     odin_user_log_gfnowDataset: samples.length ? listJson(samples.map((s) => s.gn)) : null,
     odin_user_log_diveSamples: samples.length ? samplesJson(samples) : null,
