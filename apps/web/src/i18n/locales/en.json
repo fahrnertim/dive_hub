@@ -1347,6 +1347,13 @@
       "gas": "Oxygen (%)",
       "device": "Serial number",
       "profile": "Profile samples",
+      "diveType": "Dive type",
+      "tankVolumeL": "Tank volume (L)",
+      "startPressureBar": "Start pressure (bar)",
+      "endPressureBar": "End pressure (bar)",
+      "leadKg": "Weight (kg)",
+      "surfaceInterval": "Surface interval (min)",
+      "heartRate": "Average heart rate (bpm)",
       "buddies": "Buddies (entries of your {{name}} buddy list)"
     },
     "sentStored": "sent {{sent}}, stored {{stored}}",

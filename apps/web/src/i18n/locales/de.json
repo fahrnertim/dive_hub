@@ -1347,6 +1347,13 @@
       "gas": "Sauerstoff (%)",
       "device": "Seriennummer",
       "profile": "Profilpunkte",
+      "diveType": "Tauchgangsart",
+      "tankVolumeL": "Flaschenvolumen (L)",
+      "startPressureBar": "Anfangsdruck (bar)",
+      "endPressureBar": "Enddruck (bar)",
+      "leadKg": "Blei (kg)",
+      "surfaceInterval": "Oberflächenpause (min)",
+      "heartRate": "Durchschnittliche Herzfrequenz (bpm)",
       "buddies": "Buddys (Einträge deiner {{name}}-Buddyliste)"
     },
     "sentStored": "gesendet {{sent}}, gespeichert {{stored}}",

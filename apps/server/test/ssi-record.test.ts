@@ -3,13 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { createSecretBox, parseEncryptionKey } from '../src/secrets/secret-box.js';
 import { SENT_KEYS } from '../src/providers/ssi/ssi-dive-row.js';
 import {
-  compareReadBack, createRecord, deleteRecord, fingerprint, localTime, resample, samplesJson, updateRecord, writableRecord, type DiveForSsi,
+  compareReadBack, createRecord, deleteRecord, fingerprint, localTime, ownFields, resample, samplesJson, updateRecord, writableRecord, type DiveForSsi,
 } from '../src/providers/ssi/ssi-record.js';
+import { diveModeOfSsi, keepTraining, ssiDiveType } from '../src/providers/ssi/ssi-dive-type.js';
 
 const dive = (over: Partial<DiveForSsi> = {}): DiveForSsi => ({
   startsAt: new Date('2026-01-15T09:00:00Z'), utcOffsetSeconds: 7200, durationSeconds: 30 * 60 + 20,
   maxDepthM: 18.46, avgDepthM: 12.3, waterTemperatureC: 24, maxTemperatureC: 26.5, waterType: 'salt', notes: 'Turtle',
-  cylinder: null, leadKg: null, diveMode: null, surfaceIntervalSeconds: null, avgHeartRate: null,
+  cylinder: null, leadKg: null, diveMode: 'open_circuit', surfaceIntervalSeconds: null, avgHeartRate: null,
   siteSsiId: '3314', participants: [], entry: { latitude: 27.29, longitude: 33.82 }, exit: null,
   gases: [{ o2: 32, he: 0 }], gfLow: 40, gfHigh: 85, cnsStart: 0, cnsEnd: 12,
   device: { manufacturer: 'garmin', product: 'Descent Mk3', serialNumber: '0034567890', firmware: '27.19' },
@@ -165,6 +166,101 @@ describe('read-back', () => {
   it('names fields SSI stored differently', () => {
     const stored = { ...sent, odin_user_log_depth_m: 18, odin_user_log_comment: 'other', odin_user_log_depthDataset: '[1.0]' };
     expect(compareReadBack(sent, stored).map((d) => d.field)).toEqual(['maxDepthM', 'notes', 'profile']);
+  });
+
+  describe('dive type, tank, lead, surface interval and heart rate', () => {
+    const full = createRecord(dive({
+      diveMode: 'apnea', cylinder: { volumeL: 12, workingPressureBar: 232, material: 'steel', startPressureBar: 200, endPressureBar: 50, gas: null },
+      leadKg: 6, surfaceIntervalSeconds: 5400, avgHeartRate: 82,
+    }), { number: 1, accountId: '1', reference: 'r' });
+    const fields = (stored: Record<string, unknown>) => compareReadBack(full, { ...full, ...stored }).map((d) => d.field);
+
+    it('names a dive type, tank, lead, surface interval or heart rate SSI stored differently', () => {
+      expect(fields({ odin_user_log_dive_type: 0 })).toEqual(['diveType']);
+      expect(fields({ odin_user_log_tank_vol_l: 15 })).toEqual(['tankVolumeL']);
+      expect(fields({ odin_user_log_pressure_start_bar: 180 })).toEqual(['startPressureBar']);
+      expect(fields({ odin_user_log_pressure_end_bar: 40 })).toEqual(['endPressureBar']);
+      expect(fields({ odin_user_log_weight_kg: 8 })).toEqual(['leadKg']);
+      expect(fields({ odin_user_log_si_before: 60 })).toEqual(['surfaceInterval']);
+      expect(fields({ odin_user_log_heartRateAvg: 60 })).toEqual(['heartRate']);
+    });
+
+    it('accepts a tank volume within 0.06, and a surface interval and heart rate within 1', () => {
+      expect(fields({ odin_user_log_tank_vol_l: 12.05, odin_user_log_si_before: 91, odin_user_log_heartRateAvg: 81 })).toEqual([]);
+    });
+  });
+});
+
+describe('values both sides keep', () => {
+  const ids = { number: 1, accountId: '1', reference: 'r' };
+  const remote = createRecord(dive(), ids);
+  const cylinder = (over: Partial<NonNullable<DiveForSsi['cylinder']>> = {}): DiveForSsi['cylinder'] => ({
+    volumeL: 12, workingPressureBar: 232, material: 'steel', startPressureBar: 200, endPressureBar: 50, gas: { o2: 32, he: 0 }, ...over,
+  });
+
+  it('the dive type from the dive mode and the gases', () => {
+    expect(ssiDiveType('apnea', 1)).toBe(6);
+    expect(ssiDiveType('ccr', 1)).toBe(8);
+    expect(ssiDiveType('scr', 1)).toBe(4);
+    expect(ssiDiveType('open_circuit', 2)).toBe(2);
+    expect(ssiDiveType('open_circuit', 1)).toBe(0);
+    expect(ssiDiveType('gauge', 0)).toBe(0);
+    expect(ssiDiveType(null, 0)).toBeNull();
+  });
+
+  it('reads SSI\'s dive types back as a dive mode', () => {
+    expect([6, 7, 8, 9, 4, 5, 0, 3, 12, 'x'].map(diveModeOfSsi)).toEqual(['apnea', 'apnea', 'ccr', 'ccr', 'scr', 'scr', 'open_circuit', 'open_circuit', null, null]);
+  });
+
+  it('an update keeps SSI\'s training variant', () => {
+    expect(keepTraining(7, 6)).toBe(7);
+    expect(keepTraining(6, 0)).toBe(0);
+    expect(keepTraining(3, 2)).toBe(3);
+    expect(keepTraining(7, null)).toBeNull();
+    expect(updateRecord({ ...remote, odin_user_log_dive_type: 7 }, dive({ diveMode: 'apnea' })).odin_user_log_dive_type).toBe(7);
+    expect(updateRecord({ ...remote, odin_user_log_dive_type: 6 }, dive({ diveMode: 'open_circuit' })).odin_user_log_dive_type).toBe(0);
+  });
+
+  it('a Dive without a Recording leaves SSI\'s dive type, surface interval and heart rate', () => {
+    const bare = dive({ diveMode: null, gases: [] });
+    const r = updateRecord({ ...remote, odin_user_log_dive_type: 6, odin_user_log_si_before: 90, odin_user_log_heartRateAvg: 70 }, bare);
+    expect(r).toMatchObject({ odin_user_log_dive_type: 6, odin_user_log_si_before: 90, odin_user_log_heartRateAvg: 70 });
+    expect(createRecord(bare, ids).odin_user_log_dive_type).toBe(0);
+  });
+
+  it('the tank of the one Cylinder', () => {
+    expect(ownFields(dive({ cylinder: cylinder() }))).toMatchObject({
+      odin_user_log_tank_vol_l: 12, odin_user_log_tank_vol_cuft: 97, odin_user_log_pressure_start_bar: 200, odin_user_log_pressure_start_psi: 2901,
+      odin_user_log_pressure_end_bar: 50, odin_user_log_pressure_end_psi: 725, odin_user_log_var_tanktype_id: 19,
+    });
+    expect(ownFields(dive({ cylinder: cylinder({ material: 'aluminium' }) })).odin_user_log_var_tanktype_id).toBe(20);
+    expect(ownFields(dive({ cylinder: cylinder({ material: 'carbon' }) })).odin_user_log_var_tanktype_id).toBeNull();
+    expect(ownFields(dive({ cylinder: cylinder({ workingPressureBar: null }) })).odin_user_log_tank_vol_cuft).toBeNull();
+  });
+
+  it('no tank: SSI\'s tank stays', () => {
+    expect(updateRecord({ ...remote, odin_user_log_tank_vol_l: 15 }, dive({ cylinder: null })).odin_user_log_tank_vol_l).toBe(15);
+  });
+
+  it('the lead in kg and lb', () => {
+    expect(ownFields(dive({ leadKg: 6 }))).toMatchObject({ odin_user_log_weight_kg: 6, odin_user_log_weight_lb: 13.2 });
+    expect(ownFields(dive({ leadKg: null }))).toMatchObject({ odin_user_log_weight_kg: null, odin_user_log_weight_lb: null });
+  });
+
+  it('the surface interval in minutes, only where the app takes it', () => {
+    const si = (seconds: number) => ownFields(dive({ surfaceIntervalSeconds: seconds })).odin_user_log_si_before;
+    expect(si(5400)).toBe(90);
+    expect(si(120)).toBeNull();
+    expect(si(259_200)).toBeNull();
+    expect(si(86_400)).toBe(1440);
+  });
+
+  it('heart rate from the summary, else the series', () => {
+    const series = { offsetsMs: [0, 1000, 2000], values: [70, 90, 80] };
+    expect(ownFields(dive({ avgHeartRate: 82 })).odin_user_log_heartRateAvg).toBe(82);
+    const r = ownFields(dive({ avgHeartRate: null, samples: { ...dive().samples, heartRate: series } }));
+    expect(r).toMatchObject({ odin_user_log_heartRateAvg: 80, odin_user_log_heartRateMin: 70, odin_user_log_heartRateMax: 90 });
+    expect(ownFields(dive()).odin_user_log_heartRateAvg).toBeNull();
   });
 });
 
