@@ -69,9 +69,27 @@ describe('SSI client', () => {
     await expect(client.logbook(token)).rejects.toMatchObject({ reason: 'signed_out' });
     await expect(client.save(token, {})).rejects.toMatchObject({ reason: 'signed_out' });
     fake.failWith = 503;
+    await expect(client.logbook(token)).rejects.toMatchObject({ reason: 'maintenance' });
+    fake.failWith = 500;
     await expect(client.logbook(token)).rejects.toMatchObject({ reason: 'unavailable' });
     const html: Fetch = async () => ({ status: 200, text: async () => '<html>maintenance</html>' });
     await expect(createSsiClient({ url: URL_, fetch: html }).logbook(token)).rejects.toMatchObject({ reason: 'bad_response' });
+  });
+
+  it('reads a body status 401 as signed out under any HTTP status, as the app does', async () => {
+    const fake = createFakeSsi();
+    const client = createSsiClient({ url: URL_, fetch: fake.fetch });
+    const { token } = await client.signIn('erika@example.com', PASSWORD);
+    fake.expireTokens();
+    for (const status of [200, 404, 500]) {
+      for (const body of [{ status: 401 }, { status: '401' }]) {
+        fake.expiredAnswer = { status, body };
+        await expect(client.logbook(token)).rejects.toMatchObject({ reason: 'signed_out' });
+        await expect(client.save(token, {})).rejects.toMatchObject({ reason: 'signed_out' });
+      }
+    }
+    fake.expiredAnswer = { status: 404, body: '<html>not found</html>' };
+    await expect(client.logbook(token)).rejects.toMatchObject({ reason: 'unavailable' });
   });
 
   it('never puts the password, the token or the URL into an error', async () => {
@@ -82,12 +100,21 @@ describe('SSI client', () => {
     await client.logbook('secret-token').catch((e: unknown) => errors.push(e));
     const refusing: Fetch = async () => ({ status: 500, text: async () => '' });
     await createSsiClient({ url: URL_, fetch: refusing }).signIn('erika@example.com', PASSWORD).catch((e: unknown) => errors.push(e));
-    expect(errors).toHaveLength(3);
+    const fake = createFakeSsi();
+    const real = createSsiClient({ url: URL_, fetch: fake.fetch });
+    const { token } = await real.signIn('erika@example.com', PASSWORD);
+    fake.expireTokens();
+    fake.expiredAnswer = { status: 404, body: { status: 401 } };
+    await real.logbook(token).catch((e: unknown) => errors.push(e));
+    fake.failWith = 503;
+    await real.logbook(token).catch((e: unknown) => errors.push(e));
+    expect(errors).toHaveLength(5);
     for (const e of errors) {
       expect(e).toBeInstanceOf(SsiError);
       const text = `${(e as Error).message} ${(e as Error).stack}`;
       expect(text).not.toContain(PASSWORD);
       expect(text).not.toContain('secret-token');
+      expect(text).not.toContain('token-1');
       expect(text).not.toContain('ssi.invalid');
     }
   });

@@ -92,6 +92,21 @@ describe('the SSI adapter\'s call log', () => {
   });
 });
 
+describe('the SSI adapter and SSI\'s maintenance', () => {
+  it('maps a 503 to unavailable for the generic layer and logs it as maintenance', async () => {
+    const fake = createFakeSsi();
+    const logged: SsiCallLog[] = [];
+    const adapter = createSsiAdapter({
+      client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fake.fetch }),
+      onCall: (c) => logged.push(c),
+    });
+    const { account, access } = await adapter.signIn({ kind: 'password', login: 'erika@example.com', password: 'ssi-password' });
+    fake.failWith = 503;
+    await expect(adapter.certifications!.find({ connectionId: 'c1', accountId: account.id, access })).rejects.toMatchObject({ reason: 'unavailable' });
+    expect(logged.at(-1)).toMatchObject({ call: 'get_ccards', outcome: 'maintenance' });
+  });
+});
+
 describe('the SSI adapter and a save SSI drops', () => {
   it('refuses a create that is not in the logbook afterwards, and an update SSI answers with another dive: neither is a sent dive', async () => {
     const fake = createFakeSsi();

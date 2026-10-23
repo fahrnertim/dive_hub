@@ -90,6 +90,8 @@ export interface FakeSsi {
   expireTokens(): void;
   /** While set, every call answers with this HTTP status. */
   failWith: number | null;
+  /** How a call with an unknown (expired) token is answered; null: `authenticated: false` at 200. */
+  expiredAnswer: { status: number; body: unknown } | null;
   /** Answer saves as SSI does for a client that isn't its app: with an invented dive ID, storing nothing. */
   dropSaves: boolean;
   /** Adds a dive as if it had been logged in the SSI app. */
@@ -145,6 +147,7 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
     dives: new Map(),
     calls: [],
     failWith: null,
+    expiredAnswer: null,
     dropSaves: false,
     expireTokens: () => tokens.clear(),
     addDive(accountId, values) {
@@ -182,6 +185,10 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
         return answer({ authenticated: true, token, mid: account.accountId, authenticated_email: account.email });
       }
       const accountId = tokens.get(params.get('token') ?? '');
+      if (accountId === undefined && fake.expiredAnswer) {
+        const given = fake.expiredAnswer;
+        return { status: given.status, text: async () => (typeof given.body === 'string' ? given.body : JSON.stringify(given.body)) };
+      }
       if (accountId === undefined) return answer({ authenticated: false, authenticated_message: 'Please log in again', error_message: 'token' });
 
       if (what === 'get_divelog') {

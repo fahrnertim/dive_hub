@@ -106,6 +106,9 @@ export interface SsiCallLog {
   ms: number;
 }
 
+/** SSI's maintenance (HTTP 503) is, for the generic layer, SSI being unavailable. */
+const providerReason = (error: SsiError) => (error.reason === 'maintenance' ? 'unavailable' : error.reason);
+
 export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; onCall?: (call: SsiCallLog) => void }): ProviderAdapter {
   const { client } = deps;
   const now = deps.now ?? Date.now;
@@ -122,7 +125,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
     } catch (error) {
       if (error instanceof SsiError) report(error.reason, error.message.slice(0, 300));
       else report('error');
-      throw error instanceof SsiError ? new ProviderError(error.reason, error.message) : error;
+      throw error instanceof SsiError ? new ProviderError(providerReason(error), error.message) : error;
     }
   }
   /** The last logbook read per Connection, kept briefly so the next action doesn't read it again. */
@@ -281,7 +284,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         try {
           return await client.cardImage(url);
         } catch (error) {
-          if (error instanceof SsiError) throw new ProviderError(error.reason, error.message.slice(0, 300));
+          if (error instanceof SsiError) throw new ProviderError(providerReason(error), error.message.slice(0, 300));
           throw error;
         }
       },
