@@ -97,8 +97,9 @@ Where a skill and this project disagree, these rules win. They lived in AGENTS.m
   6. **Rulings and stops.** The fix loop keeps its cap of 5 rounds (owner, 2026-10-23). Every finding parked "with a
      ruling" at the cap goes into the finish summary. A task that would change an accepted ADR stops with
      `STOP: <reason>` ([ADR 0054](decisions/0054-unattended-implementation.md)) and hands back.
-  7. **Protected paths.** An edit of migrations or `db/schema.ts`, auth, providers or `docs/decisions/**` asks the owner,
-     also in auto mode and from subagents (`.claude/hooks/ask-protected.mjs`).
+  7. **Protected paths.** An edit of migrations or `db/schema.ts` or `docs/decisions/**` asks the owner, also in auto
+     mode and from subagents (`.claude/hooks/ask-protected.mjs`). Auth and providers no longer ask
+     ([ADR 0058](decisions/0058-providers-and-auth-not-asked.md)); unattended runs still never change them.
   8. **Worktrees.** Branch in the main checkout; decline `using-git-worktrees` until a trial shows a second checkout
      works on Windows (own `pnpm install`, ports, test database; owner, 2026-10-23).
   9. **Writing skills.** `writing-skills` puts personal skills in `~/.claude/skills/`; we don't. A new project skill

@@ -146,16 +146,15 @@ test('changedFiles names the old path of a renamed file, so a moved protected fi
   }
 });
 
-test('ownerHits names only the owner\'s four groups, not the harness (ADR 0055)', () => {
-  const owner = [
-    'apps/server/drizzle/0012_x.sql', 'apps/server/src/db/schema.ts', 'apps/server/src/auth/index.ts',
-    'apps/server/src/providers/ssi/client.ts', 'docs/decisions/0055-x.md',
-  ];
+test('ownerHits names only migrations, the schema and ADRs; auth and providers are protected only unattended (ADR 0058)', () => {
+  const owner = ['apps/server/drizzle/0012_x.sql', 'apps/server/src/db/schema.ts', 'docs/decisions/0055-x.md'];
+  const unattendedOnly = ['apps/server/src/auth/index.ts', 'apps/server/src/providers/ssi/client.ts'];
   assert.deepEqual(ownerHits(owner), owner);
+  assert.deepEqual(ownerHits(unattendedOnly), []);
   assert.deepEqual(ownerHits(['.claude/settings.json', 'AGENTS.md', 'package.json', 'scripts/check-lib.mjs', 'apps/server/src/db/client.ts']), []);
   assert.deepEqual(ownerHits(['apps\\server\\src\\db\\schema.ts']), ['apps/server/src/db/schema.ts']);
-  // Every owner path is also protected in unattended runs.
-  assert.deepEqual(protectedHits(owner), owner);
+  // Every owner path, and auth and providers, stay protected in unattended runs (ADR 0054).
+  assert.deepEqual(protectedHits([...owner, ...unattendedOnly]), [...owner, ...unattendedOnly]);
 });
 
 // The interactive hook, run as Claude Code runs it: tool input on stdin, the decision as JSON on stdout.
@@ -180,8 +179,10 @@ test('ask-protected asks the owner before an edit of db/schema.ts, relative or a
   assert.equal(askHook({ notebook_path: 'docs/decisions/x.ipynb' })?.permissionDecision, 'ask');
 });
 
-test('ask-protected stays silent for other files, for the harness, and in unattended runs (the deny hook acts there)', () => {
+test('ask-protected stays silent for other files, auth, providers, the harness, and in unattended runs (the deny hook acts there)', () => {
   assert.equal(askHook({ file_path: 'apps/server/src/dives/routes.ts' }), null);
+  assert.equal(askHook({ file_path: 'apps/server/src/auth/index.ts' }), null);
+  assert.equal(askHook({ file_path: 'apps/server/src/providers/ssi/ssi-client.ts' }), null);
   assert.equal(askHook({ file_path: '.claude/settings.json' }), null);
   assert.equal(askHook({ file_path: 'apps/server/src/db/schema.ts' }, { AGENT_UNATTENDED: '1' }), null);
 });

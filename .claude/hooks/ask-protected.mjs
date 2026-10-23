@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// PreToolUse hook (ADR 0055): in an interactive session, an edit of the owner's four groups (migrations and
-// db/schema.ts, auth, providers, docs/decisions) asks the owner first, also in auto mode and from subagents.
+// PreToolUse hook (ADR 0055, 0058): in an interactive session, an edit of the owner's two groups (migrations and
+// db/schema.ts, docs/decisions) asks the owner first, also in auto mode and from subagents.
 // Unattended runs are left to guard-protected.mjs, which refuses them outright.
 // Edits made through a shell command are not seen here, as with guard-protected.mjs.
 import { readFileSync, realpathSync } from 'node:fs';
@@ -31,5 +31,5 @@ const real = (p) => { try { return realpathSync(p); } catch { return p; } };
 // A symlink inside the repository that points at a protected file counts as that file.
 const path = relative(real(root), real(resolve(root, file))).replaceAll('\\', '/');
 if (ownerHits([path]).length) {
-  ask(`${path} is one of the owner's protected paths (migrations and schema, auth, providers, ADRs; ADR 0055). The owner decides this edit.`);
+  ask(`${path} is one of the owner's protected paths (migrations and schema, ADRs; ADR 0055, 0058). The owner decides this edit.`);
 }

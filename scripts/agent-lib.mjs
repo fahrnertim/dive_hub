@@ -6,14 +6,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 /**
- * The owner's four groups: data, access, provider integrations and decisions. An interactive session asks the
- * owner before an edit of one of them (ADR 0055, `.claude/hooks/ask-protected.mjs`).
+ * The owner's two groups: stored data and decisions. An interactive session asks the owner before an edit of one of
+ * them (ADR 0055, `.claude/hooks/ask-protected.mjs`). Auth and providers left this list with ADR 0058.
  */
 export const OWNER_PATHS = [
   /^apps\/server\/drizzle\//,
   /^apps\/server\/src\/db\/schema\.ts$/,
-  /^apps\/server\/src\/auth\//,
-  /^apps\/server\/src\/providers\//,
   /^docs\/decisions\//,
 ];
 
@@ -24,6 +22,9 @@ export const OWNER_PATHS = [
  */
 export const PROTECTED = [
   ...OWNER_PATHS,
+  // Also the owner's, but no longer asked about in an interactive session (ADR 0058).
+  /^apps\/server\/src\/auth\//,
+  /^apps\/server\/src\/providers\//,
   // The harness: gates, baselines, and the agent's own rules.
   /^\.github\//,
   /^\.claude\//,
