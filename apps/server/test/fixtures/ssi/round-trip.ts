@@ -19,11 +19,18 @@
 //     note's key out, says whether the note survived (yes/no, never the text), and deletes the dive.
 //   … round-trip.ts expired
 //     calls get_divelog with the kept token and prints its age, the HTTP status and the answer's key names (no values).
-// write, number, omitted and expired sign in when SSI_EMAIL and SSI_PASSWORD are set, else use the token kept by "read".
+//   … round-trip.ts values start | values finish [<SSI dive ID> <SSI dive ID>]   (needs SSI_SITE_ID for start)
+//     start creates two throwaway dives dated 2000-01-02 (10:00 an apnea dive, 14:00 a scuba dive with tank, lead, surface
+//     interval, pressure curve, heart rate and CNS), prints their SSI IDs, the read-back comparison and, for each new key,
+//     what was sent and what SSI stored (only these two dives). Look at them in the MySSI app, then run finish: it deletes
+//     the dives and checks they are gone. The IDs come from the arguments, else from samples/private/ssi/values.json
+//     (saved by start); it only deletes a dive whose notes start with "Dive Hub test".
+// write, number, omitted, values and expired sign in when SSI_EMAIL and SSI_PASSWORD are set, else use the token kept by "read".
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import { runNumberChecks } from './number-checks.js';
+import { finishValuesChecks, startValuesChecks } from './values-checks.js';
 import { userAgent } from '../../../src/sites/import/polite-http.js';
 import { createSsiClient, SsiError, type SsiRecord } from '../../../src/providers/ssi/ssi-client.js';
 import { compareReadBack, createRecord, deleteRecord, updateRecord, writableRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
@@ -151,6 +158,18 @@ if (mode === 'read') {
   console.log(`gear note set after the update: ${gearSet(after) ? 'yes' : 'no'}`);
   await client.save(account.token, deleteRecord((after ?? stored) as SsiRecord));
   console.log((await find()) ? 'still there' : 'deleted');
+} else if (mode === 'values' && process.argv[3] === 'start') {
+  const account = await access();
+  const siteId = process.env.SSI_SITE_ID;
+  if (!siteId) throw new Error('Set SSI_SITE_ID to a site ID from your SSI logbook (see logbook.json after "read")');
+  const ids = await startValuesChecks({ client, access: account.token, accountId: account.accountId, siteId, log: console.log });
+  await save('values', { ids });
+  console.log(`Look at SSI dives ${ids.join(' and ')} in the MySSI app (pull to refresh), then run \`values finish\`.`);
+} else if (mode === 'values' && process.argv[3] === 'finish') {
+  const account = await access();
+  const given = process.argv.slice(4).filter((a) => /^\d+$/.test(a));
+  const ids = given.length ? given : (JSON.parse(await readFile(`${out}values.json`, 'utf8')) as { ids: string[] }).ids;
+  await finishValuesChecks({ client, access: account.token, log: console.log }, ids);
 } else if (mode === 'expired') {
   const { token, at } = JSON.parse(await readFile(tokenFile, 'utf8')) as { token: string; at: string };
   const hours = ((Date.now() - Date.parse(at)) / 3_600_000).toFixed(1);
@@ -180,5 +199,5 @@ if (mode === 'read') {
     + `status: ${JSON.stringify(seen.status)}; authenticated: ${JSON.stringify(seen.authenticated)}`);
   await save('expired', result);
 } else {
-  console.log('Usage: round-trip.ts read | token | write [--pause] | number [--pause] | number --dive <SSI dive ID> --to <n> | omitted start | omitted finish | expired');
+  console.log('Usage: round-trip.ts read | token | write [--pause] | number [--pause] | number --dive <SSI dive ID> --to <n> | omitted start | omitted finish | values start | values finish [<SSI dive ID>…] | expired');
 }
