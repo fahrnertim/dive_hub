@@ -37,7 +37,7 @@ const later = (dive: OutgoingDive, minutes: number): OutgoingDive => ({ ...dive,
 /** Every operation an adapter declares, as `kind.direction.operation`. */
 function declared(adapter: ProviderAdapter): string[] {
   return Object.entries(adapter.capabilities.data).flatMap(([kind, directions]) =>
-    Object.entries(directions ?? {}).flatMap(([direction, d]) => (d as { operations: string[] }).operations.map((op) => `${kind}.${direction}.${op}`)));
+    Object.entries(directions ?? {}).filter(([direction]) => direction !== 'fields').flatMap(([direction, d]) => (d as { operations: string[] }).operations.map((op) => `${kind}.${direction}.${op}`)));
 }
 
 /**

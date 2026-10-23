@@ -1,7 +1,7 @@
 // How often the SSI adapter reads the whole logbook (ADR 0027): at most once per action, and a read-back of the last
 // two minutes serves the next action's duplicate check and dive number. Updates and deletes always read afresh.
 import { describe, expect, it } from 'vitest';
-import type { OutgoingDive } from '../src/providers/provider.js';
+import { DIVE_FIELDS, type OutgoingDive } from '../src/providers/provider.js';
 import en from '../../web/src/i18n/locales/en.json' with { type: 'json' };
 import { createSsiAdapter, SSI_CAPABILITIES, type SsiCallLog } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient, type Fetch } from '../src/providers/ssi/ssi-client.js';
@@ -172,6 +172,14 @@ describe('the SSI adapter and dive numbers (ADR 0048)', () => {
     fake.dropSaves = true;
     await expect(adapter.dives!.open(ctx).setNumber!(a.remoteId!, 5)).rejects.toMatchObject({ reason: 'not_stored' });
     expect(numberAt(fake, a.remoteId)).toBe(1);
+  });
+});
+
+describe('the SSI adapter\'s dive fields', () => {
+  it('declares every dive value both ways', () => {
+    const fields = SSI_CAPABILITIES.data.dives!.fields!;
+    expect(Object.keys(fields).sort()).toEqual([...DIVE_FIELDS].sort());
+    for (const field of DIVE_FIELDS) expect(fields[field]).toEqual(['import', 'export']);
   });
 });
 

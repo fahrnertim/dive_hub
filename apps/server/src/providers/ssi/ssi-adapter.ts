@@ -2,7 +2,7 @@
 // match, its dive numbers, the SSI site ID, buddies as entries of the User's own buddy list, and its dives to import. Everything SSI answers is turned into typed values here; no `odin_*` field is
 // read outside this folder. Connections, Pushes, pacing and the routes are the generic layer's.
 import {
-  ProviderError, type ActionContext, type Capabilities, type Delivered, type DiveExportAction, type OutgoingDive,
+  DIVE_FIELDS, ProviderError, type ActionContext, type Capabilities, type Delivered, type DiveExportAction, type OutgoingDive,
   type ProviderAdapter, type RemoteDive,
 } from '../provider.js';
 import { SsiError, type SsiBuddy, type SsiClient, type SsiLogbook, type SsiRecord } from './ssi-client.js';
@@ -40,6 +40,8 @@ export const SSI_CAPABILITIES: Capabilities = {
       },
       // `list`: the whole logbook, profiles included, in one read (ADR 0030).
       import: { operations: ['list'] },
+      // Every dive value travels both ways: the send carries it, the import reads it (ADR 0057).
+      fields: Object.fromEntries(DIVE_FIELDS.map((field) => [field, ['import', 'export']])),
     },
     // `find`: the sites of the User's logbook; `list`: SSI's whole site list for the admin's Site import (ssi-sites.ts).
     diveSites: { import: { operations: ['find', 'list'], findBy: ['position'] } },
