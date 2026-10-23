@@ -3,7 +3,7 @@
 // Pure: no database, no network.
 import { describe, expect, it } from 'vitest';
 import type { SsiLogbook } from '../src/providers/ssi/ssi-client.js';
-import { contextOf, parseSsiDive } from '../src/providers/ssi/ssi-import.js';
+import { contextOf, parseSsiDive, ssiOrigin } from '../src/providers/ssi/ssi-import.js';
 import { computerDive, handTypedDive } from './fake-ssi.js';
 
 const logbook: SsiLogbook = {
@@ -106,6 +106,18 @@ describe('SSI dives for an import', () => {
   it('reads no cylinder where SSI has no volume and no pressure: a gas or a tank type alone is none', () => {
     const dive = { ...handTypedDive({ at: '2025-08-10 10:00', depthM: 18, minutes: 45 }), odin_user_log_tank_vol_l: 0, odin_user_log_var_tanktype_id: 20, odin_user_log_ean: 1, odin_user_log_ean_percent: 32 };
     expect(parseSsiDive(withId(dive), context)!.cylinder).toBeNull();
+  });
+
+  it('reads SSI\'s booleans in every form: 1, \'1\' and true; 0, \'0\' and false', () => {
+    const dive = handTypedDive({ at: '2025-08-10 10:00', depthM: 18, minutes: 45 });
+    for (const yes of [true, 1, '1']) {
+      expect(parseSsiDive(withId({ ...dive, odin_user_log_ean: yes, odin_user_log_ean_percent: 32 }), context)!.gases).toEqual([{ o2: 32, he: 0 }]);
+      expect(ssiOrigin({ ...dive, odin_user_log_divecenter_confirmed: yes }).confirmedByCentre).toBe(true);
+    }
+    for (const no of [false, 0, '0']) {
+      expect(parseSsiDive(withId({ ...dive, odin_user_log_ean: no, odin_user_log_ean_percent: 32 }), context)!.gases).toEqual([{ o2: 21, he: 0 }]);
+      expect(ssiOrigin({ ...dive, odin_user_log_divecenter_confirmed: no }).confirmedByCentre).toBe(false);
+    }
   });
 
   it('reads the weight typed at SSI as the lead of the dive in kg; 0 or nothing is not typed', () => {

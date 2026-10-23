@@ -41,7 +41,7 @@ jobs:
           # commit before the push (BASELINE_REF), so the history must be there.
           fetch-depth: 0
       - name: Baseline to compare with
-        run: echo "BASELINE_REF=${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}" >> "$GITHUB_ENV"
+        run: echo "BASELINE_REF=${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event_name == 'workflow_dispatch' && 'origin/main' || github.event.before }}" >> "$GITHUB_ENV"
 
       # pnpm's version comes from packageManager in package.json.
       - uses: pnpm/action-setup@v4

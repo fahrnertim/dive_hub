@@ -1,13 +1,14 @@
 // A Dive as SSI's dive record (ADR 0024). Pure: no database, no network. Field names and quirks come from
-// the community projects' captures (docs/research/2026-10-04-ssi-api.md); the code is our own.
+// the app's own dive row (ssi-dive-row.ts); the code is our own.
 //
-// SSI expects the whole record on every save (about 340 keys, unused ones null). A create sends our values
+// SSI expects the whole record on every save (the app's 345 keys plus date and entry time, unused ones null). A create sends our values
 // on top of empty defaults; an update re-sends SSI's current record with our values on top, so fields
 // edited in the app survive; a delete re-sends it with `deleted` set.
 import { createHash } from 'node:crypto';
 import type { SiteWaterType } from '../../vocabulary.js';
 import type { OutgoingDive, Series } from '../provider.js';
 import type { SsiRecord } from './ssi-client.js';
+import { asBool, DIVE_ROW, SENT_KEYS } from './ssi-dive-row.js';
 
 export type { Series };
 
@@ -49,8 +50,8 @@ export function startChangesAtSsi(previous: Record<string, unknown> | null, dive
 }
 
 /**
- * A number SSI's app reads as a floating-point value: always with a decimal point. Its strict JSON
- * decoding refuses `0` where it expects `0.0` (divesend's notes), and JSON.stringify drops the ".0".
+ * A number in the samples string with a decimal point, as the app itself sends them. The app (5.0.43) reads any
+ * number there; older community notes (divesend) say its strict decoding refused `0` for `0.0`. [R]
  */
 const decimal = (v: number | null) => (v === null ? 'null' : Number.isInteger(v) ? v.toFixed(1) : String(round(v, 2)));
 
@@ -102,7 +103,9 @@ export function resample(samples: DiveForSsi['samples'], durationSeconds: number
       ndl: ndlSeconds === null ? 99 : Math.max(0, Math.min(99, Math.floor(ndlSeconds / 60))),
       gs: 0, gn: 0, a: 0,
       mf: FLAG_DIVE | (atDepth ? FLAG_AT_DEPTH : 0) | (d <= 1 ? FLAG_SURFACED : 0),
-      o: false, dr: false, rv: 3,
+      // Open circuit, as the app sets it for every sample of a dive without a rebreather. Every dive is open
+      // circuit for now; dive type (and rebreathers) come in piece 2, and this must change then.
+      o: true, dr: false, rv: 3,
     });
     previous = d;
   }
@@ -142,7 +145,7 @@ export function ownFields(d: DiveForSsi): SsiRecord {
     odin_user_log_var_watertype_id: d.waterType ? WATER_TYPE_IDS[d.waterType] ?? null : null,
     odin_user_log_dive_sites_id: Number(d.siteSsiId),
     odin_user_log_comment: d.notes,
-    odin_user_log_ean: gas === undefined ? null : nitrox ? 1 : 0,
+    odin_user_log_ean: gas === undefined ? null : nitrox,
     odin_user_log_ean_percent: gas === undefined ? null : nitrox ? Math.round(gas.o2) : 0,
     odin_user_log_gf_set: d.gfLow !== null && d.gfHigh !== null ? `${d.gfLow} / ${d.gfHigh}` : null,
     odin_user_log_gf_set_1: d.gfLow,
@@ -168,79 +171,16 @@ export function ownFields(d: DiveForSsi): SsiRecord {
   };
 }
 
-/** Keys that are only SSI app bookkeeping or confirmations; an update takes SSI's values for them. */
-const XR = ['divetype_id', 'planned_bottom_time', 'total_deco_time', 'planned_depth', 'planned_deco_time', 'back', 'back_tanktype_id',
-  'deco_tanktype_id', 'back_vol_l', 'back_vol_cuft', 'back_ean', 'back_tmx', 'back_o2', 'back_he', 'back_start_bar', 'back_end_bar',
-  'back_start_psi', 'back_end_psi', 'sac_bottom_l', 'sac_bottom_psi', 'sac_deco_l', 'sac_deco_psi',
-  ...[1, 2, 3].flatMap((i) => ['', '_tanktype_id', '_vol_l', '_vol_cuft', '_o2', '_he', '_start_bar', '_end_bar', '_start_psi', '_end_psi',
-    ...(i < 3 ? ['_ean', '_tmx'] : ['_ean_o2'])].map((s) => `deco${i}${s}`))].map((k) => `odin_user_log_xr_${k}`);
-const SCR = ['unit_id', 'total_deco_time', 'sac_bailout_l', 'sac_bailout_psi', 'sac_deco_l', 'sac_deco_psi', 'start_time', 'end_time', 'oc',
-  ...['bottom', 'deco'].flatMap((g) => ['_tanktype_id', '_tank_vol_l', '_tank_vol_cuft', '_o2', '_setpoint', '_start_bar', '_start_psi', '_end_bar', '_end_psi'].map((s) => `${g}${s}`)),
-  'deco'].map((k) => `odin_user_log_scr_${k}`);
-const CCR = ['unit_id', 'total_deco_time', 'sac_bailout_l', 'sac_bailout_psi', 'sac_deco_l', 'sac_deco_psi', 'bottom_tank_vol_cuft', 'diluent_gas',
-  ...['diluent', 'o2'].flatMap((g) => ['_tanktype_id', '_tank_vol_l', '_tank_vol_cuft', '_start_bar', '_start_psi', '_end_bar', '_end_psi'].map((s) => `${g}${s}`)),
-  'diluent_o2', 'diluent_he',
-  ...['01', '02', '03'].flatMap((i) => ['', '_tanktype_id', '_tank_vol_l', '_tank_vol_cuft', '_o2', '_he', '_start_bar', '_start_psi', '_end_bar', '_end_psi'].map((s) => `bailout${i}${s}`)),
-].map((k) => `odin_user_log_ccr_${k}`);
-const FREEDIVING = [
-  'frd_weight_kg', 'frd_weight_lb', 'frd_neutral_m', 'frd_neutral_ft', 'frd_divetype_id', 'frd_suit', 'frd_NOTES', 'frdwater_body_id', 'frddisc',
-  ...['STA', 'STATT', 'WAPN', 'DYN', 'DYNTT', 'FIM', 'CWT', 'CNF', 'VWT', 'FRC', 'DNF'].flatMap((d) => {
-    const parts: Record<string, string[]> = {
-      STA: ['', '_WU', '_MAX', '_CT'], STATT: ['', '_RP', '_MAX'], WAPN: ['', '_WU', '_RP', '_MAX'], DYN: ['', '_WU', '_MAX_m', '_MAX_ft'],
-      DYNTT: ['', '_RP', '_MAX_m', '_MAX_ft'], FRC: ['', '_RP', '_MAX_m', '_MAX_ft'], DNF: ['', '_WU', '_MAX_m', '_MAX_ft'],
-    };
-    return (parts[d] ?? ['', '_WU', '_MAX_m', '_MAX_ft', '_TIME']).map((s) => `frddisc_${d}${s}`);
-  }),
-].map((k) => `odin_user_log_${k}`);
-
-const NULL_FIELDS = [
-  'odin_user_log_rating', 'odin_user_log_airtemp_c', 'odin_user_log_airtemp_f', 'odin_user_log_pressure_start_bar',
-  'odin_user_log_pressure_start_psi', 'odin_user_log_pressure_end_bar', 'odin_user_log_pressure_end_psi', 'odin_user_log_leader_nr',
-  'odin_user_log_var_divetype_id', 'odin_user_log_var_water_body_id', 'odin_user_log_var_entry_id', 'odin_user_log_var_current_id',
-  'odin_user_log_var_surface_id', 'odin_user_log_var_weather_id', 'odin_user_log_var_tanktype_id', 'odin_user_log_vis_m', 'odin_user_log_vis_ft',
-  'odin_user_log_weight_kg', 'odin_user_log_weight_lb', 'odin_user_log_tank_vol_l', 'odin_user_log_tank_vol_cuft',
-  'odin_user_log_var_specialdive_id', 'odin_user_log_amv_l', 'odin_user_log_amv_psi',
-  'odin_user_log_divecenter_confirmed', 'odin_user_log_divecenter_confirmed_id', 'odin_user_log_divecenter_confirmed_name',
-  'odin_user_log_divecenter_confirmed_logo', 'odin_user_log_leader_confirmed_id', 'odin_user_log_leader_confirmed_name',
-  'odin_user_log_user_confirmed_id', 'odin_user_log_user_confirmed_name', 'odin_user_log_transferDate', 'odin_user_log_confirmed',
-  'odin_user_log_verified', 'timestamp',
-  'odin_user_log_diveComputerData', 'odin_user_log_divecomputer_id', 'odin_user_log_divecomputer_ble_id',
-  'odin_user_log_divecomputer_raw_data_header', 'odin_user_log_divecomputer_raw_data_details', 'odin_user_log_divecomputer_productname',
-  'log_divecomputer_bottomtimer', 'log_divecomputer_max_sensor_depth', 'odin_user_log_divecomputer_dive_ref',
-  'odin_user_log_alarmDataset', 'odin_user_log_deepestDecoDataset', 'odin_user_log_tankPressureDataset', 'odin_user_log_freeDiveSessionCharts',
-  'odin_user_log_pressureDataset', 'odin_user_log_locationDataset',
-  'odin_user_log_si_before', 'odin_user_log_gf_end', 'odin_user_log_otu_start', 'odin_user_log_otu_end',
-  'odin_user_log_deco_dive', 'odin_user_log_deco_time', 'odin_user_log_deco_gas', 'odin_user_log_deco_gas_tanktype_id',
-  'odin_user_log_deco_gas_tank_vol_l', 'odin_user_log_deco_gas_tank_vol_cuft', 'odin_user_log_deco_gas_o2', 'odin_user_log_deco_gas_start_bar',
-  'odin_user_log_deco_gas_end_bar', 'odin_user_log_deco_gas_start_psi', 'odin_user_log_deco_gas_end_psi',
-  'odin_user_log_alarm_fast_ascent', 'odin_user_log_alarm_deco_stop', 'odin_user_log_alarm_deco_violation',
-  'log_linked_facility_id', 'log_linked_brevet_rule_id', 'odin_user_log_gearconfiguration_id',
-  'log_extended_data_cleanup_weight_kg', 'log_extended_data_cleanup_weight_lb',
-  'odin_user_log_apple_watch_log_id', 'odin_user_log_apple_watch_id', 'odin_user_log_apple_watch_app_version', 'odin_user_log_apple_watch_os_version',
-  'odin_user_log_heartRateMin', 'odin_user_log_heartRateMax', 'odin_user_log_heartRateAvg', 'odin_user_log_heartRateDataset',
-  'odin_user_log_batteryLevelDataset', 'odin_user_log_batteryLevelStart', 'odin_user_log_batteryLevelEnd', 'odin_user_log_accelerationDataset',
-  'odin_user_log_gyroDataset', 'odin_user_log_dive_on_own_risk_os_app', 'odin_user_log_housing_local_dive_media',
-  'localSiteId', 'odin_user_log_crdate', 'reset_profile_divelog_number_with_deletion', 'uploadError',
-  ...XR, ...SCR, ...CCR, ...FREEDIVING,
-];
-
-/** Every key SSI's save expects, with the value an empty dive has. */
+/** Every key the app's save sends (ssi-dive-row.ts), with the value an empty dive has. */
 function emptyRecord(): SsiRecord {
-  const record: SsiRecord = Object.fromEntries(NULL_FIELDS.map((k) => [k, null]));
+  const record: SsiRecord = Object.fromEntries(SENT_KEYS.map((k) => [k, null]));
   return Object.assign(record, {
-    odin_user_log_id: null, odin_user_log_nr: null, internalPk: null, odin_user_log_user_master_id: null,
-    odin_user_log_dive_type: 0, odin_user_log_deleted: 0, odin_user_log_diveComputer: '',
+    odin_user_log_dive_type: 0, odin_user_log_deleted: false, odin_user_log_diveComputer: '',
     odin_user_log_buddy_ids: [], localBuddyIds: [], odin_user_log_animal_ids: [], odin_user_log_gear: [],
-    odin_user_log_apple_watch: 0, odin_user_log_dive_on_own_risk: 0,
+    odin_user_log_apple_watch: false, odin_user_log_dive_on_own_risk: false,
     needsUpload: false, needsVerificationUpload: false, needsUnverifyUpload: false,
-  }, Object.fromEntries(Object.keys(ownFields(EMPTY_DIVE)).map((k) => [k, null])));
+  });
 }
-
-const EMPTY_DIVE: DiveForSsi = {
-  startsAt: new Date(0), utcOffsetSeconds: 0, durationSeconds: 0, maxDepthM: null, avgDepthM: null, waterTemperatureC: null,
-  maxTemperatureC: null, waterType: null, notes: null, siteSsiId: '1', participants: [], entry: null, exit: null, gases: [], gfLow: null, gfHigh: null,
-  cnsStart: null, cnsEnd: null, device: null, samples: {},
-};
 
 /** A new SSI dive. `number` is SSI's own dive number (the next in the User's SSI logbook). */
 export function createRecord(d: DiveForSsi, ids: { number: number; accountId: string; reference: string }): SsiRecord {
@@ -260,10 +200,12 @@ const READ_ALIASES: Record<string, string> = {
 /** SSI's current record reduced to the keys its save takes, so nothing read-only goes back. */
 export function writableRecord(remote: SsiRecord): SsiRecord {
   const record = emptyRecord();
-  for (const key of Object.keys(record)) {
+  const booleans = new Set(DIVE_ROW.filter(([, type]) => type === 'bool').map(([key]) => key));
+  for (const key of SENT_KEYS) {
     const alias = READ_ALIASES[key];
-    if (key in remote) record[key] = remote[key];
+    if (key in remote) record[key] = remote[key] ?? null;
     if ((record[key] === null || record[key] === undefined) && alias && alias in remote) record[key] = remote[alias];
+    if (booleans.has(key)) record[key] = asBool(record[key]);
   }
   return record;
 }
@@ -276,7 +218,7 @@ export function updateRecord(remote: SsiRecord, d: DiveForSsi): SsiRecord {
 
 /** SSI's record marked deleted (SSI keeps it, hidden; its app has no way back). */
 export function deleteRecord(remote: SsiRecord): SsiRecord {
-  return { ...writableRecord(remote), odin_user_log_deleted: 1 };
+  return { ...writableRecord(remote), odin_user_log_deleted: true };
 }
 
 /**

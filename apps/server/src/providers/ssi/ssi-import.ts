@@ -4,6 +4,7 @@ import { REFERENCE_PREFIX, type DiveOrigin, type ImportContext, type ImportedDiv
 import type { SsiLogbook, SsiRecord } from './ssi-client.js';
 import { alpha2Of } from '../../sites/countries.js';
 import { buddyIdsOf, SAMPLE_INTERVAL_MS } from './ssi-record.js';
+import { asBool } from './ssi-dive-row.js';
 
 /** The parser a Recording made from an SSI dive names (data model: Recording). */
 export const SSI_PARSER = { name: 'ssi-app-api', version: '1' };
@@ -107,7 +108,7 @@ function deviceOfRef(r: SsiRecord): ImportedDive['device'] {
 export function ssiOrigin(r: SsiRecord): DiveOrigin {
   const made = r.odin_user_log_crdate;
   const seconds = typeof made === 'number' ? made : null;
-  const flag = (v: unknown) => v === true || v === 1 || v === '1';
+  const flag = (v: unknown) => asBool(v) === true;
   const id = (v: unknown) => { const n = numberOf(v); return n !== null && n !== 0; };
   return {
     createdAt: seconds !== null ? new Date(seconds * 1000).toISOString() : text(made),
@@ -146,9 +147,9 @@ export function parseSsiDive(r: SsiRecord, context: ImportContext, givenId?: str
   const profileEnd = samples.depth ? samples.depth.offsetsMs[samples.depth.offsetsMs.length - 1]! / 1000 : 0;
   const siteId = numberOf(r.odin_user_log_dive_sites_id);
   const site = siteId !== null && siteId > 0 ? context.sites[String(siteId)] : undefined;
-  const nitrox = numberOf(r.odin_user_log_ean) === 1;
+  const ean = asBool(r.odin_user_log_ean);
   const o2 = numberOf(r.odin_user_log_ean_percent);
-  const gases = nitrox && o2 !== null && o2 > 21 ? [{ o2, he: 0 }] : numberOf(r.odin_user_log_ean) === 0 ? [{ o2: 21, he: 0 }] : [];
+  const gases = ean === true && o2 !== null && o2 > 21 ? [{ o2, he: 0 }] : ean === false ? [{ o2: 21, he: 0 }] : [];
   const gfLow = numberOf(r.odin_user_log_gf_set_1);
   const gfHigh = numberOf(r.odin_user_log_gf_set_2);
   return {

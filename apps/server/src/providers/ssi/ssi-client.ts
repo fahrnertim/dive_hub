@@ -1,40 +1,22 @@
 // SSI's private app API, the one the MySSI app uses (ADR 0024). What we rely on, and what to do when it changes:
 // docs/references/ssi-app-api.md (keep it current with this file).
 // Undocumented: one endpoint, the action in `what=`. Sign-in exchanges e-mail and password for a token, and
-// every later call carries the token. Both travel in the query string, so nothing here ever logs a URL or
-// puts one into an error message.
+// every later call carries the token. The transport (ssi-transport.ts) makes the calls and reads SSI's answers.
 
 import type { SiteWaterType } from '../../vocabulary.js';
 import { WATER_OF_BOW } from './ssi-sites.js';
+import { createSsiTransport, SSI_APP_USER_AGENT, SsiError, type Fetch } from './ssi-transport.js';
 
-// What SSI's Android app sends on every call (the owner's capture, 2026-10-10, app 5.0.43): its label and version, and
-// since 5.0 four fields about the phone. Dive Hub is no phone and says so there; SSI stores saves all the same.
-const APP_PARAMS = {
-  ssiapp: '0815_ADR', version: 'ADR_5.0.43-ssi', appVersion: '5.0.43-ssi', lang: 'en', context: 's',
-  device: 'divehub', deviceName: 'Dive Hub', manufacturer: 'Dive Hub', osVersion: '36', platform: 'ADR', brand: 'SSI',
-} as const;
-/**
- * The User-Agent of SSI's app (ADR 0049). Since October 2026 SSI stores a save only when it comes with this form of
- * User-Agent (any `Dart/<version> (dart:io)`); for any other it answers "added to Log" with an invented dive ID and
- * stores nothing. Dive Hub's own name (ADR 0024) is one of the others.
- */
-export const SSI_APP_USER_AGENT = 'Dart/3.12 (dart:io)';
+export { SSI_APP_USER_AGENT };
 export const DEFAULT_SSI_URL = 'https://api.divessi.com/app/a21.php';
 export const DEFAULT_CARD_IMAGE_BASE = 'https://my.divessi.com/cert';
 /** A card's picture is a PNG of about 200 KB (the capture of 2026-10-10); anything over this is not one. */
 export const MAX_CARD_IMAGE_BYTES = 1_000_000;
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
-export type Fetch = (url: string, init: {
-  method: 'GET' | 'POST'; headers: Record<string, string>; body?: string; signal?: AbortSignal;
-}) => Promise<{
-  status: number; text(): Promise<string>;
-  /** Only read for a card image (ADR 0050). */
-  arrayBuffer?(): Promise<ArrayBuffer>;
-  headers?: { get(name: string): string | null };
-}>;
+export type { Fetch };
 
-/** An SSI dive record: a flat object of `odin_user_log_*` fields (about 340 of them). */
+/** An SSI dive record: a flat object of `odin_user_log_*` fields (345 of them, plus date and entry time). */
 export type SsiRecord = Record<string, unknown>;
 
 export interface SsiAccount {
@@ -98,18 +80,7 @@ export interface SsiLogbook {
   buddies: SsiBuddy[];
 }
 
-export class SsiError extends Error {
-  constructor(
-    /**
-     * wrong_credentials: e-mail or password refused. signed_out: the token is no longer accepted.
-     * refused: SSI answered but didn't save. unavailable: no answer, or an HTTP error. bad_response: not what we expect.
-     */
-    readonly reason: 'wrong_credentials' | 'signed_out' | 'refused' | 'not_stored' | 'unavailable' | 'bad_response',
-    detail: string,
-  ) {
-    super(`SSI ${reason}: ${detail}`);
-  }
-}
+export { SsiError };
 
 export interface SsiClient {
   signIn(email: string, password: string): Promise<SsiAccount>;
@@ -143,33 +114,7 @@ export function createSsiClient(options: SsiClientOptions): SsiClient {
   const timeoutMs = options.timeoutMs ?? 60_000;
   const cardImageBase = (options.cardImageBase ?? DEFAULT_CARD_IMAGE_BASE).replace(/\/+$/, '');
 
-  async function call(what: string, params: Record<string, string>, body?: SsiRecord): Promise<Record<string, unknown>> {
-    const url = `${base}?${new URLSearchParams({ ...APP_PARAMS, what, ...params })}`;
-    let response: Awaited<ReturnType<Fetch>>;
-    try {
-      response = await fetchImpl(url, {
-        method: body ? 'POST' : 'GET',
-        headers: {
-          'User-Agent': SSI_APP_USER_AGENT, Accept: 'application/json',
-          ...(body && { 'Content-Type': 'application/x-www-form-urlencoded' }),
-        },
-        ...(body && { body: new URLSearchParams({ json_data: JSON.stringify(body) }).toString() }),
-        signal: AbortSignal.timeout(timeoutMs),
-      });
-    } catch (error) {
-      // The error of a failed fetch can quote the URL; keep only its kind.
-      throw new SsiError('unavailable', `${what}: ${error instanceof Error ? error.name : 'network error'}`);
-    }
-    if (response.status < 200 || response.status >= 300) throw new SsiError('unavailable', `${what}: HTTP ${response.status}`);
-    let data: unknown;
-    try {
-      data = JSON.parse(await response.text());
-    } catch {
-      throw new SsiError('bad_response', `${what}: not JSON`);
-    }
-    if (!isObject(data)) throw new SsiError('bad_response', `${what}: not an object`);
-    return data;
-  }
+  const { call } = createSsiTransport({ url: base, fetch: fetchImpl, timeoutMs });
 
   return {
     async signIn(email, password) {
@@ -183,7 +128,6 @@ export function createSsiClient(options: SsiClientOptions): SsiClient {
 
     async logbook(token) {
       const data = await call('get_divelog', { token });
-      if (data.authenticated === false) throw new SsiError('signed_out', 'get_divelog');
       if (!Array.isArray(data.logbook_details)) throw new SsiError('bad_response', 'get_divelog: no logbook_details');
       const dives = data.logbook_details.filter(isObject)
         .filter((d) => d.odin_user_log_deleted !== 1 && d.odin_user_log_deleted !== true);
@@ -215,7 +159,6 @@ export function createSsiClient(options: SsiClientOptions): SsiClient {
 
     async cards(token) {
       const data = await call('get_ccards', { token });
-      if (data.authenticated === false) throw new SsiError('signed_out', 'get_ccards');
       if (!Array.isArray(data.ccard_list)) throw new SsiError('bad_response', 'get_ccards: no ccard_list');
       const text = (v: unknown) => (typeof v === 'string' && v.trim() !== '' ? v.trim() : typeof v === 'number' && v > 0 ? String(v) : null);
       const date = (v: unknown) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) && !v.startsWith('0000') ? v.slice(0, 10) : null);
@@ -258,7 +201,6 @@ export function createSsiClient(options: SsiClientOptions): SsiClient {
 
     async save(token, record) {
       const data = await call('save_divelog', { token }, record);
-      if (data.authenticated === false) throw new SsiError('signed_out', 'save_divelog');
       // An update answers with the usual answer wrapped in `success`: { success: { ok, error, odin_user_log_id }, result }
       // (checked 2026-10-06); a create answers it as it is.
       const answer = isObject(data.success) ? data.success : data;

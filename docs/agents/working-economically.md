@@ -2,7 +2,7 @@
 title: Working economically
 summary: Rules for LLM agents that keep a session's context small without lowering quality - sessions, hand-over prompt, reading, output, subagents, models.
 status: living
-date: 2026-10-07
+date: 2026-10-23
 ---
 
 # Working economically
@@ -41,6 +41,10 @@ Short enough to read in a minute; it points to documents instead of repeating th
 
 Anything in the prompt that is worth keeping longer than the next session belongs in `docs/` instead (Rule #1).
 
+**After a Superpowers plan** the hand-over is one line, because the plan already holds all of the above:
+`/clear`, then `Execute docs/superpowers/plans/<file>.md with superpowers:<method>.`
+([override 11](../skills.md#overrides)).
+
 ## Reading
 
 - Search first (`grep`, the editor's search tool), then read the lines around the hit.
@@ -75,8 +79,11 @@ them reads it (amendment of 2026-10-08 to ADR 0023). Say so when handing over th
 | Web research for a research note | subagent `researcher` | Sonnet |
 | "Where is X, what uses Y": a search over many files whose answer is a list of places | subagent `code-search` | Haiku |
 | Planning, design, ADRs, the data model | the session | default (Opus) |
-| Implementation | the session | default; Sonnet when the hand-over prompt says so |
+| Feature design and plan: Superpowers' `brainstorming`, `writing-plans` ([ADR 0055](../decisions/0055-local-dev-cycle.md)) | the design session | default (Opus) |
+| Feature build: implementer, task reviewers and fix rounds under `subagent-driven-development` | subagents in a fresh build session | picked by Superpowers per dispatch: cheapest tier for transcription-like tasks, standard for integration, a mid tier at least for reviewers, the most capable for the final review, one tier up for fix rounds 4 and 5 |
+| Implementation outside that flow | the session | default; Sonnet when the hand-over prompt says so |
 | Review of a diff or of screenshots | the session | default (Opus) |
+| Architecture review before finishing a branch | subagent `architecture-review` | the session's (`inherit`) |
 | Running checks | the session | — |
 
 - A subagent's task says what to return and how long (a summary with sources or paths, at most about 300 lines).

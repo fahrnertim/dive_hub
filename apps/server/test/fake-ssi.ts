@@ -2,6 +2,7 @@
 // It answers like the real one as far as the community projects describe it (docs/research/2026-10-04-ssi-api.md),
 // including what SSI does to stored values: minutes only, serial numbers without leading zeros.
 import type { Fetch, SsiRecord } from '../src/providers/ssi/ssi-client.js';
+import { DIVE_ROW } from '../src/providers/ssi/ssi-dive-row.js';
 
 export interface FakeSsiAccount {
   email: string;
@@ -89,6 +90,8 @@ export interface FakeSsi {
   expireTokens(): void;
   /** While set, every call answers with this HTTP status. */
   failWith: number | null;
+  /** How a call with an unknown (expired) token is answered; null: `authenticated: false` at 200. */
+  expiredAnswer: { status: number; body: unknown } | null;
   /** Answer saves as SSI does for a client that isn't its app: with an invented dive ID, storing nothing. */
   dropSaves: boolean;
   /** Adds a dive as if it had been logged in the SSI app. */
@@ -144,6 +147,7 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
     dives: new Map(),
     calls: [],
     failWith: null,
+    expiredAnswer: null,
     dropSaves: false,
     expireTokens: () => tokens.clear(),
     addDive(accountId, values) {
@@ -181,6 +185,10 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
         return answer({ authenticated: true, token, mid: account.accountId, authenticated_email: account.email });
       }
       const accountId = tokens.get(params.get('token') ?? '');
+      if (accountId === undefined && fake.expiredAnswer) {
+        const given = fake.expiredAnswer;
+        return { status: given.status, text: async () => (typeof given.body === 'string' ? given.body : JSON.stringify(given.body)) };
+      }
       if (accountId === undefined) return answer({ authenticated: false, authenticated_message: 'Please log in again', error_message: 'token' });
 
       if (what === 'get_divelog') {
@@ -201,6 +209,9 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
         const record = JSON.parse(new URLSearchParams(init.body ?? '').get('json_data') ?? '{}') as SsiRecord;
         const stored: SsiRecord = {
           ...record,
+          // Our assumption of SSI's read side: booleans come back as 1/0 [T] (docs/research/2026-10-23-ssi-foundation-checks.md).
+          ...Object.fromEntries(DIVE_ROW.filter(([key, type]) => type === 'bool' && typeof record[key] === 'boolean')
+            .map(([key]) => [key, record[key] === true ? 1 : 0])),
           // SSI keeps minutes and drops leading zeros of serial numbers.
           odin_user_log_datetime: typeof record.odin_user_log_datetime === 'string' ? record.odin_user_log_datetime.slice(0, 16) : null,
           odin_user_log_divecomputer_serial_nr: typeof record.odin_user_log_divecomputer_serial_nr === 'string'

@@ -1,6 +1,6 @@
 ---
 title: Guardrails for autonomous agent development
-summary: What 2026 research says about the quality and cost of agent-written code, the framework camps (spec-driven, process skills, harness engineering), how architecture stays clean under autonomy (fitness functions in the loop and in CI, a fresh-context reviewer), and what that means for Dive Hub - strong on context and cost, missing enforcement; six ranked steps. Acted on in the guardrails slice (CI, dependency-cruiser, ESLint, hooks, review agent, proposed ADR 0053).
+summary: What 2026 research says about the quality and cost of agent-written code, the framework camps (spec-driven, process skills, harness engineering), how architecture stays clean under autonomy (fitness functions in the loop and in CI, a fresh-context reviewer), and what that means for Dive Hub - strong on context and cost, missing enforcement; six ranked steps. Acted on in the guardrails slice (CI, dependency-cruiser, ESLint, hooks, review agent, ADR 0053); ends with the four-step automation ladder, whose step 2 is ADR 0054.
 status: decided
 date: 2026-10-22
 ---
@@ -113,6 +113,50 @@ TypeScript (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`);
 6. An architecture-review subagent: read-only, default model, on the slice's diff before the commit.
 7. A drift report like `token-report.mjs`: cycles, suppressions and hotspots per week.
 
-Steps 1, 3, 4, 5 and 6 were done in the guardrails slice of 2026-10-22, without refactoring; step 2 is drafted as
-[ADR 0053](../decisions/0053-module-boundaries.md) (proposed) for the owner. The refactors in steps 3 and 4 and the
-drift report (step 7) are left for later slices.
+Steps 1, 3, 4, 5 and 6 were done in the guardrails slice of 2026-10-22, without refactoring; step 2 became
+[ADR 0053](../decisions/0053-module-boundaries.md) (accepted by the owner). The drift report (step 7) came with
+[ADR 0054](../decisions/0054-unattended-implementation.md) as `scripts/drift-report.mjs`
+([first report](2026-10-23-drift-report.md)); the refactors of steps 3 and 4 are done only as far as the baselines.
+
+## Automation roadmap
+
+After the guardrails, automate implementation and then the review loop in stages, and keep design decisions and
+structural merges with the owner. No source reports reliably good results from full autonomy without a human at the
+decision points.
+
+**Why staged**
+- Gates come first: OpenAI's zero-hand-written-code project rested on engineers building checks, observability and
+  agent-to-agent review.
+- Speed gains fade while complexity debt keeps rising, so more automation without enforcement only accelerates the debt.
+- Human review becomes the bottleneck; agent PRs wait hours for a first review.
+- Cognitive debt is the main risk for a solo project: if agents write and review everything, the owner stops
+  understanding the system.
+- Unattended loops multiply token spend unless capped.
+
+**The ladder**
+
+| Step | What runs automatically | Human role | Move up when |
+|---|---|---|---|
+| 1. Supervised slices (was today) | nothing unattended | watches each session | guardrails slice merged, CI green |
+| 2. Unattended implementation | an agent picks a ready task, builds it on a branch, opens a PR | reviews and merges every PR | a few weeks of PRs that need few review rounds; drift metrics flat |
+| 3. Agent review loop | implementer and review subagents iterate, at most 3 rounds and a token budget per task | reviews what remains | review findings the owner mostly agrees with |
+| 4. Auto-merge for low-risk classes | dependency bumps, docs-only changes, refactors proven behaviour-neutral by tests and baselines | spot checks | revert rate stays low |
+
+**Never fully automated:** database migrations, auth, SSI and other provider integrations, anything that creates or
+changes an ADR, and the integrity of imported dives.
+
+**What it needs**
+- A task queue: hand-over prompts as files in `docs/backlog/`, only those marked ready are picked up.
+- Stop conditions: a token budget per task, a cap on failed check runs, and a hand-back whenever an ADR would need to change.
+- A weekly drift report: cycles, lint suppressions, complexity hotspots, cost per merged PR, revert rate. Worse numbers
+  mean a step down the ladder.
+- An owner cadence: read one module's code per week to keep knowing the system.
+
+The recommended setup the analysis closes with (a synthesis, not a sourced finding): one main agent with lean context;
+subagents only for isolated work with a compact return, chiefly fresh-context review; a cheap model for routine edits and
+a strong one for planning and architecture review, with prompt caching; a lightweight plan per feature; deterministic
+gates in the edit hook, in pre-commit and hard in CI, with merges blocked on red; test-first for logic plus integration
+tests so mocks cannot fake coverage; churn, complexity trend, revert rate and cost per merged PR tracked monthly;
+humans own the architecture, the invariants and the final merge for anything structural.
+
+Step 2 of the ladder: [ADR 0054](../decisions/0054-unattended-implementation.md).

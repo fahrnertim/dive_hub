@@ -150,6 +150,13 @@ test('a change to the edit hook runs the check script tests and lints everything
   assert.equal(planFor(['.claude/hooks/guard-memory.mjs']).scripts, false);
 });
 
+test('a change to a protected-path hook runs the script tests that cover it, and nothing else', () => {
+  for (const hook of ['.claude/hooks/ask-protected.mjs', '.claude/hooks/guard-protected.mjs']) {
+    const plan = planFor([hook]);
+    assert.deepEqual([plan.scripts, plan.lint, plan.typecheck, plan.server, plan.e2e], [true, 'none', false, 'none', 'none']);
+  }
+});
+
 test('a changed check script runs its own tests', () => {
   assert.equal(planFor(['scripts/check-lib.mjs']).scripts, true);
   assert.equal(planFor(['apps/web/src/SitesPage.tsx']).scripts, false);

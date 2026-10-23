@@ -151,12 +151,6 @@
       "skillPath": "skills/tanstack-query/SKILL.md",
       "computedHash": "c4f52bec76935d74a0bd6bcd5017119fc05e904a4c5d425f16d6b254cb69f46a"
     },
-    "tdd": {
-      "source": "mattpocock/skills",
-      "sourceType": "github",
-      "skillPath": "skills/engineering/tdd/SKILL.md",
-      "computedHash": "0c09a435ba032b151d6ecc042eee25d4bd9951bfd19262f9aa317c9923d99756"
-    },
     "ux-empty-states": {
       "source": "uxcel-lab/product-skills",
       "sourceType": "github",
