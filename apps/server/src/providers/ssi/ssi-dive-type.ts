@@ -24,8 +24,12 @@ export function diveModeOfSsi(type: unknown): DiveMode | null {
   return null;
 }
 
-/** SSI marks a training dive as its base type plus one (7 for 6, and so on): that value stays when it is ours plus one. */
+/**
+ * What an update keeps of SSI's dive type: its training variant (7 for apnea 6, and so on) when it is ours plus one,
+ * and its extended-range type (2 or 3) when ours is 0, so a round trip never downgrades it.
+ */
 export function keepTraining(remote: unknown, ours: number | null): number | null {
   const n = typeof remote === 'number' ? remote : typeof remote === 'string' && remote.trim() !== '' ? Number(remote) : NaN;
+  if (ours === 0 && (n === 2 || n === 3)) return n;
   return ours !== null && ours % 2 === 0 && n === ours + 1 ? n : ours;
 }

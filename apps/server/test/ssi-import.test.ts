@@ -176,6 +176,23 @@ describe('SSI dives for an import', () => {
     expect(fromDatasets.samples.heartRate).toEqual({ offsetsMs: [0, 5000], values: [80, 85] });
   });
 
+  it('treats SSI\'s zero (and a negative) tank pressure and heart rate as nothing', () => {
+    const base = computerDive({ at: '2025-08-11 14:00', depthM: 22, minutes: 1, manufacturer: 'Mares', product: 'Puck 4', serial: '4711' });
+    const zeros = { ...base, odin_user_log_diveSamples: JSON.stringify([{ t: 0, d: 0, pr: { t: 0, v: 0 }, hb: 0 }, { t: 5000, d: 5, pr: { t: 0, v: -1 }, hb: -3 }]) };
+    const d = parseSsiDive(withId(zeros), context)!;
+    expect(d.samples.tankPressure).toBeUndefined();
+    expect(d.samples.heartRate).toBeUndefined();
+
+    const datasets = {
+      ...handTypedDive({ at: '2025-08-11 14:00', depthM: 3, minutes: 1 }), odin_user_log_divecomputer_serial_nr: '42',
+      odin_user_log_divecomputer_manufacturer: 'Mares', odin_user_log_depthDataset: '[0.0,3.0]',
+      odin_user_log_tankPressureDataset: '[0.0,0.0]', odin_user_log_heartRateDataset: '[0,-2]',
+    };
+    const fromDatasets = parseSsiDive(withId(datasets), context)!;
+    expect(fromDatasets.samples.tankPressure).toBeUndefined();
+    expect(fromDatasets.samples.heartRate).toBeUndefined();
+  });
+
   it('skips a record without a start time', () => {
     expect(parseSsiDive(withId({ ...handTypedDive({ at: '', depthM: 3, minutes: 1 }) }), context)).toBeNull();
   });

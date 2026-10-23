@@ -268,7 +268,7 @@ export function writableRecord(remote: SsiRecord): SsiRecord {
 /** SSI's current record with the Dive's values on top; where the Dive has nothing, SSI's value stays. */
 export function updateRecord(remote: SsiRecord, d: DiveForSsi): SsiRecord {
   const fields = ownFields(d);
-  // A training variant SSI holds (7 for apnea 6) stays.
+  // A training variant SSI holds (7 for apnea 6) and its extended-range type (2, 3) stay.
   fields.odin_user_log_dive_type = keepTraining(remote.odin_user_log_dive_type, asNumber(fields.odin_user_log_dive_type));
   const own = Object.entries(fields).filter(([, v]) => v !== null);
   return { ...writableRecord(remote), ...Object.fromEntries(own), odin_user_log_id: remote.odin_user_log_id };

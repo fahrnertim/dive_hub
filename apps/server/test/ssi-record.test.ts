@@ -269,6 +269,13 @@ describe('values both sides keep', () => {
     expect(updateRecord({ ...remote, odin_user_log_dive_type: 6 }, dive({ diveMode: 'open_circuit' })).odin_user_log_dive_type).toBe(0);
   });
 
+  it('an update keeps SSI\'s extended-range type (2, 3) when ours is 0, not when ours is higher', () => {
+    expect(keepTraining(2, 0)).toBe(2);
+    expect(updateRecord({ ...remote, odin_user_log_dive_type: 2 }, dive({ diveMode: 'open_circuit', gases: [] })).odin_user_log_dive_type).toBe(2);
+    expect(updateRecord({ ...remote, odin_user_log_dive_type: 3 }, dive({ diveMode: 'open_circuit', gases: [] })).odin_user_log_dive_type).toBe(3);
+    expect(updateRecord({ ...remote, odin_user_log_dive_type: 2 }, dive({ diveMode: 'apnea' })).odin_user_log_dive_type).toBe(6);
+  });
+
   it('a Dive without a Recording leaves SSI\'s dive type, surface interval and heart rate', () => {
     const bare = dive({ diveMode: null, gases: [] });
     const r = updateRecord({ ...remote, odin_user_log_dive_type: 6, odin_user_log_si_before: 5400, odin_user_log_heartRateAvg: 70 }, bare);

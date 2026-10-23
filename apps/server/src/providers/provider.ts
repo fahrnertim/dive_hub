@@ -77,7 +77,7 @@ export interface Capabilities {
     dives?: {
       export?: DiveExport;
       import?: Direction;
-      /** Which way each value of a dive travels. Absent: every synced value is imported, as before. */
+      /** Which way each value of a dive travels. Absent: every synced value is imported, as before. Present: a value missing from the map is not imported. */
       fields?: Partial<Record<DiveField, ('import' | 'export')[]>>;
     };
     diveSites?: { import?: Direction };

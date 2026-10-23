@@ -1352,7 +1352,7 @@
       "startPressureBar": "Anfangsdruck (bar)",
       "endPressureBar": "Enddruck (bar)",
       "leadKg": "Blei (kg)",
-      "surfaceInterval": "Oberflächenpause",
+      "surfaceInterval": "Oberflächenpause (s)",
       "heartRate": "Durchschnittliche Herzfrequenz (bpm)",
       "buddies": "Buddys (Einträge deiner {{name}}-Buddyliste)"
     },
