@@ -86,7 +86,7 @@ const ProviderView = Type.Object({
       })),
       import: Nullable(Direction),
       fields: Type.Optional(Type.Record(Type.String(), Type.Array(Type.Union([Type.Literal('import'), Type.Literal('export')])), {
-        description: 'Which way each value of a dive travels; absent: every value both ways the Provider\'s operations allow; present: a value missing from the map is not imported',
+        description: 'Which way each value of a dive travels; absent: every value travels both ways as far as the Provider\'s operations allow (imported if it imports, sent if it exports); present: a value missing from the map is not imported',
       })),
     })),
     diveSites: Nullable(Type.Object({ import: Nullable(Direction) })),

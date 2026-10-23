@@ -94,7 +94,7 @@ function vitals(samples: DiveForSsi['samples'], t: number): Pick<SsiSample, 'pr'
   const heartRate = valueAt(samples.heartRate, t, 'hold');
   const cns = valueAt(samples.cns, t, 'hold');
   return {
-    // The first tank; whether the app counts from 0 is unconfirmed.
+    // The first tank: `pr` with `t: 0` is the first tank, confirmed [T] in docs/research/2026-10-24-ssi-values-checks.md.
     ...(pressure === null ? {} : { pr: { t: 0, v: round(pressure, 1) } }),
     ...(heartRate === null ? {} : { hb: Math.round(heartRate) }),
     ...(cns === null ? {} : { cn: Math.round(cns) }),

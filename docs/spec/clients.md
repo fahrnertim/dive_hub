@@ -513,7 +513,7 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
 - **Information, not a duty:** the Provider's `dives.fields` says which way each value of a Dive travels (`import`,
   `export`, or both), by name (`site`, `notes`, `buddies`, `cylinder`, `lead`, `startsAt`, `durationSeconds`, `maxDepthM`,
   `avgDepthM`, `waterTemperatureC`, `maxTemperatureC`, `gas`, `device`, `profile`, `diveType`, `surfaceInterval`,
-  `heartRate`, `tankPressure`, `cns`). A client may show it. Absent, both ways as far as the operations go. SSI's
+  `heartRate`, `tankPressure`, `cns`). A client may show it. Absent: every value travels both ways as far as the Provider's operations allow (imported if it imports, sent if it exports). Present: a value missing from the map is not imported. SSI's
   `readBackFields` also name `diveType`, `tankVolumeL`, `startPressureBar`, `endPressureBar`, `leadKg`, `surfaceInterval`
   and `heartRate`, so a difference in one of them can be shown by name.
 - **Translate provider_* codes with the Provider named** (`providerName` in the answer). *Web:* `lib/display.ts` (`useProblemText`).
