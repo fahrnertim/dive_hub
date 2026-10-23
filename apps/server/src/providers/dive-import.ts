@@ -354,9 +354,18 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     return created!.id;
   }
 
+  /** The dive mode, surface interval and average heart rate a Provider names, where it names them. */
+  function summaryValuesOf(d: ImportedDive) {
+    return {
+      ...(d.diveMode !== null && { diveMode: d.diveMode }),
+      ...(d.surfaceIntervalSeconds !== null && { surfaceIntervalSeconds: d.surfaceIntervalSeconds }),
+      ...(d.avgHeartRate !== null && { avgHeartRate: d.avgHeartRate }),
+    };
+  }
+
   /** A computer's dive as a Recording, the way a FIT file's would be (ADR 0030). */
   function asRecording(run: Run, d: ImportedDive, time: PlacedTime): ParsedRecording {
-    const series = (['depth', 'temperature', 'ndl'] as const).flatMap((channel) => {
+    const series = (['depth', 'temperature', 'ndl', 'tankPressure', 'heartRate', 'cns'] as const).flatMap((channel) => {
       const s = d.samples[channel];
       return s ? [{ channel, offsetsMs: s.offsetsMs.map(Math.round), values: s.values }] : [];
     });
@@ -369,6 +378,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       ...((d.maxTemperatureC ?? (temperatures.length ? Math.max(...temperatures) : null)) !== null
         && { maxTemperatureC: d.maxTemperatureC ?? Math.max(...temperatures) }),
       ...(d.cnsStart !== null && { cnsStart: d.cnsStart }), ...(d.cnsEnd !== null && { cnsEnd: d.cnsEnd }),
+      ...summaryValuesOf(d),
     };
     const depths = d.samples.depth?.values ?? [];
     return {
@@ -428,7 +438,9 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     };
     // The Provider's one tank can't be told to be one of several Cylinders: not compared then.
     // Nor can the Provider's one weight be told to be one of several Lead entries.
-    const fields = SYNCED_FIELDS.filter((f) => (f === 'cylinder' ? cylinders.length <= 1 : f === 'lead' ? entries.length <= 1 : !row.primaryRecordingId || !VALUE_FIELDS.includes(f)));
+    const directions = run.adapter.capabilities.data.dives?.fields;
+    const imported = (f: SyncedField) => !directions || !!directions[f]?.includes('import');
+    const fields = SYNCED_FIELDS.filter(imported).filter((f) => (f === 'cylinder' ? cylinders.length <= 1 : f === 'lead' ? entries.length <= 1 : !row.primaryRecordingId || !VALUE_FIELDS.includes(f)));
     return { row, hub, fields, people, accounts };
   }
 

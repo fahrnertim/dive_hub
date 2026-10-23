@@ -240,10 +240,16 @@ From `ownFields()` in `apps/server/src/providers/ssi/ssi-record.ts`. On an updat
 | `odin_user_log_divecomputer_imported` | `true` with a Device | the app shows a computer icon [S] |
 | `odin_user_log_divecomputer_dive_ref` | `divehub-<Dive id>` | Dive Hub's reference: finds the dive again when an answer was lost |
 | `odin_user_log_user_master_id`, `_nr`, `internalPk` | the account, SSI's dive number | |
+| `odin_user_log_dive_type` | the Recording's dive mode | apnea 6, CCR 8, SCR 4, two or more gases 2, else 0; a Dive without a Recording sends 0 on a create and leaves SSI's value on an update; SSI's training types (7, 1, 3, 5, 9) are kept. The app shows 6 as a freedive [T] ([research](../research/2026-10-24-ssi-values-checks.md#does-the-app-show-an-apnea-dive-as-a-freedive)) |
+| `odin_user_log_tank_vol_l`, `_tank_vol_cuft`, `_pressure_start_bar` / `_psi`, `_pressure_end_bar` / `_psi`, `_var_tanktype_id` | the Dive's one Cylinder | none with two or more Cylinders; tank type 19 steel, 20 aluminium. Stored as sent; the app shows type, size and both pressures [T] ([research](../research/2026-10-24-ssi-values-checks.md#does-the-app-show-the-tank-the-lead-and-the-cns)) |
+| `odin_user_log_weight_kg`, `_weight_lb` | the lead | stored as sent; the app shows the weight [T] |
+| `odin_user_log_si_before` | the Recording's surface interval | **seconds** [T], 180 to 86 400, else null ([research](../research/2026-10-24-ssi-values-checks.md#is-the-surface-interval-in-seconds-or-minutes)) |
+| `odin_user_log_heartRateAvg`, `_heartRateMin`, `_heartRateMax` | the Recording's heart rate | stored as sent [T]; the app reads the series, but a flat line is not visible as its own line [T, partial] ([research](../research/2026-10-24-ssi-values-checks.md#does-the-pressure-curve-show-and-the-heart-rate)) |
+| `odin_user_log_tankPressureDataset`, `_heartRateDataset` | the pressure and heart rate series | JSON arrays, one value per sample; stored as sent [T] |
 | `odin_user_log_depthDataset`, `_tempDataset`, `_gfSurfDataset`, `_gfnowDataset`, `_diveSamples` | Primary recording's samples | JSON **strings**; see below |
 
-Not sent (null): rating, air temperature, visibility, weight, tank, pressures, conditions other than water type, the
-leader number (`odin_user_log_leader_nr`), dive centre, wildlife, surface interval; gear is not filled, and an update keeps SSI's gear note and list. The **surface interval** (`odin_user_log_si_before`) is in minutes: the app's code takes it only from 3 to 1440 and makes seconds of it by × 60 [R] ([research note](../research/2026-10-22-ssi-app-opportunities.md#2-the-surface-interval-is-in-minutes-r)).
+Not sent (null): rating, air temperature, visibility, conditions other than water type, the
+leader number (`odin_user_log_leader_nr`), dive centre, wildlife; gear is not filled, and an update keeps SSI's gear note and list. The **surface interval** (`odin_user_log_si_before`) is in **seconds** [T] ([research note](../research/2026-10-24-ssi-values-checks.md#is-the-surface-interval-in-seconds-or-minutes)): 90 showed as 1 minute, 5400 as 1 h 30 min. Dive Hub sends it only from 180 to 86 400 s (the app's 3 to 1440 minutes [R]), else null; the older claim of minutes was wrong.
 `odin_user_log_confirmed` / `_verified` can't be set: SSI derives them from a dive centre's confirmation, so dives
 sent this way show as **unconfirmed** [S].
 
@@ -262,9 +268,11 @@ A JSON string holding an array, one object per **5 s** [S]:
 | `gs`, `gn` | GF at surface, GF now (%) | 0.0 |
 | `a` | Mares alarm bits [R] | 0 |
 | `mf` | phase bits: dive `0x08000000`, at depth `0x00010000` (from 8.5 m down until above 6 m), surfaced `0x04000000` (≤ 1 m) [S] | |
-| `o`, `dr` | open circuit, deco required [R] (`o` is not "obligation") | `o: true`, as the app writes open circuit (stored by SSI, 2026-10-23, [T], see the [research note](../research/2026-10-23-ssi-foundation-checks.md)); `dr` false |
+| `o`, `dr` | open circuit, deco required [R] (`o` is not "obligation") | `o: false` for CCR and SCR, `true` otherwise (as the app writes open circuit; stored by SSI, 2026-10-23, [T], see the [research note](../research/2026-10-23-ssi-foundation-checks.md)); `dr` false |
 | `rv` | record version, 3.0 as the app writes it [R]; the app's chart is said to hang without it [S] | 3.0 |
-| `pr` | tank pressure as `{"t": <tank index>, "v": <value>}` [R]; the community's `pressure` key is not one the app reads | not sent yet |
+| `pr` | tank pressure as `{"t": <tank index>, "v": <value>}` [R]; the community's `pressure` key is not one the app reads | sent from the Recording's tank pressure series, `t` 0 for the first tank; without a series no `pr` key at all; the app draws it as "Druck (bar)" [T] |
+| `hb` | heart rate, bpm | sent from the heart rate series (held when it ends early) [T] |
+| `cn` | CNS, % | sent from the CNS series [T] |
 
 **Types matter** [S]: the app reads `d`, `s`, `te`, `gs`, `gn` and `rv` as floating-point numbers, and an integer there
 reportedly breaks the dive's view. App 5.0.43's decoder takes any JSON number there [R], so this may hold only for an older
@@ -492,7 +500,5 @@ From the research note. Record the result here with date and app version, and tu
     has it by default; its effect with another value is unknown.
 - [ ] The first Push runs ([ADR 0047](../decisions/0047-push-runs.md)): does SSI refuse anything when 100 dives go
   5 s apart (a save, or the logbook read after it)? Record the `SSI call` line's `detail` and the count that went.
-- [ ] Surface interval: seconds or minutes. The app's code says minutes [R] (2026-10-22, see above); this check would confirm
-  it on a real record. Log a dive in the app with a known surface interval (e.g. 1 h 30 min),
-  run `round-trip.ts read`, and look at the dive's surface interval key in `samples/private/ssi/` (90 = minutes,
-  5400 = seconds).
+- [x] Surface interval: seconds or minutes. Seconds [T] (2026-10-24): 90 showed as 1 minute, 5400 as 1 h 30 min
+  ([research](../research/2026-10-24-ssi-values-checks.md#is-the-surface-interval-in-seconds-or-minutes)); the earlier [R] reading of minutes was wrong.

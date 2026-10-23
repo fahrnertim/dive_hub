@@ -9,6 +9,7 @@ import type { SiteWaterType } from '../../vocabulary.js';
 import type { OutgoingDive, Series } from '../provider.js';
 import type { SsiRecord } from './ssi-client.js';
 import { asBool, DIVE_ROW, SENT_KEYS } from './ssi-dive-row.js';
+import { keepTraining, ssiDiveType } from './ssi-dive-type.js';
 
 export type { Series };
 
@@ -18,7 +19,7 @@ export type DiveForSsi = Omit<OutgoingDive, 'siteIds'> & { siteSsiId: string };
 /** Our own fields of SSI's record, by the name the read-back reports them under. */
 export const COMPARED_FIELDS = [
   'startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM', 'waterTemperatureC', 'maxTemperatureC', 'notes', 'site', 'gas', 'device', 'profile',
-  'buddies',
+  'buddies', 'diveType', 'tankVolumeL', 'startPressureBar', 'endPressureBar', 'leadKg', 'surfaceInterval', 'heartRate',
 ] as const;
 export type ComparedField = (typeof COMPARED_FIELDS)[number];
 
@@ -28,6 +29,10 @@ const M_TO_FT = 3.28084;
 const round = (v: number, digits: number) => Math.round(v * 10 ** digits) / 10 ** digits;
 const ft = (m: number | null) => (m === null ? null : round(m * M_TO_FT, 1));
 const fahrenheit = (c: number | null) => (c === null ? null : round(c * 1.8 + 32, 1));
+const KG_TO_LB = 2.20462;
+const BAR_TO_PSI = 14.5038;
+const TANK_TYPE_IDS = { steel: 19, aluminium: 20 } as const;
+const orNull = (v: number | null | undefined, digits: number) => (v === null || v === undefined ? null : round(v, digits));
 const pad = (n: number) => String(n).padStart(2, '0');
 
 /** Local wall-clock time of the dive: SSI has no time zone. Without a known offset, UTC. */
@@ -79,10 +84,28 @@ const FLAG_SURFACED = 0x04000000;
 export interface SsiSample {
   n: number; t: number; d: number; s: number; te: number | null; ndl: number;
   gs: number; gn: number; a: number; mf: number; o: boolean; dr: boolean; rv: number;
+  /** Tank pressure (bar) of tank `t`, heart rate (bpm) and CNS (%), where the Recording has them. */
+  pr?: { t: number; v: number }; hb?: number; cn?: number;
 }
 
-/** The profile on SSI's 5 s grid: depth interpolated, temperature and NDL held from the last reading. */
-export function resample(samples: DiveForSsi['samples'], durationSeconds: number): SsiSample[] {
+/** Tank pressure, heart rate and CNS at `t`, each only where the Recording has the series. */
+function vitals(samples: DiveForSsi['samples'], t: number): Pick<SsiSample, 'pr' | 'hb' | 'cn'> {
+  const pressure = valueAt(samples.tankPressure, t, 'linear');
+  const heartRate = valueAt(samples.heartRate, t, 'hold');
+  const cns = valueAt(samples.cns, t, 'hold');
+  return {
+    // The first tank: `pr` with `t: 0` is the first tank, confirmed [T] in docs/research/2026-10-24-ssi-values-checks.md.
+    ...(pressure === null ? {} : { pr: { t: 0, v: round(pressure, 1) } }),
+    ...(heartRate === null ? {} : { hb: Math.round(heartRate) }),
+    ...(cns === null ? {} : { cn: Math.round(cns) }),
+  };
+}
+
+/**
+ * The profile on SSI's 5 s grid: depth and tank pressure interpolated, temperature, NDL, heart rate and CNS held from
+ * the last reading. A series that ends early holds its last value. `closedCircuit` is a rebreather dive.
+ */
+export function resample(samples: DiveForSsi['samples'], durationSeconds: number, closedCircuit = false): SsiSample[] {
   const depth = samples.depth;
   if (!depth || depth.offsetsMs.length === 0) return [];
   const end = Math.max(durationSeconds * 1000, depth.offsetsMs[depth.offsetsMs.length - 1]!);
@@ -103,9 +126,9 @@ export function resample(samples: DiveForSsi['samples'], durationSeconds: number
       ndl: ndlSeconds === null ? 99 : Math.max(0, Math.min(99, Math.floor(ndlSeconds / 60))),
       gs: 0, gn: 0, a: 0,
       mf: FLAG_DIVE | (atDepth ? FLAG_AT_DEPTH : 0) | (d <= 1 ? FLAG_SURFACED : 0),
-      // Open circuit, as the app sets it for every sample of a dive without a rebreather. Every dive is open
-      // circuit for now; dive type (and rebreathers) come in piece 2, and this must change then.
-      o: true, dr: false, rv: 3,
+      // Open circuit, as the app sets it for every sample of a dive without a rebreather.
+      o: !closedCircuit, dr: false, rv: 3,
+      ...vitals(samples, t),
     });
     previous = d;
   }
@@ -116,19 +139,30 @@ export function resample(samples: DiveForSsi['samples'], durationSeconds: number
 export function samplesJson(samples: SsiSample[]): string {
   return `[${samples.map((s) =>
     `{"n":${s.n},"t":${s.t},"d":${decimal(s.d)},"s":${decimal(s.s)},"te":${decimal(s.te)},"ndl":${s.ndl},`
-    + `"gs":${decimal(s.gs)},"gn":${decimal(s.gn)},"a":${s.a},"mf":${s.mf},"o":${s.o},"dr":${s.dr},"rv":${decimal(s.rv)}}`).join(',')}]`;
+    + `"gs":${decimal(s.gs)},"gn":${decimal(s.gn)},"a":${s.a},"mf":${s.mf},"o":${s.o},"dr":${s.dr},"rv":${decimal(s.rv)}`
+    + `${s.pr ? `,"pr":{"t":${s.pr.t},"v":${decimal(s.pr.v)}}` : ''}${s.hb === undefined ? '' : `,"hb":${s.hb}`}${s.cn === undefined ? '' : `,"cn":${s.cn}`}}`).join(',')}]`;
 }
 const listJson = (values: (number | null)[]) => `[${values.map(decimal).join(',')}]`;
+
+/** One value per sample, or null when no sample has the value. */
+const dataset = (samples: SsiSample[], pick: (s: SsiSample) => number | undefined) =>
+  samples.some((s) => pick(s) !== undefined) ? listJson(samples.map((s) => pick(s) ?? null)) : null;
 
 const WATER_TYPE_IDS: Partial<Record<SiteWaterType, number>> = { fresh: 4, salt: 5 };
 
 /** Fields of SSI's record that Dive Hub fills from the Dive. On an update, null leaves SSI's value. */
 export function ownFields(d: DiveForSsi): SsiRecord {
   const time = localTime(d.startsAt, d.utcOffsetSeconds);
-  const samples = resample(d.samples, d.durationSeconds);
+  const samples = resample(d.samples, d.durationSeconds, d.diveMode === 'ccr' || d.diveMode === 'scr');
   const gas = d.gases[0];
   const nitrox = gas !== undefined && gas.he === 0 && gas.o2 > 21;
   const minutes = Math.round(d.durationSeconds / 60);
+  const tank = d.cylinder;
+  const startBar = orNull(tank?.startPressureBar, 0);
+  const endBar = orNull(tank?.endPressureBar, 0);
+  const material = tank?.material;
+  const heart = d.samples.heartRate?.values ?? [];
+  const siSeconds = d.surfaceIntervalSeconds === null ? null : Math.round(d.surfaceIntervalSeconds);
   return {
     odin_user_log_datetime: time.dateTime,
     odin_user_log_date: time.date,
@@ -144,6 +178,23 @@ export function ownFields(d: DiveForSsi): SsiRecord {
     odin_user_log_watertemp_max_f: fahrenheit(d.maxTemperatureC),
     odin_user_log_var_watertype_id: d.waterType ? WATER_TYPE_IDS[d.waterType] ?? null : null,
     odin_user_log_dive_sites_id: Number(d.siteSsiId),
+    odin_user_log_dive_type: ssiDiveType(d.diveMode, d.gases.length),
+    odin_user_log_tank_vol_l: orNull(tank?.volumeL, 1),
+    odin_user_log_tank_vol_cuft: tank?.volumeL != null && tank.workingPressureBar != null
+      ? round((tank.volumeL * tank.workingPressureBar) / 1.01325 / 28.3168, 1) : null,
+    odin_user_log_pressure_start_bar: startBar,
+    odin_user_log_pressure_start_psi: startBar === null ? null : round(startBar * BAR_TO_PSI, 0),
+    odin_user_log_pressure_end_bar: endBar,
+    odin_user_log_pressure_end_psi: endBar === null ? null : round(endBar * BAR_TO_PSI, 0),
+    odin_user_log_var_tanktype_id: material === 'steel' || material === 'aluminium' ? TANK_TYPE_IDS[material] : null,
+    odin_user_log_weight_kg: orNull(d.leadKg, 1),
+    odin_user_log_weight_lb: d.leadKg === null ? null : round(d.leadKg * KG_TO_LB, 1),
+    // SSI's si_before is in seconds; the app takes 3 to 1440 minutes (180 to 86 400 s) and throws anything else away.
+    odin_user_log_si_before: siSeconds !== null && siSeconds >= 180 && siSeconds <= 86_400 ? siSeconds : null,
+    odin_user_log_heartRateAvg: d.avgHeartRate !== null ? Math.round(d.avgHeartRate)
+      : heart.length ? Math.round(heart.reduce((a, b) => a + b, 0) / heart.length) : null,
+    odin_user_log_heartRateMin: heart.length ? Math.round(Math.min(...heart)) : null,
+    odin_user_log_heartRateMax: heart.length ? Math.round(Math.max(...heart)) : null,
     odin_user_log_comment: d.notes,
     odin_user_log_ean: gas === undefined ? null : nitrox,
     odin_user_log_ean_percent: gas === undefined ? null : nitrox ? Math.round(gas.o2) : 0,
@@ -165,6 +216,8 @@ export function ownFields(d: DiveForSsi): SsiRecord {
     odin_user_log_divecomputer_imported: d.device ? true : null,
     odin_user_log_depthDataset: samples.length ? listJson(samples.map((s) => s.d)) : null,
     odin_user_log_tempDataset: samples.length ? listJson(samples.map((s) => s.te)) : null,
+    odin_user_log_tankPressureDataset: dataset(samples, (s) => s.pr?.v),
+    odin_user_log_heartRateDataset: dataset(samples, (s) => s.hb),
     odin_user_log_gfSurfDataset: samples.length ? listJson(samples.map((s) => s.gs)) : null,
     odin_user_log_gfnowDataset: samples.length ? listJson(samples.map((s) => s.gn)) : null,
     odin_user_log_diveSamples: samples.length ? samplesJson(samples) : null,
@@ -186,6 +239,8 @@ function emptyRecord(): SsiRecord {
 export function createRecord(d: DiveForSsi, ids: { number: number; accountId: string; reference: string }): SsiRecord {
   return {
     ...emptyRecord(), ...ownFields(d),
+    // A new dive without a known type is open circuit.
+    odin_user_log_dive_type: ssiDiveType(d.diveMode, d.gases.length) ?? 0,
     odin_user_log_nr: ids.number, internalPk: ids.number, odin_user_log_user_master_id: Number(ids.accountId),
     odin_user_log_divecomputer_dive_ref: ids.reference,
   };
@@ -212,7 +267,10 @@ export function writableRecord(remote: SsiRecord): SsiRecord {
 
 /** SSI's current record with the Dive's values on top; where the Dive has nothing, SSI's value stays. */
 export function updateRecord(remote: SsiRecord, d: DiveForSsi): SsiRecord {
-  const own = Object.entries(ownFields(d)).filter(([, v]) => v !== null);
+  const fields = ownFields(d);
+  // A training variant SSI holds (7 for apnea 6) and its extended-range type (2, 3) stay.
+  fields.odin_user_log_dive_type = keepTraining(remote.odin_user_log_dive_type, asNumber(fields.odin_user_log_dive_type));
+  const own = Object.entries(fields).filter(([, v]) => v !== null);
   return { ...writableRecord(remote), ...Object.fromEntries(own), odin_user_log_id: remote.odin_user_log_id };
 }
 
@@ -264,7 +322,7 @@ const datasetLength = (v: unknown) => {
 
 /**
  * Fields SSI stored differently from what we sent, read back after saving. SSI keeps minutes (time and
- * duration), so those compare to the minute; numbers within 0.06; serial numbers without leading zeros
+ * duration), so those compare to the minute; numbers within 0.06 (surface interval and heart rate within 1); serial numbers without leading zeros
  * (SSI drops them); the profile by its number of samples.
  */
 export function compareReadBack(sent: SsiRecord, stored: SsiRecord): ReadBackDifference[] {
@@ -272,11 +330,11 @@ export function compareReadBack(sent: SsiRecord, stored: SsiRecord): ReadBackDif
   const check = (field: ComparedField, a: string | number | null, b: string | number | null, same: boolean) => {
     if (!same) differences.push({ field, sent: a, stored: b });
   };
-  const num = (field: ComparedField, key: string) => {
+  const num = (field: ComparedField, key: string, tolerance = 0.06) => {
     const a = asNumber(sent[key]);
     const b = asNumber(stored[key]);
     // SSI stores "nothing" as 0 in places.
-    check(field, a, b, a === null ? b === null || b === 0 : b !== null && Math.abs(a - b) < 0.06);
+    check(field, a, b, a === null ? b === null || b === 0 : b !== null && Math.abs(a - b) < tolerance);
   };
   const sentTime = asText(sent.odin_user_log_datetime)?.slice(0, 16) ?? null;
   const storedTime = asText(stored.odin_user_log_datetime)?.replace('T', ' ').replace('+', ' ').slice(0, 16) ?? null;
@@ -286,6 +344,13 @@ export function compareReadBack(sent: SsiRecord, stored: SsiRecord): ReadBackDif
   num('avgDepthM', 'odin_user_log_avg_depth_m');
   num('waterTemperatureC', 'odin_user_log_watertemp_c');
   num('maxTemperatureC', 'odin_user_log_watertemp_max_c');
+  num('diveType', 'odin_user_log_dive_type');
+  num('tankVolumeL', 'odin_user_log_tank_vol_l');
+  num('startPressureBar', 'odin_user_log_pressure_start_bar');
+  num('endPressureBar', 'odin_user_log_pressure_end_bar');
+  num('leadKg', 'odin_user_log_weight_kg');
+  num('surfaceInterval', 'odin_user_log_si_before', 1.01);
+  num('heartRate', 'odin_user_log_heartRateAvg', 1.01);
   const notesA = asText(sent.odin_user_log_comment);
   const notesB = asText(stored.odin_user_log_comment);
   check('notes', notesA, notesB, (notesA ?? '').trim() === (notesB ?? '').trim());

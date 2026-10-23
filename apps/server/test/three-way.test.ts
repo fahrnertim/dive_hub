@@ -1,6 +1,7 @@
 // Changes made at a Provider (ADR 0030, amended): per field, taken when only the Provider changed it, a conflict when
 // both did, nothing when only Dive Hub did; compared as the Provider keeps values (minutes, 0.1 m).
 import { describe, expect, it } from 'vitest';
+import { DIVE_FIELDS } from '../src/providers/provider.js';
 import { SYNCED_FIELDS, threeWay, type Comparable, type SyncedField } from '../src/providers/three-way.js';
 
 const base: Comparable = {
@@ -12,6 +13,10 @@ const run = (provider: Partial<Comparable>, hub: Partial<Comparable>, fields: re
   threeWay(fields, base, { ...base, ...provider }, { ...base, ...hub });
 
 describe('three-way per field', () => {
+  it('every synced field is a dive field', () => {
+    expect(SYNCED_FIELDS.every((f) => (DIVE_FIELDS as readonly string[]).includes(f))).toBe(true);
+  });
+
   it('takes what only the Provider changed', () => {
     expect(run({ site: '1077045', notes: 'Napoleon' }, {})).toEqual({ take: ['site', 'notes'], conflicts: [] });
   });

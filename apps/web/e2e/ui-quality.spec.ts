@@ -1093,7 +1093,8 @@ test.describe('behaviour', () => {
     page.once('dialog', (dialog) => void dialog.dismiss()); // stay
     await page.getByRole('navigation').getByRole('link', { name: 'Divers' }).click();
     await expect(page.getByRole('textbox', { name: 'Notes' })).toHaveValue('Not saved yet');
-    expect(page.url()).toContain(`/dives/${diveId}`);
+    // The hash changes first and is put back once the question is dismissed: wait for it.
+    await expect(page).toHaveURL(new RegExp(`/dives/${diveId}`));
 
     page.once('dialog', (dialog) => void dialog.dismiss());
     await page.getByRole('button', { name: 'Cancel' }).click();

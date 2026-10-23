@@ -29,6 +29,7 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Provider', () => {
   let otherDiver: string;
   let diveId: string;
   let secondDiveId: string;
+  let hausreefId: string;
   /** Every response body, to check that no secret ever comes back. */
   const bodies: string[] = [];
 
@@ -106,6 +107,7 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Provider', () => {
         { id: '3314', name: 'Hausreef', latitude: 27.29, longitude: 33.82, country: 'EG', distanceM: null },
       ]);
       const site = (await call('POST', '/api/dive-sites', tim, { name: 'Hausreef', position: { latitude: 27.29, longitude: 33.82 }, waterType: 'salt' })).json();
+      hausreefId = site.id;
       await call('PUT', `/api/dive-sites/${site.id}/external-ids/ssi`, tim, { externalId: '3314' });
       for (const id of [diveId, secondDiveId]) {
         const { version } = (await call('GET', `/api/dives/${id}`, tim)).json();
@@ -227,6 +229,36 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Provider', () => {
       ssiDive(remoteId).odin_user_log_deleted = 1;
       expect((await send()).json()).toMatchObject({ code: 'provider_dive_gone' });
       expect((await status()).current).toBeNull();
+    });
+
+    /** A new upload on its own day, at the site of the others, ready to send. */
+    const newDive = async (start: Date, subSport?: 'apneaDiving') => {
+      const id = await upload(tim, `${start.getTime()}.fit`, makeSyntheticDive({ serialNumber: 111, start, ...(subSport && { subSport }) }));
+      const { version } = (await call('GET', `/api/dives/${id}`, tim)).json();
+      expect((await call('PATCH', `/api/dives/${id}`, tim, { version, siteId: hausreefId })).statusCode).toBe(200);
+      return id;
+    };
+
+    it('sends the dive type, the tank, the lead, the surface interval, heart rate and tank pressure', async () => {
+      const id = await newDive(new Date('2026-02-10T09:00:00Z'));
+      const { version } = (await call('GET', `/api/dives/${id}`, tim)).json();
+      const tank = { volumeL: 12, workingPressureBar: 232, material: 'steel', gas: { o2: 32, he: 0 }, startPressureBar: 200, endPressureBar: 50 };
+      expect((await call('PATCH', `/api/dives/${id}`, tim, { version, cylinders: [tank], lead: [{ amountKg: 6 }] })).statusCode).toBe(200);
+      expect((await send({}, id)).json()).toMatchObject({ outcome: 'created' });
+      const s = await status(id);
+      expect(s.pushes[0]).toMatchObject({ state: 'confirmed', differences: [] });
+      const stored = ssiDive(s.current!.remoteId);
+      expect(stored).toMatchObject({
+        odin_user_log_dive_type: 0, odin_user_log_tank_vol_l: 12, odin_user_log_pressure_start_bar: 200, odin_user_log_var_tanktype_id: 19,
+        odin_user_log_weight_kg: 6, odin_user_log_si_before: 86_400, odin_user_log_heartRateAvg: 80,
+      });
+      expect(String(stored.odin_user_log_diveSamples)).toContain('"hb":80');
+    });
+
+    it('an apnea session goes to SSI as a freedive', async () => {
+      const id = await newDive(new Date('2026-02-11T09:00:00Z'), 'apneaDiving');
+      expect((await send({}, id)).json()).toMatchObject({ outcome: 'created' });
+      expect(ssiDive((await status(id)).current!.remoteId)).toMatchObject({ odin_user_log_dive_type: 6 });
     });
 
     it('keeps other Users out', async () => {

@@ -510,6 +510,12 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
 - **Show what went wrong:** the latest Push's `failureCode` (with the Provider's name), and its read-back `differences`
   (fields stored differently, named by the Provider's `readBackFields`; show an unknown one by its name). A history of
   Pushes is optional; `remoteGone` on a confirmed delete means it was already deleted there.
+- **Information, not a duty:** the Provider's `dives.fields` says which way each value of a Dive travels (`import`,
+  `export`, or both), by name (`site`, `notes`, `buddies`, `cylinder`, `lead`, `startsAt`, `durationSeconds`, `maxDepthM`,
+  `avgDepthM`, `waterTemperatureC`, `maxTemperatureC`, `gas`, `device`, `profile`, `diveType`, `surfaceInterval`,
+  `heartRate`, `tankPressure`, `cns`). A client may show it. Absent: every value travels both ways as far as the Provider's operations allow (imported if it imports, sent if it exports). Present: a value missing from the map is not imported. SSI's
+  `readBackFields` also name `diveType`, `tankVolumeL`, `startPressureBar`, `endPressureBar`, `leadKg`, `surfaceInterval`
+  and `heartRate`, so a difference in one of them can be shown by name.
 - **Translate provider_* codes with the Provider named** (`providerName` in the answer). *Web:* `lib/display.ts` (`useProblemText`).
   - **`provider_not_stored`** is not `provider_refused`: the Provider answered that the dive was saved and it isn't
     there, which trying again doesn't fix (SSI does this to a client it takes no saves from). Say that the Provider may

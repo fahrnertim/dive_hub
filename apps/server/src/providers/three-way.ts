@@ -1,14 +1,14 @@
 // Changes made at a Provider, taken back into Dive Hub (ADR 0030, amended): a three-way comparison per field between
 // what the Provider had when Dive Hub last saw its dive (the base: the Original of the last import, or what Dive Hub
 // sent last), what it has now, and what the Dive here has now. Pure: no database.
-import type { ImportedDive, ProviderCylinder } from './provider.js';
+import type { DiveField, ImportedDive, ProviderCylinder } from './provider.js';
 import { wallClockMs } from '../dives/time-zone.js';
 
 /**
  * Fields a Provider's change can bring: on every Dive the site, notes and buddies; the tank on a Dive with at most one
  * Cylinder, and the lead on a Dive with at most one Lead entry; the values only on a Dive without a Recording.
  */
-export const SYNCED_FIELDS = ['site', 'notes', 'buddies', 'cylinder', 'lead', 'startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM', 'waterTemperatureC'] as const;
+export const SYNCED_FIELDS = ['site', 'notes', 'buddies', 'cylinder', 'lead', 'startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM', 'waterTemperatureC'] as const satisfies readonly DiveField[];
 export type SyncedField = (typeof SYNCED_FIELDS)[number];
 export const VALUE_FIELDS: readonly SyncedField[] = ['startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM', 'waterTemperatureC'];
 

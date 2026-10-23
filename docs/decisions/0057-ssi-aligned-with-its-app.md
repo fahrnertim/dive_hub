@@ -30,7 +30,9 @@ nothing of several values it imports.
 - **Both ways** (amends [0031](0031-lead-suit-cylinders-and-lead-estimate.md) and
   [0045](0045-tank-pressure-cylinders-and-sac-on-a-dive.md), "not sent to SSI"): the dive type (from the Dive's kind and
   the Primary recording's dive mode: apnea 6, CCR 8, SCR 4, extended range 2, else 0), the tank of a Dive with one
-  Cylinder, the lead, the surface interval in minutes, tank pressure in the samples, CNS and heart rate. Read back by
+  Cylinder, the lead, the surface interval in seconds (corrected 2026-10-24 by the owner's [T] check,
+  [values checks](../research/2026-10-24-ssi-values-checks.md); first written as minutes), tank pressure in the
+  samples, CNS and heart rate. Read back by
   the import under [ADR 0056](0056-two-way-exchange-and-automation.md)'s rule.
 - **Sites** (amends [0024](0024-ssi-target-via-app-api.md) and [0029](0029-push-requirements-and-buddies.md)): a Dive
   whose site has no SSI ID takes a nearby SSI site (100 m and name, [ADR 0021](0021-site-external-ids-and-import.md)), else

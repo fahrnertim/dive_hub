@@ -3,7 +3,7 @@
 // and does only what is its own. Connections, credentials, Pushes, leases, pacing, problem codes and the routes are
 // the generic layer's (connection-service.ts, push-service.ts, leases.ts, routes.ts).
 import type { CylinderMaterial, ParticipantRole, ProviderImportPlan } from '../db/schema.js';
-import type { SiteWaterType } from '../vocabulary.js';
+import type { DiveMode, SiteWaterType } from '../vocabulary.js';
 import type { SiteSource } from '../sites/sources.js';
 
 export type DiverSource = 'ssi' | 'padi';
@@ -62,12 +62,24 @@ export interface DiveExport extends Direction {
   };
 }
 
+/** Every value of a dive a Provider may keep, named as the three-way comparison and the Provider's `fields` name them. */
+export const DIVE_FIELDS = [
+  'site', 'notes', 'buddies', 'cylinder', 'lead', 'startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM', 'waterTemperatureC',
+  'maxTemperatureC', 'gas', 'device', 'profile', 'diveType', 'surfaceInterval', 'heartRate', 'tankPressure', 'cns',
+] as const;
+export type DiveField = (typeof DIVE_FIELDS)[number];
+
 export interface Capabilities {
   /** Proper name, the same in every UI language. */
   name: string;
   signIn: SignIn;
   data: {
-    dives?: { export?: DiveExport; import?: Direction };
+    dives?: {
+      export?: DiveExport;
+      import?: Direction;
+      /** Which way each value of a dive travels. Absent: every value travels both ways as far as the Provider's operations allow (imported if it imports, sent if it exports). Present: a value missing from the map is not imported. */
+      fields?: Partial<Record<DiveField, ('import' | 'export')[]>>;
+    };
     diveSites?: { import?: Direction };
     /** `find`: the account's own list of people (SSI's buddy list), through a Connection (ADR 0029). */
     buddies?: { import?: Direction };
@@ -122,23 +134,27 @@ export interface Series {
   values: number[];
 }
 
-/** A Dive as it leaves Dive Hub, the same for every Provider. Times are ours: UTC plus the offset at the dive. */
-export interface OutgoingDive {
-  startsAt: Date;
-  utcOffsetSeconds: number | null;
+/** The series a Provider may take or give, in m, °C, s, bar, bpm and %. */
+export interface ProviderSamples {
+  depth?: Series | undefined;
+  temperature?: Series | undefined;
+  ndl?: Series | undefined;
+  tankPressure?: Series | undefined;
+  heartRate?: Series | undefined;
+  cns?: Series | undefined;
+}
+
+/** What a dive has on both sides: the values Dive Hub sends to a Provider and reads back from it. */
+export interface ProviderDive {
   durationSeconds: number;
   maxDepthM: number | null;
   avgDepthM: number | null;
   /** Lowest water temperature, as on the Dive. */
   waterTemperatureC: number | null;
   maxTemperatureC: number | null;
-  /** The Dive site's water type (ADR 0025). */
-  waterType: SiteWaterType | null;
   notes: string | null;
   /** The Dive site's External IDs by Source (e.g. its SSI site ID). */
   siteIds: Partial<Record<SiteSource, string>>;
-  /** Who else was on the Dive (ADR 0028); the adapter takes the reference it needs from `ids`. */
-  participants: OutgoingParticipant[];
   entry: { latitude: number; longitude: number } | null;
   exit: { latitude: number; longitude: number } | null;
   /** The first gas is the one single-gas logbooks describe. */
@@ -148,7 +164,25 @@ export interface OutgoingDive {
   cnsStart: number | null;
   cnsEnd: number | null;
   device: { manufacturer: string; product: string | null; serialNumber: string; firmware: string | null } | null;
-  samples: { depth?: Series | undefined; temperature?: Series | undefined; ndl?: Series | undefined };
+  samples: ProviderSamples;
+  /** The one tank; null when the Dive has none or several. */
+  cylinder: ProviderCylinder | null;
+  /** The weight in kg; null when there is none. */
+  leadKg: number | null;
+  diveMode: DiveMode | null;
+  /** Seconds since the previous dive ended. */
+  surfaceIntervalSeconds: number | null;
+  avgHeartRate: number | null;
+}
+
+/** A Dive as it leaves Dive Hub, the same for every Provider. Times are ours: UTC plus the offset at the dive. */
+export interface OutgoingDive extends ProviderDive {
+  startsAt: Date;
+  utcOffsetSeconds: number | null;
+  /** The Dive site's water type (ADR 0025). */
+  waterType: SiteWaterType | null;
+  /** Who else was on the Dive (ADR 0028); the adapter takes the reference it needs from `ids`. */
+  participants: OutgoingParticipant[];
 }
 
 /** A dive as the Provider keeps it, in typed values. */
@@ -291,7 +325,7 @@ export interface DiveListing {
  * A dive as a Provider keeps it, in typed values (ADR 0030). `evidence` says how it got there: `ours` carries Dive Hub's
  * reference, `computer` was synced from a dive computer (a profile and a serial number), `logbook` was typed by hand.
  */
-export interface ImportedDive {
+export interface ImportedDive extends ProviderDive {
   remoteId: string;
   remoteNumber: number | null;
   evidence: 'ours' | 'computer' | 'logbook';
@@ -299,31 +333,10 @@ export interface ImportedDive {
   reference: string | null;
   /** The local wall-clock start, "YYYY-MM-DD HH:MM[:SS]", without a time zone. */
   localStart: string;
-  durationSeconds: number;
-  maxDepthM: number | null;
-  avgDepthM: number | null;
-  /** Lowest and highest water temperature. */
-  waterTemperatureC: number | null;
-  maxTemperatureC: number | null;
-  entry: { latitude: number; longitude: number } | null;
-  exit: { latitude: number; longitude: number } | null;
-  /** The dive's site at the Provider: its IDs by site Source, and its position from the context. */
-  siteIds: Partial<Record<SiteSource, string>>;
+  /** The dive's site at the Provider: its position from the context (its IDs are `siteIds`). */
   sitePosition: { latitude: number; longitude: number } | null;
-  device: { manufacturer: string; product: string | null; serialNumber: string; firmware: string | null } | null;
-  samples: { depth?: Series | undefined; temperature?: Series | undefined; ndl?: Series | undefined };
-  gases: { o2: number; he: number }[];
-  gfLow: number | null;
-  gfHigh: number | null;
-  cnsStart: number | null;
-  cnsEnd: number | null;
   /** The people on the dive, as their accounts at the Provider (Diver External IDs at `accountSource`). */
   people: string[];
-  notes: string | null;
-  /** The one tank a logbook entry describes, as typed there (ADR 0031, 0045); null when it gives no volume and no pressure. */
-  cylinder: ProviderCylinder | null;
-  /** The weight typed at the Provider, in kg (ADR 0031); null when it gives none (0 counts as none). */
-  leadKg: number | null;
 }
 
 /** A Provider's single tank: what it keeps of a Cylinder. A value it doesn't have is null. */
@@ -332,6 +345,8 @@ export interface ProviderCylinder {
   material: CylinderMaterial | null;
   startPressureBar: number | null;
   endPressureBar: number | null;
+  /** Not compared; used only for `tank_vol_cuft`. */
+  workingPressureBar?: number | null;
   /** In percent. */
   gas: { o2: number; he: number } | null;
 }

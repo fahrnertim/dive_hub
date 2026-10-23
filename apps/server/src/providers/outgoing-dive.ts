@@ -3,12 +3,34 @@
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { device, dive, diveSite, diveSiteExternalId, diverExternalId, recording, sampleSeries } from '../db/schema.js';
+import { cylindersOf, providerCylinderOf } from '../dives/cylinders.js';
 import { managedDiverIds, participantsOf } from '../dives/dive-service.js';
+import { leadOf, leadTotalKg } from '../dives/weighting.js';
 import type { SiteSource } from '../sites/sources.js';
 import type { DiverSource, OutgoingDive, OutgoingParticipant, Series } from './provider.js';
 import { ProviderServiceError } from './registry.js';
 
 export type DiveRow = typeof dive.$inferSelect;
+
+/** The Dive site's ids at the services that know it, and its position and water. */
+async function outgoingSite(db: Db | Tx, siteId: string | null) {
+  if (!siteId) return { siteIds: {} as Partial<Record<SiteSource, string>>, site: undefined };
+  const ids = await db.select({ source: diveSiteExternalId.source, externalId: diveSiteExternalId.externalId })
+    .from(diveSiteExternalId).where(eq(diveSiteExternalId.siteId, siteId));
+  const [site] = await db.select({ latitude: diveSite.latitude, longitude: diveSite.longitude, waterType: diveSite.waterType }).from(diveSite).where(eq(diveSite.id, siteId));
+  return { siteIds: Object.fromEntries(ids.map((r) => [r.source, r.externalId])) as Partial<Record<SiteSource, string>>, site };
+}
+
+/** Who else was on the Dive, with their accounts at services: all an adapter may know of them (ADR 0029). */
+async function outgoingParticipants(db: Db | Tx, diveId: string): Promise<OutgoingParticipant[]> {
+  const people = await participantsOf(db, diveId);
+  const accounts = people.length === 0 ? [] : await db.select().from(diverExternalId)
+    .where(inArray(diverExternalId.diverId, people.map((p) => p.diverId)));
+  return people.map((p) => ({
+    ...p,
+    ids: Object.fromEntries(accounts.filter((a) => a.diverId === p.diverId).map((a) => [a.source, a.externalId])) as Partial<Record<DiverSource, string>>,
+  }));
+}
 
 /**
  * The Dive and what leaves Dive Hub of it, if the User manages its Diver (else `dive_not_found`). A deleted Dive only
@@ -20,28 +42,18 @@ export async function loadOutgoingDive(db: Db | Tx, userId: string, diveId: stri
   const [rec] = row.primaryRecordingId ? await db.select().from(recording).where(eq(recording.id, row.primaryRecordingId)) : [];
   const [dev] = rec?.deviceId ? await db.select().from(device).where(eq(device.id, rec.deviceId)) : [];
   const series = rec
-    ? await db.select().from(sampleSeries).where(and(eq(sampleSeries.recordingId, rec.id), inArray(sampleSeries.channel, ['depth', 'temperature', 'ndl'])))
+    ? await db.select().from(sampleSeries).where(and(eq(sampleSeries.recordingId, rec.id), inArray(sampleSeries.channel, ['depth', 'temperature', 'ndl', 'tankPressure', 'heartRate', 'cns'])))
     : [];
   const channel = (name: string): Series | undefined => {
     const s = series.find((x) => x.channel === name);
     return s ? { offsetsMs: s.offsetsMs, values: s.values } : undefined;
   };
-  const siteIds = row.siteId
-    ? Object.fromEntries((await db.select({ source: diveSiteExternalId.source, externalId: diveSiteExternalId.externalId })
-      .from(diveSiteExternalId).where(eq(diveSiteExternalId.siteId, row.siteId))).map((r) => [r.source, r.externalId])) as Partial<Record<SiteSource, string>>
-    : {};
-  const [site] = row.siteId
-    ? await db.select({ latitude: diveSite.latitude, longitude: diveSite.longitude, waterType: diveSite.waterType }).from(diveSite).where(eq(diveSite.id, row.siteId))
-    : [];
-  // Who else was on it, with their accounts at services: all an adapter may know of them (ADR 0029).
-  const people = await participantsOf(db, row.id);
-  const accounts = people.length === 0 ? [] : await db.select().from(diverExternalId)
-    .where(inArray(diverExternalId.diverId, people.map((p) => p.diverId)));
-  const participants: OutgoingParticipant[] = people.map((p) => ({
-    ...p,
-    ids: Object.fromEntries(accounts.filter((a) => a.diverId === p.diverId).map((a) => [a.source, a.externalId])) as Partial<Record<DiverSource, string>>,
-  }));
+  const { siteIds, site } = await outgoingSite(db, row.siteId);
+  const participants = await outgoingParticipants(db, row.id);
   const summary = rec?.summary ?? {};
+  // One tank only: with two or more Cylinders the Provider's one tank can't be told (ADR 0031, 0057).
+  const cylinders = await cylindersOf(db, row.id);
+  const tank = cylinders.length === 1 ? cylinders[0]! : null;
   const outgoing: OutgoingDive = {
     startsAt: row.startsAt, utcOffsetSeconds: row.utcOffsetSeconds, durationSeconds: row.durationSeconds,
     maxDepthM: row.maxDepthM, avgDepthM: row.avgDepthM, waterTemperatureC: row.waterTemperatureC,
@@ -54,7 +66,13 @@ export async function loadOutgoingDive(db: Db | Tx, userId: string, diveId: stri
     gases: (summary.gases ?? []).map(({ o2, he }) => ({ o2, he })),
     gfLow: summary.gfLow ?? null, gfHigh: summary.gfHigh ?? null, cnsStart: summary.cnsStart ?? null, cnsEnd: summary.cnsEnd ?? null,
     device: dev ? { manufacturer: dev.manufacturer, product: dev.product, serialNumber: dev.serialNumber, firmware: dev.firmware } : null,
-    samples: { depth: channel('depth'), temperature: channel('temperature'), ndl: channel('ndl') },
+    samples: {
+      depth: channel('depth'), temperature: channel('temperature'), ndl: channel('ndl'),
+      tankPressure: channel('tankPressure'), heartRate: channel('heartRate'), cns: channel('cns'),
+    },
+    cylinder: tank && { ...providerCylinderOf(tank), workingPressureBar: tank.workingPressureBar },
+    leadKg: leadTotalKg(await leadOf(db, row.id)),
+    diveMode: summary.diveMode ?? null, surfaceIntervalSeconds: summary.surfaceIntervalSeconds ?? null, avgHeartRate: summary.avgHeartRate ?? null,
   };
   const sitePosition = site?.latitude != null && site.longitude != null ? { latitude: site.latitude, longitude: site.longitude } : null;
   // Where to look for the Provider's sites: the Dive site, else where the Device placed the dive.

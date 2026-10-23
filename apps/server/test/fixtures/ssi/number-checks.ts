@@ -67,7 +67,7 @@ export async function runNumberChecks(o: NumberChecks): Promise<void> {
       startsAt: new Date('2000-01-01T12:00:00Z'), utcOffsetSeconds: 0, durationSeconds: 1800, maxDepthM: 12, avgDepthM: 8,
       waterTemperatureC: 20, maxTemperatureC: 21, waterType: 'fresh', notes: 'Dive Hub number test – delete me',
       siteSsiId, participants: [], entry: null, exit: null, gases: [{ o2: 21, he: 0 }], gfLow: null, gfHigh: null,
-      cnsStart: null, cnsEnd: null, device: null,
+      cnsStart: null, cnsEnd: null, device: null, cylinder: null, leadKg: null, diveMode: null, surfaceIntervalSeconds: null, avgHeartRate: null,
       samples: { depth: { offsetsMs: [0, 300_000, 900_000, 1_500_000, 1_800_000], values: [0, 12, 12, 3, 0] }, temperature: { offsetsMs: [0], values: [20] } },
     };
     // 1. the logbook as it is

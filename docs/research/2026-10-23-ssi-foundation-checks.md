@@ -37,3 +37,4 @@ Run on 2026-10-23 with SSI app version 5.0.43 on the owner's account. The first 
 - Stored: nothing changed.
 - Result [T]: open. Both times the token was still accepted (HTTP 200, a normal logbook answer with no `status` and no `authenticated` key, the same top-level keys in both runs), so how SSI answers an expired token is still unknown. The age reached is 3.3 h.
 - For the code: the transport reads a body `status` 401, or `authenticated: false` outside sign-in, as signed out under any HTTP status. No expired-token answer has been seen yet, so this rule is not tested. Run `expired` again with an older token.
+- Owner, 2026-10-23: never had to sign in again in the SSI app since this work began, so a token probably lasts weeks [S]; the check stays open until `expired` sees one fail.
