@@ -24,7 +24,8 @@ nothing of several values it imports.
   in the [SSI reference](../references/ssi-app-api.md) carries its source: **[R]** read in the app or on the wire,
   **[T]** tested on the owner's account (new), **[S]** reported by others, **[?]** unknown.
 - **The record and the answers.** A save sends every key of the app's dive row with the app's types (booleans as
-  booleans); an update keeps every key SSI returned, known or not. An answer is read as the app reads it: 2xx, a body
+  booleans); an update takes every one of those keys from the record SSI
+  returned, so nothing of the row is lost, and sends no key the app doesn't send. An answer is read as the app reads it: 2xx, a body
   `status: 401` is signed out under any HTTP status, 503 is maintenance.
 - **Both ways** (amends [0031](0031-lead-suit-cylinders-and-lead-estimate.md) and
   [0045](0045-tank-pressure-cylinders-and-sac-on-a-dive.md), "not sent to SSI"): the dive type (from the Dive's kind and

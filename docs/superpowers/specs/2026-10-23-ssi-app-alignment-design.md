@@ -146,7 +146,8 @@ automatic exchange without clash handling would overwrite edits made in SSI's ap
 
 1. **Foundation.** Dive-row declaration and transport (above). Fixes from the review: the six keys an update drops
    (`odin_user_log_gear_details`, `log_extended_data_latitude`, `_longitude`, `_conservatism`, `_decomodel`,
-   `_libdivecomputer_identifier_base64`), and the writable copy keeps any key SSI returned; `o` in samples is "open
+   `_libdivecomputer_identifier_base64`), and the writable copy takes every key of the app's row (plus `odin_user_log_date` and `_entry_time`, which the app
+   also sends) from SSI's record, and nothing else, as the app does; `o` in samples is "open
    circuit" (true for open circuit); booleans as booleans; a body `status: 401` is `signed_out`; 503 is a maintenance
    reason; outdated comments. The check modes and the [T] marker. **Checks first:** do gear notes survive an update
    today; how does an expired token answer `get_divelog`.
