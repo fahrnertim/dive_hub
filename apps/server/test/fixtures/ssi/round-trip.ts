@@ -25,10 +25,16 @@
 //     what was sent and what SSI stored (only these two dives). Look at them in the MySSI app, then run finish: it deletes
 //     the dives and checks they are gone. The IDs come from the arguments, else from samples/private/ssi/values.json
 //     (saved by start); it only deletes a dive whose notes start with "Dive Hub test".
-// write, number, omitted, values and expired sign in when SSI_EMAIL and SSI_PASSWORD are set, else use the token kept by "read".
+//   … round-trip.ts clear start | clear finish   (needs SSI_SITE_ID for start)
+//     start creates one throwaway dive dated 2000-01-03 (lead, tank, average depth, water temperature), updates it up to
+//     three times with null, then "", then 0 for those keys and prints, per key, what was sent and what SSI stored (only this
+//     dive); the SSI ID goes to samples/private/ssi/clear.json. finish deletes the dive (only if its notes start with
+//     "Dive Hub test") and checks it is gone.
+// write, number, omitted, values, clear and expired sign in when SSI_EMAIL and SSI_PASSWORD are set, else use the token kept by "read".
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
+import { finishClearChecks, startClearChecks } from './clear-checks.js';
 import { runNumberChecks } from './number-checks.js';
 import { finishValuesChecks, startValuesChecks } from './values-checks.js';
 import { userAgent } from '../../../src/sites/import/polite-http.js';
@@ -170,6 +176,17 @@ if (mode === 'read') {
   const given = process.argv.slice(4).filter((a) => /^\d+$/.test(a));
   const ids = given.length ? given : (JSON.parse(await readFile(`${out}values.json`, 'utf8')) as { ids: string[] }).ids;
   await finishValuesChecks({ client, access: account.token, log: console.log }, ids);
+} else if (mode === 'clear' && process.argv[3] === 'start') {
+  const account = await access();
+  const siteId = process.env.SSI_SITE_ID;
+  if (!siteId) throw new Error('Set SSI_SITE_ID to a site ID from your SSI logbook (see logbook.json after "read")');
+  const id = await startClearChecks({ client, access: account.token, accountId: account.accountId, siteId, log: console.log });
+  await save('clear', { id });
+  console.log(`Run \`clear finish\` to delete SSI dive ${id}.`);
+} else if (mode === 'clear' && process.argv[3] === 'finish') {
+  const account = await access();
+  const { id } = JSON.parse(await readFile(`${out}clear.json`, 'utf8')) as { id: string };
+  await finishClearChecks({ client, access: account.token, log: console.log }, id);
 } else if (mode === 'expired') {
   const { token, at } = JSON.parse(await readFile(tokenFile, 'utf8')) as { token: string; at: string };
   const hours = ((Date.now() - Date.parse(at)) / 3_600_000).toFixed(1);
@@ -199,5 +216,5 @@ if (mode === 'read') {
     + `status: ${JSON.stringify(seen.status)}; authenticated: ${JSON.stringify(seen.authenticated)}`);
   await save('expired', result);
 } else {
-  console.log('Usage: round-trip.ts read | token | write [--pause] | number [--pause] | number --dive <SSI dive ID> --to <n> | omitted start | omitted finish | values start | values finish [<SSI dive ID>…] | expired');
+  console.log('Usage: round-trip.ts read | token | write [--pause] | number [--pause] | number --dive <SSI dive ID> --to <n> | omitted start | omitted finish | values start | values finish [<SSI dive ID>…] | clear start | clear finish | expired');
 }
