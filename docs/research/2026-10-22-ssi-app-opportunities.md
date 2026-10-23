@@ -1,6 +1,6 @@
 ---
 title: What the SSI app's code offers Dive Hub (app 5.0.43)
-summary: A pass over the decompiled MySSI app for what Dive Hub could use. The sample record has 37 keys (tank pressure is `pr`, not `pressure`; `o` is open circuit); the surface interval is in minutes; `odin_user_log_dive_type` separates scuba, freediving and rebreathers, which Dive Hub always sends as 0; SSI's logbook history holds the dives before the logbook. With a ranked list of improvements, none decided.
+summary: A pass over the decompiled MySSI app for what Dive Hub could use. The sample record has 37 keys (tank pressure is `pr`, not `pressure`; `o` is open circuit); the surface interval is in minutes (Corrected 2026-10-24: seconds [T], see [values checks](2026-10-24-ssi-values-checks.md)); `odin_user_log_dive_type` separates scuba, freediving and rebreathers, which Dive Hub always sends as 0; SSI's logbook history holds the dives before the logbook. With a ranked list of improvements, none decided.
 status: open
 date: 2026-10-22
 ---
@@ -58,6 +58,8 @@ in the app and the type the app's decoder accepts:
 (24 h in minutes) and turns into seconds elsewhere with `siBeforeInSeconds = siBefore × 60`. So the key holds **minutes**.
 This settles the owner's open check in the reference (minutes, not seconds); a real record would confirm it.
 
+Corrected 2026-10-24: seconds [T], see [values checks](2026-10-24-ssi-values-checks.md).
+
 ## 3. The dive type [R]
 
 `odin_user_log_dive_type` is the app's `DiveType`: 0 scuba, 1 scuba training, 2 extended range, 3 extended range training,
@@ -88,7 +90,7 @@ number is the index is [?], no record of another type seen). From a computer the
 | 2 | Send the tank: `_tank_vol_l`, `_pressure_start_bar` / `_end_bar` (and the psi / cuft twins), `_var_tanktype_id` (19 steel, 20 alu) for a Dive with one Cylinder | Dive Hub imports SSI's tank three-way (ADR 0045) but never sends one, so a tank typed in Dive Hub never reaches SSI | small | an ADR amendment (ADR 0045's "it sends no tank"); read-back comparison |
 | 3 | Send the lead as `odin_user_log_weight_kg` / `_lb` | the import reads it (ADR 0031) but "not sent to SSI"; the same one-way gap | small | the same amendment to ADR 0031 |
 | 4 | Send tank pressure in the samples (`pr: {t: 0, v: bar}`) and `tankPressureDataset` for a Cylinder tied to a pod series | SSI's app draws the pressure curve; Dive Hub has the series | medium | a check in the app that the curve shows |
-| 5 | Send `odin_user_log_si_before` in minutes | Dive Hub has the surface interval (`surfaceIntervalSeconds`) | small | none beyond item 2's test pattern |
+| 5 | Send `odin_user_log_si_before` in minutes (corrected 2026-10-24: seconds [T], see [values checks](2026-10-24-ssi-values-checks.md)) | Dive Hub has the surface interval (`surfaceIntervalSeconds`) | small | none beyond item 2's test pattern |
 | 6 | Send CNS, heart rate (`cn`, `hb`; `heartRateDataset`, `_Min` / `_Max` / `_Avg`) and the NDL / deco stop / TTS of the computer (`ndl`, `de`, `dr`, `asc`?) | richer profile at SSI from FIT data | medium | the units of `asc` and `p` [?] |
 | 7 | Offer SSI's `history_scuba_totaldives` as "dives before this logbook" on an SSI import | saves typing a number the person already keeps at SSI | small | a read of the answer's shape (one capture) |
 | 8 | Import SSI's gear list into Equipment items | ADR 0034 put "SSI's gear later"; the write bodies are known | large | its own ADR |

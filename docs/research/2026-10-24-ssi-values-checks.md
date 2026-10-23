@@ -9,8 +9,6 @@ date: 2026-10-24
 
 Run by the controller with the kept token, announced in the session: `values start` on 2026-10-23, the owner's look in the app and `values finish` on 2026-10-24. Site 83913 (the one the earlier `write` check used). MySSI app on the owner's phone, German UI; app version 5.0.43 per the plan, not re-read on screen. Background: [the plan](../superpowers/plans/2026-10-23-ssi-both-ways.md), [the foundation checks](2026-10-23-ssi-foundation-checks.md), [the opportunities note](2026-10-22-ssi-app-opportunities.md). [T] means tested on the owner's account.
 
-ADR 0057 says minutes; the check shows seconds — the ADR needs a correction by the owner.
-
 ## What was sent, and what SSI stored
 
 Two throwaway dives dated 2000-01-02, noted "Dive Hub test", sent by key name with the full record. The read-back comparison printed an empty list for both: every new key came back as sent [T].
@@ -40,9 +38,8 @@ Two throwaway dives dated 2000-01-02, noted "Dive Hub test", sent by key name wi
 - Sent: `odin_user_log_si_before` 90 on dive B, meaning 90 minutes as the plan, the review note and ADR 0057 had it.
 - Stored: 90.
 - App: "Oberflächenpause 00:01 Stunden": the app read 90 as seconds. A one-off update (owner-approved) set the key to 5400: the app then showed "01:30 Stunden" and "Ofl Vorher 1 h 30 min".
-- Result [T]: **`odin_user_log_si_before` is in seconds.** The earlier [R] claim (the app's code takes minutes, 3 to 1440, and multiplies by 60) was a reading of user input in the app's form, not of this stored key. Code fixed in commit 8142f3b: Dive Hub sends and reads seconds, and sends `null` outside 180 to 86 400 s (the app's 3 to 1440 minutes). That limit stays [R] and was not tested: it is a controller ruling.
+- Result [T]: **`odin_user_log_si_before` is in seconds.** The earlier [R] claim (minutes) read the Mares header field, which is in minutes, 3 to 1440, and is multiplied by 60 into seconds (per [the opportunities note](2026-10-22-ssi-app-opportunities.md)); it is not user input in the app's form (the owner could not edit the surface interval in the app), and the stored key holds the seconds. Code fixed in commit 8142f3b: Dive Hub sends and reads seconds, and sends `null` outside 180 to 86 400 s (the app's 3 to 1440 minutes). That limit stays [R] and was not tested: it is a controller ruling. An apnea surface interval under 3 min (180 s) is therefore not sent.
 - The owner could not edit the surface interval in the app (it seems to come only from dive computers). None of the owner's 84 logbook dives has `si_before` set.
-- ADR 0057 says minutes; the check shows seconds — the ADR needs a correction by the owner.
 
 ## Does the pressure curve show, and the heart rate?
 
@@ -58,5 +55,5 @@ Two throwaway dives dated 2000-01-02, noted "Dive Hub test", sent by key name wi
 
 ## For the code and the docs
 
-- Seconds for `si_before`, in code (8142f3b) and in [the reference](../references/ssi-app-api.md). ADR 0057, the plan's value list and the opportunities note's section 2 still say minutes; ADR 0057 is proposed and needs the owner's correction.
+- Seconds for `si_before`, in code (8142f3b) and in [the reference](../references/ssi-app-api.md). ADR 0057 says minutes and is proposed: it needs the owner's correction. The plan's original value line is kept, with a correction beside it; the opportunities note's section 2 and the decompilation review carry a correction pointer.
 - Still open: the limit of 180 to 86 400 s [R], and a visible heart rate line (needs a varying series).

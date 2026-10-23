@@ -268,7 +268,7 @@ A JSON string holding an array, one object per **5 s** [S]:
 | `gs`, `gn` | GF at surface, GF now (%) | 0.0 |
 | `a` | Mares alarm bits [R] | 0 |
 | `mf` | phase bits: dive `0x08000000`, at depth `0x00010000` (from 8.5 m down until above 6 m), surfaced `0x04000000` (≤ 1 m) [S] | |
-| `o`, `dr` | open circuit, deco required [R] (`o` is not "obligation") | `o: true`, as the app writes open circuit (stored by SSI, 2026-10-23, [T], see the [research note](../research/2026-10-23-ssi-foundation-checks.md)); `dr` false |
+| `o`, `dr` | open circuit, deco required [R] (`o` is not "obligation") | `o: false` for CCR and SCR, `true` otherwise (as the app writes open circuit; stored by SSI, 2026-10-23, [T], see the [research note](../research/2026-10-23-ssi-foundation-checks.md)); `dr` false |
 | `rv` | record version, 3.0 as the app writes it [R]; the app's chart is said to hang without it [S] | 3.0 |
 | `pr` | tank pressure as `{"t": <tank index>, "v": <value>}` [R]; the community's `pressure` key is not one the app reads | sent from the Recording's tank pressure series, `t` 0 for the first tank; without a series no `pr` key at all; the app draws it as "Druck (bar)" [T] |
 | `hb` | heart rate, bpm | sent from the heart rate series (held when it ends early) [T] |

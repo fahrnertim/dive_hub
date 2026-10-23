@@ -43,7 +43,7 @@ Ordered by value for the effort; the first block only fills keys that are `null`
 | Dive type from the dive mode (or keep apnea out of a Push) | `recording.summary.diveMode` | owner's check that SSI shows it; ADR 0029 note |
 | Tank: volume, start/end pressure, tank type 19/20 | `cylinder` rows | amend ADR 0045 ("sends no tank") |
 | Lead as `weight_kg`/`_lb` | `leadKg` on import side | amend ADR 0031 |
-| Surface interval in minutes (`si_before`) | `summary.surfaceIntervalSeconds` | none |
+| Surface interval in minutes (`si_before`) (corrected 2026-10-24: seconds [T], see [values checks](2026-10-24-ssi-values-checks.md)) | `summary.surfaceIntervalSeconds` | none |
 | Tank pressure in the samples (`pr: {t, v}`) and `tankPressureDataset` | pressure series tied to a Cylinder | a look in the app that the curve shows |
 | Add a missing buddy with `save_buddy` instead of leaving the Participant out | Diver's SSI account, name | ADR 0029 amendment; writes to the buddy list |
 | "Dives before this logbook" from `get_divelog_history` / `user_no_dives` | ADR 0048 number | one read of the answer's shape |
