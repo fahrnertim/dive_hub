@@ -5,7 +5,7 @@
 // nothing personal of a buddy is stored.
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { importJob, original } from '../src/db/schema.js';
+import { dive, importJob, original, recording, revision, sampleSeries } from '../src/db/schema.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { createFakeSsi, computerDive, handTypedDive, type FakeSsiBuddy } from './fake-ssi.js';
@@ -106,7 +106,14 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
     add('atSite', handTypedDive({ at: '2025-08-10 10:00', depthM: 20, minutes: 45, siteId: 3314, nr: 70, tempC: 27 }));
     add('nearby', handTypedDive({ at: '2025-08-12 09:00', depthM: 15, minutes: 50, nr: 72 }));
     add('nowhere', handTypedDive({ at: '2024-02-01 09:00', depthM: 12, minutes: 40, nr: 50 }));
-    add('computer', computerDive({ at: '2025-08-11 14:00', depthM: 22, minutes: 40, manufacturer: 'Garmin', product: 'Descent Mk3', serial: '3333', siteId: 3314, nr: 71 }));
+    // With the values SSI's app keeps beside the profile: the dive type, the interval before, the heart rate and the tank.
+    const withSamples = computerDive({ at: '2025-08-11 14:00', depthM: 22, minutes: 40, manufacturer: 'Garmin', product: 'Descent Mk3', serial: '3333', siteId: 3314, nr: 71 });
+    const profile = (JSON.parse(String(withSamples.odin_user_log_diveSamples)) as Record<string, unknown>[])
+      .map((s, i) => ({ ...s, pr: { t: 0, v: 200 - i / 10 }, hb: 80, cn: 5 }));
+    add('computer', {
+      ...withSamples, odin_user_log_diveSamples: JSON.stringify(profile),
+      odin_user_log_dive_type: 8, odin_user_log_si_before: 90, odin_user_log_heartRateAvg: 80,
+    });
     add('ours', { ...handTypedDive({ at: '2025-09-01 10:00', depthM: 10, minutes: 30 }), odin_user_log_divecomputer_dive_ref: 'divehub-0190a3f2-0000-7000-8000-000000000001' });
     add('between', handTypedDive({ at: '2026-02-01 10:20', depthM: 18, minutes: 30, nr: 81 }));
     add('turnsAmbiguous', handTypedDive({ at: '2026-03-01 10:05', depthM: 18, minutes: 10, nr: 82 }));
@@ -195,6 +202,13 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
       expect(await status(d.id)).toMatchObject({ current: { remoteId: remote.computer, upToDate: true } });
       const devices = (await call('GET', '/api/devices')).json() as { manufacturer: string; serialNumber: string }[];
       expect(devices).toEqual(expect.arrayContaining([expect.objectContaining({ manufacturer: 'garmin', serialNumber: '3333' })]));
+    });
+
+    it('a dive SSI\'s app synced from a computer becomes a Recording with its dive mode, surface interval, heart rate and tank pressure', async () => {
+      const [rec] = await t.db.select().from(recording).where(eq(recording.diveId, of('computer').diveId!));
+      expect(rec!.summary).toMatchObject({ diveMode: 'ccr', surfaceIntervalSeconds: 5400, avgHeartRate: 80 });
+      const channels = (await t.db.select().from(sampleSeries).where(eq(sampleSeries.recordingId, rec!.id))).map((s) => s.channel);
+      expect(channels).toEqual(expect.arrayContaining(['depth', 'tankPressure', 'heartRate', 'cns']));
     });
 
     it('never imports back what Dive Hub sent', () => {
@@ -465,6 +479,23 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
       await runImport();
       expect(await lead(never)).toEqual([{ amountKg: 7, placement: null }]);
     }, 30_000);
+
+    it('the values of a Recording are not taken back onto a Dive that has one', async () => {
+      const id = fit.a!;
+      const primary = async () => {
+        const [row] = await t.db.select({ summary: recording.summary }).from(dive).innerJoin(recording, eq(recording.id, dive.primaryRecordingId)).where(eq(dive.id, id));
+        return row!.summary.diveMode ?? null;
+      };
+      const before = await primary();
+      const revisions = async () => (await t.db.select().from(revision).where(eq(revision.entityId, id))).length;
+      const count = await revisions();
+      ctx.fakeSsi.dives.get(Number(remote.matching))!.odin_user_log_dive_type = 8;
+      const p = (await preview()) as unknown as { conflicts: unknown[] };
+      expect(p.conflicts).toEqual([]);
+      await runImport();
+      expect(await primary()).toBe(before);
+      expect(await revisions()).toBe(count);
+    });
 
     it('only adds to Dives here when told so', async () => {
       await call('PATCH', `/api/connections/${connectionId}`, { diveImport: { mode: 'add' } });

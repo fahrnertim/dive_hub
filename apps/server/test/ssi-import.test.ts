@@ -128,6 +128,54 @@ describe('SSI dives for an import', () => {
     expect(parseSsiDive(withId(dive), context)!.leadKg).toBeNull();
   });
 
+  it('reads the dive type as a dive mode', () => {
+    const dive = handTypedDive({ at: '2025-08-10 10:00', depthM: 18, minutes: 45 });
+    const mode = (type: unknown) => parseSsiDive(withId({ ...dive, odin_user_log_dive_type: type }), context)!.diveMode;
+    expect([6, 7, 8, 5, 2].map(mode)).toEqual(['apnea', 'apnea', 'ccr', 'scr', 'open_circuit']);
+    expect(mode(42)).toBeNull();
+    expect(parseSsiDive(withId(dive), context)!.diveMode).toBeNull();
+  });
+
+  it('reads the surface interval in minutes, only where the app takes it', () => {
+    const dive = handTypedDive({ at: '2025-08-10 10:00', depthM: 18, minutes: 45 });
+    const interval = (minutes: unknown) => parseSsiDive(withId({ ...dive, odin_user_log_si_before: minutes }), context)!.surfaceIntervalSeconds;
+    expect(interval(90)).toBe(5400);
+    expect(interval(2)).toBeNull();
+    expect(interval(2000)).toBeNull();
+    expect(parseSsiDive(withId(dive), context)!.surfaceIntervalSeconds).toBeNull();
+  });
+
+  it('reads the average heart rate where it is positive, also of a logbook entry', () => {
+    const dive = handTypedDive({ at: '2025-08-10 10:00', depthM: 18, minutes: 45 });
+    expect(parseSsiDive(withId({ ...dive, odin_user_log_heartRateAvg: 72 }), context)).toMatchObject({ evidence: 'logbook', avgHeartRate: 72, samples: {} });
+    expect(parseSsiDive(withId({ ...dive, odin_user_log_heartRateAvg: 0 }), context)!.avgHeartRate).toBeNull();
+  });
+
+  it('reads tank pressure, heart rate and CNS from the samples, and the datasets without them', () => {
+    const base = computerDive({ at: '2025-08-11 14:00', depthM: 22, minutes: 1, manufacturer: 'Mares', product: 'Puck 4', serial: '4711' });
+    const withSamples = {
+      ...base,
+      odin_user_log_diveSamples: JSON.stringify([
+        { t: 0, d: 0, pr: { t: 0, v: 200 }, hb: 80, cn: 5 },
+        { t: 5000, d: 5, pr: { t: 1, v: 150 }, hb: 85, cn: 6 },
+        { t: 10_000, d: 6, pr: { t: 0, v: 190 } },
+      ]),
+    };
+    const d = parseSsiDive(withId(withSamples), context)!;
+    expect(d.samples.tankPressure).toEqual({ offsetsMs: [0, 10_000], values: [200, 190] });
+    expect(d.samples.heartRate).toEqual({ offsetsMs: [0, 5000], values: [80, 85] });
+    expect(d.samples.cns).toEqual({ offsetsMs: [0, 5000], values: [5, 6] });
+
+    const datasets = {
+      ...handTypedDive({ at: '2025-08-11 14:00', depthM: 3, minutes: 1 }), odin_user_log_divecomputer_serial_nr: '42',
+      odin_user_log_divecomputer_manufacturer: 'Mares', odin_user_log_depthDataset: '[0.0,3.0]',
+      odin_user_log_tankPressureDataset: '[200.0,190.0]', odin_user_log_heartRateDataset: '[80,85]',
+    };
+    const fromDatasets = parseSsiDive(withId(datasets), context)!;
+    expect(fromDatasets.samples.tankPressure).toEqual({ offsetsMs: [0, 5000], values: [200, 190] });
+    expect(fromDatasets.samples.heartRate).toEqual({ offsetsMs: [0, 5000], values: [80, 85] });
+  });
+
   it('skips a record without a start time', () => {
     expect(parseSsiDive(withId({ ...handTypedDive({ at: '', depthM: 3, minutes: 1 }) }), context)).toBeNull();
   });

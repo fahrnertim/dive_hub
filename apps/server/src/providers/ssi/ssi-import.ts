@@ -5,6 +5,7 @@ import type { SsiLogbook, SsiRecord } from './ssi-client.js';
 import { alpha2Of } from '../../sites/countries.js';
 import { buddyIdsOf, SAMPLE_INTERVAL_MS } from './ssi-record.js';
 import { asBool } from './ssi-dive-row.js';
+import { diveModeOfSsi } from './ssi-dive-type.js';
 
 /** The parser a Recording made from an SSI dive names (data model: Recording). */
 export const SSI_PARSER = { name: 'ssi-app-api', version: '1' };
@@ -13,6 +14,7 @@ const numberOf = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? 
   : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : null);
 /** SSI stores "nothing" as 0 in places: a depth, a temperature or a position of 0 counts as none. */
 const positive = (v: unknown) => { const n = numberOf(v); return n !== null && n !== 0 ? n : null; };
+const positiveOnly = (v: unknown) => { const n = numberOf(v); return n !== null && n > 0 ? n : null; };
 const text = (v: unknown) => (typeof v === 'string' && v.trim() !== '' ? v.trim() : typeof v === 'number' ? String(v) : null);
 
 /** The context of a logbook (ADR 0030): buddy-list entry → SSI account, SSI site → name and position. No names of people. */
@@ -45,12 +47,30 @@ function json(v: unknown): unknown {
   }
 }
 
-/** The profile: SSI's samples (every 5 s, `t` in ms), else its depth and temperature datasets on the same grid. */
+/** The tank pressure of the lowest tank index among the samples (`pr: {t, v}`); other tanks are left out. */
+function tankPressureOf(samples: unknown[]): Series | undefined {
+  const readings = samples.flatMap((s, i) => {
+    if (typeof s !== 'object' || s === null) return [];
+    const o = s as Record<string, unknown>;
+    const pr = typeof o.pr === 'object' && o.pr !== null ? o.pr as Record<string, unknown> : null;
+    const v = pr ? numberOf(pr.v) : null;
+    return pr && v !== null ? [{ tank: numberOf(pr.t) ?? 0, offsetMs: numberOf(o.t) ?? i * SAMPLE_INTERVAL_MS, v }] : [];
+  });
+  if (readings.length === 0) return undefined;
+  const first = Math.min(...readings.map((r) => r.tank));
+  const own = readings.filter((r) => r.tank === first);
+  return { offsetsMs: own.map((r) => r.offsetMs), values: own.map((r) => r.v) };
+}
+
+/** The profile: SSI's samples (every 5 s, `t` in ms), else its datasets on the same grid. */
 function samplesOf(r: SsiRecord): ImportedDive['samples'] {
   const series = () => ({ offsetsMs: [] as number[], values: [] as number[] });
   const depth = series();
   const temperature = series();
   const ndl = series();
+  const heartRate = series();
+  const cns = series();
+  let tankPressure: Series | undefined;
   const samples = json(r.odin_user_log_diveSamples);
   if (Array.isArray(samples) && samples.length > 0) {
     samples.forEach((s: unknown, i) => {
@@ -64,17 +84,34 @@ function samplesOf(r: SsiRecord): ImportedDive['samples'] {
       // SSI's no-deco limit is in minutes, at most 99 (which also stands for "none"); ours is in seconds.
       const limit = numberOf(o.ndl);
       if (limit !== null && limit < 99) { ndl.offsetsMs.push(t); ndl.values.push(limit * 60); }
+      const hb = numberOf(o.hb);
+      if (hb !== null) { heartRate.offsetsMs.push(t); heartRate.values.push(hb); }
+      const cn = numberOf(o.cn);
+      if (cn !== null) { cns.offsetsMs.push(t); cns.values.push(cn); }
     });
+    tankPressure = tankPressureOf(samples);
   } else {
     const fill = (target: Series, values: unknown) => {
       if (!Array.isArray(values)) return;
       values.forEach((v, i) => { const n = numberOf(v); if (n !== null) { target.offsetsMs.push(i * SAMPLE_INTERVAL_MS); target.values.push(n); } });
     };
+    const pressure = series();
     fill(depth, json(r.odin_user_log_depthDataset));
     fill(temperature, json(r.odin_user_log_tempDataset));
+    fill(pressure, json(r.odin_user_log_tankPressureDataset));
+    fill(heartRate, json(r.odin_user_log_heartRateDataset));
+    tankPressure = pressure;
   }
-  const some = (s: Series) => (s.values.length > 0 ? s : undefined);
-  return { depth: some(depth), temperature: some(temperature), ndl: some(ndl) };
+  const some = (s: Series | undefined) => (s && s.values.length > 0 ? s : undefined);
+  return {
+    depth: some(depth), temperature: some(temperature), ndl: some(ndl), tankPressure: some(tankPressure), heartRate: some(heartRate), cns: some(cns),
+  };
+}
+
+/** SSI's `si_before`, minutes since the last dive: the app takes 3 to 1440, so only those are read, in seconds. */
+function surfaceIntervalOf(v: unknown): number | null {
+  const minutes = numberOf(v);
+  return minutes !== null && minutes >= 3 && minutes <= 1440 ? minutes * 60 : null;
 }
 
 /** The dive computer SSI names, if it names one with a serial number. SSI drops leading zeros of serial numbers. */
@@ -172,7 +209,8 @@ export function parseSsiDive(r: SsiRecord, context: ImportContext, givenId?: str
     cylinder: cylinderOf(r, gases[0] ?? null),
     // SSI's weight, as typed; 0 is what an empty field reads as.
     leadKg: positive(r.odin_user_log_weight_kg),
-    // Read from SSI's dive type, interval and heart rate in a later task.
-    diveMode: null, surfaceIntervalSeconds: null, avgHeartRate: null,
+    diveMode: diveModeOfSsi(r.odin_user_log_dive_type),
+    surfaceIntervalSeconds: surfaceIntervalOf(r.odin_user_log_si_before),
+    avgHeartRate: positiveOnly(r.odin_user_log_heartRateAvg),
   };
 }

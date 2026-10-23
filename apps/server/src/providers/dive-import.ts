@@ -354,9 +354,18 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     return created!.id;
   }
 
+  /** The dive mode, surface interval and average heart rate a Provider names, where it names them. */
+  function summaryValuesOf(d: ImportedDive) {
+    return {
+      ...(d.diveMode !== null && { diveMode: d.diveMode }),
+      ...(d.surfaceIntervalSeconds !== null && { surfaceIntervalSeconds: d.surfaceIntervalSeconds }),
+      ...(d.avgHeartRate !== null && { avgHeartRate: d.avgHeartRate }),
+    };
+  }
+
   /** A computer's dive as a Recording, the way a FIT file's would be (ADR 0030). */
   function asRecording(run: Run, d: ImportedDive, time: PlacedTime): ParsedRecording {
-    const series = (['depth', 'temperature', 'ndl'] as const).flatMap((channel) => {
+    const series = (['depth', 'temperature', 'ndl', 'tankPressure', 'heartRate', 'cns'] as const).flatMap((channel) => {
       const s = d.samples[channel];
       return s ? [{ channel, offsetsMs: s.offsetsMs.map(Math.round), values: s.values }] : [];
     });
@@ -369,6 +378,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       ...((d.maxTemperatureC ?? (temperatures.length ? Math.max(...temperatures) : null)) !== null
         && { maxTemperatureC: d.maxTemperatureC ?? Math.max(...temperatures) }),
       ...(d.cnsStart !== null && { cnsStart: d.cnsStart }), ...(d.cnsEnd !== null && { cnsEnd: d.cnsEnd }),
+      ...summaryValuesOf(d),
     };
     const depths = d.samples.depth?.values ?? [];
     return {
