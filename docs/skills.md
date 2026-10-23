@@ -105,6 +105,11 @@ Where a skill and this project disagree, these rules win. They lived in AGENTS.m
      is proposed to the owner and lives in the repository; project conventions go into `docs/`, not into a skill.
   10. **Diagnosing.** `diagnosing-superpowers` keeps its workspace in `~/.superpowers/`; filing an issue or sharing a
       bundle needs the owner's yes, as the skill itself says.
+  11. **Execution hand-off.** `writing-plans` ends the design session (owner, 2026-10-23): once the owner has approved
+      the plan and chosen the execution method, don't invoke `subagent-driven-development` or `executing-plans` in that
+      session. Commit the design doc and plan, then give the owner one line to paste after `/clear`:
+      `Execute docs/superpowers/plans/<file>.md with superpowers:<method>.` The plan carries the rest; a fresh
+      run re-reads the plan, not the design conversation ([ADR 0039](decisions/0039-working-economically.md)).
 - **vercel-react-best-practices**: our web client is a Vite SPA, not Next.js. Ignore the
   `server-*` rules (React Server Components, server actions).
 - **tanstack-query-best-practices**: community skill, not from TanStack; official docs win on conflict.

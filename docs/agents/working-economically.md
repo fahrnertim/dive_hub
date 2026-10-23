@@ -41,6 +41,10 @@ Short enough to read in a minute; it points to documents instead of repeating th
 
 Anything in the prompt that is worth keeping longer than the next session belongs in `docs/` instead (Rule #1).
 
+**After a Superpowers plan** the hand-over is one line, because the plan already holds all of the above:
+`/clear`, then `Execute docs/superpowers/plans/<file>.md with superpowers:<method>.`
+([override 11](../skills.md#overrides)).
+
 ## Reading
 
 - Search first (`grep`, the editor's search tool), then read the lines around the hit.
