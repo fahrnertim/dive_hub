@@ -168,6 +168,52 @@ automatic exchange without clash handling would overwrite edits made in SSI's ap
 
 **Later:** gear and gear sets, after equipment.
 
+## Piece 3, settled 2026-10-24
+
+From a second session with the owner, before piece 3's plan. It fills what the "Exchange" section above leaves open.
+Recorded in [ADR 0056](../../decisions/0056-two-way-exchange-and-automation.md) (amended 2026-10-24).
+
+- **A clash in a manual send from the Dive's page is asked there** (owner): the User is at it, so "Needs your
+  decision" would only add clicks. Nothing is sent; the answer lists each clashed field with both values (as `exists`
+  does for a dive at the same time), the User picks "keep Dive Hub's" or "take SSI's" per field and sends again with
+  the choices. One save at the Provider; the read again in that case is accepted.
+- **A clash in a Push run waits in "Needs your decision"** (owner): a run may be 100 paced dives, so it doesn't stop.
+  The dive is sent without the clashed fields (they stay as the Provider has them), one entry per Dive and Connection
+  waits, and the run's report says how many with a link there. Push runs are the first user of these entries; piece 6
+  reuses them. Like gone dives ([ADR 0051](../../decisions/0051-dives-gone-at-a-provider.md)), they are stored per
+  Connection and shown on the Review page and in the logbook's strip.
+- **An emptied field is a change like any other, both ways** (owner, on the owner's worry that removals would be
+  blocked). Today a null in an update leaves the Provider's value (`ssi-record.ts`), so a note removed here stays in
+  SSI. With a base: removed here (base had it, the Provider still has it) → sent as a removal; removed at the Provider
+  → taken as a removal here; removed on one side and changed on the other → a clash; removed on both → nothing. Without
+  a base the Provider's value stays, as today. Exceptions (my call, the owner agreed): the **site** is never cleared by
+  the Provider (SSI needs one; ADR 0030 stays); **values from a Recording** are send-only and put back on the next
+  send. **Tank and lead** take a removal at the Provider: the Dive's one Cylinder or its one Lead entry is removed,
+  unless a Recording brought it. This changes ADR 0031's and ADR 0045's "never removes" (owner: "what I would expect").
+- **Dive type** (correction, found while planning): a Dive without a Recording has no dive mode of its own (no column),
+  so there is nothing for SSI's dive type to come back into. The send leaves SSI's value there (`null` on an update),
+  so nothing is overwritten either; it stays out of the comparison.
+- **Word:** the glossary's **Conflict** (a value changed in two places since their last common state) is what this
+  design calls a clash; code, API and UI say conflict, as the import preview does.
+- **Folded in from piece 2** (owner): the Provider's `fields` governs the send, the import's fill and `asRecording`, not
+  only the three-way import; an outgoing test for the `tankPressure` and `cns` channels; one number parser in
+  `ssi-dive-type.ts`. **Kept parked:** the 180–86 400 s limit of `si_before` [R] (it needs a check of its own).
+- **A send without a base** (owner: "push it out"): a Dive linked to a dive already at the Provider and never imported
+  has no base. Its first update sends Dive Hub's values as today, and fills what is empty here from the Provider's
+  record; no clash is raised. From then on the sent payload is the base.
+- **Resolving an entry** (my call, from the builder check; revised while planning): both choices on the Review page
+  run the same send as the Dive's page, with the choices (no queue before piece 6): "take <Provider>'s" is taken from
+  the record read in that send, "keep Dive Hub's" is sent in it. One code path, and the Provider's value is fresh, not
+  the one stored when the entry was made. A manual send while an entry is open for the Dive and Connection asks those
+  fields on the Dive's page and closes the entry. While an entry is open, each of its fields counts as a conflict as
+  long as the two sides differ, whatever the base says (the base moved with the send that left the field out).
+- **A key the Provider can't clear** (my call): the check whether SSI clears a key sent empty runs early in the plan,
+  before the removal is built. A field it can't clear is reported in the send's answer as not removable there, and the
+  base moves so it isn't tried again on every send.
+- **The check on the owner's account** (announced first): notes changed in SSI's app and lead changed in Dive Hub, then
+  a send: the note comes back, the lead goes out, nothing is overwritten. Then a note removed in Dive Hub, a send: it is
+  gone in SSI's app (not yet known [?] whether SSI clears a key sent as null or empty).
+
 ## For the equipment work (owner, recorded here so it isn't lost)
 
 Equipment items ([ADR 0034](../../decisions/0034-equipment-items-and-service-schedules.md), not built yet) need **item groups**: a base

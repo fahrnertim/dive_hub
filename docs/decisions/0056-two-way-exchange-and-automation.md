@@ -1,6 +1,6 @@
 ---
 title: "ADR 0056: Two-way exchange and automation for integrations"
-summary: For every Provider, the send gets the import's three-way rule (a change made only at the Provider comes back instead of being overwritten; a change on both sides is a clash), unattended clashes wait in "Needs your decision" per Dive and Connection, and a Connection can send on change (one coalesced entry per Dive, sent after 2 quiet minutes, skipped when the fingerprint is unchanged), send new Dives and delete at the Provider by setting (both off by default), and fetch on a schedule no faster than the Provider declares; unattended runs renew a sign-in only with a kept password. Amends 0026, 0027, 0030, 0038, 0047.
+summary: For every Provider, the send gets the import's three-way rule (a change made only at the Provider comes back instead of being overwritten; a change on both sides is a clash), unattended clashes wait in "Needs your decision" per Dive and Connection, and a Connection can send on change (one coalesced entry per Dive, sent after 2 quiet minutes, skipped when the fingerprint is unchanged), send new Dives and delete at the Provider by setting (both off by default), and fetch on a schedule no faster than the Provider declares; unattended runs renew a sign-in only with a kept password. Amended 2026-10-24 - a manual send asks a clash on the Dive's page, a Push run leaves it in "Needs your decision"; a removal is a change both ways (tank and lead too, amending 0031 and 0045). Amends 0026, 0027, 0030, 0031, 0038, 0045, 0047.
 status: proposed
 date: 2026-10-23
 ---
@@ -59,6 +59,21 @@ Proposed – 2026-10-23. From the owner's design session of 2026-10-23
 ### Signing in unattended
 - A Connection that keeps the sealed password renews an expired token by itself. One with a token only pauses its
   queue and schedule and shows `provider_sign_in_needed` until the User signs in.
+
+## Amended 2026-10-24 (owner, before piece 3's plan)
+From the [design's "Piece 3" section](../superpowers/specs/2026-10-23-ssi-app-alignment-design.md#piece-3-settled-2026-10-24).
+- **A manual send from the Dive's page asks a clash there:** nothing is sent; the answer lists the clashed fields with
+  both values; the User chooses per field and sends again. "Needs your decision" is for runs: a **Push run**
+  ([ADR 0047](0047-push-runs.md)) sends the Dive without the clashed fields and leaves an entry there, as unattended
+  runs do.
+- **A removal is a change** in both directions, against the base: removed on one side only, it is removed on the other;
+  removed on one and changed on the other, a clash. Without a base the Provider's value stays. The site is never
+  cleared by the Provider ([ADR 0030](0030-importing-dives-from-providers.md) stays); values from a Recording stay
+  send-only.
+- **Amends [ADR 0031](0031-lead-suit-cylinders-and-lead-estimate.md) and
+  [ADR 0045](0045-tank-pressure-cylinders-and-sac-on-a-dive.md) ("never removes"):** a weight or tank emptied at the
+  Provider removes the Dive's one Lead entry or its one Cylinder, unless a Recording brought it.
+- **The Provider's `fields`** governs every direction: the send, the import's three-way and its fill.
 
 ## Consequences
 - A change made in a Provider's app is no longer lost when Dive Hub sends first.
