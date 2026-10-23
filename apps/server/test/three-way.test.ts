@@ -17,7 +17,6 @@ describe('three-way per field', () => {
     expect(SYNCED_FIELDS.every((f) => (DIVE_FIELDS as readonly string[]).includes(f))).toBe(true);
   });
 
-
   it('takes what only the Provider changed', () => {
     expect(run({ site: '1077045', notes: 'Napoleon' }, {})).toEqual({ take: ['site', 'notes'], conflicts: [] });
   });

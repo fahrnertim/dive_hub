@@ -134,7 +134,7 @@ export interface Series {
   values: number[];
 }
 
-/** The series a Provider may take or give, in m, °C, s, bar, bpm and %. */
+/** The series a Provider may take or give, in m, Â°C, s, bar, bpm and %. */
 export interface ProviderSamples {
   depth?: Series | undefined;
   temperature?: Series | undefined;

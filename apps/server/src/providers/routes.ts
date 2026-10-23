@@ -271,7 +271,7 @@ export function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Sta
           readBackFields: exports.readBackFields ?? [], numbers: exports.numbers ?? null,
         } : null,
         import: direction(dives.import),
-        ...(dives.fields && { fields: dives.fields as Record<string, ('import' | 'export')[]> }),
+        ...(dives.fields && { fields: dives.fields }),
       } : null,
       diveSites: c.data.diveSites ? { import: direction(c.data.diveSites.import) } : null,
       buddies: c.data.buddies ? { import: direction(c.data.buddies.import) } : null,
