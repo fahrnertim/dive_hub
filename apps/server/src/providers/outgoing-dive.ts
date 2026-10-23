@@ -55,6 +55,8 @@ export async function loadOutgoingDive(db: Db | Tx, userId: string, diveId: stri
     gfLow: summary.gfLow ?? null, gfHigh: summary.gfHigh ?? null, cnsStart: summary.cnsStart ?? null, cnsEnd: summary.cnsEnd ?? null,
     device: dev ? { manufacturer: dev.manufacturer, product: dev.product, serialNumber: dev.serialNumber, firmware: dev.firmware } : null,
     samples: { depth: channel('depth'), temperature: channel('temperature'), ndl: channel('ndl') },
+    // The values Tasks 2 and 5 fill.
+    cylinder: null, leadKg: null, diveMode: null, surfaceIntervalSeconds: null, avgHeartRate: null,
   };
   const sitePosition = site?.latitude != null && site.longitude != null ? { latitude: site.latitude, longitude: site.longitude } : null;
   // Where to look for the Provider's sites: the Dive site, else where the Device placed the dive.

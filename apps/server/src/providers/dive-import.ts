@@ -428,7 +428,9 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     };
     // The Provider's one tank can't be told to be one of several Cylinders: not compared then.
     // Nor can the Provider's one weight be told to be one of several Lead entries.
-    const fields = SYNCED_FIELDS.filter((f) => (f === 'cylinder' ? cylinders.length <= 1 : f === 'lead' ? entries.length <= 1 : !row.primaryRecordingId || !VALUE_FIELDS.includes(f)));
+    const directions = run.adapter.capabilities.data.dives?.fields;
+    const imported = (f: SyncedField) => !directions || !!directions[f]?.includes('import');
+    const fields = SYNCED_FIELDS.filter(imported).filter((f) => (f === 'cylinder' ? cylinders.length <= 1 : f === 'lead' ? entries.length <= 1 : !row.primaryRecordingId || !VALUE_FIELDS.includes(f)));
     return { row, hub, fields, people, accounts };
   }
 

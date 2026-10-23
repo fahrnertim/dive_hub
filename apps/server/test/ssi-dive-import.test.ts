@@ -6,6 +6,8 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { importJob, original } from '../src/db/schema.js';
+import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
+import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { createFakeSsi, computerDive, handTypedDive, type FakeSsiBuddy } from './fake-ssi.js';
 import { makeSyntheticDive, type SyntheticDiveOptions } from './fixtures/synthetic-dive.js';
 import {
@@ -472,4 +474,45 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
       expect(of('late')).toMatchObject({ result: 'skipped', reason: 'no_match' });
     });
   });
+});
+
+describe.skipIf(!(await databaseReachable()))('a field the Provider does not import', () => {
+  it('is never taken back', async () => {
+    const t = await createTestDatabase();
+    const fakeSsi = createFakeSsi();
+    // SSI's adapter under another id, declaring that it takes notes from Dive Hub and never gives them back.
+    const ssi = createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch }), now: () => 0 });
+    const exportOnly = {
+      ...ssi, id: 'ssi_notes_out',
+      capabilities: { ...ssi.capabilities, data: { ...ssi.capabilities.data, dives: { ...ssi.capabilities.data.dives, fields: { notes: ['export' as const] } } } },
+    };
+    const ctx = await createTestApp(t, { fakeSsi, extraProviders: [exportOnly] });
+    try {
+      await createUser(ctx.auth, 'tim@example.com');
+      const cookie = await signIn(ctx.app, 'tim@example.com');
+      const call = async (method: 'GET' | 'POST' | 'PATCH', url: string, payload?: object) =>
+        ctx.app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload && { payload }) });
+      const own = ((await call('GET', '/api/divers')).json() as { id: string; isOwn: boolean }[]).find((d) => d.isOwn)!.id;
+      const connectionId = (await call('POST', '/api/connections/ssi_notes_out', { diverId: own, login: 'erika@example.com', password: 'ssi-password', keepSignedIn: false })).json().id;
+      await call('PATCH', `/api/connections/${connectionId}`, { diveImport: { mode: 'create' } });
+      const remoteId = ctx.fakeSsi.addDive(ERIKA, handTypedDive({ at: '2025-08-10 10:00', depthM: 20, minutes: 45, comment: 'First', nr: 70 }));
+      const runImport = async () => {
+        ctx.ssiClock.advance(5 * 60_000);
+        const started = await call('POST', `/api/connections/${connectionId}/dive-import`, { computers: [], decisions: [], conflicts: [] });
+        await ctx.imports.processImport(started.json().id);
+        return ((await call('GET', `/api/imports/${started.json().id}`)).json() as { outcome: { diveId?: string }[] }).outcome;
+      };
+      const id = (await runImport())[0]!.diveId!;
+      ctx.fakeSsi.dives.get(Number(remoteId))!.odin_user_log_comment = 'Changed at SSI';
+      ctx.ssiClock.advance(5 * 60_000);
+      const preview = (await call('GET', `/api/connections/${connectionId}/dive-import`)).json() as { counts: Record<string, number>; conflicts: unknown[] };
+      await runImport();
+      expect(((await call('GET', `/api/dives/${id}`)).json() as { notes: string | null }).notes).toBe('First');
+      expect(preview.conflicts).toEqual([]);
+      expect(preview.counts).toMatchObject({ changed: 0 });
+    } finally {
+      await ctx.app.close();
+      await t.drop();
+    }
+  }, 30_000);
 });

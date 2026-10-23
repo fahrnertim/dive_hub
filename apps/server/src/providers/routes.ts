@@ -85,6 +85,9 @@ const ProviderView = Type.Object({
         }, { description: 'ADR 0048: null when the Provider numbers by itself. Else a Connection can be set to number dives here as in Dive Hub (diveNumbers.follow)' })),
       })),
       import: Nullable(Direction),
+      fields: Type.Optional(Type.Record(Type.String(), Type.Array(Type.Union([Type.Literal('import'), Type.Literal('export')])), {
+        description: 'Which way each value of a dive travels; absent: every value both ways the Provider\'s operations allow',
+      })),
     })),
     diveSites: Nullable(Type.Object({ import: Nullable(Direction) })),
     buddies: Nullable(Type.Object({ import: Nullable(Direction) }, {
@@ -268,6 +271,7 @@ export function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Sta
           readBackFields: exports.readBackFields ?? [], numbers: exports.numbers ?? null,
         } : null,
         import: direction(dives.import),
+        ...(dives.fields && { fields: dives.fields as Record<string, ('import' | 'export')[]> }),
       } : null,
       diveSites: c.data.diveSites ? { import: direction(c.data.diveSites.import) } : null,
       buddies: c.data.buddies ? { import: direction(c.data.buddies.import) } : null,

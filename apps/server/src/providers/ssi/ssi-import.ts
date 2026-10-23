@@ -172,5 +172,7 @@ export function parseSsiDive(r: SsiRecord, context: ImportContext, givenId?: str
     cylinder: cylinderOf(r, gases[0] ?? null),
     // SSI's weight, as typed; 0 is what an empty field reads as.
     leadKg: positive(r.odin_user_log_weight_kg),
+    // Read from SSI's dive type, interval and heart rate in a later task.
+    diveMode: null, surfaceIntervalSeconds: null, avgHeartRate: null,
   };
 }

@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { PARTICIPANT_ROLES } from '../src/db/schema.js';
 import {
-  FIND_BY, OPERATIONS, ProviderError, type ActionContext, type OutgoingDive, type OutgoingParticipant, type ProviderAdapter,
+  DIVE_FIELDS, FIND_BY, OPERATIONS, ProviderError, type ActionContext, type OutgoingDive, type OutgoingParticipant, type ProviderAdapter,
   type SignInInput,
 } from '../src/providers/provider.js';
 import { SITE_SOURCES } from '../src/sites/sources.js';
@@ -95,6 +95,15 @@ export function providerContract(name: string, make: () => ContractHarness) {
       for (const secret of h.secrets) expect((error as Error).message).not.toContain(secret);
       return (error as ProviderError).reason;
     };
+
+    it("declares each value's directions only for directions it has", () => {
+      const dives = make().adapter.capabilities.data.dives;
+      for (const [field, directions] of Object.entries(dives?.fields ?? {})) {
+        expect(DIVE_FIELDS).toContain(field);
+        if (directions.includes('import')) expect(dives?.import, `${field} imports`).toBeDefined();
+        if (directions.includes('export')) expect(dives?.export, `${field} exports`).toBeDefined();
+      }
+    });
 
     it('declares capabilities that match what it does', () => {
       const { adapter } = make();

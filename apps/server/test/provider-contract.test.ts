@@ -15,6 +15,7 @@ const dive: OutgoingDive = {
   participants: [], entry: null, exit: null, gases: [{ o2: 32, he: 0 }], gfLow: 40, gfHigh: 85, cnsStart: 0, cnsEnd: 12,
   device: { manufacturer: 'garmin', product: 'Descent Mk3', serialNumber: '0111', firmware: '1.0' },
   samples: { depth: { offsetsMs: [0, 60_000, 2_340_000, 2_400_000], values: [0, 18.2, 3, 0] } },
+  cylinder: null, leadKg: null, diveMode: null, surfaceIntervalSeconds: null, avgHeartRate: null,
 };
 
 providerContract('SSI', () => {

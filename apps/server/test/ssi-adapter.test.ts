@@ -11,6 +11,7 @@ const dive = (start: string): OutgoingDive => ({
   startsAt: new Date(start), utcOffsetSeconds: 0, durationSeconds: 1800, maxDepthM: 12, avgDepthM: 8, waterTemperatureC: 20,
   maxTemperatureC: 22, waterType: 'salt', notes: null, siteIds: { ssi: '3314' }, participants: [], entry: null, exit: null, gases: [],
   gfLow: null, gfHigh: null, cnsStart: null, cnsEnd: null, device: null, samples: {},
+  cylinder: null, leadKg: null, diveMode: null, surfaceIntervalSeconds: null, avgHeartRate: null,
 });
 
 async function setUp() {
