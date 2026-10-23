@@ -195,8 +195,9 @@ Read from the app's compiled code and one capture; details in the
   and the error from `success` when it is an object. Until 2026-10-06 it looked only at the top level and refused every
   update SSI had in fact stored: Pushes `provider_refused`, the Dive "changed since sent", the dive at SSI not known as
   sent by Dive Hub. Sending again records it: confirmed with the fix on the owner's dive #90 (2026-10-06, update confirmed,
-  read back with no differences). A **delete** goes through the same save and is read the same way; its answer hasn't
-  been seen yet [?].
+  read back with no differences). A **delete** goes through the same save and is read the same way; it was
+  tested (2026-10-23, app 5.0.43): the dive left the logbook [T] ([research](../research/2026-10-23-ssi-foundation-checks.md#does-the-full-record-with-booleans-go-through-and-does-a-delete-with-true-work-after-the-fixes)).
+  The raw answer body wasn't recorded [?].
 - **The whole record goes every time**: every key of the app's own row, unused ones `null`. `ssi-dive-row.ts` declares
   the app's 345 keys and their types [R]; `ssi-record.ts` builds the empty and the writable record from it. Dive Hub also
   sends `odin_user_log_date` and `odin_user_log_entry_time`. Whether SSI accepts a partial record is untested.
