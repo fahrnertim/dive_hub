@@ -136,12 +136,12 @@ describe('SSI dives for an import', () => {
     expect(parseSsiDive(withId(dive), context)!.diveMode).toBeNull();
   });
 
-  it('reads the surface interval in minutes, only where the app takes it', () => {
+  it('reads the surface interval in seconds, only where the app takes it', () => {
     const dive = handTypedDive({ at: '2025-08-10 10:00', depthM: 18, minutes: 45 });
-    const interval = (minutes: unknown) => parseSsiDive(withId({ ...dive, odin_user_log_si_before: minutes }), context)!.surfaceIntervalSeconds;
-    expect(interval(90)).toBe(5400);
-    expect(interval(2)).toBeNull();
-    expect(interval(2000)).toBeNull();
+    const interval = (seconds: unknown) => parseSsiDive(withId({ ...dive, odin_user_log_si_before: seconds }), context)!.surfaceIntervalSeconds;
+    expect(interval(5400)).toBe(5400);
+    expect(interval(120)).toBeNull();
+    expect(interval(100_000)).toBeNull();
     expect(parseSsiDive(withId(dive), context)!.surfaceIntervalSeconds).toBeNull();
   });
 

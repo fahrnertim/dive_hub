@@ -250,7 +250,7 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Provider', () => {
       const stored = ssiDive(s.current!.remoteId);
       expect(stored).toMatchObject({
         odin_user_log_dive_type: 0, odin_user_log_tank_vol_l: 12, odin_user_log_pressure_start_bar: 200, odin_user_log_var_tanktype_id: 19,
-        odin_user_log_weight_kg: 6, odin_user_log_si_before: 1440, odin_user_log_heartRateAvg: 80,
+        odin_user_log_weight_kg: 6, odin_user_log_si_before: 86_400, odin_user_log_heartRateAvg: 80,
       });
       expect(String(stored.odin_user_log_diveSamples)).toContain('"hb":80');
     });

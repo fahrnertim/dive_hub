@@ -162,7 +162,7 @@ export function ownFields(d: DiveForSsi): SsiRecord {
   const endBar = orNull(tank?.endPressureBar, 0);
   const material = tank?.material;
   const heart = d.samples.heartRate?.values ?? [];
-  const siMinutes = d.surfaceIntervalSeconds === null ? null : Math.round(d.surfaceIntervalSeconds / 60);
+  const siSeconds = d.surfaceIntervalSeconds === null ? null : Math.round(d.surfaceIntervalSeconds);
   return {
     odin_user_log_datetime: time.dateTime,
     odin_user_log_date: time.date,
@@ -189,8 +189,8 @@ export function ownFields(d: DiveForSsi): SsiRecord {
     odin_user_log_var_tanktype_id: material === 'steel' || material === 'aluminium' ? TANK_TYPE_IDS[material] : null,
     odin_user_log_weight_kg: orNull(d.leadKg, 1),
     odin_user_log_weight_lb: d.leadKg === null ? null : round(d.leadKg * KG_TO_LB, 1),
-    // The app takes 3 to 1440 minutes and throws anything else away.
-    odin_user_log_si_before: siMinutes !== null && siMinutes >= 3 && siMinutes <= 1440 ? siMinutes : null,
+    // SSI's si_before is in seconds; the app takes 3 to 1440 minutes (180 to 86 400 s) and throws anything else away.
+    odin_user_log_si_before: siSeconds !== null && siSeconds >= 180 && siSeconds <= 86_400 ? siSeconds : null,
     odin_user_log_heartRateAvg: d.avgHeartRate !== null ? Math.round(d.avgHeartRate)
       : heart.length ? Math.round(heart.reduce((a, b) => a + b, 0) / heart.length) : null,
     odin_user_log_heartRateMin: heart.length ? Math.round(Math.min(...heart)) : null,

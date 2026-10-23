@@ -108,10 +108,10 @@ function samplesOf(r: SsiRecord): ImportedDive['samples'] {
   };
 }
 
-/** SSI's `si_before`, minutes since the last dive: the app takes 3 to 1440, so only those are read, in seconds. */
+/** SSI's `si_before`, seconds since the last dive: the app takes 3 to 1440 minutes, so only 180 to 86 400 s are read. */
 function surfaceIntervalOf(v: unknown): number | null {
-  const minutes = numberOf(v);
-  return minutes !== null && minutes >= 3 && minutes <= 1440 ? minutes * 60 : null;
+  const seconds = numberOf(v);
+  return seconds !== null && seconds >= 180 && seconds <= 86_400 ? seconds : null;
 }
 
 /** The dive computer SSI names, if it names one with a serial number. SSI drops leading zeros of serial numbers. */

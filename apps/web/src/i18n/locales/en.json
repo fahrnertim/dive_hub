@@ -1352,7 +1352,7 @@
       "startPressureBar": "Start pressure (bar)",
       "endPressureBar": "End pressure (bar)",
       "leadKg": "Weight (kg)",
-      "surfaceInterval": "Surface interval (min)",
+      "surfaceInterval": "Surface interval",
       "heartRate": "Average heart rate (bpm)",
       "buddies": "Buddies (entries of your {{name}} buddy list)"
     },

@@ -229,12 +229,12 @@ describe('read-back', () => {
       expect(fields({ odin_user_log_pressure_start_bar: 180 })).toEqual(['startPressureBar']);
       expect(fields({ odin_user_log_pressure_end_bar: 40 })).toEqual(['endPressureBar']);
       expect(fields({ odin_user_log_weight_kg: 8 })).toEqual(['leadKg']);
-      expect(fields({ odin_user_log_si_before: 60 })).toEqual(['surfaceInterval']);
+      expect(fields({ odin_user_log_si_before: 3600 })).toEqual(['surfaceInterval']);
       expect(fields({ odin_user_log_heartRateAvg: 60 })).toEqual(['heartRate']);
     });
 
     it('accepts a tank volume within 0.06, and a surface interval and heart rate within 1', () => {
-      expect(fields({ odin_user_log_tank_vol_l: 12.05, odin_user_log_si_before: 91, odin_user_log_heartRateAvg: 81 })).toEqual([]);
+      expect(fields({ odin_user_log_tank_vol_l: 12.05, odin_user_log_si_before: 5401, odin_user_log_heartRateAvg: 81 })).toEqual([]);
     });
   });
 });
@@ -271,8 +271,8 @@ describe('values both sides keep', () => {
 
   it('a Dive without a Recording leaves SSI\'s dive type, surface interval and heart rate', () => {
     const bare = dive({ diveMode: null, gases: [] });
-    const r = updateRecord({ ...remote, odin_user_log_dive_type: 6, odin_user_log_si_before: 90, odin_user_log_heartRateAvg: 70 }, bare);
-    expect(r).toMatchObject({ odin_user_log_dive_type: 6, odin_user_log_si_before: 90, odin_user_log_heartRateAvg: 70 });
+    const r = updateRecord({ ...remote, odin_user_log_dive_type: 6, odin_user_log_si_before: 5400, odin_user_log_heartRateAvg: 70 }, bare);
+    expect(r).toMatchObject({ odin_user_log_dive_type: 6, odin_user_log_si_before: 5400, odin_user_log_heartRateAvg: 70 });
     expect(createRecord(bare, ids).odin_user_log_dive_type).toBe(0);
   });
 
@@ -295,12 +295,14 @@ describe('values both sides keep', () => {
     expect(ownFields(dive({ leadKg: null }))).toMatchObject({ odin_user_log_weight_kg: null, odin_user_log_weight_lb: null });
   });
 
-  it('the surface interval in minutes, only where the app takes it', () => {
+  it('the surface interval in seconds, only where the app takes it', () => {
     const si = (seconds: number) => ownFields(dive({ surfaceIntervalSeconds: seconds })).odin_user_log_si_before;
-    expect(si(5400)).toBe(90);
+    expect(si(5400)).toBe(5400);
     expect(si(120)).toBeNull();
+    expect(si(179)).toBeNull();
+    expect(si(180)).toBe(180);
     expect(si(259_200)).toBeNull();
-    expect(si(86_400)).toBe(1440);
+    expect(si(86_400)).toBe(86_400);
   });
 
   it('heart rate from the summary, else the series', () => {

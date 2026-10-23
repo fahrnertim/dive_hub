@@ -112,7 +112,7 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
       .map((s, i) => ({ ...s, pr: { t: 0, v: 200 - i / 10 }, hb: 80, cn: 5 }));
     add('computer', {
       ...withSamples, odin_user_log_diveSamples: JSON.stringify(profile),
-      odin_user_log_dive_type: 8, odin_user_log_si_before: 90, odin_user_log_heartRateAvg: 80,
+      odin_user_log_dive_type: 8, odin_user_log_si_before: 5400, odin_user_log_heartRateAvg: 80,
     });
     add('ours', { ...handTypedDive({ at: '2025-09-01 10:00', depthM: 10, minutes: 30 }), odin_user_log_divecomputer_dive_ref: 'divehub-0190a3f2-0000-7000-8000-000000000001' });
     add('between', handTypedDive({ at: '2026-02-01 10:20', depthM: 18, minutes: 30, nr: 81 }));
