@@ -37,12 +37,17 @@
 //     plan's leave and prints the stored notes and lead (expected: take notes, the lead goes out). clear sends with the
 //     notes removed here and prints the stored notes (expected: none). finish deletes the dive (only if it is a test
 //     dive) and checks it is gone.
-// write, number, omitted, values, clear, twoway and expired sign in when SSI_EMAIL and SSI_PASSWORD are set, else use the token kept by "read".
+//   … round-trip.ts site probe   (needs SSI_SITE_ID, a public site; Piece 4, private sites)
+//     creates one private site "Dive Hub test" at 0.001, 0.001 with save_divesite, reads it with get_divesite and get_divelog
+//     (also a public site and an unknown ID), deletes it with odin_dive_sites_deleted and checks it is gone. Prints key names,
+//     HTTP statuses and IDs only; the answers go to samples/private/ssi/site-probe.json. If a step fails the new ID is printed.
+// write, number, omitted, values, clear, twoway, site and expired sign in when SSI_EMAIL and SSI_PASSWORD are set, else use the token kept by "read".
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import { finishClearChecks, startClearChecks } from './clear-checks.js';
 import { finishTwoway, sendTwoway, startTwoway, type TwowaySaved } from './twoway-checks.js';
+import { runSiteProbe } from './site-checks.js';
 import { runNumberChecks } from './number-checks.js';
 import { finishValuesChecks, startValuesChecks } from './values-checks.js';
 import { userAgent } from '../../../src/sites/import/polite-http.js';
@@ -212,6 +217,11 @@ if (mode === 'read') {
   const account = await access();
   const { id } = JSON.parse(await readFile(`${out}twoway.json`, 'utf8')) as TwowaySaved;
   await finishTwoway({ client, access: account.token, log: console.log }, id);
+} else if (mode === 'site' && process.argv[3] === 'probe') {
+  const account = await access();
+  const siteId = process.env.SSI_SITE_ID;
+  if (!siteId) throw new Error('Set SSI_SITE_ID to a public site ID from your SSI logbook (see logbook.json after "read")');
+  await save('site-probe', await runSiteProbe({ access: account.token, accountId: account.accountId, siteId, log: console.log }));
 } else if (mode === 'expired') {
   const { token, at } = JSON.parse(await readFile(tokenFile, 'utf8')) as { token: string; at: string };
   const hours = ((Date.now() - Date.parse(at)) / 3_600_000).toFixed(1);
@@ -241,5 +251,5 @@ if (mode === 'read') {
     + `status: ${JSON.stringify(seen.status)}; authenticated: ${JSON.stringify(seen.authenticated)}`);
   await save('expired', result);
 } else {
-  console.log('Usage: round-trip.ts read | token | write [--pause] | number [--pause] | number --dive <SSI dive ID> --to <n> | omitted start | omitted finish | values start | values finish [<SSI dive ID>…] | clear start | clear finish | twoway start | twoway send | twoway clear | twoway finish | expired');
+  console.log('Usage: round-trip.ts read | token | write [--pause] | number [--pause] | number --dive <SSI dive ID> --to <n> | omitted start | omitted finish | values start | values finish [<SSI dive ID>…] | clear start | clear finish | twoway start | twoway send | twoway clear | twoway finish | site probe | expired');
 }

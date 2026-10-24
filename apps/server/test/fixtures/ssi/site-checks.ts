@@ -1,0 +1,185 @@
+// The owner's check of what SSI answers for sites, run by `round-trip.ts site probe` (Piece 4, private sites).
+// It writes to the real SSI account: it creates one private site "Dive Hub test" at 0.001, 0.001 with `save_divesite`,
+// reads it with `get_divesite` and `get_divelog`, deletes it again with `odin_dive_sites_deleted: true` and looks whether
+// it is gone. Output: key names, HTTP statuses and ID-like values only, never names, comments, URLs, tokens or passwords.
+// Everything SSI answers goes to samples/private/ssi/site-probe.json (git-ignored).
+import { DEFAULT_SSI_URL } from '../../../src/providers/ssi/ssi-client.js';
+import { createSsiTransport, SsiError, type Fetch } from '../../../src/providers/ssi/ssi-transport.js';
+
+export interface SiteProbe {
+  access: string;
+  /** The account's `mid`. */
+  accountId: string;
+  /** A public site of the logbook. */
+  siteId: string;
+  log: (line: string) => void;
+}
+
+const NAME = 'Dive Hub test';
+const UNKNOWN_ID = '999999999';
+const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+const isIdValue = (v: unknown) => (typeof v === 'number' && Number.isInteger(v)) || (typeof v === 'string' && /^\d+$/.test(v));
+const idKey = (k: string) => /(^|_)(id|ids|mid|owner)$/.test(k) || k === 'dsid';
+
+/** The site row the app sends (`siteUpload` in the write-bodies note), without `internalPk` and `needsUpload`. */
+export function siteRow(accountId: string, id: string | null, deleted: boolean): Record<string, unknown> {
+  return {
+    odin_dive_sites_id: id === null ? null : Number(id),
+    odin_dive_sites_name: NAME,
+    bow: 'salt',
+    odin_user_log_animal_ids: null,
+    odin_dive_sites_lon: 0.001,
+    odin_dive_sites_lat: 0.001,
+    odin_dive_sites_meta_address: null,
+    odin_dive_sites_meta_region: null,
+    odin_dive_sites_meta_country: null,
+    odin_countries_code_iso: null,
+    odin_dive_sites_regions_name: null,
+    odin_dive_sites_areas_name: null,
+    odin_dive_sites_geo_locked: null,
+    odin_dive_sites_is_private: true,
+    odin_dive_sites_alias_ids: null,
+    odin_dive_sites_is_private_owner: Number(accountId),
+    odin_dive_sites_deleted: deleted,
+    alias_names_search: null,
+    alias_names: null,
+  };
+}
+
+/** Key names, and the values of keys that look like IDs (also inside objects one level down). */
+function describe(data: Record<string, unknown>): string {
+  const one = (k: string, v: unknown) => (idKey(k) && isIdValue(v) ? `${k}=${String(v)}` : k);
+  return Object.entries(data).map(([k, v]) => (isObject(v)
+    ? `${k}{${Object.entries(v).map(([k2, v2]) => one(k2, v2)).join(', ')}}`
+    : one(k, v))).join(', ');
+}
+
+function findNewId(data: Record<string, unknown>): string | null {
+  for (const level of [data, isObject(data.success) ? data.success : {}, isObject(data.result) ? data.result : {}]) {
+    for (const key of ['odin_dive_sites_id', 'dsid', 'id']) {
+      if (isIdValue(level[key]) && Number(level[key]) > 0) return String(level[key]);
+    }
+  }
+  return null;
+}
+
+type Answer = { httpStatus: number | undefined; data: Record<string, unknown> | null; error: string | null };
+type Ask = (what: string, params: Record<string, string>, body?: Record<string, unknown>) => Promise<Answer>;
+
+/** The transport with the HTTP status of the last call; a refusal or an HTTP error is an outcome to print, not a reason to stop. */
+function makeAsk(access: string): Ask {
+  let httpStatus: number | undefined;
+  const transport = createSsiTransport({
+    url: DEFAULT_SSI_URL, timeoutMs: 60_000,
+    fetch: (async (url, init) => {
+      const response = await fetch(url, init);
+      httpStatus = response.status;
+      return response;
+    }) as Fetch,
+  });
+  return async (what, params, body) => {
+    httpStatus = undefined;
+    try {
+      const data = await transport.call(what, { token: access, ...params }, body);
+      return { httpStatus, data, error: null };
+    } catch (error) {
+      return { httpStatus, data: null, error: error instanceof SsiError ? error.reason : 'error' };
+    }
+  };
+}
+
+const outcome = (r: Answer) => `HTTP ${r.httpStatus ?? 'none'}${r.error ? `, error ${r.error}` : ''}`;
+
+async function logbookSites(ask: Ask) {
+  const r = await ask('get_divelog', {});
+  const sites = Array.isArray(r.data?.logbook_sites) ? r.data.logbook_sites.filter(isObject) : [];
+  return { r, sites };
+}
+
+async function getSite(ask: Ask, log: (line: string) => void, label: string, id: string) {
+  const r = await ask('get_divesite', { dsid: id });
+  const d = r.data;
+  // The site may sit at the top of the answer or one level down.
+  const nested = d ? Object.values(d).find((v): v is Record<string, unknown> => isObject(v) && 'odin_dive_sites_id' in v) : undefined;
+  const src = nested ?? d;
+  const values = src && {
+    odin_dive_sites_id: src.odin_dive_sites_id, is_private: src.odin_dive_sites_is_private,
+    is_private_owner: src.odin_dive_sites_is_private_owner, deleted: src.odin_dive_sites_deleted,
+  };
+  log(`  get_divesite ${label}: ${outcome(r)}; keys: ${d ? Object.keys(d).join(', ') : '-'}`
+    + (nested ? `; site keys: ${Object.keys(nested).join(', ')}` : '')
+    + (values ? `; values: ${JSON.stringify(values)}` : ''));
+  return { httpStatus: r.httpStatus, error: r.error, answer: d };
+}
+
+async function inLogbook(ask: Ask, log: (line: string) => void, label: string, id: string) {
+  const { r, sites } = await logbookSites(ask);
+  const found = sites.find((s) => String(s.odin_dive_sites_id) === id) ?? null;
+  const where = found
+    ? `IS in logbook_sites (is_private ${JSON.stringify(found.odin_dive_sites_is_private)}, owner ${JSON.stringify(found.odin_dive_sites_is_private_owner)}; keys: ${Object.keys(found).join(', ')})`
+    : 'is NOT in logbook_sites';
+  log(`  get_divelog ${label}: ${outcome(r)}; ${sites.length} logbook_sites; site ${id} ${where}`);
+  return { found, siteCount: sites.length, error: r.error };
+}
+
+/** The new site ID: from the answer, else from the logbook by name and position (the answer may not carry it). */
+async function learnNewId(ask: Ask, log: (line: string) => void, created: Answer): Promise<string | null> {
+  const fromAnswer = created.data ? findNewId(created.data) : null;
+  if (fromAnswer) {
+    log(`  NEW SITE ID: ${fromAnswer}`);
+    return fromAnswer;
+  }
+  const { sites } = await logbookSites(ask);
+  const hit = sites.find((s) => s.odin_dive_sites_name === NAME && Math.abs(Number(s.odin_dive_sites_lat) - 0.001) < 1e-6);
+  const id = hit && isIdValue(hit.odin_dive_sites_id) ? String(hit.odin_dive_sites_id) : null;
+  log(id ? `  the answer has no site ID; found in logbook_sites by name and position: ${id}` : '  no site ID in the answer, none found in logbook_sites');
+  return id;
+}
+
+/** Step 4 and its checks; runs also when a read failed. */
+async function deleteAndCheck(ask: Ask, o: SiteProbe, id: string, results: Record<string, unknown>) {
+  o.log(`4. save_divesite (delete ${id}, odin_dive_sites_deleted: true)`);
+  const deleted = await ask('save_divesite', {}, siteRow(o.accountId, id, true));
+  o.log(`  answer: ${outcome(deleted)}; ${deleted.data ? describe(deleted.data) : '-'}`);
+  results.delete = { httpStatus: deleted.httpStatus, error: deleted.error, answer: deleted.data };
+  results.getAfterDelete = await getSite(ask, o.log, `${id} after delete`, id);
+  const after = await inLogbook(ask, o.log, 'after delete', id);
+  results.logbookAfterDelete = after;
+  o.log(after.found || deleted.error
+    ? `*** SITE ${id} MAY STILL EXIST: tell the owner before anything else runs; delete it by hand ***`
+    : `site ${id} is gone from logbook_sites`);
+}
+
+export async function runSiteProbe(o: SiteProbe): Promise<Record<string, unknown>> {
+  const results: Record<string, unknown> = { app: '5.0.43', at: new Date().toISOString() };
+  const ask = makeAsk(o.access);
+
+  const row = siteRow(o.accountId, null, false);
+  o.log(`1. save_divesite (create). Keys sent: ${Object.keys(row).join(', ')}`);
+  o.log(`   private flag key: odin_dive_sites_is_private = true; owner key: odin_dive_sites_is_private_owner = account ${o.accountId}`);
+  const created = await ask('save_divesite', {}, row);
+  o.log(`  answer: ${outcome(created)}; ${created.data ? describe(created.data) : '-'}`);
+  results.create = { sentKeys: Object.keys(row), httpStatus: created.httpStatus, error: created.error, answer: created.data };
+  const id = await learnNewId(ask, o.log, created);
+  if (!id) {
+    o.log('STOP: save_divesite gives no way to learn the new site ID. Check the MySSI app for a site "Dive Hub test" at 0.001, 0.001 and delete it by hand.');
+    return results;
+  }
+  o.log(`*** CREATED SITE ID ${id}: if the run stops before step 4 ends, delete it by hand (save_divesite with this ID and odin_dive_sites_deleted: true) ***`);
+  results.newId = id;
+
+  try {
+    o.log('2. get_divesite (dsid)');
+    results.getNew = await getSite(ask, o.log, `new ${id}`, id);
+    results.getPublic = await getSite(ask, o.log, `public ${o.siteId}`, o.siteId);
+    results.getUnknown = await getSite(ask, o.log, `unknown ${UNKNOWN_ID}`, UNKNOWN_ID);
+    o.log('3. get_divelog');
+    results.logbookAfterCreate = await inLogbook(ask, o.log, 'after create', id);
+  } catch (error) {
+    o.log(`  a read failed (${error instanceof Error ? error.name : 'error'}); deleting the site anyway`);
+    results.readFailed = true;
+  } finally {
+    await deleteAndCheck(ask, o, id, results);
+  }
+  return results;
+}
