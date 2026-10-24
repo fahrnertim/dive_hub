@@ -83,8 +83,8 @@ export function threeWay(fields: readonly SyncedField[], base: Comparable, provi
     const providerChanged = !same(field, base, provider);
     const hubChanged = !same(field, base, hub);
     if (!providerChanged && !hubChanged) continue;
-    // The Provider no longer names a site: it never clears one here (SSI needs a site on every dive).
-    if (field === 'site' && providerChanged && isEmpty('site', provider)) continue;
+    // A dive needs a site at the Provider: a site is never cleared there, and a Provider without one never clears it here.
+    if (field === 'site' && (isEmpty('site', provider) || (isEmpty('site', hub) && !providerChanged))) continue;
     // Where Dive Hub never saw a tank or weight there, the one here stays (the import only fills).
     if ((field === 'cylinder' || field === 'lead') && isEmpty(field, base) && !isEmpty(field, hub)) continue;
     if (providerChanged && !hubChanged) take.push(field);
@@ -122,12 +122,13 @@ export function planSend(input: {
   const auto = threeWay(fields.filter((f) => !open.includes(f)), base, provider, hub);
   const settle = (field: SyncedField) => {
     const choice = choices[field];
-    if (choice === 'provider') plan.take.push(field);
-    else if (choice === 'hub') { if (isEmpty(field, hub)) plan.clear.push(field); }
+    if (choice === 'provider') { if (!(field === 'site' && isEmpty(field, provider))) plan.take.push(field); }
+    else if (choice === 'hub') { if (isEmpty(field, hub) && field !== 'site') plan.clear.push(field); }
     else (onConflict === 'ask' ? plan.conflicts : plan.keep).push(field);
   };
   for (const field of fields) {
     if (open.includes(field)) {
+      if (field === 'site' && isEmpty('site', provider)) continue;
       if (!same(field, provider, hub)) settle(field);
     } else if (auto.take.includes(field)) plan.take.push(field);
     else if (auto.clear.includes(field)) plan.clear.push(field);

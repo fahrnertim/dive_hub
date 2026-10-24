@@ -110,6 +110,27 @@ describe('three-way per field', () => {
   });
 });
 
+describe('removals of guarded fields', () => {
+  const lead = (before: number | null, provider: number | null, hub: number | null) =>
+    threeWay(['lead'], { ...base, lead: before }, { ...base, lead: provider }, { ...base, lead: hub });
+  const tankAt = (before: typeof tank | null, provider: typeof tank | null, hub: typeof tank | null) =>
+    threeWay(['cylinder'], { ...base, cylinder: before }, { ...base, cylinder: provider }, { ...base, cylinder: hub });
+
+  it('a site removed here is not cleared at the Provider', () => {
+    expect(threeWay(['site'], base, base, { ...base, site: null })).toEqual({ take: [], conflicts: [], clear: [] });
+  });
+
+  it('a lead or tank removed at the Provider and changed here is a conflict', () => {
+    expect(lead(6, null, 7)).toEqual({ take: [], conflicts: ['lead'], clear: [] });
+    expect(tankAt(tank, null, { ...tank, volumeL: 15 })).toEqual({ take: [], conflicts: ['cylinder'], clear: [] });
+  });
+
+  it('a lead or tank removed here, unchanged at the Provider, is cleared', () => {
+    expect(lead(6, 6, null)).toEqual({ take: [], conflicts: [], clear: ['lead'] });
+    expect(tankAt(tank, tank, null)).toEqual({ take: [], conflicts: [], clear: ['cylinder'] });
+  });
+});
+
 describe('planSend', () => {
   const plan = (o: { base?: Comparable | null; provider?: Partial<Comparable>; hub?: Partial<Comparable>; choices?: Parameters<typeof planSend>[0]['choices']; open?: SyncedField[]; onConflict?: 'ask' | 'defer'; fields?: readonly SyncedField[] }) =>
     planSend({
@@ -150,5 +171,19 @@ describe('planSend', () => {
 
   it('a stale choice is ignored', () => {
     expect(plan({ provider: { notes: 'Napoleon' }, choices: { notes: 'hub' } })).toEqual({ ...empty, take: ['notes'] });
+  });
+
+  it('a choice on a removal: provider takes it, hub clears it', () => {
+    const removedThere = { base: { ...base, notes: 'X' }, provider: { notes: null }, hub: { notes: 'H' } };
+    expect(plan({ ...removedThere, choices: { notes: 'provider' } })).toEqual({ ...empty, take: ['notes'] });
+    expect(plan({ ...removedThere, choices: { notes: 'hub' } })).toEqual(empty);
+    const removedHere = { base: { ...base, notes: 'X' }, provider: { notes: 'P' }, hub: { notes: null } };
+    expect(plan({ ...removedHere, choices: { notes: 'hub' } })).toEqual({ ...empty, clear: ['notes'] });
+    expect(plan({ ...removedHere, choices: { notes: 'provider' } })).toEqual({ ...empty, take: ['notes'] });
+  });
+
+  it('an open site is never taken as a removal nor cleared', () => {
+    expect(plan({ provider: { site: null }, open: ['site'], choices: { site: 'provider' } })).toEqual(empty);
+    expect(plan({ provider: { site: '77' }, hub: { site: null }, open: ['site'], choices: { site: 'hub' } })).toEqual(empty);
   });
 });
