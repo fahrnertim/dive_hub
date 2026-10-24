@@ -39,6 +39,9 @@ const sendsChoices = (send: { isPending: boolean; variables: SendRequest | undef
 /** A choice asked by a send can be put away; one a run left stays until it is sent. */
 const cancelAsked = (asked: unknown, cancel: () => void) => (asked ? cancel : undefined);
 
+/** Whether the line offers an update now: the Dive changed since it was sent, and no choice stands in the button's place. */
+const offersUpdate = (s: ProviderStatusView, choosing: unknown, canUpdate: boolean) => canUpdate && !!s.current && !s.current.upToDate && !choosing;
+
 /** The requirement an unmet item is about, as the Provider declares it (ADR 0029). */
 const requirementOf = (p: ProviderView, u: UnmetView): RequirementView | undefined =>
   p.data.dives?.export?.requirements.find((r) => r.type === u.type && r.source === u.source);
@@ -151,7 +154,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
       {last?.state === 'failed' && !send.error && <Notice tone="danger">{pt('lastFailed', { error: failure(last) })}</Notice>}
       {last?.leftOut && last.leftOut.length > 0 && last.state !== 'failed' && <LeftOut provider={p} push={last} />}
       {last?.differences && last.differences.length > 0 && <Differences provider={p} push={last} />}
-      {exchanged && <ExchangedNotice provider={p} exchanged={exchanged} />}
+      {exchanged && <ExchangedNotice provider={p} exchanged={exchanged} onClose={() => setExchanged(null)} />}
 
       {s.current?.number?.differs && (
         <div className="provider-number">
@@ -221,6 +224,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
           )}
         </div>
       )}
+      <UpdateNote provider={p} shown={ready && !signInNeeded && !asked && offersUpdate(s, choosing, can('update'))} />
       {p.notices.map((n) => <Muted key={n}>{pt(`notice.${n}`)}</Muted>)}
       {s.pushes.length > 0 && (
         <details className="extras">
@@ -367,8 +371,15 @@ function SentState({ provider: p, status: s }: { provider: ProviderView; status:
   );
 }
 
+/** Under the update button: an update sends a removal too (ADR 0056), so a value cleared here goes at the Provider. */
+function UpdateNote({ provider: p, shown }: { provider: ProviderView; shown: boolean }) {
+  const pt = useProviderText(p);
+  return shown ? <Muted>{pt('updateRemoves')}</Muted> : null;
+}
+
 /** What the last update took from the Provider into the Dive, and what it left as the Provider has it (ADR 0056). */
-function ExchangedNotice({ provider: p, exchanged }: { provider: ProviderView; exchanged: Exchanged }) {
+function ExchangedNotice({ provider: p, exchanged, onClose }: { provider: ProviderView; exchanged: Exchanged; onClose: () => void }) {
+  const { t } = useTranslation();
   const pt = useProviderText(p);
   const fieldNames = useFieldNames();
   if (exchanged.taken.length === 0 && exchanged.deferred.length === 0) return null;
@@ -376,6 +387,7 @@ function ExchangedNotice({ provider: p, exchanged }: { provider: ProviderView; e
     <Notice tone="info">
       {exchanged.taken.length > 0 && <p>{pt('taken', { fields: fieldNames(exchanged.taken) })}</p>}
       {exchanged.deferred.length > 0 && <p>{pt('deferred', { fields: fieldNames(exchanged.deferred) })}</p>}
+      <Button variant="quiet" onPress={onClose}>{t('common.close')}</Button>
     </Notice>
   );
 }

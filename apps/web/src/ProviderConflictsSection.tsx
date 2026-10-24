@@ -48,7 +48,7 @@ function Group({ group: g, diver, onTold }: { group: ConflictsOfConnection; dive
   const fieldNames = useFieldNames();
   const queryClient = useQueryClient();
   const nameOf = (e: ConflictEntryView) => (e.number !== null ? t('dive.title', { number: e.number }) : display.diveTime(e.startsAt, e.utcOffsetSeconds, e.utcOffsetSource));
-  // One Dive at a time; the others wait (page rules).
+  // One Dive at a time: the other Dives' buttons wait while one is sent (page rules).
   const send = useMutation({
     mutationFn: async ({ entry, choices }: { entry: ConflictEntryView; choices: ConflictChoices }) =>
       unwrap(await api.POST('/api/dives/{id}/providers/{provider}', { params: { path: { id: entry.diveId, provider: g.provider } }, body: { conflicts: choices } })),
@@ -89,6 +89,7 @@ function Group({ group: g, diver, onTold }: { group: ConflictsOfConnection; dive
               <ProviderConflicts
                 key={e.fields.map((f) => f.field).join()} item={nameOf(e)} conflicts={e.fields} providerName={g.providerName}
                 isPending={send.isPending && send.variables.entry.diveId === e.diveId}
+                isDisabled={send.isPending && send.variables.entry.diveId !== e.diveId}
                 onSend={(choices) => send.mutate({ entry: e, choices })}
               />
             </li>

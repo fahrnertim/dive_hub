@@ -1299,6 +1299,7 @@
     "buddyLinkedTo": "{{name}} is now linked.",
     "lastFailed": "Sending failed: {{error}}",
     "update": "Update in {{name}}",
+    "updateRemoves": "A value removed here is removed in {{name}} too (not the dive site).",
     "send": "Send to {{name}}",
     "delete": "Delete in {{name}}",
     "deleteTitle": "Delete the dive in {{name}}?",

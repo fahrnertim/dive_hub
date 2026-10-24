@@ -43,9 +43,9 @@ const option = (label: string, value: string) => (
  * caller sends the Dive again with them. On the Dive's page it has its own heading (`waiting`: a run left them, so part of
  * the Dive was sent already); on the Review page (`item` names the Dive) the section around it says what it is.
  */
-export function ProviderConflicts({ conflicts, providerName, onSend, onCancel, isPending, item, waiting }: {
+export function ProviderConflicts({ conflicts, providerName, onSend, onCancel, isPending, isDisabled, item, waiting }: {
   conflicts: ConflictFieldView[]; providerName: string; onSend: (choices: ConflictChoices) => void;
-  onCancel?: (() => void) | undefined; isPending?: boolean; item?: string; waiting?: boolean;
+  onCancel?: (() => void) | undefined; isPending?: boolean; isDisabled?: boolean; item?: string; waiting?: boolean;
 }) {
   const { t } = useTranslation();
   const valueText = useConflictValueText();
@@ -71,7 +71,7 @@ export function ProviderConflicts({ conflicts, providerName, onSend, onCancel, i
       ))}
       <div className="form-actions">
         <Button
-          variant="primary" icon="send" isPending={!!isPending}
+          variant="primary" icon="send" isPending={!!isPending} isDisabled={!!isDisabled}
           {...(item && { 'aria-label': t('common.forItem', { action: send, item }) })}
           onPress={() => onSend(Object.fromEntries(conflicts.map((c) => [c.field, choices[c.field] ?? 'hub'])))}
         >

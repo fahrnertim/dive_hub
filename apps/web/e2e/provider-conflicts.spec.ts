@@ -57,8 +57,13 @@ test('a note changed only in SSI comes back on update and the page says so', { t
 
     await page.goto(`/#/dives/${id}`);
     await openLine(page, 'SSI');
+    // An update sends a removal too, and the line says so where the User updates.
+    await expect(page.getByText('A value removed here is removed in SSI too (not the dive site).')).toBeVisible();
     await page.getByRole('button', { name: 'Update in SSI' }).click();
     await expect(page.locator('#main').getByText('Taken from SSI: notes.')).toBeVisible();
+    // The notice can be closed.
+    await page.getByRole('group', { name: 'SSI' }).getByRole('button', { name: 'Close' }).click();
+    await expect(page.locator('#main').getByText('Taken from SSI: notes.')).toBeHidden();
     await expect(page.locator('#main').getByText('Up to date')).toBeVisible();
     // The Dive shows the note from SSI without a reload.
     await expect(page.locator('#main').getByText('Reef, a turtle')).toBeVisible();
@@ -77,6 +82,15 @@ test('a run\'s conflict waits under Needs your decision; Take SSI\'s sends and t
     expect(started.status(), await started.text()).toBe(202);
     const run = await started.json() as { id: string };
     await expect.poll(async () => ((await (await request.get(`/api/push-runs/${run.id}`)).json()) as { status: string }).status, { timeout: 30_000 }).toBe('done');
+
+    // On the dive's page the run's entry is asked as well: part of the dive was sent already, so there is nothing to cancel.
+    await page.goto(`/#/dives/${id}`);
+    await openLine(page, 'SSI');
+    const waiting = page.getByRole('region', { name: 'Changed in both places' });
+    await expect(waiting.getByText('A run sent this dive to SSI without these values: they were changed in both places. Choose which to keep.')).toBeVisible();
+    await expect(waiting.getByRole('radiogroup', { name: 'Notes' })).toBeVisible();
+    await expect(waiting.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Update in SSI' })).toBeHidden();
 
     // The run's report says how many wait, and the logbook's strip counts them with what else waits.
     await page.goto('/#/');
