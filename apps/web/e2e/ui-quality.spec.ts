@@ -9,7 +9,7 @@ import { dataFile, type PreparedData } from './prepare.ts';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, diveNumber, seededDiveId, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectGoodPage, externalDiver, openLine,
-  clearPushRuns, expireSsiTokens, forgetDivers, goneAtSsi, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences, falseStart, keepFalseStart, tankPodDive
+  clearPushRuns, conflictAtSsi, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences, falseStart, keepFalseStart, tankPodDive
 } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
@@ -887,6 +887,33 @@ for (const v of variants) {
       } finally {
         await deletableDive(request);
         await request.post('/e2e/fake-ssi/clear-dives', { data: { email: 'erika@example.com' }, headers });
+      }
+    });
+
+    test('notes changed both here and in SSI, asked on the dive\'s page and waiting on the Review page after a run', { tag: ['@dives'] }, async ({ page, request }) => {
+      const id = await conflictAtSsi(request);
+      const n = await diveNumber(request, id);
+      const conflictsTitle = v.english ? 'Changed in both places' : 'An beiden Stellen geändert';
+      try {
+        await page.goto(`/#/dives/${id}`);
+        await openLine(page, 'SSI');
+        await page.getByRole('button', { name: v.english ? 'Update in SSI' : 'In SSI aktualisieren' }).click();
+        await expect(page.getByRole('region', { name: conflictsTitle }).getByRole('radiogroup')).toBeVisible();
+        await expectGoodPage(page, title(`Dive ${n}`), v);
+
+        // A run leaves the dive waiting on the Review page.
+        const status = await (await request.get(`/api/dives/${id}/providers/ssi`)).json() as { connection: { id: string } };
+        const run = await (await request.post(`/api/connections/${status.connection.id}/push-runs`, { data: { dives: { ids: [id] }, updates: true }, headers })).json() as { id: string };
+        await expect.poll(async () => ((await (await request.get(`/api/push-runs/${run.id}`)).json()) as { status: string }).status, { timeout: 30_000 }).toBe('done');
+        // Loaded afresh: the run ended at the server, unseen by the page.
+        await page.goto('/#/review');
+        await page.reload();
+        await expect(page.getByRole('heading', { name: `${conflictsTitle} (1)`, level: 2 })).toBeVisible();
+        await expect(page.getByRole('button', { name: v.english ? `Send with these choices: Dive ${n}` : `Mit dieser Wahl senden: Tauchgang ${n}` })).toBeVisible();
+        await expectGoodPage(page, title('Review'), v);
+      } finally {
+        await clearPushRuns(request);
+        await leaveConflict(request);
       }
     });
 

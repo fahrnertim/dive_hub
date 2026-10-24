@@ -130,6 +130,8 @@ export const keys = {
   connections: ['connections'] as const,
   /** Dives gone at a Provider, waiting for the User's choice (ADR 0051). */
   goneDives: ['gone-dives'] as const,
+  /** Conflicts with a Provider waiting for the User's choice (ADR 0056); a send from the Dive's page closes them. */
+  providerConflicts: ['provider-conflicts'] as const,
   /** Push runs (ADR 0047): the User's list, one run with its items, and what a start would do. */
   pushRuns: ['push-runs'] as const,
   pushRun: (id: string) => ['push-runs', id] as const,
@@ -449,6 +451,18 @@ async function fetchGoneDives() {
 export const goneDivesQuery = () => queryOptions({ queryKey: keys.goneDives, queryFn: fetchGoneDives });
 export type GoneDivesOfConnection = Awaited<ReturnType<typeof fetchGoneDives>>[number];
 export type GoneDiveView = GoneDivesOfConnection['dives'][number];
+
+async function fetchProviderConflicts() {
+  return unwrap(await api.GET('/api/provider-conflicts')).connections;
+}
+/** Conflicts with a Provider that wait for the User's choice, per Connection (ADR 0056); stored, no call to the Provider. */
+export const providerConflictsQuery = () => queryOptions({ queryKey: keys.providerConflicts, queryFn: fetchProviderConflicts });
+export type ConflictsOfConnection = Awaited<ReturnType<typeof fetchProviderConflicts>>[number];
+export type ConflictEntryView = ConflictsOfConnection['entries'][number];
+/** One field changed on both sides, with both values as the import preview says them. */
+export type ConflictFieldView = ConflictEntryView['fields'][number];
+/** A choice per Conflict: Dive Hub's value goes out (hub), or the Provider's comes in (provider). */
+export type ConflictChoices = Partial<Record<ConflictFieldView['field'], 'hub' | 'provider'>>;
 
 async function fetchDiveTimes(connectionId: string) {
   return unwrap(await api.GET('/api/connections/{id}/dive-times', { params: { path: { id: connectionId } } }));

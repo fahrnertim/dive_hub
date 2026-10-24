@@ -10,7 +10,7 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, diveNumber, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, falseStart, forgetDivers, keepFalseStart, mergePair, mergeablePair, tankPodDive,
-  clearPushRuns, expireSsiTokens, goneAtSsi, leaveLena, leaveSsi, lenaReady, openLine, pushRunSetup, readyForSsi, sendToSsi, setBuddies, setPreferences,
+  clearPushRuns, conflictAtSsi, expireSsiTokens, leaveConflict, goneAtSsi, leaveLena, leaveSsi, lenaReady, openLine, pushRunSetup, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
 const out = process.env.REVIEW_OUT ?? 'review-output/';
@@ -889,6 +889,46 @@ test('review material', async ({ page, request, browser }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await request.post('/e2e/fake-ssi/clear-dives', { data: { email: 'erika@example.com' }, headers });
     await deletableDive(request);
+
+    // Notes changed both here and in SSI's app (ADR 0056): the update asks on the dive's page, light and dark, desktop
+    // and phone; a run leaves the dive waiting, its report says so, and the Review page asks the same.
+    const conflictId = await conflictAtSsi(request);
+    const askConflict = async () => {
+      await page.goto(`/#/dives/${conflictId}`); await page.reload();
+      await openLine(page, 'SSI');
+      await page.getByRole('button', { name: /^(Update in SSI|In SSI aktualisieren)$/ }).click();
+      await page.getByRole('radiogroup', { name: /^(Notes|Notizen)$/ }).waitFor();
+    };
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await askConflict();
+    await capture(page, '79e-dive-ssi-conflict');
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await askConflict();
+    await capture(page, '79f-dive-ssi-conflict-dark', { aria: false });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await capture(page, '79g-dive-ssi-conflict-dark-390', { aria: false });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await setPreferences(request, { language: 'de' });
+    await askConflict();
+    await capture(page, '79h-dive-ssi-conflict-de-390', { aria: false });
+    await setPreferences(request, { language: null });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    const conflictStatus = await (await request.get(`/api/dives/${conflictId}/providers/ssi`)).json() as { connection: { id: string } };
+    const conflictRun = await (await request.post(`/api/connections/${conflictStatus.connection.id}/push-runs`, { data: { dives: { ids: [conflictId] }, updates: true }, headers })).json() as { id: string };
+    await expect.poll(async () => ((await (await request.get(`/api/push-runs/${conflictRun.id}`)).json()) as { status: string }).status, { timeout: 30_000 }).toBe('done');
+    await page.goto('/'); await page.reload();
+    await page.getByText(/values changed in both places: it waits in Needs your decision/).waitFor();
+    await capture(page, '79i-logbook-run-conflicts', { full: false, aria: false });
+    await page.goto('/#/review'); await page.reload();
+    await page.getByRole('button', { name: /^Send with these choices: / }).waitFor();
+    await capture(page, '79j-review-conflict');
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await capture(page, '79k-review-conflict-dark-390', { aria: false });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await clearPushRuns(request);
+    await leaveConflict(request);
   }
 
   // Signed out, then signed up through the invitation: the empty logbook and Divers belong to the new account.

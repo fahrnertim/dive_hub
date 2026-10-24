@@ -681,6 +681,8 @@ page, beside the gone dives: `entries` carry the Dive's number, time, depth, dur
 remote dive is no longer the Dive's current one is not listed. Only the Connection's owner sees it. A Push run makes
 them: it sends the Dive without the field. Deciding is the Dive's send with `conflicts`
 ([Sending a Dive](#sending-a-dive-to-a-provider-ssi)); a successful send that settles the fields removes the entry.
+*Web:* `ProviderConflicts.tsx` (the choice per field, on the Dive's page where the send button was, and on the Review
+page), `ProviderConflictsSection.tsx` (the Review section), `PushRun.tsx` (the run report's line).
 
 ### Logbook checks
 ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md); `GET /api/logbook-checks`, computed each time)

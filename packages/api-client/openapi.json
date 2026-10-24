@@ -57288,6 +57288,7 @@
                     "numbersRemovingVerification",
                     "cancelRequested",
                     "counts",
+                    "conflicts",
                     "leftOut",
                     "pauseMs",
                     "createdAt",
@@ -57477,6 +57478,10 @@
                           "type": "integer"
                         }
                       }
+                    },
+                    "conflicts": {
+                      "type": "integer",
+                      "description": "Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted"
                     },
                     "leftOut": {
                       "type": "object",
@@ -58035,6 +58040,7 @@
                       "numbersRemovingVerification",
                       "cancelRequested",
                       "counts",
+                      "conflicts",
                       "leftOut",
                       "pauseMs",
                       "createdAt",
@@ -58225,6 +58231,10 @@
                           }
                         }
                       },
+                      "conflicts": {
+                        "type": "integer",
+                        "description": "Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted"
+                      },
                       "leftOut": {
                         "type": "object",
                         "required": [
@@ -58362,6 +58372,7 @@
                         "numbersRemovingVerification",
                         "cancelRequested",
                         "counts",
+                        "conflicts",
                         "leftOut",
                         "pauseMs",
                         "createdAt",
@@ -58551,6 +58562,10 @@
                               "type": "integer"
                             }
                           }
+                        },
+                        "conflicts": {
+                          "type": "integer",
+                          "description": "Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted"
                         },
                         "leftOut": {
                           "type": "object",
@@ -59240,6 +59255,7 @@
                     "numbersRemovingVerification",
                     "cancelRequested",
                     "counts",
+                    "conflicts",
                     "leftOut",
                     "pauseMs",
                     "createdAt",
@@ -59429,6 +59445,10 @@
                           "type": "integer"
                         }
                       }
+                    },
+                    "conflicts": {
+                      "type": "integer",
+                      "description": "Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted"
                     },
                     "leftOut": {
                       "type": "object",
@@ -59997,6 +60017,7 @@
                     "numbersRemovingVerification",
                     "cancelRequested",
                     "counts",
+                    "conflicts",
                     "leftOut",
                     "pauseMs",
                     "createdAt",
@@ -60186,6 +60207,10 @@
                           "type": "integer"
                         }
                       }
+                    },
+                    "conflicts": {
+                      "type": "integer",
+                      "description": "Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted"
                     },
                     "leftOut": {
                       "type": "object",
@@ -60753,6 +60778,7 @@
                     "numbersRemovingVerification",
                     "cancelRequested",
                     "counts",
+                    "conflicts",
                     "leftOut",
                     "pauseMs",
                     "createdAt",
@@ -60942,6 +60968,10 @@
                           "type": "integer"
                         }
                       }
+                    },
+                    "conflicts": {
+                      "type": "integer",
+                      "description": "Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted"
                     },
                     "leftOut": {
                       "type": "object",
@@ -61781,6 +61811,29 @@
                                         }
                                       }
                                     ]
+                                  },
+                                  "fields": {
+                                    "type": "object",
+                                    "description": "Which way each value of a dive travels; absent: every value travels both ways as far as the Provider's operations allow (imported if it imports, sent if it exports); present: a value missing from the map is not imported",
+                                    "additionalProperties": {
+                                      "type": "array",
+                                      "items": {
+                                        "anyOf": [
+                                          {
+                                            "type": "string",
+                                            "enum": [
+                                              "import"
+                                            ]
+                                          },
+                                          {
+                                            "type": "string",
+                                            "enum": [
+                                              "export"
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    }
                                   }
                                 }
                               }
@@ -71577,6 +71630,1096 @@
         }
       }
     },
+    "/api/provider-conflicts": {
+      "get": {
+        "summary": "Conflicts with a Provider that wait for the choice of the User, per Connection; no call to a Provider",
+        "description": "A Conflict is a field changed on both sides, differently, found while sending a Dive. One entry per Dive and Provider, with both values of each field. The User chooses per field, the Dive Hub value preselected, by sending the Dive again with `conflicts`. An entry whose Dive is deleted, or whose remote dive is no longer the current one of the Dive, is not listed.",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "connections"
+                  ],
+                  "properties": {
+                    "connections": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "connectionId",
+                          "provider",
+                          "providerName",
+                          "entries"
+                        ],
+                        "properties": {
+                          "connectionId": {
+                            "type": "string"
+                          },
+                          "provider": {
+                            "type": "string"
+                          },
+                          "providerName": {
+                            "type": "string"
+                          },
+                          "entries": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "diveId",
+                                "number",
+                                "startsAt",
+                                "utcOffsetSeconds",
+                                "utcOffsetSource",
+                                "durationSeconds",
+                                "maxDepthM",
+                                "site",
+                                "remoteId",
+                                "fields",
+                                "foundAt"
+                              ],
+                              "properties": {
+                                "diveId": {
+                                  "type": "string"
+                                },
+                                "number": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "integer"
+                                    }
+                                  ]
+                                },
+                                "startsAt": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "utcOffsetSeconds": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "integer"
+                                    }
+                                  ]
+                                },
+                                "utcOffsetSource": {
+                                  "enum": [
+                                    "device",
+                                    "position",
+                                    "nearby",
+                                    "unknown"
+                                  ]
+                                },
+                                "durationSeconds": {
+                                  "type": "number"
+                                },
+                                "maxDepthM": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "number"
+                                    }
+                                  ]
+                                },
+                                "site": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "id",
+                                        "name"
+                                      ],
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                "remoteId": {
+                                  "type": "string"
+                                },
+                                "fields": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "required": [
+                                      "field",
+                                      "hub",
+                                      "provider"
+                                    ],
+                                    "properties": {
+                                      "field": {
+                                        "enum": [
+                                          "site",
+                                          "notes",
+                                          "buddies",
+                                          "cylinder",
+                                          "lead",
+                                          "startsAt",
+                                          "durationSeconds",
+                                          "maxDepthM",
+                                          "avgDepthM",
+                                          "waterTemperatureC"
+                                        ],
+                                        "description": "The field the two sides differ on"
+                                      },
+                                      "hub": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "anyOf": [
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "number"
+                                              },
+                                              {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "string"
+                                                }
+                                              },
+                                              {
+                                                "type": "object",
+                                                "required": [
+                                                  "volumeL",
+                                                  "material",
+                                                  "startPressureBar",
+                                                  "endPressureBar",
+                                                  "gas"
+                                                ],
+                                                "properties": {
+                                                  "volumeL": {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "null"
+                                                      },
+                                                      {
+                                                        "type": "number"
+                                                      }
+                                                    ]
+                                                  },
+                                                  "material": {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "null"
+                                                      },
+                                                      {
+                                                        "enum": [
+                                                          "aluminium",
+                                                          "steel",
+                                                          "carbon"
+                                                        ]
+                                                      }
+                                                    ]
+                                                  },
+                                                  "startPressureBar": {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "null"
+                                                      },
+                                                      {
+                                                        "type": "number"
+                                                      }
+                                                    ]
+                                                  },
+                                                  "endPressureBar": {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "null"
+                                                      },
+                                                      {
+                                                        "type": "number"
+                                                      }
+                                                    ]
+                                                  },
+                                                  "gas": {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "null"
+                                                      },
+                                                      {
+                                                        "type": "object",
+                                                        "required": [
+                                                          "o2",
+                                                          "he"
+                                                        ],
+                                                        "properties": {
+                                                          "o2": {
+                                                            "type": "number"
+                                                          },
+                                                          "he": {
+                                                            "type": "number"
+                                                          }
+                                                        },
+                                                        "description": "O₂ and He as percent"
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                              }
+                                            ],
+                                            "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
+                                          }
+                                        ]
+                                      },
+                                      "provider": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "anyOf": [
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "number"
+                                              },
+                                              {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "string"
+                                                }
+                                              },
+                                              {
+                                                "type": "object",
+                                                "required": [
+                                                  "volumeL",
+                                                  "material",
+                                                  "startPressureBar",
+                                                  "endPressureBar",
+                                                  "gas"
+                                                ],
+                                                "properties": {
+                                                  "volumeL": {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "null"
+                                                      },
+                                                      {
+                                                        "type": "number"
+                                                      }
+                                                    ]
+                                                  },
+                                                  "material": {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "null"
+                                                      },
+                                                      {
+                                                        "enum": [
+                                                          "aluminium",
+                                                          "steel",
+                                                          "carbon"
+                                                        ]
+                                                      }
+                                                    ]
+                                                  },
+                                                  "startPressureBar": {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "null"
+                                                      },
+                                                      {
+                                                        "type": "number"
+                                                      }
+                                                    ]
+                                                  },
+                                                  "endPressureBar": {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "null"
+                                                      },
+                                                      {
+                                                        "type": "number"
+                                                      }
+                                                    ]
+                                                  },
+                                                  "gas": {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "null"
+                                                      },
+                                                      {
+                                                        "type": "object",
+                                                        "required": [
+                                                          "o2",
+                                                          "he"
+                                                        ],
+                                                        "properties": {
+                                                          "o2": {
+                                                            "type": "number"
+                                                          },
+                                                          "he": {
+                                                            "type": "number"
+                                                          }
+                                                        },
+                                                        "description": "O₂ and He as percent"
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                              }
+                                            ],
+                                            "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                },
+                                "foundAt": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "import_not_waiting",
+                        "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "gas_not_breathable",
+                        "body_weight_not_found",
+                        "certification_not_found",
+                        "certification_changed",
+                        "certification_read_only",
+                        "certification_image_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "check_not_found",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "centre_not_found",
+                        "centre_changed",
+                        "centre_not_deletable",
+                        "centre_external_id_taken",
+                        "code_not_recognised",
+                        "code_not_a_person",
+                        "diver_choice_needed",
+                        "diver_has_other_account",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_not_stored",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_number_taken",
+                        "provider_numbers_off",
+                        "provider_number_nothing_to_set",
+                        "provider_unsupported",
+                        "push_run_active",
+                        "push_run_nothing_to_send",
+                        "push_run_not_found",
+                        "push_run_not_active",
+                        "push_run_going",
+                        "push_run_not_stopped",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "import_not_waiting",
+                        "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "gas_not_breathable",
+                        "body_weight_not_found",
+                        "certification_not_found",
+                        "certification_changed",
+                        "certification_read_only",
+                        "certification_image_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "check_not_found",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "centre_not_found",
+                        "centre_changed",
+                        "centre_not_deletable",
+                        "centre_external_id_taken",
+                        "code_not_recognised",
+                        "code_not_a_person",
+                        "diver_choice_needed",
+                        "diver_has_other_account",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_not_stored",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_number_taken",
+                        "provider_numbers_off",
+                        "provider_number_nothing_to_set",
+                        "provider_unsupported",
+                        "push_run_active",
+                        "push_run_nothing_to_send",
+                        "push_run_not_found",
+                        "push_run_not_active",
+                        "push_run_going",
+                        "push_run_not_stopped",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "import_not_waiting",
+                        "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "gas_not_breathable",
+                        "body_weight_not_found",
+                        "certification_not_found",
+                        "certification_changed",
+                        "certification_read_only",
+                        "certification_image_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "check_not_found",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "centre_not_found",
+                        "centre_changed",
+                        "centre_not_deletable",
+                        "centre_external_id_taken",
+                        "code_not_recognised",
+                        "code_not_a_person",
+                        "diver_choice_needed",
+                        "diver_has_other_account",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_not_stored",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_number_taken",
+                        "provider_numbers_off",
+                        "provider_number_nothing_to_set",
+                        "provider_unsupported",
+                        "push_run_active",
+                        "push_run_nothing_to_send",
+                        "push_run_not_found",
+                        "push_run_not_active",
+                        "push_run_going",
+                        "push_run_not_stopped",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    },
+                    "diver": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "dives"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "dives": {
+                          "type": "integer",
+                          "description": "The Dives it is a Participant on"
+                        }
+                      },
+                      "description": "With provider_account_held: the external Diver here with this account; connect again with claim to make it yours"
+                    },
+                    "unmet": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "type",
+                          "severity",
+                          "source"
+                        ],
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "description": "As in the Provider's requirements"
+                          },
+                          "severity": {
+                            "enum": [
+                              "blocking",
+                              "advisory"
+                            ]
+                          },
+                          "source": {
+                            "type": "string"
+                          },
+                          "siteId": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "site_external_id: the Dive site to give the ID; null: choose a site first"
+                              }
+                            ]
+                          },
+                          "diverId": {
+                            "type": "string",
+                            "description": "diver_mapping: the Participant"
+                          },
+                          "diverName": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "enum": [
+                              "buddy",
+                              "guide",
+                              "instructor"
+                            ]
+                          },
+                          "fixes": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source})"
+                          }
+                        },
+                        "description": "A requirement this Dive doesn't meet, from Dive Hub's own data"
+                      },
+                      "description": "With provider_requirements_unmet: every requirement unmet, blocking ones among them"
+                    },
+                    "existing": {
+                      "type": "object",
+                      "required": [
+                        "remoteId",
+                        "number",
+                        "startsAt",
+                        "maxDepthM",
+                        "durationMinutes"
+                      ],
+                      "properties": {
+                        "remoteId": {
+                          "type": "string"
+                        },
+                        "number": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "integer"
+                            }
+                          ]
+                        },
+                        "startsAt": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "maxDepthM": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "durationMinutes": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        }
+                      },
+                      "description": "With provider_number_taken: the dive at the Provider that has the number"
+                    },
+                    "runId": {
+                      "type": "string",
+                      "description": "With push_run_active: the run that is going"
+                    },
+                    "diveId": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "description": "With provider_number_taken: the Dive here that dive is, if Dive Hub knows it"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "error"
+                  ],
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "sign_in_required",
+                        "admins_only",
+                        "not_found",
+                        "invalid_input",
+                        "internal_error",
+                        "upload_missing",
+                        "upload_too_large",
+                        "setup_done",
+                        "setup_token_invalid",
+                        "invitation_invalid",
+                        "invitation_not_found",
+                        "email_taken",
+                        "reset_link_invalid",
+                        "user_not_found",
+                        "user_disabled",
+                        "last_admin",
+                        "not_yourself",
+                        "confirmation_mismatch",
+                        "session_not_found",
+                        "import_not_found",
+                        "import_not_waiting",
+                        "dive_not_found",
+                        "cylinder_invalid",
+                        "cylinder_series_not_found",
+                        "weighting_feedback_invalid",
+                        "suit_invalid",
+                        "dive_changed",
+                        "dive_values_inconsistent",
+                        "recording_not_on_dive",
+                        "last_recording",
+                        "diver_not_found",
+                        "gas_not_breathable",
+                        "body_weight_not_found",
+                        "certification_not_found",
+                        "certification_changed",
+                        "certification_read_only",
+                        "certification_image_not_found",
+                        "own_diver",
+                        "diver_not_empty",
+                        "diver_in_use",
+                        "diver_not_deletable",
+                        "diver_not_editable",
+                        "diver_external_id_taken",
+                        "diver_external_id_connected",
+                        "participant_invalid",
+                        "merge_not_possible",
+                        "check_not_found",
+                        "device_not_found",
+                        "candidate_not_found",
+                        "candidate_resolved",
+                        "not_a_candidate",
+                        "recording_not_found",
+                        "site_not_found",
+                        "site_changed",
+                        "site_in_use",
+                        "site_not_deletable",
+                        "external_id_taken",
+                        "site_source_not_typed",
+                        "site_merge_self",
+                        "site_offer_not_found",
+                        "centre_not_found",
+                        "centre_changed",
+                        "centre_not_deletable",
+                        "centre_external_id_taken",
+                        "code_not_recognised",
+                        "code_not_a_person",
+                        "diver_choice_needed",
+                        "diver_has_other_account",
+                        "odbl_not_confirmed",
+                        "ssi_not_confirmed",
+                        "site_import_running",
+                        "site_import_not_found",
+                        "source_unavailable",
+                        "source_rate_limited",
+                        "site_import_interrupted",
+                        "connection_not_found",
+                        "encryption_key_missing",
+                        "provider_already_connected",
+                        "provider_account_taken",
+                        "provider_other_account",
+                        "provider_wrong_credentials",
+                        "provider_not_connected",
+                        "provider_sign_in_needed",
+                        "provider_unavailable",
+                        "provider_refused",
+                        "provider_not_stored",
+                        "provider_requirements_unmet",
+                        "provider_not_sent",
+                        "provider_dive_gone",
+                        "provider_busy",
+                        "provider_number_taken",
+                        "provider_numbers_off",
+                        "provider_number_nothing_to_set",
+                        "provider_unsupported",
+                        "push_run_active",
+                        "push_run_nothing_to_send",
+                        "push_run_not_found",
+                        "push_run_not_active",
+                        "push_run_going",
+                        "push_run_not_stopped",
+                        "provider_account_held",
+                        "diver_not_external",
+                        "provider_import_off",
+                        "finding_not_found",
+                        "ai_access_not_found",
+                        "ai_access_off",
+                        "provider_site_data_not_confirmed"
+                      ],
+                      "description": "Stable, machine-readable reason; clients translate it"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "English description, for logs and scripts"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "description": "The Provider a provider_* code is about (ADR 0027)"
+                    },
+                    "providerName": {
+                      "type": "string",
+                      "description": "Its name, to put into the translated text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/connections/{id}/gone-dives/check": {
       "post": {
         "summary": "Check the Provider's logbook for Dives that are gone there (ADR 0051): one fresh read, stores findings, changes no Dive",
@@ -73753,6 +74896,7 @@
                       "siteId",
                       "unmet",
                       "current",
+                      "conflicts",
                       "pushes"
                     ],
                     "properties": {
@@ -73938,6 +75082,248 @@
                               }
                             },
                             "description": "The remote dive this Dive has now; null when none (never sent, deleted)"
+                          }
+                        ]
+                      },
+                      "conflicts": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "field",
+                                "hub",
+                                "provider"
+                              ],
+                              "properties": {
+                                "field": {
+                                  "enum": [
+                                    "site",
+                                    "notes",
+                                    "buddies",
+                                    "cylinder",
+                                    "lead",
+                                    "startsAt",
+                                    "durationSeconds",
+                                    "maxDepthM",
+                                    "avgDepthM",
+                                    "waterTemperatureC"
+                                  ],
+                                  "description": "The field the two sides differ on"
+                                },
+                                "hub": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        {
+                                          "type": "object",
+                                          "required": [
+                                            "volumeL",
+                                            "material",
+                                            "startPressureBar",
+                                            "endPressureBar",
+                                            "gas"
+                                          ],
+                                          "properties": {
+                                            "volumeL": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "null"
+                                                },
+                                                {
+                                                  "type": "number"
+                                                }
+                                              ]
+                                            },
+                                            "material": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "null"
+                                                },
+                                                {
+                                                  "enum": [
+                                                    "aluminium",
+                                                    "steel",
+                                                    "carbon"
+                                                  ]
+                                                }
+                                              ]
+                                            },
+                                            "startPressureBar": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "null"
+                                                },
+                                                {
+                                                  "type": "number"
+                                                }
+                                              ]
+                                            },
+                                            "endPressureBar": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "null"
+                                                },
+                                                {
+                                                  "type": "number"
+                                                }
+                                              ]
+                                            },
+                                            "gas": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "null"
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "required": [
+                                                    "o2",
+                                                    "he"
+                                                  ],
+                                                  "properties": {
+                                                    "o2": {
+                                                      "type": "number"
+                                                    },
+                                                    "he": {
+                                                      "type": "number"
+                                                    }
+                                                  },
+                                                  "description": "O₂ and He as percent"
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ],
+                                      "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
+                                    }
+                                  ]
+                                },
+                                "provider": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        {
+                                          "type": "object",
+                                          "required": [
+                                            "volumeL",
+                                            "material",
+                                            "startPressureBar",
+                                            "endPressureBar",
+                                            "gas"
+                                          ],
+                                          "properties": {
+                                            "volumeL": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "null"
+                                                },
+                                                {
+                                                  "type": "number"
+                                                }
+                                              ]
+                                            },
+                                            "material": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "null"
+                                                },
+                                                {
+                                                  "enum": [
+                                                    "aluminium",
+                                                    "steel",
+                                                    "carbon"
+                                                  ]
+                                                }
+                                              ]
+                                            },
+                                            "startPressureBar": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "null"
+                                                },
+                                                {
+                                                  "type": "number"
+                                                }
+                                              ]
+                                            },
+                                            "endPressureBar": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "null"
+                                                },
+                                                {
+                                                  "type": "number"
+                                                }
+                                              ]
+                                            },
+                                            "gas": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "null"
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "required": [
+                                                    "o2",
+                                                    "he"
+                                                  ],
+                                                  "properties": {
+                                                    "o2": {
+                                                      "type": "number"
+                                                    },
+                                                    "he": {
+                                                      "type": "number"
+                                                    }
+                                                  },
+                                                  "description": "O₂ and He as percent"
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ],
+                                      "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            "description": "The open entry of Conflicts about the current remote dive (a Push run left these fields as the Provider has them): say so and offer to decide (send with conflicts). null when none waits"
                           }
                         ]
                       },
@@ -74411,6 +75797,7 @@
                     "siteId",
                     "unmet",
                     "current",
+                    "conflicts",
                     "pushes"
                   ],
                   "properties": {
@@ -74596,6 +75983,248 @@
                             }
                           },
                           "description": "The remote dive this Dive has now; null when none (never sent, deleted)"
+                        }
+                      ]
+                    },
+                    "conflicts": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "field",
+                              "hub",
+                              "provider"
+                            ],
+                            "properties": {
+                              "field": {
+                                "enum": [
+                                  "site",
+                                  "notes",
+                                  "buddies",
+                                  "cylinder",
+                                  "lead",
+                                  "startsAt",
+                                  "durationSeconds",
+                                  "maxDepthM",
+                                  "avgDepthM",
+                                  "waterTemperatureC"
+                                ],
+                                "description": "The field the two sides differ on"
+                              },
+                              "hub": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "volumeL",
+                                          "material",
+                                          "startPressureBar",
+                                          "endPressureBar",
+                                          "gas"
+                                        ],
+                                        "properties": {
+                                          "volumeL": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "number"
+                                              }
+                                            ]
+                                          },
+                                          "material": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "enum": [
+                                                  "aluminium",
+                                                  "steel",
+                                                  "carbon"
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          "startPressureBar": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "number"
+                                              }
+                                            ]
+                                          },
+                                          "endPressureBar": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "number"
+                                              }
+                                            ]
+                                          },
+                                          "gas": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "object",
+                                                "required": [
+                                                  "o2",
+                                                  "he"
+                                                ],
+                                                "properties": {
+                                                  "o2": {
+                                                    "type": "number"
+                                                  },
+                                                  "he": {
+                                                    "type": "number"
+                                                  }
+                                                },
+                                                "description": "O₂ and He as percent"
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    ],
+                                    "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
+                                  }
+                                ]
+                              },
+                              "provider": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "volumeL",
+                                          "material",
+                                          "startPressureBar",
+                                          "endPressureBar",
+                                          "gas"
+                                        ],
+                                        "properties": {
+                                          "volumeL": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "number"
+                                              }
+                                            ]
+                                          },
+                                          "material": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "enum": [
+                                                  "aluminium",
+                                                  "steel",
+                                                  "carbon"
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          "startPressureBar": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "number"
+                                              }
+                                            ]
+                                          },
+                                          "endPressureBar": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "number"
+                                              }
+                                            ]
+                                          },
+                                          "gas": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "object",
+                                                "required": [
+                                                  "o2",
+                                                  "he"
+                                                ],
+                                                "properties": {
+                                                  "o2": {
+                                                    "type": "number"
+                                                  },
+                                                  "he": {
+                                                    "type": "number"
+                                                  }
+                                                },
+                                                "description": "O₂ and He as percent"
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    ],
+                                    "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "description": "The open entry of Conflicts about the current remote dive (a Push run left these fields as the Provider has them): say so and offer to decide (send with conflicts). null when none waits"
                         }
                       ]
                     },
@@ -75172,7 +76801,7 @@
       },
       "post": {
         "summary": "Send the Dive to the Provider: updates its remote dive, or creates one",
-        "description": "Before creating, a dive at about the same time already at the Provider is answered with outcome exists and nothing is sent; send again with onExisting link (tie the Dive to it) or create (a second dive). Mind the Provider's notices.",
+        "description": "Before creating, a dive at about the same time already at the Provider is answered with outcome exists and nothing is sent; send again with onExisting link (tie the Dive to it) or create (a second dive). Mind the Provider's notices. An update is three-way (ADR 0056): what changed only at the Provider is taken into the Dive first (taken), a value removed here is removed there, and a field changed on both sides is a Conflict: outcome conflicts, nothing sent. Send again with conflicts, a choice per field (hub preselected).",
         "requestBody": {
           "required": true,
           "content": {
@@ -75185,6 +76814,73 @@
                       "link",
                       "create"
                     ]
+                  },
+                  "conflicts": {
+                    "type": "object",
+                    "properties": {
+                      "site": {
+                        "enum": [
+                          "hub",
+                          "provider"
+                        ]
+                      },
+                      "notes": {
+                        "enum": [
+                          "hub",
+                          "provider"
+                        ]
+                      },
+                      "buddies": {
+                        "enum": [
+                          "hub",
+                          "provider"
+                        ]
+                      },
+                      "cylinder": {
+                        "enum": [
+                          "hub",
+                          "provider"
+                        ]
+                      },
+                      "lead": {
+                        "enum": [
+                          "hub",
+                          "provider"
+                        ]
+                      },
+                      "startsAt": {
+                        "enum": [
+                          "hub",
+                          "provider"
+                        ]
+                      },
+                      "durationSeconds": {
+                        "enum": [
+                          "hub",
+                          "provider"
+                        ]
+                      },
+                      "maxDepthM": {
+                        "enum": [
+                          "hub",
+                          "provider"
+                        ]
+                      },
+                      "avgDepthM": {
+                        "enum": [
+                          "hub",
+                          "provider"
+                        ]
+                      },
+                      "waterTemperatureC": {
+                        "enum": [
+                          "hub",
+                          "provider"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false,
+                    "description": "Per Conflict: hub sends the Dive's value, provider takes the Provider's. A field that is no Conflict any more is ignored"
                   }
                 },
                 "additionalProperties": false
@@ -75223,6 +76919,9 @@
                   "required": [
                     "outcome",
                     "existing",
+                    "conflicts",
+                    "taken",
+                    "deferred",
                     "status"
                   ],
                   "properties": {
@@ -75231,9 +76930,10 @@
                         "created",
                         "updated",
                         "linked",
-                        "exists"
+                        "exists",
+                        "conflicts"
                       ],
-                      "description": "exists: nothing was sent; a dive at the same time is there. Send again with onExisting link or create"
+                      "description": "exists: nothing was sent; a dive at the same time is there. Send again with onExisting link or create. conflicts: nothing was sent; list the fields with both values and send again with conflicts"
                     },
                     "existing": {
                       "anyOf": [
@@ -75299,6 +76999,298 @@
                         }
                       ]
                     },
+                    "conflicts": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "field",
+                              "hub",
+                              "provider"
+                            ],
+                            "properties": {
+                              "field": {
+                                "enum": [
+                                  "site",
+                                  "notes",
+                                  "buddies",
+                                  "cylinder",
+                                  "lead",
+                                  "startsAt",
+                                  "durationSeconds",
+                                  "maxDepthM",
+                                  "avgDepthM",
+                                  "waterTemperatureC"
+                                ],
+                                "description": "The field the two sides differ on"
+                              },
+                              "hub": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "volumeL",
+                                          "material",
+                                          "startPressureBar",
+                                          "endPressureBar",
+                                          "gas"
+                                        ],
+                                        "properties": {
+                                          "volumeL": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "number"
+                                              }
+                                            ]
+                                          },
+                                          "material": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "enum": [
+                                                  "aluminium",
+                                                  "steel",
+                                                  "carbon"
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          "startPressureBar": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "number"
+                                              }
+                                            ]
+                                          },
+                                          "endPressureBar": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "number"
+                                              }
+                                            ]
+                                          },
+                                          "gas": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "object",
+                                                "required": [
+                                                  "o2",
+                                                  "he"
+                                                ],
+                                                "properties": {
+                                                  "o2": {
+                                                    "type": "number"
+                                                  },
+                                                  "he": {
+                                                    "type": "number"
+                                                  }
+                                                },
+                                                "description": "O₂ and He as percent"
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    ],
+                                    "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
+                                  }
+                                ]
+                              },
+                              "provider": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "volumeL",
+                                          "material",
+                                          "startPressureBar",
+                                          "endPressureBar",
+                                          "gas"
+                                        ],
+                                        "properties": {
+                                          "volumeL": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "number"
+                                              }
+                                            ]
+                                          },
+                                          "material": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "enum": [
+                                                  "aluminium",
+                                                  "steel",
+                                                  "carbon"
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          "startPressureBar": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "number"
+                                              }
+                                            ]
+                                          },
+                                          "endPressureBar": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "number"
+                                              }
+                                            ]
+                                          },
+                                          "gas": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "object",
+                                                "required": [
+                                                  "o2",
+                                                  "he"
+                                                ],
+                                                "properties": {
+                                                  "o2": {
+                                                    "type": "number"
+                                                  },
+                                                  "he": {
+                                                    "type": "number"
+                                                  }
+                                                },
+                                                "description": "O₂ and He as percent"
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    ],
+                                    "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "description": "With outcome conflicts: the fields changed on both sides"
+                        }
+                      ]
+                    },
+                    "taken": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "enum": [
+                              "site",
+                              "notes",
+                              "buddies",
+                              "cylinder",
+                              "lead",
+                              "startsAt",
+                              "durationSeconds",
+                              "maxDepthM",
+                              "avgDepthM",
+                              "waterTemperatureC"
+                            ]
+                          },
+                          "description": "With outcome updated: the fields taken from the Provider into the Dive first"
+                        }
+                      ]
+                    },
+                    "deferred": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "enum": [
+                              "site",
+                              "notes",
+                              "buddies",
+                              "cylinder",
+                              "lead",
+                              "startsAt",
+                              "durationSeconds",
+                              "maxDepthM",
+                              "avgDepthM",
+                              "waterTemperatureC"
+                            ]
+                          },
+                          "description": "With outcome updated: the fields left as the Provider has them"
+                        }
+                      ]
+                    },
                     "status": {
                       "type": "object",
                       "required": [
@@ -75307,6 +77299,7 @@
                         "siteId",
                         "unmet",
                         "current",
+                        "conflicts",
                         "pushes"
                       ],
                       "properties": {
@@ -75492,6 +77485,248 @@
                                 }
                               },
                               "description": "The remote dive this Dive has now; null when none (never sent, deleted)"
+                            }
+                          ]
+                        },
+                        "conflicts": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "field",
+                                  "hub",
+                                  "provider"
+                                ],
+                                "properties": {
+                                  "field": {
+                                    "enum": [
+                                      "site",
+                                      "notes",
+                                      "buddies",
+                                      "cylinder",
+                                      "lead",
+                                      "startsAt",
+                                      "durationSeconds",
+                                      "maxDepthM",
+                                      "avgDepthM",
+                                      "waterTemperatureC"
+                                    ],
+                                    "description": "The field the two sides differ on"
+                                  },
+                                  "hub": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "anyOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          {
+                                            "type": "object",
+                                            "required": [
+                                              "volumeL",
+                                              "material",
+                                              "startPressureBar",
+                                              "endPressureBar",
+                                              "gas"
+                                            ],
+                                            "properties": {
+                                              "volumeL": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "number"
+                                                  }
+                                                ]
+                                              },
+                                              "material": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "enum": [
+                                                      "aluminium",
+                                                      "steel",
+                                                      "carbon"
+                                                    ]
+                                                  }
+                                                ]
+                                              },
+                                              "startPressureBar": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "number"
+                                                  }
+                                                ]
+                                              },
+                                              "endPressureBar": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "number"
+                                                  }
+                                                ]
+                                              },
+                                              "gas": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "object",
+                                                    "required": [
+                                                      "o2",
+                                                      "he"
+                                                    ],
+                                                    "properties": {
+                                                      "o2": {
+                                                        "type": "number"
+                                                      },
+                                                      "he": {
+                                                        "type": "number"
+                                                      }
+                                                    },
+                                                    "description": "O₂ and He as percent"
+                                                  }
+                                                ]
+                                              }
+                                            }
+                                          }
+                                        ],
+                                        "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
+                                      }
+                                    ]
+                                  },
+                                  "provider": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "anyOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          {
+                                            "type": "object",
+                                            "required": [
+                                              "volumeL",
+                                              "material",
+                                              "startPressureBar",
+                                              "endPressureBar",
+                                              "gas"
+                                            ],
+                                            "properties": {
+                                              "volumeL": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "number"
+                                                  }
+                                                ]
+                                              },
+                                              "material": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "enum": [
+                                                      "aluminium",
+                                                      "steel",
+                                                      "carbon"
+                                                    ]
+                                                  }
+                                                ]
+                                              },
+                                              "startPressureBar": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "number"
+                                                  }
+                                                ]
+                                              },
+                                              "endPressureBar": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "number"
+                                                  }
+                                                ]
+                                              },
+                                              "gas": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "object",
+                                                    "required": [
+                                                      "o2",
+                                                      "he"
+                                                    ],
+                                                    "properties": {
+                                                      "o2": {
+                                                        "type": "number"
+                                                      },
+                                                      "he": {
+                                                        "type": "number"
+                                                      }
+                                                    },
+                                                    "description": "O₂ and He as percent"
+                                                  }
+                                                ]
+                                              }
+                                            }
+                                          }
+                                        ],
+                                        "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              "description": "The open entry of Conflicts about the current remote dive (a Push run left these fields as the Provider has them): say so and offer to decide (send with conflicts). null when none waits"
                             }
                           ]
                         },
@@ -76536,6 +78771,7 @@
                     "siteId",
                     "unmet",
                     "current",
+                    "conflicts",
                     "pushes"
                   ],
                   "properties": {
@@ -76721,6 +78957,248 @@
                             }
                           },
                           "description": "The remote dive this Dive has now; null when none (never sent, deleted)"
+                        }
+                      ]
+                    },
+                    "conflicts": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "field",
+                              "hub",
+                              "provider"
+                            ],
+                            "properties": {
+                              "field": {
+                                "enum": [
+                                  "site",
+                                  "notes",
+                                  "buddies",
+                                  "cylinder",
+                                  "lead",
+                                  "startsAt",
+                                  "durationSeconds",
+                                  "maxDepthM",
+                                  "avgDepthM",
+                                  "waterTemperatureC"
+                                ],
+                                "description": "The field the two sides differ on"
+                              },
+                              "hub": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "volumeL",
+                                          "material",
+                                          "startPressureBar",
+                                          "endPressureBar",
+                                          "gas"
+                                        ],
+                                        "properties": {
+                                          "volumeL": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "number"
+                                              }
+                                            ]
+                                          },
+                                          "material": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "enum": [
+                                                  "aluminium",
+                                                  "steel",
+                                                  "carbon"
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          "startPressureBar": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "number"
+                                              }
+                                            ]
+                                          },
+                                          "endPressureBar": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "number"
+                                              }
+                                            ]
+                                          },
+                                          "gas": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "object",
+                                                "required": [
+                                                  "o2",
+                                                  "he"
+                                                ],
+                                                "properties": {
+                                                  "o2": {
+                                                    "type": "number"
+                                                  },
+                                                  "he": {
+                                                    "type": "number"
+                                                  }
+                                                },
+                                                "description": "O₂ and He as percent"
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    ],
+                                    "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
+                                  }
+                                ]
+                              },
+                              "provider": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "volumeL",
+                                          "material",
+                                          "startPressureBar",
+                                          "endPressureBar",
+                                          "gas"
+                                        ],
+                                        "properties": {
+                                          "volumeL": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "number"
+                                              }
+                                            ]
+                                          },
+                                          "material": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "enum": [
+                                                  "aluminium",
+                                                  "steel",
+                                                  "carbon"
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          "startPressureBar": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "number"
+                                              }
+                                            ]
+                                          },
+                                          "endPressureBar": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "number"
+                                              }
+                                            ]
+                                          },
+                                          "gas": {
+                                            "anyOf": [
+                                              {
+                                                "type": "null"
+                                              },
+                                              {
+                                                "type": "object",
+                                                "required": [
+                                                  "o2",
+                                                  "he"
+                                                ],
+                                                "properties": {
+                                                  "o2": {
+                                                    "type": "number"
+                                                  },
+                                                  "he": {
+                                                    "type": "number"
+                                                  }
+                                                },
+                                                "description": "O₂ and He as percent"
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    ],
+                                    "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "description": "The open entry of Conflicts about the current remote dive (a Push run left these fields as the Provider has them): say so and offer to decide (send with conflicts). null when none waits"
                         }
                       ]
                     },
@@ -78584,6 +81062,7 @@
                         "siteId",
                         "unmet",
                         "current",
+                        "conflicts",
                         "pushes"
                       ],
                       "properties": {
@@ -78769,6 +81248,248 @@
                                 }
                               },
                               "description": "The remote dive this Dive has now; null when none (never sent, deleted)"
+                            }
+                          ]
+                        },
+                        "conflicts": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "field",
+                                  "hub",
+                                  "provider"
+                                ],
+                                "properties": {
+                                  "field": {
+                                    "enum": [
+                                      "site",
+                                      "notes",
+                                      "buddies",
+                                      "cylinder",
+                                      "lead",
+                                      "startsAt",
+                                      "durationSeconds",
+                                      "maxDepthM",
+                                      "avgDepthM",
+                                      "waterTemperatureC"
+                                    ],
+                                    "description": "The field the two sides differ on"
+                                  },
+                                  "hub": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "anyOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          {
+                                            "type": "object",
+                                            "required": [
+                                              "volumeL",
+                                              "material",
+                                              "startPressureBar",
+                                              "endPressureBar",
+                                              "gas"
+                                            ],
+                                            "properties": {
+                                              "volumeL": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "number"
+                                                  }
+                                                ]
+                                              },
+                                              "material": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "enum": [
+                                                      "aluminium",
+                                                      "steel",
+                                                      "carbon"
+                                                    ]
+                                                  }
+                                                ]
+                                              },
+                                              "startPressureBar": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "number"
+                                                  }
+                                                ]
+                                              },
+                                              "endPressureBar": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "number"
+                                                  }
+                                                ]
+                                              },
+                                              "gas": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "object",
+                                                    "required": [
+                                                      "o2",
+                                                      "he"
+                                                    ],
+                                                    "properties": {
+                                                      "o2": {
+                                                        "type": "number"
+                                                      },
+                                                      "he": {
+                                                        "type": "number"
+                                                      }
+                                                    },
+                                                    "description": "O₂ and He as percent"
+                                                  }
+                                                ]
+                                              }
+                                            }
+                                          }
+                                        ],
+                                        "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
+                                      }
+                                    ]
+                                  },
+                                  "provider": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "anyOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          {
+                                            "type": "object",
+                                            "required": [
+                                              "volumeL",
+                                              "material",
+                                              "startPressureBar",
+                                              "endPressureBar",
+                                              "gas"
+                                            ],
+                                            "properties": {
+                                              "volumeL": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "number"
+                                                  }
+                                                ]
+                                              },
+                                              "material": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "enum": [
+                                                      "aluminium",
+                                                      "steel",
+                                                      "carbon"
+                                                    ]
+                                                  }
+                                                ]
+                                              },
+                                              "startPressureBar": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "number"
+                                                  }
+                                                ]
+                                              },
+                                              "endPressureBar": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "number"
+                                                  }
+                                                ]
+                                              },
+                                              "gas": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "object",
+                                                    "required": [
+                                                      "o2",
+                                                      "he"
+                                                    ],
+                                                    "properties": {
+                                                      "o2": {
+                                                        "type": "number"
+                                                      },
+                                                      "he": {
+                                                        "type": "number"
+                                                      }
+                                                    },
+                                                    "description": "O₂ and He as percent"
+                                                  }
+                                                ]
+                                              }
+                                            }
+                                          }
+                                        ],
+                                        "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              "description": "The open entry of Conflicts about the current remote dive (a Push run left these fields as the Provider has them): say so and offer to decide (send with conflicts). null when none waits"
                             }
                           ]
                         },

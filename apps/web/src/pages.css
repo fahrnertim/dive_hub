@@ -334,6 +334,12 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .provider-import h4 { font-size: var(--text-sm); font-weight: var(--weight-semibold); margin: 0; }
 .provider-import .muted, .provider-import p { margin: 0; }
 .provider-import-part { display: grid; gap: var(--space-3); }
+/* Fields changed both here and at a Provider (ADR 0056): one choice per field, where the send button was. */
+.provider-conflicts { display: grid; gap: var(--space-3); min-width: 0; }
+.provider-conflicts > h3 { font-size: var(--text-md); margin: 0; }
+.provider-conflicts > .muted, .provider-conflicts .form-actions { margin: 0; }
+.provider-conflicts-asked { background: var(--color-accent-soft); border-radius: var(--radius-md); padding: var(--space-4); }
+.provider-conflict-value { overflow-wrap: anywhere; white-space: pre-line; }
 .import-counts { margin: 0; padding-left: var(--space-5); }
 .import-counts li + li { margin-top: var(--space-1); }
 .import-summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); }

@@ -754,6 +754,13 @@
     "notWaiting": "{{dive}} wartet nicht mehr auf eine Entscheidung.",
     "kept": "{{dive}} bleibt hier. Er ist nicht mehr mit {{name}} verknüpft; wenn du ihn erneut sendest, wird er dort neu angelegt."
   },
+  "conflicts": {
+    "title": "An beiden Stellen geändert ({{count}})",
+    "titleConnection": "An beiden Stellen geändert in {{name}}: {{diver}} ({{count}})",
+    "intro": "Eine Sendung hat diese Tauchgänge ohne diese Werte an {{name}} geschickt: Sie wurden seit dem letzten Austausch hier und in {{name}} geändert. Wähle, welcher bleibt; der Tauchgang wird dann mit deiner Wahl erneut gesendet.",
+    "sent": "{{dive}} wurde mit deiner Wahl an {{name}} gesendet.",
+    "again": "{{dive}} wurde erneut an beiden Stellen geändert. Wähle noch einmal."
+  },
   "review": {
     "title": "Durchsicht",
     "parts": "Teile der Durchsicht",
@@ -777,6 +784,8 @@
       "shortDives_other": "{{count}} Tauchgänge, die wahrscheinlich keine sind",
       "gone_one": "{{count}} Tauchgang nicht mehr in {{name}}",
       "gone_other": "{{count}} Tauchgänge nicht mehr in {{name}}",
+      "conflicts_one": "{{count}} Tauchgang mit an beiden Stellen geänderten Werten",
+      "conflicts_other": "{{count}} Tauchgänge mit an beiden Stellen geänderten Werten",
       "go": "Durchsehen"
     }
   },
@@ -1159,6 +1168,8 @@
     "done": "{{sent}} von {{total}} Tauchgängen an {{name}} gesendet.",
     "cancelled": "Gestoppt: {{sent}} von {{total}} Tauchgängen wurden an {{name}} gesendet.",
     "stopped": "Angehalten nach {{sent}} von {{total}} Tauchgängen an {{name}}.",
+    "conflicts_one": "{{count}} Tauchgang hat an beiden Stellen geänderte Werte: Er wartet auf deine Entscheidung.",
+    "conflicts_other": "{{count}} Tauchgänge haben an beiden Stellen geänderte Werte: Sie warten auf deine Entscheidung.",
     "continue": "Fortsetzen",
     "signIn": "Erneut bei {{name}} anmelden",
     "dismiss": "Ausblenden",
@@ -1331,7 +1342,8 @@
       "updated": "In {{name}} aktualisiert.",
       "linked": "Mit {{name}}-Tauchgang {{number}} verknüpft.",
       "exists": "Ein Tauchgang zur selben Zeit ist schon in {{name}}.",
-      "numbered": "Nummer in {{name}} auf {{number}} gesetzt."
+      "numbered": "Nummer in {{name}} auf {{number}} gesetzt.",
+      "conflicts": "Noch nichts an {{name}} gesendet: Wähle, welche Werte bleiben."
     },
     "handedOverResult": "An {{name}} übergeben.",
     "differences": "{{name}} hat einige Werte anders gespeichert als gesendet:",
@@ -1493,6 +1505,14 @@
     },
     "importKeepHub": "Aus Dive Hub behalten: {{value}}",
     "importTakeProvider": "Von {{name}} übernehmen: {{value}}",
+    "conflictsTitle": "An beiden Stellen geändert",
+    "conflictsIntro": "{{name}} hat hier seit dem letzten Austausch einen anderen Wert. Wähle, welcher bleibt; noch wurde nichts gesendet.",
+    "conflictsWaiting": "Eine Sendung hat diesen Tauchgang ohne diese Werte an {{name}} geschickt: Sie wurden an beiden Stellen geändert. Wähle, welcher bleibt.",
+    "conflictKeep": "Aus Dive Hub behalten",
+    "conflictTake": "Von {{name}} übernehmen",
+    "conflictsSend": "Mit dieser Wahl senden",
+    "taken": "Von {{name}} übernommen: {{fields}}.",
+    "deferred": "Wie in {{name}} gelassen: {{fields}}.",
     "claimQuestion_one": "Dieses {{name}}-Konto ist hier {{diver}}, Buddy bei {{count}} Tauchgang. Bist du das?",
     "claimQuestion_other": "Dieses {{name}}-Konto ist hier {{diver}}, Buddy bei {{count}} Tauchgängen. Bist du das?",
     "claimExplain": "Beim Verbinden wird {{diver}} zu {{mine}}: die Tauchgänge, die {{diver}} nennen, nennen dann {{mine}}. Nichts von diesen Tauchgängen wird deins.",

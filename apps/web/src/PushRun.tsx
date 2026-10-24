@@ -11,6 +11,7 @@ import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
 import { logbookHref, toggled, type LogbookFilter, type LogbookParams } from './lib/logbook.ts';
 import { useProviders } from './lib/providers.ts';
+import { reviewHref } from './lib/review.ts';
 import { accountHref } from './lib/account-tabs.ts';
 import { HeldAtProvider, NumberPlanList } from './NumberChain.tsx';
 import { ActionMenu, Button, Checkbox, ConfirmButton, Dialog, Disclosure, Icon, LinkButton, Muted, Notice, RadioGroup } from './ui/index.ts';
@@ -336,6 +337,8 @@ export function PushRunStrip() {
     if (seen.current?.id === run.id && seen.current.active && !active) {
       void queryClient.invalidateQueries({ queryKey: keys.dives });
       void queryClient.invalidateQueries({ queryKey: keys.connections });
+      // Dives it left with Conflicts wait on the Review page (ADR 0056).
+      void queryClient.invalidateQueries({ queryKey: keys.providerConflicts });
       announce(runSummary(t, run, name));
     }
     seen.current = { id: run.id, active };
@@ -437,6 +440,7 @@ function EndedStrip({ run, name, onDismiss, dismissError }: { run: PushRunView; 
       </div>
       {resume.isError && <Notice tone="danger">{errorText(resume.error)}</Notice>}
       {dismissError && <Notice tone="danger">{errorText(dismissError)}</Notice>}
+      {run.conflicts > 0 && <p>{t('pushRun.conflicts', { count: run.conflicts })} <a href={reviewHref('decide')}>{t('review.strip.go')}</a></p>}
       {run.numbers && <SharedSteps id={run.id} />}
       {unsent > 0 && <Disclosure title={t('pushRun.details', { count: unsent })}><RunItems id={run.id} name={name} provider={provider} /></Disclosure>}
     </>

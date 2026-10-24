@@ -161,11 +161,13 @@ for (const record of [
 // Uploads made by the tests are processed in the background, as in the real app.
 const worker = await startWorker(pool, imports, siteImports, aiAccesses, assessments, providers.pushRuns, providers.certifications, app.log);
 // Test-only (never in the production app): a browser test changes a dive in an SSI account's logbook, as the User would
-// in SSI's app (ADR 0030: changes taken back). By the account's e-mail and SSI's dive number; only the fields given.
+// in SSI's app (ADR 0030: changes taken back). By the account's e-mail and SSI's dive number or ID; only the fields given.
 app.post('/e2e/fake-ssi/dive', { schema: { hide: true } }, async (request) => {
-  const { email, number, set } = request.body as { email: string; number: number; set: Record<string, unknown> };
+  const { email, number, remoteId, set } = request.body as { email: string; number?: number; remoteId?: string; set: Record<string, unknown> };
   const account = fakeSsi.accounts.find((a) => a.email === email);
-  const record = [...fakeSsi.dives.values()].find((d) => d.odin_user_log_user_master_id === account?.accountId && d.odin_user_log_nr === number);
+  const record = remoteId !== undefined
+    ? [fakeSsi.dives.get(Number(remoteId))].find((d) => d?.odin_user_log_user_master_id === account?.accountId)
+    : [...fakeSsi.dives.values()].find((d) => d.odin_user_log_user_master_id === account?.accountId && d.odin_user_log_nr === number);
   if (!record) return { found: false };
   Object.assign(record, set);
   return { found: true };

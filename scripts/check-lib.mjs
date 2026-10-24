@@ -39,7 +39,8 @@ const AREAS = [
   [/^apps\/web\/src\/(Account|AccountPage|Connections|ProviderBuddies)\.tsx$|^apps\/web\/src\/lib\/account-tabs\.ts$/, ['@account']],
   // Importing a Provider's dives (ADR 0030): on the Connection, and the dives it makes.
   [/^apps\/web\/src\/(ProviderDiveImport|GoneDives)\.tsx$/, ['@account', '@dives']],
-  [/^apps\/web\/src\/ProviderPanel\.tsx$/, ['@dives']],
+  // A Dive at a Provider, and a Conflict with it asked on the Dive's page and waiting on the Review page (ADR 0056).
+  [/^apps\/web\/src\/(ProviderPanel|ProviderConflicts|ProviderConflictsSection)\.tsx$/, ['@dives']],
   // Providers in the web client (ADR 0027): the account's Connections and each Dive's panels read them.
   [/^apps\/web\/src\/lib\/providers\.ts$/, ['@dives', '@account']],
   [/^apps\/web\/src\/Admin\.tsx$/, ['@admin']],
