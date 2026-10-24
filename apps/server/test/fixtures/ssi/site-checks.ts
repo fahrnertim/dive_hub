@@ -2,6 +2,7 @@
 // It writes to the real SSI account: it creates one private site "Dive Hub test" at 0.001, 0.001 with `save_divesite`,
 // reads it with `get_divesite` and `get_divelog`, deletes it again with `odin_dive_sites_deleted: true` and looks whether
 // it is gone. Output: key names, HTTP statuses and ID-like values only, never names, comments, URLs, tokens or passwords.
+// The flags go as the numbers 0/1 (SSI takes the dive record's flags so; the owner's run of 2026-10-24 showed a boolean delete is not stored).
 // Everything SSI answers goes to samples/private/ssi/site-probe.json (git-ignored).
 import { DEFAULT_SSI_URL } from '../../../src/providers/ssi/ssi-client.js';
 import { createSsiTransport, SsiError, type Fetch } from '../../../src/providers/ssi/ssi-transport.js';
@@ -37,10 +38,10 @@ export function siteRow(accountId: string, id: string | null, deleted: boolean):
     odin_dive_sites_regions_name: null,
     odin_dive_sites_areas_name: null,
     odin_dive_sites_geo_locked: null,
-    odin_dive_sites_is_private: true,
+    odin_dive_sites_is_private: 1,
     odin_dive_sites_alias_ids: null,
     odin_dive_sites_is_private_owner: Number(accountId),
-    odin_dive_sites_deleted: deleted,
+    odin_dive_sites_deleted: deleted ? 1 : 0,
     alias_names_search: null,
     alias_names: null,
   };
@@ -67,13 +68,17 @@ type Answer = { httpStatus: number | undefined; data: Record<string, unknown> | 
 type Ask = (what: string, params: Record<string, string>, body?: Record<string, unknown>) => Promise<Answer>;
 
 /** The transport with the HTTP status of the last call; a refusal or an HTTP error is an outcome to print, not a reason to stop. */
-function makeAsk(access: string): Ask {
+interface Raw { status?: number; contentType?: string | null; text?: string }
+function makeAsk(access: string, raw: Raw = {}): Ask {
   let httpStatus: number | undefined;
   const transport = createSsiTransport({
     url: DEFAULT_SSI_URL, timeoutMs: 60_000,
     fetch: (async (url, init) => {
       const response = await fetch(url, init);
       httpStatus = response.status;
+      raw.status = response.status;
+      raw.contentType = response.headers.get('content-type');
+      raw.text = await response.clone().text();
       return response;
     }) as Fetch,
   });
@@ -138,7 +143,7 @@ async function learnNewId(ask: Ask, log: (line: string) => void, created: Answer
 
 /** Step 4 and its checks; runs also when a read failed. */
 async function deleteAndCheck(ask: Ask, o: SiteProbe, id: string, results: Record<string, unknown>) {
-  o.log(`4. save_divesite (delete ${id}, odin_dive_sites_deleted: true)`);
+  o.log(`4. save_divesite (delete ${id}, odin_dive_sites_deleted: 1)`);
   const deleted = await ask('save_divesite', {}, siteRow(o.accountId, id, true));
   o.log(`  answer: ${outcome(deleted)}; ${deleted.data ? describe(deleted.data) : '-'}`);
   results.delete = { httpStatus: deleted.httpStatus, error: deleted.error, answer: deleted.data };
@@ -156,7 +161,7 @@ export async function runSiteProbe(o: SiteProbe): Promise<Record<string, unknown
 
   const row = siteRow(o.accountId, null, false);
   o.log(`1. save_divesite (create). Keys sent: ${Object.keys(row).join(', ')}`);
-  o.log(`   private flag key: odin_dive_sites_is_private = true; owner key: odin_dive_sites_is_private_owner = account ${o.accountId}`);
+  o.log(`   private flag key: odin_dive_sites_is_private = 1; owner key: odin_dive_sites_is_private_owner = account ${o.accountId}`);
   const created = await ask('save_divesite', {}, row);
   o.log(`  answer: ${outcome(created)}; ${created.data ? describe(created.data) : '-'}`);
   results.create = { sentKeys: Object.keys(row), httpStatus: created.httpStatus, error: created.error, answer: created.data };
@@ -165,7 +170,7 @@ export async function runSiteProbe(o: SiteProbe): Promise<Record<string, unknown
     o.log('STOP: save_divesite gives no way to learn the new site ID. Check the MySSI app for a site "Dive Hub test" at 0.001, 0.001 and delete it by hand.');
     return results;
   }
-  o.log(`*** CREATED SITE ID ${id}: if the run stops before step 4 ends, delete it by hand (save_divesite with this ID and odin_dive_sites_deleted: true) ***`);
+  o.log(`*** CREATED SITE ID ${id}: if the run stops before step 4 ends, delete it by hand (save_divesite with this ID and odin_dive_sites_deleted: 1) ***`);
   results.newId = id;
 
   try {
@@ -182,4 +187,54 @@ export async function runSiteProbe(o: SiteProbe): Promise<Record<string, unknown
     await deleteAndCheck(ask, o, id, results);
   }
   return results;
+}
+
+const looksLikeState = (k: string) => idKey(k) || /private|deleted|owner/.test(k);
+const shown = (k: string, v: unknown) => (looksLikeState(k) && (isIdValue(v) || typeof v === 'boolean' || v === null) ? `${k}=${String(v)}` : k);
+
+/**
+ * `site get <id>`: read-only. Calls get_divesite and prints what came back without the transport's parsing: the transport
+ * answers `bad_response` for a body that is not JSON or whose top level is not an object (an array, a number, a string).
+ */
+export async function runSiteGet(o: Pick<SiteProbe, 'access' | 'log'> & { id: string }): Promise<void> {
+  const raw: Raw = {};
+  const ask = makeAsk(o.access, raw);
+  const r = await ask('get_divesite', { dsid: o.id });
+  let parsed: unknown;
+  let json = false;
+  try {
+    parsed = JSON.parse(raw.text ?? '');
+    json = true;
+  } catch { /* not JSON */ }
+  o.log(`get_divesite ${o.id}: HTTP ${raw.status ?? 'none'}; content-type ${raw.contentType ?? 'none'}; body length ${raw.text?.length ?? 0}; JSON: ${json ? 'yes' : 'no'}; transport: ${r.error ?? 'ok'}`);
+  if (!json) return;
+  const type = Array.isArray(parsed) ? 'array' : parsed === null ? 'null' : typeof parsed;
+  o.log(`  top level: ${type}`);
+  const describeObject = (obj: Record<string, unknown>) => Object.entries(obj).map(([k, v]) => shown(k, v)).join(', ');
+  if (isObject(parsed)) o.log(`  keys: ${describeObject(parsed)}`);
+  else if (Array.isArray(parsed)) {
+    o.log(`  length ${parsed.length}`);
+    parsed.filter(isObject).slice(0, 3).forEach((item, i) => o.log(`  [${i}] keys: ${describeObject(item)}`));
+  }
+}
+
+/** `site delete <id>`: deletes a leftover test site, only one named "Dive Hub test" and private to the account. */
+export async function runSiteDelete(o: Pick<SiteProbe, 'access' | 'accountId' | 'log'> & { id: string }): Promise<Record<string, unknown>> {
+  const ask = makeAsk(o.access);
+  const { sites } = await logbookSites(ask);
+  const entry = sites.find((s) => String(s.odin_dive_sites_id) === o.id);
+  const isPrivate = entry && (entry.odin_dive_sites_is_private === 1 || entry.odin_dive_sites_is_private === '1' || entry.odin_dive_sites_is_private === true);
+  const owned = entry && String(entry.odin_dive_sites_is_private_owner) === o.accountId;
+  if (!entry || entry.odin_dive_sites_name !== NAME || !isPrivate || !owned) {
+    throw new Error(`Refused: site ${o.id} is not in the logbook as a private "${NAME}" of this account (listed: ${entry ? 'yes' : 'no'}).`);
+  }
+  const row = siteRow(o.accountId, o.id, true);
+  o.log(`save_divesite (delete ${o.id}, odin_dive_sites_deleted: 1). Keys sent: ${Object.keys(row).join(', ')}`);
+  const deleted = await ask('save_divesite', {}, row);
+  const site = isObject(deleted.data?.result) && isObject(deleted.data.result.site) ? deleted.data.result.site : null;
+  o.log(`  answer: ${outcome(deleted)}; ${deleted.data ? describe(deleted.data) : '-'}`);
+  o.log(`  result.site.odin_dive_sites_deleted: ${site ? JSON.stringify(site.odin_dive_sites_deleted) : 'no result.site'}`);
+  const after = await inLogbook(ask, o.log, 'after delete', o.id);
+  o.log(after.found ? `  still listed, deleted flag: ${JSON.stringify(after.found.odin_dive_sites_deleted)}` : `  site ${o.id} is gone from logbook_sites`);
+  return { sentKeys: Object.keys(row), httpStatus: deleted.httpStatus, error: deleted.error, answer: deleted.data, logbookAfter: after };
 }
