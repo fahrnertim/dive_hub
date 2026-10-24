@@ -75,6 +75,9 @@ const ExternalIdView = Type.Object({
   offered: Nullable(Type.Object(OfferedValues.properties, {
     description: 'A reference\'s values from its Source, which any User can take up with POST …/adopt (ADR 0025): empty fields take them',
   })),
+  privateTo: Nullable(Type.Object({ diverId: Type.String() }, {
+    description: 'Set: private to this Diver\'s account at the Source (ADR 0057), seen only by Users who manage the Diver and used only by sends for the Diver. Null: public',
+  })),
 }, { description: 'Where a site comes from, or where else it is known (ADR 0021)' });
 
 export const SiteView = Type.Object({
@@ -142,6 +145,7 @@ export const externalIdView = (e: ExternalIdRow) => {
       waterBody: e.offered.waterBody ?? null, description: e.offered.description ?? null,
       maxDepthM: e.offered.maxDepthM ?? null, waterType: e.offered.waterType ?? null,
     },
+    privateTo: e.privateTo,
   };
 };
 

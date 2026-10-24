@@ -4,7 +4,7 @@
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import {
-  dive, diveSite, diveSiteExternalId, diver, diverExternalId, importJob, importOriginal, original, participant, push,
+  dive, diveSite, diver, diverExternalId, importJob, importOriginal, original, participant, push,
   type ComputerChoice, type DiveImportMode,
 } from '../db/schema.js';
 import { managedDiverIds, participantsOf } from '../dives/dive-service.js';
@@ -13,6 +13,7 @@ import { writeRevision, type Actor, type Changes } from '../dives/revisions.js';
 import { placeLocalTime, wallClockMs, type PlacedTime } from '../dives/time-zone.js';
 import { siteRef } from '../sites/dive-site-link.js';
 import { siteDataAllowed, siteForProvider, type ProviderSite } from '../sites/provider-sites.js';
+import { accountOf, idsOf, pickId } from '../sites/site-ids.js';
 import type { SiteSource } from '../sites/sources.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
@@ -54,17 +55,18 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
 
   /**
    * The sites a Provider's dive names, with what the Provider says about them. A site missing from the context can only be
-   * found by its ID (no name to match or create it by).
+   * found by its ID (no name to match or create it by). The context doesn't say yet which sites are private: public.
    */
-  function sitesOf(run: ProviderRun, d: ImportedDive): ProviderSite[] {
-    return Object.entries(d.siteIds).map(([source, externalId]) => {
+  async function sitesOf(q: Db | Tx, run: ProviderRun, d: ImportedDive): Promise<ProviderSite[]> {
+    return Promise.all(Object.entries(d.siteIds).map(async ([source, externalId]) => {
       const known = run.context.sites[externalId];
       return {
         source: source as SiteSource, externalId, name: known?.name ?? '',
         position: known && known.latitude !== null && known.longitude !== null ? { latitude: known.latitude, longitude: known.longitude } : null,
         country: known?.country ?? null, waterType: known?.waterType ?? null,
+        account: await accountOf(q, run.diverId, source as SiteSource), private: false,
       };
-    });
+    }));
   }
 
   /** The start's instant: from the dive's position, else its site's at the Provider, else nearby Dives, else unknown. */
@@ -73,7 +75,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
 
   /** The Dive's site from the first of the Provider's sites that is here (or may be created): its ID, or null. */
   async function fillSite(tx: Tx, run: ProviderRun, d: ImportedDive, actor: Actor): Promise<string | null> {
-    for (const site of sitesOf(run, d)) {
+    for (const site of await sitesOf(tx, run, d)) {
       const siteId = await siteForProvider(tx, site, { allowCreate: run.sitesAllowed, userId: run.userId, actor });
       if (siteId) return siteId;
     }
@@ -147,12 +149,20 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     return parse(JSON.parse((await blobs.read(seen.storageKey)).toString('utf8')) as Record<string, unknown>, run.context, remoteId);
   }
 
-  /** The Dive here as the comparison sees it, and the fields it compares (values only without a Recording). */
-  async function hubOf(q: Db | Tx, run: ProviderRun, diveId: string, siteSource: SiteSource | null) {
+  /**
+   * The Dive here as the comparison sees it, and the fields it compares (values only without a Recording). Its site is the
+   * ID a send would use (`pickId`): `remoteSiteId` when the Diver's account may use it, else the public one, else the
+   * account's private one.
+   */
+  async function hubOf(q: Db | Tx, run: ProviderRun, diveId: string, siteSource: SiteSource | null, remoteSiteId?: string | null) {
     const [row] = await q.select().from(dive).where(eq(dive.id, diveId));
     if (!row) return null;
-    const [siteId] = row.siteId && siteSource ? await q.select({ id: diveSiteExternalId.externalId }).from(diveSiteExternalId)
-      .where(and(eq(diveSiteExternalId.siteId, row.siteId), eq(diveSiteExternalId.source, siteSource))) : [];
+    let siteId: string | null = null;
+    if (row.siteId && siteSource) {
+      const account = await accountOf(q, row.diverId, siteSource);
+      const rows = (await idsOf(q, [row.siteId], account ? [account] : [])).get(row.siteId) ?? [];
+      siteId = pickId(rows, siteSource, account, remoteSiteId);
+    }
     const source = run.adapter.accountSource;
     const people = await participantsOf(q, diveId);
     const accounts = source && people.length > 0 ? await q.select({ diverId: diverExternalId.diverId, account: diverExternalId.externalId })
@@ -160,7 +170,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     const cylinders = await cylindersOf(q, diveId);
     const entries = await leadOf(q, diveId);
     const hub: Comparable = {
-      site: siteId?.id ?? null, notes: row.notes?.trim() || null, buddies: accounts.map((a) => a.account).sort(),
+      site: siteId, notes: row.notes?.trim() || null, buddies: accounts.map((a) => a.account).sort(),
       startsAt: Math.floor((row.startsAt.getTime() + (row.utcOffsetSeconds ?? 0) * 1000) / 60_000),
       durationSeconds: row.durationSeconds, maxDepthM: row.maxDepthM, avgDepthM: row.avgDepthM, waterTemperatureC: row.waterTemperatureC,
       cylinder: cylinders.length === 1 ? providerCylinderOf(cylinders[0]!) : null, lead: leadTotalKg(entries),
@@ -176,7 +186,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     const base = await baseOf(q, run, diveId, d.remoteId, notImport);
     if (!base) return null;
     const source = (Object.keys(d.siteIds)[0] ?? Object.keys(base.siteIds)[0] ?? null) as SiteSource | null;
-    const here = await hubOf(q, run, diveId, source);
+    const here = await hubOf(q, run, diveId, source, source ? d.siteIds[source] : null);
     if (!here) return null;
     const provider = comparableOf(d);
     return { ...threeWay(here.fields, comparableOf(base), provider, here.hub), here, provider };
@@ -191,7 +201,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
   /** The Provider's site becomes the Dive's. */
   async function takeSite(t: Taking) {
     const { tx, run, d, actor, current } = t;
-    const site = sitesOf(run, d)[0];
+    const [site] = await sitesOf(tx, run, d);
     const siteId = site ? await siteForProvider(tx, site, { allowCreate: run.sitesAllowed, userId: run.userId, actor }) : null;
     if (!siteId || siteId === current.siteId) return;
     t.columns.siteId = siteId;

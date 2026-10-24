@@ -9804,6 +9804,9 @@ export interface paths {
                                         maxDepthM: null | number;
                                         waterType: null | ("fresh" | "salt" | "brackish");
                                     };
+                                    privateTo: null | {
+                                        diverId: string;
+                                    };
                                 }[];
                                 /** @description Send it back with an edit; it changes with every change */
                                 version: number;
@@ -9914,6 +9917,9 @@ export interface paths {
                                     description: null | string;
                                     maxDepthM: null | number;
                                     waterType: null | ("fresh" | "salt" | "brackish");
+                                };
+                                privateTo: null | {
+                                    diverId: string;
                                 };
                             }[];
                             /** @description Send it back with an edit; it changes with every change */
@@ -10084,6 +10090,9 @@ export interface paths {
                                     description: null | string;
                                     maxDepthM: null | number;
                                     waterType: null | ("fresh" | "salt" | "brackish");
+                                };
+                                privateTo: null | {
+                                    diverId: string;
                                 };
                             }[];
                             /** @description Send it back with an edit; it changes with every change */
@@ -10308,6 +10317,9 @@ export interface paths {
                                     maxDepthM: null | number;
                                     waterType: null | ("fresh" | "salt" | "brackish");
                                 };
+                                privateTo: null | {
+                                    diverId: string;
+                                };
                             }[];
                             /** @description Send it back with an edit; it changes with every change */
                             version: number;
@@ -10484,6 +10496,9 @@ export interface paths {
                                     description: null | string;
                                     maxDepthM: null | number;
                                     waterType: null | ("fresh" | "salt" | "brackish");
+                                };
+                                privateTo: null | {
+                                    diverId: string;
                                 };
                             }[];
                             /** @description Send it back with an edit; it changes with every change */
@@ -10675,6 +10690,9 @@ export interface paths {
                                     maxDepthM: null | number;
                                     waterType: null | ("fresh" | "salt" | "brackish");
                                 };
+                                privateTo: null | {
+                                    diverId: string;
+                                };
                             }[];
                             /** @description Send it back with an edit; it changes with every change */
                             version: number;
@@ -10861,6 +10879,9 @@ export interface paths {
                                     description: null | string;
                                     maxDepthM: null | number;
                                     waterType: null | ("fresh" | "salt" | "brackish");
+                                };
+                                privateTo: null | {
+                                    diverId: string;
                                 };
                             }[];
                             /** @description Send it back with an edit; it changes with every change */

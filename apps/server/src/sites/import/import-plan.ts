@@ -5,7 +5,7 @@
 // Hand-made sites are never changed: they get the ID as a reference, and the Source's values are kept
 // beside it so the site page can offer them ("Use SSI's data").
 import type { SiteImportCounts } from '../../db/import-types.js';
-import type { Position } from '../site-service.js';
+import type { Position } from '../../vocabulary.js';
 import { IMPORT_SOURCES, type ImportSource, type SiteSource } from '../sources.js';
 import { FIELD_PRECEDENCE, IMPORTED_FIELDS, inBox, type ImportArea, type ImportedValues, type SourceSite } from './site-source.js';
 

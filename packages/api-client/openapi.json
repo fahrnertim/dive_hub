@@ -41606,7 +41606,8 @@
                                 "url",
                                 "providesData",
                                 "attribution",
-                                "offered"
+                                "offered",
+                                "privateTo"
                               ],
                               "properties": {
                                 "source": {
@@ -41773,6 +41774,25 @@
                                         }
                                       },
                                       "description": "A reference's values from its Source, which any User can take up with POST …/adopt (ADR 0025): empty fields take them"
+                                    }
+                                  ]
+                                },
+                                "privateTo": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "diverId"
+                                      ],
+                                      "properties": {
+                                        "diverId": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "description": "Set: private to this Diver's account at the Source (ADR 0057), seen only by Users who manage the Diver and used only by sends for the Diver. Null: public"
                                     }
                                   ]
                                 }
@@ -42205,7 +42225,8 @@
                           "url",
                           "providesData",
                           "attribution",
-                          "offered"
+                          "offered",
+                          "privateTo"
                         ],
                         "properties": {
                           "source": {
@@ -42372,6 +42393,25 @@
                                   }
                                 },
                                 "description": "A reference's values from its Source, which any User can take up with POST …/adopt (ADR 0025): empty fields take them"
+                              }
+                            ]
+                          },
+                          "privateTo": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "diverId"
+                                ],
+                                "properties": {
+                                  "diverId": {
+                                    "type": "string"
+                                  }
+                                },
+                                "description": "Set: private to this Diver's account at the Source (ADR 0057), seen only by Users who manage the Diver and used only by sends for the Diver. Null: public"
                               }
                             ]
                           }
@@ -43117,7 +43157,8 @@
                           "url",
                           "providesData",
                           "attribution",
-                          "offered"
+                          "offered",
+                          "privateTo"
                         ],
                         "properties": {
                           "source": {
@@ -43284,6 +43325,25 @@
                                   }
                                 },
                                 "description": "A reference's values from its Source, which any User can take up with POST …/adopt (ADR 0025): empty fields take them"
+                              }
+                            ]
+                          },
+                          "privateTo": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "diverId"
+                                ],
+                                "properties": {
+                                  "diverId": {
+                                    "type": "string"
+                                  }
+                                },
+                                "description": "Set: private to this Diver's account at the Source (ADR 0057), seen only by Users who manage the Diver and used only by sends for the Diver. Null: public"
                               }
                             ]
                           }
@@ -43725,7 +43785,8 @@
                           "url",
                           "providesData",
                           "attribution",
-                          "offered"
+                          "offered",
+                          "privateTo"
                         ],
                         "properties": {
                           "source": {
@@ -43892,6 +43953,25 @@
                                   }
                                 },
                                 "description": "A reference's values from its Source, which any User can take up with POST …/adopt (ADR 0025): empty fields take them"
+                              }
+                            ]
+                          },
+                          "privateTo": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "diverId"
+                                ],
+                                "properties": {
+                                  "diverId": {
+                                    "type": "string"
+                                  }
+                                },
+                                "description": "Set: private to this Diver's account at the Source (ADR 0057), seen only by Users who manage the Diver and used only by sends for the Diver. Null: public"
                               }
                             ]
                           }
@@ -45258,7 +45338,8 @@
                           "url",
                           "providesData",
                           "attribution",
-                          "offered"
+                          "offered",
+                          "privateTo"
                         ],
                         "properties": {
                           "source": {
@@ -45425,6 +45506,25 @@
                                   }
                                 },
                                 "description": "A reference's values from its Source, which any User can take up with POST …/adopt (ADR 0025): empty fields take them"
+                              }
+                            ]
+                          },
+                          "privateTo": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "diverId"
+                                ],
+                                "properties": {
+                                  "diverId": {
+                                    "type": "string"
+                                  }
+                                },
+                                "description": "Set: private to this Diver's account at the Source (ADR 0057), seen only by Users who manage the Diver and used only by sends for the Diver. Null: public"
                               }
                             ]
                           }
@@ -46202,7 +46302,8 @@
                           "url",
                           "providesData",
                           "attribution",
-                          "offered"
+                          "offered",
+                          "privateTo"
                         ],
                         "properties": {
                           "source": {
@@ -46369,6 +46470,25 @@
                                   }
                                 },
                                 "description": "A reference's values from its Source, which any User can take up with POST …/adopt (ADR 0025): empty fields take them"
+                              }
+                            ]
+                          },
+                          "privateTo": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "diverId"
+                                ],
+                                "properties": {
+                                  "diverId": {
+                                    "type": "string"
+                                  }
+                                },
+                                "description": "Set: private to this Diver's account at the Source (ADR 0057), seen only by Users who manage the Diver and used only by sends for the Diver. Null: public"
                               }
                             ]
                           }
@@ -47144,7 +47264,8 @@
                           "url",
                           "providesData",
                           "attribution",
-                          "offered"
+                          "offered",
+                          "privateTo"
                         ],
                         "properties": {
                           "source": {
@@ -47311,6 +47432,25 @@
                                   }
                                 },
                                 "description": "A reference's values from its Source, which any User can take up with POST …/adopt (ADR 0025): empty fields take them"
+                              }
+                            ]
+                          },
+                          "privateTo": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "diverId"
+                                ],
+                                "properties": {
+                                  "diverId": {
+                                    "type": "string"
+                                  }
+                                },
+                                "description": "Set: private to this Diver's account at the Source (ADR 0057), seen only by Users who manage the Diver and used only by sends for the Diver. Null: public"
                               }
                             ]
                           }

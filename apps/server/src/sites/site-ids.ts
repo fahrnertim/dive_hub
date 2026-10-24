@@ -2,7 +2,7 @@
 // `dive_site_external_id`. A row without `accountId` is public (every User and every send may use it); a row with one
 // is private to that account (`diver_external_id`): only sends for its Diver use it, only Users who manage that Diver
 // see it. A Source has one ID space, so `(source, external_id)` is held once, public or private.
-import { and, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, ne, or, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { diveSite, diveSiteExternalId, diverExternalId, diverManagement } from '../db/schema.js';
 import { writeRevision, type Actor } from '../dives/revisions.js';
@@ -40,6 +40,25 @@ export async function accountsOfUser(q: Q, userId: string, source?: SiteSource):
   return rows.map((r) => r.id);
 }
 
+/** The Diver of each account. */
+export async function diversOf(q: Q, accounts: string[]): Promise<Map<string, string>> {
+  if (accounts.length === 0) return new Map();
+  const rows = await q.select({ id: diverExternalId.id, diverId: diverExternalId.diverId }).from(diverExternalId).where(inArray(diverExternalId.id, accounts));
+  return new Map(rows.map((r) => [r.id, r.diverId]));
+}
+
+const rowOf = (r: typeof diveSiteExternalId.$inferSelect): SiteIdRow =>
+  ({ source: r.source, externalId: r.externalId, accountId: r.accountId, providesData: r.providesData, imported: r.imported });
+
+/** Every site's public rows, by site (the Site import plans against these only). */
+export async function allPublicIds(q: Q): Promise<Map<string, SiteIdRow[]>> {
+  const result = new Map<string, SiteIdRow[]>();
+  for (const r of await q.select().from(diveSiteExternalId).where(isNull(diveSiteExternalId.accountId))) {
+    result.set(r.siteId, [...(result.get(r.siteId) ?? []), rowOf(r)]);
+  }
+  return result;
+}
+
 /** The sites' public rows and the private rows of `accounts`, by site. */
 export async function idsOf(q: Q, siteIds: string[], accounts: string[]): Promise<Map<string, SiteIdRow[]>> {
   const result = new Map<string, SiteIdRow[]>();
@@ -50,7 +69,7 @@ export async function idsOf(q: Q, siteIds: string[], accounts: string[]): Promis
   ));
   for (const r of rows) {
     const list = result.get(r.siteId) ?? [];
-    list.push({ source: r.source, externalId: r.externalId, accountId: r.accountId, providesData: r.providesData, imported: r.imported });
+    list.push(rowOf(r));
     result.set(r.siteId, list);
   }
   return result;
@@ -87,6 +106,8 @@ const sameKey = (siteId: string, source: SiteSource, accountId: string | null) =
 export async function storeId(tx: Tx, s: {
   siteId: string; source: SiteSource; externalId: string; accountId: string | null; actor: Actor | null;
   providesData?: boolean; imported?: ImportedValues;
+  /** The Site import that delivered it. */
+  siteImportId?: string;
 }): Promise<void> {
   if (s.accountId !== null) {
     const [account] = await tx.select({ source: diverExternalId.source }).from(diverExternalId).where(eq(diverExternalId.id, s.accountId));
@@ -102,7 +123,7 @@ export async function storeId(tx: Tx, s: {
   try {
     await tx.insert(diveSiteExternalId).values({
       siteId: s.siteId, source: s.source, externalId: s.externalId, accountId: s.accountId,
-      providesData: s.providesData ?? false, imported: s.imported ?? null,
+      providesData: s.providesData ?? false, imported: s.imported ?? null, siteImportId: s.siteImportId ?? null,
     });
   } catch (error) {
     if (isUniqueViolation(error)) throw new SiteError('external_id_taken');
@@ -122,6 +143,56 @@ export async function clearId(tx: Tx, siteId: string, source: SiteSource, accoun
     await writeRevision(tx, 'dive_site', siteId, actor, 'edit', { [revisionKey(source)]: { from: removed.externalId, to: null } });
   }
   return removed.externalId;
+}
+
+/** A Site import's new values for a public ID it delivered again. */
+export async function updateImported(tx: Tx, source: SiteSource, externalId: string, v: {
+  providesData: boolean; imported: ImportedValues; siteImportId: string;
+}): Promise<void> {
+  await tx.update(diveSiteExternalId).set({ ...v, updatedAt: new Date() }).where(and(
+    eq(diveSiteExternalId.source, source), eq(diveSiteExternalId.externalId, externalId), isNull(diveSiteExternalId.accountId),
+  ));
+}
+
+/**
+ * The site's public reference at a Source starts providing data (a User takes up its offer, ADR 0025): its ID and the
+ * values offered, or null when there is no offer to take.
+ */
+export async function takeOffer(tx: Tx, siteId: string, source: SiteSource): Promise<{ externalId: string; imported: ImportedValues } | null> {
+  const [offer] = await tx.select().from(diveSiteExternalId).where(sameKey(siteId, source, null)).for('update');
+  if (!offer || offer.providesData || !offer.imported) return null;
+  await tx.update(diveSiteExternalId).set({ providesData: true, updatedAt: new Date() }).where(eq(diveSiteExternalId.id, offer.id));
+  return { externalId: offer.externalId, imported: offer.imported };
+}
+
+/**
+ * A merge's rows (ADR 0022), keyed by Source and account: a row of the removed site moves to the kept one unless the kept
+ * site has a row of the same key, which wins (the removed site's row then stays where it is). Answers the rows moved.
+ */
+export async function moveIds(tx: Tx, fromSiteId: string, toSiteId: string): Promise<SiteIdRow[]> {
+  const rows = await tx.select().from(diveSiteExternalId).where(inArray(diveSiteExternalId.siteId, [fromSiteId, toSiteId]));
+  const key = (r: typeof rows[number]) => `${r.source}:${r.accountId ?? ''}`;
+  const kept = new Set(rows.filter((r) => r.siteId === toSiteId).map(key));
+  const moving = rows.filter((r) => r.siteId === fromSiteId && !kept.has(key(r)));
+  if (moving.length > 0) {
+    await tx.update(diveSiteExternalId).set({ siteId: toSiteId, updatedAt: new Date() }).where(inArray(diveSiteExternalId.id, moving.map((r) => r.id)));
+  }
+  return moving.map(rowOf);
+}
+
+/**
+ * IDs the Source lists publicly (a Site import's answer): a private row holding one becomes public, unless its site
+ * already has a public row at that Source (then it stays private).
+ */
+export async function publishIds(tx: Tx, source: SiteSource, externalIds: string[]): Promise<void> {
+  const listed = new Set(externalIds);
+  // The private rows are few and an import's IDs many: those are read, not the IDs sent.
+  const held = await tx.select().from(diveSiteExternalId).where(and(eq(diveSiteExternalId.source, source), isNotNull(diveSiteExternalId.accountId)));
+  for (const row of held.filter((r) => listed.has(r.externalId))) {
+    const [clash] = await tx.select({ id: diveSiteExternalId.id }).from(diveSiteExternalId).where(sameKey(row.siteId, source, null));
+    if (clash) continue;
+    await tx.update(diveSiteExternalId).set({ accountId: null, updatedAt: new Date() }).where(eq(diveSiteExternalId.id, row.id));
+  }
 }
 
 /**

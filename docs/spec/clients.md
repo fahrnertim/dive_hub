@@ -44,6 +44,11 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - The API names only the signed-in User (`actor.type` `you`) and says `user` for anyone else. Don't fill in
     names from elsewhere ([ADR 0020](../decisions/0020-dive-sites.md)).
   - A merge tells a Dive's owner "Dive Hub" moved it (ADR 0022).
+- **A private site ID is shown only to its own Users.** An entry of a site's `externalIds` with `privateTo` set is
+  private to that Diver's account at the Source (an SSI site only that account can use, ADR 0057); the API lists it
+  only to Users who manage that Diver, and only sends for that Diver use it. A site can then have two IDs from one
+  Source (the public one and the account's private one): show the private one as the Diver's, never as the site's for
+  everyone. Null: public. The site's history never names a private ID.
 - **Must say that a site is shared** when creating or editing one, especially one made from a Dive's position.
   Every User sees a site's position, while a Dive's own position stays private (ADR 0020).
   *Web:* `SiteForm.tsx` (`sites.sharedHint`).

@@ -504,7 +504,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       const seen = new Set<string>();
       for (const d of dives) {
         if (d.evidence === 'ours') continue;
-        for (const site of sitesOf(run, d)) {
+        for (const site of await sitesOf(db, run, d)) {
           const key = `${site.source}:${site.externalId}`;
           if (seen.has(key)) continue;
           seen.add(key);

@@ -2,23 +2,32 @@
 // recording, Device, samples and site. Each adapter turns it into its own record.
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
-import { device, dive, diveSite, diveSiteExternalId, diverExternalId, recording, sampleSeries } from '../db/schema.js';
+import { device, dive, diveSite, diverExternalId, recording, sampleSeries } from '../db/schema.js';
 import { cylindersOf, providerCylinderOf } from '../dives/cylinders.js';
 import { managedDiverIds, participantsOf } from '../dives/dive-service.js';
 import { leadOf, leadTotalKg } from '../dives/weighting.js';
-import type { SiteSource } from '../sites/sources.js';
+import { accountOf, idsOf, pickId } from '../sites/site-ids.js';
+import { SITE_SOURCES, type SiteSource } from '../sites/sources.js';
 import type { DiverSource, OutgoingDive, OutgoingParticipant, Series } from './provider.js';
 import { ProviderServiceError } from './registry.js';
 
 export type DiveRow = typeof dive.$inferSelect;
 
-/** The Dive site's ids at the services that know it, and its position and water. */
-async function outgoingSite(db: Db | Tx, siteId: string | null) {
-  if (!siteId) return { siteIds: {} as Partial<Record<SiteSource, string>>, site: undefined };
-  const ids = await db.select({ source: diveSiteExternalId.source, externalId: diveSiteExternalId.externalId })
-    .from(diveSiteExternalId).where(eq(diveSiteExternalId.siteId, siteId));
+/**
+ * The Dive site's ids at the services that know it, as a send for the Diver uses them (`pickId`: the remote dive's when
+ * the Diver's account may use it, else the public one, else the account's private one), and its position and water.
+ */
+async function outgoingSite(db: Db | Tx, siteId: string | null, diverId: string, remoteSiteIds: Partial<Record<SiteSource, string>>) {
+  const siteIds: Partial<Record<SiteSource, string>> = {};
+  if (!siteId) return { siteIds, site: undefined };
+  const accounts = Object.fromEntries(await Promise.all(SITE_SOURCES.map(async (s) => [s, await accountOf(db, diverId, s)] as const)));
+  const rows = (await idsOf(db, [siteId], Object.values(accounts).filter((a): a is string => a !== null))).get(siteId) ?? [];
+  for (const source of SITE_SOURCES) {
+    const id = pickId(rows, source, accounts[source] ?? null, remoteSiteIds[source]);
+    if (id !== null) siteIds[source] = id;
+  }
   const [site] = await db.select({ latitude: diveSite.latitude, longitude: diveSite.longitude, waterType: diveSite.waterType }).from(diveSite).where(eq(diveSite.id, siteId));
-  return { siteIds: Object.fromEntries(ids.map((r) => [r.source, r.externalId])) as Partial<Record<SiteSource, string>>, site };
+  return { siteIds, site };
 }
 
 /** Who else was on the Dive, with their accounts at services: all an adapter may know of them (ADR 0029). */
@@ -35,8 +44,11 @@ async function outgoingParticipants(db: Db | Tx, diveId: string): Promise<Outgoi
 /**
  * The Dive and what leaves Dive Hub of it, if the User manages its Diver (else `dive_not_found`). A deleted Dive only
  * with `deleted`: its state and deleting it at a Provider still work (the reminder, ADR 0026), sending doesn't.
+ * `remoteSiteIds`: the site IDs of the dive at the Provider, kept when the Diver's account may use them.
  */
-export async function loadOutgoingDive(db: Db | Tx, userId: string, diveId: string, options: { deleted?: boolean } = {}) {
+export async function loadOutgoingDive(db: Db | Tx, userId: string, diveId: string, options: {
+  deleted?: boolean; remoteSiteIds?: Partial<Record<SiteSource, string>>;
+} = {}) {
   const [row] = await db.select().from(dive).where(and(eq(dive.id, diveId), options.deleted ? undefined : isNull(dive.deletedAt)));
   if (!row || !(await managedDiverIds(db, userId)).has(row.diverId)) throw new ProviderServiceError('dive_not_found');
   const [rec] = row.primaryRecordingId ? await db.select().from(recording).where(eq(recording.id, row.primaryRecordingId)) : [];
@@ -48,7 +60,7 @@ export async function loadOutgoingDive(db: Db | Tx, userId: string, diveId: stri
     const s = series.find((x) => x.channel === name);
     return s ? { offsetsMs: s.offsetsMs, values: s.values } : undefined;
   };
-  const { siteIds, site } = await outgoingSite(db, row.siteId);
+  const { siteIds, site } = await outgoingSite(db, row.siteId, row.diverId, options.remoteSiteIds ?? {});
   const participants = await outgoingParticipants(db, row.id);
   const summary = rec?.summary ?? {};
   // One tank only: with two or more Cylinders the Provider's one tank can't be told (ADR 0031, 0057).
