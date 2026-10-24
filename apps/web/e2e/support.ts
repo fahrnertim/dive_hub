@@ -615,9 +615,10 @@ export async function pushRunSetup(api: APIRequestContext, diveId: string, optio
   return { connectionId: connection.id, siteId: dive.site.id };
 }
 
-/** Makes the fake SSI forget every token it issued, as when SSI's tokens expire. */
-export async function expireSsiTokens(api: APIRequestContext) {
-  await api.post('/e2e/fake-ssi/expire-tokens', { data: {}, headers });
+/** Makes the fake SSI forget the tokens it issued to one account (Erika's), as when SSI's tokens expire. */
+export async function expireSsiTokens(api: APIRequestContext, login = SSI_ACCOUNT.login) {
+  const answer = await (await api.post('/e2e/fake-ssi/expire-tokens', { data: { email: login }, headers })).json() as { ok: boolean };
+  if (!answer.ok) throw new Error(`no SSI account ${login} at the fake SSI`);
 }
 
 export async function signInSsi(api: APIRequestContext, connectionId: string) {

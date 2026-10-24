@@ -187,8 +187,15 @@ app.post('/e2e/fake-ssi/delete-dive', { schema: { hide: true } }, async (request
   return { found: true };
 });
 
-// Test-only: SSI's tokens expire (a Connection that keeps no password then needs a new sign-in).
-app.post('/e2e/fake-ssi/expire-tokens', { schema: { hide: true } }, async () => { fakeSsi.expireTokens(); return { ok: true }; });
+// Test-only: one SSI account's tokens expire (a Connection that keeps no password then needs a new sign-in). Only that
+// account's: Lena's Connection, used by other tests on this server, stays signed in.
+app.post('/e2e/fake-ssi/expire-tokens', { schema: { hide: true } }, async (request) => {
+  const { email } = request.body as { email: string };
+  const account = fakeSsi.accounts.find((a) => a.email === email);
+  if (!account) return { ok: false };
+  fakeSsi.expireTokens(account.accountId);
+  return { ok: true };
+});
 
 // Test-only: the dives in an SSI account's logbook are removed (what earlier tests sent), so a run finds no dive there.
 app.post('/e2e/fake-ssi/clear-dives', { schema: { hide: true } }, async (request) => {

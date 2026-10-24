@@ -9,7 +9,7 @@ import { dataFile, type PreparedData } from './prepare.ts';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, diveNumber, seededDiveId, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectGoodPage, externalDiver, openLine,
-  clearPushRuns, conflictAtSsi, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences, falseStart, keepFalseStart, tankPodDive
+  clearPushRuns, conflictAtSsi, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, tankPodDive
 } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
@@ -105,9 +105,12 @@ for (const v of variants) {
 
     test('sending many dives to SSI: the dialog and a stopped run', { tag: ['@dives'] }, async ({ page, request }) => {
       await resetDive(request);
+      let connectionId: string | undefined;
       try {
         // The test reef has no SSI site ID: the dialog names what is held back and links to the site.
-        const { connectionId, siteId } = await pushRunSetup(request, diveId, { keepSignedIn: false, siteExternalId: null });
+        const setup = await pushRunSetup(request, diveId, { keepSignedIn: false, siteExternalId: null });
+        connectionId = setup.connectionId;
+        const { siteId } = setup;
         await page.goto(`/#/?site=${siteId}`);
         await openChoices(page);
         await page.getByRole('button', { name: v.english ? 'Send to SSI…' : 'An SSI senden…' }).click();
@@ -133,6 +136,8 @@ for (const v of variants) {
         await expectGoodPage(page, title('Logbook'), v);
       } finally {
         await clearPushRuns(request);
+        // Signed in again: the Connection would otherwise wait for a sign-in, and later tests on this server would say so.
+        if (connectionId) await signInSsi(request, connectionId);
         await leaveSsi(request, diveId);
       }
     });

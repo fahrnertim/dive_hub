@@ -86,8 +86,8 @@ export interface FakeSsi {
   buddies: FakeSsiBuddy[];
   /** Every call: its action and whether it carried a token (never the password). */
   calls: { what: string; method: string }[];
-  /** Makes every token issued so far invalid, as when SSI's tokens expire. */
-  expireTokens(): void;
+  /** Makes every token issued so far invalid, as when SSI's tokens expire; with an account ID only that account's. */
+  expireTokens(accountId?: number): void;
   /** While set, every call answers with this HTTP status. */
   failWith: number | null;
   /** How a call with an unknown (expired) token is answered; null: `authenticated: false` at 200. */
@@ -152,7 +152,9 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
     expiredAnswer: null,
     dropSaves: false,
     expireAfterRead: false,
-    expireTokens: () => tokens.clear(),
+    expireTokens: (accountId) => {
+      for (const [token, owner] of tokens) if (accountId === undefined || owner === accountId) tokens.delete(token);
+    },
     addDive(accountId, values) {
       const id = nextDiveId++;
       fake.dives.set(id, { ...values, odin_user_log_id: id, odin_user_log_user_master_id: accountId, odin_user_log_deleted: 0 });
