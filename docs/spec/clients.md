@@ -480,6 +480,8 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
 - **Must show what the Provider needs first** ([ADR 0029](../decisions/0029-push-requirements-and-buddies.md)): the status's
   `unmet` lists each requirement the Dive doesn't meet, from Dive Hub's data alone. While a `blocking` one is unmet, don't
   offer sending (the server refuses with `provider_requirements_unmet` and `unmet`); an `advisory` one is sent without.
+  A send refused this way may already have taken changes made at the Provider into the Dive (the take comes first), so
+  re-read the Dive after the error.
   Offer the fix per `type`, from the Provider's `requirements` in `GET /api/providers`:
   - **`site_external_id`:** `siteId: null` means choose a site first. Otherwise, when `typed`, offer the Provider's sites
     nearest first (`GET /api/dives/{id}/providers/{provider}/sites`, which asks the Provider, so only on request) and

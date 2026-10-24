@@ -1,6 +1,6 @@
 ---
 title: Tidy the two-way exchange with a Provider
-summary: Small follow-ups the review of the three-way send (ADR 0056) left - a run's conflict count, the entry's values on the Dive's page, the import directions of a Recording's values, the conflicts body, the entry's run, and two browser tests.
+summary: Small follow-ups the review of the three-way send (ADR 0056) left - a run's conflict count, the entry's values on the Dive's page, the import directions of a Recording's values, the conflicts body, the entry's run, two browser tests and the conflicts module's way in.
 status: draft
 risk: low
 date: 2026-10-24
@@ -30,6 +30,9 @@ decides against it, struck out here with the reason; `pnpm check:full` is green.
    run's report, or keep it as is and document it); and no test that a closed entry counts 0 in its run. The index
    needs a migration and a change to `apps/server/src/db/schema.ts`.
 6. **No browser test for the deferred notice nor for the disabled Send** on the Dive's page while a send waits.
+7. **`conflicts.ts` has two ways in.** The bare functions (`record`, `entryOf`, `openFields`, `close`, used by
+   `push-service.ts` with a raw `db`) and `createConflictService` (used by the routes). Give the send the service too, or
+   say in the module's header comment why the bare functions are the seam the send uses.
 
 ## Read first
 - [ADR 0056](../decisions/0056-two-way-exchange-and-automation.md) (search for "Conflict").
