@@ -375,6 +375,17 @@ a synced dive has been seen:
 - A dive's site (slice 15a): the site here with that SSI ID, else the same site by name and position (it gets the ID),
   else, only if an admin allowed SSI's site data, a site made from the logbook's entry (marked "From SSI").
 
+### Sites: `save_divesite`, `get_divesite` (checked 2026-10-24, app 5.0.43)
+
+Tested on the owner's account [T]; details in [the research note](../research/2026-10-24-ssi-site-checks.md).
+
+- **`save_divesite`** (query `token`; body `json_data` = the site row, keys in [the write bodies](../research/2026-10-22-ssi-write-bodies.md), without `internalPk` and `needsUpload`) with `odin_dive_sites_id` null creates a site. HTTP 200; the new ID is at the answer's top level `odin_dive_sites_id` (also `success.New.odin_dive_sites_id` and `result.site.odin_dive_sites_id`) [T].
+- A private site: `odin_dive_sites_is_private` 1 (`true` accepted, stored as 1) and `odin_dive_sites_is_private_owner` the account's `mid`. `result.site` repeats both [T].
+- **Flags are answered as the numbers 0/1** [T].
+- **`get_divesite`** (query `token`, `dsid`) answers HTTP 200 with a JSON **array of one row** (not an object), carrying `odin_dive_sites_is_private`, `_is_private_owner` and `_deleted`. An unknown ID answers HTTP 404 [T].
+- A new site with no dive is in `logbook_sites` of `get_divelog` right after creation, with `is_private` 1 and the owner [T].
+- **A site cannot be deleted**: `odin_dive_sites_deleted` true or 1 is answered "update saved" but not stored, and the site stays in `logbook_sites` [T]. The app never sets the flag and has no delete call or button [R]. A site created at SSI is permanent.
+
 ## Known but not used
 
 | Call | What | Note |
