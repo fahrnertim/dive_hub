@@ -23,6 +23,7 @@ Keep this list complete: add a line when a doc is created, remove it when delete
 - [development.md](development.md) — setup, layout, common tasks (incl. SSI's hand-made site list for tests, connecting Claude Code to a local Dive Hub over MCP, adding an MCP tool, changing a rule of the dive assessment and seeing how often rules fire on real dives), tooling notes.
 
 ## Agents
+- [agents/check-escapes.md](agents/check-escapes.md) — the log of failures CI's full check found after a green local `pnpm check` (ADR 0023, amended 2026-10-24): how certain the local check is.
 - [agents/working-economically.md](agents/working-economically.md) — rules that keep a session's context small: one slice per session, the hand-over prompt, narrow reading, quiet output, subagents and models, what is never saved on.
 - [skills.md](skills.md) — installed agent skills and the Superpowers plugin, our overrides of them, rejected candidates, how to vet and install.
 - `superpowers/specs/`, `superpowers/plans/` — design docs and plans of feature work, written by Superpowers' `brainstorming` and `writing-plans` ([ADR 0055](decisions/0055-local-dev-cycle.md)); one file per feature, listed by folder, not here.
