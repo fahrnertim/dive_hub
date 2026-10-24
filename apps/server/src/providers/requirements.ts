@@ -7,17 +7,22 @@ import type { DiverSource, OutgoingDive, Requirement } from './provider.js';
 
 /** A requirement not met by one Dive, with what a client needs to offer the fix. */
 export type Unmet = { severity: Requirement['severity'] } & (
-  /** `siteId` null: the Dive has no site yet, which is the first step. */
-  | { type: 'site_external_id'; source: SiteSource; siteId: string | null }
+  /**
+   * `siteId` null: the Dive has no site yet, which is the first step. `bySend`: sending finds the site at the Provider
+   * or creates it there (the Provider can, and the site has a position), so it doesn't stop a send.
+   */
+  | { type: 'site_external_id'; source: SiteSource; siteId: string | null; bySend: boolean }
   /** One per Participant nothing identifies at the Provider; `fixes` lists the ways Dive Hub has to fix it. */
   | { type: 'diver_mapping'; source: DiverSource; diverId: string; diverName: string; role: ParticipantRole; fixes: 'diver_external_id'[] }
 );
 
-/** What of `requirements` the Dive doesn't meet, in the order the Provider declares them. */
-export function unmetRequirements(requirements: Requirement[], siteId: string | null, dive: OutgoingDive): Unmet[] {
+/** What of `requirements` the Dive doesn't meet, in the order the Provider declares them. `site`: the Dive's site, if any. */
+export function unmetRequirements(requirements: Requirement[], site: { id: string; positioned: boolean } | null, dive: OutgoingDive): Unmet[] {
   return requirements.flatMap((r): Unmet[] => {
     if (r.type === 'site_external_id') {
-      return siteId && dive.siteIds[r.source] ? [] : [{ type: r.type, severity: r.severity, source: r.source, siteId }];
+      return site && dive.siteIds[r.source] ? [] : [{
+        type: r.type, severity: r.severity, source: r.source, siteId: site?.id ?? null, bySend: !!r.createdBySend && !!site?.positioned,
+      }];
     }
     return dive.participants
       .filter((p) => r.roles.includes(p.role) && !p.ids[r.source])
@@ -26,6 +31,14 @@ export function unmetRequirements(requirements: Requirement[], siteId: string | 
         fixes: ['diver_external_id'],
       }));
   });
+}
+
+/**
+ * The unmet requirements that stop a send. `beforeSite`: before the send has found or created the site at the Provider,
+ * so a site requirement the send fixes itself (`bySend`) doesn't stop it yet.
+ */
+export function blocking<T extends { severity: Unmet['severity']; bySend?: boolean }>(unmet: T[], options: { beforeSite?: boolean } = {}): T[] {
+  return unmet.filter((u) => u.severity === 'blocking' && !(options.beforeSite && u.bySend));
 }
 
 /**

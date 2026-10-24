@@ -126,7 +126,7 @@ for (const v of variants) {
       let connectionId: string | undefined;
       try {
         // The test reef has no SSI site ID: the dialog names what is held back and links to the site.
-        const setup = await pushRunSetup(request, diveId, { keepSignedIn: false, siteExternalId: null });
+        const setup = await pushRunSetup(request, diveId, { keepSignedIn: false, siteExternalId: null, positioned: false });
         connectionId = setup.connectionId;
         const { siteId } = setup;
         await page.goto(`/#/?site=${siteId}`);

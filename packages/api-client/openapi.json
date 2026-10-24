@@ -61790,6 +61790,7 @@
                                                 "typed",
                                                 "pattern",
                                                 "prefixes",
+                                                "createdBySend",
                                                 "roles"
                                               ],
                                               "properties": {
@@ -61845,6 +61846,17 @@
                                                         "type": "string"
                                                       },
                                                       "description": "site_external_id: what may come before the ID as the Source shows it, e.g. \"site:\""
+                                                    }
+                                                  ]
+                                                },
+                                                "createdBySend": {
+                                                  "anyOf": [
+                                                    {
+                                                      "type": "null"
+                                                    },
+                                                    {
+                                                      "type": "boolean",
+                                                      "description": "site_external_id: a send finds or creates the site at the Provider when the site has a position"
                                                     }
                                                   ]
                                                 },
@@ -62994,6 +63006,10 @@
                               }
                             ]
                           },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
+                          },
                           "diverId": {
                             "type": "string",
                             "description": "diver_mapping: the Participant"
@@ -63876,6 +63892,10 @@
                               }
                             ]
                           },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
+                          },
                           "diverId": {
                             "type": "string",
                             "description": "diver_mapping: the Participant"
@@ -64672,6 +64692,10 @@
                                 "description": "site_external_id: the Dive site to give the ID; null: choose a site first"
                               }
                             ]
+                          },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
                           },
                           "diverId": {
                             "type": "string",
@@ -65503,6 +65527,10 @@
                               }
                             ]
                           },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
+                          },
                           "diverId": {
                             "type": "string",
                             "description": "diver_mapping: the Participant"
@@ -66297,6 +66325,10 @@
                                 "description": "site_external_id: the Dive site to give the ID; null: choose a site first"
                               }
                             ]
+                          },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
                           },
                           "diverId": {
                             "type": "string",
@@ -67244,6 +67276,10 @@
                                 "description": "site_external_id: the Dive site to give the ID; null: choose a site first"
                               }
                             ]
+                          },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
                           },
                           "diverId": {
                             "type": "string",
@@ -68227,6 +68263,10 @@
                                 "description": "site_external_id: the Dive site to give the ID; null: choose a site first"
                               }
                             ]
+                          },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
                           },
                           "diverId": {
                             "type": "string",
@@ -69609,6 +69649,10 @@
                               }
                             ]
                           },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
+                          },
                           "diverId": {
                             "type": "string",
                             "description": "diver_mapping: the Participant"
@@ -70644,6 +70688,10 @@
                               }
                             ]
                           },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
+                          },
                           "diverId": {
                             "type": "string",
                             "description": "diver_mapping: the Participant"
@@ -71524,6 +71572,10 @@
                                 "description": "site_external_id: the Dive site to give the ID; null: choose a site first"
                               }
                             ]
+                          },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
                           },
                           "diverId": {
                             "type": "string",
@@ -72615,6 +72667,10 @@
                               }
                             ]
                           },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
+                          },
                           "diverId": {
                             "type": "string",
                             "description": "diver_mapping: the Participant"
@@ -73380,6 +73436,10 @@
                                 "description": "site_external_id: the Dive site to give the ID; null: choose a site first"
                               }
                             ]
+                          },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
                           },
                           "diverId": {
                             "type": "string",
@@ -74178,6 +74238,10 @@
                                 "description": "site_external_id: the Dive site to give the ID; null: choose a site first"
                               }
                             ]
+                          },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
                           },
                           "diverId": {
                             "type": "string",
@@ -75118,6 +75182,10 @@
                                 }
                               ]
                             },
+                            "bySend": {
+                              "type": "boolean",
+                              "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
+                            },
                             "diverId": {
                               "type": "string",
                               "description": "diver_mapping: the Participant"
@@ -76018,6 +76086,10 @@
                                 "description": "site_external_id: the Dive site to give the ID; null: choose a site first"
                               }
                             ]
+                          },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
                           },
                           "diverId": {
                             "type": "string",
@@ -77521,6 +77593,10 @@
                                   }
                                 ]
                               },
+                              "bySend": {
+                                "type": "boolean",
+                                "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
+                              },
                               "diverId": {
                                 "type": "string",
                                 "description": "diver_mapping: the Participant"
@@ -78631,6 +78707,10 @@
                               }
                             ]
                           },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
+                          },
                           "diverId": {
                             "type": "string",
                             "description": "diver_mapping: the Participant"
@@ -78992,6 +79072,10 @@
                                 "description": "site_external_id: the Dive site to give the ID; null: choose a site first"
                               }
                             ]
+                          },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
                           },
                           "diverId": {
                             "type": "string",
@@ -80101,6 +80185,10 @@
                               }
                             ]
                           },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
+                          },
                           "diverId": {
                             "type": "string",
                             "description": "diver_mapping: the Participant"
@@ -80913,6 +81001,10 @@
                               }
                             ]
                           },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
+                          },
                           "diverId": {
                             "type": "string",
                             "description": "diver_mapping: the Participant"
@@ -81283,6 +81375,10 @@
                                     "description": "site_external_id: the Dive site to give the ID; null: choose a site first"
                                   }
                                 ]
+                              },
+                              "bySend": {
+                                "type": "boolean",
+                                "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
                               },
                               "diverId": {
                                 "type": "string",
@@ -82393,6 +82489,10 @@
                                 "description": "site_external_id: the Dive site to give the ID; null: choose a site first"
                               }
                             ]
+                          },
+                          "bySend": {
+                            "type": "boolean",
+                            "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
                           },
                           "diverId": {
                             "type": "string",

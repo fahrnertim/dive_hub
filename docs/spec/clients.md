@@ -488,7 +488,9 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
   A send refused this way may already have taken changes made at the Provider into the Dive (the take comes first), so
   re-read the Dive after the error.
   Offer the fix per `type`, from the Provider's `requirements` in `GET /api/providers`:
-  - **`site_external_id`:** `siteId: null` means choose a site first. Otherwise, when `typed`, offer the Provider's sites
+  - **`site_external_id`:** `siteId: null` means choose a site first. With `bySend: true` (the Provider's requirement
+    has `createdBySend` and the site has a position) it doesn't block: offer sending, and say "Sending finds this site in
+    your <Provider> logbook or creates it there as a private site"; the pick below stays on offer. Otherwise, when `typed`, offer the Provider's sites
     nearest first (`GET /api/dives/{id}/providers/{provider}/sites`, which asks the Provider, so only on request) and
     typing the ID (accept the `prefixes`, check against `pattern`); save it on the site
     (`PUT /api/dive-sites/{id}/external-ids/{source}`). When not `typed`, say it can't be fixed here.

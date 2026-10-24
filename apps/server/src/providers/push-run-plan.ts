@@ -1,11 +1,13 @@
 // What a Push run does with one Dive, and in which order (ADR 0047, 0048). Pure: it works from a Dive's status at the
 // Provider (what Dive Hub knows, no call) and the run's options.
+import { blocking } from './requirements.js';
 
 export type LeftOutReason = 'up_to_date' | 'requirements_unmet' | 'update_not_chosen' | 'removes_verification' | 'update_unsupported';
 
 /** The part of `pushes.status` the plan looks at. */
 export interface PlanStatus {
-  unmet: { severity: 'blocking' | 'advisory' }[];
+  /** `bySend`: a site requirement the send fixes itself. */
+  unmet: { severity: 'blocking' | 'advisory'; bySend?: boolean }[];
   current: {
     upToDate: boolean;
     updateRemovesVerification: boolean;
@@ -32,7 +34,8 @@ export type Planned =
 const out = (leftOut: LeftOutReason, numberNotChosen = false): Planned => ({ leftOut, numberNotChosen });
 
 export function planItem(status: PlanStatus, options: PlanOptions): Planned {
-  if (status.unmet.some((u) => u.severity === 'blocking')) return out('requirements_unmet');
+  // A site the send finds or makes at the Provider doesn't keep a Dive out of the run.
+  if (blocking(status.unmet, { beforeSite: true }).length > 0) return out('requirements_unmet');
   const { current } = status;
   if (!current) return { send: 'create' };
   let base: LeftOutReason;

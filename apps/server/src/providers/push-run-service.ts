@@ -12,6 +12,7 @@ import { planItem, orderItems, type PlanOptions, type Planned } from './push-run
 import type { RemoteDive } from './provider.js';
 import type { PushService } from './push-service.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
+import { blocking } from './requirements.js';
 
 export const PUSH_RUN_STEP_TASK = 'push_run_step';
 /** Runs kept per Connection; an older one is deleted when a new one starts. */
@@ -135,7 +136,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
     for (const d of dives) {
       const status = await pushes.status(userId, d.id, conn.provider);
       const current = status.current;
-      if (status.unmet.some((u) => u.severity === 'blocking')) {
+      if (blocking(status.unmet, { beforeSite: true }).length > 0) {
         counts.requirementsUnmet++;
         blocked.push({ diveId: d.id, number: d.number, startsAt: d.startsAt, siteId: d.siteId, siteName: d.siteName, unmet: status.unmet });
       } else if (!current) counts.create++;

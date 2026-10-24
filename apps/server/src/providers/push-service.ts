@@ -20,7 +20,8 @@ import {
 } from './provider.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { currentRemote, type PushRow } from './remote-state.js';
-import { forProvider, leftOutBy, unmetRequirements } from './requirements.js';
+import { blocking, forProvider, leftOutBy, unmetRequirements } from './requirements.js';
+import { siteForSend } from './site-for-send.js';
 import { comparableOf, planSend, same, type Choice, type Comparable, type SendPlan, type SyncedField } from './three-way.js';
 
 /** What deleting a Dive at Providers did: each copy deleted or kept, and why it stopped, if it did. */
@@ -221,15 +222,18 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
    * Participants an advisory requirement leaves out aren't in it.
    */
   function prepared(exports: { requirements: Parameters<typeof unmetRequirements>[0] }, loaded: Awaited<ReturnType<typeof loadOutgoingDive>>) {
-    const unmet = unmetRequirements(exports.requirements, loaded.row.siteId, loaded.outgoing);
+    const unmet = unmetRequirements(exports.requirements, loaded.site, loaded.outgoing);
     return { unmet, outgoing: forProvider(loaded.outgoing, unmet) };
   }
 
   type Prepared = ReturnType<typeof prepared>;
 
-  /** Refuses a Dive whose blocking requirements are unmet (ADR 0029). */
-  function requirementsMet(adapter: ProviderAdapter, p: Prepared) {
-    if (p.unmet.some((u) => u.severity === 'blocking')) {
+  /**
+   * Refuses a Dive whose blocking requirements are unmet (ADR 0029). `beforeSite`: before the send found or made the
+   * site at the Provider, a site requirement the send fixes itself doesn't refuse yet.
+   */
+  function requirementsMet(adapter: ProviderAdapter, p: Prepared, options: { beforeSite?: boolean } = {}) {
+    if (blocking(p.unmet, options).length > 0) {
       throw new ProviderServiceError('provider_requirements_unmet', named(adapter), { unmet: p.unmet });
     }
   }
@@ -278,7 +282,8 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     });
     const base = await changes.baseOf(db, run, diveId, remoteId);
     const source = (Object.keys(read.dive.siteIds)[0] ?? Object.keys(base?.siteIds ?? {})[0] ?? null) as SiteSource | null;
-    const here = (await changes.hubOf(db, run, diveId, source))!;
+    // The remote dive's site ID, when the Diver's account may use it: an update never moves a dive between a site's IDs.
+    const here = (await changes.hubOf(db, run, diveId, source, source ? read.dive.siteIds[source] : null))!;
     const provider = comparableOf(read.dive);
     const plan = planSend({
       fields: here.fields.filter((f) => exportsField(adapter, f)), base: base && comparableOf(base), provider, hub: here.hub,
@@ -333,7 +338,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     // brought, removed there, is sent again.
     const missed = (x?.plan.take ?? []).filter((f) => !applied.includes(f) && !(f === 'cylinder' && x!.remote.cylinder === null));
     const deferred = [...(x?.deferred ?? []), ...missed];
-    const reloaded = await loadOutgoingDive(db, userId, diveId);
+    const reloaded = await loadOutgoingDive(db, userId, diveId, read ? { remoteSiteIds: read.dive.siteIds } : {});
     const now = prepared(exports, reloaded);
     requirementsMet(adapter, now);
     const wanted = numbersFor(conn, exports, reloaded.row.number);
@@ -463,16 +468,26 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     async send(userId: string, diveId: string, provider: string, options: SendOptions = {}): Promise<SendResult> {
       const { onExisting } = options;
       const { adapter, dives, exports } = exporter(provider);
-      const loaded = await loadOutgoingDive(db, userId, diveId);
-      const { row } = loaded;
-      const sending = prepared(exports, loaded);
-      const { outgoing } = sending;
-      const conn = await connectionOrThrow(userId, row.diverId, adapter);
-      requirementsMet(adapter, sending);
-      const wanted = numbersFor(conn, exports, row.number);
+      const first = await loadOutgoingDive(db, userId, diveId);
+      const conn = await connectionOrThrow(userId, first.row.diverId, adapter);
+      requirementsMet(adapter, prepared(exports, first), { beforeSite: true });
+      const bySend = exports.requirements.find((r) => r.type === 'site_external_id' && r.createdBySend);
       // What an update took, kept across a retry after a sign-in.
       const taken = new Set<SyncedField>();
       return leased(diveId, [adapter], () => connections.withAccess(conn, async (ctx) => {
+        // The site at the Provider first, found or made (stored at once, so a retry after a sign-in makes none), then
+        // the Dive as it goes out with it.
+        if (bySend?.type === 'site_external_id') {
+          await siteForSend(db, {
+            adapter, context: ctx, diverId: first.row.diverId, siteId: first.row.siteId, source: bySend.source, actor: { type: 'user', id: userId },
+          });
+        }
+        const loaded = await loadOutgoingDive(db, userId, diveId);
+        const { row } = loaded;
+        const sending = prepared(exports, loaded);
+        const { outgoing } = sending;
+        requirementsMet(adapter, sending);
+        const wanted = numbersFor(conn, exports, row.number);
         const action = dives.open(ctx);
         const steps = pushSteps(adapter, conn, row, userId);
 

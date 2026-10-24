@@ -64,6 +64,7 @@ const RequirementView = Type.Object({
   typed: Nullable(Type.Boolean({ description: 'site_external_id: Users may type an ID (PUT /api/dive-sites/{id}/external-ids/{source})' })),
   pattern: Nullable(Type.String({ description: 'site_external_id: what the bare ID looks like (a regular expression)' })),
   prefixes: Nullable(Type.Array(Type.String(), { description: 'site_external_id: what may come before the ID as the Source shows it, e.g. "site:"' })),
+  createdBySend: Nullable(Type.Boolean({ description: 'site_external_id: a send finds or creates the site at the Provider when the site has a position' })),
   roles: Nullable(RoleList),
 }, { description: 'What sending needs (ADR 0029)' });
 
@@ -146,6 +147,10 @@ const UnmetView = Type.Object({
   severity: Type.Enum(['blocking', 'advisory']),
   source: Type.String(),
   siteId: Type.Optional(Nullable(Type.String({ description: 'site_external_id: the Dive site to give the ID; null: choose a site first' }))),
+  bySend: Type.Optional(Type.Boolean({
+    description: 'site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), '
+      + 'so it does not stop a send; offering the pick stays',
+  })),
   diverId: Type.Optional(Type.String({ description: 'diver_mapping: the Participant' })),
   diverName: Type.Optional(Type.String()),
   role: Type.Optional(Type.Enum([...PARTICIPANT_ROLES])),
@@ -272,12 +277,12 @@ export const pushView = (p: PushRow): Static<typeof PushView> => ({
 
 /** A requirement with what clients need to offer its fix: a typed site ID's forms come from its Source. */
 function requirementView(r: Requirement): Static<typeof RequirementView> {
-  const none = { typed: null, pattern: null, prefixes: null, roles: null };
+  const none = { typed: null, pattern: null, prefixes: null, createdBySend: null, roles: null };
   if (r.type === 'diver_mapping') return { type: r.type, severity: r.severity, description: r.description, source: r.source, ...none, roles: r.roles };
   const info = SOURCE_INFO[r.source];
   return {
     type: r.type, severity: r.severity, description: r.description, source: r.source, ...none,
-    typed: !!info.typed, pattern: info.idPattern.source, prefixes: info.typed?.prefixes ?? [],
+    typed: !!info.typed, pattern: info.idPattern.source, prefixes: info.typed?.prefixes ?? [], createdBySend: !!r.createdBySend,
   };
 }
 

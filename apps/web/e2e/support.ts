@@ -248,14 +248,20 @@ export async function disconnectSsi(api: APIRequestContext) {
 
 /**
  * The Dive ready to go to SSI, but not there: at the site "SSI test reef" without an SSI site ID, and with
- * no SSI dive (deleted there if an earlier test sent it). Needs a Connection.
+ * no SSI dive (deleted there if an earlier test sent it). Needs a Connection. `positioned: false`: the site without its
+ * position, so that sending can't find or make it at SSI and the site's ID is still needed first (piece 4).
  */
-export async function readyForSsi(api: APIRequestContext, diveId: string) {
+export async function readyForSsi(api: APIRequestContext, diveId: string, options: { positioned?: boolean } = {}) {
   const name = 'SSI test reef';
+  const position = options.positioned === false ? null : { latitude: 47.851, longitude: 13.5512 };
   const { sites } = await (await api.get(`/api/dive-sites?q=${encodeURIComponent(name)}`)).json() as { sites: { id: string; name: string; version: number }[] };
   let site = sites.find((s) => s.name === name);
-  if (!site) site = await (await api.post('/api/dive-sites', { data: { name, position: { latitude: 47.851, longitude: 13.5512 } }, headers })).json() as { id: string; name: string; version: number };
-  else await api.put(`/api/dive-sites/${site.id}/external-ids/ssi`, { data: { externalId: null }, headers });
+  if (!site) site = await (await api.post('/api/dive-sites', { data: { name, position }, headers })).json() as { id: string; name: string; version: number };
+  else {
+    await api.put(`/api/dive-sites/${site.id}/external-ids/ssi`, { data: { externalId: null }, headers });
+    const { version } = await (await api.get(`/api/dive-sites/${site.id}`)).json() as { version: number };
+    await api.patch(`/api/dive-sites/${site.id}`, { data: { version, position }, headers });
+  }
   const dive = await (await api.get(`/api/dives/${diveId}`)).json() as Dive;
   await api.patch(`/api/dives/${diveId}`, { data: { version: dive.version, siteId: site.id }, headers });
   const status = await (await api.get(`/api/dives/${diveId}/providers/ssi`)).json() as { current: unknown };
@@ -605,13 +611,13 @@ export async function cancelWaitingImports(api: APIRequestContext) {
  * Erika's SSI connection as the push-run tests need it: the password not kept (so an expired token stops a run), and
  * the test reef's SSI site ID set or taken away. Returns the Connection, the site and the Dive's id.
  */
-export async function pushRunSetup(api: APIRequestContext, diveId: string, options: { keepSignedIn: boolean; siteExternalId: string | null }) {
+export async function pushRunSetup(api: APIRequestContext, diveId: string, options: { keepSignedIn: boolean; siteExternalId: string | null; positioned?: boolean }) {
   await disconnectSsi(api);
   const me = await (await api.get('/api/me')).json() as { ownDiver: { id: string } };
   const made = await api.post('/api/connections/ssi', { data: { diverId: me.ownDiver.id, ...SSI_ACCOUNT, keepSignedIn: options.keepSignedIn }, headers });
   if (!made.ok()) throw new Error(`connecting to SSI failed: ${made.status()} ${await made.text()}`);
   const connection = await made.json() as { id: string };
-  await readyForSsi(api, diveId);
+  await readyForSsi(api, diveId, { positioned: options.positioned ?? true });
   await api.post('/e2e/fake-ssi/clear-dives', { data: { email: SSI_ACCOUNT.login }, headers });
   const dive = await (await api.get(`/api/dives/${diveId}`)).json() as { site: { id: string } };
   await api.put(`/api/dive-sites/${dive.site.id}/external-ids/ssi`, { data: { externalId: options.siteExternalId }, headers });

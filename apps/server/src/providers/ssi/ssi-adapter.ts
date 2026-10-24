@@ -28,7 +28,10 @@ export const SSI_CAPABILITIES: Capabilities = {
         findBy: ['reference', 'time'],
         delivery: 'confirmed',
         requirements: [
-          { type: 'site_external_id', severity: 'blocking', source: 'ssi', description: 'SSI needs the dive site\'s SSI site ID.' },
+          {
+            type: 'site_external_id', severity: 'blocking', source: 'ssi', createdBySend: true,
+            description: 'SSI needs the dive site\'s SSI site ID; sending finds the site in your SSI logbook or creates it there as a private site.',
+          },
           {
             type: 'diver_mapping', severity: 'advisory', source: 'ssi', roles: ['buddy', 'guide', 'instructor'],
             description: 'SSI lists buddies from your SSI buddy list, found by their SSI account; one without an account is left out.',

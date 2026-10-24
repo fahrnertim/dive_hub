@@ -37,8 +37,12 @@ export interface Direction {
  * only by a client that doesn't know the type.
  */
 export type Requirement = { severity: 'blocking' | 'advisory'; description: string } & (
-  /** The Dive's site has an External ID at this site Source (SSI site ID). */
-  | { type: 'site_external_id'; source: SiteSource }
+  /**
+   * The Dive's site has an External ID at this site Source (SSI site ID). `createdBySend`: a send finds the site at the
+   * Provider or creates it there when the site has a position (`diveSites.find` and `create`), so only a site without
+   * one blocks.
+   */
+  | { type: 'site_external_id'; source: SiteSource; createdBySend?: boolean }
   /** The Provider can tell who each Participant in these roles is: today, by the Diver's account at `source`. */
   | { type: 'diver_mapping'; source: DiverSource; roles: ParticipantRole[] }
 );

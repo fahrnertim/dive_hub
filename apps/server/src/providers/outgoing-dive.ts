@@ -88,5 +88,9 @@ export async function loadOutgoingDive(db: Db | Tx, userId: string, diveId: stri
   };
   const sitePosition = site?.latitude != null && site.longitude != null ? { latitude: site.latitude, longitude: site.longitude } : null;
   // Where to look for the Provider's sites: the Dive site, else where the Device placed the dive.
-  return { row, outgoing, position: sitePosition ?? outgoing.exit ?? outgoing.entry };
+  return {
+    row, outgoing, position: sitePosition ?? outgoing.exit ?? outgoing.entry,
+    /** The Dive's site for the requirements: whether it has a position (a send can then make it at the Provider). */
+    site: row.siteId ? { id: row.siteId, positioned: sitePosition !== null } : null,
+  };
 }

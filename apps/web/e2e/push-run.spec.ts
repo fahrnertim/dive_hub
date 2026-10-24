@@ -9,7 +9,8 @@ test.afterEach(async ({ request }) => {
 
 test('sends the logbook\'s list to SSI: held back first, then sent with progress and a result', { tag: ['@dives'] }, async ({ page, request }) => {
   const dive = await resetDive(request);
-  const { siteId } = await pushRunSetup(request, dive.id, { keepSignedIn: true, siteExternalId: null });
+  // Without a position, so that the run can't find or make the site at SSI itself.
+  const { siteId } = await pushRunSetup(request, dive.id, { keepSignedIn: true, siteExternalId: null, positioned: false });
   await page.goto(`/#/?site=${siteId}`);
 
   await page.getByRole('button', { name: 'Send to SSI…' }).click();

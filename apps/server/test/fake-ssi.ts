@@ -100,6 +100,8 @@ export interface FakeSsi {
   dropSaves: boolean;
   /** While set, every token expires right after the next logbook read, as when one runs out in the middle of an action. */
   expireAfterRead: boolean;
+  /** While set, every token expires right after the next site save, as when one runs out between a site and its dive. */
+  expireAfterSiteSave: boolean;
   /** Adds a dive as if it had been logged in the SSI app. */
   addDive(accountId: number, values: SsiRecord): number;
 }
@@ -157,6 +159,7 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
     expiredAnswer: null,
     dropSaves: false,
     expireAfterRead: false,
+    expireAfterSiteSave: false,
     expireTokens: (accountId) => {
       for (const [token, owner] of tokens) if (accountId === undefined || owner === accountId) tokens.delete(token);
     },
@@ -230,6 +233,10 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
           odin_countries_code_iso: row.odin_countries_code_iso ?? '',
         } as unknown as FakeSsiSite;
         fake.sites.push(created);
+        if (fake.expireAfterSiteSave) {
+          fake.expireAfterSiteSave = false;
+          tokens.clear();
+        }
         // The new ID is at the top level, in `success.New` and in `result.site` (checked 2026-10-24).
         return answer({ ok: 'saved', odin_dive_sites_id: id, success: { New: { odin_dive_sites_id: id } }, result: { site: created } });
       }

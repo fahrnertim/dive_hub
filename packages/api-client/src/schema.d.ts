@@ -14039,6 +14039,7 @@ export interface paths {
                                             typed: null | boolean;
                                             pattern: null | string;
                                             prefixes: null | string[];
+                                            createdBySend: null | boolean;
                                             roles: null | ("buddy" | "guide" | "instructor")[];
                                         }[];
                                         /** @description Field names read-back differences are reported under; translate them */
@@ -14333,6 +14334,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -14531,6 +14534,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -14698,6 +14703,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -14878,6 +14885,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -15048,6 +15057,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -15308,6 +15319,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -15479,6 +15492,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -15776,6 +15791,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -15997,6 +16014,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -16183,6 +16202,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -16391,6 +16412,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -16561,6 +16584,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -16733,6 +16758,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -16988,6 +17015,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -17157,6 +17186,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -17408,6 +17439,8 @@ export interface paths {
                                     severity: "blocking" | "advisory";
                                     source: string;
                                     siteId?: null | string;
+                                    /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                    bySend?: boolean;
                                     /** @description diver_mapping: the Participant */
                                     diverId?: string;
                                     diverName?: string;
@@ -17578,6 +17611,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -17660,6 +17695,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -17829,6 +17866,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -17992,6 +18031,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
@@ -18095,6 +18136,8 @@ export interface paths {
                                     severity: "blocking" | "advisory";
                                     source: string;
                                     siteId?: null | string;
+                                    /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                    bySend?: boolean;
                                     /** @description diver_mapping: the Participant */
                                     diverId?: string;
                                     diverName?: string;
@@ -18265,6 +18308,8 @@ export interface paths {
                                 severity: "blocking" | "advisory";
                                 source: string;
                                 siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
                                 /** @description diver_mapping: the Participant */
                                 diverId?: string;
                                 diverName?: string;
