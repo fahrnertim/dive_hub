@@ -7,7 +7,7 @@ import { diveSite, siteImport, type SiteImportFinding, type SiteImportProgress }
 import { writeRevision, type Actor, type Changes } from '../../dives/revisions.js';
 import type { ProblemCode } from '../../http/problems.js';
 import { isUniqueViolation } from '../site-error.js';
-import { allPublicIds, holderOf, publishIds, storeId, updateImported } from '../site-ids.js';
+import { allPublicIds, heldIds, insertImportedIds, publishIds, updateImported } from '../site-ids.js';
 import { IMPORT_SOURCES, revisionKey, type ImportSource } from '../sources.js';
 import { planSiteImport, type ExistingSite, type Field, type PlannedCreate, type PlannedUpdate } from './import-plan.js';
 import { IMPORTED_FIELDS, SiteSourceError, type ImportArea, type ImportedValues, type SiteSourceAdapter, type SourceSite } from './site-source.js';
@@ -70,19 +70,20 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
     }));
   }
 
-  /** An ID the plan wants to add that a row already holds (a private one it didn't see) is left where it is. */
-  const free = async (tx: Tx, e: { source: ImportSource; externalId: string }) => !(await holderOf(tx, e.source, e.externalId));
-
-  async function create(tx: Tx, actor: Actor, c: PlannedCreate): Promise<string> {
+  /**
+   * A new site from the Sources' objects; null when a row here already holds every one of their IDs (a private ID the plan
+   * didn't see: its site is already here, and no second one is made).
+   */
+  async function create(tx: Tx, actor: Actor, c: PlannedCreate): Promise<string | null> {
+    const held = await heldIds(tx, c.externalIds);
+    const free = c.externalIds.filter((e) => !held.has(`${e.source}:${e.externalId}`));
+    if (free.length === 0) return null;
     const [created] = await tx.insert(diveSite).values({ ...columnsOf(c.values), name: c.values.name!, createdBy: null }).returning({ id: diveSite.id });
     const id = created!.id;
     const changes: Changes = {};
     for (const field of IMPORTED_FIELDS) if (c.values[field] !== null) changes[field] = { from: null, to: c.values[field] };
-    for (const e of c.externalIds) {
-      if (!(await free(tx, e))) continue;
-      await storeId(tx, { siteId: id, source: e.source, externalId: e.externalId, accountId: null, actor: null, providesData: true, imported: e.imported, siteImportId: actor.id });
-      changes[idKey(e.source)] = { from: null, to: e.externalId };
-    }
+    const stored = await insertImportedIds(tx, actor.id, free.map((e) => ({ siteId: id, source: e.source, externalId: e.externalId, providesData: true, imported: e.imported })));
+    for (const e of free) if (stored.has(`${e.source}:${e.externalId}`)) changes[idKey(e.source)] = { from: null, to: e.externalId };
     await writeRevision(tx, 'dive_site', id, actor, 'create', changes);
     return id;
   }
@@ -99,17 +100,14 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
       set[field] = to;
       changes[field] = { from: current[field], to };
     }
+    // New IDs in one insert; one a row already holds (a private ID the plan didn't see) is left where it is.
+    const added = u.externalIds.filter((e) => e.added);
+    const stored = await insertImportedIds(tx, actor.id, added.map((e) => ({
+      siteId: u.siteId, source: e.source, externalId: e.externalId, providesData: e.providesData, imported: e.imported,
+    })));
+    for (const e of added) if (stored.has(`${e.source}:${e.externalId}`)) changes[idKey(e.source)] = { from: null, to: e.externalId };
     for (const e of u.externalIds) {
-      if (e.added) {
-        if (!(await free(tx, e))) continue;
-        await storeId(tx, {
-          siteId: u.siteId, source: e.source, externalId: e.externalId, accountId: null, actor: null,
-          providesData: e.providesData, imported: e.imported, siteImportId: actor.id,
-        });
-        changes[idKey(e.source)] = { from: null, to: e.externalId };
-      } else {
-        await updateImported(tx, e.source, e.externalId, { providesData: e.providesData, imported: e.imported, siteImportId: actor.id });
-      }
+      if (!e.added) await updateImported(tx, e.source, e.externalId, { providesData: e.providesData, imported: e.imported, siteImportId: actor.id });
     }
     if (Object.keys(changes).length === 0) return;
     await tx.update(diveSite)
@@ -182,6 +180,7 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
             for (const item of work.slice(i, i + BATCH)) {
               if ('create' in item) {
                 const siteId = await create(tx, actor, item.create);
+                if (!siteId) continue;
                 const near = item.create.near;
                 if (near) findings.push({ kind: 'near', siteId, name: item.create.values.name!, nearSiteId: near.siteId, nearName: near.name, distanceM: near.distanceM });
               } else {

@@ -145,6 +145,32 @@ export async function clearId(tx: Tx, siteId: string, source: SiteSource, accoun
   return removed.externalId;
 }
 
+const keyOf = (r: { source: SiteSource; externalId: string }) => `${r.source}:${r.externalId}`;
+
+/** Which of these IDs some row holds (public or private, any site), as `source:externalId`. */
+export async function heldIds(q: Q, ids: { source: SiteSource; externalId: string }[]): Promise<Set<string>> {
+  const held = new Set<string>();
+  for (const source of new Set(ids.map((i) => i.source))) {
+    const rows = await q.select({ source: diveSiteExternalId.source, externalId: diveSiteExternalId.externalId }).from(diveSiteExternalId)
+      .where(and(eq(diveSiteExternalId.source, source), inArray(diveSiteExternalId.externalId, ids.filter((i) => i.source === source).map((i) => i.externalId))));
+    for (const r of rows) held.add(keyOf(r));
+  }
+  return held;
+}
+
+/**
+ * A Site import's new public IDs, in one insert: an ID a row already holds, or a site that already has a public ID at
+ * that Source, is skipped. Answers the IDs stored, as `source:externalId` (only those go into the Revisions).
+ */
+export async function insertImportedIds(tx: Tx, siteImportId: string, rows: {
+  siteId: string; source: SiteSource; externalId: string; providesData: boolean; imported: ImportedValues;
+}[]): Promise<Set<string>> {
+  if (rows.length === 0) return new Set();
+  const stored = await tx.insert(diveSiteExternalId).values(rows.map((r) => ({ ...r, accountId: null, siteImportId })))
+    .onConflictDoNothing().returning({ source: diveSiteExternalId.source, externalId: diveSiteExternalId.externalId });
+  return new Set(stored.map(keyOf));
+}
+
 /** A Site import's new values for a public ID it delivered again. */
 export async function updateImported(tx: Tx, source: SiteSource, externalId: string, v: {
   providesData: boolean; imported: ImportedValues; siteImportId: string;

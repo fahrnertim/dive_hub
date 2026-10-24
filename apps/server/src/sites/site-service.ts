@@ -108,10 +108,12 @@ export function createSiteService(db: Db) {
   async function views<R extends { site: typeof diveSite.$inferSelect; diveCount: number; inUse: boolean; distanceM?: number }>(actor: SiteActor, rows: R[]) {
     const accounts = await accountsOfUser(db, actor.userId);
     const [ids, divers] = await Promise.all([idsOf(db, rows.map((r) => r.site.id), accounts), diversOf(db, accounts)]);
-    const order = (r: { source: SiteSource; accountId: string | null }) => `${SITE_SOURCES.indexOf(r.source)}:${r.accountId === null ? 0 : 1}:${r.accountId ?? ''}`;
+    const order = (a: { source: SiteSource; accountId: string | null }, b: { source: SiteSource; accountId: string | null }) =>
+      SITE_SOURCES.indexOf(a.source) - SITE_SOURCES.indexOf(b.source) || Number(a.accountId !== null) - Number(b.accountId !== null)
+      || (a.accountId ?? '').localeCompare(b.accountId ?? '');
     return rows.map((row) => ({
       ...row,
-      externalIds: (ids.get(row.site.id) ?? []).sort((a, b) => order(a).localeCompare(order(b))).map((e): ExternalIdRow => ({
+      externalIds: (ids.get(row.site.id) ?? []).sort(order).map((e): ExternalIdRow => ({
         source: e.source, externalId: e.externalId, providesData: e.providesData, offered: e.providesData ? null : e.imported,
         privateTo: e.accountId === null ? null : { diverId: divers.get(e.accountId)! },
       })),

@@ -56,6 +56,15 @@ describe.skipIf(!(await databaseReachable()))('private SSI site IDs', () => {
   const atSite = (diveId: string, siteId: string) => t.db.update(dive).set({ siteId }).where(eq(dive.id, diveId));
   const ssiIdOf = async (userId: string, diveId: string, remoteSiteIds?: { ssi: string }) =>
     (await loadOutgoingDive(t.db, userId, diveId, remoteSiteIds ? { remoteSiteIds } : {})).outgoing.siteIds.ssi ?? null;
+  const runSiteImport = async () => {
+    const started = await call('POST', '/api/admin/site-imports', cookies.admin, {
+      sources: ['ssi'], area: { kind: 'country', country: 'EG' }, language: 'en', confirmSsi: true,
+    });
+    expect(started.statusCode).toBe(202);
+    await ctx.siteImports.run(started.json().id);
+    const done = (await call('GET', `/api/admin/site-imports/${started.json().id}`, cookies.admin)).json() as { status: string };
+    expect(done.status).toBe('done');
+  };
   const toolContext = (who: 'a' | 'b') => ({ tx: t.db as unknown as Tx, userId: users[who], diverIds: [divers[who]], positions: false });
 
   beforeAll(async () => {
@@ -204,15 +213,25 @@ describe.skipIf(!(await databaseReachable()))('private SSI site IDs', () => {
       source: 'ssi', externalId: '500', sameAs: {},
       values: { name: 'You Reef', position: { latitude: 40, longitude: 40 }, country: 'EG', waterBody: null, description: null, maxDepthM: null, waterType: null },
     }];
-    const started = await call('POST', '/api/admin/site-imports', cookies.admin, {
-      sources: ['ssi'], area: { kind: 'country', country: 'EG' }, language: 'en', confirmSsi: true,
-    });
-    expect(started.statusCode).toBe(202);
-    await ctx.siteImports.run(started.json().id);
-    const done = (await call('GET', `/api/admin/site-imports/${started.json().id}`, cookies.admin)).json() as { status: string };
-    expect(done.status).toBe('done');
+    await runSiteImport();
     const [row] = await t.db.select().from(diveSiteExternalId).where(eq(diveSiteExternalId.externalId, '500'));
     expect(row).toMatchObject({ siteId: u.id, accountId: null });
     expect(ids(await siteAs('b', u.id))).toEqual(['500']);
+  });
+
+  it('creates no second site for an ID held privately on a site that also has a public one', async () => {
+    const both = await site('Both Reef', { latitude: 41, longitude: 41 });
+    await store(both.id, '700', null);
+    await store(both.id, '701', accounts.a);
+    ssiAnswer = [{
+      source: 'ssi', externalId: '701', sameAs: {},
+      values: { name: 'Both Reef', position: { latitude: 41, longitude: 41 }, country: 'EG', waterBody: null, description: null, maxDepthM: null, waterType: null },
+    }];
+    await runSiteImport();
+    const named = (await call('GET', '/api/dive-sites?q=Both%20Reef', cookies.a)).json() as { sites: Site[] };
+    expect(named.sites.map((x) => x.id)).toEqual([both.id]);
+    // The site can't have two public SSI IDs: 701 stays A's.
+    const [row] = await t.db.select().from(diveSiteExternalId).where(eq(diveSiteExternalId.externalId, '701'));
+    expect(row).toMatchObject({ siteId: both.id, accountId: accounts.a });
   });
 });
