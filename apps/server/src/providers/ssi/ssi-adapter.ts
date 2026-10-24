@@ -214,10 +214,12 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         const { ids: sent, leftOut } = buddiesFor(dive, (await logbook.current()).buddies);
         // Buddies kept as the Provider has them: its IDs go back unchanged and Dive Hub's are not added.
         const asTheyAre = leave?.keep.includes('buddies') ?? false;
-        const ids = asTheyAre ? [] : sent;
+        // Cleared: none stays, not even those SSI holds that Dive Hub never sent.
+        const cleared = leave?.clear.includes('buddies') ?? false;
+        const ids = asTheyAre ? [] : cleared ? [] : sent;
         // Buddies set in SSI's app stay; those Dive Hub sent before are replaced by those it sends now.
         const sentBefore = asTheyAre ? [] : buddyIdsOf(previous);
-        const kept = buddyIdsOf(remote).filter((id) => !sentBefore.includes(id) && !ids.includes(id));
+        const kept = cleared ? [] : buddyIdsOf(remote).filter((id) => !sentBefore.includes(id) && !ids.includes(id));
         // The number there stays unless Dive Hub's is asked for and no other dive has it.
         const number = wanted != null && !(await holderOf(wanted, remoteId)) ? wanted : numberOf(remote.odin_user_log_nr);
         const record = { ...withBuddies(updateRecord(remote, forSsi(dive), leave), [...ids, ...kept]), odin_user_log_nr: number };

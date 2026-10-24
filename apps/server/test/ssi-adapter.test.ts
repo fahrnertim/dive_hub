@@ -92,6 +92,14 @@ describe('the SSI adapter reading the current record', () => {
     await adapter.dives!.open(ctx).update!(remoteId!, dive('2026-01-15T09:00:00Z'), { odin_user_log_buddy_ids: [41] }, null, { keep: ['buddies'], clear: [] });
     expect(fake.dives.get(Number(remoteId))!.odin_user_log_buddy_ids).toEqual([41, 42]);
   });
+
+  it('an update that clears the buddies removes every buddy at SSI, also those Dive Hub never sent', async () => {
+    const { fake, adapter, ctx } = await setUp();
+    const { remoteId } = await adapter.dives!.open(ctx).create(dive('2026-01-15T09:00:00Z'), 'divehub-1');
+    fake.dives.get(Number(remoteId))!.odin_user_log_buddy_ids = [41, 42];
+    await adapter.dives!.open(ctx).update!(remoteId!, dive('2026-01-15T09:00:00Z'), null, null, { keep: [], clear: ['buddies'] });
+    expect(fake.dives.get(Number(remoteId))!.odin_user_log_buddy_ids).toEqual([]);
+  });
 });
 
 describe('the SSI adapter\'s call log', () => {
