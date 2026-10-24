@@ -22,6 +22,7 @@ settled 2026-10-24"). Not ready: it waits for piece 4 (private site IDs per acco
 - **Keep:** the entry closes and isn't raised again for that site and account.
 
 ## Open
-- Whether SSI lets a site be deleted (piece 4's first check); if so, whether "move" also offers deleting the private site
-  once no dive uses it.
+- ~~Whether SSI lets a site be deleted~~: piece 4's first check (2026-10-24) found it can't be deleted with
+  `odin_dive_sites_deleted`, and the app has no delete ([research](../research/2026-10-24-ssi-site-checks.md)); "move"
+  therefore leaves the private site at SSI.
 - The entry is about a site, not a Dive; today's entries are per Dive and Connection (ADR 0056).
