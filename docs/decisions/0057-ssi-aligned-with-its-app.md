@@ -1,6 +1,6 @@
 ---
 title: "ADR 0057: SSI aligned with its app"
-summary: The decompiled SSI app (5.0.43) is the source of truth for the integration, and every claim about SSI carries its source ([R] app code, [T] our test on the owner's account, [S] reported, [?] unknown); Dive Hub sends the app's full record with its types and reads answers by the app's rules; everything both sides hold goes both ways (dive type, tank, lead, surface interval, tank pressure, CNS, heart rate); a missing site is matched or created at SSI as private; Participants are added to the SSI buddy list (name-only only if a check shows SSI keeps it); a save is checked against SSI's own answer; checks on the owner's account are announced, repeatable and recorded. Amends 0024, 0029, 0031, 0045, 0047.
+summary: The decompiled SSI app (5.0.43) is the source of truth for the integration, and every claim about SSI carries its source ([R] app code, [T] our test on the owner's account, [S] reported, [?] unknown); Dive Hub sends the app's full record with its types and reads answers by the app's rules; everything both sides hold goes both ways (dive type, tank, lead, surface interval, tank pressure, CNS, heart rate); a missing site is matched or created at SSI as private; Participants are added to the SSI buddy list (name-only only if a check shows SSI keeps it); a save is checked against SSI's own answer; checks on the owner's account are announced, repeatable and recorded. Amends 0024, 0029, 0031, 0045, 0047; amended 2026-10-24: private site IDs belong to the owning account (amends 0021).
 status: proposed
 date: 2026-10-23
 ---
@@ -38,6 +38,15 @@ nothing of several values it imports.
   whose site has no SSI ID takes a nearby SSI site (100 m and name, [ADR 0021](0021-site-external-ids-and-import.md)), else
   Dive Hub creates the site at SSI as **private** and stores its ID. The blocking requirement becomes something the
   send fixes.
+  - **Amended 2026-10-24** (owner, [piece 4](../superpowers/specs/2026-10-23-ssi-app-alignment-design.md); amends
+    [0021](0021-site-external-ids-and-import.md)'s "at most one per Source and site"): other Users have their own SSI
+    accounts, so a private ID belongs to the account at the Source that owns it, not to the shared site.
+    `dive_site_external_id` gets `account_id`, a reference to the Diver's account at that Source
+    (`diver_external_id`, removed with it; empty = public), never to a Connection; a site has at most one public ID per Source and at most
+    one private ID per Source and account; an ID is still unique per Source. Only the sites module reads the table, and
+    never shows an account another account's private ID. A new dive takes the public ID first, then the account's
+    private one, then a nearby logbook site, then a new private site; an update keeps the ID the dive already has at
+    SSI. The import stores a logbook site SSI marks private and owned by the account as that account's private ID.
 - **Buddies** (amends [0029](0029-push-requirements-and-buddies.md)): a Participant missing from the SSI buddy list is
   added (`save_buddy`) when the Diver has an SSI account or an e-mail; with a name only if a check shows SSI keeps such
   an entry. Matched by account, e-mail, then exact name; the entry ID is remembered. The list is read with `get_buddies`.

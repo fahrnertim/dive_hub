@@ -214,6 +214,85 @@ Recorded in [ADR 0056](../../decisions/0056-two-way-exchange-and-automation.md) 
   a send: the note comes back, the lead goes out, nothing is overwritten. Then a note removed in Dive Hub, a send: it is
   gone in SSI's app (not yet known [?] whether SSI clears a key sent as null or empty).
 
+## Piece 4, settled 2026-10-24
+
+From a third session with the owner, before piece 4's plan. It fills what the "SSI" section's Sites bullet leaves open.
+Recorded in [ADR 0057](../../decisions/0057-ssi-aligned-with-its-app.md) (amended 2026-10-24).
+
+- **Other Users have their own SSI accounts** (owner). A private site at SSI belongs to one SSI account, while a Dive Hub
+  site is shared by every User, so a private SSI ID must never be used for another account's dive.
+- **One table, with an owning account** (owner, after weighing two tables): `dive_site_external_id` gets
+  `account_id`, the account at the Source that owns a private site (below: the Diver's account row); empty = public,
+  usable by everyone. One column, not
+  a flag plus an account, so the two can't contradict. Why one table: SSI's private and public sites share one ID space
+  (`odin_dive_sites_id`), so "an ID belongs to one site here" stays one unique index; and a private site SSI later
+  publishes keeps its ID, so it is one value changing, not a row moving. Rules: an ID once per Source (as today); at most
+  one public ID per Source and site; at most one private ID per Source, site and account. A private row may carry
+  `provides_data` and `imported` (the dive import makes shared sites from private logbook sites, owner 2026-10-06); the
+  site's data stays shared, only the ID is private. `site_import_id` stays empty on private rows (the site import never
+  delivers them; no rule needed). Generic: any site Source, not only SSI.
+- **Reads go through the sites module** (owner): one function answers "the IDs this account may see for this site";
+  `mcp/tools-sites.ts`, `site-service.ts` and every other direct reader of the table move onto it. A test shows another
+  account's private ID never appears.
+- **Which SSI ID a send uses** (owner: public first, no setting):
+  - **A new dive at SSI:** the site's public ID; else the account's private one; else a site of the account's logbook
+    within 100 m with a matching name (ADR 0021's rule; the send reads the logbook anyway, no extra call), whose ID is
+    stored public or private as SSI marks it; else Dive Hub creates the site at SSI as private (`save_divesite`: name,
+    position, country, water type) and stores its ID as private to the account.
+  - **An update:** when the dive at SSI already points at one of this site's IDs the account may use (public or
+    private), it stays there. Dive Hub never moves a dive between the two (an anti-goal: it would change a value the
+    User didn't touch, and split the site's dives in SSI's app). A private ID is kept although a public one exists.
+  - The same in a manual send and a Push run, with no extra step.
+- **What the User sees** (my calls): the requirement `site_external_id` no longer blocks when the site has a position;
+  the Dive's page says "Sending finds this site in your SSI logbook or creates it there as a private site", and picking
+  an SSI site or typing an ID stays. A Dive without a site still blocks; a site without a position still blocks ("give
+  the site a position"; Dive Hub doesn't create a site without a pin at SSI). The site page shows "Your private SSI site:
+  <ID>" only to that account's User, who can change or remove it; the public ID works as today.
+- **An ID picked or typed by hand** (owner): picked from the account's logbook sites, it is stored as SSI marks it
+  (`is_private` and owner). Typed, Dive Hub asks SSI for it (`get_divesite`, `dsid` [R]; one call, only on the User's
+  action): an ID SSI doesn't know is refused (the User mistyped it); SSI's answer decides public or private. Where the
+  answer doesn't say, or SSI can't be reached, the ID is private to the account (the safe side: only other Users lose).
+- **What `account_id` holds** (owner): a private site belongs to the SSI account, not to a Connection. An SSI account
+  is one Diver's here (`diver_external_id`, unique per Source; another Diver connecting it is `provider_account_taken`),
+  while Connections are per User, Diver and Provider: several Users managing one Diver (`diver_management`, ADR 0028)
+  each have a Connection to the same account. So `account_id` is a foreign key to that `diver_external_id` row, `on
+  delete cascade`: removing a Connection keeps the IDs; deleting the Diver or connecting the Diver to another account
+  (which replaces the row) removes them; no orphaned data and no clean-up code. The row's Source and the account's
+  Source must be the same (both `ssi`); the two enums are separate, so code checks it. "The IDs this User may see" =
+  the public ones plus the private ones of the Divers the User manages, for that Source; a send for a Diver uses that
+  Diver's.
+- **Merging two sites** (my call): the kept site keeps its private ID for an account; the removed site's private ID for
+  the same account is dropped (a public or private ID the kept site lacks moves, as today). Dives of the removed site
+  then count as changed, and their next update points them at the kept site's ID: merging means that. Both sites stay
+  at SSI.
+- **Site history** (my call): setting, changing or removing a private ID writes no Revision on the site, whose history
+  every User reads. A private ID is the account's own setting.
+- **A logbook site whose ID another site here holds** (my call): skipped in the nearby match, as ADR 0021's matching
+  skips a site with an ID at that Source; the send goes on to create a site. Two sites here matching one SSI site is a
+  duplicate to merge here.
+- **Edge cases** (my calls): a site created at SSI whose dive save then fails keeps its ID, so the next send reuses it;
+  two dives at one new site in a Push run create one site (sends on a Connection run one at a time); deleting a site or
+  a Dive here never deletes the site at SSI (ADR 0056: the site is never cleared).
+- **The import** (my call): a logbook site SSI marks private (`odin_dive_sites_is_private`) and owned by the account
+  (`_is_private_owner` = the Connection's account) is stored as that account's private ID. The owner's private IDs
+  already on shared sites become private on the account's next logbook read; no migration guesses. When SSI reads a
+  site as public whose row here is private (SSI published it), `account_id` is cleared.
+- **Checks on the owner's account, before anything is built on them** (announced each time):
+  1. What `save_divesite` answers: the new ID in the answer, or a read has to find it. Whether a site can be deleted
+     again (`odin_dive_sites_deleted`). If it can't, the owner is asked before the next check leaves a test site behind.
+     What `get_divesite` answers for one of the owner's private sites, a public site and an ID that doesn't exist
+     (whether it carries the privacy flag and owner; how an unknown ID is answered).
+  2. **"Usable and not visible to others"** (owner: enough from one account): Dive Hub creates a private site "Dive Hub
+     test", a 2000-01-01 test dive uses it, the owner sees the site on the dive in SSI's app; the logbook returns it
+     `is_private: 1` with the owner as owner; it is in neither `get_divesites_global` (read right after, with a
+     `last_sync` before the creation) nor the public zip of the next day. Then the dive and the site are deleted. It
+     doesn't prove another account can't use the ID directly; accepted.
+- **Later** (owner): when a site that an account holds privately gets a public SSI ID, "Needs your decision" offers to
+  move the account's dives to the public site or keep them. The decision only changes Dive Hub's side; the Dives then
+  count as changed since sent and go out with whatever send comes next. Draft:
+  [backlog 0003](../../backlog/0003-private-site-gets-public.md). For piece 6: whether a resolved Conflict entry should
+  likewise only mark the Dive for sending instead of sending at once (piece 3 sends at once, as no queue exists yet).
+
 ## For the equipment work (owner, recorded here so it isn't lost)
 
 Equipment items ([ADR 0034](../../decisions/0034-equipment-items-and-service-schedules.md), not built yet) need **item groups**: a base
