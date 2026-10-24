@@ -278,7 +278,9 @@ Deliberate simplifications, to revisit:
 **Slice 8 (2026-10-04): external site IDs and the Site import** ([ADR 0021](../decisions/0021-site-external-ids-and-import.md)).
 
 Implemented:
-- **External IDs** (`dive_site_external_id`): unique per Source, at most one per Source and site. Each is either
+- **External IDs** (`dive_site_external_id`): unique per Source; public (every User and send) or private to one SSI account
+  (`account_id`, [ADR 0057](../decisions/0057-ssi-aligned-with-its-app.md): seen by the Users who manage that Diver, used by that Diver's sends);
+  at most one public row per Source and site and one private row per account; read and written only by `sites/site-ids.ts`. Each is either
   data-providing (it keeps what its Source delivered last) or a reference. The Sources (`osm`, `wikidata`, `ssi`)
   and their license, Attribution and link pattern are defined in `src/sites/sources.ts`.
 - **Dive sites:**

@@ -7,23 +7,10 @@ import { dive, diveCentreSite, diveSite, diveSiteExternalId, revision, siteImpor
 import { writeRevision, type Changes } from '../dives/revisions.js';
 import type { Position, SiteWaterType } from '../vocabulary.js';
 import { IMPORTED_FIELDS, type ImportedValues } from './import/site-source.js';
+import { isUniqueViolation, SiteError } from './site-error.js';
 import { revisionKey, SOURCE_INFO, typedId, type SiteSource } from './sources.js';
 
-export class SiteError extends Error {
-  constructor(readonly code:
-    | 'site_not_found' | 'site_changed' | 'site_in_use' | 'site_not_deletable' | 'external_id_taken' | 'site_merge_self'
-    | 'site_offer_not_found' | 'site_source_not_typed' | 'invalid_input') {
-    super(code);
-  }
-}
-
-/** A PostgreSQL unique violation, however deep the driver and Drizzle wrapped it. */
-export function isUniqueViolation(error: unknown, constraint?: string): boolean {
-  for (let e = error as { code?: string; constraint?: string; cause?: unknown } | undefined; e; e = e.cause as typeof e) {
-    if (e.code === '23505') return !constraint || e.constraint === constraint;
-  }
-  return false;
-}
+export { isUniqueViolation, SiteError };
 
 export type { Position };
 
