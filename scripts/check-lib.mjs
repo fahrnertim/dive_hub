@@ -104,11 +104,13 @@ export const fullPlan = () => ({ typecheck: true, lint: 'all', scripts: true, se
  */
 function planTestSupport(path, plan, more, loads) {
   if (path.startsWith('apps/server/test/')) {
-    if (path === 'apps/server/test/support.ts' || !path.endsWith('.ts')) {
+    const data = !path.endsWith('.ts');
+    if (path === 'apps/server/test/support.ts' || data) {
       more('server', 'all');
       plan.notes.push({ text: `${path} is the server test setup or data the server tests read, so all server tests run`, steps: ['server'] });
     } else more('server', 'changed');
-    if (!loads || loads.has(path)) {
+    // Data is read by path, which no import shows: the e2e server may read it too (when unsure, run more).
+    if (data || !loads || loads.has(path)) {
       plan.e2e = 'all';
       plan.notes.push({ text: `${path} is loaded by the browser tests' server, so all browser tests run`, steps: ['e2e'] });
     }
@@ -401,6 +403,20 @@ export function clearFailed(step, cwd = process.cwd()) {
 }
 
 /**
+ * The failed tests a failed browser step may keep for `--failed` (Playwright's last run, `.last-run.json`), or none:
+ * only a report Playwright wrote during the step (`writtenAt` after `startedAt`; a server that didn't start, a setup
+ * that crashed or Ctrl-C leave an older file), of a run that ended as failed with a list, and only when Playwright
+ * can't have stopped early (`stopsEarly`: maxFailures set), which would leave unrun tests out of every list.
+ * Returns `{ failedTests, why }`: the list, or null and why not.
+ */
+export function keptFailures({ lastRun, writtenAt, startedAt, stopsEarly }) {
+  if (!lastRun || writtenAt === null || writtenAt < startedAt) return { failedTests: null, why: "Playwright's last report is from an earlier run" };
+  if (lastRun.status !== 'failed' || !(lastRun.failedTests?.length > 0)) return { failedTests: null, why: `Playwright's run ended as ${lastRun.status} without a list of failed tests` };
+  if (stopsEarly) return { failedTests: null, why: 'Playwright may have stopped early (maxFailures), so some tests never ran' };
+  return { failedTests: lastRun.failedTests, why: null };
+}
+
+/**
  * Whether a passing rerun of the failed browser tests makes the browser step green: only on the snapshot the
  * kept failed run ran on, and only when Playwright's last run is that run (the same failed tests). `{ renews, why }`.
  */
@@ -424,8 +440,12 @@ export function e2eServerLoads(cwd = process.cwd()) {
     loads.add(path);
     const dir = path.slice(0, path.lastIndexOf('/'));
     for (const [, spec] of readFileSync(join(cwd, path), 'utf8').matchAll(/(?:from|import)\s*\(?\s*['"](\.{1,2}\/[^'"]+)['"]/g)) {
-      const target = posix.normalize(`${dir}/${spec}`).replace(/\.js$/, '.ts');
-      if (target.startsWith('apps/server/test/')) visit(target);
+      const target = posix.normalize(`${dir}/${spec}`);
+      if (!target.startsWith('apps/server/test/')) continue;
+      // './x.js' is x.ts; './x' is x.ts or x/index.ts; anything else (a .json) as it is.
+      if (target.endsWith('.js')) visit(target.replace(/\.js$/, '.ts'));
+      else if (/\.\w+$/.test(target)) visit(target);
+      else for (const candidate of [`${target}.ts`, `${target}/index.ts`]) visit(candidate);
     }
   };
   visit(E2E_SERVER);

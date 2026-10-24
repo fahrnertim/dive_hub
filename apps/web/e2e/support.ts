@@ -76,6 +76,20 @@ export async function setPreferences(api: APIRequestContext, preferences: { lang
   await api.patch('/api/me/preferences', { data: preferences, headers });
 }
 
+/** No axe violations on the page as it is (WCAG 2.2 AA and best practices). */
+export async function expectAccessible(page: Page) {
+  // React Aria points a search field at its new active result one render after a list changes: wait until every such
+  // reference is on the page. One that stays broken still fails.
+  await expect.poll(() => page.evaluate(() => [...document.querySelectorAll('[aria-activedescendant]')]
+    .every((el) => !!document.getElementById(el.getAttribute('aria-activedescendant')!)))).toBe(true);
+  const axe = await new AxeBuilder({ page })
+    // React Aria's live announcer briefly keeps a role=img pointing at a pending button that may be gone.
+    .exclude('[data-live-announcer]')
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
+    .analyze();
+  expect(axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.html.slice(0, 120)).join(' | ')}`)).toEqual([]);
+}
+
 /**
  * The checks every page must pass (UI review 2026-10-03, so its problems don't come back):
  * axe-core finds no WCAG 2.2 AA or best-practice violation, the page has one h1 and its own title,
@@ -94,18 +108,7 @@ export async function expectGoodPage(page: Page, title?: string, options: { axe?
   else await expect(page).toHaveTitle(/^.+ – Dive Hub$/);
 
   // axe is the slowest check; ui-quality runs it in two of its four variants (ADR 0023).
-  if (options.axe !== false) {
-    // React Aria points a search field at its new active result one render after a list changes: wait until every such
-    // reference is on the page. One that stays broken still fails.
-    await expect.poll(() => page.evaluate(() => [...document.querySelectorAll('[aria-activedescendant]')]
-      .every((el) => !!document.getElementById(el.getAttribute('aria-activedescendant')!)))).toBe(true);
-    const axe = await new AxeBuilder({ page })
-      // React Aria's live announcer briefly keeps a role=img pointing at a pending button that may be gone.
-      .exclude('[data-live-announcer]')
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-      .analyze();
-    expect(axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.html.slice(0, 120)).join(' | ')}`)).toEqual([]);
-  }
+  if (options.axe !== false) await expectAccessible(page);
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow, 'the page scrolls sideways').toBeLessThanOrEqual(0);

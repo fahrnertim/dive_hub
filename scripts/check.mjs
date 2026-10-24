@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // The checks for what changed (ADR 0023): typecheck, lint and module boundaries of the changed files (amendment of
-// 2026-10-22), the unit tests whose imports changed, and the browser tests of the areas touched. `pnpm check` while working and before a commit; `pnpm check:full` before a
-// push or a release (ADR 0023, amendment of 2026-10-08).
+// 2026-10-22), the unit tests whose imports changed, and the browser tests of the areas touched. `pnpm check` while working and before a commit; `pnpm check:full`
+// everything, which CI runs on every pull request: no full check by hand before a push (ADR 0023, amendment of 2026-10-24).
 //   pnpm check                 changes since each step's last green run or since main (where this branch left it),
 //                              whichever leaves fewer files; since the last commit when neither exists
 //   pnpm check --base main     changes since another commit or branch (--base HEAD: all uncommitted changes)
@@ -15,19 +15,38 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { relative } from 'node:path';
-import { readFileSync } from 'node:fs';
-import { QUIET, STEPS, TAGS, browserGrepInvert, changedSince, variantsRun, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, fullPlan, lintTargets, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
+import { readFileSync, statSync } from 'node:fs';
+import { QUIET, STEPS, TAGS, browserGrepInvert, changedSince, variantsRun, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, keptFailures, fullPlan, lintTargets, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
 import { lint } from './check-lint.mjs';
 
 const args = process.argv.slice(2);
+// pnpm check runs axe once per ui-quality test, on its final state; check:full (CI) at every page check (ADR 0023,
+// amendment of 2026-10-24). Set here so that --failed reruns tests the way the failed check ran them.
+if (!args.includes('--full')) process.env.E2E_AXE ??= 'once';
 
+const LAST_RUN = 'apps/web/test-results/.last-run.json';
 /** The ids of the browser tests that failed in Playwright's last run. */
 function lastFailed() {
   try {
-    return JSON.parse(readFileSync('apps/web/test-results/.last-run.json', 'utf8')).failedTests ?? [];
+    return JSON.parse(readFileSync(LAST_RUN, 'utf8')).failedTests ?? [];
   } catch {
     return []; // no browser run yet
   }
+}
+
+/**
+ * The failed tests a browser step that started at `startedAt` may keep (`keptFailures`): Playwright's report only
+ * when it was written during the step. The config sets no maxFailures today; if it ever does, nothing is kept.
+ */
+function failuresSince(startedAt) {
+  let lastRun = null;
+  let writtenAt = null;
+  try {
+    lastRun = JSON.parse(readFileSync(LAST_RUN, 'utf8'));
+    writtenAt = statSync(LAST_RUN).mtimeMs;
+  } catch { /* no report */ }
+  const stopsEarly = /maxFailures/.test(readFileSync('apps/web/playwright.config.ts', 'utf8'));
+  return keptFailures({ lastRun, writtenAt, startedAt, stopsEarly });
 }
 
 // --failed: after a failing browser run, only the tests that failed (Playwright's record of its last run). When
@@ -44,14 +63,17 @@ if (args.includes('--failed')) {
   const verdict = failedRerunRenews(failedRun('e2e'), tree, failed);
   const outcome = verdict.renews ? `${verdict.why}, so if they pass the browser tests count as green on these files` : `nothing is recorded: ${verdict.why}`;
   console.log(`check: the ${failed.length} browser test(s) that failed in the last browser run; ${outcome}`);
+  const startedAt = Date.now();
   const status = spawnSync('pnpm --filter @dive-hub/web test:e2e --last-failed', { stdio: 'inherit', shell: true }).status ?? 1;
   if (verdict.renews && status === 0) {
     recordGreen('e2e', tree);
     clearFailed('e2e');
     console.log('check: browser tests recorded green on these files; the next pnpm check counts from here');
   } else if (verdict.renews) {
-    // Some failed again: a later --failed reruns those, still on the same files.
-    recordFailed('e2e', tree, lastFailed());
+    // Some failed again: a later --failed reruns those, still on the same files; without a fresh report, nothing.
+    const again = failuresSince(startedAt);
+    if (again.failedTests) recordFailed('e2e', tree, again.failedTests);
+    else clearFailed('e2e');
   }
   process.exit(status);
 }
@@ -124,7 +146,10 @@ if (plan.e2e !== 'none') {
   // The variants of ui-quality that only the full check runs, and the German, dark, phone one unless texts, shared
   // styles or shared UI changed (ADR 0023, amendment of 2026-10-24). Counted from the files before texts were narrowed.
   const variants = variantsRun(since.e2e.changed);
-  if (!full) console.log(`check: ${variants.why ?? `browser tests in English, light, desktop only; the other ui-quality variants run in CI (pnpm check:full)`}`);
+  if (!full) {
+    console.log(`check: ${variants.why ?? 'browser tests in English, light, desktop only; the other ui-quality variants run in CI (pnpm check:full)'}`);
+    if (process.env.E2E_AXE === 'once') console.log('check: axe once per ui-quality test, on its final state; CI runs it at every page check');
+  }
   const leftOut = browserGrepInvert({ full, variants: variants.run });
   const without = leftOut ? ` --grep-invert "${leftOut}"` : '';
   steps.push([`browser tests (${which}${leftOut ? `, without ${leftOut}` : ''})`, pnpm(`--filter @dive-hub/web test:e2e${plan.e2e === 'all' ? '' : ` --grep "${grep}"`}${without}`), 'e2e']);
@@ -162,10 +187,12 @@ for (const [name, cmd, step] of steps) {
   times.push(`${name}: ${Math.round((Date.now() - started) / 1000)} s`);
   if (status !== 0) {
     // A failed browser step keeps its files and failed tests: `pnpm check --failed` can then make it green.
-    const keeps = records && step === 'e2e' && lastFailed().length > 0;
-    if (keeps) recordFailed('e2e', tree, lastFailed());
+    const kept = records && step === 'e2e' ? failuresSince(started) : { failedTests: null, why: null };
+    if (kept.failedTests) recordFailed('e2e', tree, kept.failedTests);
+    else if (records && step === 'e2e') clearFailed('e2e');
     console.log(`\n✗ ${name} failed\n${times.join('\n')}`);
-    if (keeps) console.log('check: pnpm check --failed reruns the failed browser tests; if they pass on these files, the browser tests count as green');
+    if (kept.failedTests) console.log('check: pnpm check --failed reruns the failed browser tests; if they pass on these files, the browser tests count as green');
+    else if (kept.why) console.log(`check: nothing kept for pnpm check --failed: ${kept.why}`);
     process.exit(status ?? 1);
   }
   if (records && step) recordGreen(step, tree);

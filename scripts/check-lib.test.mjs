@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { FULL_ONLY, VARIANTS, browserGrepInvert, variantsRun } from './check-lib.mjs';
-import { baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, greenRun, lintTargets, planFor, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
+import { baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, greenRun, keptFailures, lintTargets, planFor, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
 
 /** A git repository with one commit holding `files`. */
 function repository(files) {
@@ -292,8 +292,9 @@ test('the server test setup and fixture data run all server tests; neither runs 
   const none = { e2eServerLoads: new Set() };
   for (const path of ['apps/server/test/support.ts', 'apps/server/test/fixtures/synthetic-dive.fit']) {
     const plan = planFor([path], none);
-    assert.deepEqual([plan.server, plan.web, plan.e2e], ['all', 'none', 'none'], path);
+    assert.deepEqual([plan.server, plan.web], ['all', 'none'], path);
   }
+  assert.equal(planFor(['apps/server/test/support.ts'], none).e2e, 'none');
 });
 
 test('the browser test setup and its data run every browser test and nothing else; the review capture runs none', () => {
@@ -415,6 +416,34 @@ test('a failed browser run is kept with its snapshot and its failed tests, and c
   clearFailed('e2e', repo.cwd);
   assert.equal(failedRun('e2e', repo.cwd), null);
   clearFailed('e2e', repo.cwd); // clearing twice is fine
+});
+
+test('a failed browser step keeps only failures Playwright wrote during it, and none when it may have stopped early', () => {
+  const lastRun = { status: 'failed', failedTests: ['a'] };
+  assert.deepEqual(keptFailures({ lastRun, writtenAt: 2000, startedAt: 1000, stopsEarly: false }), { failedTests: ['a'], why: null });
+  // The server didn't start or the setup crashed: the file is from an earlier run.
+  assert.equal(keptFailures({ lastRun, writtenAt: 500, startedAt: 1000, stopsEarly: false }).failedTests, null);
+  assert.match(keptFailures({ lastRun, writtenAt: 500, startedAt: 1000, stopsEarly: false }).why, /earlier/);
+  assert.equal(keptFailures({ lastRun: null, writtenAt: null, startedAt: 1000, stopsEarly: false }).failedTests, null);
+  assert.equal(keptFailures({ lastRun: { status: 'interrupted', failedTests: ['a'] }, writtenAt: 2000, startedAt: 1000, stopsEarly: false }).failedTests, null);
+  assert.equal(keptFailures({ lastRun: { status: 'failed', failedTests: [] }, writtenAt: 2000, startedAt: 1000, stopsEarly: false }).failedTests, null);
+  // With maxFailures Playwright stops early: the tests it never ran are in no list.
+  assert.equal(keptFailures({ lastRun, writtenAt: 2000, startedAt: 1000, stopsEarly: true }).failedTests, null);
+});
+
+test('data files under the server tests run every browser test (the e2e server reads some by path)', () => {
+  const plan = planFor(['apps/server/test/fixtures/synthetic-dive.fit'], { e2eServerLoads: new Set() });
+  assert.deepEqual([plan.server, plan.e2e], ['all', 'all']);
+});
+
+test('what the e2e server loads follows imports without an extension and of a folder index', (t) => {
+  const repo = repository({
+    'apps/server/test/e2e-server.ts': "import { a } from './helpers';\nimport { b } from './seeds';",
+    'apps/server/test/helpers.ts': '',
+    'apps/server/test/seeds/index.ts': '',
+  });
+  t.after(repo.drop);
+  assert.deepEqual([...e2eServerLoads(repo.cwd)].sort(), ['apps/server/test/e2e-server.ts', 'apps/server/test/helpers.ts', 'apps/server/test/seeds/index.ts']);
 });
 
 test('a passing --failed records the browser step green only on the same snapshot and the same failed tests', () => {

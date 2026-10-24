@@ -8,7 +8,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { dataFile, type PreparedData } from './prepare.ts';
 import {
   cancelWaitingImports, waitingImport,
-  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, diveNumber, seededDiveId, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectGoodPage, externalDiver, openLine,
+  E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, diveNumber, seededDiveId, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectAccessible, expectGoodPage, externalDiver, openLine,
   clearPushRuns, conflictAtSsi, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, tankPodDive
 } from './support.ts';
 
@@ -16,6 +16,23 @@ import {
 test.describe.configure({ mode: 'parallel' });
 
 const headers = { origin: E2E_BASE_URL };
+
+// pnpm check sets E2E_AXE=once: axe runs once per test, on the page as the test leaves it; CI and pnpm check:full run
+// it at every page check (ADR 0023, amendment of 2026-10-24). axe is about half of this file's time.
+const AXE_ONCE = process.env.E2E_AXE === 'once';
+let axeOwed = false;
+/** expectGoodPage, with axe deferred to the end of the test when AXE_ONCE. */
+async function goodPage(page: Page, title?: string, options: { axe?: boolean } = {}) {
+  if (!AXE_ONCE || options.axe === false) return expectGoodPage(page, title, options);
+  axeOwed = true;
+  return expectGoodPage(page, title, { ...options, axe: false });
+}
+test.afterEach(async ({ page }, testInfo) => {
+  const owed = axeOwed;
+  axeOwed = false;
+  // A test that already failed has its own error to show.
+  if (owed && testInfo.status === testInfo.expectedStatus) await expectAccessible(page);
+});
 let diveId: string;
 let invitationToken: string;
 let resetToken: string;
@@ -87,17 +104,17 @@ for (const v of variants) {
         await expect(diveRows(page).first()).toBeVisible();
         await openChoices(page);
         await expect(page.getByRole('group', { name: v.english ? 'Show only' : 'Nur anzeigen' })).toBeVisible();
-        await expectGoodPage(page, title('Logbook'), v);
+        await goodPage(page, title('Logbook'), v);
         // A filter pressed, and sorted by depth: no month headings, the day with its year.
         await page.goto('/#/?sort=maxDepth&only=no-recording');
         await openChoices(page);
         await expect(page.getByRole('button', { name: v.english ? /^No recording \d+$/ : /^Keine Aufzeichnung \d+$/ })).toHaveAttribute('aria-pressed', 'true');
         await expect(diveRows(page).first()).toBeVisible();
-        await expectGoodPage(page, title('Logbook'), v);
+        await goodPage(page, title('Logbook'), v);
         // Nothing fits: the filters are named, and all dives are one press away.
         await page.goto('/#/?q=zzzz&only=no-recording,with-findings');
         await expect(page.getByRole('button', { name: v.english ? 'Show all dives' : 'Alle Tauchgänge zeigen' })).toBeVisible();
-        await expectGoodPage(page, title('Logbook'), v);
+        await goodPage(page, title('Logbook'), v);
       } finally {
         await clearParticipants(request, diveId);
         await leaveLena(request);
@@ -116,7 +133,7 @@ for (const v of variants) {
         await openChoices(page);
         await page.getByRole('button', { name: v.english ? 'Send to SSI…' : 'An SSI senden…' }).click();
         await expect(page.getByRole('dialog').getByRole('link', { name: /SSI test reef/ })).toBeVisible();
-        await expectGoodPage(page, title('Logbook'), v);
+        await goodPage(page, title('Logbook'), v);
         await page.keyboard.press('Escape');
         // The site has its SSI ID now: the dialog asks which dives, and lists the ones that go with a checkbox each (slice 25b).
         await request.put(`/api/dive-sites/${siteId}/external-ids/ssi`, { data: { externalId: '7099' }, headers });
@@ -125,7 +142,7 @@ for (const v of variants) {
         await expect(dialog.getByRole('radiogroup')).toBeVisible();
         await dialog.getByRole('button', { name: v.english ? 'Show the dive' : 'Den Tauchgang zeigen' }).click();
         await expect(dialog.getByRole('group', { name: v.english ? 'Dives to send' : 'Zu sendende Tauchgänge' }).getByRole('checkbox')).toHaveCount(1);
-        await expectGoodPage(page, title('Logbook'), v);
+        await goodPage(page, title('Logbook'), v);
         await page.keyboard.press('Escape');
         // A run that stopped for a sign-in need: the reason and the way on stay in the strip.
         await expireSsiTokens(request);
@@ -134,7 +151,7 @@ for (const v of variants) {
         await page.goto('/#/');
         await page.reload();
         await expect(page.getByRole('button', { name: v.english ? 'Continue' : 'Fortsetzen' })).toBeVisible();
-        await expectGoodPage(page, title('Logbook'), v);
+        await goodPage(page, title('Logbook'), v);
       } finally {
         await clearPushRuns(request);
         // Signed in again: the Connection would otherwise wait for a sign-in, and later tests on this server would say so.
@@ -159,16 +176,16 @@ for (const v of variants) {
       await expect(page.locator('.run-mark')).toBeVisible();
       await page.getByRole('button', { name: v.english ? 'Earlier runs (1)' : 'Frühere Sendungen (1)' }).click();
       await expect(page.locator('.push-run-earlier').getByRole('listitem')).toHaveCount(1);
-      await expectGoodPage(page, title('Logbook'), v);
+      await goodPage(page, title('Logbook'), v);
     });
 
     test('dive, reading and editing', { tag: ['@dives'] }, async ({ page }) => {
       await page.goto(`/#/dives/${diveId}`);
       await expect(page.locator('canvas').first()).toBeVisible();
-      await expectGoodPage(page, title('Dive 42'), v);
+      await goodPage(page, title('Dive 42'), v);
       await page.getByRole('button', { name: v.english ? 'Edit dive' : 'Tauchgang bearbeiten' }).click();
       await expect(page.getByRole('button', { name: v.english ? 'Save' : 'Speichern' })).toBeVisible();
-      await expectGoodPage(page, title('Dive 42'), v);
+      await goodPage(page, title('Dive 42'), v);
     });
 
     test("a dive's assessment: several findings, one shown on the profile", { tag: ['@dives'] }, async ({ page, request }) => {
@@ -180,11 +197,11 @@ for (const v of variants) {
       await lane.getByRole('button', { name: v.english ? /^Fast ascent/ : /^Schneller Aufstieg/ }).click();
       await expect(page.getByText(v.english ? /Not medical advice/ : /Kein medizinischer Rat/)).toBeVisible();
       await expect(page.getByRole('button', { name: v.english ? /^Put aside on this dive: Fast ascent/ : /: Schneller Aufstieg$/ }).first()).toBeVisible();
-      await expectGoodPage(page, title(`Dive ${n}`), v);
+      await goodPage(page, title(`Dive ${n}`), v);
       // The fixed note's full text, one step away.
       await page.getByRole('button', { name: v.english ? /^What the assessment can/ : /^Was die Auswertung sagen kann/ }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
-      await expectGoodPage(page, title(`Dive ${n}`), v);
+      await goodPage(page, title(`Dive ${n}`), v);
       await page.keyboard.press('Escape');
       // The lane stays inside the page on a phone.
       const box = await lane.boundingBox();
@@ -199,7 +216,7 @@ for (const v of variants) {
         await page.goto(`/#/dives/${id}`);
         await page.getByText(v.english ? '2 findings put aside' : '2 Hinweise beiseitegelegt').click();
         await expect(page.getByRole('button', { name: v.english ? 'Show again: Fast ascent' : 'Wieder zeigen: Schneller Aufstieg' })).toBeVisible();
-        await expectGoodPage(page, title(`Dive ${n}`), v);
+        await goodPage(page, title(`Dive ${n}`), v);
       } finally {
         await assessedDive(request);
       }
@@ -212,7 +229,7 @@ for (const v of variants) {
         await putAside(request, id, { dismiss: 'all' });
         await page.goto(`/#/dives/${id}`);
         await expect(page.getByText(v.english ? 'Nothing stands out on this dive.' : 'An diesem Tauchgang fällt nichts auf.')).toBeVisible();
-        await expectGoodPage(page, title(`Dive ${n}`), v);
+        await goodPage(page, title(`Dive ${n}`), v);
       } finally {
         await assessedDive(request);
       }
@@ -221,52 +238,52 @@ for (const v of variants) {
     test('unknown dive', { tag: ['@dives'] }, async ({ page }) => {
       await page.goto('/#/dives/00000000-0000-7000-8000-000000000000');
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-      await expectGoodPage(page, title('Dive not found'), v);
+      await goodPage(page, title('Dive not found'), v);
     });
 
     test('Dive sites', { tag: ['@sites'] }, async ({ page }) => {
       await page.goto('/#/sites');
       await expect(page.getByRole('table')).toBeVisible();
-      await expectGoodPage(page, title('Dive sites'), v);
+      await goodPage(page, title('Dive sites'), v);
       await page.getByRole('button', { name: v.english ? 'New dive site' : 'Neuer Tauchplatz' }).click();
       await expect(page.getByRole('button', { name: v.english ? 'Create dive site' : 'Tauchplatz anlegen' })).toBeVisible();
-      await expectGoodPage(page, title('Dive sites'), v);
+      await goodPage(page, title('Dive sites'), v);
     });
 
     test('Dive centres, and creating one', { tag: ['@sites'] }, async ({ page }) => {
       await page.goto('/#/centres');
       await expect(page.getByRole('link', { name: /^Tauchsportzentrum Beispielhausen/ })).toBeVisible();
-      await expectGoodPage(page, title('Dive centres'), v);
+      await goodPage(page, title('Dive centres'), v);
       await page.getByRole('button', { name: v.english ? 'New dive centre' : 'Neue Tauchbasis' }).click();
       await expect(page.getByRole('button', { name: v.english ? 'Create dive centre' : 'Tauchbasis anlegen' })).toBeVisible();
-      await expectGoodPage(page, title('Dive centres'), v);
+      await goodPage(page, title('Dive centres'), v);
     });
 
     test('Tools: empty, with a bottom time and every limit, and outside the limits', { tag: ['@tools'] }, async ({ page }) => {
       await page.goto('/#/tools');
-      await expectGoodPage(page, title('Tools'), v);
+      await goodPage(page, title('Tools'), v);
       // 30 m on EAN32 with a 11.1 L cylinder at 200 bar; the three limits and what was assumed.
       await page.goto('/#/tools?o2=32&depth=30&volume=11.1&pressure=200');
       await expect(page.getByTestId('bottom-time')).toBeVisible();
-      await expectGoodPage(page, title('Tools'), v);
+      await goodPage(page, title('Tools'), v);
       // With the settings open (a setting in the address keeps them open).
       await page.goto('/#/tools?o2=32&depth=30&volume=11.1&pressure=200&rule=reserve&bar=60');
       await page.reload();
       await expect(page.getByRole('textbox', { name: /^(Reserve at the end|Reserve am Ende)/ })).toBeVisible();
       await expect(page.getByTestId('bottom-time')).toBeVisible();
-      await expectGoodPage(page, title('Tools'), v);
+      await goodPage(page, title('Tools'), v);
       // A gas plan of two Divers with a turn rule, and one that does not fit.
       await page.goto('/#/tools/plan?water=fresh&rule=thirds&lv=20x20&dv=Tim~12~200~20~&dv=Ann~10~200~15~');
       await expect(page.getByTestId('plan-briefing')).toBeVisible();
-      await expectGoodPage(page, title('Tools'), v);
+      await goodPage(page, title('Tools'), v);
       await page.goto('/#/tools/plan?water=fresh&lv=20x40&dv=Tim~12~200~20~');
       await expect(page.getByTestId('plan-briefing')).toBeVisible();
-      await expectGoodPage(page, title('Tools'), v);
+      await goodPage(page, title('Tools'), v);
       // Beyond the MOD: the reason, no number.
       await page.goto('/#/tools?o2=40&depth=36&he=0');
       await expect(page.getByTestId('bottom-time')).toHaveCount(0);
       await expect(page.locator('#tools-bottom ~ .notice, .tools-answer .notice').first()).toBeVisible();
-      await expectGoodPage(page, title('Tools'), v);
+      await goodPage(page, title('Tools'), v);
     });
 
     test('Tools: the lead calculator with no history, a rule of thumb only, and based on dives', { tag: ['@tools'] }, async ({ page }) => {
@@ -293,22 +310,22 @@ for (const v of variants) {
       const url = '/#/tools/lead?lw=salt&suit=wetsuit&mm=5&hood=0&cyl=11.1%7Ealuminium';
       await page.goto('/#/tools/lead');
       await expect(page.getByRole('heading', { level: 2, name: /^(Weight check|Gewichtscheck)$/ })).toBeVisible();
-      await expectGoodPage(page, title('Tools'), v);
+      await goodPage(page, title('Tools'), v);
       await answer(none);
       await page.goto(url);
       await expect(page.getByRole('link', { name: /^(Add body weight on the Divers page|Körpergewicht auf der Taucherseite eintragen)$/ })).toBeVisible();
-      await expectGoodPage(page, title('Tools'), v);
+      await goodPage(page, title('Tools'), v);
       await page.unroute('**/api/divers/*/lead-estimate*');
       await answer(rule);
       await page.reload();
       await expect(page.getByTestId('lead-total')).toBeVisible();
-      await expectGoodPage(page, title('Tools'), v);
+      await goodPage(page, title('Tools'), v);
       await page.unroute('**/api/divers/*/lead-estimate*');
       await answer(dives);
       await page.reload();
       await expect(page.getByTestId('lead-total')).toBeVisible();
       await expect(page.getByRole('link', { name: /^(Dive 12|Tauchgang 12)/ })).toBeVisible();
-      await expectGoodPage(page, title('Tools'), v);
+      await goodPage(page, title('Tools'), v);
     });
 
     test('the code scanner, without a camera', { tag: ['@sites'] }, async ({ page }) => {
@@ -321,7 +338,7 @@ for (const v of variants) {
       await page.getByRole('button', { name: v.english ? 'Scan with camera' : 'Mit Kamera scannen' }).click();
       const dialog = page.getByRole('dialog', { name: v.english ? 'Scan code' : 'Code scannen' });
       await expect(dialog.getByRole('button', { name: v.english ? 'Try again' : 'Erneut versuchen' })).toBeVisible();
-      await expectGoodPage(page, title('Dive centres'), v);
+      await goodPage(page, title('Dive centres'), v);
     });
 
     test('a dive centre with its code, changing its number and adding a dive site', { tag: ['@sites'] }, async ({ page }) => {
@@ -334,48 +351,48 @@ for (const v of variants) {
       expect(box.width).toBeGreaterThanOrEqual(200);
       expect(await code.locator('.qr-code-paper').evaluate((el) => getComputedStyle(el).fill)).toBe('rgb(255, 255, 255)');
       expect(await code.locator('.qr-code-ink').evaluate((el) => getComputedStyle(el).fill)).toBe('rgb(0, 0, 0)');
-      await expectGoodPage(page, undefined, v);
+      await goodPage(page, undefined, v);
       await page.getByRole('button', { name: v.english ? 'Change: SSI centre number' : 'Ändern: SSI-Centernummer' }).click();
       await expect(page.getByRole('button', { name: v.english ? 'Save' : 'Speichern' })).toBeVisible();
-      await expectGoodPage(page, undefined, v);
+      await goodPage(page, undefined, v);
       await page.getByRole('button', { name: v.english ? 'Cancel' : 'Abbrechen' }).click();
       await page.getByRole('button', { name: v.english ? 'Add dive site' : 'Tauchplatz hinzufügen' }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
-      await expectGoodPage(page, undefined, v);
+      await goodPage(page, undefined, v);
     });
 
     test('a dive site, reading and editing', { tag: ['@sites'] }, async ({ page }) => {
       await page.goto(`/#/sites/${siteId}`);
       await expect(page.getByRole('link', { name: v.english ? 'Open in maps' : 'In Karte öffnen' })).toBeVisible();
-      await expectGoodPage(page, undefined, v);
+      await goodPage(page, undefined, v);
       await page.getByRole('button', { name: v.english ? 'Edit dive site' : 'Tauchplatz bearbeiten' }).click();
       await expect(page.getByRole('button', { name: v.english ? 'Save dive site' : 'Tauchplatz speichern' })).toBeVisible();
-      await expectGoodPage(page, undefined, v);
+      await goodPage(page, undefined, v);
     });
 
     test('merging a dive site close by', { tag: ['@sites'] }, async ({ page }) => {
       await page.goto(`/#/sites/${siteId}`);
       await page.getByRole('button', { name: v.english ? /^Merge into this site:/ : /^Mit diesem Platz zusammenführen:/ }).first().click();
       await expect(page.getByRole('dialog')).toBeVisible();
-      await expectGoodPage(page, undefined, v);
+      await goodPage(page, undefined, v);
     });
 
     test('an imported dive site, with its source and history', { tag: ['@sites'] }, async ({ page }) => {
       await page.goto(`/#/sites/${importedSiteId}`);
       await expect(page.getByRole('link', { name: 'way/644356549' })).toBeVisible();
       await expect(page.locator('.history > li').first()).toBeVisible();
-      await expectGoodPage(page, title('Elphinstone Reef'), v);
+      await goodPage(page, title('Elphinstone Reef'), v);
     });
 
     test('importing dive sites, by country and by area', { tag: ['@admin', '@sites'] }, async ({ page }) => {
       await page.goto('/#/admin/site-imports');
       await expect(page.locator('.site-imports > li').first()).toBeVisible();
-      await expectGoodPage(page, title('Import dive sites'), v);
+      await goodPage(page, title('Import dive sites'), v);
       await page.getByText(v.english ? 'An area by coordinates' : 'Ein Gebiet nach Koordinaten').click();
       await expect(page.getByRole('textbox', { name: v.english ? 'South edge' : 'Südrand' })).toBeVisible();
       await page.getByRole('button', { name: v.english ? 'Start import' : 'Import starten' }).click();
       await expect(page.getByText(v.english ? 'Enter all four edges' : 'Gib alle vier Ränder an', { exact: false })).toBeVisible();
-      await expectGoodPage(page, title('Import dive sites'), v);
+      await goodPage(page, title('Import dive sites'), v);
     });
 
     test('importing dive sites from SSI, with its explanation and only filling', { tag: ['@admin', '@sites'] }, async ({ page }) => {
@@ -385,14 +402,14 @@ for (const v of variants) {
       await expect(page.getByText(v.english ? 'SSI gives no licence for its list of dive sites.' : 'SSI gibt für seine Liste der Tauchplätze keine Lizenz.')).toBeVisible();
       // The prepared import filled a site made here: the list names it.
       await expect(page.locator('.site-imports').getByRole('link', { name: 'Ouchy – Seeufer (club notes)' })).toBeVisible();
-      await expectGoodPage(page, title('Import dive sites'), v);
+      await goodPage(page, title('Import dive sites'), v);
     });
 
     test('a dive site offering a source\'s data', { tag: ['@sites'] }, async ({ page }) => {
       await page.goto(`/#/sites/${offerSiteId}`);
       await page.getByRole('button', { name: v.english ? 'Use SSI’s data' : 'Daten von SSI übernehmen' }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
-      await expectGoodPage(page, undefined, v);
+      await goodPage(page, undefined, v);
     });
 
     test('a dive whose computer was set to other water than its site', { tag: ['@dives', '@sites'] }, async ({ page, request }) => {
@@ -405,7 +422,7 @@ for (const v of variants) {
       try {
         await page.goto(`/#/dives/${diveId}`);
         await expect(page.getByText(v.english ? /this site is fresh water/ : /dieser Platz ist Süßwasser/)).toBeVisible();
-        await expectGoodPage(page, title('Dive 42'), v);
+        await goodPage(page, title('Dive 42'), v);
       } finally {
         await leaveSsi(request, diveId);
       }
@@ -414,27 +431,27 @@ for (const v of variants) {
     test('unknown dive site', { tag: ['@dives'] }, async ({ page }) => {
       await page.goto('/#/sites/00000000-0000-7000-8000-000000000000');
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-      await expectGoodPage(page, title('Dive site not found'), v);
+      await goodPage(page, title('Dive site not found'), v);
     });
 
     test('choosing a dive site on a dive', { tag: ['@sites', '@dives'] }, async ({ page }) => {
       await page.goto(`/#/dives/${diveId}`);
       await page.getByRole('button', { name: v.english ? 'Choose dive site' : 'Tauchplatz wählen' }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
-      await expectGoodPage(page, title('Dive 42'), v);
+      await goodPage(page, title('Dive 42'), v);
       // Results while typing, and the way on when nothing matches.
       // Checked once the results for what was typed are in (the status names the query).
       await page.getByRole('dialog').getByRole('searchbox').fill('Ras Mohammed');
       await expect(page.getByRole('dialog').getByRole('status')).toContainText('Ras Mohammed');
-      await expectGoodPage(page, title('Dive 42'), v);
+      await goodPage(page, title('Dive 42'), v);
       await page.getByRole('dialog').getByRole('searchbox').fill('Nowhere at all');
       await expect(page.getByRole('dialog').getByRole('option', { name: v.english ? /Create/ : /anlegen/ })).toBeVisible();
       await expect(page.getByRole('dialog').getByRole('status')).toContainText('Nowhere at all');
       await activeResultShown(page.getByRole('dialog').getByRole('searchbox'));
-      await expectGoodPage(page, title('Dive 42'), v);
+      await goodPage(page, title('Dive 42'), v);
       await page.getByRole('button', { name: v.english ? 'New dive site' : 'Neuer Tauchplatz' }).click();
       await expect(page.getByRole('button', { name: v.english ? 'Create and choose' : 'Anlegen und auswählen' })).toBeVisible();
-      await expectGoodPage(page, title('Dive 42'), v);
+      await goodPage(page, title('Dive 42'), v);
     });
 
     test('Divers, with a rule of the assessment muted', { tag: ['@divers', '@dives'] }, async ({ page, request }) => {
@@ -444,7 +461,7 @@ for (const v of variants) {
         await putAside(request, id, { mute: ['ascent_rate', 'safety_stop'] });
         await page.goto('/#/divers');
         await expect(page.getByRole('button', { name: v.english ? /^Show again: Fast ascent, / : /^Wieder zeigen: Schneller Aufstieg, / })).toBeVisible();
-        await expectGoodPage(page, title('Divers'), v);
+        await goodPage(page, title('Divers'), v);
       } finally {
         await assessedDive(request);
       }
@@ -459,14 +476,14 @@ for (const v of variants) {
       // A circle beside each name: decoration (the name is the text), the same two letters as in the logbook row.
       const ulla = page.getByRole('listitem').filter({ hasText: 'Ulla Berg' }).first();
       await expect(ulla.locator('.avatar[aria-hidden="true"]')).toHaveText('UB');
-      await expectGoodPage(page, title('Divers'), v);
+      await goodPage(page, title('Divers'), v);
       await expectCirclesFit(page);
     });
 
     test('my account', { tag: ['@account'] }, async ({ page }) => {
       await page.goto('/#/account');
       await expect(page.getByRole('table').first()).toBeVisible();
-      await expectGoodPage(page, title('My account'), v);
+      await goodPage(page, title('My account'), v);
     });
 
     test('my account, AI access: none yet, then a new key shown once', { tag: ['@account'] }, async ({ page, request }) => {
@@ -474,12 +491,12 @@ for (const v of variants) {
       try {
         await page.goto('/#/account?tab=ai');
         await expect(page.getByText(v.english ? 'You have no AI access yet.' : 'Du hast noch keinen KI-Zugang.')).toBeVisible();
-        await expectGoodPage(page, title('My account'), v);
+        await goodPage(page, title('My account'), v);
         // A long name, as someone might type it.
         await page.getByRole('textbox', { name: 'Name' }).fill(`Claude Code on the old laptop in the dive shop ${v.locale}`);
         await page.getByRole('button', { name: v.english ? 'Create AI access' : 'KI-Zugang erstellen' }).click();
         await expect(page.getByRole('button', { name: v.english ? 'Copy: Key' : 'Kopieren: Schlüssel' })).toBeVisible();
-        await expectGoodPage(page, title('My account'), v);
+        await goodPage(page, title('My account'), v);
       } finally {
         await aiAccessReady(request);
       }
@@ -493,7 +510,7 @@ for (const v of variants) {
         await askMcp(request, access.key, 'logbook_get_dive', { dive_id: '00000000-0000-7000-8000-000000000000' });
         await page.goto('/#/account?tab=ai');
         await expect(page.getByRole('region', { name: v.english ? 'What was read' : 'Was gelesen wurde' }).getByText('logbook_get_dive').first()).toBeVisible();
-        await expectGoodPage(page, title('My account'), v);
+        await goodPage(page, title('My account'), v);
       } finally {
         await aiAccessReady(request);
       }
@@ -504,7 +521,7 @@ for (const v of variants) {
       await page.goto('/#/account?tab=connections');
       await page.getByRole('button', { name: v.english ? /^Sign in again: / : /^Neu anmelden: / }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
-      await expectGoodPage(page, title('My account'), v);
+      await goodPage(page, title('My account'), v);
     });
 
     test('a dive at SSI, choosing the SSI site', { tag: ['@dives'] }, async ({ page, request }) => {
@@ -515,10 +532,10 @@ for (const v of variants) {
       await openLine(page, 'SSI');
       const choose = page.getByRole('button', { name: v.english ? 'Choose the SSI site' : 'SSI-Tauchplatz wählen' });
       await expect(choose).toBeVisible();
-      await expectGoodPage(page, title('Dive 42'), v);
+      await goodPage(page, title('Dive 42'), v);
       await choose.click();
       await expect(page.getByRole('dialog').getByRole('option').first()).toBeVisible();
-      await expectGoodPage(page, title('Dive 42'), v);
+      await goodPage(page, title('Dive 42'), v);
       await leaveSsi(request, diveId);
     });
 
@@ -536,20 +553,20 @@ for (const v of variants) {
       await expect(find).toBeVisible();
       const people = page.getByRole('group', { name: v.english ? 'Buddies and guides' : 'Buddys und Guides' }).getByRole('listitem');
       await expect(people.locator('.avatar[aria-hidden="true"]')).toHaveText(['KL', 'UB']);
-      await expectGoodPage(page, title('Dive 42'), v);
+      await goodPage(page, title('Dive 42'), v);
       await expectCirclesFit(page);
       // Roles and taking someone off, in the dialog from the fact.
       await page.getByRole('button', { name: v.english ? 'Change: Buddies and guides' : 'Ändern: Buddys und Guides' }).click();
       await expect(page.getByRole('dialog').getByRole('listitem').first()).toBeVisible();
-      await expectGoodPage(page, title('Dive 42'), v);
+      await goodPage(page, title('Dive 42'), v);
       await page.keyboard.press('Escape');
       await page.getByRole('button', { name: v.english ? 'Add someone' : 'Jemanden hinzufügen' }).click();
       await expect(page.getByRole('dialog').getByRole('radio').first()).toBeVisible();
-      await expectGoodPage(page, title('Dive 42'), v);
+      await goodPage(page, title('Dive 42'), v);
       await page.keyboard.press('Escape');
       await find.click();
       await expect(page.getByRole('dialog').getByRole('option').first()).toBeVisible();
-      await expectGoodPage(page, title('Dive 42'), v);
+      await goodPage(page, title('Dive 42'), v);
       await clearParticipants(request, diveId);
       await leaveSsi(request, diveId);
     });
@@ -559,7 +576,7 @@ for (const v of variants) {
       await page.goto('/#/account?tab=connections');
       await page.getByRole('button', { name: v.english ? /^Show your SSI buddy list/ : /^Deine SSI-Buddyliste zeigen/ }).click();
       await expect(page.getByRole('row', { name: /Mia Stone/ })).toBeVisible();
-      await expectGoodPage(page, title('My account'), v);
+      await goodPage(page, title('My account'), v);
     });
 
     // Importing dives from SSI (ADR 0030), with Lena's logbook: the setting, the preview with a computer and a decision
@@ -571,10 +588,10 @@ for (const v of variants) {
         const section = page.getByRole('region', { name: v.english ? 'Dives of Lena from SSI' : 'Tauchgänge von Lena aus SSI' });
         await section.getByRole('button', { name: v.english ? 'Show what the import would do' : 'Zeigen, was der Import tun würde' }).click();
         await expect(section.getByRole('radiogroup', { name: v.english ? /^SSI dive 15: / : /^SSI-Tauchgang 15: / })).toBeVisible();
-        await expectGoodPage(page, title('My account'), v);
+        await goodPage(page, title('My account'), v);
         await section.getByRole('button', { name: v.english ? 'Import from SSI' : 'Aus SSI importieren' }).click();
         await expect(section.getByRole('link', { name: v.english ? 'Go to the logbook' : 'Zum Logbuch' })).toBeVisible({ timeout: 30_000 });
-        await expectGoodPage(page, title('My account'), v);
+        await goodPage(page, title('My account'), v);
       } finally {
         await leaveLena(request);
       }
@@ -587,7 +604,7 @@ for (const v of variants) {
         const section = page.getByRole('region', { name: v.english ? 'Dives of Lena from SSI' : 'Tauchgänge von Lena aus SSI' });
         await section.getByRole('button', { name: v.english ? 'Show when each dive was made' : 'Zeigen, wann jeder Tauchgang angelegt wurde' }).click();
         await expect(section.getByRole('region', { name: v.english ? 'Dives in SSI with start and origin' : 'Tauchgänge in SSI mit Beginn und Herkunft' })).toBeVisible();
-        await expectGoodPage(page, title('My account'), v);
+        await goodPage(page, title('My account'), v);
       } finally {
         await leaveLena(request);
       }
@@ -600,7 +617,7 @@ for (const v of variants) {
         const section = page.getByRole('region', { name: v.english ? 'Dives of Lena from SSI' : 'Tauchgänge von Lena aus SSI' });
         await section.getByRole('button', { name: v.english ? 'Show what the import would do' : 'Zeigen, was der Import tun würde' }).click();
         await expect(section.getByRole('heading', { name: v.english ? 'Changed in both places' : 'An beiden Stellen geändert' })).toBeVisible();
-        await expectGoodPage(page, title('My account'), v);
+        await goodPage(page, title('My account'), v);
       } finally {
         await leaveLena(request);
       }
@@ -617,7 +634,7 @@ for (const v of variants) {
         await panel.getByRole('textbox', { name: v.english ? 'SSI password' : 'SSI-Passwort' }).fill(LENA_SSI.password);
         await panel.getByRole('button', { name: v.english ? 'Connect to SSI' : 'Mit SSI verbinden' }).click();
         await expect(panel.getByRole('button', { name: v.english ? /^Yes, I am Lena Berger/ : /^Ja, ich bin Lena Berger/ })).toBeVisible();
-        await expectGoodPage(page, title('My account'), v);
+        await goodPage(page, title('My account'), v);
       } finally {
         await leaveLena(request);
         // The question was left open: Lena's account stays with the external Diver; give it back to her.
@@ -639,22 +656,22 @@ for (const v of variants) {
         await page.goto('/#/divers');
         await page.getByRole('button', { name: `Codes: ${name}` }).click();
         await expect(page.getByRole('dialog').getByRole('img')).toHaveCount(2);
-        await expectGoodPage(page, title('Divers'), v);
+        await goodPage(page, title('Divers'), v);
         await page.getByRole('button', { name: v.english ? 'Edit details' : 'Angaben bearbeiten' }).click();
         await expect(page.getByRole('textbox', { name: v.english ? 'First name' : 'Vorname' })).toBeFocused();
-        await expectGoodPage(page, title('Divers'), v);
+        await goodPage(page, title('Divers'), v);
         await page.keyboard.press('Escape');
         // A code nobody here has the account of: the question who it is.
         await page.getByRole('button', { name: v.english ? 'Add from a code' : 'Aus Code hinzufügen' }).click();
         await page.getByRole('textbox', { name: v.english ? 'Text of the code' : 'Text des Codes' }).fill(code(`9${account}`));
         await page.getByRole('button', { name: v.english ? 'Read code' : 'Code lesen' }).click();
         await expect(page.getByRole('radiogroup')).toBeVisible();
-        await expectGoodPage(page, title('Divers'), v);
+        await goodPage(page, title('Divers'), v);
         // And the code of someone already here, with nothing new in it.
         await page.getByRole('textbox', { name: v.english ? 'Text of the code' : 'Text des Codes' }).fill(code(account));
         await page.getByRole('button', { name: v.english ? 'Read code' : 'Code lesen' }).click();
         await expect(page.getByRole('button', { name: v.english ? 'Show codes' : 'Codes zeigen' })).toBeVisible();
-        await expectGoodPage(page, title('Divers'), v);
+        await goodPage(page, title('Divers'), v);
       } finally {
         await forgetDivers(request, name);
       }
@@ -667,11 +684,11 @@ for (const v of variants) {
         await page.goto('/#/divers');
         await page.getByRole('button', { name: `${v.english ? 'Body weight' : 'Körpergewicht'}: ${name}` }).click();
         await expect(page.getByRole('dialog')).toBeVisible();
-        await expectGoodPage(page, title('Divers'), v);
+        await goodPage(page, title('Divers'), v);
         await page.getByRole('dialog').getByRole('textbox', { name: v.english ? /^Weight/ : /^Gewicht/ }).fill('78');
         await page.getByRole('dialog').getByRole('button', { name: v.english ? 'Add weight' : 'Gewicht hinzufügen' }).click();
         await expect(page.getByRole('dialog').getByRole('listitem')).toHaveCount(1);
-        await expectGoodPage(page, title('Divers'), v);
+        await goodPage(page, title('Divers'), v);
       } finally {
         await request.delete(`/api/divers/${created.id}`, { headers });
       }
@@ -686,15 +703,15 @@ for (const v of variants) {
         await expect(row.getByText(v.english ? 'No cards yet' : 'Noch keine Karten')).toBeVisible();
         await row.getByRole('button', { name: v.english ? /^Certifications: / : /^Zertifizierungen: / }).click();
         await expect(row.getByText(v.english ? 'No certifications yet.' : 'Noch keine Zertifizierungen.')).toBeVisible();
-        await expectGoodPage(page, title('Divers'), v);
+        await goodPage(page, title('Divers'), v);
         await row.getByRole('button', { name: v.english ? 'Add certification' : 'Zertifizierung hinzufügen' }).click();
         const dialog = page.getByRole('dialog');
-        await expectGoodPage(page, title('Divers'), v);
+        await goodPage(page, title('Divers'), v);
         await dialog.getByRole('textbox', { name: v.english ? /^Agency/ : /^Organisation/ }).fill('PADI');
         await dialog.getByRole('textbox', { name: v.english ? /^Course or level/ : /^Kurs oder Stufe/ }).fill('Open Water Diver');
         await dialog.getByRole('button', { name: v.english ? 'Save certification' : 'Zertifizierung speichern' }).click();
         await expect(row.getByRole('list', { name: v.english ? 'Certification cards' : 'Zertifizierungskarten' }).getByRole('listitem')).toHaveCount(1);
-        await expectGoodPage(page, title('Divers'), v);
+        await goodPage(page, title('Divers'), v);
         // An expired card, in words (C21), and the line counting it.
         await request.post(`/api/divers/${created.id}/certifications`, {
           data: { agency: 'DAN', level: 'First Aid', issuedOn: '2020-01-01', expiresOn: '2021-01-01' }, headers,
@@ -704,7 +721,7 @@ for (const v of variants) {
         // The address says the section is open, so it is still open after the reload.
         await expect(row.getByRole('button', { name: v.english ? /^Certifications: / : /^Zertifizierungen: / })).toHaveAttribute('aria-expanded', 'true');
         await expect(row.getByRole('listitem').filter({ hasText: 'First Aid' })).toContainText(v.english ? 'Expired' : 'Abgelaufen');
-        await expectGoodPage(page, title('Divers'), v);
+        await goodPage(page, title('Divers'), v);
       } finally {
         await request.delete(`/api/divers/${created.id}`, { headers });
       }
@@ -735,7 +752,7 @@ for (const v of variants) {
         await page.getByRole('button', { name: `${v.english ? 'Delete' : 'Löschen'}: ${name}` }).click();
         await expect(dialog.getByRole('heading', { name: v.english ? `Delete ${name}?` : `${name} löschen?` })).toBeVisible();
         await expect(close).toBeVisible();
-        await expectGoodPage(page, title('Divers'), v);
+        await goodPage(page, title('Divers'), v);
       } finally {
         await request.delete(`/api/divers/${created.id}`, { headers });
       }
@@ -771,7 +788,7 @@ for (const v of variants) {
         await page.goto('/#/divers');
         await page.getByRole('button', { name: v.english ? `Merge into…: ${name}` : `Zusammenführen mit\u00a0…: ${name}` }).click();
         await expect(page.getByRole('dialog').getByRole('searchbox')).toBeFocused();
-        await expectGoodPage(page, title('Divers'), v);
+        await goodPage(page, title('Divers'), v);
       } finally {
         await request.delete(`/api/external-divers/${id}`, { headers });
       }
@@ -782,7 +799,7 @@ for (const v of variants) {
         const id = await diveWithoutRecording(request);
         await page.goto(`/#/dives/${id}`);
         await expect(page.getByText(v.english ? /^No recording yet/ : /^Noch keine Aufzeichnung/)).toBeVisible();
-        await expectGoodPage(page, title(`Dive ${await diveNumber(request, id)}`), v);
+        await goodPage(page, title(`Dive ${await diveNumber(request, id)}`), v);
       } finally {
         await leaveLena(request);
       }
@@ -800,7 +817,7 @@ for (const v of variants) {
       const n = await diveNumber(request, diveId);
       const dialog = await openDelete(page, diveId, n);
       await expect(dialog.getByRole('button', { name: v.english ? 'Cancel' : 'Abbrechen' })).toBeVisible();
-      await expectGoodPage(page, title(`Dive ${n}`), v);
+      await goodPage(page, title(`Dive ${n}`), v);
     });
 
     test('deleting a dive in SSI, then the logbook with Undo and the deleted dives', { tag: ['@dives'] }, async ({ page, request }) => {
@@ -810,14 +827,14 @@ for (const v of variants) {
         const n = await diveNumber(request, id);
         const dialog = await openDelete(page, id, n);
         await expect(dialog.getByRole('button', { name: v.english ? 'Delete here and in SSI' : 'Hier und in SSI löschen' })).toBeVisible();
-        await expectGoodPage(page, title(`Dive ${n}`), v);
+        await goodPage(page, title(`Dive ${n}`), v);
         await dialog.getByRole('button', { name: v.english ? 'Delete only here' : 'Nur hier löschen' }).click();
         await expect(page.getByRole('button', { name: v.english ? 'Undo' : 'Rückgängig' })).toBeVisible();
-        await expectGoodPage(page, title('Logbook'), v);
+        await goodPage(page, title('Logbook'), v);
         await page.reload();
         await page.getByRole('link', { name: v.english ? 'Show deleted dives' : 'Gelöschte Tauchgänge zeigen', exact: true }).click();
         await expect(page.getByRole('button', { name: v.english ? /^Delete in SSI: .*2026/ : /^In SSI löschen: .*2026/ })).toBeVisible();
-        await expectGoodPage(page, title('Review'), v);
+        await goodPage(page, title('Review'), v);
       } finally {
         await deletableDive(request);
       }
@@ -830,25 +847,25 @@ for (const v of variants) {
         await page.goto(`/#/dives/${kept}`);
         const open = page.getByRole('button', { name: v.english ? 'Merge the two…' : /^Beide zusammenführen/ });
         await expect(open).toBeVisible();
-        await expectGoodPage(page, title(`Dive ${n}`), v);
+        await goodPage(page, title(`Dive ${n}`), v);
         // Merging by hand: the dives nearby to choose from.
         await page.getByRole('button', { name: /^(More|Mehr)/ }).click();
         await page.getByRole('menuitem', { name: v.english ? 'Merge with another dive…' : /^Mit einem anderen Tauchgang zusammenführen/ }).click();
         const picker = page.getByRole('dialog');
         await expect(picker.getByRole('button', { name: v.english ? /^Merge with this dive…/ : /^Mit diesem zusammenführen/ })).toBeVisible();
-        await expectGoodPage(page, title(`Dive ${n}`), v);
+        await goodPage(page, title(`Dive ${n}`), v);
         await picker.getByRole('button', { name: v.english ? 'Cancel' : 'Abbrechen' }).click();
         await open.click();
         await expect(page.getByRole('dialog').getByRole('button', { name: v.english ? 'Merge' : 'Zusammenführen', exact: true })).toBeVisible();
-        await expectGoodPage(page, title(`Dive ${n}`), v);
+        await goodPage(page, title(`Dive ${n}`), v);
         // The same pair waits as a logbook check, with its decisions on the Review page and a line on the logbook.
         await page.goto('/');
         await page.getByRole('link', { name: v.english ? 'Review them' : 'Durchsehen' }).click();
         await expect(page.getByRole('button', { name: v.english ? /^They are two dives: / : /^Es sind zwei Tauchgänge: / })).toBeVisible();
-        await expectGoodPage(page, title('Review'), v);
+        await goodPage(page, title('Review'), v);
         await page.goto('/');
         await expect(page.getByRole('link', { name: v.english ? 'Review them' : 'Durchsehen' })).toBeVisible();
-        await expectGoodPage(page, title('Logbook'), v);
+        await goodPage(page, title('Logbook'), v);
       } finally {
         await mergePair(request);
       }
@@ -860,14 +877,14 @@ for (const v of variants) {
         await page.goto('/');
         const choice = page.getByRole('group', { name: /account-export\.zip/ });
         await expect(choice.getByRole('checkbox', { name: v.english ? 'Apnea sessions (1)' : 'Apnoe-Sessions (1)' })).toBeChecked();
-        await expectGoodPage(page, title('Logbook'), v);
+        await goodPage(page, title('Logbook'), v);
         // Nothing chosen: nothing to import.
         for (const box of await choice.getByRole('checkbox').all()) await box.uncheck({ force: true });
         await expect(choice.getByRole('button', { name: v.english ? 'Import' : 'Importieren', exact: true })).toBeDisabled();
-        await expectGoodPage(page, title('Logbook'), v);
+        await goodPage(page, title('Logbook'), v);
         await page.goto('/#/review?tab=imports');
         await expect(page.getByRole('group', { name: /account-export\.zip/ })).toBeVisible();
-        await expectGoodPage(page, title('Review'), v);
+        await goodPage(page, title('Review'), v);
       } finally {
         await cancelWaitingImports(request);
       }
@@ -882,14 +899,14 @@ for (const v of variants) {
         await page.goto('/#/review');
         await expect(page.getByRole('heading', { name: v.english ? 'Dives no longer in SSI' : 'Tauchgänge nicht mehr in SSI', level: 2 })).toBeVisible();
         await expect(page.getByRole('button', { name: v.english ? `Keep here: Dive ${n}` : `Hier behalten: Tauchgang ${n}` })).toBeVisible();
-        await expectGoodPage(page, title('Review'), v);
+        await goodPage(page, title('Review'), v);
         await page.goto('/');
         await expect(page.getByText(v.english ? /1 dive no longer in SSI/ : /1 Tauchgang nicht mehr in SSI/)).toBeVisible();
-        await expectGoodPage(page, title('Logbook'), v);
+        await goodPage(page, title('Logbook'), v);
         await page.goto('/#/account?tab=connections');
         await page.getByRole('button', { name: v.english ? /^Check for dives deleted in SSI/ : /^Nach in SSI gelöschten Tauchgängen suchen/ }).click();
         await expect(page.locator('#main').getByText(v.english ? /dive is no longer in your SSI logbook/ : /Tauchgang ist nicht mehr in deinem SSI-Logbuch/)).toBeVisible();
-        await expectGoodPage(page, title('My account'), v);
+        await goodPage(page, title('My account'), v);
       } finally {
         await deletableDive(request);
         await request.post('/e2e/fake-ssi/clear-dives', { data: { email: 'erika@example.com' }, headers });
@@ -905,7 +922,7 @@ for (const v of variants) {
         await openLine(page, 'SSI');
         await page.getByRole('button', { name: v.english ? 'Update in SSI' : 'In SSI aktualisieren' }).click();
         await expect(page.getByRole('region', { name: conflictsTitle }).getByRole('radiogroup')).toBeVisible();
-        await expectGoodPage(page, title(`Dive ${n}`), v);
+        await goodPage(page, title(`Dive ${n}`), v);
 
         // A run leaves the dive waiting on the Review page.
         const status = await (await request.get(`/api/dives/${id}/providers/ssi`)).json() as { connection: { id: string } };
@@ -916,7 +933,7 @@ for (const v of variants) {
         await page.reload();
         await expect(page.getByRole('heading', { name: `${conflictsTitle} (1)`, level: 2 })).toBeVisible();
         await expect(page.getByRole('button', { name: v.english ? `Send with these choices: Dive ${n}` : `Mit dieser Wahl senden: Tauchgang ${n}` })).toBeVisible();
-        await expectGoodPage(page, title('Review'), v);
+        await goodPage(page, title('Review'), v);
       } finally {
         await clearPushRuns(request);
         await leaveConflict(request);
@@ -928,10 +945,10 @@ for (const v of variants) {
       try {
         await page.goto('/#/review');
         await expect(page.getByRole('heading', { name: v.english ? 'Probably not dives' : 'Wahrscheinlich keine Tauchgänge', level: 2 })).toBeVisible();
-        await expectGoodPage(page, title('Review'), v);
+        await goodPage(page, title('Review'), v);
         await page.getByRole('button', { name: v.english ? /^Delete…: / : /^Löschen.…: / }).click();
         await expect(page.getByRole('dialog').getByRole('button', { name: v.english ? 'Cancel' : 'Abbrechen' })).toBeVisible();
-        await expectGoodPage(page, title('Review'), v);
+        await goodPage(page, title('Review'), v);
       } finally {
         await keepFalseStart(request);
       }
@@ -942,7 +959,7 @@ for (const v of variants) {
       await page.getByRole('textbox', { name: v.english ? 'E-mail' : 'E-Mail' }).fill(`shown-${v.locale}@example.com`);
       await page.getByRole('button', { name: v.english ? 'Create invitation link' : 'Einladungslink erstellen' }).click();
       await expect(page.getByRole('button', { name: v.english ? 'Copy' : 'Kopieren' })).toBeVisible();
-      await expectGoodPage(page, title('Admin'), v);
+      await goodPage(page, title('Admin'), v);
       // On a phone the rows are cards: the actions stay in sight instead of scrolling away sideways.
       // (Below the fold is fine on a short screen; off to the right is not.)
       const revoke = await page.getByRole('button', { name: v.english ? /^Revoke:/ : /^Zurückziehen:/ }).first().boundingBox();
@@ -957,7 +974,7 @@ for (const v of variants) {
         await expect(page.getByRole('button', { name: v.english ? 'Revoke all AI accesses…' : 'Alle KI-Zugänge zurückziehen…' })).toBeVisible();
         await page.getByRole('button', { name: v.english ? 'Switch AI access off…' : 'KI-Zugang ausschalten…' }).click();
         await expect(page.getByRole('dialog')).toBeVisible();
-        await expectGoodPage(page, title('Admin'), v);
+        await goodPage(page, title('Admin'), v);
       } finally {
         await aiAccessReady(request);
       }
@@ -968,7 +985,7 @@ for (const v of variants) {
       try {
         await page.goto('/#/admin');
         await expect(page.getByRole('button', { name: v.english ? 'Stop making sites' : 'Keine Tauchplätze mehr anlegen' })).toBeVisible();
-        await expectGoodPage(page, title('Admin'), v);
+        await goodPage(page, title('Admin'), v);
       } finally {
         await request.put('/api/admin/provider-site-data/ssi', { data: { allowed: false }, headers });
       }
@@ -981,24 +998,24 @@ for (const v of variants) {
         await page.goto('/');
         await page.getByRole('button', { name: v.english ? 'Sign in' : 'Anmelden' }).click();
         await expect(page.getByRole('textbox').first()).toHaveAttribute('aria-invalid', 'true');
-        await expectGoodPage(page, title('Sign in'), v);
+        await goodPage(page, title('Sign in'), v);
       });
 
       test('setup', { tag: ['@account'] }, async ({ page }) => {
         await page.goto('/#/setup');
-        await expectGoodPage(page, title('Set up Dive Hub'), v);
+        await goodPage(page, title('Set up Dive Hub'), v);
       });
 
       test('invitation', { tag: ['@account'] }, async ({ page }) => {
         await page.goto(`/#/invite/${invitationToken}`);
         await expect(page.getByRole('textbox').first()).toBeVisible();
-        await expectGoodPage(page, title('Join Dive Hub'), v);
+        await goodPage(page, title('Join Dive Hub'), v);
       });
 
       test('password reset link', { tag: ['@account'] }, async ({ page }) => {
         await page.goto(`/#/reset/${resetToken}`);
         await expect(page.getByRole('textbox').first()).toBeVisible();
-        await expectGoodPage(page, title('Reset password'), v);
+        await goodPage(page, title('Reset password'), v);
       });
     });
   });
@@ -1161,11 +1178,11 @@ test.describe('behaviour', () => {
     const table = page.getByRole('region', { name: 'Profile as a table' });
     await expect(table.getByRole('columnheader', { name: 'Tank pressure' })).toBeVisible();
     await expect(table.getByRole('row').nth(1).getByRole('cell').last()).toHaveText('200 bar');
-    await expectGoodPage(page);
+    await goodPage(page);
     // The pod's Cylinder in the Dive's form: a group of fields with its own name (ADR 0045, slice 2).
     await page.getByRole('button', { name: 'Edit dive' }).click();
     await expect(page.getByRole('group', { name: /Cylinder 1/ }).getByRole('textbox', { name: 'Pressure at the start (bar)' })).toHaveValue('200');
-    await expectGoodPage(page);
+    await goodPage(page);
     await page.getByRole('button', { name: 'Cancel' }).click();
 
     await setPreferences(request, { units: 'imperial' });
@@ -1187,12 +1204,12 @@ test.describe('behaviour', () => {
     try {
       await page.goto(`/#/dives/${id}`);
       await expect(page.getByRole('definition').filter({ hasText: '8 kg (6 kg on a belt, 2 kg trim)' })).toBeVisible();
-      await expectGoodPage(page);
+      await goodPage(page);
       await page.getByRole('button', { name: 'Edit dive' }).click();
       await expect(page.getByRole('textbox', { name: 'Lead 1 (kg)' })).toHaveValue('6');
       await expect(page.getByRole('textbox', { name: 'Thickness (mm)' })).toHaveValue('7');
       await expect(page.getByRole('textbox', { name: 'By how much (kg)' })).toHaveValue('1');
-      await expectGoodPage(page);
+      await goodPage(page);
       await page.getByRole('button', { name: 'Cancel' }).click();
     } finally {
       await set({ lead: [], weightingFeedback: null, suit: null });
@@ -1220,7 +1237,7 @@ test.describe('behaviour', () => {
       await page.getByRole('button', { name: /Hood$/ }).click();
       await page.getByRole('option', { name: 'Without hood', exact: true }).click();
       await expect(page.getByTestId('lead-hint')).toContainText('Last time with this suit: 8 kg, felt right.');
-      await expectGoodPage(page);
+      await goodPage(page);
       await page.getByRole('button', { name: 'Cancel' }).click();
     } finally {
       await set(earlier, nothing);
@@ -1380,6 +1397,8 @@ test.describe('behaviour', () => {
     // The Review page's Deleted dives part. (Its list, with a heading of its own, shows only once a spec deleted a dive.)
     await expect(page.getByRole('navigation', { name: 'Parts of the review' }).getByRole('link', { name: 'Deleted dives' }))
       .toHaveAttribute('aria-current', 'page');
+    // And the part itself: its list, or that nothing is deleted.
+    await expect(page.getByRole('heading', { name: 'Deleted dives', level: 2 }).or(page.getByText('No deleted dives.'))).toBeVisible();
   });
 
   test('the way back sits above the title on every page that has one (slice 25e, C15)', { tag: ['@dives', '@sites'] }, async ({ page }) => {
