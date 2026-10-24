@@ -1,6 +1,6 @@
 // The owner's check of what SSI answers for sites, run by `round-trip.ts site probe` (Piece 4, private sites).
 // It writes to the real SSI account: it creates one private site "Dive Hub test" at 0.001, 0.001 with `save_divesite`,
-// reads it with `get_divesite` and `get_divelog`, deletes it again with `odin_dive_sites_deleted: true` and looks whether
+// reads it with `get_divesite` and `get_divelog`, deletes it again with `odin_dive_sites_deleted: 1` and looks whether
 // it is gone. Output: key names, HTTP statuses and ID-like values only, never names, comments, URLs, tokens or passwords.
 // The flags go as the numbers 0/1 (SSI takes the dive record's flags so; the owner's run of 2026-10-24 showed a boolean delete is not stored).
 // Everything SSI answers goes to samples/private/ssi/site-probe.json (git-ignored).

@@ -224,10 +224,10 @@ if (mode === 'read') {
   const siteId = process.env.SSI_SITE_ID;
   if (!siteId) throw new Error('Set SSI_SITE_ID to a public site ID from your SSI logbook (see logbook.json after "read")');
   await save('site-probe', await runSiteProbe({ access: account.token, accountId: account.accountId, siteId, log: console.log }));
-} else if (mode === 'site' && process.argv[3] === 'get' && /^d+$/.test(process.argv[4] ?? '')) {
+} else if (mode === 'site' && process.argv[3] === 'get' && /^\d+$/.test(process.argv[4] ?? '')) {
   const account = await access();
   await runSiteGet({ access: account.token, id: process.argv[4]!, log: console.log });
-} else if (mode === 'site' && process.argv[3] === 'delete' && /^d+$/.test(process.argv[4] ?? '')) {
+} else if (mode === 'site' && process.argv[3] === 'delete' && /^\d+$/.test(process.argv[4] ?? '')) {
   const account = await access();
   await save('site-delete', await runSiteDelete({ access: account.token, accountId: account.accountId, id: process.argv[4]!, log: console.log }));
 } else if (mode === 'expired') {
