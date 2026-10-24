@@ -7,31 +7,53 @@
 //   pnpm check --base main     changes since another commit or branch (--base HEAD: all uncommitted changes)
 //   pnpm check:full            everything
 //   pnpm check --dry           only say what would run and from which base (with --files a,b: for these paths)
-//   pnpm check --failed        only the browser tests that failed in the last browser run; records nothing
-// A step that passes records the state it passed on (a local git ref, refs/check/green-<step>); a run with --base
-// or --files records nothing. Unknown paths count as "everything": when in doubt, run more.
+//   pnpm check --failed        only the browser tests that failed in the last browser run; when they pass on the
+//                              files the failed pnpm check ran on, the browser tests count as green there
+// A step that passes records the state it passed on (a local git ref, refs/check/green-<step>); a failed browser
+// step keeps its state and failed tests (refs/check/failed-e2e) for --failed. A run with --base or --files records
+// nothing. Unknown paths count as "everything": when in doubt, run more.
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { relative } from 'node:path';
 import { readFileSync } from 'node:fs';
-import { FULL_ONLY, QUIET, STEPS, TAGS, changedSince, countingBase, forBrowserTests, fullPlan, lintTargets, planSteps, recordGreen, snapshot } from './check-lib.mjs';
+import { FULL_ONLY, QUIET, STEPS, TAGS, changedSince, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, fullPlan, lintTargets, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
 import { lint } from './check-lint.mjs';
 
 const args = process.argv.slice(2);
 
-// --failed: after a failing browser run, only the tests that failed (Playwright's record of its last run). It
-// says nothing about the other tests, so it records nothing: `pnpm check` afterwards runs the browser plan whole.
-if (args.includes('--failed')) {
-  let failed = [];
+/** The ids of the browser tests that failed in Playwright's last run. */
+function lastFailed() {
   try {
-    failed = JSON.parse(readFileSync('apps/web/test-results/.last-run.json', 'utf8')).failedTests ?? [];
-  } catch { /* no browser run yet */ }
+    return JSON.parse(readFileSync('apps/web/test-results/.last-run.json', 'utf8')).failedTests ?? [];
+  } catch {
+    return []; // no browser run yet
+  }
+}
+
+// --failed: after a failing browser run, only the tests that failed (Playwright's record of its last run). When
+// they pass on the same files as the failed browser step of `pnpm check`, every test that step planned has passed
+// on them, so the browser step counts as green there (ADR 0023, amendment of 2026-10-24); otherwise it records
+// nothing and `pnpm check` afterwards runs the browser plan whole.
+if (args.includes('--failed')) {
+  const failed = lastFailed();
   if (failed.length === 0) {
     console.log('check: no browser test failed in the last browser run; nothing to run');
     process.exit(0);
   }
-  console.log(`check: the ${failed.length} browser test(s) that failed in the last browser run; nothing is recorded`);
-  process.exit(spawnSync('pnpm --filter @dive-hub/web test:e2e --last-failed', { stdio: 'inherit', shell: true }).status ?? 1);
+  const tree = snapshot();
+  const verdict = failedRerunRenews(failedRun('e2e'), tree, failed);
+  const outcome = verdict.renews ? `${verdict.why}, so if they pass the browser tests count as green on these files` : `nothing is recorded: ${verdict.why}`;
+  console.log(`check: the ${failed.length} browser test(s) that failed in the last browser run; ${outcome}`);
+  const status = spawnSync('pnpm --filter @dive-hub/web test:e2e --last-failed', { stdio: 'inherit', shell: true }).status ?? 1;
+  if (verdict.renews && status === 0) {
+    recordGreen('e2e', tree);
+    clearFailed('e2e');
+    console.log('check: browser tests recorded green on these files; the next pnpm check counts from here');
+  } else if (verdict.renews) {
+    // Some failed again: a later --failed reruns those, still on the same files.
+    recordFailed('e2e', tree, lastFailed());
+  }
+  process.exit(status);
 }
 const full = args.includes('--full');
 const dry = args.includes('--dry');
@@ -51,7 +73,7 @@ const since = Object.fromEntries(STEPS.map((step) => {
 }));
 // Changed texts count, for the browser tests, as the source files that use them.
 const browser = forBrowserTests(since.e2e.changed, since.e2e.base, tree);
-const plan = full ? fullPlan() : planSteps({ ...Object.fromEntries(STEPS.map((step) => [step, since[step].changed])), e2e: browser.changed });
+const plan = full ? fullPlan() : planSteps({ ...Object.fromEntries(STEPS.map((step) => [step, since[step].changed])), e2e: browser.changed }, { e2eServerLoads: e2eServerLoads() });
 if (!full) for (const note of [browser.note, ...plan.notes]) if (note) console.log(`check: ${note}`);
 
 /** Fails when a browser test has no area tag (ADR 0023): the checks by area would never run it. */
@@ -135,9 +157,14 @@ for (const [name, cmd, step] of steps) {
   const status = typeof cmd === 'string' ? spawnSync(cmd, { stdio: 'inherit', shell: true }).status : cmd();
   times.push(`${name}: ${Math.round((Date.now() - started) / 1000)} s`);
   if (status !== 0) {
+    // A failed browser step keeps its files and failed tests: `pnpm check --failed` can then make it green.
+    const keeps = records && step === 'e2e' && lastFailed().length > 0;
+    if (keeps) recordFailed('e2e', tree, lastFailed());
     console.log(`\n✗ ${name} failed\n${times.join('\n')}`);
+    if (keeps) console.log('check: pnpm check --failed reruns the failed browser tests; if they pass on these files, the browser tests count as green');
     process.exit(status ?? 1);
   }
   if (records && step) recordGreen(step, tree);
+  if (records && step === 'e2e') clearFailed('e2e');
 }
 console.log(`\n✓ all checks passed\n${times.join('\n')}`);
