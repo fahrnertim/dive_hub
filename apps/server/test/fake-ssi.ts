@@ -21,6 +21,7 @@ export interface FakeSsiSite {
   /** Private to `odin_dive_sites_is_private_owner` (SSI answers flags as 0/1). */
   odin_dive_sites_is_private?: number | boolean;
   odin_dive_sites_is_private_owner?: number;
+  odin_dive_sites_deleted?: number;
 }
 
 /** An entry in an account's SSI buddy list, with the personal data SSI keeps (which Dive Hub must never store). */
@@ -217,7 +218,7 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
         if (!found) return answer({ error: 'not found' }, 404);
         return answer([{
           ...found, odin_dive_sites_is_private: found.odin_dive_sites_is_private ? 1 : 0,
-          odin_dive_sites_is_private_owner: found.odin_dive_sites_is_private_owner ?? null, odin_dive_sites_deleted: 0,
+          odin_dive_sites_is_private_owner: found.odin_dive_sites_is_private_owner ?? null, odin_dive_sites_deleted: found.odin_dive_sites_deleted ?? 0,
         }]);
       }
       if (what === 'save_divesite' && init.method === 'POST') {

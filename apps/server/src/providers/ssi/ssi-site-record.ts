@@ -2,6 +2,7 @@
 // create a private site (the app's `siteUpload`), and the typed values of a site row SSI answers with, in the logbook
 // (`logbook_sites`) and from `get_divesite`. Pure: no calls.
 import type { Position, SiteWaterType } from '../../vocabulary.js';
+import { alpha3Of } from '../../sites/countries.js';
 import { WATER_OF_BOW } from './ssi-sites.js';
 
 /**
@@ -21,7 +22,7 @@ export function ssiSiteRow(
     odin_dive_sites_meta_address: null,
     odin_dive_sites_meta_region: null,
     odin_dive_sites_meta_country: null,
-    odin_countries_code_iso: site.country,
+    odin_countries_code_iso: alpha3Of(site.country),
     odin_dive_sites_regions_name: null,
     odin_dive_sites_areas_name: null,
     odin_dive_sites_geo_locked: null,

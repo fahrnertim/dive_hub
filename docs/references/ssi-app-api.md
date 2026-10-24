@@ -381,6 +381,7 @@ a synced dive has been seen:
 Tested on the owner's account [T]; details in [the research note](../research/2026-10-24-ssi-site-checks.md).
 
 - **`save_divesite`** (query `token`; body `json_data` = the site row, keys in [the write bodies](../research/2026-10-22-ssi-write-bodies.md), without `internalPk` and `needsUpload`) with `odin_dive_sites_id` null creates a site. HTTP 200; the new ID is at the answer's top level `odin_dive_sites_id` (also `success.New.odin_dive_sites_id` and `result.site.odin_dive_sites_id`) [T].
+- Dive Hub sends `odin_countries_code_iso` as ISO alpha-3 (as SSI keeps it); unverified at SSI until the owner's next probe.
 - A private site: `odin_dive_sites_is_private` 1 (`true` accepted, stored as 1) and `odin_dive_sites_is_private_owner` the account's `mid`. `result.site` repeats both [T].
 - **Flags are answered as the numbers 0/1** [T].
 - **`get_divesite`** (query `token`, `dsid`) answers HTTP 200 with a JSON **array of one row** (not an object), carrying `odin_dive_sites_is_private`, `_is_private_owner` and `_deleted`. An unknown ID answers HTTP 404 [T].

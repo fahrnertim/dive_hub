@@ -58,7 +58,9 @@ describe('SSI\'s sites through the adapter', () => {
     expect(await adapter.diveSites!.get!(ctx, '100')).toMatchObject({ id: '100', name: 'Public Reef', visibility: 'public', waterType: 'fresh' });
     expect(await adapter.diveSites!.get!(ctx, '200')).toMatchObject({ id: '200', visibility: 'private' });
     expect(await adapter.diveSites!.get!(ctx, '999')).toBeNull();
-    expect(fake.calls.filter((c) => c.what === 'get_divesite')).toHaveLength(3);
+    fake.sites.push(site(150, 'Gone Reef', 13, { odin_dive_sites_deleted: 1 }));
+    expect(await adapter.diveSites!.get!(ctx, '150')).toBeNull();
+    expect(fake.calls.filter((c) => c.what === 'get_divesite')).toHaveLength(4);
   });
 
   it('does not use another account\'s private site it gets', async () => {
@@ -117,7 +119,7 @@ describe('SSI\'s sites through the adapter', () => {
     expect(Object.keys(row).sort()).toEqual([...SITE_UPLOAD_KEYS].sort());
     expect(row).toMatchObject({
       odin_dive_sites_id: null, odin_dive_sites_name: 'New Reef', bow: 'fresh', odin_dive_sites_lat: 12.5, odin_dive_sites_lon: 34.5,
-      odin_countries_code_iso: 'EG', odin_dive_sites_is_private: true, odin_dive_sites_is_private_owner: 5_012_047, odin_dive_sites_deleted: false,
+      odin_countries_code_iso: 'EGY', odin_dive_sites_is_private: true, odin_dive_sites_is_private_owner: 5_012_047, odin_dive_sites_deleted: false,
     });
     const nulls = Object.entries(row).filter(([, v]) => v === null).map(([k]) => k).sort();
     expect(nulls).toEqual(['alias_names', 'alias_names_search', 'odin_dive_sites_alias_ids', 'odin_dive_sites_areas_name',
@@ -240,6 +242,9 @@ describe.skipIf(!(await databaseReachable()))('a dive import and SSI\'s private 
   });
 
   it('clears the account on a private ID SSI now lists as public (Review Focus 5)', async () => {
+    await t.db.update(diveSiteExternalId).set({ accountId: accounts.a }).where(eq(diveSiteExternalId.externalId, '500'));
+    expect(await rowOf('500')).toMatchObject({ accountId: accounts.a });
+    await runImport('a');
     expect(await rowOf('500')).toMatchObject({ siteId: published.id, accountId: null });
     // After that every User sees it.
     const seenByB = (await call('GET', `/api/dive-sites/${published.id}`, 'b')).json() as { externalIds: { externalId: string }[] };
