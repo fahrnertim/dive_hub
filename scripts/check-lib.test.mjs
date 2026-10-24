@@ -6,6 +6,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
+import { FULL_ONLY, VARIANTS, browserGrepInvert, variantsRun } from './check-lib.mjs';
 import { baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, greenRun, lintTargets, planFor, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
 
 /** A git repository with one commit holding `files`. */
@@ -344,6 +345,24 @@ test('what the e2e server loads: its own file and the test files it imports, fol
   });
   t.after(repo.drop);
   assert.deepEqual([...e2eServerLoads(repo.cwd)].sort(), ['apps/server/test/e2e-server.ts', 'apps/server/test/fake-ssi.ts', 'apps/server/test/fixtures/ssi-shapes.ts', 'apps/server/test/fixtures/synthetic-dive.ts']);
+});
+
+// Amendment of 2026-10-24: one ui-quality variant in pnpm check.
+
+test('the other ui-quality variants run in pnpm check only when texts, shared styles or shared UI changed', () => {
+  assert.deepEqual(variantsRun(['apps/web/src/SitesPage.tsx', 'apps/server/src/sites/routes.ts', 'apps/web/e2e/sites.spec.ts']), { run: false, why: null });
+  for (const path of ['apps/web/src/i18n/locales/de.json', 'apps/web/src/i18n/index.ts', 'apps/web/src/ui/Button.tsx', 'apps/web/src/design/tokens.css',
+    'apps/web/src/App.tsx', 'apps/web/src/pages.css', 'apps/web/src/main.tsx']) {
+    const verdict = variantsRun(['apps/web/src/SitesPage.tsx', path]);
+    assert.equal(verdict.run, true, path);
+    assert.match(verdict.why, new RegExp(path.replace(/[./]/g, '\\$&')));
+  }
+});
+
+test('what the browser tests leave out: in pnpm check the full-only tests and, unless asked for, the other variants', () => {
+  assert.equal(browserGrepInvert({ full: true, variants: false }), null);
+  assert.equal(browserGrepInvert({ full: false, variants: true }), FULL_ONLY);
+  assert.equal(browserGrepInvert({ full: false, variants: false }), `${FULL_ONLY}|${VARIANTS}`);
 });
 
 // Leftovers of the review of the amendment "main counts as green".

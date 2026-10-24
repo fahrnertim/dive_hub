@@ -58,8 +58,9 @@ const variants = [
 
 for (const v of variants) {
   // The variants without axe run only in the full check (@full, ADR 0023): the two with axe cover both languages
-  // and colour schemes, and the width sweep covers the widths.
-  test.describe(v.name, { tag: v.axe ? [] : ['@full'] }, () => {
+  // and colour schemes, and the width sweep covers the widths. `pnpm check` runs the German, dark, phone variant
+  // (@variants) only when texts, shared styles or shared UI changed (amendment of 2026-10-24); CI always runs it.
+  test.describe(v.name, { tag: v.axe ? (v.english ? [] : ['@variants']) : ['@full'] }, () => {
     test.use({ locale: v.locale, colorScheme: v.colorScheme, viewport: v.viewport });
     const title = (english: string) => (v.english ? english : undefined);
     /** On a phone the logbook's choices sit behind "Filter and sort" (slice 25f): open it where it is shut. */
@@ -1376,7 +1377,9 @@ test.describe('behaviour', () => {
     const list = await diveRows(page).first().boundingBox();
     expect(link!.y).toBeLessThan(list!.y);
     await more.getByRole('link', { name: 'Deleted dives' }).click();
-    await expect(page.getByRole('heading', { name: 'Deleted dives', level: 2 })).toBeVisible();
+    // The Review page's Deleted dives part. (Its list, with a heading of its own, shows only once a spec deleted a dive.)
+    await expect(page.getByRole('navigation', { name: 'Parts of the review' }).getByRole('link', { name: 'Deleted dives' }))
+      .toHaveAttribute('aria-current', 'page');
   });
 
   test('the way back sits above the title on every page that has one (slice 25e, C15)', { tag: ['@dives', '@sites'] }, async ({ page }) => {

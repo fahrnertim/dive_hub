@@ -16,7 +16,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { relative } from 'node:path';
 import { readFileSync } from 'node:fs';
-import { FULL_ONLY, QUIET, STEPS, TAGS, changedSince, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, fullPlan, lintTargets, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
+import { QUIET, STEPS, TAGS, browserGrepInvert, changedSince, variantsRun, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, fullPlan, lintTargets, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
 import { lint } from './check-lint.mjs';
 
 const args = process.argv.slice(2);
@@ -121,9 +121,13 @@ if (plan.e2e !== 'none') {
   steps.push(['browser test tags', untaggedBrowserTests, null]);
   const grep = [...plan.areas, ...[...plan.specs].map((s) => s.replace(/\./g, '\\.'))].join('|');
   const which = plan.e2e === 'all' ? 'all' : grep;
-  // The variants of ui-quality that only the full check runs (ADR 0023).
-  const without = full ? '' : ` --grep-invert "${FULL_ONLY}"`;
-  steps.push([`browser tests (${which}${full ? '' : `, without ${FULL_ONLY}`})`, pnpm(`--filter @dive-hub/web test:e2e${plan.e2e === 'all' ? '' : ` --grep "${grep}"`}${without}`), 'e2e']);
+  // The variants of ui-quality that only the full check runs, and the German, dark, phone one unless texts, shared
+  // styles or shared UI changed (ADR 0023, amendment of 2026-10-24). Counted from the files before texts were narrowed.
+  const variants = variantsRun(since.e2e.changed);
+  if (!full) console.log(`check: ${variants.why ?? `browser tests in English, light, desktop only; the other ui-quality variants run in CI (pnpm check:full)`}`);
+  const leftOut = browserGrepInvert({ full, variants: variants.run });
+  const without = leftOut ? ` --grep-invert "${leftOut}"` : '';
+  steps.push([`browser tests (${which}${leftOut ? `, without ${leftOut}` : ''})`, pnpm(`--filter @dive-hub/web test:e2e${plan.e2e === 'all' ? '' : ` --grep "${grep}"`}${without}`), 'e2e']);
 }
 
 // A step with nothing to run is as green on this state as on the one it last passed on.

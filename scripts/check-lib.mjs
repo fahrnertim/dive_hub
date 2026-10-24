@@ -72,6 +72,26 @@ export const TAGS = ['@dives', '@divers', '@sites', '@account', '@admin', '@layo
 /** The tag of browser tests that only the full check runs: ui-quality's two variants without axe (small phone, tablet). */
 export const FULL_ONLY = '@full';
 
+/**
+ * The tag of ui-quality's other variant with axe (German, dark, phone), which `pnpm check` runs only when texts,
+ * shared styles or shared UI changed; CI's full check always runs it (amendment of 2026-10-24).
+ */
+export const VARIANTS = '@variants';
+const VARIANT_TRIGGERS = /^apps\/web\/src\/((i18n|ui|design)\/|(App|main)\.tsx$|pages\.css$)/;
+
+/** Whether `pnpm check` runs the other ui-quality variants for these changed files: `{ run, why }`. */
+export function variantsRun(changed) {
+  const triggers = changed.filter((path) => VARIANT_TRIGGERS.test(path));
+  if (triggers.length === 0) return { run: false, why: null };
+  return { run: true, why: `${triggers.join(', ')} changed texts, shared styles or shared UI, so the German, dark, phone variant of the areas touched runs too` };
+}
+
+/** The browser tests a run leaves out (`--grep-invert`), or null for none. */
+export function browserGrepInvert({ full, variants }) {
+  if (full) return null;
+  return variants ? FULL_ONLY : `${FULL_ONLY}|${VARIANTS}`;
+}
+
 /** The plan that runs everything (`pnpm check:full`). */
 export const fullPlan = () => ({ typecheck: true, lint: 'all', scripts: true, server: 'all', web: 'all', e2e: 'all', areas: new Set(), specs: new Set(), notes: [] });
 

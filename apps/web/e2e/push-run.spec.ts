@@ -60,8 +60,9 @@ test('a run stopped by a sign-in need goes on after signing in', { tag: ['@dives
   expect(started.status(), `${await started.text()} ${JSON.stringify(await (await request.post(`/api/connections/${connectionId}/push-runs/preview`, { data: { dives: { list: { siteId } } }, headers })).json())}`).toBe(202);
 
   await page.goto('/#/');
-  // It doesn't time out and doesn't hide behind a toast: the reason, and the way on.
-  await expect(page.getByText(/Stopped after 0 of 1 dives to SSI\./)).toBeVisible();
+  // It doesn't time out and doesn't hide behind a toast: the reason, and the way on. (In #main: the live announcer
+  // outside it says the same words while the announcement lasts.)
+  await expect(page.locator('#main').getByText(/Stopped after 0 of 1 dives to SSI\./)).toBeVisible();
   await expect(page.getByText('SSI wants you to sign in again')).toBeVisible();
   // The way on is the sign-in, first; "Continue" would fail until then (C4).
   const signIn = page.getByRole('link', { name: 'Sign in to SSI again' });
