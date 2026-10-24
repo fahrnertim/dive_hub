@@ -40,6 +40,9 @@ export interface ProviderRun {
   sitesAllowed: boolean;
 }
 
+/** A field's value as the import preview says it (`shown`). */
+export type ShownValue = string | number | string[] | ProviderCylinder | null;
+
 /** Whether the Provider's `dives.fields` let this field come in: no map means every field does. */
 export function importsField(run: Pick<ProviderRun, 'adapter'>, field: DiveField): boolean {
   const directions = run.adapter.capabilities.data.dives?.fields;
@@ -286,7 +289,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
   }
 
   /** A field's value as the preview shows it: the site's and people's names, the local start, the number or text. */
-  async function shown(run: ProviderRun, field: SyncedField, c: Comparable, hubSiteId: string | null): Promise<string | number | string[] | ProviderCylinder | null> {
+  async function shown(run: ProviderRun, field: SyncedField, c: Comparable, hubSiteId: string | null): Promise<ShownValue> {
     if (field === 'site') {
       if (hubSiteId) return (await db.select({ name: diveSite.name }).from(diveSite).where(eq(diveSite.id, hubSiteId)))[0]?.name ?? null;
       return c.site ? run.context.sites[c.site]?.name ?? c.site : null;

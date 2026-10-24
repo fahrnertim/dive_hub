@@ -35,3 +35,13 @@ export interface SiteImportCounts {
   offered: number;
   gone: number;
 }
+
+/**
+ * One field of a Conflict as stored (src/providers/conflicts.ts says which fields and values exist): the field and both
+ * sides' values as the import preview shows them.
+ */
+export interface StoredConflictField {
+  field: string;
+  hub: unknown;
+  provider: unknown;
+}

@@ -655,6 +655,13 @@ import preview.) *Web:* `GoneDives.tsx`, the Review page, the logbook's strip an
   "all"**, never a bulk delete, never delete without that dialog.
 - Only the Connection's owner sees and decides; the findings of another User's Connection are a 404.
 
+### Conflicts with a Provider
+(`GET /api/provider-conflicts`, per Connection, no call to a Provider.) A Conflict is a field changed on both sides,
+differently, found while sending a Dive. One entry per Dive and Provider waits under "Needs your decision" on the Review
+page, beside the gone dives: `entries` carry the Dive's number, time, depth, duration and site, the `remoteId`, and
+`fields`, each with `hub` and `provider` values said as in the import preview. An entry whose Dive is deleted or whose
+remote dive is no longer the Dive's current one is not listed. Only the Connection's owner sees it.
+
 ### Logbook checks
 ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md); `GET /api/logbook-checks`, computed each time)
 - **Must show them where the User lands after an import** (the logbook), in the same place as Duplicate candidates: each

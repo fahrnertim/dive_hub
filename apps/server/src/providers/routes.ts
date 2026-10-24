@@ -12,6 +12,7 @@ import { SITE_SOURCES, SOURCE_INFO } from '../sites/sources.js';
 import type { BuddyService } from './buddy-service.js';
 import type { ConnectionService } from './connection-service.js';
 import type { DiveImportService } from './dive-import.js';
+import type { ConflictService } from './conflicts.js';
 import type { GoneDiveService } from './gone-dives.js';
 import { SYNCED_FIELDS } from './three-way.js';
 import { FIND_BY, OPERATIONS, type ProviderAdapter, type Requirement } from './provider.js';
@@ -32,6 +33,7 @@ export interface ProviderRouteDeps {
   buddies: BuddyService;
   diveImports: DiveImportService;
   goneDives: GoneDiveService;
+  conflicts: ConflictService;
   certifications: CertificationService;
 }
 
@@ -282,7 +284,7 @@ export function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Sta
   };
 }
 
-export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, pushRuns, buddies, diveImports, goneDives, certifications }) => {
+export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, pushRuns, buddies, diveImports, goneDives, conflicts, certifications }) => {
   app.addHook('onRequest', requireUser(auth));
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof ProviderServiceError) return replyProviderError(error, reply);
@@ -632,6 +634,40 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
   }, async (request) => (await goneDives.waiting(request.user!.id)).map((c) => ({
     ...c, dives: c.dives.map((d) => ({ ...d, startsAt: d.startsAt.toISOString(), foundAt: d.foundAt.toISOString() })),
   })));
+
+  const ConflictsView = Type.Object({
+    connectionId: Type.String(),
+    provider: Type.String(),
+    providerName: Type.String(),
+    entries: Type.Array(Type.Object({
+      diveId: Type.String(),
+      number: Nullable(Type.Integer()),
+      startsAt: DateTime,
+      utcOffsetSeconds: Nullable(Type.Integer()),
+      utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES]),
+      durationSeconds: Type.Number(),
+      maxDepthM: Nullable(Type.Number()),
+      site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
+      remoteId: Type.String(),
+      fields: Type.Array(Type.Object({ field: Type.String({ description: 'The field the two sides differ on' }), hub: Nullable(ConflictValue), provider: Nullable(ConflictValue) })),
+      foundAt: DateTime,
+    })),
+  });
+
+  app.get('/provider-conflicts', {
+    schema: {
+      summary: 'Conflicts with a Provider that wait for the choice of the User, per Connection; no call to a Provider',
+      description: 'A Conflict is a field changed on both sides, differently, found while sending a Dive. One entry per Dive and Provider, '
+        + 'with both values of each field. The User chooses per field, the Dive Hub value preselected, by sending the Dive again with `conflicts`. '
+        + 'An entry whose Dive is deleted, or whose remote dive is no longer the current one of the Dive, is not listed.',
+      response: { 200: Type.Object({ connections: Type.Array(ConflictsView) }), ...errors },
+    },
+  }, async (request) => ({
+    connections: (await conflicts.waiting(request.user!.id)).map((c) => ({
+      ...c, providerName: providers.list().find((a) => a.id === c.provider)?.capabilities.name ?? c.provider,
+      entries: c.entries.map((e) => ({ ...e, startsAt: e.startsAt.toISOString(), foundAt: e.foundAt.toISOString() })),
+    })),
+  }));
 
   app.post('/connections/:id/gone-dives/check', {
     schema: {
