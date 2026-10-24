@@ -18,6 +18,9 @@ export interface FakeSsiSite {
   odin_countries_code_iso: string;
   /** Body of water: salt, fresh or artificial. */
   bow?: string;
+  /** Private to `odin_dive_sites_is_private_owner` (SSI answers flags as 0/1). */
+  odin_dive_sites_is_private?: number | boolean;
+  odin_dive_sites_is_private_owner?: number;
 }
 
 /** An entry in an account's SSI buddy list, with the personal data SSI keeps (which Dive Hub must never store). */
@@ -138,6 +141,7 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
   const tokens = new Map<string, number>();
   let nextToken = 1;
   let nextDiveId = 27_000_001;
+  let nextSiteId = 9_000_001;
   const fake: FakeSsi = {
     accounts: options.accounts ?? [{ email: 'erika@example.com', password: 'ssi-password', accountId: 5_012_047 }],
     sites: options.sites ?? [
@@ -206,6 +210,27 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
           tokens.clear();
         }
         return answer({ verified_dives: 0, logbook_details: own, logbook_sites: fake.sites, logbook_buddies: buddies });
+      }
+      if (what === 'get_divesite') {
+        const found = fake.sites.find((s) => String(s.odin_dive_sites_id) === params.get('dsid'));
+        // The real SSI answers one row in an array, flags as 0/1; an unknown ID is a 404 (checked 2026-10-24).
+        if (!found) return answer({ error: 'not found' }, 404);
+        return answer([{
+          ...found, odin_dive_sites_is_private: found.odin_dive_sites_is_private ? 1 : 0,
+          odin_dive_sites_is_private_owner: found.odin_dive_sites_is_private_owner ?? null, odin_dive_sites_deleted: 0,
+        }]);
+      }
+      if (what === 'save_divesite' && init.method === 'POST') {
+        const row = JSON.parse(new URLSearchParams(init.body ?? '').get('json_data') ?? '{}') as Record<string, unknown>;
+        if (row.odin_dive_sites_id !== null && row.odin_dive_sites_id !== undefined) return answer({ ok: '', error: 'only new sites are made here' });
+        const id = nextSiteId++;
+        const created = {
+          ...row, odin_dive_sites_id: id, odin_dive_sites_is_private: row.odin_dive_sites_is_private ? 1 : 0, odin_dive_sites_deleted: 0,
+          odin_countries_code_iso: row.odin_countries_code_iso ?? '',
+        } as unknown as FakeSsiSite;
+        fake.sites.push(created);
+        // The new ID is at the top level, in `success.New` and in `result.site` (checked 2026-10-24).
+        return answer({ ok: 'saved', odin_dive_sites_id: id, success: { New: { odin_dive_sites_id: id } }, result: { site: created } });
       }
       if (what === 'get_ccards') {
         const own = fake.cards.filter((c) => c.owner === accountId).map(({ owner: _owner, ...c }) => ({

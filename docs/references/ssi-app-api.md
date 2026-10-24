@@ -123,9 +123,10 @@ Only when a User does something. There are no background calls: the worker never
 | User action | Calls |
 |---|---|
 | Connect, or sign in again | `authenticate` |
-| Send a dive (create or update) | `get_divelog` (may come from the kept read-back), `save_divelog`, `get_divelog` (read-back) |
+| Send a dive (create or update) | `get_divelog` (may come from the kept read-back), `save_divelog`, `get_divelog` (read-back); first `save_divesite` when the dive's site has no ID usable for the account and is made at SSI as a private site |
 | Delete a dive that was sent to SSI | `get_divelog` (is it still there?), `save_divelog` (deleted) |
 | Open the SSI site picker on a dive | `get_divelog` (may come from the kept read-back) |
+| Type an SSI site ID on a dive's site | `get_divesite` (is the ID known, public or the account's own private site?) |
 | Open the buddy list (Connections) or the buddy picker on a dive | `get_divelog` (may come from the kept read-back) |
 | Show what importing the dives would do (the preview, [ADR 0030](../decisions/0030-importing-dives-from-providers.md)) | `get_divelog` (always read afresh) |
 | Start the import | `get_divelog` (may come from the kept read; the worker never calls SSI) |

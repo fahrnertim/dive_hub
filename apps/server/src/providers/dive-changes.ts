@@ -13,7 +13,7 @@ import { writeRevision, type Actor, type Changes } from '../dives/revisions.js';
 import { placeLocalTime, wallClockMs, type PlacedTime } from '../dives/time-zone.js';
 import { siteRef } from '../sites/dive-site-link.js';
 import { siteDataAllowed, siteForProvider, type ProviderSite } from '../sites/provider-sites.js';
-import { accountOf, idsOf, pickId } from '../sites/site-ids.js';
+import { accountOf, idsOf, pickId, settleVisibility } from '../sites/site-ids.js';
 import type { SiteSource } from '../sites/sources.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
@@ -55,7 +55,8 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
 
   /**
    * The sites a Provider's dive names, with what the Provider says about them. A site missing from the context can only be
-   * found by its ID (no name to match or create it by). The context doesn't say yet which sites are private: public.
+   * found by its ID (no name to match or create it by). `private`: the Provider marks the site private and the account's
+   * own (the context holds no other account's private site).
    */
   async function sitesOf(q: Db | Tx, run: ProviderRun, d: ImportedDive): Promise<ProviderSite[]> {
     return Promise.all(Object.entries(d.siteIds).map(async ([source, externalId]) => {
@@ -64,9 +65,21 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
         source: source as SiteSource, externalId, name: known?.name ?? '',
         position: known && known.latitude !== null && known.longitude !== null ? { latitude: known.latitude, longitude: known.longitude } : null,
         country: known?.country ?? null, waterType: known?.waterType ?? null,
-        account: await accountOf(q, run.diverId, source as SiteSource), private: false,
+        account: await accountOf(q, run.diverId, source as SiteSource), private: known?.private === true,
       };
     }));
+  }
+
+  /**
+   * Makes the IDs held here agree with what the Provider says about the account's sites (its context): a public ID of a
+   * site the account has as private becomes the account's, a private ID of the account's whose site is public becomes
+   * public. Another account's rows stay.
+   */
+  async function settle(tx: Tx, run: ProviderRun): Promise<void> {
+    const source = run.adapter.accountSource as SiteSource | undefined;
+    const account = source ? await accountOf(tx, run.diverId, source) : null;
+    if (!source || !account) return;
+    await settleVisibility(tx, source, account, Object.entries(run.context.sites).map(([externalId, s]) => ({ externalId, private: s.private === true })));
   }
 
   /** The start's instant: from the dive's position, else its site's at the Provider, else nearby Dives, else unknown. */
@@ -330,5 +343,5 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     return { userId, adapter, ...s, managed: await managedDiverIds(q, userId), sitesAllowed: await siteDataAllowed(q, adapter.id) };
   }
 
-  return { runOf, sitesOf, placeTime, baseOf, hubOf, changesOf, takeChanges, fill, shown };
+  return { runOf, sitesOf, settle, placeTime, baseOf, hubOf, changesOf, takeChanges, fill, shown };
 }

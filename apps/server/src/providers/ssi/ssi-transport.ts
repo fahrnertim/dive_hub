@@ -40,6 +40,11 @@ export class SsiError extends Error {
 
 export interface SsiTransport {
   call(what: string, params: Record<string, string>, body?: Record<string, unknown>): Promise<Record<string, unknown>>;
+  /**
+   * A read that answers one row as an array of one object (`get_divesite`). An unknown ID is HTTP 404: null.
+   * Anything else is `bad_response`.
+   */
+  lookup(what: string, params: Record<string, string>): Promise<Record<string, unknown> | null>;
 }
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -53,37 +58,52 @@ function parseJson(text: string): unknown {
 }
 
 export function createSsiTransport(options: { url: string; fetch: Fetch; timeoutMs: number }): SsiTransport {
+  /** The answer as it is, with the checks every call shares: signed out, maintenance. */
+  async function exchange(what: string, params: Record<string, string>, body?: Record<string, unknown>) {
+    const url = `${options.url}?${new URLSearchParams({ ...APP_PARAMS, what, ...params })}`;
+    let response: Awaited<ReturnType<Fetch>>;
+    let text: string;
+    try {
+      response = await options.fetch(url, {
+        method: body ? 'POST' : 'GET',
+        headers: {
+          'User-Agent': SSI_APP_USER_AGENT, Accept: 'application/json',
+          ...(body && { 'Content-Type': 'application/x-www-form-urlencoded' }),
+        },
+        ...(body && { body: new URLSearchParams({ json_data: JSON.stringify(body) }).toString() }),
+        signal: AbortSignal.timeout(options.timeoutMs),
+      });
+      text = await response.text();
+    } catch (error) {
+      // The error of a failed fetch can quote the URL; keep only its kind.
+      throw new SsiError('unavailable', `${what}: ${error instanceof Error ? error.name : 'network error'}`);
+    }
+    const data = parseJson(text);
+    // The app reads a body status 401 as signed out under any HTTP status. A false `authenticated` is read the
+    // same here, kept from the community report [S]; the app itself reads only `status` 401. While signing in
+    // it means a refused password, which the caller decides.
+    if (isObject(data) && (data.status === 401 || data.status === '401')) throw new SsiError('signed_out', what);
+    if (what !== 'authenticate' && isObject(data) && data.authenticated === false) throw new SsiError('signed_out', what);
+    if (response.status === 503) throw new SsiError('maintenance', `${what}: HTTP 503`);
+    return { status: response.status, data };
+  }
+
   return {
     async call(what, params, body) {
-      const url = `${options.url}?${new URLSearchParams({ ...APP_PARAMS, what, ...params })}`;
-      let response: Awaited<ReturnType<Fetch>>;
-      let text: string;
-      try {
-        response = await options.fetch(url, {
-          method: body ? 'POST' : 'GET',
-          headers: {
-            'User-Agent': SSI_APP_USER_AGENT, Accept: 'application/json',
-            ...(body && { 'Content-Type': 'application/x-www-form-urlencoded' }),
-          },
-          ...(body && { body: new URLSearchParams({ json_data: JSON.stringify(body) }).toString() }),
-          signal: AbortSignal.timeout(options.timeoutMs),
-        });
-        text = await response.text();
-      } catch (error) {
-        // The error of a failed fetch can quote the URL; keep only its kind.
-        throw new SsiError('unavailable', `${what}: ${error instanceof Error ? error.name : 'network error'}`);
-      }
-      const data = parseJson(text);
-      // The app reads a body status 401 as signed out under any HTTP status. A false `authenticated` is read the
-      // same here, kept from the community report [S]; the app itself reads only `status` 401. While signing in
-      // it means a refused password, which the caller decides.
-      if (isObject(data) && (data.status === 401 || data.status === '401')) throw new SsiError('signed_out', what);
-      if (what !== 'authenticate' && isObject(data) && data.authenticated === false) throw new SsiError('signed_out', what);
-      if (response.status === 503) throw new SsiError('maintenance', `${what}: HTTP 503`);
-      if (response.status < 200 || response.status >= 300) throw new SsiError('unavailable', `${what}: HTTP ${response.status}`);
+      const { status, data } = await exchange(what, params, body);
+      if (status < 200 || status >= 300) throw new SsiError('unavailable', `${what}: HTTP ${status}`);
       if (data === undefined) throw new SsiError('bad_response', `${what}: not JSON`);
       if (!isObject(data)) throw new SsiError('bad_response', `${what}: not an object`);
       return data;
+    },
+
+    async lookup(what, params) {
+      const { status, data } = await exchange(what, params);
+      if (status === 404) return null;
+      if (status < 200 || status >= 300) throw new SsiError('unavailable', `${what}: HTTP ${status}`);
+      if (data === undefined) throw new SsiError('bad_response', `${what}: not JSON`);
+      if (Array.isArray(data) && data.length === 1 && isObject(data[0])) return data[0];
+      throw new SsiError('bad_response', `${what}: not one row`);
     },
   };
 }

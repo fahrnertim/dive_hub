@@ -4,7 +4,7 @@
 // every later call carries the token. The transport (ssi-transport.ts) makes the calls and reads SSI's answers.
 
 import type { SiteWaterType } from '../../vocabulary.js';
-import { WATER_OF_BOW } from './ssi-sites.js';
+import { readSsiSite } from './ssi-site-record.js';
 import { createSsiTransport, SSI_APP_USER_AGENT, SsiError, type Fetch } from './ssi-transport.js';
 
 export { SSI_APP_USER_AGENT };
@@ -36,6 +36,8 @@ export interface SsiLogbookSite {
   country: string | null;
   /** From SSI's `bow` (body of water): salt or fresh; artificial or missing is null (as in ssi-sites.ts). */
   waterType: SiteWaterType | null;
+  /** The account (SSI's `mid`) the site is private to (`_is_private` set); null for a public site. */
+  privateOwner: string | null;
 }
 
 /**
@@ -93,6 +95,10 @@ export interface SsiClient {
   cardImage(url: string): Promise<{ bytes: Uint8Array; mediaType: string }>;
   /** Creates a dive (`odin_user_log_id: null`) or updates one; returns SSI's dive ID. */
   save(token: string, record: SsiRecord): Promise<{ id: string }>;
+  /** One site by its ID (`get_divesite`); null when SSI doesn't know it (HTTP 404). */
+  site(token: string, id: string): Promise<SsiRecord | null>;
+  /** Creates a site (`odin_dive_sites_id: null`) from the app's site row; returns SSI's site ID. Sites can't be deleted at SSI. */
+  saveSite(token: string, row: SsiRecord): Promise<string>;
 }
 
 export interface SsiClientOptions {
@@ -106,7 +112,6 @@ export interface SsiClientOptions {
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const idText = (v: unknown) => (typeof v === 'number' && Number.isInteger(v) && v > 0 ? String(v)
   : typeof v === 'string' && /^[1-9]\d*$/.test(v) ? v : null);
-const numberOrNull = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v !== 0 ? v : null);
 
 export function createSsiClient(options: SsiClientOptions): SsiClient {
   const fetchImpl: Fetch = options.fetch ?? ((url, init) => fetch(url, init));
@@ -114,7 +119,8 @@ export function createSsiClient(options: SsiClientOptions): SsiClient {
   const timeoutMs = options.timeoutMs ?? 60_000;
   const cardImageBase = (options.cardImageBase ?? DEFAULT_CARD_IMAGE_BASE).replace(/\/+$/, '');
 
-  const { call } = createSsiTransport({ url: base, fetch: fetchImpl, timeoutMs });
+  const transport = createSsiTransport({ url: base, fetch: fetchImpl, timeoutMs });
+  const { call } = transport;
 
   return {
     async signIn(email, password) {
@@ -131,16 +137,11 @@ export function createSsiClient(options: SsiClientOptions): SsiClient {
       if (!Array.isArray(data.logbook_details)) throw new SsiError('bad_response', 'get_divelog: no logbook_details');
       const dives = data.logbook_details.filter(isObject)
         .filter((d) => d.odin_user_log_deleted !== 1 && d.odin_user_log_deleted !== true);
-      const sites = (Array.isArray(data.logbook_sites) ? data.logbook_sites : []).filter(isObject).flatMap((s) => {
-        const id = idText(s.odin_dive_sites_id);
-        const name = typeof s.odin_dive_sites_name === 'string' ? s.odin_dive_sites_name : null;
-        if (!id || !name || s.odin_dive_sites_deleted === 1) return [];
-        const latitude = numberOrNull(s.odin_dive_sites_lat);
-        const longitude = numberOrNull(s.odin_dive_sites_lon);
-        const country = [s.odin_countries_code_iso, s.odin_dive_sites_country_iso3, s.odin_dive_sites_meta_country]
-          .find((c): c is string => typeof c === 'string' && c.length > 0) ?? null;
-        const waterType = typeof s.bow === 'string' ? WATER_OF_BOW[s.bow] ?? null : null;
-        return [{ id, name, latitude: latitude !== null && longitude !== null ? latitude : null, longitude: latitude !== null ? longitude : null, country, waterType }];
+      const sites = (Array.isArray(data.logbook_sites) ? data.logbook_sites : []).flatMap((row): SsiLogbookSite[] => {
+        const site = readSsiSite(row);
+        if (!site || site.deleted) return [];
+        const { id, name, latitude, longitude, country, waterType, privateOwner } = site;
+        return [{ id, name, latitude, longitude, country, waterType, privateOwner }];
       });
       const buddies = (Array.isArray(data.logbook_buddies) ? data.logbook_buddies : []).filter(isObject).flatMap((b) => {
         const id = idText(b.id);
@@ -214,6 +215,21 @@ export function createSsiClient(options: SsiClientOptions): SsiClient {
       const reason = typeof answer.error === 'string' && answer.error ? answer.error
         : `no dive id in the answer (ok: ${JSON.stringify(answer.ok ?? null)}, fields: ${Object.keys(data).join(', ')}${answer === data ? '' : ` / success: ${Object.keys(answer).join(', ')}`})`;
       throw new SsiError('refused', `save_divelog: ${reason}`);
+    },
+
+    async site(token, id) {
+      return transport.lookup('get_divesite', { token, dsid: id });
+    },
+
+    async saveSite(token, row) {
+      const data = await call('save_divesite', { token }, row);
+      // The new ID is at the top level; `success.New` holds it too (checked 2026-10-24).
+      const created = isObject(data.success) && isObject(data.success.New) ? data.success.New : null;
+      const id = idText(data.odin_dive_sites_id) ?? idText(created?.odin_dive_sites_id);
+      if (id) return id;
+      // SSI's reason, else which fields it sent instead (names only).
+      const reason = typeof data.error === 'string' && data.error ? data.error : `no site id in the answer (fields: ${Object.keys(data).join(', ')})`;
+      throw new SsiError('refused', `save_divesite: ${reason}`);
     },
   };
 }

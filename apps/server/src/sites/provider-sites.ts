@@ -79,7 +79,8 @@ export async function siteForProvider(
     if (accountId === null) await writeRevision(tx, 'dive_site', outlook.siteId, options.actor, 'link', idChange);
     return outlook.siteId;
   }
-  if (!options.allowCreate) return null;
+  // A site we know only by its ID (a name-less one: the Provider left it out of its lists) is not made.
+  if (!options.allowCreate || !s.name) return null;
   const imported: ImportedValues = {
     name: s.name, position: s.position, country: s.country, waterBody: null, description: null, maxDepthM: null, waterType: s.waterType,
   };
