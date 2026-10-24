@@ -4,7 +4,7 @@
 // run would do (the preview), and it never calls a Provider.
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { connection, dive, diveSite, pushRun, pushRunItem, type PushRunLeftOut } from '../db/schema.js';
+import { connection, dive, diveSite, providerConflict, pushRun, pushRunItem, type PushRunLeftOut } from '../db/schema.js';
 import { asksFor, diveListFilter } from '../dives/list-filter.js';
 import { managedDiverIds } from '../dives/dive-service.js';
 import { isUniqueViolation } from '../sites/site-service.js';
@@ -227,18 +227,27 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
     if (conn.state === 'needs_sign_in') throw new ProviderServiceError('provider_sign_in_needed', named(registry.get(conn.provider)));
   }
 
+  /** Conflicts that still wait and carry these runs' ids: an entry a later send closed is gone, one another run found again carries that run's id. */
+  async function conflictsOf(runIds: string[]) {
+    const waiting = new Map<string, number>();
+    if (runIds.length === 0) return waiting;
+    const rows = await db.select({ runId: providerConflict.runId, n: sql<number>`count(*)`.mapWith(Number) }).from(providerConflict)
+      .where(inArray(providerConflict.runId, runIds)).groupBy(providerConflict.runId);
+    for (const r of rows) if (r.runId) waiting.set(r.runId, r.n);
+    return waiting;
+  }
   async function view(row: RunRow) {
     const items = await db.select({ state: pushRunItem.state }).from(pushRunItem).where(eq(pushRunItem.runId, row.id));
-    return viewOf(row, countsOf(items));
+    return viewOf(row, countsOf(items), (await conflictsOf([row.id])).get(row.id) ?? 0);
   }
-  function viewOf(row: RunRow, counts: ReturnType<typeof countsOf>) {
+  function viewOf(row: RunRow, counts: ReturnType<typeof countsOf>, conflicts: number) {
     let pauseMs = 0;
     try { pauseMs = runner(row.provider).run.pauseMs; } catch { /* the Provider is gone from this instance */ }
     return {
       id: row.id, connectionId: row.connectionId, provider: row.provider, diverId: row.diverId, status: row.status, stopCode: row.stopCode,
       updates: row.updates, updatesRemovingVerification: row.updatesRemovingVerification, numbers: row.numbers,
       numbersRemovingVerification: row.numbersRemovingVerification,
-      cancelRequested: row.cancelRequestedAt !== null, counts, leftOut: row.leftOut, pauseMs,
+      cancelRequested: row.cancelRequestedAt !== null, counts, conflicts, leftOut: row.leftOut, pauseMs,
       createdAt: row.createdAt, startedAt: row.startedAt, finishedAt: row.finishedAt, dismissedAt: row.dismissedAt,
     };
   }
@@ -315,7 +324,8 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
       const runs = await db.select().from(pushRun).where(eq(pushRun.userId, userId)).orderBy(desc(pushRun.createdAt), desc(pushRun.id));
       if (runs.length === 0) return [];
       const items = await db.select({ runId: pushRunItem.runId, state: pushRunItem.state }).from(pushRunItem).where(inArray(pushRunItem.runId, runs.map((r) => r.id)));
-      return runs.map((r) => viewOf(r, countsOf(items.filter((i) => i.runId === r.id))));
+      const waiting = await conflictsOf(runs.map((r) => r.id));
+      return runs.map((r) => viewOf(r, countsOf(items.filter((i) => i.runId === r.id)), waiting.get(r.id) ?? 0));
     },
 
     async get(userId: string, runId: string) {
@@ -327,7 +337,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
       }).from(pushRunItem).innerJoin(dive, eq(dive.id, pushRunItem.diveId)).leftJoin(diveSite, eq(diveSite.id, dive.siteId))
         .where(eq(pushRunItem.runId, runId)).orderBy(asc(pushRunItem.position));
       return {
-        ...viewOf(row, countsOf(items)),
+        ...viewOf(row, countsOf(items), (await conflictsOf([row.id])).get(row.id) ?? 0),
         items: items.map(({ number, startsAt, siteName, ...item }) => ({ ...item, dive: { number, startsAt, siteName } })),
       };
     },

@@ -17,7 +17,7 @@ import {
 type Run = {
   id: string; status: string; stopCode: string | null; cancelRequested: boolean;
   counts: { total: number; waiting: number; sent: number; skipped: number; failed: number };
-  leftOut: Record<string, number>; pauseMs: number;
+  leftOut: Record<string, number>; pauseMs: number; conflicts: number;
   items: { diveId: string; position: number; action: string; state: string; outcome: string | null; reason: string | null }[];
 };
 type Preview = {
@@ -226,6 +226,30 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
     expect(done).toMatchObject({ status: 'done', counts: { total: 1, sent: 1 }, leftOut: { requirementsUnmet: 1 } });
     expect((await statusOf(good, 'ssi')).current).not.toBeNull();
     expect((await statusOf(blocked, 'ssi')).current).toBeNull();
+  });
+
+  it("a run sends a Dive with a conflict without that field, the entry waits, and the run's report counts it", async () => {
+    const id = await upload(day(1));
+    await atSsiSite(id);
+    await edit(id, 'Reef');
+    const first = (await start({ dives: all }, ssiConnectionId).then((r) => r.json())) as Run;
+    await runToEnd(first.id);
+    expect((await run(first.id)).conflicts).toBe(0);
+    const remote = ssi.dives.get(Number((await statusOf(id, 'ssi')).current!.remoteId))!;
+    remote.odin_user_log_comment = 'Reef in SSI';
+    ctx.ssiClock.advance(3 * 60_000);
+    await edit(id, 'Reef here');
+    const second = (await start({ dives: all, updates: true }, ssiConnectionId).then((r) => r.json())) as Run;
+    await runToEnd(second.id);
+    const done = await run(second.id);
+    expect(done).toMatchObject({ status: 'done', conflicts: 1, counts: { sent: 1 } });
+    expect(done.items[0]).toMatchObject({ state: 'sent', outcome: 'updated' });
+    expect(remote.odin_user_log_comment).toBe('Reef in SSI');
+    const waiting = await json<{ connections: { connectionId: string; entries: { diveId: string; fields: object[] }[] }[] }>('GET', '/api/provider-conflicts');
+    expect(waiting.connections.find((c) => c.connectionId === ssiConnectionId)!.entries).toMatchObject([
+      { diveId: id, fields: [{ field: 'notes', hub: 'Reef here', provider: 'Reef in SSI' }] },
+    ]);
+    expect((await json<Run[]>('GET', '/api/push-runs')).find((r) => r.id === second.id)!.conflicts).toBe(1);
   });
 
   it('skips a dive already at SSI at the same time, and saves nothing for it', async () => {

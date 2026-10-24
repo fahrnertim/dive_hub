@@ -558,6 +558,10 @@ repeatedly).
 - **Name a number held by a dive only at the Provider** (`heldAtProvider`, `counts.numberHeldAtProvider`,
   `leftOut.numberHeldAtProvider`: known only when `numbers` is chosen, as the preview then reads the Provider's logbook once):
   the wanted number and the holder's time, and lead to the Connection's import. Nothing there is renumbered.
+- **Say how many Conflicts wait** (`conflicts` on the run, also in the list): a Dive with a Conflict in a run is sent without that field
+  (it stays as the Provider has it) and its item keeps `outcome: updated`. One entry per Dive and Provider waits under "Needs your
+  decision" (`GET /api/provider-conflicts`). The report says how many wait and links there; the count is of the entries that still
+  carry the run's id, so one a later send closed is not counted.
 - **A run stopped between the two saves of a swap** leaves one pair sharing a number at the Provider until it goes on or the
   next run is made; items with `sharesWithDiveId` that were `sent` say so in the report.
 
