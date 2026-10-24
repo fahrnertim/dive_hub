@@ -35,11 +35,21 @@ export async function record(q: Db | Tx, entry: ConflictEntry): Promise<void> {
     .onConflictDoUpdate({ target: [providerConflict.diveId, providerConflict.provider], set: values });
 }
 
-/** The fields of the Dive's open entry at the Provider (none when there is no entry). */
-export async function openFields(q: Db | Tx, diveId: string, provider: string): Promise<SyncedField[]> {
-  const rows = await q.select({ fields: providerConflict.fields }).from(providerConflict)
+/** The Dive's entry at the Provider: the remote dive it is about and its fields; null when there is none. */
+export async function entryOf(q: Db | Tx, diveId: string, provider: string): Promise<{ remoteId: string; fields: ConflictField[] } | null> {
+  const [row] = await q.select({ remoteId: providerConflict.remoteId, fields: providerConflict.fields }).from(providerConflict)
     .where(and(eq(providerConflict.diveId, diveId), eq(providerConflict.provider, provider)));
-  return fieldsOf(rows[0]?.fields ?? []).map((f) => f.field);
+  return row ? { remoteId: row.remoteId, fields: fieldsOf(row.fields) } : null;
+}
+
+/**
+ * The fields of the Dive's open entry at the Provider (none when there is no entry). With `remoteId`, only an entry
+ * about that remote dive counts: one about a dive no longer the Dive's current one blocks nothing.
+ */
+export async function openFields(q: Db | Tx, diveId: string, provider: string, remoteId?: string): Promise<SyncedField[]> {
+  const entry = await entryOf(q, diveId, provider);
+  if (!entry || (remoteId !== undefined && entry.remoteId !== remoteId)) return [];
+  return entry.fields.map((f) => f.field);
 }
 
 /** Removes the Dive's entry at the Provider. */

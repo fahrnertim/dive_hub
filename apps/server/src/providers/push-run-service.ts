@@ -410,8 +410,10 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
             const { push } = await pushes.setNumber(run.userId, diveId, run.provider, { sharesWithDiveId: item.shares_with_dive_id ?? undefined });
             await settle({ state: 'sent', outcome: 'numbered', pushId: push.id });
           } else {
-            const sent = await pushes.send(run.userId, diveId, run.provider);
+            // A Conflict doesn't stop a run (ADR 0056): the field is left as the Provider has it, and an entry waits.
+            const sent = await pushes.send(run.userId, diveId, run.provider, { onConflict: 'defer', runId });
             if (sent.result === 'exists') await skip('exists');
+            else if (sent.result === 'conflicts') throw new Error('a Push run defers Conflicts');
             else await settle({ state: 'sent', outcome: sent.result, pushId: sent.push.id });
           }
         }

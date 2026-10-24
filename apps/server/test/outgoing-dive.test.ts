@@ -1,7 +1,7 @@
 // What leaves Dive Hub of a Dive (ADR 0027, 0057): the values every Provider may take from it, read once.
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { dive, user } from '../src/db/schema.js';
+import { dive, sampleSeries, user } from '../src/db/schema.js';
 import { loadOutgoingDive } from '../src/providers/outgoing-dive.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
@@ -51,6 +51,18 @@ describe.skipIf(!(await databaseReachable()))('the outgoing Dive', () => {
     expect(out).toMatchObject({ diveMode: 'open_circuit', surfaceIntervalSeconds: 86_400, avgHeartRate: 80 });
     expect(out.samples.heartRate!.values.length).toBeGreaterThan(0);
     expect(new Set(out.samples.heartRate!.values)).toEqual(new Set([80]));
+  });
+
+  it("carries the Primary recording's tank pressure and CNS channels", async () => {
+    const id = await upload();
+    const [row] = await t.db.select({ recordingId: dive.primaryRecordingId }).from(dive).where(eq(dive.id, id));
+    await t.db.insert(sampleSeries).values([
+      { recordingId: row!.recordingId!, channel: 'tankPressure', offsetsMs: [0, 60_000], values: [200, 190] },
+      { recordingId: row!.recordingId!, channel: 'cns', offsetsMs: [0, 60_000], values: [0, 1] },
+    ]).onConflictDoNothing();
+    const { samples } = await outgoing(id);
+    expect(samples.tankPressure).toEqual({ offsetsMs: [0, 60_000], values: [200, 190] });
+    expect(samples.cns).toEqual({ offsetsMs: [0, 60_000], values: [0, 1] });
   });
 
   it('an apnea session is apnea', async () => {

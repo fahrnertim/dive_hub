@@ -8,7 +8,7 @@ import { requireAdmin, requireUser } from '../auth/fastify.js';
 import { Problem, problem, PROBLEMS, providerProblem, type ProblemCode } from '../http/problems.js';
 import { CYLINDER_MATERIALS, DIVE_IMPORT_MODES, MATCHING_WINDOWS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES } from '../db/schema.js';
 import { ImportView, toImportView } from '../routes.js';
-import { SITE_SOURCES, SOURCE_INFO } from '../sites/sources.js';
+import { SOURCE_INFO } from '../sites/sources.js';
 import type { BuddyService } from './buddy-service.js';
 import type { ConnectionService } from './connection-service.js';
 import type { DiveImportService } from './dive-import.js';
@@ -173,6 +173,28 @@ const PushView = Type.Object({
   createdAt: DateTime,
 });
 
+const ConflictCylinder = Type.Object({
+  volumeL: Nullable(Type.Number()),
+  material: Nullable(Type.Enum([...CYLINDER_MATERIALS])),
+  startPressureBar: Nullable(Type.Number()),
+  endPressureBar: Nullable(Type.Number()),
+  gas: Nullable(Type.Object({ o2: Type.Number(), he: Type.Number() }, { description: 'O₂ and He as percent' })),
+});
+const ConflictValue = Type.Union([Type.String(), Type.Number(), Type.Array(Type.String()), ConflictCylinder], {
+  description: 'site: its name; buddies: the names of Divers here (people Dive Hub doesn\'t know are left out); startsAt: local "YYYY-MM-DD HH:MM"; '
+    + 'cylinder: the tank typed at the Provider, or the Dive\'s only Cylinder in the same values (null: none); '
+    + 'lead: the weight typed at the Provider, or the total of the Dive\'s Lead, in kg (null: none)',
+});
+/** A User's choice for one Conflict: the Dive's value goes out (hub), or the Provider's comes in (provider). */
+const ConflictChoice = Type.Enum(['hub', 'provider']);
+
+/** One field changed on both sides, differently: both values as the import preview says them (ADR 0056). */
+const ConflictFieldView = Type.Object({
+  field: Type.Enum([...SYNCED_FIELDS], { description: 'The field the two sides differ on' }),
+  hub: Nullable(ConflictValue),
+  provider: Nullable(ConflictValue),
+});
+
 const StatusView = Type.Object({
   provider: Type.String(),
   connection: Nullable(Type.Object({ id: Type.String(), state: Type.Enum(['active', 'needs_sign_in']), accountLabel: Type.String() }, {
@@ -196,6 +218,10 @@ const StatusView = Type.Object({
       removesVerification: Type.Boolean({ description: 'Setting it can remove a verification the dive has there: warn before' }),
     }, { description: 'ADR 0048; null when the Connection doesn\'t follow, the Provider declares no numbers or the Dive has no number' })),
   }, { description: 'The remote dive this Dive has now; null when none (never sent, deleted)' })),
+  conflicts: Nullable(Type.Array(ConflictFieldView, {
+    description: 'The open entry of Conflicts about the current remote dive (a Push run left these fields as the Provider has them): '
+      + 'say so and offer to decide (send with conflicts). null when none waits',
+  })),
   pushes: Type.Array(PushView, { description: 'Newest first' }),
 });
 
@@ -460,18 +486,6 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       description: 'A Recording under 2 minutes that stayed above 3 m (a false start): the entry never links to it by itself, so it is asked about even as the only Dive',
     }),
   });
-  const ConflictCylinder = Type.Object({
-    volumeL: Nullable(Type.Number()),
-    material: Nullable(Type.Enum([...CYLINDER_MATERIALS])),
-    startPressureBar: Nullable(Type.Number()),
-    endPressureBar: Nullable(Type.Number()),
-    gas: Nullable(Type.Object({ o2: Type.Number(), he: Type.Number() }, { description: 'O₂ and He as percent' })),
-  });
-  const ConflictValue = Type.Union([Type.String(), Type.Number(), Type.Array(Type.String()), ConflictCylinder], {
-    description: 'site: its name; buddies: the names of Divers here (people Dive Hub doesn\'t know are left out); startsAt: local "YYYY-MM-DD HH:MM"; '
-      + 'cylinder: the tank typed at the Provider, or the Dive\'s only Cylinder in the same values (null: none); '
-      + 'lead: the weight typed at the Provider, or the total of the Dive\'s Lead, in kg (null: none)',
-  });
   const GoneSummary = Type.Object({
     empty: Type.Boolean({ description: 'The Provider\'s logbook came back empty: nothing was compared, and an empty logbook is never a finding' }),
     compared: Type.Integer({ description: 'Dives compared: live, and sent or linked through this Connection' }),
@@ -649,7 +663,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       maxDepthM: Nullable(Type.Number()),
       site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
       remoteId: Type.String(),
-      fields: Type.Array(Type.Object({ field: Type.String({ description: 'The field the two sides differ on' }), hub: Nullable(ConflictValue), provider: Nullable(ConflictValue) })),
+      fields: Type.Array(ConflictFieldView),
       foundAt: DateTime,
     })),
   });
@@ -775,15 +789,33 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     schema: {
       summary: 'Send the Dive to the Provider: updates its remote dive, or creates one',
       description: 'Before creating, a dive at about the same time already at the Provider is answered with outcome exists and nothing is '
-        + 'sent; send again with onExisting link (tie the Dive to it) or create (a second dive). Mind the Provider\'s notices.',
+        + 'sent; send again with onExisting link (tie the Dive to it) or create (a second dive). Mind the Provider\'s notices. '
+        + 'An update is three-way (ADR 0056): what changed only at the Provider is taken into the Dive first (taken), a value removed here '
+        + 'is removed there, and a field changed on both sides is a Conflict: outcome conflicts, nothing sent. Send again with conflicts, '
+        + 'a choice per field (hub preselected).',
       params: DiveProviderParams,
-      body: Type.Object({ onExisting: Type.Optional(Type.Enum(['link', 'create'])) }, { additionalProperties: false }),
+      body: Type.Object({
+        onExisting: Type.Optional(Type.Enum(['link', 'create'])),
+        conflicts: Type.Optional(Type.Object({
+          site: Type.Optional(ConflictChoice), notes: Type.Optional(ConflictChoice), buddies: Type.Optional(ConflictChoice),
+          cylinder: Type.Optional(ConflictChoice), lead: Type.Optional(ConflictChoice), startsAt: Type.Optional(ConflictChoice),
+          durationSeconds: Type.Optional(ConflictChoice), maxDepthM: Type.Optional(ConflictChoice), avgDepthM: Type.Optional(ConflictChoice),
+          waterTemperatureC: Type.Optional(ConflictChoice),
+        }, {
+          additionalProperties: false,
+          description: 'Per Conflict: hub sends the Dive\'s value, provider takes the Provider\'s. A field that is no Conflict any more is ignored',
+        })),
+      }, { additionalProperties: false }),
       response: {
         200: Type.Object({
-          outcome: Type.Enum(['created', 'updated', 'linked', 'exists'], {
-            description: 'exists: nothing was sent; a dive at the same time is there. Send again with onExisting link or create',
+          outcome: Type.Enum(['created', 'updated', 'linked', 'exists', 'conflicts'], {
+            description: 'exists: nothing was sent; a dive at the same time is there. Send again with onExisting link or create. '
+              + 'conflicts: nothing was sent; list the fields with both values and send again with conflicts',
           }),
           existing: Nullable(Existing),
+          conflicts: Nullable(Type.Array(ConflictFieldView, { description: 'With outcome conflicts: the fields changed on both sides' })),
+          taken: Nullable(Type.Array(Type.Enum([...SYNCED_FIELDS]), { description: 'With outcome updated: the fields taken from the Provider into the Dive first' })),
+          deferred: Nullable(Type.Array(Type.Enum([...SYNCED_FIELDS]), { description: 'With outcome updated: the fields left as the Provider has them' })),
           status: StatusView,
         }),
         ...errors,
@@ -791,9 +823,13 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     },
   }, async (request) => {
     const { id, provider } = request.params;
-    const sent = await pushes.send(request.user!.id, id, provider, request.body.onExisting);
+    const { onExisting, conflicts: choices } = request.body;
+    const sent = await pushes.send(request.user!.id, id, provider, { ...(onExisting && { onExisting }), ...(choices && { conflicts: choices }) });
     return {
       outcome: sent.result, existing: sent.result === 'exists' ? sent.existing : null,
+      conflicts: sent.result === 'conflicts' ? sent.conflicts : null,
+      taken: sent.result === 'updated' ? sent.taken : null,
+      deferred: sent.result === 'updated' ? sent.deferred : null,
       status: statusView(await pushes.status(request.user!.id, id, provider)),
     };
   });

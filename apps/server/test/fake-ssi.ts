@@ -94,6 +94,8 @@ export interface FakeSsi {
   expiredAnswer: { status: number; body: unknown } | null;
   /** Answer saves as SSI does for a client that isn't its app: with an invented dive ID, storing nothing. */
   dropSaves: boolean;
+  /** While set, every token expires right after the next logbook read, as when one runs out in the middle of an action. */
+  expireAfterRead: boolean;
   /** Adds a dive as if it had been logged in the SSI app. */
   addDive(accountId: number, values: SsiRecord): number;
 }
@@ -149,6 +151,7 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
     failWith: null,
     expiredAnswer: null,
     dropSaves: false,
+    expireAfterRead: false,
     expireTokens: () => tokens.clear(),
     addDive(accountId, values) {
       const id = nextDiveId++;
@@ -196,6 +199,10 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
         // The real logbook lists the sites of the account's dives; the fake's account has dived at all of them.
         const buddies = fake.buddies.filter((b) => b.owner === accountId)
           .map(({ owner: _owner, ...b }) => ({ ...b, master_id: b.buddy_master_id, forename: b.firstname, confirmed: 1, deleted: 0, favorite: 0 }));
+        if (fake.expireAfterRead) {
+          fake.expireAfterRead = false;
+          tokens.clear();
+        }
         return answer({ verified_dives: 0, logbook_details: own, logbook_sites: fake.sites, logbook_buddies: buddies });
       }
       if (what === 'get_ccards') {

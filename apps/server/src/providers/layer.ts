@@ -21,7 +21,7 @@ export function createProviderLayer(deps: { db: Db; secrets: SecretBox; blobs: B
   const providers = createProviderRegistry(deps.adapters);
   const leases = createLeases({ db: deps.db, ...(deps.clock && { clock: deps.clock }) });
   const connections = createConnectionService({ db: deps.db, registry: providers, secrets: deps.secrets, leases });
-  const pushes = createPushService({ db: deps.db, registry: providers, connections, leases });
+  const pushes = createPushService({ db: deps.db, blobs: deps.blobs, registry: providers, connections, leases });
   const pushRuns = createPushRunService({ db: deps.db, registry: providers, pushes });
   const buddies = createBuddyService({ registry: providers, connections, divers: createDiverService(deps.db) });
   const diveImports = createDiveImportService({ db: deps.db, blobs: deps.blobs, registry: providers, connections });

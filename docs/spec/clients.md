@@ -496,6 +496,20 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
   scanning their buddy QR code, then update).
 - **`outcome: exists`:** nothing was sent; a dive at the same time is there. Show it (number, time, depth, minutes)
   and ask: link to it (`onExisting: link`) or send a new one (`create`).
+- **An update is three-way** ([ADR 0056](../decisions/0056-two-way-exchange-and-automation.md)): per field against what the
+  Provider had when Dive Hub last saw its dive, a change made only at the Provider is taken into the Dive first (one
+  Revision, "Updated from its source"), a change made only here is sent, and **a removal is sent too**: a value cleared
+  here is cleared at the Provider (the site never is). Say so where the User updates ("A note removed here is removed in
+  SSI too").
+  - **`outcome: conflicts`:** nothing was sent; `conflicts` lists the fields changed on both sides, each with `hub` and
+    `provider` said as in the import preview. Show them with a choice per field, **"keep Dive Hub's" preselected** as in
+    the import preview, and send again with `conflicts` (`{ notes: 'hub', lead: 'provider' }`: `hub` sends the Dive's value,
+    `provider` takes the Provider's). A choice for a field that is no Conflict any more is ignored.
+  - **`taken`** (with `updated`): the fields that came back from the Provider. Say what came back ("Notes came from SSI").
+  - **`deferred`** (with `updated`): the fields left as the Provider has them (from a Push run, or a field the Provider
+    doesn't take from Dive Hub). Say which.
+  - **`status.conflicts`:** an open entry (a Push run left these fields as the Provider has them). Say so on the panel,
+    with both values, and offer to decide (the same send with `conflicts`).
 - **Must show the Provider's `notices`:** `shows_unconfirmed` means it shows the dive as unconfirmed (SSI: only a dive
   center can confirm it there). `presents_as_app` means Dive Hub introduces itself to the Provider as the Provider's own
   app, which the Provider hasn't agreed to and could object to ([ADR 0049](../decisions/0049-ssi-app-user-agent.md)):
@@ -660,7 +674,9 @@ import preview.) *Web:* `GoneDives.tsx`, the Review page, the logbook's strip an
 differently, found while sending a Dive. One entry per Dive and Provider waits under "Needs your decision" on the Review
 page, beside the gone dives: `entries` carry the Dive's number, time, depth, duration and site, the `remoteId`, and
 `fields`, each with `hub` and `provider` values said as in the import preview. An entry whose Dive is deleted or whose
-remote dive is no longer the Dive's current one is not listed. Only the Connection's owner sees it.
+remote dive is no longer the Dive's current one is not listed. Only the Connection's owner sees it. A Push run makes
+them: it sends the Dive without the field. Deciding is the Dive's send with `conflicts`
+([Sending a Dive](#sending-a-dive-to-a-provider-ssi)); a successful send that settles the fields removes the entry.
 
 ### Logbook checks
 ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md); `GET /api/logbook-checks`, computed each time)

@@ -257,9 +257,9 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
 
   /**
    * Takes the Provider's values for these fields (ADR 0030, amended): one Revision (`update`). A Dive that was up to date
-   * at the Provider stays so (a new `link` Push with its fingerprint).
+   * at the Provider stays so (a new `link` Push with its fingerprint), unless `sending`: the send's own Push follows.
    */
-  async function takeChanges(tx: Tx, run: ProviderRun, diveId: string, d: ImportedDive, fields: SyncedField[], actor: Actor) {
+  async function takeChanges(tx: Tx, run: ProviderRun, diveId: string, d: ImportedDive, fields: SyncedField[], actor: Actor, sending = false) {
     const [current] = await tx.select().from(dive).where(eq(dive.id, diveId)).for('update');
     if (!current) return false;
     const pushes = await tx.select().from(push).where(and(eq(push.diveId, diveId), eq(push.provider, run.adapter.id)))
@@ -277,7 +277,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     await tx.update(dive).set({ ...t.columns, version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
     await writeRevision(tx, 'dive', diveId, actor, 'update', changes);
     if (changes.startsAt) await renumber(tx, [current.diverId]);
-    if (wasUpToDate && remote) {
+    if (wasUpToDate && remote && !sending) {
       const loaded = await loadOutgoingDive(tx, run.userId, diveId);
       await tx.insert(push).values({
         diveId, connectionId: run.connectionId, userId: run.userId, provider: run.adapter.id, mode: run.adapter.dives!.mode,

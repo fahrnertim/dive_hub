@@ -1,17 +1,27 @@
 // Pushes to Providers (ADR 0024, 0027): what every Provider needs when a Dive goes out. It records each action, knows
 // the remote record a Dive has now, works out "outdated" from the adapter's fingerprint, runs one action per Dive and
 // Provider at a time (a lease, leases.ts), deletes at several Providers only once each would, and turns adapter errors
-// into problem codes. What a Provider does with the Dive is the adapter's.
+// into problem codes. An update is three-way (ADR 0056): against the base, what changed only at the Provider is taken
+// first, a removal goes out, and a field changed on both sides is a Conflict. What a Provider does with the Dive is the
+// adapter's.
 import { and, desc, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { connection, dive, push } from '../db/schema.js';
-import type { ConnectionService } from './connection-service.js';
+import type { SiteSource } from '../sites/sources.js';
+import type { BlobStore } from '../storage/blob-store.js';
+import { close, entryOf, openFields, record as recordConflict, type ConflictField } from './conflicts.js';
+import type { ConnectionRow, ConnectionService } from './connection-service.js';
+import { createDiveChanges, type ProviderRun } from './dive-changes.js';
 import { LeaseBusy, type Leases } from './leases.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
-import { ProviderError, referenceOf, type Delivered, type DiveExport, type OutgoingDive, type ProviderAdapter, type RemoteDive, type RemoteSite } from './provider.js';
+import {
+  DIVE_FIELDS, ProviderError, referenceOf, type Delivered, type DiveExport, type DiveExportAction, type DiveField, type ImportContext,
+  type ImportedDive, type Leave, type OutgoingDive, type ProviderAdapter, type RemoteDive, type RemoteSite,
+} from './provider.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { currentRemote, type PushRow } from './remote-state.js';
 import { forProvider, leftOutBy, unmetRequirements } from './requirements.js';
+import { comparableOf, planSend, same, type Choice, type Comparable, type SendPlan, type SyncedField } from './three-way.js';
 
 /** What deleting a Dive at Providers did: each copy deleted or kept, and why it stopped, if it did. */
 export interface Removal {
@@ -20,9 +30,47 @@ export interface Removal {
   failure: ProviderServiceError | null;
 }
 
+/** How a send goes about what the Provider has (ADR 0056). */
+export interface SendOptions {
+  /** Before creating, a dive at the same time there: link to it, or create a second one. */
+  onExisting?: 'link' | 'create';
+  /** The User's choice per Conflict: Dive Hub's value (`hub`, sent) or the Provider's (taken). */
+  conflicts?: Partial<Record<SyncedField, Choice>>;
+  /**
+   * A Conflict without a choice: `ask` (the Dive's page, the default) sends nothing and answers them; `defer` (a Push
+   * run) leaves the field as the Provider has it, and an entry waits in "Needs your decision".
+   */
+  onConflict?: 'ask' | 'defer';
+  /** The Push run that sends, kept on the entry. */
+  runId?: string;
+}
+
 export type SendResult =
-  | { result: 'created' | 'updated' | 'linked'; push: PushRow }
-  | { result: 'exists'; existing: RemoteDive };
+  | { result: 'created' | 'linked'; push: PushRow }
+  /** `taken`: the fields that came from the Provider first; `deferred`: those left as the Provider has them. */
+  | { result: 'updated'; push: PushRow; taken: SyncedField[]; deferred: SyncedField[] }
+  | { result: 'exists'; existing: RemoteDive }
+  /** Nothing was sent: these fields changed on both sides. */
+  | { result: 'conflicts'; conflicts: ConflictField[] };
+
+/** Whether the Provider's `dives.fields` let this field go out: no map means every field does. */
+function exportsField(adapter: ProviderAdapter, field: DiveField): boolean {
+  const directions = adapter.capabilities.data.dives?.fields;
+  return !directions || !!directions[field]?.includes('export');
+}
+
+type Here = NonNullable<Awaited<ReturnType<ReturnType<typeof createDiveChanges>['hubOf']>>>;
+
+/** The Provider's record compared with the Dive here and the base: what an update takes, clears, keeps or asks. */
+interface Exchange {
+  run: ProviderRun;
+  remote: ImportedDive;
+  here: Here;
+  provider: Comparable;
+  plan: SendPlan;
+  /** Left as the Provider has them: deferred Conflicts, and fields that differ but don't go out to this Provider. */
+  deferred: SyncedField[];
+}
 
 const SUGGESTIONS = 20;
 /** Left to `withAccess`, which signs in again and retries the action; not a failed Push. */
@@ -51,8 +99,9 @@ export function numbersFor(conn: { followNumbers: boolean } | null, exports: Div
 }
 type NumbersFor = NonNullable<ReturnType<typeof numbersFor>>;
 
-export function createPushService(deps: { db: Db; registry: ProviderRegistry; connections: ConnectionService; leases: Leases }) {
+export function createPushService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService; leases: Leases }) {
   const { db, registry, connections, leases } = deps;
+  const changes = createDiveChanges({ db, blobs: deps.blobs });
 
   /** The Provider's dive export, or `provider_unsupported`. */
   function exporter(provider: string) {
@@ -176,6 +225,121 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
     return { unmet, outgoing: forProvider(loaded.outgoing, unmet) };
   }
 
+  type Prepared = ReturnType<typeof prepared>;
+
+  /** Refuses a Dive whose blocking requirements are unmet (ADR 0029). */
+  function requirementsMet(adapter: ProviderAdapter, p: Prepared) {
+    if (p.unmet.some((u) => u.severity === 'blocking')) {
+      throw new ProviderServiceError('provider_requirements_unmet', named(adapter), { unmet: p.unmet });
+    }
+  }
+
+  /** Recording one send's Pushes: delivered, failed (a sign-out is left to `withAccess`, which retries) or gone. */
+  function pushSteps(adapter: ProviderAdapter, conn: ConnectionRow, row: { id: string; version: number }, userId: string) {
+    const exports = adapter.capabilities.data.dives!.export!;
+    const base = { diveId: row.id, connectionId: conn.id, userId, diveVersion: row.version, remoteReference: reference(row.id) };
+    /** Who this Push couldn't carry: advisory ones nobody could send, and those the Provider doesn't have. */
+    const leftOut = (d: Delivered, p: Prepared) => {
+      const all = [...leftOutBy(p.unmet), ...(d.leftOut ?? []).map((l) => ({
+        diverId: l.diverId, name: p.outgoing.participants.find((x) => x.diverId === l.diverId)?.name ?? '', reason: l.reason,
+      }))];
+      return all.length > 0 ? all : null;
+    };
+    const delivered = (action: 'create' | 'update', d: Delivered, p: Prepared, diveVersion: number) => record(adapter, {
+      ...base, diveVersion, action, state: exports.delivery === 'confirmed' ? 'confirmed' : 'handed_over',
+      remoteId: d.remoteId, remoteNumber: d.remoteNumber, fingerprint: adapter.dives!.fingerprint(p.outgoing), payload: d.payload,
+      differences: d.differences, leftOut: leftOut(d, p),
+    });
+    const failed = async (action: 'create' | 'update', error: unknown, remoteId: string | null = null): Promise<never> => {
+      if (signedOut(error)) throw error;
+      const problem = asProblem(error, adapter);
+      await record(adapter, {
+        ...base, action, state: 'failed', remoteId, errorCode: problem instanceof ProviderServiceError ? problem.code : 'internal_error',
+      });
+      throw problem;
+    };
+    const gone = async (remoteId: string): Promise<never> => {
+      await record(adapter, { ...base, action: 'update', state: 'failed', remoteId, errorCode: 'provider_dive_gone', remoteGone: true });
+      throw new ProviderServiceError('provider_dive_gone', named(adapter));
+    };
+    return { base, delivered, failed, gone };
+  }
+
+  /**
+   * Compares the Provider's record as it is now with the Dive and the base (ADR 0056): the fields that travel both ways
+   * (as the import compares them), with the open entry's fields and the User's choices.
+   */
+  async function exchange(
+    conn: ConnectionRow, adapter: ProviderAdapter, diveId: string, remoteId: string, read: { dive: ImportedDive; context: ImportContext },
+    options: SendOptions,
+  ): Promise<Exchange> {
+    const run = await changes.runOf(db, conn.userId, adapter, {
+      diverId: conn.diverId, connectionId: conn.id, mode: conn.importMode, windowMinutes: conn.importWindowMinutes, choices: {}, context: read.context,
+    });
+    const base = await changes.baseOf(db, run, diveId, remoteId);
+    const source = (Object.keys(read.dive.siteIds)[0] ?? Object.keys(base?.siteIds ?? {})[0] ?? null) as SiteSource | null;
+    const here = (await changes.hubOf(db, run, diveId, source))!;
+    const provider = comparableOf(read.dive);
+    const plan = planSend({
+      fields: here.fields.filter((f) => exportsField(adapter, f)), base: base && comparableOf(base), provider, hub: here.hub,
+      choices: options.conflicts ?? {}, open: await openFields(db, diveId, adapter.id, remoteId), onConflict: options.onConflict ?? 'ask',
+    });
+    const deferred = [...plan.keep, ...here.fields.filter((f) => !exportsField(adapter, f) && !same(f, provider, here.hub))];
+    return { run, remote: read.dive, here, provider, plan, deferred };
+  }
+
+  /** These fields with both values, said as the import preview says them. */
+  const shownOf = (x: Exchange, fields: SyncedField[]): Promise<ConflictField[]> => Promise.all(fields.map(async (field) => ({
+    field, hub: await changes.shown(x.run, field, x.here.hub, x.here.row.siteId), provider: await changes.shown(x.run, field, x.provider, null),
+  })));
+
+  /** After an update: a Push run's Conflicts wait as the Dive's entry; any other successful send settles the entry. */
+  async function settle(x: Exchange, conn: ConnectionRow, diveId: string, remoteId: string, options: SendOptions) {
+    if (options.onConflict === 'defer' && x.plan.keep.length > 0) {
+      await recordConflict(db, {
+        diveId, provider: conn.provider, connectionId: conn.id, remoteId, fields: await shownOf(x, x.plan.keep), runId: options.runId ?? null,
+      });
+    } else await close(db, diveId, conn.provider);
+  }
+
+  /**
+   * Updates the Dive's remote dive (ADR 0056), under the lease and the action of `send`. Where the Provider reads its
+   * record (`current`) and parses a base: 1. its record now (gone: `provider_dive_gone`); 2.-4. compared with the Dive
+   * and the base, with the open entry and the choices; 5. a Conflict to ask sends nothing; 6. what changed only there is
+   * taken first (one Revision, the User's); 7. the Dive is read again; 8. the update keeps what is deferred or doesn't go
+   * out, and clears what was removed here; 9. the Push with the fingerprint of the Dive as sent; 10. the entry waits
+   * (a Push run's Conflicts) or is settled. A retry after a sign-in compares again: what was taken is equal there now.
+   */
+  async function updateThere(u: {
+    adapter: ProviderAdapter; conn: ConnectionRow; userId: string; diveId: string; action: DiveExportAction; current: PushRow;
+    steps: ReturnType<typeof pushSteps>; options: SendOptions;
+  }): Promise<SendResult> {
+    const { adapter, conn, userId, diveId, action, current, steps, options } = u;
+    const exports = adapter.capabilities.data.dives!.export!;
+    const remoteId = current.remoteId!;
+    const read = action.current && adapter.dives!.parse
+      ? await action.current(remoteId).catch((error: unknown) => steps.failed('update', error, remoteId)) : undefined;
+    if (read === null) return steps.gone(remoteId);
+    const x = read ? await exchange(conn, adapter, diveId, remoteId, read, options) : null;
+    if (x && x.plan.conflicts.length > 0) return { result: 'conflicts', conflicts: await shownOf(x, x.plan.conflicts) };
+    if (x && x.plan.take.length > 0) {
+      await db.transaction((tx) => changes.takeChanges(tx, x.run, diveId, x.remote, x.plan.take, { type: 'user', id: userId }, true));
+    }
+    const reloaded = await loadOutgoingDive(db, userId, diveId);
+    const now = prepared(exports, reloaded);
+    requirementsMet(adapter, now);
+    const wanted = numbersFor(conn, exports, reloaded.row.number);
+    const leave: Leave = {
+      keep: [...(x?.plan.keep ?? []), ...DIVE_FIELDS.filter((f) => !exportsField(adapter, f))], clear: x?.plan.clear ?? [],
+    };
+    const updated = await action.update!(remoteId, now.outgoing, current.payload, wanted?.onUpdate ? wanted.wanted : undefined, leave)
+      .catch((error: unknown) => steps.failed('update', error, remoteId));
+    if (!updated) return steps.gone(remoteId);
+    const pushed = await steps.delivered('update', { ...updated, remoteNumber: updated.remoteNumber ?? current.remoteNumber }, now, reloaded.row.version);
+    if (x) await settle(x, conn, diveId, remoteId, options);
+    return { result: 'updated', push: pushed, taken: x?.plan.take ?? [], deferred: x?.deferred ?? [] };
+  }
+
   /** The remote dive a Dive has now: whether it is up to date, and what an update would cost there (ADR 0043). */
   function remoteState(current: PushRow, dives: NonNullable<ProviderAdapter['dives']>, outgoing: OutgoingDive, numbers: NumbersFor | null) {
     const upToDate = current.fingerprint !== null && current.fingerprint === dives.fingerprint(outgoing);
@@ -210,12 +374,15 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
     const conn = await connections.forDiver(userId, row.diverId, adapter.id);
     const pushes = await pushesOf(row.id, adapter.id);
     const current = currentRemote(pushes);
+    // The open entry about the current remote dive: the Conflicts that wait (ADR 0056).
+    const entry = current ? await entryOf(db, row.id, adapter.id) : null;
     return {
       provider: adapter.id,
       connection: conn ? { id: conn.id, state: conn.state, accountLabel: conn.accountLabel } : null,
       siteId: row.siteId,
       unmet,
       current: current ? remoteState(current, dives, outgoing, numbersFor(conn, exports, row.number)) : null,
+      conflicts: entry && entry.remoteId === current?.remoteId ? entry.fields : null,
       pushes,
     };
   }
@@ -283,71 +450,42 @@ export function createPushService(deps: { db: Db; registry: ProviderRegistry; co
      * Sends the Dive: updates the remote dive it already has, or creates one. Before creating, a dive the Provider
      * already has at the same time is offered instead (`exists`), unless `onExisting` says to link to it or to create
      * anyway. A dive we sent before whose answer got lost (found by our reference) is linked without asking.
+     * An update is three-way where the Provider reads its record (ADR 0056): see `updateThere`.
      */
-    async send(userId: string, diveId: string, provider: string, onExisting?: 'link' | 'create'): Promise<SendResult> {
+    async send(userId: string, diveId: string, provider: string, options: SendOptions = {}): Promise<SendResult> {
+      const { onExisting } = options;
       const { adapter, dives, exports } = exporter(provider);
       const loaded = await loadOutgoingDive(db, userId, diveId);
       const { row } = loaded;
-      const { unmet, outgoing } = prepared(exports, loaded);
+      const sending = prepared(exports, loaded);
+      const { outgoing } = sending;
       const conn = await connectionOrThrow(userId, row.diverId, adapter);
-      if (unmet.some((u) => u.severity === 'blocking')) {
-        throw new ProviderServiceError('provider_requirements_unmet', named(adapter), { unmet });
-      }
+      requirementsMet(adapter, sending);
       const wanted = numbersFor(conn, exports, row.number);
-      const advisory = leftOutBy(unmet);
-      /** Who this Push couldn't carry: advisory ones nobody could send, and those the Provider doesn't have. */
-      const leftOut = (d: Delivered) => {
-        const all = [...advisory, ...(d.leftOut ?? []).map((l) => ({
-          diverId: l.diverId, name: outgoing.participants.find((p) => p.diverId === l.diverId)?.name ?? '', reason: l.reason,
-        }))];
-        return all.length > 0 ? all : null;
-      };
       return leased(diveId, [adapter], () => connections.withAccess(conn, async (ctx) => {
         const action = dives.open(ctx);
-        const base = { diveId, connectionId: conn.id, userId, diveVersion: row.version, remoteReference: reference(diveId) };
-        const delivered = (action_: 'create' | 'update', d: Delivered) => record(adapter, {
-          ...base, action: action_, state: exports.delivery === 'confirmed' ? 'confirmed' : 'handed_over',
-          remoteId: d.remoteId, remoteNumber: d.remoteNumber, fingerprint: dives.fingerprint(outgoing), payload: d.payload,
-          differences: d.differences, leftOut: leftOut(d),
-        });
-        const failed = async (action_: 'create' | 'update', error: unknown, remoteId: string | null = null): Promise<never> => {
-          if (signedOut(error)) throw error;
-          const problem = asProblem(error, adapter);
-          await record(adapter, {
-            ...base, action: action_, state: 'failed', remoteId,
-            errorCode: problem instanceof ProviderServiceError ? problem.code : 'internal_error',
-          });
-          throw problem;
-        };
+        const steps = pushSteps(adapter, conn, row, userId);
 
         const current = currentRemote(await pushesOf(diveId, adapter.id));
-        if (current && action.update) {
-          const updated = await action.update(current.remoteId!, outgoing, current.payload, wanted?.onUpdate ? wanted.wanted : undefined)
-            .catch((error: unknown) => failed('update', error, current.remoteId));
-          if (!updated) {
-            await record(adapter, { ...base, action: 'update', state: 'failed', remoteId: current.remoteId, errorCode: 'provider_dive_gone', remoteGone: true });
-            throw new ProviderServiceError('provider_dive_gone', named(adapter));
-          }
-          return { result: 'updated', push: await delivered('update', { ...updated, remoteNumber: updated.remoteNumber ?? current.remoteNumber }) };
-        }
+        if (current && action.update) return updateThere({ adapter, conn, userId, diveId, action, current, steps, options });
 
         if (action.find) {
           const { ours, sameTime } = await action.find(outgoing, reference(diveId));
-          const same = ours ?? (onExisting === 'create' ? null : sameTime);
-          if (same && !ours && onExisting !== 'link') return { result: 'exists', existing: same };
-          if (same) {
+          const found = ours ?? (onExisting === 'create' ? null : sameTime);
+          if (found && !ours && onExisting !== 'link') return { result: 'exists', existing: found };
+          if (found) {
             // Linked, not sent: our values aren't there yet, so the Dive shows as changed until it is updated.
             return {
               result: 'linked', push: await record(adapter, {
-                ...base, action: 'link', state: 'confirmed', remoteId: same.remoteId, remoteNumber: same.number,
+                ...steps.base, action: 'link', state: 'confirmed', remoteId: found.remoteId, remoteNumber: found.number,
                 fingerprint: ours ? dives.fingerprint(outgoing) : null,
               }),
             };
           }
         }
 
-        const created = await action.create(outgoing, reference(diveId), wanted?.onCreate ? wanted.wanted : undefined).catch((error: unknown) => failed('create', error));
-        return { result: 'created', push: await delivered('create', created) };
+        const created = await action.create(outgoing, reference(diveId), wanted?.onCreate ? wanted.wanted : undefined).catch((error: unknown) => steps.failed('create', error));
+        return { result: 'created', push: await steps.delivered('create', created, sending, row.version) };
       }));
     },
 
