@@ -5,7 +5,8 @@
 // nothing personal of a buddy is stored.
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { dive, importJob, original, recording, revision, sampleSeries } from '../src/db/schema.js';
+import { DIVE_FIELDS } from '../src/providers/provider.js';
+import { cylinder, dive, importJob, original, recording, revision, sampleSeries } from '../src/db/schema.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { createFakeSsi, computerDive, handTypedDive, type FakeSsiBuddy } from './fake-ssi.js';
@@ -429,10 +430,48 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
       outcome = await runImport({ conflicts: [{ remoteId: remote.tank!, field: 'cylinder', choice: 'provider' }] });
       expect(await cylindersOfDive(id)).toEqual([expect.objectContaining({ volumeL: 12, material: 'aluminium', workingPressureBar: 232 })]);
 
-      // SSI's tank emptied there removes nothing here.
-      Object.assign(record, { odin_user_log_tank_vol_l: 0, odin_user_log_pressure_start_bar: 0, odin_user_log_pressure_end_bar: 0, odin_user_log_var_tanktype_id: 0 });
+    }, 30_000);
+
+    it('a tank emptied at SSI removes the Dive\'s one Cylinder (ADR 0056 amends 0045); one a Recording brought stays', async () => {
+      const id = of('tank').diveId!;
+      const record = ctx.fakeSsi.dives.get(Number(remote.tank))!;
+      const typed = { odin_user_log_tank_vol_l: 12, odin_user_log_pressure_start_bar: 204, odin_user_log_pressure_end_bar: 60, odin_user_log_var_tanktype_id: 20 };
+      const empty = { odin_user_log_tank_vol_l: 0, odin_user_log_pressure_start_bar: 0, odin_user_log_pressure_end_bar: 0, odin_user_log_var_tanktype_id: 0 };
+      Object.assign(record, empty);
       await runImport();
-      expect(await cylindersOfDive(id)).toEqual([expect.objectContaining({ volumeL: 12, startPressureBar: 204 })]);
+      expect(await cylindersOfDive(id)).toEqual([]);
+      const history = (await call('GET', `/api/dives/${id}/revisions`)).json() as { cause: string; changes: Record<string, unknown> }[];
+      expect(history[0]).toMatchObject({ cause: 'update', changes: { cylinders: expect.anything() } });
+
+      // Typed again at SSI it comes back; a Recording ties it to its series, and then SSI's removal leaves it.
+      Object.assign(record, typed);
+      await runImport();
+      expect(await cylindersOfDive(id)).toHaveLength(1);
+      const [rec] = await t.db.select({ id: recording.id }).from(recording).limit(1);
+      await t.db.update(cylinder).set({ recordingId: rec!.id, channel: 'tankPressure' }).where(eq(cylinder.diveId, id));
+      Object.assign(record, empty);
+      await runImport();
+      expect(await cylindersOfDive(id)).toEqual([expect.objectContaining({ volumeL: 12, series: { recordingId: rec!.id, channel: 'tankPressure' } })]);
+    }, 30_000);
+
+    it('a Dive with two Cylinders keeps both when SSI empties its tank', async () => {
+      const id = of('nowhere').diveId!;
+      Object.assign(ctx.fakeSsi.dives.get(Number(remote.nowhere))!, { odin_user_log_tank_vol_l: 0, odin_user_log_pressure_start_bar: 0, odin_user_log_pressure_end_bar: 0, odin_user_log_var_tanktype_id: 0 });
+      await runImport();
+      expect(await cylindersOfDive(id)).toEqual([expect.objectContaining({ volumeL: 7, endPressureBar: 90 }), expect.objectContaining({ volumeL: 7, endPressureBar: 80 })]);
+    }, 30_000);
+
+    it('a note emptied at SSI is emptied here, one Revision \'Updated from its source\'', async () => {
+      remote.noted = String(ctx.fakeSsi.addDive(ERIKA, handTypedDive({ at: '2025-11-05 10:00', depthM: 14, minutes: 40, comment: 'Seen at SSI' })));
+      outcome = await runImport();
+      const id = of('noted').diveId!;
+      expect((await diveOf(id)).notes).toBe('Seen at SSI');
+      ctx.fakeSsi.dives.get(Number(remote.noted))!.odin_user_log_comment = '';
+      outcome = await runImport();
+      expect(of('noted')).toMatchObject({ result: 'updated' });
+      expect((await diveOf(id)).notes).toBeNull();
+      const history = (await call('GET', `/api/dives/${id}/revisions`)).json() as { cause: string; changes: Record<string, unknown> }[];
+      expect(history.filter((r) => r.cause === 'update' && 'notes' in r.changes)).toHaveLength(1);
     }, 30_000);
 
     it('makes the weight typed at SSI the lead of the Dive, takes a change only made at SSI, keeps a placement, and leaves several entries alone', async () => {
@@ -469,7 +508,7 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
       outcome = await runImport();
       expect(await lead(id)).toEqual(parts);
 
-      // A weight emptied at SSI removes nothing here, and where Dive Hub never saw a weight at SSI the lead here stays.
+      // With several entries a weight emptied at SSI removes none of them; where Dive Hub never saw a weight at SSI the lead here stays.
       record.odin_user_log_weight_kg = 0;
       await runImport();
       expect(await lead(id)).toEqual(parts);
@@ -478,6 +517,20 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
       Object.assign(ctx.fakeSsi.dives.get(Number(remote.atSite))!, { odin_user_log_weight_kg: 5 });
       await runImport();
       expect(await lead(never)).toEqual([{ amountKg: 7, placement: null }]);
+    }, 30_000);
+
+    it('a weight emptied at SSI removes the Dive\'s one Lead entry (ADR 0056 amends 0031)', async () => {
+      const lead = async (id: string) => (await diveOf(id) as unknown as { lead: object[] }).lead;
+      const id = of('lead').diveId!;
+      await call('PATCH', `/api/dives/${id}`, { version: (await diveOf(id)).version, lead: [{ amountKg: 10, placement: 'belt' }] });
+      const record = ctx.fakeSsi.dives.get(Number(remote.lead))!;
+      // SSI has the same weight again, so that Dive Hub has seen it there; then SSI empties it.
+      record.odin_user_log_weight_kg = 10;
+      await runImport();
+      expect(await lead(id)).toEqual([{ amountKg: 10, placement: 'belt' }]);
+      record.odin_user_log_weight_kg = 0;
+      await runImport();
+      expect(await lead(id)).toEqual([]);
     }, 30_000);
 
     it('the values of a Recording are not taken back onto a Dive that has one', async () => {
@@ -534,6 +587,9 @@ describe.skipIf(!(await databaseReachable()))('a field the Provider does not imp
         return ((await call('GET', `/api/imports/${started.json().id}`)).json() as { outcome: { diveId?: string }[] }).outcome;
       };
       const id = (await runImport())[0]!.diveId!;
+      // Not imported, so not filled: the Dive's notes are typed here.
+      expect(((await call('GET', `/api/dives/${id}`)).json() as { notes: string | null }).notes).toBeNull();
+      await call('PATCH', `/api/dives/${id}`, { version: ((await call('GET', `/api/dives/${id}`)).json() as { version: number }).version, notes: 'First' });
       ctx.fakeSsi.dives.get(Number(remoteId))!.odin_user_log_comment = 'Changed at SSI';
       ctx.ssiClock.advance(5 * 60_000);
       const preview = (await call('GET', `/api/connections/${connectionId}/dive-import`)).json() as { counts: Record<string, number>; conflicts: unknown[] };
@@ -541,6 +597,47 @@ describe.skipIf(!(await databaseReachable()))('a field the Provider does not imp
       expect(((await call('GET', `/api/dives/${id}`)).json() as { notes: string | null }).notes).toBe('First');
       expect(preview.conflicts).toEqual([]);
       expect(preview.counts).toMatchObject({ changed: 0 });
+    } finally {
+      await ctx.app.close();
+      await t.drop();
+    }
+  }, 30_000);
+});
+
+describe.skipIf(!(await databaseReachable()))('a field the Provider does not import, on a new Dive', () => {
+  it('is neither filled nor put into the Recording', async () => {
+    const t = await createTestDatabase();
+    const fakeSsi = createFakeSsi();
+    const ssi = createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch }), now: () => 0 });
+    // SSI's adapter under another id, importing everything but notes and heart rate.
+    const fields = Object.fromEntries(DIVE_FIELDS.filter((f) => f !== 'notes' && f !== 'heartRate').map((f) => [f, ['import' as const, 'export' as const]]));
+    const partial = {
+      ...ssi, id: 'ssi_no_notes',
+      capabilities: { ...ssi.capabilities, data: { ...ssi.capabilities.data, dives: { ...ssi.capabilities.data.dives, fields } } },
+    };
+    const ctx = await createTestApp(t, { fakeSsi, extraProviders: [partial] });
+    try {
+      await createUser(ctx.auth, 'tim@example.com');
+      const cookie = await signIn(ctx.app, 'tim@example.com');
+      const call = async (method: 'GET' | 'POST' | 'PATCH', url: string, payload?: object) =>
+        ctx.app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload && { payload }) });
+      const own = ((await call('GET', '/api/divers')).json() as { id: string; isOwn: boolean }[]).find((d) => d.isOwn)!.id;
+      const connectionId = (await call('POST', '/api/connections/ssi_no_notes', { diverId: own, login: 'erika@example.com', password: 'ssi-password', keepSignedIn: false })).json().id;
+      await call('PATCH', `/api/connections/${connectionId}`, { diveImport: { mode: 'create' } });
+      const base = computerDive({ at: '2025-08-11 14:00', depthM: 22, minutes: 40, manufacturer: 'Garmin', product: 'Descent Mk3', serial: '3333' });
+      const profile = (JSON.parse(String(base.odin_user_log_diveSamples)) as Record<string, unknown>[]).map((s) => ({ ...s, hb: 80, cn: 5 }));
+      fakeSsi.addDive(ERIKA, { ...base, odin_user_log_diveSamples: JSON.stringify(profile), odin_user_log_comment: 'Not imported', odin_user_log_heartRateAvg: 80 });
+      ctx.ssiClock.advance(5 * 60_000);
+      const started = await call('POST', `/api/connections/${connectionId}/dive-import`, { computers: [], decisions: [], conflicts: [] });
+      await ctx.imports.processImport(started.json().id);
+      const done = (await call('GET', `/api/imports/${started.json().id}`)).json() as { outcome: { diveId?: string }[] };
+      const id = done.outcome[0]!.diveId!;
+      expect(((await call('GET', `/api/dives/${id}`)).json() as { notes: string | null }).notes).toBeNull();
+      const [rec] = await t.db.select().from(recording).where(eq(recording.diveId, id));
+      const channels = (await t.db.select().from(sampleSeries).where(eq(sampleSeries.recordingId, rec!.id))).map((s) => s.channel);
+      expect(channels).toEqual(expect.arrayContaining(['depth', 'cns']));
+      expect(channels).not.toContain('heartRate');
+      expect(rec!.summary).not.toHaveProperty('avgHeartRate');
     } finally {
       await ctx.app.close();
       await t.drop();

@@ -16,7 +16,7 @@ import { siteDataAllowed, siteForProvider, type ProviderSite } from '../sites/pr
 import type { SiteSource } from '../sites/sources.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
-import type { ImportContext, ImportedDive, ProviderAdapter, ProviderCylinder } from './provider.js';
+import type { DiveField, ImportContext, ImportedDive, ProviderAdapter, ProviderCylinder } from './provider.js';
 import { currentRemote, fingerprintNow } from './remote-state.js';
 import { comparableOf, SYNCED_FIELDS, threeWay, VALUE_FIELDS, type Comparable, type SyncedField } from './three-way.js';
 import { cylindersOf, mergeProviderCylinder, providerCylinderOf } from '../dives/cylinders.js';
@@ -40,6 +40,12 @@ export interface ProviderRun {
   sitesAllowed: boolean;
 }
 
+/** Whether the Provider's `dives.fields` let this field come in: no map means every field does. */
+export function importsField(run: Pick<ProviderRun, 'adapter'>, field: DiveField): boolean {
+  const directions = run.adapter.capabilities.data.dives?.fields;
+  return !directions || !!directions[field]?.includes('import');
+}
+
 export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
   const { db, blobs } = deps;
 
@@ -61,6 +67,15 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
   /** The start's instant: from the dive's position, else its site's at the Provider, else nearby Dives, else unknown. */
   const placeTime = (q: Db | Tx, run: ProviderRun, d: ImportedDive): Promise<PlacedTime> =>
     placeLocalTime(q, run.diverId, wallClockMs(d.localStart)!, [d.exit, d.entry, d.sitePosition]);
+
+  /** The Dive's site from the first of the Provider's sites that is here (or may be created): its ID, or null. */
+  async function fillSite(tx: Tx, run: ProviderRun, d: ImportedDive, actor: Actor): Promise<string | null> {
+    for (const site of sitesOf(run, d)) {
+      const siteId = await siteForProvider(tx, site, { allowCreate: run.sitesAllowed, userId: run.userId, actor });
+      if (siteId) return siteId;
+    }
+    return null;
+  }
 
   /** The Participants the Dive lacks, by their accounts at the Provider: the Dive's `participants` change, if any. */
   async function fillBuddies(tx: Tx, run: ProviderRun, diveId: string, d: ImportedDive, ownerId: string): Promise<Changes> {
@@ -86,22 +101,20 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     if (!current) return false;
     const changes: Changes = {};
     const columns: Partial<typeof dive.$inferInsert> = {};
-    if (!current.siteId) {
-      for (const site of sitesOf(run, d)) {
-        const siteId = await siteForProvider(tx, site, { allowCreate: run.sitesAllowed, userId: run.userId, actor });
-        if (!siteId) continue;
+    if (!current.siteId && importsField(run, 'site')) {
+      const siteId = await fillSite(tx, run, d, actor);
+      if (siteId) {
         columns.siteId = siteId;
         changes.site = { from: null, to: await siteRef(tx, siteId) };
-        break;
       }
     }
-    if (!current.notes?.trim() && d.notes) {
+    if (importsField(run, 'notes') && !current.notes?.trim() && d.notes) {
       columns.notes = d.notes;
       changes.notes = { from: current.notes, to: d.notes };
     }
-    Object.assign(changes, await fillBuddies(tx, run, diveId, d, current.diverId));
-    if (d.cylinder) Object.assign(changes, await mergeProviderCylinder(tx, diveId, d.cylinder, 'fill'));
-    if (d.leadKg !== null) Object.assign(changes, await mergeProviderLead(tx, diveId, d.leadKg, 'fill'));
+    if (importsField(run, 'buddies')) Object.assign(changes, await fillBuddies(tx, run, diveId, d, current.diverId));
+    if (d.cylinder && importsField(run, 'cylinder')) Object.assign(changes, await mergeProviderCylinder(tx, diveId, d.cylinder, 'fill'));
+    if (d.leadKg !== null && importsField(run, 'lead')) Object.assign(changes, await mergeProviderLead(tx, diveId, d.leadKg, 'fill'));
     if (Object.keys(changes).length === 0) return false;
     await tx.update(dive).set({ ...columns, version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
     await writeRevision(tx, 'dive', diveId, actor, 'fill', changes);
@@ -151,9 +164,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     };
     // The Provider's one tank can't be told to be one of several Cylinders: not compared then.
     // Nor can the Provider's one weight be told to be one of several Lead entries.
-    const directions = run.adapter.capabilities.data.dives?.fields;
-    const imported = (f: SyncedField) => !directions || !!directions[f]?.includes('import');
-    const fields = SYNCED_FIELDS.filter(imported).filter((f) => (f === 'cylinder' ? cylinders.length <= 1 : f === 'lead' ? entries.length <= 1 : !row.primaryRecordingId || !VALUE_FIELDS.includes(f)));
+    const fields = SYNCED_FIELDS.filter((f) => importsField(run, f)).filter((f) => (f === 'cylinder' ? cylinders.length <= 1 : f === 'lead' ? entries.length <= 1 : !row.primaryRecordingId || !VALUE_FIELDS.includes(f)));
     return { row, hub, fields, people, accounts };
   }
 
@@ -174,6 +185,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     changes: Changes; columns: Partial<typeof dive.$inferInsert>; overrides: Set<(typeof dive.$inferSelect)['overrides'][number]>;
   }
 
+  /** The Provider's site becomes the Dive's. */
   async function takeSite(t: Taking) {
     const { tx, run, d, actor, current } = t;
     const site = sitesOf(run, d)[0];
@@ -183,6 +195,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     t.changes.site = { from: await siteRef(tx, current.siteId), to: await siteRef(tx, siteId) };
   }
 
+  /** The Provider's list of people replaces the Participants it can know of; the others stay. */
   async function takeBuddies(t: Taking) {
     const { tx, run, diveId, d, current } = t;
     const source = run.adapter.accountSource;
@@ -202,6 +215,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     t.changes.participants = { from: before, to: await participantsOf(tx, diveId) };
   }
 
+  /** The Provider's start, placed in time like an imported file's. */
   async function takeStartsAt(t: Taking) {
     const { tx, run, d, current } = t;
     const time = await placeTime(tx, run, d);
@@ -223,6 +237,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     t.overrides.delete(field);
   }
 
+  /** One field's take, by its kind. */
   async function takeField(t: Taking, field: SyncedField) {
     const { tx, diveId, d, current } = t;
     if (field === 'site') await takeSite(t);
@@ -231,11 +246,9 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
       t.columns.notes = notes;
       t.changes.notes = { from: current.notes, to: notes };
     } else if (field === 'buddies') await takeBuddies(t);
-    else if (field === 'cylinder') {
-      if (d.cylinder) Object.assign(t.changes, await mergeProviderCylinder(tx, diveId, d.cylinder, 'take'));
-    } else if (field === 'lead') {
-      if (d.leadKg !== null) Object.assign(t.changes, await mergeProviderLead(tx, diveId, d.leadKg, 'take'));
-    } else if (field === 'startsAt') await takeStartsAt(t);
+    else if (field === 'cylinder') Object.assign(t.changes, await mergeProviderCylinder(tx, diveId, d.cylinder, 'take'));
+    else if (field === 'lead') Object.assign(t.changes, await mergeProviderLead(tx, diveId, d.leadKg, 'take'));
+    else if (field === 'startsAt') await takeStartsAt(t);
     else takeValue(t, field);
   }
 
@@ -288,7 +301,6 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     if (field === 'startsAt') return c.startsAt === null ? null : new Date(c.startsAt * 60_000).toISOString().slice(0, 16).replace('T', ' ');
     return c[field];
   }
-
 
   async function runOf(q: Db | Tx, userId: string, adapter: ProviderAdapter, s: {
     diverId: string; connectionId: string | null; mode: DiveImportMode; windowMinutes: number; choices: Record<string, ComputerChoice>;

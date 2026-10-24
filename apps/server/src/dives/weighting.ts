@@ -45,10 +45,12 @@ export async function setLead(tx: Tx, diveId: string, list: LeadInput[]): Promis
  * The weight typed at a Provider, in kg, as the Dive's Lead (ADR 0031). `fill`: a Dive without entries gets one, without
  * a placement, unless its history spoke of Lead (one a User emptied stays empty); a Dive with entries keeps them.
  * `take`: the Dive's only entry takes the total and keeps its placement, a Dive without entries gets one. With several
- * entries nothing: the total can't be told to be one of them. Answers the change for the caller's Revision.
+ * entries nothing: the total can't be told to be one of them. A weight emptied at the Provider (`null`) removes the only entry (ADR 0056). Answers the change for the caller's Revision.
  */
-export async function mergeProviderLead(tx: Tx, diveId: string, kg: number, how: 'fill' | 'take'): Promise<Changes> {
+export async function mergeProviderLead(tx: Tx, diveId: string, kg: number | null, how: 'fill' | 'take'): Promise<Changes> {
   const before = await leadOf(tx, diveId);
+  // The weight was emptied at the Provider (ADR 0056): the only entry goes.
+  if (kg === null) return how === 'take' && before.length === 1 ? setLead(tx, diveId, []) : {};
   if (before.length > 1 || (before.length === 1 && how === 'fill')) return {};
   if (before.length === 0 && how === 'fill') {
     const [spoken] = await tx.select({ id: revision.id }).from(revision)

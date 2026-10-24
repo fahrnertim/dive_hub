@@ -21,7 +21,7 @@ import type { BlobStore } from '../storage/blob-store.js';
 import type { ConnectionService } from './connection-service.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
 import { REFERENCE_PREFIX, type ImportContext, type ImportedDive, type ProviderCylinder } from './provider.js';
-import { createDiveChanges, type ProviderRun } from './dive-changes.js';
+import { createDiveChanges, importsField, type ProviderRun } from './dive-changes.js';
 import { currentRemote, fingerprintNow } from './remote-state.js';
 import type { SyncedField } from './three-way.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
@@ -271,37 +271,41 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     return created!.id;
   }
 
-  /** The dive mode, surface interval and average heart rate a Provider names, where it names them. */
-  function summaryValuesOf(d: ImportedDive) {
+  /** The dive mode, surface interval and average heart rate a Provider names, where it names them and lets them in. */
+  function summaryValuesOf(run: ProviderRun, d: ImportedDive) {
     return {
-      ...(d.diveMode !== null && { diveMode: d.diveMode }),
-      ...(d.surfaceIntervalSeconds !== null && { surfaceIntervalSeconds: d.surfaceIntervalSeconds }),
-      ...(d.avgHeartRate !== null && { avgHeartRate: d.avgHeartRate }),
+      ...(d.diveMode !== null && importsField(run, 'diveType') && { diveMode: d.diveMode }),
+      ...(d.surfaceIntervalSeconds !== null && importsField(run, 'surfaceInterval') && { surfaceIntervalSeconds: d.surfaceIntervalSeconds }),
+      ...(d.avgHeartRate !== null && importsField(run, 'heartRate') && { avgHeartRate: d.avgHeartRate }),
     };
   }
 
-  /** A computer's dive as a Recording, the way a FIT file's would be (ADR 0030). */
+  const CHANNEL_FIELD = { depth: 'profile', temperature: 'profile', ndl: 'profile', tankPressure: 'tankPressure', heartRate: 'heartRate', cns: 'cns' } as const;
+
+  /** A computer's dive as a Recording, the way a FIT file's would be (ADR 0030); only the values the Provider's `dives.fields` let in. */
   function asRecording(run: ProviderRun, d: ImportedDive, time: PlacedTime): ParsedRecording {
     const series = (['depth', 'temperature', 'ndl', 'tankPressure', 'heartRate', 'cns'] as const).flatMap((channel) => {
-      const s = d.samples[channel];
+      const s = importsField(run, CHANNEL_FIELD[channel]) ? d.samples[channel] : undefined;
       return s ? [{ channel, offsetsMs: s.offsetsMs.map(Math.round), values: s.values }] : [];
     });
-    const temperatures = d.samples.temperature?.values ?? [];
+    const temperatures = series.find((s) => s.channel === 'temperature')?.values ?? [];
+    const cns = importsField(run, 'cns');
     const summary = {
-      ...(d.gases.length > 0 && { gases: d.gases }),
+      ...(d.gases.length > 0 && importsField(run, 'gas') && { gases: d.gases }),
       ...(d.gfLow !== null && { gfLow: d.gfLow }), ...(d.gfHigh !== null && { gfHigh: d.gfHigh }),
       ...((d.waterTemperatureC ?? (temperatures.length ? Math.min(...temperatures) : null)) !== null
         && { minTemperatureC: d.waterTemperatureC ?? Math.min(...temperatures) }),
       ...((d.maxTemperatureC ?? (temperatures.length ? Math.max(...temperatures) : null)) !== null
         && { maxTemperatureC: d.maxTemperatureC ?? Math.max(...temperatures) }),
-      ...(d.cnsStart !== null && { cnsStart: d.cnsStart }), ...(d.cnsEnd !== null && { cnsEnd: d.cnsEnd }),
-      ...summaryValuesOf(d),
+      ...(cns && d.cnsStart !== null && { cnsStart: d.cnsStart }), ...(cns && d.cnsEnd !== null && { cnsEnd: d.cnsEnd }),
+      ...summaryValuesOf(run, d),
     };
-    const depths = d.samples.depth?.values ?? [];
+    const depths = series.find((s) => s.channel === 'depth')?.values ?? [];
+    const device = importsField(run, 'device') ? d.device : null;
     return {
-      device: d.device ? {
-        manufacturer: d.device.manufacturer, serialNumber: d.device.serialNumber,
-        ...(d.device.product && { product: d.device.product }), ...(d.device.firmware && { firmware: d.device.firmware }),
+      device: device ? {
+        manufacturer: device.manufacturer, serialNumber: device.serialNumber,
+        ...(device.product && { product: device.product }), ...(device.firmware && { firmware: device.firmware }),
       } : undefined,
       recordingKey: `${run.adapter.id}:${d.remoteId}`,
       startsAt: time.startsAt, utcOffsetSeconds: time.utcOffsetSeconds ?? undefined, utcOffsetSource: time.utcOffsetSource,
