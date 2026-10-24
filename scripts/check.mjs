@@ -2,7 +2,8 @@
 // The checks for what changed (ADR 0023): typecheck, lint and module boundaries of the changed files (amendment of
 // 2026-10-22), the unit tests whose imports changed, and the browser tests of the areas touched. `pnpm check` while working and before a commit; `pnpm check:full` before a
 // push or a release (ADR 0023, amendment of 2026-10-08).
-//   pnpm check                 changes since each step's last green run, or since the last commit when none is recorded
+//   pnpm check                 changes since each step's last green run or since main (where this branch left it),
+//                              whichever leaves fewer files; since the last commit when neither exists
 //   pnpm check --base main     changes since another commit or branch (--base HEAD: all uncommitted changes)
 //   pnpm check:full            everything
 //   pnpm check --dry           only say what would run and from which base (with --files a,b: for these paths)
@@ -13,7 +14,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { relative } from 'node:path';
 import { readFileSync } from 'node:fs';
-import { FULL_ONLY, QUIET, STEPS, TAGS, changedSince, forBrowserTests, fullPlan, greenRun, lintTargets, planSteps, recordGreen, snapshot } from './check-lib.mjs';
+import { FULL_ONLY, QUIET, STEPS, TAGS, changedSince, countingBase, forBrowserTests, fullPlan, lintTargets, planSteps, recordGreen, snapshot } from './check-lib.mjs';
 import { lint } from './check-lint.mjs';
 
 const args = process.argv.slice(2);
@@ -46,10 +47,7 @@ const tree = given ? null : snapshot();
 const since = Object.fromEntries(STEPS.map((step) => {
   if (given) return [step, { from: '--files', base: null, changed: given }];
   if (givenBase) return [step, { from: givenBase, base: givenBase, changed: changedSince(givenBase, tree) }];
-  const green = greenRun(step);
-  return [step, green
-    ? { from: `its green run of ${green.at}`, base: green.base, changed: changedSince(green.base, tree) }
-    : { from: 'the last commit (no green run recorded)', base: 'HEAD', changed: changedSince('HEAD', tree) }];
+  return [step, countingBase(step, tree)];
 }));
 // Changed texts count, for the browser tests, as the source files that use them.
 const browser = forBrowserTests(since.e2e.changed, since.e2e.base, tree);
@@ -119,7 +117,7 @@ function bases() {
     byBase.set(text, [...(byBase.get(text) ?? []), names[step]]);
   }
   if (byBase.size === 1) return `check: ${[...byBase.keys()][0].replace(' its ', ' the ')}`;
-  return `check: each step counts from its own last green run\n${[...byBase].map(([text, stepNames]) => `  ${stepNames.join(', ')}: ${text}`).join('\n')}`;
+  return `check: each step counts from its own last green run or from main\n${[...byBase].map(([text, stepNames]) => `  ${stepNames.join(', ')}: ${text}`).join('\n')}`;
 }
 
 console.log(full ? 'check: everything' : bases());

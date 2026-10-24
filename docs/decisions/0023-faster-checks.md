@@ -1,6 +1,6 @@
 ---
 title: "ADR 0023: Checks by what changed, and a faster full check"
-summary: pnpm check runs typecheck, the unit tests whose imports changed and the browser tests of the areas touched (tags); pnpm check:full runs everything, before a commit as decided, since the amendment of 2026-10-08 before a push or a release. pnpm check counts each step from its last green run (amendment of 2026-10-08) and leaves two ui-quality variants to the full check; changed texts run the pages that use them; --failed reruns the failed browser tests. Browser tests run on 2 workers with a server and database each, prepared once; no trace recording by default; axe in 2 of 4 ui-quality variants; server tests share modules. Full check 10.5 → 3 min.
+summary: pnpm check runs typecheck, the unit tests whose imports changed and the browser tests of the areas touched (tags); pnpm check:full runs everything, before a commit as decided, since the amendment of 2026-10-08 before a push or a release. pnpm check counts each step from its last green run (amendment of 2026-10-08) or from where the branch left main, whichever leaves fewer files (amendment of 2026-10-24) and leaves two ui-quality variants to the full check; changed texts run the pages that use them; --failed reruns the failed browser tests. Browser tests run on 2 workers with a server and database each, prepared once; no trace recording by default; axe in 2 of 4 ui-quality variants; server tests share modules. Full check 10.5 → 3 min.
 status: accepted
 date: 2026-10-04
 ---
@@ -263,3 +263,20 @@ refactoring code yet.
 - *Considered:* Biome (faster, but no cognitive-complexity rule with SonarJS's definition and no bulk suppressions);
   eslint-plugin-boundaries instead of dependency-cruiser (see ADR 0053); type-aware ESLint rules (slower on every
   edit; can come later).
+
+## Amendment 2026-10-24: main counts as green
+Why: a fresh branch off main inherited a stale green record (the records are one per repository, not per branch), so
+everything main had gained since, merged pull requests included, counted as changed and the full browser suite ran.
+Asked by the owner on 2026-10-24: what branches off main counts as green, because CI runs `pnpm check:full` on every
+push to main and every pull request.
+
+- **Per step, without `--base` or `--files`, there are up to three bases:** the step's green record, `git merge-base
+  HEAD main` (when a `main` exists) and `git merge-base HEAD origin/main` (when `origin/main` exists). The step counts
+  from the one that leaves the fewest changed files; a tie prefers the green record. With none, from the last commit
+  as before. Changed texts are mapped to the source files that use them against the chosen base.
+- **This replaces one sentence of the amendment of 2026-10-08**, "A pull or a branch switch counts like any other
+  change": a pull or a branch switch now counts only what differs from main or from the green record, whichever is closer.
+- **`--dry` names the base:** "its green run of <date>" or "main (where this branch left it, <short sha>)".
+- **Recording is unchanged:** a step that passes records the snapshot as its green run.
+- **What is given up:** the check trusts that main is green. CI checks it; but a red main would hide its own failures
+  from the branch's check until the failing files change or `pnpm check:full` runs.

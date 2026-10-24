@@ -6,7 +6,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
-import { baselineGrowth, baselineSize, changedSince, forBrowserTests, greenRun, lintTargets, planFor, planSteps, recordGreen, snapshot } from './check-lib.mjs';
+import { baselineGrowth, baselineSize, changedSince, chooseBase, countingBase, forBrowserTests, greenRun, lintTargets, planFor, planSteps, recordGreen, snapshot } from './check-lib.mjs';
 
 /** A git repository with one commit holding `files`. */
 function repository(files) {
@@ -235,4 +235,33 @@ test('without changed texts, or without a base to compare them with, the files s
   t.after(repo.drop);
   assert.deepEqual(forBrowserTests(['apps/web/src/Admin.tsx'], 'HEAD', snapshot(repo.cwd), repo.cwd).changed, ['apps/web/src/Admin.tsx']);
   assert.deepEqual(forBrowserTests([EN], null, null, repo.cwd).changed, [EN]);
+});
+
+test('the counting base is the candidate with the fewest changed files; a tie prefers the first (the green run)', () => {
+  const green = { from: 'its green run', base: 'g', changed: ['a', 'b'] };
+  const main = { from: 'main', base: 'm', changed: ['a'] };
+  assert.equal(chooseBase([green, main]), main);
+  assert.equal(chooseBase([green, { ...main, changed: ['x', 'y'] }]), green);
+  assert.equal(chooseBase([main]), main);
+  assert.equal(chooseBase([]), null);
+});
+
+test('a branch counts from main when that leaves fewer files than a stale green run', (t) => {
+  const repo = repository({ 'a.ts': 'a' });
+  t.after(repo.drop);
+  repo.git('branch', '-M', 'main');
+  assert.match(countingBase('server', snapshot(repo.cwd), repo.cwd).from, /^main \(/, 'on main without a green run: main itself');
+  recordGreen('server', snapshot(repo.cwd), repo.cwd);
+  assert.match(countingBase('server', snapshot(repo.cwd), repo.cwd).from, /^its green run of /);
+  // Main moves on without a green run; a branch leaves it and adds one file.
+  repo.write('b.ts', 'b');
+  repo.write('c.ts', 'c');
+  repo.git('add', '-A');
+  repo.git('commit', '--quiet', '-m', 'main moves on');
+  repo.git('checkout', '--quiet', '-b', 'topic');
+  repo.write('d.ts', 'd');
+  const chosen = countingBase('server', snapshot(repo.cwd), repo.cwd);
+  assert.match(chosen.from, /^main \(where this branch left it, [0-9a-f]{7,}\)$/);
+  assert.deepEqual(chosen.changed, ['d.ts']);
+  assert.equal(chosen.base, repo.git('merge-base', 'HEAD', 'main').toString().trim());
 });

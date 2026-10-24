@@ -62,7 +62,7 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 
 | Task | Command |
 |---|---|
-| **Checks while working** | `pnpm check` (`npx pnpm@12.8.1 check`): typecheck, lint and module boundaries of the changed files, the unit tests whose imports changed, and the browser tests of the areas touched, picked from git's changed files ([ADR 0023](decisions/0023-faster-checks.md)). `--dry` shows the plan; `--files a,b` plans for given paths; `--base <ref>` compares with another commit. A Dive sites change takes about 1½ min. |
+| **Checks while working** | `pnpm check` (`npx pnpm@12.8.1 check`): typecheck, lint and module boundaries of the changed files, the unit tests whose imports changed, and the browser tests of the areas touched, picked from git's changed files ([ADR 0023](decisions/0023-faster-checks.md)). `--dry` shows the plan; `--files a,b` plans for given paths; `--base <ref>` compares with another commit. Each step counts from its last green run or from where the branch left main, whichever leaves fewer files. A Dive sites change takes about 1½ min. |
 | **Checks before a commit** | `pnpm check` again, green on the commit's final state. It runs everything by itself when the change touches shared code. |
 | **Checks before a push or a release** | `pnpm check:full`: everything (about 10 min in October 2026). CI (`.github/workflows/check.yml`) runs the same on every push to `main` and every pull request, with PostgreSQL as a service and Playwright's Chromium (cached) instead of Edge. |
 | **Git hook** | `pnpm hooks:install` once per clone: sets `core.hooksPath` to `.githooks/`, whose `pre-commit` runs `pnpm check` on the working tree (not only what is staged), so with only documentation changed it passes at once. |

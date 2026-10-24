@@ -259,6 +259,41 @@ export function greenRun(step, cwd = process.cwd()) {
   }
 }
 
+/** Of the candidates `{ from, base, changed }` (in order of preference), the one with the fewest changed files; null when none. */
+export function chooseBase(candidates) {
+  return candidates.reduce((best, next) => (best && best.changed.length <= next.changed.length ? best : next), null);
+}
+
+/** Whether a ref names a commit here. */
+function exists(name, cwd) {
+  try {
+    git(['rev-parse', '--verify', '--quiet', `${name}^{commit}`], cwd);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Where `step` counts its changed files from (ADR 0023, amendment of 2026-10-24): its green run, or where this
+ * branch left main or origin/main (CI checks those), whichever leaves the fewest files; a tie prefers the green run.
+ * Without any of them, the last commit. Returns `{ from, base, changed }`.
+ */
+export function countingBase(step, tree, cwd = process.cwd()) {
+  const candidates = [];
+  const green = greenRun(step, cwd);
+  if (green) candidates.push({ from: `its green run of ${green.at}`, base: green.base });
+  for (const name of ['main', 'origin/main']) {
+    if (!exists(name, cwd)) continue;
+    try {
+      const base = git(['merge-base', 'HEAD', name], cwd);
+      candidates.push({ from: `main (where this branch left it, ${base.slice(0, 7)})`, base });
+    } catch { /* no common history */ }
+  }
+  const counted = candidates.map((candidate) => ({ ...candidate, changed: changedSince(candidate.base, tree, cwd) }));
+  return chooseBase(counted) ?? { from: 'the last commit (no green run recorded)', base: 'HEAD', changed: changedSince('HEAD', tree, cwd) };
+}
+
 const TEXTS = /^apps\/web\/src\/i18n\/locales\/[\w-]+\.json$/;
 const WEB_SOURCES = 'apps/web/src';
 
