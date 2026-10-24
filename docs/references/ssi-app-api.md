@@ -207,6 +207,10 @@ Read from the app's compiled code and one capture; details in the
     ([research](../research/2026-10-23-ssi-foundation-checks.md#does-an-update-that-omits-a-key-keep-its-value)). So an update
     re-sends SSI's current record (from `get_divelog`) with Dive Hub's values on top, and the gear note and the five
     `log_extended_data_*` keys go with it; values edited in the app (rating, buddies, …) survive.
+  - **An update keeps what the app changed, and a key sent as `null` is cleared** [T] (2026-10-24, app 5.0.43): `null` cleared
+    all 14 keys tested ([research](../research/2026-10-24-ssi-clearing-keys.md)); a send of SSI's own record with the notes taken
+    kept the notes the owner wrote in the app and set the lead to 8 kg, and a removal here cleared the notes at SSI
+    ([research](../research/2026-10-24-ssi-two-way-checks.md)).
   - Read-only keys of the read side (`updates`, `app_version`, …) are left out.
   - **Booleans go as JSON booleans** (`true`/`false`), as the app sends them [R]; until 2026-10-23 Dive Hub sent `0`/`1`.
     SSI stored the full record with booleans as sent, with no read-back differences, and returns the four booleans
