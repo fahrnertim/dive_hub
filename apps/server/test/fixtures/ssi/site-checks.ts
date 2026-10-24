@@ -101,6 +101,7 @@ async function logbookSites(ask: Ask) {
   return { r, sites };
 }
 
+// The transport rejects get_divesite's answer, an array of one row, as bad_response (see `site get`); the row is not in `answer` then.
 async function getSite(ask: Ask, log: (line: string) => void, label: string, id: string) {
   const r = await ask('get_divesite', { dsid: id });
   const d = r.data;
@@ -128,14 +129,15 @@ async function inLogbook(ask: Ask, log: (line: string) => void, label: string, i
 }
 
 /** The new site ID: from the answer, else from the logbook by name and position (the answer may not carry it). */
-async function learnNewId(ask: Ask, log: (line: string) => void, created: Answer): Promise<string | null> {
+async function learnNewId(ask: Ask, log: (line: string) => void, created: Answer, known: Set<string>): Promise<string | null> {
   const fromAnswer = created.data ? findNewId(created.data) : null;
   if (fromAnswer) {
     log(`  NEW SITE ID: ${fromAnswer}`);
     return fromAnswer;
   }
   const { sites } = await logbookSites(ask);
-  const hit = sites.find((s) => s.odin_dive_sites_name === NAME && Math.abs(Number(s.odin_dive_sites_lat) - 0.001) < 1e-6);
+  // Earlier test sites stay at SSI for good, so only a site that was not in the logbook before the create counts.
+  const hit = sites.find((s) => !known.has(String(s.odin_dive_sites_id)) && s.odin_dive_sites_name === NAME && Math.abs(Number(s.odin_dive_sites_lat) - 0.001) < 1e-6);
   const id = hit && isIdValue(hit.odin_dive_sites_id) ? String(hit.odin_dive_sites_id) : null;
   log(id ? `  the answer has no site ID; found in logbook_sites by name and position: ${id}` : '  no site ID in the answer, none found in logbook_sites');
   return id;
@@ -159,13 +161,14 @@ export async function runSiteProbe(o: SiteProbe): Promise<Record<string, unknown
   const results: Record<string, unknown> = { app: '5.0.43', at: new Date().toISOString() };
   const ask = makeAsk(o.access);
 
+  const known = new Set((await logbookSites(ask)).sites.map((s) => String(s.odin_dive_sites_id)));
   const row = siteRow(o.accountId, null, false);
   o.log(`1. save_divesite (create). Keys sent: ${Object.keys(row).join(', ')}`);
   o.log(`   private flag key: odin_dive_sites_is_private = 1; owner key: odin_dive_sites_is_private_owner = account ${o.accountId}`);
   const created = await ask('save_divesite', {}, row);
   o.log(`  answer: ${outcome(created)}; ${created.data ? describe(created.data) : '-'}`);
   results.create = { sentKeys: Object.keys(row), httpStatus: created.httpStatus, error: created.error, answer: created.data };
-  const id = await learnNewId(ask, o.log, created);
+  const id = await learnNewId(ask, o.log, created, known);
   if (!id) {
     o.log('STOP: save_divesite gives no way to learn the new site ID. Check the MySSI app for a site "Dive Hub test" at 0.001, 0.001 and delete it by hand.');
     return results;

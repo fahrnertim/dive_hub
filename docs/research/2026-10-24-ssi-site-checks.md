@@ -1,6 +1,6 @@
 ---
 title: SSI checks of private sites (save_divesite, get_divesite)
-summary: On the owner's account (app 5.0.43) save_divesite creates a private site and answers its ID at the top level (odin_dive_sites_id). get_divesite answers a one-element JSON array, 404 for an unknown ID. A new site with no dive is in logbook_sites at once, with is_private 1 and the account as owner. A site cannot be deleted through the API (deleted true or 1 is answered "update saved" but not stored), and the app never deletes one: a site created at SSI is permanent. Task 3 reads the new ID from the top level.
+summary: On the owner's account (app 5.0.43) save_divesite creates a private site and answers its ID at the top level (odin_dive_sites_id). get_divesite answers a one-element JSON array, 404 for an unknown ID. A new site with no dive is in logbook_sites at once, with is_private 1 and the account as owner. A site was not deletable with `odin_dive_sites_deleted` true or 1 ("update saved", not stored) [T], and the app has no delete [R]. Task 3 reads the new ID from the top level.
 status: done
 date: 2026-10-24
 ---
@@ -21,7 +21,7 @@ Run by the controller with the kept token on 2026-10-24, announced in the sessio
 - **App code** [R] (Blutter output of 5.0.43): the app never sets `odin_dive_sites_deleted`, it only reads it (`sites_store.dart`) and removes a server-deleted site from its local table. `ssi_api.dart` has only `save_divesite` and `save_divesite_descr` for sites; `site_create` and `site_select` have no delete.
 
 ## Result
-A site created at SSI is permanent; Dive Hub never deletes one (consistent with the rule that deleting a site here never deletes it at SSI). The test site 1083262 "Dive Hub test" (private to the account) stays; Task 8 reuses it.
+A site created at SSI was not deletable with `odin_dive_sites_deleted` true or 1 [T], and the app has no delete [R]; other ways to delete were not tried, so Dive Hub plans as if a created site stays (consistent with the rule that deleting a site here never deletes it at SSI). The test site 1083262 "Dive Hub test" (private to the account) stays; Task 8 reuses it.
 
 ## Decision for Task 3
 The new site's ID is read from the answer's top-level `odin_dive_sites_id`, with `success.New.odin_dive_sites_id` as fallback. `get_divelog` is not needed to learn it. No STOP.

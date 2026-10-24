@@ -384,7 +384,7 @@ Tested on the owner's account [T]; details in [the research note](../research/20
 - **Flags are answered as the numbers 0/1** [T].
 - **`get_divesite`** (query `token`, `dsid`) answers HTTP 200 with a JSON **array of one row** (not an object), carrying `odin_dive_sites_is_private`, `_is_private_owner` and `_deleted`. An unknown ID answers HTTP 404 [T].
 - A new site with no dive is in `logbook_sites` of `get_divelog` right after creation, with `is_private` 1 and the owner [T].
-- **A site cannot be deleted**: `odin_dive_sites_deleted` true or 1 is answered "update saved" but not stored, and the site stays in `logbook_sites` [T]. The app never sets the flag and has no delete call or button [R]. A site created at SSI is permanent.
+- **Not deletable with `odin_dive_sites_deleted` true or 1** [T]: `save_divesite` answers "update saved", but the site stays and `logbook_sites` still lists it. The app has no delete call or button and never sets the flag [R]. Other ways to delete were not tried.
 
 ## Known but not used
 
