@@ -1,7 +1,8 @@
 // Conflicts with a Provider, stored per Dive and Provider and listed for "Needs your decision": the service the send
 // will call (record, openFields, close) and the listing route, against a fake ledger Provider and the real database.
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { providerConflict } from '../src/db/schema.js';
+import { eq } from 'drizzle-orm';
+import { connection, providerConflict, push } from '../src/db/schema.js';
 import { close, openFields, record, type ConflictField } from '../src/providers/conflicts.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
@@ -104,10 +105,30 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     expect((await listed()).connections).toEqual([]);
   });
 
-  it('another User sees none of it', async () => {
+  it('another User with a Connection of his own at the same Provider sees none of it', async () => {
     const { diveId, remoteId } = await sentDive();
     await record(t.db, entry(diveId, remoteId));
+    ledger.tokens.set('ledger-token-2', { accountId: 'l-6', label: 'Ledger of Bob' });
+    const bobDiver = (await json<{ id: string }[]>('GET', '/api/divers', undefined, bob))[0]!.id;
+    const own = await json<{ id: string }>('POST', '/api/connections/ledger', { diverId: bobDiver, token: 'ledger-token-2', keepSignedIn: false }, bob);
     expect((await listed(bob)).connections).toEqual([]);
+    expect((await listed()).connections[0]!.entries).toHaveLength(1);
+    await call('DELETE', `/api/connections/${own.id}`, undefined, bob);
     expect((await ctx.app.inject({ method: 'GET', url: '/api/provider-conflicts' })).statusCode).toBe(401);
+  });
+
+  it('leaves out the Connection of a Provider this instance does not offer', async () => {
+    const { diveId, remoteId } = await sentDive();
+    await record(t.db, entry(diveId, remoteId));
+    expect((await listed()).connections).toHaveLength(1);
+    // The Connection and the Dive's Push now belong to a Provider that is not registered: only that can leave it out.
+    await t.db.update(connection).set({ provider: 'retired' }).where(eq(connection.id, connectionId));
+    await t.db.update(push).set({ provider: 'retired' }).where(eq(push.diveId, diveId));
+    await t.db.update(providerConflict).set({ provider: 'retired' }).where(eq(providerConflict.diveId, diveId));
+    try {
+      expect((await listed()).connections).toEqual([]);
+    } finally {
+      await t.db.update(connection).set({ provider: 'ledger' }).where(eq(connection.id, connectionId));
+    }
   });
 });

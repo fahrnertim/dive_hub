@@ -4,7 +4,8 @@
 // is still the Dive's current one. The send records, reads and closes entries; nothing here calls a Provider.
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
-import { connection, dive, diveSite, providerConflict, push } from '../db/schema.js';
+import { dive, diveSite, providerConflict, push } from '../db/schema.js';
+import type { ConnectionService } from './connection-service.js';
 import type { ShownValue } from './dive-changes.js';
 import { currentRemote, type PushRow } from './remote-state.js';
 import type { SyncedField } from './three-way.js';
@@ -25,6 +26,8 @@ export interface ConflictEntry {
   runId: string | null;
 }
 
+const fieldsOf = (stored: unknown): ConflictField[] => stored as ConflictField[];
+
 /** Stores the Conflict of a Dive at a Provider; a newer one for the same Dive and Provider replaces the older. */
 export async function record(q: Db | Tx, entry: ConflictEntry): Promise<void> {
   const values = { connectionId: entry.connectionId, remoteId: entry.remoteId, fields: entry.fields, runId: entry.runId, foundAt: new Date() };
@@ -36,7 +39,7 @@ export async function record(q: Db | Tx, entry: ConflictEntry): Promise<void> {
 export async function openFields(q: Db | Tx, diveId: string, provider: string): Promise<SyncedField[]> {
   const rows = await q.select({ fields: providerConflict.fields }).from(providerConflict)
     .where(and(eq(providerConflict.diveId, diveId), eq(providerConflict.provider, provider)));
-  return ((rows[0]?.fields ?? []) as ConflictField[]).map((f) => f.field);
+  return fieldsOf(rows[0]?.fields ?? []).map((f) => f.field);
 }
 
 /** Removes the Dive's entry at the Provider. */
@@ -44,15 +47,14 @@ export async function close(q: Db | Tx, diveId: string, provider: string): Promi
   await q.delete(providerConflict).where(and(eq(providerConflict.diveId, diveId), eq(providerConflict.provider, provider)));
 }
 
-export function createConflictService(deps: { db: Db }) {
-  const { db } = deps;
+export function createConflictService(deps: { db: Db; connections: ConnectionService }) {
+  const { db, connections } = deps;
   return {
     /** The entries that wait, for each of the User's Connections that has any (no call to a Provider). */
     async waiting(userId: string) {
-      const connections = await db.select({ id: connection.id, provider: connection.provider, diverId: connection.diverId })
-        .from(connection).where(eq(connection.userId, userId)).orderBy(connection.createdAt);
       const out = [];
-      for (const c of connections) {
+      // The User's Connections of the Providers this instance offers: the others cannot be acted on.
+      for (const c of await connections.list(userId)) {
         const entries = await db.select().from(providerConflict)
           .where(and(eq(providerConflict.connectionId, c.id), eq(providerConflict.provider, c.provider)));
         if (entries.length === 0) continue;
@@ -73,7 +75,7 @@ export function createConflictService(deps: { db: Db }) {
           return [{
             diveId: d.id, number: d.number, startsAt: d.startsAt, utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource,
             durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, site: d.siteId && d.siteName !== null ? { id: d.siteId, name: d.siteName } : null,
-            remoteId: e.remoteId, fields: e.fields as ConflictField[], foundAt: e.foundAt,
+            remoteId: e.remoteId, fields: fieldsOf(e.fields), foundAt: e.foundAt,
           }];
         }).sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
         if (listed.length > 0) out.push({ connectionId: c.id, provider: c.provider, entries: listed });

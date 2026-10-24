@@ -664,7 +664,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     },
   }, async (request) => ({
     connections: (await conflicts.waiting(request.user!.id)).map((c) => ({
-      ...c, providerName: providers.list().find((a) => a.id === c.provider)?.capabilities.name ?? c.provider,
+      ...c, providerName: providers.get(c.provider).capabilities.name,
       entries: c.entries.map((e) => ({ ...e, startsAt: e.startsAt.toISOString(), foundAt: e.foundAt.toISOString() })),
     })),
   }));

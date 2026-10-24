@@ -996,7 +996,6 @@ export const providerConflict = pgTable(
   (t) => [primaryKey({ columns: [t.diveId, t.provider] }), index('provider_conflict_connection_idx').on(t.connectionId)],
 );
 
-
 /** One Dive of a Push run: what is done with it, where it stands, and the Push it made. */
 export const pushRunItem = pgTable(
   'push_run_item',

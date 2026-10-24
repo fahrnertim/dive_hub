@@ -26,7 +26,7 @@ export function createProviderLayer(deps: { db: Db; secrets: SecretBox; blobs: B
   const buddies = createBuddyService({ registry: providers, connections, divers: createDiverService(deps.db) });
   const diveImports = createDiveImportService({ db: deps.db, blobs: deps.blobs, registry: providers, connections });
   const goneDives = createGoneDiveService({ db: deps.db, registry: providers, connections, leases });
-  const conflicts = createConflictService({ db: deps.db });
+  const conflicts = createConflictService({ db: deps.db, connections });
   const certifications = createCertificationService({ db: deps.db, blobs: deps.blobs, registry: providers, connections });
   return { providers, connections, pushes, pushRuns, buddies, diveImports, goneDives, conflicts, certifications };
 }
