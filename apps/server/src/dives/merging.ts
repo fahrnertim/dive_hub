@@ -6,7 +6,7 @@ import { and, desc, eq, gte, inArray, isNull, lte, ne, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { OVERRIDABLE_FIELDS, dive, diveSite, participant, push, recording, type OverridableField } from '../db/schema.js';
 import { OVERLAP_TOLERANCE_SECONDS, localStartMs } from '../imports/matching.js';
-import { currentRemote, type PushRow } from '../providers/push-service.js';
+import { currentRemote, type PushRow } from '../providers/remote-state.js';
 import { liveSite } from '../sites/dive-site-link.js';
 import {
   DiveError, applyToDive, attachRecording, lockManagedDive, managedDiverIds, participantsOf,

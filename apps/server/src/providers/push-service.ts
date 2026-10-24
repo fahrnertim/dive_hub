@@ -10,9 +10,8 @@ import { LeaseBusy, type Leases } from './leases.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
 import { ProviderError, referenceOf, type Delivered, type DiveExport, type OutgoingDive, type ProviderAdapter, type RemoteDive, type RemoteSite } from './provider.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
+import { currentRemote, type PushRow } from './remote-state.js';
 import { forProvider, leftOutBy, unmetRequirements } from './requirements.js';
-
-export type PushRow = typeof push.$inferSelect;
 
 /** What deleting a Dive at Providers did: each copy deleted or kept, and why it stopped, if it did. */
 export interface Removal {
@@ -36,30 +35,6 @@ function distanceM(a: { latitude: number; longitude: number }, b: { latitude: nu
   const h = Math.sin(((b.latitude - a.latitude) * rad) / 2) ** 2
     + Math.cos(a.latitude * rad) * Math.cos(b.latitude * rad) * Math.sin(((b.longitude - a.longitude) * rad) / 2) ** 2;
   return 2 * 6_371_000 * Math.asin(Math.sqrt(h));
-}
-
-/**
- * The remote dive a Dive has at one Provider now, from its Pushes there (newest first): the last confirmed one with an
- * ID, unless a later delete or a "found gone" came after it.
- */
-export function currentRemote(pushes: PushRow[]): PushRow | null {
-  for (const p of pushes) {
-    if (p.remoteGone) return null;
-    if (p.state !== 'confirmed') continue;
-    if (p.action === 'delete') return null;
-    if (p.remoteId) return p;
-  }
-  return null;
-}
-
-/**
- * What the Provider's fingerprint of the Dive is now, as it would get it (without the Participants an advisory
- * requirement leaves out): a link made from the Provider's own dive records it, so the Dive shows up to date (ADR 0030).
- */
-export function fingerprintNow(adapter: ProviderAdapter, loaded: Awaited<ReturnType<typeof loadOutgoingDive>>): string | null {
-  const exports = adapter.capabilities.data.dives?.export;
-  if (!adapter.dives || !exports) return null;
-  return adapter.dives.fingerprint(forProvider(loaded.outgoing, unmetRequirements(exports.requirements, loaded.row.siteId, loaded.outgoing)));
 }
 
 /**
