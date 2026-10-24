@@ -10,7 +10,7 @@ import { compareGone, goneWarning, type GoneCandidate } from './gone-dive-rules.
 import { LeaseBusy, type Leases } from './leases.js';
 import type { ProviderAdapter } from './provider.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
-import { currentRemote, type PushRow } from './push-service.js';
+import { currentRemote, type PushRow } from './remote-state.js';
 
 type ConnectionRow = typeof connection.$inferSelect;
 

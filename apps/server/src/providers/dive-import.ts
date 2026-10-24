@@ -5,30 +5,25 @@
 import { and, desc, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import {
-  connection, dive, diveSite, diveSiteExternalId, diver, diverExternalId, device, importJob, importOriginal, original, participant, providerSiteData, push, user,
+  connection, dive, diveSite, device, importJob, importOriginal, original, providerSiteData, push, user,
   recording, type ComputerChoice, type DiveImportMode, type ImportOutcome, type ProviderImportPlan, type UtcOffsetSource,
 } from '../db/schema.js';
-import { managedDiverIds, participantsOf } from '../dives/dive-service.js';
-import { columnsOf } from '../dives/dive-values.js';
-import { writeRevision, type Actor, type Changes } from '../dives/revisions.js';
-import { placeLocalTime, wallClockMs, type PlacedTime } from '../dives/time-zone.js';
+import { writeRevision, type Actor } from '../dives/revisions.js';
+import { wallClockMs, type PlacedTime } from '../dives/time-zone.js';
 import type { ParsedRecording } from '../imports/parsed-recording.js';
 import { PROCESS_IMPORT_TASK } from '../imports/import-service.js';
 import { deviceDiver, placeRecording } from '../imports/placement.js';
 import { entryMatches } from '../imports/matching.js';
 import { recordFindings } from './gone-dives.js';
 import { probablyNoDive } from '../dives/logbook-check-rules.js';
-import { siteRef } from '../sites/dive-site-link.js';
-import { siteDataAllowed, siteForProvider, siteOutlook, type ProviderSite } from '../sites/provider-sites.js';
-import type { SiteSource } from '../sites/sources.js';
+import { siteOutlook } from '../sites/provider-sites.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import type { ConnectionService } from './connection-service.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
-import { REFERENCE_PREFIX, type ImportContext, type ImportedDive, type ProviderAdapter, type ProviderCylinder } from './provider.js';
-import { currentRemote, fingerprintNow } from './push-service.js';
-import { comparableOf, SYNCED_FIELDS, threeWay, VALUE_FIELDS, type Comparable, type SyncedField } from './three-way.js';
-import { cylindersOf, mergeProviderCylinder, providerCylinderOf } from '../dives/cylinders.js';
-import { leadOf, leadTotalKg, mergeProviderLead } from '../dives/weighting.js';
+import { REFERENCE_PREFIX, type ImportContext, type ImportedDive, type ProviderCylinder } from './provider.js';
+import { createDiveChanges, importsField, type ProviderRun } from './dive-changes.js';
+import { currentRemote, fingerprintNow } from './remote-state.js';
+import type { SyncedField } from './three-way.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { renumber } from '../dives/dive-numbers.js';
 
@@ -89,23 +84,6 @@ type Assessment =
   | { kind: 'create' }
   | { kind: 'no_match' };
 
-/** Everything one run needs to know, the same in the preview and in the worker. */
-interface Run {
-  userId: string;
-  adapter: ProviderAdapter;
-  diverId: string;
-  connectionId: string | null;
-  mode: DiveImportMode;
-  windowMinutes: number;
-  /** The choice for every computer found. */
-  choices: Record<string, ComputerChoice>;
-  managed: Set<string>;
-  /** Whose account each person entry is, each site's name and position. */
-  context: ImportContext;
-  /** An admin allowed creating sites from the Provider's site data. */
-  sitesAllowed: boolean;
-}
-
 const DAY_MS = 86_400_000;
 const MAX_OFFSET_MS = 14 * 3600_000;
 const keyOf = (d: { manufacturer: string; serialNumber: string }) => `${d.manufacturer}:${d.serialNumber}`;
@@ -113,6 +91,7 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 export function createDiveImportService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService }) {
   const { db, blobs, registry, connections } = deps;
+  const { runOf, sitesOf, placeTime, changesOf, takeChanges, fill, shown } = createDiveChanges({ db, blobs });
 
   /** The Provider's dive import, or `provider_unsupported`. */
   function importer(provider: string) {
@@ -135,7 +114,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   }
 
   /** The computers among the dives, with the User's choice kept on the Connection, else the suggestion. */
-  async function computersOf(q: Db | Tx, run: Run, dives: ImportedDive[], saved: Record<string, ComputerChoice>) {
+  async function computersOf(q: Db | Tx, run: ProviderRun, dives: ImportedDive[], saved: Record<string, ComputerChoice>) {
     const found = new Map<string, ComputerView>();
     for (const d of dives) {
       // A dive Dive Hub sent, or one linked to a Dive that has this computer's Recording, carries what Dive Hub has or
@@ -170,7 +149,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   }
 
   /** The Dive this remote dive is linked to now (by a Push), among the User's, or null. */
-  async function linkedTo(q: Db | Tx, run: Run, remoteId: string) {
+  async function linkedTo(q: Db | Tx, run: ProviderRun, remoteId: string) {
     const rows = await q.selectDistinct({ diveId: push.diveId }).from(push)
       .where(and(eq(push.provider, run.adapter.id), eq(push.remoteId, remoteId)));
     for (const { diveId } of rows) {
@@ -187,14 +166,14 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
    * The Dive whose values Dive Hub sent to this remote dive (a confirmed create or update Push), among the User's: the
    * remote dive is Dive Hub's own then, like one carrying our reference (ADR 0030).
    */
-  async function sentTo(q: Db | Tx, run: Run, remoteId: string): Promise<string | null> {
+  async function sentTo(q: Db | Tx, run: ProviderRun, remoteId: string): Promise<string | null> {
     const rows = await q.select({ diveId: push.diveId, diverId: dive.diverId }).from(push).innerJoin(dive, eq(dive.id, push.diveId))
       .where(and(eq(push.provider, run.adapter.id), eq(push.remoteId, remoteId), eq(push.state, 'confirmed'), inArray(push.action, ['create', 'update'])));
     return rows.find((r) => run.managed.has(r.diverId))?.diveId ?? null;
   }
 
   /** Of these Dives, those that have a remote dive at the Provider now (they are another remote dive's already). */
-  async function withRemote(q: Db | Tx, run: Run, diveIds: string[]) {
+  async function withRemote(q: Db | Tx, run: ProviderRun, diveIds: string[]) {
     if (diveIds.length === 0) return new Set<string>();
     const rows = await q.select().from(push).where(and(eq(push.provider, run.adapter.id), inArray(push.diveId, diveIds)))
       .orderBy(desc(push.createdAt), desc(push.id));
@@ -202,7 +181,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   }
 
   /** What the import does with one dive (the preview says it, the worker does it). */
-  async function assess(q: Db | Tx, run: Run, d: ImportedDive): Promise<Assessment> {
+  async function assess(q: Db | Tx, run: ProviderRun, d: ImportedDive): Promise<Assessment> {
     if (d.evidence === 'ours') {
       // The Dive it is linked to now, when that isn't the one our reference names: the Dive it was sent from was merged
       // into another, which took the link (ADR 0038). Changes made at the Provider then come back to that Dive.
@@ -264,72 +243,10 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   }
 
   /**
-   * The sites a Provider's dive names, with what the Provider says about them. A site missing from the context can only be
-   * found by its ID (no name to match or create it by).
-   */
-  function sitesOf(run: Run, d: ImportedDive): ProviderSite[] {
-    return Object.entries(d.siteIds).map(([source, externalId]) => {
-      const known = run.context.sites[externalId];
-      return {
-        source: source as SiteSource, externalId, name: known?.name ?? '',
-        position: known && known.latitude !== null && known.longitude !== null ? { latitude: known.latitude, longitude: known.longitude } : null,
-        country: known?.country ?? null, waterType: known?.waterType ?? null,
-      };
-    });
-  }
-
-  /** The start's instant: from the dive's position, else its site's at the Provider, else nearby Dives, else unknown. */
-  const placeTime = (q: Db | Tx, run: Run, d: ImportedDive): Promise<PlacedTime> =>
-    placeLocalTime(q, run.diverId, wallClockMs(d.localStart)!, [d.exit, d.entry, d.sitePosition]);
-
-  /**
-   * Fills what the Dive lacks from the Provider's dive (ADR 0030), overwriting nothing: the site (only one that already
-   * has the Provider's site ID), the Participants (by their accounts at the Provider, when the Dive has none), the notes,
-   * the tank typed there (a Cylinder where the Dive has none, the gaps of its only one; ADR 0045).
-   * One Revision; whether anything changed.
-   */
-  async function fill(tx: Tx, run: Run, diveId: string, d: ImportedDive, actor: Actor): Promise<boolean> {
-    const [current] = await tx.select().from(dive).where(eq(dive.id, diveId)).for('update');
-    if (!current) return false;
-    const changes: Changes = {};
-    const columns: Partial<typeof dive.$inferInsert> = {};
-    if (!current.siteId) {
-      for (const site of sitesOf(run, d)) {
-        const siteId = await siteForProvider(tx, site, { allowCreate: run.sitesAllowed, userId: run.userId, actor });
-        if (!siteId) continue;
-        columns.siteId = siteId;
-        changes.site = { from: null, to: await siteRef(tx, siteId) };
-        break;
-      }
-    }
-    if (!current.notes?.trim() && d.notes) {
-      columns.notes = d.notes;
-      changes.notes = { from: current.notes, to: d.notes };
-    }
-    const source = run.adapter.accountSource;
-    if (source && d.people.length > 0 && (await participantsOf(tx, diveId)).length === 0) {
-      const divers = await tx.select({ diverId: diverExternalId.diverId }).from(diverExternalId)
-        .innerJoin(diver, eq(diver.id, diverExternalId.diverId))
-        .where(and(eq(diverExternalId.source, source), inArray(diverExternalId.externalId, d.people), isNull(diver.deletedAt)));
-      const ids = [...new Set(divers.map((x) => x.diverId))].filter((id) => id !== current.diverId);
-      if (ids.length > 0) {
-        await tx.insert(participant).values(ids.map((diverId) => ({ diveId, diverId, role: 'buddy' as const })));
-        changes.participants = { from: [], to: await participantsOf(tx, diveId) };
-      }
-    }
-    if (d.cylinder) Object.assign(changes, await mergeProviderCylinder(tx, diveId, d.cylinder, 'fill'));
-    if (d.leadKg !== null) Object.assign(changes, await mergeProviderLead(tx, diveId, d.leadKg, 'fill'));
-    if (Object.keys(changes).length === 0) return false;
-    await tx.update(dive).set({ ...columns, version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
-    await writeRevision(tx, 'dive', diveId, actor, 'fill', changes);
-    return true;
-  }
-
-  /**
    * Links the Dive to the Provider's dive (a `link` Push), unless it has a remote dive there already: sending then updates
    * that dive instead of making another. `upToDate`: the Dive was made from it, so it shows up to date.
    */
-  async function link(tx: Tx, run: Run, diveId: string, d: ImportedDive, upToDate: boolean) {
+  async function link(tx: Tx, run: ProviderRun, diveId: string, d: ImportedDive, upToDate: boolean) {
     if ((await withRemote(tx, run, [diveId])).size > 0) return;
     const loaded = await loadOutgoingDive(tx, run.userId, diveId);
     await tx.insert(push).values({
@@ -340,7 +257,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   }
 
   /** A Dive without a Recording from a logbook entry (ADR 0030): its values, marked as the Provider's. */
-  async function createDive(tx: Tx, run: Run, d: ImportedDive, actor: Actor): Promise<string> {
+  async function createDive(tx: Tx, run: ProviderRun, d: ImportedDive, actor: Actor): Promise<string> {
     const time = await placeTime(tx, run, d);
     const [created] = await tx.insert(dive).values({
       diverId: run.diverId, startsAt: time.startsAt, utcOffsetSeconds: time.utcOffsetSeconds, utcOffsetSource: time.utcOffsetSource,
@@ -354,37 +271,41 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     return created!.id;
   }
 
-  /** The dive mode, surface interval and average heart rate a Provider names, where it names them. */
-  function summaryValuesOf(d: ImportedDive) {
+  /** The dive mode, surface interval and average heart rate a Provider names, where it names them and lets them in. */
+  function summaryValuesOf(run: ProviderRun, d: ImportedDive) {
     return {
-      ...(d.diveMode !== null && { diveMode: d.diveMode }),
-      ...(d.surfaceIntervalSeconds !== null && { surfaceIntervalSeconds: d.surfaceIntervalSeconds }),
-      ...(d.avgHeartRate !== null && { avgHeartRate: d.avgHeartRate }),
+      ...(d.diveMode !== null && importsField(run, 'diveType') && { diveMode: d.diveMode }),
+      ...(d.surfaceIntervalSeconds !== null && importsField(run, 'surfaceInterval') && { surfaceIntervalSeconds: d.surfaceIntervalSeconds }),
+      ...(d.avgHeartRate !== null && importsField(run, 'heartRate') && { avgHeartRate: d.avgHeartRate }),
     };
   }
 
-  /** A computer's dive as a Recording, the way a FIT file's would be (ADR 0030). */
-  function asRecording(run: Run, d: ImportedDive, time: PlacedTime): ParsedRecording {
+  const CHANNEL_FIELD = { depth: 'profile', temperature: 'profile', ndl: 'profile', tankPressure: 'tankPressure', heartRate: 'heartRate', cns: 'cns' } as const;
+
+  /** A computer's dive as a Recording, the way a FIT file's would be (ADR 0030); only the values the Provider's `dives.fields` let in. */
+  function asRecording(run: ProviderRun, d: ImportedDive, time: PlacedTime): ParsedRecording {
     const series = (['depth', 'temperature', 'ndl', 'tankPressure', 'heartRate', 'cns'] as const).flatMap((channel) => {
-      const s = d.samples[channel];
+      const s = importsField(run, CHANNEL_FIELD[channel]) ? d.samples[channel] : undefined;
       return s ? [{ channel, offsetsMs: s.offsetsMs.map(Math.round), values: s.values }] : [];
     });
-    const temperatures = d.samples.temperature?.values ?? [];
+    const temperatures = series.find((s) => s.channel === 'temperature')?.values ?? [];
+    const cns = importsField(run, 'cns');
     const summary = {
-      ...(d.gases.length > 0 && { gases: d.gases }),
+      ...(d.gases.length > 0 && importsField(run, 'gas') && { gases: d.gases }),
       ...(d.gfLow !== null && { gfLow: d.gfLow }), ...(d.gfHigh !== null && { gfHigh: d.gfHigh }),
       ...((d.waterTemperatureC ?? (temperatures.length ? Math.min(...temperatures) : null)) !== null
         && { minTemperatureC: d.waterTemperatureC ?? Math.min(...temperatures) }),
       ...((d.maxTemperatureC ?? (temperatures.length ? Math.max(...temperatures) : null)) !== null
         && { maxTemperatureC: d.maxTemperatureC ?? Math.max(...temperatures) }),
-      ...(d.cnsStart !== null && { cnsStart: d.cnsStart }), ...(d.cnsEnd !== null && { cnsEnd: d.cnsEnd }),
-      ...summaryValuesOf(d),
+      ...(cns && d.cnsStart !== null && { cnsStart: d.cnsStart }), ...(cns && d.cnsEnd !== null && { cnsEnd: d.cnsEnd }),
+      ...summaryValuesOf(run, d),
     };
-    const depths = d.samples.depth?.values ?? [];
+    const depths = series.find((s) => s.channel === 'depth')?.values ?? [];
+    const device = importsField(run, 'device') ? d.device : null;
     return {
-      device: d.device ? {
-        manufacturer: d.device.manufacturer, serialNumber: d.device.serialNumber,
-        ...(d.device.product && { product: d.device.product }), ...(d.device.firmware && { firmware: d.device.firmware }),
+      device: device ? {
+        manufacturer: device.manufacturer, serialNumber: device.serialNumber,
+        ...(device.product && { product: device.product }), ...(device.firmware && { firmware: device.firmware }),
       } : undefined,
       recordingKey: `${run.adapter.id}:${d.remoteId}`,
       startsAt: time.startsAt, utcOffsetSeconds: time.utcOffsetSeconds ?? undefined, utcOffsetSource: time.utcOffsetSource,
@@ -396,161 +317,21 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   }
 
   /**
-   * What the Provider had for this dive when Dive Hub last saw it (ADR 0030, amended): the newer of the Original an
-   * earlier finished Import brought and what Dive Hub last sent there. Null when Dive Hub never saw it.
-   */
-  async function baseOf(q: Db | Tx, run: Run, diveId: string, remoteId: string, notImport?: string): Promise<ImportedDive | null> {
-    const [seen] = await q.select({ storageKey: original.storageKey, at: importJob.createdAt }).from(original)
-      .innerJoin(importOriginal, eq(importOriginal.originalId, original.id))
-      .innerJoin(importJob, eq(importJob.id, importOriginal.importId))
-      .where(and(
-        eq(original.userId, run.userId), eq(original.fileName, `${run.adapter.id}-dive-${remoteId}.json`), eq(importJob.status, 'done'),
-        notImport ? sql`${importJob.id} <> ${notImport}` : undefined,
-      ))
-      .orderBy(desc(importJob.createdAt)).limit(1);
-    const [sent] = await q.select({ payload: push.payload, at: push.createdAt }).from(push)
-      .where(and(eq(push.diveId, diveId), eq(push.provider, run.adapter.id), eq(push.remoteId, remoteId), eq(push.state, 'confirmed'),
-        inArray(push.action, ['create', 'update'])))
-      .orderBy(desc(push.createdAt)).limit(1);
-    const parse = run.adapter.dives!.parse!;
-    if (sent?.payload && (!seen || sent.at > seen.at)) return parse(sent.payload, run.context, remoteId);
-    if (!seen) return null;
-    return parse(JSON.parse((await blobs.read(seen.storageKey)).toString('utf8')) as Record<string, unknown>, run.context, remoteId);
-  }
-
-  /** The Dive here as the comparison sees it, and the fields it compares (values only without a Recording). */
-  async function hubOf(q: Db | Tx, run: Run, diveId: string, siteSource: SiteSource | null) {
-    const [row] = await q.select().from(dive).where(eq(dive.id, diveId));
-    if (!row) return null;
-    const [siteId] = row.siteId && siteSource ? await q.select({ id: diveSiteExternalId.externalId }).from(diveSiteExternalId)
-      .where(and(eq(diveSiteExternalId.siteId, row.siteId), eq(diveSiteExternalId.source, siteSource))) : [];
-    const source = run.adapter.accountSource;
-    const people = await participantsOf(q, diveId);
-    const accounts = source && people.length > 0 ? await q.select({ diverId: diverExternalId.diverId, account: diverExternalId.externalId })
-      .from(diverExternalId).where(and(eq(diverExternalId.source, source), inArray(diverExternalId.diverId, people.map((p) => p.diverId)))) : [];
-    const cylinders = await cylindersOf(q, diveId);
-    const entries = await leadOf(q, diveId);
-    const hub: Comparable = {
-      site: siteId?.id ?? null, notes: row.notes?.trim() || null, buddies: accounts.map((a) => a.account).sort(),
-      startsAt: Math.floor((row.startsAt.getTime() + (row.utcOffsetSeconds ?? 0) * 1000) / 60_000),
-      durationSeconds: row.durationSeconds, maxDepthM: row.maxDepthM, avgDepthM: row.avgDepthM, waterTemperatureC: row.waterTemperatureC,
-      cylinder: cylinders.length === 1 ? providerCylinderOf(cylinders[0]!) : null, lead: leadTotalKg(entries),
-    };
-    // The Provider's one tank can't be told to be one of several Cylinders: not compared then.
-    // Nor can the Provider's one weight be told to be one of several Lead entries.
-    const directions = run.adapter.capabilities.data.dives?.fields;
-    const imported = (f: SyncedField) => !directions || !!directions[f]?.includes('import');
-    const fields = SYNCED_FIELDS.filter(imported).filter((f) => (f === 'cylinder' ? cylinders.length <= 1 : f === 'lead' ? entries.length <= 1 : !row.primaryRecordingId || !VALUE_FIELDS.includes(f)));
-    return { row, hub, fields, people, accounts };
-  }
-
-  /** What changed at the Provider since Dive Hub last saw the dive, compared with the Dive here; null without a base. */
-  async function changesOf(q: Db | Tx, run: Run, diveId: string, d: ImportedDive, notImport?: string) {
-    const base = await baseOf(q, run, diveId, d.remoteId, notImport);
-    if (!base) return null;
-    const source = (Object.keys(d.siteIds)[0] ?? Object.keys(base.siteIds)[0] ?? null) as SiteSource | null;
-    const here = await hubOf(q, run, diveId, source);
-    if (!here) return null;
-    const provider = comparableOf(d);
-    return { ...threeWay(here.fields, comparableOf(base), provider, here.hub), here, provider };
-  }
-
-  /**
-   * Takes the Provider's values for these fields (ADR 0030, amended): one Revision (`update`). A Dive that was up to date
-   * at the Provider stays so (a new `link` Push with its fingerprint).
-   */
-  async function takeChanges(tx: Tx, run: Run, diveId: string, d: ImportedDive, fields: SyncedField[], actor: Actor) {
-    const [current] = await tx.select().from(dive).where(eq(dive.id, diveId)).for('update');
-    if (!current) return false;
-    const pushes = await tx.select().from(push).where(and(eq(push.diveId, diveId), eq(push.provider, run.adapter.id)))
-      .orderBy(desc(push.createdAt), desc(push.id));
-    const remote = currentRemote(pushes);
-    const wasUpToDate = !!remote?.fingerprint && remote.fingerprint === fingerprintNow(run.adapter, await loadOutgoingDive(tx, run.userId, diveId));
-    const changes: Changes = {};
-    let columns: Partial<typeof dive.$inferInsert> = {};
-    const overrides = new Set(current.overrides);
-    for (const field of fields) {
-      if (field === 'site') {
-        const site = sitesOf(run, d)[0];
-        const siteId = site ? await siteForProvider(tx, site, { allowCreate: run.sitesAllowed, userId: run.userId, actor }) : null;
-        if (!siteId || siteId === current.siteId) continue;
-        columns.siteId = siteId;
-        changes.site = { from: await siteRef(tx, current.siteId), to: await siteRef(tx, siteId) };
-      } else if (field === 'notes') {
-        const notes = d.notes?.trim() || null;
-        columns.notes = notes;
-        changes.notes = { from: current.notes, to: notes };
-      } else if (field === 'buddies') {
-        const source = run.adapter.accountSource;
-        if (!source) continue;
-        const before = await participantsOf(tx, diveId);
-        const withAccount = before.length === 0 ? [] : await tx.select({ diverId: diverExternalId.diverId }).from(diverExternalId)
-          .where(and(eq(diverExternalId.source, source), inArray(diverExternalId.diverId, before.map((p) => p.diverId))));
-        const wanted = d.people.length === 0 ? [] : await tx.select({ diverId: diverExternalId.diverId }).from(diverExternalId)
-          .innerJoin(diver, eq(diver.id, diverExternalId.diverId))
-          .where(and(eq(diverExternalId.source, source), inArray(diverExternalId.externalId, d.people), isNull(diver.deletedAt)));
-        // Participants the Provider can't know (no account there) stay; the others are the Provider's list now.
-        const keep = before.filter((p) => !withAccount.some((w) => w.diverId === p.diverId));
-        const add = [...new Set(wanted.map((w) => w.diverId))].filter((id) => id !== current.diverId && !keep.some((k) => k.diverId === id));
-        await tx.delete(participant).where(eq(participant.diveId, diveId));
-        const list = [...keep.map((k) => ({ diveId, diverId: k.diverId, role: k.role })), ...add.map((diverId) => ({ diveId, diverId, role: 'buddy' as const }))];
-        if (list.length > 0) await tx.insert(participant).values(list);
-        changes.participants = { from: before, to: await participantsOf(tx, diveId) };
-      } else if (field === 'cylinder') {
-        if (d.cylinder) Object.assign(changes, await mergeProviderCylinder(tx, diveId, d.cylinder, 'take'));
-      } else if (field === 'lead') {
-        if (d.leadKg !== null) Object.assign(changes, await mergeProviderLead(tx, diveId, d.leadKg, 'take'));
-      } else if (field === 'startsAt') {
-        const time = await placeTime(tx, run, d);
-        columns = { ...columns, ...columnsOf('startsAt', { at: time.startsAt, utcOffsetSeconds: time.utcOffsetSeconds }), utcOffsetSource: time.utcOffsetSource };
-        changes.startsAt = {
-          from: { at: current.startsAt.toISOString(), utcOffsetSeconds: current.utcOffsetSeconds },
-          to: { at: time.startsAt.toISOString(), utcOffsetSeconds: time.utcOffsetSeconds },
-        };
-        overrides.delete('startsAt');
-      } else {
-        const to = field === 'durationSeconds' ? d.durationSeconds : d[field];
-        if (field === 'durationSeconds' && !to) continue;
-        columns = { ...columns, [field]: to };
-        changes[field] = { from: current[field], to };
-        overrides.delete(field);
-      }
-    }
-    if (Object.keys(changes).length === 0) return false;
-    if (overrides.size !== current.overrides.length) {
-      changes.overrides = { from: current.overrides, to: [...overrides] };
-      columns.overrides = [...overrides];
-    }
-    await tx.update(dive).set({ ...columns, version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
-    await writeRevision(tx, 'dive', diveId, actor, 'update', changes);
-    if (changes.startsAt) await renumber(tx, [current.diverId]);
-    if (wasUpToDate && remote) {
-      const loaded = await loadOutgoingDive(tx, run.userId, diveId);
-      await tx.insert(push).values({
-        diveId, connectionId: run.connectionId, userId: run.userId, provider: run.adapter.id, mode: run.adapter.dives!.mode,
-        action: 'link', state: 'confirmed', remoteId: remote.remoteId, remoteNumber: remote.remoteNumber, diveVersion: loaded.row.version,
-        fingerprint: fingerprintNow(run.adapter, loaded),
-      });
-    }
-    return true;
-  }
-
-  /**
    * The Provider's changes since Dive Hub last saw the dive, taken where the Dive here kept its value, and where the User
    * chose the Provider's in a conflict; then what is still empty is filled. Whether anything changed.
    */
-  async function sync(tx: Tx, run: Run, plan: ProviderImportPlan, diveId: string, d: ImportedDive, importId: string, actor: Actor) {
+  async function sync(tx: Tx, run: ProviderRun, plan: ProviderImportPlan, diveId: string, d: ImportedDive, importId: string, actor: Actor) {
     const found = await changesOf(tx, run, diveId, d, importId);
     const fields = found
       ? [...found.take, ...found.conflicts.filter((f) => plan.conflicts?.[`${d.remoteId}:${f}`] === 'provider')]
       : [];
-    const taken = fields.length > 0 && await takeChanges(tx, run, diveId, d, fields, actor);
+    const taken = fields.length > 0 && (await takeChanges(tx, run, diveId, d, fields, actor)).length > 0;
     const filled = await fill(tx, run, diveId, d, actor);
     return taken || filled;
   }
 
   /** The Dive a Provider's dive is linked to already (sent from here, linked, or a Recording of it), for comparing. */
-  async function diveOfLinked(run: Run, a: Assessment, d: ImportedDive): Promise<string | null> {
+  async function diveOfLinked(run: ProviderRun, a: Assessment, d: ImportedDive): Promise<string | null> {
     if (a.kind === 'linked') return a.diveId;
     if (a.kind === 'ours' && a.diveId) {
       const [own] = await db.select({ diverId: dive.diverId }).from(dive).where(and(eq(dive.id, a.diveId), isNull(dive.deletedAt)));
@@ -564,26 +345,9 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     return null;
   }
 
-  /** A field's value as the preview shows it: the site's and people's names, the local start, the number or text. */
-  async function shown(run: Run, field: SyncedField, c: Comparable, hubSiteId: string | null): Promise<string | number | string[] | ProviderCylinder | null> {
-    if (field === 'site') {
-      if (hubSiteId) return (await db.select({ name: diveSite.name }).from(diveSite).where(eq(diveSite.id, hubSiteId)))[0]?.name ?? null;
-      return c.site ? run.context.sites[c.site]?.name ?? c.site : null;
-    }
-    if (field === 'buddies') {
-      const source = run.adapter.accountSource;
-      if (!source || c.buddies.length === 0) return [];
-      const rows = await db.select({ name: diver.name }).from(diverExternalId).innerJoin(diver, eq(diver.id, diverExternalId.diverId))
-        .where(and(eq(diverExternalId.source, source), inArray(diverExternalId.externalId, c.buddies)));
-      return rows.map((r) => r.name).sort();
-    }
-    if (field === 'startsAt') return c.startsAt === null ? null : new Date(c.startsAt * 60_000).toISOString().slice(0, 16).replace('T', ' ');
-    return c[field];
-  }
-
   /** One dive of a running Import, in its own transaction. `seen`: its Original came with an earlier Import unchanged. */
   async function processDive(
-    tx: Tx, run: Run, plan: ProviderImportPlan, d: ImportedDive, at: { importId: string; originalId: string; fileName: string; seen: boolean },
+    tx: Tx, run: ProviderRun, plan: ProviderImportPlan, d: ImportedDive, at: { importId: string; originalId: string; fileName: string; seen: boolean },
   ): Promise<ImportOutcome[number]> {
     const actor: Actor = { type: 'import', id: at.importId };
     const base = { fileName: at.fileName, remoteId: d.remoteId, ...(d.remoteNumber !== null && { remoteNumber: d.remoteNumber }) };
@@ -639,13 +403,6 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       case 'no_match':
         return { ...base, result: 'skipped', reason: 'no_match' };
     }
-  }
-
-  async function runOf(q: Db | Tx, userId: string, adapter: ProviderAdapter, s: {
-    diverId: string; connectionId: string | null; mode: DiveImportMode; windowMinutes: number; choices: Record<string, ComputerChoice>;
-    context: ImportContext;
-  }): Promise<Run> {
-    return { userId, adapter, ...s, managed: await managedDiverIds(q, userId), sitesAllowed: await siteDataAllowed(q, adapter.id) };
   }
 
   return {

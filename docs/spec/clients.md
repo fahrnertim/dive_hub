@@ -480,6 +480,8 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
 - **Must show what the Provider needs first** ([ADR 0029](../decisions/0029-push-requirements-and-buddies.md)): the status's
   `unmet` lists each requirement the Dive doesn't meet, from Dive Hub's data alone. While a `blocking` one is unmet, don't
   offer sending (the server refuses with `provider_requirements_unmet` and `unmet`); an `advisory` one is sent without.
+  A send refused this way may already have taken changes made at the Provider into the Dive (the take comes first), so
+  re-read the Dive after the error.
   Offer the fix per `type`, from the Provider's `requirements` in `GET /api/providers`:
   - **`site_external_id`:** `siteId: null` means choose a site first. Otherwise, when `typed`, offer the Provider's sites
     nearest first (`GET /api/dives/{id}/providers/{provider}/sites`, which asks the Provider, so only on request) and
@@ -496,6 +498,20 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
   scanning their buddy QR code, then update).
 - **`outcome: exists`:** nothing was sent; a dive at the same time is there. Show it (number, time, depth, minutes)
   and ask: link to it (`onExisting: link`) or send a new one (`create`).
+- **An update is three-way** ([ADR 0056](../decisions/0056-two-way-exchange-and-automation.md)): per field against what the
+  Provider had when Dive Hub last saw its dive, a change made only at the Provider is taken into the Dive first (one
+  Revision, "Updated from its source"), a change made only here is sent, and **a removal is sent too**: a value cleared
+  here is cleared at the Provider (the site never is). Say so where the User updates ("A note removed here is removed in
+  SSI too").
+  - **`outcome: conflicts`:** nothing was sent; `conflicts` lists the fields changed on both sides, each with `hub` and
+    `provider` said as in the import preview. Show them with a choice per field, **"keep Dive Hub's" preselected** as in
+    the import preview, and send again with `conflicts` (`{ notes: 'hub', lead: 'provider' }`: `hub` sends the Dive's value,
+    `provider` takes the Provider's). A choice for a field that is no Conflict any more is ignored.
+  - **`taken`** (with `updated`): the fields that came back from the Provider. Say what came back ("Notes came from SSI").
+  - **`deferred`** (with `updated`): the fields left as the Provider has them (from a Push run, a field the Provider
+    doesn't take from Dive Hub, or a change there Dive Hub couldn't take, such as a site it doesn't know). Say which.
+  - **`status.conflicts`:** an open entry (a Push run left these fields as the Provider has them). Say so on the panel,
+    with both values, and offer to decide (the same send with `conflicts`).
 - **Must show the Provider's `notices`:** `shows_unconfirmed` means it shows the dive as unconfirmed (SSI: only a dive
   center can confirm it there). `presents_as_app` means Dive Hub introduces itself to the Provider as the Provider's own
   app, which the Provider hasn't agreed to and could object to ([ADR 0049](../decisions/0049-ssi-app-user-agent.md)):
@@ -544,6 +560,10 @@ repeatedly).
 - **Name a number held by a dive only at the Provider** (`heldAtProvider`, `counts.numberHeldAtProvider`,
   `leftOut.numberHeldAtProvider`: known only when `numbers` is chosen, as the preview then reads the Provider's logbook once):
   the wanted number and the holder's time, and lead to the Connection's import. Nothing there is renumbered.
+- **Say how many Conflicts wait** (`conflicts` on the run, also in the list): a Dive with a Conflict in a run is sent without that field
+  (it stays as the Provider has it) and its item keeps `outcome: updated`. One entry per Dive and Provider waits under "Needs your
+  decision" (`GET /api/provider-conflicts`). The report says how many wait and links there; the count is of the entries that still
+  carry the run's id, so one a later send closed is not counted.
 - **A run stopped between the two saves of a swap** leaves one pair sharing a number at the Provider until it goes on or the
   next run is made; items with `sharesWithDiveId` that were `sent` say so in the report.
 
@@ -654,6 +674,17 @@ import preview.) *Web:* `GoneDives.tsx`, the Review page, the logbook's strip an
 - **"Delete here too"** then opens the Dive's own delete dialog, one Dive at a time, with its usual words. **Never offer
   "all"**, never a bulk delete, never delete without that dialog.
 - Only the Connection's owner sees and decides; the findings of another User's Connection are a 404.
+
+### Conflicts with a Provider
+(`GET /api/provider-conflicts`, per Connection, no call to a Provider.) A Conflict is a field changed on both sides,
+differently, found while sending a Dive. One entry per Dive and Provider waits under "Needs your decision" on the Review
+page, beside the gone dives: `entries` carry the Dive's number, time, depth, duration and site, the `remoteId`, and
+`fields`, each with `hub` and `provider` values said as in the import preview. An entry whose Dive is deleted or whose
+remote dive is no longer the Dive's current one is not listed. Only the Connection's owner sees it. A Push run makes
+them: it sends the Dive without the field. Deciding is the Dive's send with `conflicts`
+([Sending a Dive](#sending-a-dive-to-a-provider-ssi)); a successful send that settles the fields removes the entry.
+*Web:* `ProviderConflicts.tsx` (the choice per field, on the Dive's page where the send button was, and on the Review
+page), `ProviderConflictsSection.tsx` (the Review section), `PushRun.tsx` (the run report's line).
 
 ### Logbook checks
 ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md); `GET /api/logbook-checks`, computed each time)

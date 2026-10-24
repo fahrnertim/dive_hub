@@ -754,6 +754,13 @@
     "notWaiting": "{{dive}} no longer waits for a decision.",
     "kept": "{{dive}} stays here. It is no longer linked with {{name}}; sending it again creates it there anew."
   },
+  "conflicts": {
+    "title": "Changed in both places ({{count}})",
+    "titleConnection": "Changed in both places in {{name}}: {{diver}} ({{count}})",
+    "intro": "A run sent these dives to {{name}} without these values: they were changed both here and in {{name}} since the last exchange. Choose which to keep; the dive is then sent again with your choice.",
+    "sent": "{{dive}} was sent to {{name}} with your choices.",
+    "again": "{{dive}} was changed in both places again. Choose once more."
+  },
   "review": {
     "title": "Review",
     "parts": "Parts of the review",
@@ -777,6 +784,8 @@
       "shortDives_other": "{{count}} dives that are probably no dives",
       "gone_one": "{{count}} dive no longer in {{name}}",
       "gone_other": "{{count}} dives no longer in {{name}}",
+      "conflicts_one": "{{count}} dive with values changed in both places",
+      "conflicts_other": "{{count}} dives with values changed in both places",
       "go": "Review them"
     }
   },
@@ -1159,6 +1168,8 @@
     "done": "Sent {{sent}} of {{total}} dives to {{name}}.",
     "cancelled": "Stopped: {{sent}} of {{total}} dives were sent to {{name}}.",
     "stopped": "Stopped after {{sent}} of {{total}} dives to {{name}}.",
+    "conflicts_one": "{{count}} dive has values changed in both places: it waits in Needs your decision.",
+    "conflicts_other": "{{count}} dives have values changed in both places: they wait in Needs your decision.",
     "continue": "Continue",
     "signIn": "Sign in to {{name}} again",
     "dismiss": "Dismiss",
@@ -1288,6 +1299,7 @@
     "buddyLinkedTo": "{{name}} is now linked.",
     "lastFailed": "Sending failed: {{error}}",
     "update": "Update in {{name}}",
+    "updateRemoves": "A value removed here is removed in {{name}} too (not the dive site).",
     "send": "Send to {{name}}",
     "delete": "Delete in {{name}}",
     "deleteTitle": "Delete the dive in {{name}}?",
@@ -1331,7 +1343,8 @@
       "updated": "Updated in {{name}}.",
       "linked": "Linked to {{name}} dive {{number}}.",
       "exists": "A dive at the same time is already in {{name}}.",
-      "numbered": "Number in {{name}} set to {{number}}."
+      "numbered": "Number in {{name}} set to {{number}}.",
+      "conflicts": "Nothing was sent to {{name}} yet: choose which values to keep."
     },
     "handedOverResult": "Handed over to {{name}}.",
     "differences": "{{name}} stored some values differently from what was sent:",
@@ -1493,6 +1506,14 @@
     },
     "importKeepHub": "Keep Dive Hub’s: {{value}}",
     "importTakeProvider": "Take {{name}}’s: {{value}}",
+    "conflictsTitle": "Changed in both places",
+    "conflictsIntro": "{{name}} has a different value for these since the last exchange. Choose which to keep; nothing was sent yet.",
+    "conflictsWaiting": "A run sent this dive to {{name}} without these values: they were changed in both places. Choose which to keep.",
+    "conflictKeep": "Keep Dive Hub’s",
+    "conflictTake": "Take {{name}}’s",
+    "conflictsSend": "Send with these choices",
+    "taken": "Taken from {{name}}: {{fields}}.",
+    "deferred": "Left as {{name}} has it: {{fields}}.",
     "claimQuestion_one": "This {{name}} account is {{diver}} here, a buddy on {{count}} dive. Is that you?",
     "claimQuestion_other": "This {{name}} account is {{diver}} here, a buddy on {{count}} dives. Is that you?",
     "claimExplain": "Connecting makes {{diver}} {{mine}}: the dives that list {{diver}} then list {{mine}}. Nothing of those dives becomes yours.",

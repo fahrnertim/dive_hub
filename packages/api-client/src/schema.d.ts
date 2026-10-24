@@ -13134,6 +13134,8 @@ export interface paths {
                                 skipped: number;
                                 failed: number;
                             };
+                            /** @description Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted */
+                            conflicts: number;
                             /** @description What the run left out when it was planned, as counts */
                             leftOut: {
                                 upToDate: number;
@@ -13281,6 +13283,8 @@ export interface paths {
                                 skipped: number;
                                 failed: number;
                             };
+                            /** @description Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted */
+                            conflicts: number;
                             /** @description What the run left out when it was planned, as counts */
                             leftOut: {
                                 upToDate: number;
@@ -13363,6 +13367,8 @@ export interface paths {
                                 skipped: number;
                                 failed: number;
                             };
+                            /** @description Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted */
+                            conflicts: number;
                             /** @description What the run left out when it was planned, as counts */
                             leftOut: {
                                 upToDate: number;
@@ -13535,6 +13541,8 @@ export interface paths {
                                 skipped: number;
                                 failed: number;
                             };
+                            /** @description Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted */
+                            conflicts: number;
                             /** @description What the run left out when it was planned, as counts */
                             leftOut: {
                                 upToDate: number;
@@ -13689,6 +13697,8 @@ export interface paths {
                                 skipped: number;
                                 failed: number;
                             };
+                            /** @description Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted */
+                            conflicts: number;
                             /** @description What the run left out when it was planned, as counts */
                             leftOut: {
                                 upToDate: number;
@@ -13840,6 +13850,8 @@ export interface paths {
                                 skipped: number;
                                 failed: number;
                             };
+                            /** @description Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted */
+                            conflicts: number;
                             /** @description What the run left out when it was planned, as counts */
                             leftOut: {
                                 upToDate: number;
@@ -14021,6 +14033,10 @@ export interface paths {
                                         operations: ("create" | "update" | "delete" | "link" | "find" | "list" | "readBack")[];
                                         /** @description How find finds a record: by our reference, by a time window, near a position */
                                         findBy: ("reference" | "time" | "position")[];
+                                    };
+                                    /** @description Which way each value of a dive travels; absent: every value travels both ways as far as the Provider's operations allow (imported if it imports, sent if it exports); present: a value missing from the map is not imported */
+                                    fields?: {
+                                        [key: string]: ("import" | "export")[];
                                     };
                                 };
                                 diveSites: null | {
@@ -16199,6 +16215,214 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/provider-conflicts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Conflicts with a Provider that wait for the choice of the User, per Connection; no call to a Provider
+         * @description A Conflict is a field changed on both sides, differently, found while sending a Dive. One entry per Dive and Provider, with both values of each field. The User chooses per field, the Dive Hub value preselected, by sending the Dive again with `conflicts`. An entry whose Dive is deleted, or whose remote dive is no longer the current one of the Dive, is not listed.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            connections: {
+                                connectionId: string;
+                                provider: string;
+                                providerName: string;
+                                entries: {
+                                    diveId: string;
+                                    number: null | number;
+                                    /** Format: date-time */
+                                    startsAt: string;
+                                    utcOffsetSeconds: null | number;
+                                    /** @enum {unknown} */
+                                    utcOffsetSource: "device" | "position" | "nearby" | "unknown";
+                                    durationSeconds: number;
+                                    maxDepthM: null | number;
+                                    site: null | {
+                                        id: string;
+                                        name: string;
+                                    };
+                                    remoteId: string;
+                                    fields: {
+                                        /**
+                                         * @description The field the two sides differ on
+                                         * @enum {unknown}
+                                         */
+                                        field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
+                                        hub: null | (string | number | string[] | {
+                                            volumeL: null | number;
+                                            material: null | ("aluminium" | "steel" | "carbon");
+                                            startPressureBar: null | number;
+                                            endPressureBar: null | number;
+                                            gas: null | {
+                                                o2: number;
+                                                he: number;
+                                            };
+                                        });
+                                        provider: null | (string | number | string[] | {
+                                            volumeL: null | number;
+                                            material: null | ("aluminium" | "steel" | "carbon");
+                                            startPressureBar: null | number;
+                                            endPressureBar: null | number;
+                                            gas: null | {
+                                                o2: number;
+                                                he: number;
+                                            };
+                                        });
+                                    }[];
+                                    /** Format: date-time */
+                                    foundAt: string;
+                                }[];
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_data_not_confirmed";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                            /** @description The Provider a provider_* code is about (ADR 0027) */
+                            provider?: string;
+                            /** @description Its name, to put into the translated text */
+                            providerName?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_data_not_confirmed";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                            /** @description The Provider a provider_* code is about (ADR 0027) */
+                            provider?: string;
+                            /** @description Its name, to put into the translated text */
+                            providerName?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_data_not_confirmed";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                            /** @description The Provider a provider_* code is about (ADR 0027) */
+                            provider?: string;
+                            /** @description Its name, to put into the translated text */
+                            providerName?: string;
+                            /** @description With provider_account_held: the external Diver here with this account; connect again with claim to make it yours */
+                            diver?: {
+                                id: string;
+                                name: string;
+                                /** @description The Dives it is a Participant on */
+                                dives: number;
+                            };
+                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
+                            unmet?: {
+                                /** @description As in the Provider's requirements */
+                                type: string;
+                                /** @enum {unknown} */
+                                severity: "blocking" | "advisory";
+                                source: string;
+                                siteId?: null | string;
+                                /** @description diver_mapping: the Participant */
+                                diverId?: string;
+                                diverName?: string;
+                                /** @enum {unknown} */
+                                role?: "buddy" | "guide" | "instructor";
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                fixes?: string[];
+                            }[];
+                            /** @description With provider_number_taken: the dive at the Provider that has the number */
+                            existing?: {
+                                remoteId: string;
+                                number: null | number;
+                                startsAt: null | string;
+                                maxDepthM: null | number;
+                                durationMinutes: null | number;
+                            };
+                            /** @description With push_run_active: the run that is going */
+                            runId?: string;
+                            diveId?: null | string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Stable, machine-readable reason; clients translate it
+                             * @enum {unknown}
+                             */
+                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_data_not_confirmed";
+                            /** @description English description, for logs and scripts */
+                            error: string;
+                            /** @description The Provider a provider_* code is about (ADR 0027) */
+                            provider?: string;
+                            /** @description Its name, to put into the translated text */
+                            providerName?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/connections/{id}/gone-dives/check": {
         parameters: {
             query?: never;
@@ -16771,6 +16995,33 @@ export interface paths {
                                     removesVerification: boolean;
                                 };
                             };
+                            conflicts: null | {
+                                /**
+                                 * @description The field the two sides differ on
+                                 * @enum {unknown}
+                                 */
+                                field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
+                                hub: null | (string | number | string[] | {
+                                    volumeL: null | number;
+                                    material: null | ("aluminium" | "steel" | "carbon");
+                                    startPressureBar: null | number;
+                                    endPressureBar: null | number;
+                                    gas: null | {
+                                        o2: number;
+                                        he: number;
+                                    };
+                                });
+                                provider: null | (string | number | string[] | {
+                                    volumeL: null | number;
+                                    material: null | ("aluminium" | "steel" | "carbon");
+                                    startPressureBar: null | number;
+                                    endPressureBar: null | number;
+                                    gas: null | {
+                                        o2: number;
+                                        he: number;
+                                    };
+                                });
+                            }[];
                             /** @description Newest first */
                             pushes: {
                                 id: string;
@@ -16913,6 +17164,33 @@ export interface paths {
                                     removesVerification: boolean;
                                 };
                             };
+                            conflicts: null | {
+                                /**
+                                 * @description The field the two sides differ on
+                                 * @enum {unknown}
+                                 */
+                                field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
+                                hub: null | (string | number | string[] | {
+                                    volumeL: null | number;
+                                    material: null | ("aluminium" | "steel" | "carbon");
+                                    startPressureBar: null | number;
+                                    endPressureBar: null | number;
+                                    gas: null | {
+                                        o2: number;
+                                        he: number;
+                                    };
+                                });
+                                provider: null | (string | number | string[] | {
+                                    volumeL: null | number;
+                                    material: null | ("aluminium" | "steel" | "carbon");
+                                    startPressureBar: null | number;
+                                    endPressureBar: null | number;
+                                    gas: null | {
+                                        o2: number;
+                                        he: number;
+                                    };
+                                });
+                            }[];
                             /** @description Newest first */
                             pushes: {
                                 id: string;
@@ -16999,7 +17277,7 @@ export interface paths {
         put?: never;
         /**
          * Send the Dive to the Provider: updates its remote dive, or creates one
-         * @description Before creating, a dive at about the same time already at the Provider is answered with outcome exists and nothing is sent; send again with onExisting link (tie the Dive to it) or create (a second dive). Mind the Provider's notices.
+         * @description Before creating, a dive at about the same time already at the Provider is answered with outcome exists and nothing is sent; send again with onExisting link (tie the Dive to it) or create (a second dive). Mind the Provider's notices. An update is three-way (ADR 0056): what changed only at the Provider is taken into the Dive first (taken), a value removed here is removed there, and a field changed on both sides is a Conflict: outcome conflicts, nothing sent. Send again with conflicts, a choice per field (hub preselected).
          */
         post: {
             parameters: {
@@ -17017,6 +17295,29 @@ export interface paths {
                     "application/json": {
                         /** @enum {unknown} */
                         onExisting?: "link" | "create";
+                        /** @description Per Conflict: hub sends the Dive's value, provider takes the Provider's. A field that is no Conflict any more is ignored */
+                        conflicts?: {
+                            /** @enum {unknown} */
+                            site?: "hub" | "provider";
+                            /** @enum {unknown} */
+                            notes?: "hub" | "provider";
+                            /** @enum {unknown} */
+                            buddies?: "hub" | "provider";
+                            /** @enum {unknown} */
+                            cylinder?: "hub" | "provider";
+                            /** @enum {unknown} */
+                            lead?: "hub" | "provider";
+                            /** @enum {unknown} */
+                            startsAt?: "hub" | "provider";
+                            /** @enum {unknown} */
+                            durationSeconds?: "hub" | "provider";
+                            /** @enum {unknown} */
+                            maxDepthM?: "hub" | "provider";
+                            /** @enum {unknown} */
+                            avgDepthM?: "hub" | "provider";
+                            /** @enum {unknown} */
+                            waterTemperatureC?: "hub" | "provider";
+                        };
                     };
                 };
             };
@@ -17029,10 +17330,10 @@ export interface paths {
                     content: {
                         "application/json": {
                             /**
-                             * @description exists: nothing was sent; a dive at the same time is there. Send again with onExisting link or create
+                             * @description exists: nothing was sent; a dive at the same time is there. Send again with onExisting link or create. conflicts: nothing was sent; list the fields with both values and send again with conflicts
                              * @enum {unknown}
                              */
-                            outcome: "created" | "updated" | "linked" | "exists";
+                            outcome: "created" | "updated" | "linked" | "exists" | "conflicts";
                             existing: null | {
                                 remoteId: string;
                                 number: null | number;
@@ -17040,6 +17341,35 @@ export interface paths {
                                 maxDepthM: null | number;
                                 durationMinutes: null | number;
                             };
+                            conflicts: null | {
+                                /**
+                                 * @description The field the two sides differ on
+                                 * @enum {unknown}
+                                 */
+                                field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
+                                hub: null | (string | number | string[] | {
+                                    volumeL: null | number;
+                                    material: null | ("aluminium" | "steel" | "carbon");
+                                    startPressureBar: null | number;
+                                    endPressureBar: null | number;
+                                    gas: null | {
+                                        o2: number;
+                                        he: number;
+                                    };
+                                });
+                                provider: null | (string | number | string[] | {
+                                    volumeL: null | number;
+                                    material: null | ("aluminium" | "steel" | "carbon");
+                                    startPressureBar: null | number;
+                                    endPressureBar: null | number;
+                                    gas: null | {
+                                        o2: number;
+                                        he: number;
+                                    };
+                                });
+                            }[];
+                            taken: null | ("site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC")[];
+                            deferred: null | ("site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC")[];
                             status: {
                                 provider: string;
                                 connection: null | {
@@ -17085,6 +17415,33 @@ export interface paths {
                                         removesVerification: boolean;
                                     };
                                 };
+                                conflicts: null | {
+                                    /**
+                                     * @description The field the two sides differ on
+                                     * @enum {unknown}
+                                     */
+                                    field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
+                                    hub: null | (string | number | string[] | {
+                                        volumeL: null | number;
+                                        material: null | ("aluminium" | "steel" | "carbon");
+                                        startPressureBar: null | number;
+                                        endPressureBar: null | number;
+                                        gas: null | {
+                                            o2: number;
+                                            he: number;
+                                        };
+                                    });
+                                    provider: null | (string | number | string[] | {
+                                        volumeL: null | number;
+                                        material: null | ("aluminium" | "steel" | "carbon");
+                                        startPressureBar: null | number;
+                                        endPressureBar: null | number;
+                                        gas: null | {
+                                            o2: number;
+                                            he: number;
+                                        };
+                                    });
+                                }[];
                                 /** @description Newest first */
                                 pushes: {
                                     id: string;
@@ -17310,6 +17667,33 @@ export interface paths {
                                     removesVerification: boolean;
                                 };
                             };
+                            conflicts: null | {
+                                /**
+                                 * @description The field the two sides differ on
+                                 * @enum {unknown}
+                                 */
+                                field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
+                                hub: null | (string | number | string[] | {
+                                    volumeL: null | number;
+                                    material: null | ("aluminium" | "steel" | "carbon");
+                                    startPressureBar: null | number;
+                                    endPressureBar: null | number;
+                                    gas: null | {
+                                        o2: number;
+                                        he: number;
+                                    };
+                                });
+                                provider: null | (string | number | string[] | {
+                                    volumeL: null | number;
+                                    material: null | ("aluminium" | "steel" | "carbon");
+                                    startPressureBar: null | number;
+                                    endPressureBar: null | number;
+                                    gas: null | {
+                                        o2: number;
+                                        he: number;
+                                    };
+                                });
+                            }[];
                             /** @description Newest first */
                             pushes: {
                                 id: string;
@@ -17718,6 +18102,33 @@ export interface paths {
                                         removesVerification: boolean;
                                     };
                                 };
+                                conflicts: null | {
+                                    /**
+                                     * @description The field the two sides differ on
+                                     * @enum {unknown}
+                                     */
+                                    field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
+                                    hub: null | (string | number | string[] | {
+                                        volumeL: null | number;
+                                        material: null | ("aluminium" | "steel" | "carbon");
+                                        startPressureBar: null | number;
+                                        endPressureBar: null | number;
+                                        gas: null | {
+                                            o2: number;
+                                            he: number;
+                                        };
+                                    });
+                                    provider: null | (string | number | string[] | {
+                                        volumeL: null | number;
+                                        material: null | ("aluminium" | "steel" | "carbon");
+                                        startPressureBar: null | number;
+                                        endPressureBar: null | number;
+                                        gas: null | {
+                                            o2: number;
+                                            he: number;
+                                        };
+                                    });
+                                }[];
                                 /** @description Newest first */
                                 pushes: {
                                     id: string;

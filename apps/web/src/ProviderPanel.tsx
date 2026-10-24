@@ -3,17 +3,44 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   api, ApiError, buddiesQuery, keys, providerSitesQuery, providerStatusQuery, unwrap,
-  type DiveView, type ProviderStatusView, type ProviderView, type PushView, type RequirementView, type UnmetView,
+  type ConflictChoices, type ConflictFieldView, type DiveView, type ProviderStatusView, type ProviderView, type PushView, type RequirementView,
+  type UnmetView,
 } from './api.ts';
 import { showDiveCodes } from './CentresPage.tsx';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
-import { exporting, typedSiteId, useNames, useProviders, useProviderText, waitsForUser } from './lib/providers.ts';
+import { exporting, typedSiteId, useFieldNames, useNames, useProviders, useProviderText, waitsForUser, type SyncedField } from './lib/providers.ts';
 import { accountHref } from './lib/account-tabs.ts';
 import { NumberChainDialog } from './NumberChain.tsx';
+import { ProviderConflicts } from './ProviderConflicts.tsx';
 import { Badge, Button, ConfirmButton, Dialog, Disclosure, Muted, Notice, SearchList, type SearchListItem } from './ui/index.ts';
 
 type Existing = { remoteId: string; number: number | null; startsAt: string | null; maxDepthM: number | null; durationMinutes: number | null };
+/** What a send asks for: link to or create beside a dive at the same time, and the choice per Conflict (ADR 0056). */
+type SendRequest = { onExisting?: 'link' | 'create'; conflicts?: ConflictChoices };
+/** What the last update did beyond sending (ADR 0056): the fields taken from the Provider, and those left as it has them. */
+type Exchanged = { taken: SyncedField[]; deferred: SyncedField[] };
+
+const sendDive = async (id: string, provider: string, request: SendRequest) =>
+  unwrap(await api.POST('/api/dives/{id}/providers/{provider}', { params: { path: { id, provider } }, body: request }));
+/**
+ * What a send's answer leaves on the line (ADR 0056): the fields asked when it found Conflicts (nothing was sent), or
+ * what an update took from the Provider and left as it has it.
+ */
+const afterSend = (sent: Awaited<ReturnType<typeof sendDive>>) => ({
+  asked: sent.outcome === 'conflicts' ? sent.conflicts : null,
+  exchanged: sent.outcome === 'updated' ? { taken: sent.taken ?? [], deferred: sent.deferred ?? [] } : null,
+});
+
+/** The Conflicts a run left on the Dive's open entry (ADR 0056), if any. */
+const openConflicts = (s: ProviderStatusView) => (s.conflicts && s.conflicts.length > 0 ? s.conflicts : null);
+/** Whether the send under way is the one with the User's choices. */
+const sendsChoices = (send: { isPending: boolean; variables: SendRequest | undefined }) => send.isPending && !!send.variables?.conflicts;
+/** A choice asked by a send can be put away; one a run left stays until it is sent. */
+const cancelAsked = (asked: unknown, cancel: () => void) => (asked ? cancel : undefined);
+
+/** Whether the line offers an update now: the Dive changed since it was sent, and no choice stands in the button's place. */
+const offersUpdate = (s: ProviderStatusView, choosing: unknown, canUpdate: boolean) => canUpdate && !!s.current && !s.current.upToDate && !choosing;
 
 /** The requirement an unmet item is about, as the Provider declares it (ADR 0029). */
 const requirementOf = (p: ProviderView, u: UnmetView): RequirementView | undefined =>
@@ -44,6 +71,9 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
   const [existing, setExisting] = useState<Existing | null>(null);
   const [verificationRemoved, setVerificationRemoved] = useState(false);
   const [chainOpen, setChainOpen] = useState(false);
+  // Fields changed on both sides, asked by the last send: the choice stands where the send button was until sent or cancelled.
+  const [asked, setAsked] = useState<ConflictFieldView[] | null>(null);
+  const [exchanged, setExchanged] = useState<Exchanged | null>(null);
   const can = (op: (typeof exports.operations)[number]) => exports.operations.includes(op);
   const refresh = async (next?: ProviderStatusView) => {
     if (next) queryClient.setQueryData(keys.providerStatus(d.id, p.id), next);
@@ -51,17 +81,22 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
     await queryClient.invalidateQueries({ queryKey: keys.connections });
   };
   const send = useMutation({
-    mutationFn: async (onExisting?: 'link' | 'create') =>
-      unwrap(await api.POST('/api/dives/{id}/providers/{provider}', { params: { path: { id: d.id, provider: p.id } }, body: onExisting ? { onExisting } : {} })),
+    mutationFn: (request: SendRequest) => sendDive(d.id, p.id, request),
     onSuccess: async (sent) => {
       // Said again after the update, with the way to the code (ADR 0043).
       setVerificationRemoved(sent.outcome === 'updated' && !!status.data?.current?.updateRemovesVerification);
       await refresh(sent.status);
-      if (sent.outcome === 'exists') {
-        setExisting(sent.existing);
-        return;
-      }
-      setExisting(null);
+      // A send settles or leaves the Conflicts the Review page lists.
+      await queryClient.invalidateQueries({ queryKey: keys.providerConflicts });
+      const after = afterSend(sent);
+      setAsked(after.asked);
+      setExchanged(after.exchanged);
+      // Nothing was sent: the User chooses per field first.
+      if (sent.outcome === 'conflicts') return announce(pt('result.conflicts'));
+      setExisting(sent.outcome === 'exists' ? sent.existing : null);
+      if (sent.outcome === 'exists') return;
+      // Values came back from the Provider: the Dive and the logbook show them; the notice under the line names them.
+      if (after.exchanged?.taken.length) await queryClient.invalidateQueries({ queryKey: keys.dives });
       announce(exports.delivery === 'handed_over' ? pt('handedOverResult') : pt(`result.${sent.outcome}`, { number: sent.status.current?.remoteNumber ?? '' }));
     },
     onError: () => refresh(),
@@ -98,6 +133,8 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
     || (send.error instanceof ApiError && send.error.code === 'provider_sign_in_needed');
   const ready = !s.unmet.some((u) => u.severity === 'blocking');
   const failure = (x: PushView) => problemText(x.failureCode ?? 'internal_error', p);
+  // Asked by a send, or left by a run (the open entry): the choice takes the send button's place.
+  const choosing = asked ?? openConflicts(s);
 
   const state = s.current ? <SentState provider={p} status={s} />
     : handedOver && !can('update') ? <p className="provider-state">{pt('handedOver', { date: display.dateTime(handedOver.createdAt) })}</p>
@@ -117,6 +154,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
       {last?.state === 'failed' && !send.error && <Notice tone="danger">{pt('lastFailed', { error: failure(last) })}</Notice>}
       {last?.leftOut && last.leftOut.length > 0 && last.state !== 'failed' && <LeftOut provider={p} push={last} />}
       {last?.differences && last.differences.length > 0 && <Differences provider={p} push={last} />}
+      {exchanged && <ExchangedNotice provider={p} exchanged={exchanged} onClose={() => setExchanged(null)} />}
 
       {s.current?.number?.differs && (
         <div className="provider-number">
@@ -163,11 +201,18 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
       {verificationRemoved && !s.current?.updateRemovesVerification && (
         <Notice>{pt('removedVerification')} <VerifyAgain dive={d} /></Notice>
       )}
-      {ready && !signInNeeded && (
+      {ready && !signInNeeded && choosing && (
+        <ProviderConflicts
+          key={choosing.map((c) => c.field).join()} conflicts={choosing} providerName={p.name} waiting={!asked}
+          isPending={sendsChoices(send)} onSend={(conflicts) => send.mutate({ conflicts })}
+          onCancel={cancelAsked(asked, () => setAsked(null))}
+        />
+      )}
+      {ready && !signInNeeded && !asked && (
         <div className="form-actions">
-          {(!s.current || !s.current.upToDate) && (
-            <Button variant="primary" icon="send" isPending={send.isPending && send.variables === undefined}
-              onPress={() => send.mutate(undefined)}>
+          {(!s.current || !s.current.upToDate) && !choosing && (
+            <Button variant="primary" icon="send" isPending={send.isPending && !send.variables.onExisting && !send.variables.conflicts}
+              onPress={() => send.mutate({})}>
               {s.current && can('update') ? pt('update') : pt('send')}
             </Button>
           )}
@@ -179,6 +224,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
           )}
         </div>
       )}
+      <UpdateNote provider={p} shown={ready && !signInNeeded && !asked && offersUpdate(s, choosing, can('update'))} />
       {p.notices.map((n) => <Muted key={n}>{pt(`notice.${n}`)}</Muted>)}
       {s.pushes.length > 0 && (
         <details className="extras">
@@ -208,10 +254,10 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
             <p>{pt('existsQuestion')}</p>
             {send.error && <Notice tone="danger">{errorText(send.error)}</Notice>}
             <div className="form-actions">
-              <Button variant="primary" icon="link" isPending={send.isPending && send.variables === 'link'} isDisabled={send.isPending}
-                onPress={() => send.mutate('link')}>{pt('linkExisting')}</Button>
-              <Button icon="send" isPending={send.isPending && send.variables === 'create'} isDisabled={send.isPending}
-                onPress={() => send.mutate('create')}>{pt('sendAnyway')}</Button>
+              <Button variant="primary" icon="link" isPending={send.isPending && send.variables.onExisting === 'link'} isDisabled={send.isPending}
+                onPress={() => send.mutate({ onExisting: 'link' })}>{pt('linkExisting')}</Button>
+              <Button icon="send" isPending={send.isPending && send.variables.onExisting === 'create'} isDisabled={send.isPending}
+                onPress={() => send.mutate({ onExisting: 'create' })}>{pt('sendAnyway')}</Button>
               <Button onPress={() => setExisting(null)}>{t('common.cancel')}</Button>
             </div>
           </>
@@ -322,6 +368,27 @@ function SentState({ provider: p, status: s }: { provider: ProviderView; status:
       {pt('sent', { number: s.current.remoteNumber ?? '', date: display.dateTime(s.current.sentAt) })}
       {s.current.upToDate ? <Badge tone="success">{pt('upToDate')}</Badge> : <Badge>{pt('changed')}</Badge>}
     </p>
+  );
+}
+
+/** Under the update button: an update sends a removal too (ADR 0056), so a value cleared here goes at the Provider. */
+function UpdateNote({ provider: p, shown }: { provider: ProviderView; shown: boolean }) {
+  const pt = useProviderText(p);
+  return shown ? <Muted>{pt('updateRemoves')}</Muted> : null;
+}
+
+/** What the last update took from the Provider into the Dive, and what it left as the Provider has it (ADR 0056). */
+function ExchangedNotice({ provider: p, exchanged, onClose }: { provider: ProviderView; exchanged: Exchanged; onClose: () => void }) {
+  const { t } = useTranslation();
+  const pt = useProviderText(p);
+  const fieldNames = useFieldNames();
+  if (exchanged.taken.length === 0 && exchanged.deferred.length === 0) return null;
+  return (
+    <Notice tone="info">
+      {exchanged.taken.length > 0 && <p>{pt('taken', { fields: fieldNames(exchanged.taken) })}</p>}
+      {exchanged.deferred.length > 0 && <p>{pt('deferred', { fields: fieldNames(exchanged.deferred) })}</p>}
+      <Button variant="quiet" onPress={onClose}>{t('common.close')}</Button>
+    </Notice>
   );
 }
 

@@ -86,14 +86,16 @@ export interface FakeSsi {
   buddies: FakeSsiBuddy[];
   /** Every call: its action and whether it carried a token (never the password). */
   calls: { what: string; method: string }[];
-  /** Makes every token issued so far invalid, as when SSI's tokens expire. */
-  expireTokens(): void;
+  /** Makes every token issued so far invalid, as when SSI's tokens expire; with an account ID only that account's. */
+  expireTokens(accountId?: number): void;
   /** While set, every call answers with this HTTP status. */
   failWith: number | null;
   /** How a call with an unknown (expired) token is answered; null: `authenticated: false` at 200. */
   expiredAnswer: { status: number; body: unknown } | null;
   /** Answer saves as SSI does for a client that isn't its app: with an invented dive ID, storing nothing. */
   dropSaves: boolean;
+  /** While set, every token expires right after the next logbook read, as when one runs out in the middle of an action. */
+  expireAfterRead: boolean;
   /** Adds a dive as if it had been logged in the SSI app. */
   addDive(accountId: number, values: SsiRecord): number;
 }
@@ -149,7 +151,10 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
     failWith: null,
     expiredAnswer: null,
     dropSaves: false,
-    expireTokens: () => tokens.clear(),
+    expireAfterRead: false,
+    expireTokens: (accountId) => {
+      for (const [token, owner] of tokens) if (accountId === undefined || owner === accountId) tokens.delete(token);
+    },
     addDive(accountId, values) {
       const id = nextDiveId++;
       fake.dives.set(id, { ...values, odin_user_log_id: id, odin_user_log_user_master_id: accountId, odin_user_log_deleted: 0 });
@@ -196,6 +201,10 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
         // The real logbook lists the sites of the account's dives; the fake's account has dived at all of them.
         const buddies = fake.buddies.filter((b) => b.owner === accountId)
           .map(({ owner: _owner, ...b }) => ({ ...b, master_id: b.buddy_master_id, forename: b.firstname, confirmed: 1, deleted: 0, favorite: 0 }));
+        if (fake.expireAfterRead) {
+          fake.expireAfterRead = false;
+          tokens.clear();
+        }
         return answer({ verified_dives: 0, logbook_details: own, logbook_sites: fake.sites, logbook_buddies: buddies });
       }
       if (what === 'get_ccards') {

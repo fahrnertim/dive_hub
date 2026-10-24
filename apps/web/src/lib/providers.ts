@@ -2,8 +2,11 @@
 // panels render from the capabilities; texts name the Provider, in its own words where it has them.
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { providersQuery, type ProblemCode, type ProviderView, type RequirementView } from '../api.ts';
+import { providersQuery, type ConflictFieldView, type ProblemCode, type ProviderView, type RequirementView } from '../api.ts';
 import type en from '../i18n/locales/en.json';
+
+/** A field the two sides exchange both ways and compare (ADR 0056). */
+export type SyncedField = ConflictFieldView['field'];
 
 type Paths<T> = { [K in keyof T & string]: T[K] extends string ? K : `${K}.${Paths<T[K]>}` }[keyof T & string];
 /** A text under `provider` in en.json; a Provider may word it itself under `providers.<id>`. */
@@ -21,11 +24,20 @@ export type StrayOverride = { [Id in keyof Overrides]: Exclude<Paths<Overrides[I
 export const exporting = (providers: ProviderView[] | undefined) => (providers ?? []).filter((p) => p.data.dives?.export);
 /**
  * Whether the Dive at a Provider has something that waits for the User: it changed since it was sent, the last
- * sending failed, or the connection needs a new sign-in. Its line on the dive page then opens by itself.
+ * sending failed, the connection needs a new sign-in, or a run left Conflicts to decide (ADR 0056). Its line on the dive
+ * page then opens by itself.
  */
 export const waitsForUser = (s: {
-  connection: { state: string } | null; current: { upToDate: boolean } | null; pushes: { state: string }[];
-}) => !!s.connection && (s.connection.state === 'needs_sign_in' || s.pushes[0]?.state === 'failed' || (!!s.current && !s.current.upToDate));
+  connection: { state: string } | null; current: { upToDate: boolean } | null; pushes: { state: string }[]; conflicts?: unknown[] | null;
+}) => !!s.connection && (s.connection.state === 'needs_sign_in' || s.pushes[0]?.state === 'failed' || (!!s.current && !s.current.upToDate)
+  || (s.conflicts?.length ?? 0) > 0);
+
+/** The fields a send named (taken from or left at the Provider), in the import preview's words: "notes and buddies". */
+export function useFieldNames() {
+  const { t, i18n } = useTranslation();
+  return (fields: readonly SyncedField[]) => new Intl.ListFormat(i18n.language, { type: 'conjunction' })
+    .format(fields.map((f) => t(`provider.importField.${f}`)));
+}
 /** The Providers a User connects to (any sign-in but none). */
 export const connectable = (providers: ProviderView[] | undefined) => (providers ?? []).filter((p) => p.signIn.kind !== 'none');
 

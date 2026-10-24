@@ -1,8 +1,10 @@
 // SSI as a Provider through the HTTP API (ADR 0024, 0027, data model scenario 4), against the fake SSI:
-// connecting, sending a Dive, updating it in place, linking, deleting, an expired token, an outage.
-import { eq } from 'drizzle-orm';
+// connecting, sending a Dive, updating it in place, linking, deleting, an expired token, an outage, and the three-way
+// send (ADR 0056): a change made in SSI's app comes back, a removal goes out, a Conflict is asked or waits.
+import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { connection, diverExternalId, push } from '../src/db/schema.js';
+import { connection, cylinder, dive, diverExternalId, providerConflict, push, pushRun, revision, user } from '../src/db/schema.js';
+import type { ProviderAdapter } from '../src/providers/provider.js';
 import { createSecretBox } from '../src/secrets/secret-box.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
@@ -266,6 +268,190 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Provider', () => {
       expect((await call('POST', `/api/dives/${diveId}/providers/ssi`, other, {})).statusCode).toBe(404);
       const conn = (await status()).connection!;
       expect((await call('DELETE', `/api/connections/${conn.id}`, other)).statusCode).toBe(404);
+    });
+  });
+
+  describe('the three-way send (ADR 0056)', () => {
+    let day = 1;
+    const patch = async (id: string, changes: object) => {
+      const { version } = (await call('GET', `/api/dives/${id}`, tim)).json();
+      expect((await call('PATCH', `/api/dives/${id}`, tim, { version, ...changes })).statusCode).toBe(200);
+    };
+    /** A Dive sent to SSI with these values: its ID and SSI's dive ID. */
+    const sentDive = async (values: object = {}) => {
+      const id = await upload(tim, `three-way-${day}.fit`, makeSyntheticDive({ serialNumber: 111, start: new Date(Date.UTC(2026, 5, day++, 9)) }));
+      await patch(id, { siteId: hausreefId, ...values });
+      expect((await send({}, id)).json()).toMatchObject({ outcome: 'created' });
+      return { id, remoteId: (await status(id)).current!.remoteId };
+    };
+    /** Changed in SSI's app, as the browser tests' helper does. */
+    const setInSsi = (remoteId: string, set: Record<string, unknown>) => Object.assign(ssiDive(remoteId), set);
+    const values = async (id: string) => (await call('GET', `/api/dives/${id}`, tim)).json() as {
+      notes: string | null; site: { id: string } | null; cylinders: { volumeL: number | null }[]; lead: { amountKg: number }[];
+    };
+    const saves = () => ctx.fakeSsi.calls.filter((c) => c.what === 'save_divelog').length;
+    const updates = async (id: string) => t.db.select().from(revision)
+      .where(and(eq(revision.entityType, 'dive'), eq(revision.entityId, id), eq(revision.cause, 'update')));
+
+    it("a note changed in SSI's app comes back and the lead changed here goes out; one save, one Revision 'Updated from its source', the Dive up to date", async () => {
+      const { id, remoteId } = await sentDive({ notes: 'Reef', lead: [{ amountKg: 6 }] });
+      setInSsi(remoteId, { odin_user_log_comment: 'Reef, a turtle' });
+      await patch(id, { lead: [{ amountKg: 8 }] });
+      const before = saves();
+      const answer = (await send({}, id)).json();
+      expect(answer).toMatchObject({ outcome: 'updated', taken: ['notes'], deferred: [], status: { current: { upToDate: true }, conflicts: null } });
+      expect(saves()).toBe(before + 1);
+      expect(ssiDive(remoteId)).toMatchObject({ odin_user_log_comment: 'Reef, a turtle', odin_user_log_weight_kg: 8 });
+      expect((await values(id)).notes).toBe('Reef, a turtle');
+      const taken = await updates(id);
+      expect(taken).toHaveLength(1);
+      expect(taken[0]!.actorType).toBe('user');
+      expect(Object.keys(taken[0]!.changes)).toEqual(['notes']);
+    });
+
+    it('a note removed here is removed at SSI', async () => {
+      const { id, remoteId } = await sentDive({ notes: 'Strong current' });
+      await patch(id, { notes: null });
+      expect((await send({}, id)).json()).toMatchObject({ outcome: 'updated', taken: [] });
+      expect(ssiDive(remoteId).odin_user_log_comment).toBeNull();
+    });
+
+    it("a note removed in SSI's app is removed here", async () => {
+      const { id, remoteId } = await sentDive({ notes: 'Strong current' });
+      setInSsi(remoteId, { odin_user_log_comment: '' });
+      expect((await send({}, id)).json()).toMatchObject({ outcome: 'updated', taken: ['notes'] });
+      expect((await values(id)).notes).toBeNull();
+      expect(ssiDive(remoteId).odin_user_log_comment || null).toBeNull();
+    });
+
+    it("a tank removed in SSI's app removes the Dive's one Cylinder; one from a Recording is sent again", async () => {
+      const tank = { volumeL: 12, workingPressureBar: 232, material: 'steel', gas: { o2: 32, he: 0 }, startPressureBar: 200, endPressureBar: 50 };
+      const noTank = { odin_user_log_tank_vol_l: null, odin_user_log_pressure_start_bar: null, odin_user_log_pressure_end_bar: null };
+      const typed = await sentDive({ cylinders: [tank] });
+      setInSsi(typed.remoteId, noTank);
+      expect((await send({}, typed.id)).json()).toMatchObject({ outcome: 'updated', taken: ['cylinder'] });
+      expect((await values(typed.id)).cylinders).toEqual([]);
+
+      const recorded = await sentDive({ cylinders: [tank] });
+      const [row] = await t.db.select({ recordingId: dive.primaryRecordingId }).from(dive).where(eq(dive.id, recorded.id));
+      await t.db.update(cylinder).set({ recordingId: row!.recordingId, channel: 'tankPressure' }).where(eq(cylinder.diveId, recorded.id));
+      setInSsi(recorded.remoteId, noTank);
+      expect((await send({}, recorded.id)).json()).toMatchObject({ outcome: 'updated', taken: [], deferred: [] });
+      expect((await values(recorded.id)).cylinders).toHaveLength(1);
+      expect(ssiDive(recorded.remoteId)).toMatchObject({ odin_user_log_tank_vol_l: 12, odin_user_log_pressure_start_bar: 200 });
+    });
+
+    it('a site removed at SSI is sent again', async () => {
+      const { id, remoteId } = await sentDive();
+      setInSsi(remoteId, { odin_user_log_dive_sites_id: 0 });
+      expect((await send({}, id)).json()).toMatchObject({ outcome: 'updated', taken: [] });
+      expect(ssiDive(remoteId).odin_user_log_dive_sites_id).toBe(3314);
+      expect((await values(id)).site?.id).toBe(hausreefId);
+    });
+
+    it("a site changed in SSI's app to one Dive Hub doesn't know (no site data from SSI) stays as SSI has it and is deferred", async () => {
+      ctx.fakeSsi.sites.push({ odin_dive_sites_id: 4410, odin_dive_sites_name: 'Elphinstone', odin_dive_sites_lat: 25.31, odin_dive_sites_lon: 34.86, odin_countries_code_iso: 'EG' });
+      const { id, remoteId } = await sentDive({ notes: 'Reef' });
+      setInSsi(remoteId, { odin_user_log_dive_sites_id: 4410 });
+      const answer = (await send({}, id)).json();
+      expect(answer).toMatchObject({ outcome: 'updated', taken: [], deferred: ['site'] });
+      expect(ssiDive(remoteId).odin_user_log_dive_sites_id).toBe(4410);
+      expect((await values(id)).site?.id).toBe(hausreefId);
+      expect(await updates(id)).toEqual([]);
+    });
+
+    it('changed on both sides: nothing is sent, the answer lists the conflict with both values', async () => {
+      const { id, remoteId } = await sentDive({ notes: 'Reef' });
+      setInSsi(remoteId, { odin_user_log_comment: 'Reef in SSI' });
+      await patch(id, { notes: 'Reef here' });
+      const pushes = (await status(id)).pushes.length;
+      const before = saves();
+      const response = await send({}, id);
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toMatchObject({ outcome: 'conflicts', conflicts: [{ field: 'notes', hub: 'Reef here', provider: 'Reef in SSI' }] });
+      expect(saves()).toBe(before);
+      expect((await status(id)).pushes).toHaveLength(pushes);
+      expect(ssiDive(remoteId).odin_user_log_comment).toBe('Reef in SSI');
+    });
+
+    it("with choices, SSI's value is taken and Dive Hub's sent, in one save", async () => {
+      const { id, remoteId } = await sentDive({ notes: 'Reef', lead: [{ amountKg: 6 }] });
+      setInSsi(remoteId, { odin_user_log_comment: 'Reef in SSI', odin_user_log_weight_kg: 7 });
+      await patch(id, { notes: 'Reef here', lead: [{ amountKg: 8 }] });
+      expect((await send({}, id)).json()).toMatchObject({ outcome: 'conflicts', conflicts: [{ field: 'notes' }, { field: 'lead', hub: 8, provider: 7 }] });
+      const before = saves();
+      expect((await send({ conflicts: { notes: 'provider', lead: 'hub' } }, id)).json()).toMatchObject({ outcome: 'updated', taken: ['notes'] });
+      expect(saves()).toBe(before + 1);
+      expect((await values(id)).notes).toBe('Reef in SSI');
+      expect(ssiDive(remoteId)).toMatchObject({ odin_user_log_comment: 'Reef in SSI', odin_user_log_weight_kg: 8 });
+    });
+
+    it('a Dive linked without a base sends its values and fills its empty notes from SSI, no conflict', async () => {
+      const id = await upload(tim, 'three-way-linked.fit', makeSyntheticDive({ serialNumber: 111, start: new Date(Date.UTC(2026, 6, 1, 9)) }));
+      await patch(id, { siteId: hausreefId, lead: [{ amountKg: 5 }] });
+      const { startsAt } = (await call('GET', `/api/dives/${id}`, tim)).json().values;
+      const local = new Date(Date.parse(startsAt.at) + (startsAt.utcOffsetSeconds ?? 0) * 1000).toISOString().slice(0, 16).replace('T', ' ');
+      const remoteId = String(ctx.fakeSsi.addDive(5_012_047, {
+        odin_user_log_nr: 40, odin_user_log_datetime: local, odin_user_log_depth_m: 18, odin_user_log_divetime: 31,
+        odin_user_log_comment: 'Logged in the app', odin_user_log_weight_kg: 9,
+      }));
+      ctx.ssiClock.advance(3 * 60_000);
+      expect((await send({ onExisting: 'link' }, id)).json()).toMatchObject({ outcome: 'linked' });
+      expect((await send({}, id)).json()).toMatchObject({ outcome: 'updated', taken: ['notes'] });
+      expect((await values(id)).notes).toBe('Logged in the app');
+      expect(ssiDive(remoteId)).toMatchObject({ odin_user_log_comment: 'Logged in the app', odin_user_log_weight_kg: 5, odin_user_log_dive_sites_id: 3314 });
+    });
+
+    it("a run's conflict: sent without the field, an entry waits; the next send from the Dive's page asks it, and with a choice closes the entry", async () => {
+      const { id, remoteId } = await sentDive({ notes: 'Reef', lead: [{ amountKg: 6 }] });
+      setInSsi(remoteId, { odin_user_log_comment: 'Reef in SSI' });
+      await patch(id, { notes: 'Reef here', lead: [{ amountKg: 8 }] });
+      const [{ id: userId }] = (await t.db.select({ id: user.id }).from(user).where(eq(user.email, 'tim@example.com'))) as [{ id: string }];
+      const connectionId = (await status(id)).connection!.id;
+      const [run] = await t.db.insert(pushRun).values({
+        userId, connectionId, provider: 'ssi', diverId: timDiver, updates: true, updatesRemovingVerification: false, leftOut: {} as typeof pushRun.$inferInsert['leftOut'],
+      }).returning();
+      const sent = await ctx.providers.pushes.send(userId, id, 'ssi', { onConflict: 'defer', runId: run!.id });
+      expect(sent).toMatchObject({ result: 'updated', taken: [], deferred: ['notes'] });
+      expect(ssiDive(remoteId)).toMatchObject({ odin_user_log_comment: 'Reef in SSI', odin_user_log_weight_kg: 8 });
+      expect(await t.db.select().from(providerConflict).where(eq(providerConflict.diveId, id))).toMatchObject([
+        { remoteId, runId: run!.id, fields: [{ field: 'notes', hub: 'Reef here', provider: 'Reef in SSI' }] },
+      ]);
+      expect((await status(id) as unknown as { conflicts: unknown }).conflicts).toEqual([{ field: 'notes', hub: 'Reef here', provider: 'Reef in SSI' }]);
+
+      expect((await send({}, id)).json()).toMatchObject({ outcome: 'conflicts', conflicts: [{ field: 'notes', hub: 'Reef here', provider: 'Reef in SSI' }] });
+      expect((await send({ conflicts: { notes: 'hub' } }, id)).json()).toMatchObject({ outcome: 'updated', status: { conflicts: null } });
+      expect(ssiDive(remoteId).odin_user_log_comment).toBe('Reef here');
+      expect(await t.db.select().from(providerConflict).where(eq(providerConflict.diveId, id))).toEqual([]);
+    });
+
+    it("a field the Provider doesn't export stays as SSI has it", async () => {
+      // The same SSI, but its notes only come in (a test adapter's fields).
+      const notesIn = (a: ProviderAdapter): ProviderAdapter => {
+        const dives = a.capabilities.data.dives!;
+        return { ...a, capabilities: { ...a.capabilities, data: { ...a.capabilities.data, dives: { ...dives, fields: { ...dives.fields, notes: ['import'] } } } } };
+      };
+      const narrow = await createTestApp(t, { fakeSsi: ctx.fakeSsi, ssi: notesIn, clock: ctx.clock });
+      const { id, remoteId } = await sentDive({ notes: 'Reef' });
+      setInSsi(remoteId, { odin_user_log_comment: 'Reef in SSI' });
+      await patch(id, { notes: 'Reef here', lead: [{ amountKg: 4 }] });
+      const answer = await narrow.app.inject({ method: 'POST', url: `/api/dives/${id}/providers/ssi`, headers: { cookie: tim, origin: BASE_URL }, payload: {} });
+      expect(answer.json()).toMatchObject({ outcome: 'updated', taken: [], deferred: ['notes'] });
+      expect(ssiDive(remoteId)).toMatchObject({ odin_user_log_comment: 'Reef in SSI', odin_user_log_weight_kg: 4 });
+      expect((await values(id)).notes).toBe('Reef here');
+      await narrow.app.close();
+    });
+
+    it('a send retried after signing in takes nothing twice', async () => {
+      const { id, remoteId } = await sentDive({ notes: 'Reef' });
+      setInSsi(remoteId, { odin_user_log_comment: 'Reef, a turtle' });
+      const signIns = ctx.fakeSsi.calls.filter((c) => c.what === 'authenticate').length;
+      ctx.fakeSsi.expireAfterRead = true;
+      expect((await send({}, id)).json()).toMatchObject({ outcome: 'updated', taken: ['notes'], status: { current: { upToDate: true } } });
+      expect(ctx.fakeSsi.calls.filter((c) => c.what === 'authenticate')).toHaveLength(signIns + 1);
+      expect(await updates(id)).toHaveLength(1);
+      expect((await values(id)).notes).toBe('Reef, a turtle');
+      expect(ssiDive(remoteId).odin_user_log_comment).toBe('Reef, a turtle');
     });
   });
 

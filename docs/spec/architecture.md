@@ -917,3 +917,16 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   deleting a Diver or a User releases theirs.
 - Web: `Certifications.tsx`, a dialog on the Divers page. Tests: `diver-certifications.test.ts`, cases in `provider-contract.ts` and
   `ssi-client.test.ts`, `certifications.spec.ts`, a case in `ui-quality.spec.ts`; the e2e server's fake SSI has two invented cards for Erika.
+
+**Piece 3 (2026-10-24): the send is three-way** ([ADR 0056](../decisions/0056-two-way-exchange-and-automation.md), amended).
+- `pushes.send(userId, diveId, provider, options)` with `SendOptions` (`onExisting`, `conflicts`, `onConflict: 'ask' | 'defer'`,
+  `runId`). An update, under the lease and `withAccess`, where the adapter offers `current` and `parse` (`updateThere` in
+  `push-service.ts`): the Provider's record now (the same read the update writes from), the base and the Dive's side
+  (`dive-changes.ts`: `baseOf`, `hubOf`), the fields that travel both ways, the open entry (`conflicts.ts`) and the choices go
+  into `planSend` (`three-way.ts`). A Conflict to ask answers `conflicts` and writes nothing; otherwise what changed only at the
+  Provider is taken first (`takeChanges`, one Revision `update` by the User), the Dive is read again, and the adapter's `update`
+  gets `leave` (`keep`: deferred Conflicts and fields without `export`; `clear`: removed here). The Push carries the fingerprint of
+  the Dive as sent. A Push run's Conflicts are recorded as the Dive's entry (`record`, with the run); any other successful update
+  closes it. A retry after a sign-in compares again, so nothing is taken twice.
+- The answer `updated` carries `taken` and `deferred`; the status carries `conflicts` (the open entry about the current remote dive).
+- Tests: `ssi-target.test.ts` (the three-way send through the fake SSI, whose tokens can expire right after a logbook read).

@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { DeletedDives } from './DeletedDives.tsx';
 import { DiscardedRecordings, RecordingDecisions } from './Decisions.tsx';
 import { GoneDivesSections } from './GoneDives.tsx';
+import { ProviderConflictsSection } from './ProviderConflictsSection.tsx';
 import { ImportHistory } from './ImportPanel.tsx';
 import { AnsweredChecks, KeptDives, PairDecisions, ShortDiveDecisions } from './LogbookChecks.tsx';
 import { usePageTitle } from './lib/page.ts';
@@ -45,6 +46,7 @@ function ToDecide() {
       <ShortDiveDecisions />
       <RecordingDecisions />
       <GoneDivesSections />
+      <ProviderConflictsSection />
       {total === 0 && <Muted>{t('review.nothingWaits')}</Muted>}
     </>
   );

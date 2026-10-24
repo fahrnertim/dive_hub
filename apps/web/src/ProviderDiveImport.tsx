@@ -5,9 +5,9 @@ import {
   api, diveImportPreviewQuery, diveTimesQuery, importQuery, keys, unwrap, type ConnectionView, type DiveImportMode, type DiveImportPreview,
   type ProviderView,
 } from './api.ts';
-import { useCylinderText } from './Cylinders.tsx';
 import { GoneCheck } from './GoneDives.tsx';
 import { ProviderImportSummary } from './ImportPanel.tsx';
+import { useConflictValueText } from './ProviderConflicts.tsx';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { deviceName } from './lib/devices.ts';
@@ -148,7 +148,7 @@ function Preview({ provider: p, connection: c, mode, onSettings, onStarted, onCl
   const { t, i18n } = useTranslation();
   const errorText = useErrorText();
   const display = useDisplay();
-  const cylinderText = useCylinderText();
+  const valueText = useConflictValueText();
   const queryClient = useQueryClient();
   const preview = useQuery(diveImportPreviewQuery(c.id));
   // The same read found Dives gone at the Provider and stored them (ADR 0051): the Review page and its strip ask again.
@@ -191,21 +191,6 @@ function Preview({ provider: p, connection: c, mode, onSettings, onStarted, onCl
     .filter((k) => data.counts[k] > 0);
   // The local time as the Provider keeps it, without a time zone.
   const local = (text: string) => formatDiveTime(`${text.replace(' ', 'T')}Z`, null, display.locale, true);
-  /** A conflicting value as the User reads it: depths, temperatures and durations in their units, names listed, a tank in words. */
-  const valueText = (field: DiveImportPreview['conflicts'][number]['field'], v: DiveImportPreview['conflicts'][number]['hub']): string => {
-    if (v === null || (Array.isArray(v) && v.length === 0)) return t('common.none');
-    if (Array.isArray(v)) return new Intl.ListFormat(i18n.language, { type: 'conjunction' }).format(v);
-    // The tank typed at the Provider, or the Dive's only Cylinder, in a Cylinder's words.
-    if (typeof v === 'object') return cylinderText({ ...v, workingPressureBar: null });
-    if (field === 'startsAt' && typeof v === 'string') return local(v);
-    if (typeof v === 'number') {
-      if (field === 'durationSeconds') return display.duration(v);
-      if (field === 'waterTemperatureC') return display.temperature(v);
-      if (field === 'lead') return display.mass(v);
-      return display.depth(v);
-    }
-    return v;
-  };
   const candidate = (x: Decision['candidates'][number]) => [
     x.number !== null ? t('dive.title', { number: x.number }) : null,
     display.diveTime(x.startsAt, x.utcOffsetSeconds, x.utcOffsetSource),

@@ -1,7 +1,7 @@
 // The Review page (UI redesign 4): what waits for the User, in the logbook's one line and the navigation's count, and
 // the page's parts, kept in the address like the logbook's settings (ADR 0017).
 import { useQuery } from '@tanstack/react-query';
-import { candidatesQuery, deletedDivesQuery, goneDivesQuery, isPairCheck, logbookChecksQuery } from '../api.ts';
+import { candidatesQuery, deletedDivesQuery, goneDivesQuery, isPairCheck, logbookChecksQuery, providerConflictsQuery } from '../api.ts';
 
 export const REVIEW_TABS = ['decide', 'imports', 'decided', 'deleted'] as const;
 export type ReviewTab = (typeof REVIEW_TABS)[number];
@@ -17,7 +17,8 @@ export function reviewHref(tab: ReviewTab): string {
 
 /**
  * What waits for a decision: Recordings that don't clearly belong to a Dive (ADR 0016), pairs of Dives at the same time and
- * Dives that are probably no dive (ADR 0038), and Dives gone at a Provider (ADR 0051), counted per Provider.
+ * Dives that are probably no dive (ADR 0038), Dives gone at a Provider (ADR 0051), counted per Provider, and Dives a run
+ * left with values changed in both places (ADR 0056).
  */
 export function useWaiting() {
   const recordings = useQuery(candidatesQuery('open')).data?.length ?? 0;
@@ -27,7 +28,8 @@ export function useWaiting() {
   const goneAt: Record<string, number> = {};
   for (const g of useQuery(goneDivesQuery()).data ?? []) goneAt[g.provider] = (goneAt[g.provider] ?? 0) + g.dives.length;
   const gone = Object.values(goneAt).reduce((a, b) => a + b, 0);
-  return { recordings, pairs, shortDives, goneAt, gone, total: recordings + checks.length + gone };
+  const conflicts = (useQuery(providerConflictsQuery()).data ?? []).reduce((n, g) => n + g.entries.length, 0);
+  return { recordings, pairs, shortDives, goneAt, gone, conflicts, total: recordings + checks.length + gone + conflicts };
 }
 
 /** Counts that go into the tabs and the links under the logbook: what was decided and what was deleted. */

@@ -13,10 +13,16 @@ export function ssiDiveType(mode: DiveMode | null, gasCount: number): number | n
   return gasCount >= 2 ? 2 : 0;
 }
 
+/** A whole number SSI holds as a number or as a numeric string; null for anything else. */
+export function ssiInteger(v: unknown): number | null {
+  const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN;
+  return Number.isInteger(n) ? n : null;
+}
+
 /** The dive mode of an SSI dive type: 6 and 7 apnea, 8 and 9 CCR, 4 and 5 SCR, 0 to 3 open circuit; else unknown. */
 export function diveModeOfSsi(type: unknown): DiveMode | null {
-  const n = typeof type === 'number' ? type : typeof type === 'string' && type.trim() !== '' ? Number(type) : NaN;
-  if (!Number.isInteger(n)) return null;
+  const n = ssiInteger(type);
+  if (n === null) return null;
   if (n === 6 || n === 7) return 'apnea';
   if (n === 8 || n === 9) return 'ccr';
   if (n === 4 || n === 5) return 'scr';
@@ -29,7 +35,7 @@ export function diveModeOfSsi(type: unknown): DiveMode | null {
  * and its extended-range type (2 or 3) when ours is 0, so a round trip never downgrades it.
  */
 export function keepTraining(remote: unknown, ours: number | null): number | null {
-  const n = typeof remote === 'number' ? remote : typeof remote === 'string' && remote.trim() !== '' ? Number(remote) : NaN;
+  const n = ssiInteger(remote);
   if (ours === 0 && (n === 2 || n === 3)) return n;
   return ours !== null && ours % 2 === 0 && n === ours + 1 ? n : ours;
 }

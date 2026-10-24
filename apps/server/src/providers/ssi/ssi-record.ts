@@ -6,7 +6,8 @@
 // edited in the app survive; a delete re-sends it with `deleted` set.
 import { createHash } from 'node:crypto';
 import type { SiteWaterType } from '../../vocabulary.js';
-import type { OutgoingDive, Series } from '../provider.js';
+import type { DiveField, Leave, OutgoingDive, Series } from '../provider.js';
+import type { SyncedField } from '../three-way.js';
 import type { SsiRecord } from './ssi-client.js';
 import { asBool, DIVE_ROW, SENT_KEYS } from './ssi-dive-row.js';
 import { keepTraining, ssiDiveType } from './ssi-dive-type.js';
@@ -265,13 +266,43 @@ export function writableRecord(remote: SsiRecord): SsiRecord {
   return record;
 }
 
-/** SSI's current record with the Dive's values on top; where the Dive has nothing, SSI's value stays. */
-export function updateRecord(remote: SsiRecord, d: DiveForSsi): SsiRecord {
+/**
+ * The keys of SSI's record that `ownFields` writes for each synced field, metric and imperial together. Buddies are
+ * entries of the buddy list (`withBuddies`), not keys of their own.
+ */
+export const SSI_FIELD_KEYS: Record<SyncedField, readonly string[]> = {
+  site: ['odin_user_log_dive_sites_id'],
+  notes: ['odin_user_log_comment'],
+  buddies: [],
+  cylinder: [
+    'odin_user_log_tank_vol_l', 'odin_user_log_tank_vol_cuft', 'odin_user_log_pressure_start_bar', 'odin_user_log_pressure_start_psi',
+    'odin_user_log_pressure_end_bar', 'odin_user_log_pressure_end_psi', 'odin_user_log_var_tanktype_id',
+  ],
+  lead: ['odin_user_log_weight_kg', 'odin_user_log_weight_lb'],
+  startsAt: ['odin_user_log_datetime', 'odin_user_log_date', 'odin_user_log_entry_time'],
+  durationSeconds: ['odin_user_log_divetime'],
+  maxDepthM: ['odin_user_log_depth_m', 'odin_user_log_depth_ft'],
+  avgDepthM: ['odin_user_log_avg_depth_m', 'odin_user_log_avg_depth_ft'],
+  waterTemperatureC: ['odin_user_log_watertemp_c', 'odin_user_log_watertemp_f'],
+};
+const keysOf = (fields: DiveField[]) => fields.flatMap((f) => (SSI_FIELD_KEYS as Partial<Record<DiveField, readonly string[]>>)[f] ?? []);
+
+/**
+ * SSI's current record with the Dive's values on top; where the Dive has nothing, SSI's value stays. `leave.keep` fields
+ * stay as SSI has them; `leave.clear` fields are emptied with `null` on each key, which SSI takes as a clear (checked
+ * 2026-10-24, docs/research/2026-10-24-ssi-clearing-keys.md). The site is never cleared (ADR 0030).
+ */
+export function updateRecord(remote: SsiRecord, d: DiveForSsi, leave?: Leave): SsiRecord {
   const fields = ownFields(d);
   // A training variant SSI holds (7 for apnea 6) and its extended-range type (2, 3) stay.
   fields.odin_user_log_dive_type = keepTraining(remote.odin_user_log_dive_type, asNumber(fields.odin_user_log_dive_type));
   const own = Object.entries(fields).filter(([, v]) => v !== null);
-  return { ...writableRecord(remote), ...Object.fromEntries(own), odin_user_log_id: remote.odin_user_log_id };
+  const record: SsiRecord = { ...writableRecord(remote), ...Object.fromEntries(own), odin_user_log_id: remote.odin_user_log_id };
+  if (!leave) return record;
+  const theirs = writableRecord(remote);
+  for (const key of keysOf(leave.clear.filter((f) => f !== 'site'))) record[key] = null;
+  for (const key of keysOf(leave.keep)) record[key] = theirs[key];
+  return record;
 }
 
 /** SSI's record marked deleted (SSI keeps it, hidden; its app has no way back). */

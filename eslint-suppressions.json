@@ -97,22 +97,12 @@
   },
   "apps/server/src/providers/dive-import.ts": {
     "sonarjs/cognitive-complexity": {
-      "count": 5
+      "count": 3
     }
   },
   "apps/server/src/providers/push-run-service.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 3
-    }
-  },
-  "apps/server/src/providers/push-service.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "apps/server/src/providers/routes.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
     }
   },
   "apps/server/src/providers/ssi/ssi-import.ts": {

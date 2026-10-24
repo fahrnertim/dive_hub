@@ -92,9 +92,11 @@ export async function createTestApp(t: TestDatabase, options: {
   extraProviders?: ProviderAdapter[];
   /** The leases' clock; two app instances on one database share one (default: a fresh skipping clock). */
   clock?: ReturnType<typeof skippingClock>;
+  /** A test's change to the SSI adapter, such as which way its fields travel. */
+  ssi?: (adapter: ProviderAdapter) => ProviderAdapter;
 } = {}) {
   const {
-    webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, extraProviders = [], clock = skippingClock(),
+    webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, extraProviders = [], clock = skippingClock(), ssi = (a) => a,
     ...authOptions
   } = options;
   const auth = createTestAuth(t.db, authOptions);
@@ -109,10 +111,10 @@ export async function createTestApp(t: TestDatabase, options: {
   const providers = createProviderLayer({
     db: t.db, blobs, secrets: createSecretBox(encryptionKey ?? undefined),
     adapters: [
-      createSsiAdapter({
+      ssi(createSsiAdapter({
         client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch }),
         now: () => ssiClock.now,
-      }),
+      })),
       ...extraProviders,
     ],
     clock,

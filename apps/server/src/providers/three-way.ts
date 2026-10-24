@@ -52,8 +52,8 @@ function sameCylinder(a: ProviderCylinder, b: ProviderCylinder): boolean {
 
 /** Equal as far as the Provider keeps it: minutes for times, a minute for durations, 0.1 for depths and temperatures. */
 export function same(field: SyncedField, a: Comparable, b: Comparable): boolean {
-  const x = a[field];
-  const y = b[field];
+  const x = field === 'notes' ? text(a.notes) : a[field];
+  const y = field === 'notes' ? text(b.notes) : b[field];
   if (field === 'buddies') return JSON.stringify(x) === JSON.stringify(y);
   if (x === null || y === null) return x === y;
   if (field === 'cylinder') return sameCylinder(x as ProviderCylinder, y as ProviderCylinder);
@@ -63,23 +63,76 @@ export function same(field: SyncedField, a: Comparable, b: Comparable): boolean 
   return x === y;
 }
 
+/** Nothing there: null, or no buddies. */
+function isEmpty(field: SyncedField, c: Comparable): boolean {
+  if (field === 'buddies') return c.buddies.length === 0;
+  return field === 'notes' ? text(c.notes) === null : c[field] === null;
+}
+
 /**
- * Per field: unchanged at the Provider since the base, nothing; changed there and not here, `take` the Provider's value;
- * changed in both, and differently, a conflict. Without a base there is nothing to tell (the import only fills).
+ * Per field against the base: changed only at the Provider, `take` its value (a removal there too, except the site);
+ * changed only here, nothing, or `clear` when removed here; changed on both sides and differently, a conflict.
+ * A removal is a change both ways (ADR 0056).
  */
 export function threeWay(fields: readonly SyncedField[], base: Comparable, provider: Comparable, hub: Comparable) {
   const take: SyncedField[] = [];
   const conflicts: SyncedField[] = [];
+  const clear: SyncedField[] = [];
   for (const field of fields) {
-    if (same(field, base, provider) || same(field, provider, hub)) continue;
-    // The Provider no longer names a site: it never clears one here (SSI needs a site on every dive).
-    if (field === 'site' && provider.site === null) continue;
-    // Nor does it remove a tank; and where Dive Hub never saw a tank there, the one here stays (the import only fills).
-    if (field === 'cylinder' && (provider.cylinder === null || (base.cylinder === null && hub.cylinder !== null))) continue;
-    // Nor does it remove lead; and where Dive Hub never saw a weight there, the lead here stays.
-    if (field === 'lead' && (provider.lead === null || (base.lead === null && hub.lead !== null))) continue;
-    if (same(field, base, hub)) take.push(field);
-    else conflicts.push(field);
+    if (same(field, provider, hub)) continue;
+    const providerChanged = !same(field, base, provider);
+    const hubChanged = !same(field, base, hub);
+    if (!providerChanged && !hubChanged) continue;
+    // A dive needs a site at the Provider: a site is never cleared there, and a Provider without one never clears it here.
+    if (field === 'site' && (isEmpty('site', provider) || (isEmpty('site', hub) && !providerChanged))) continue;
+    // Where Dive Hub never saw a tank or weight there, the one here stays (the import only fills).
+    if ((field === 'cylinder' || field === 'lead') && isEmpty(field, base) && !isEmpty(field, hub)) continue;
+    if (providerChanged && !hubChanged) take.push(field);
+    else if (hubChanged && !providerChanged) {
+      if (isEmpty(field, hub)) clear.push(field);
+    } else conflicts.push(field);
   }
-  return { take, conflicts };
+  return { take, conflicts, clear };
+}
+
+export type Choice = 'hub' | 'provider';
+
+export interface SendPlan {
+  /** Taken from the Provider into the Dive here. */
+  take: SyncedField[];
+  /** Removed here: cleared at the Provider. */
+  clear: SyncedField[];
+  /** Left as the Provider has it in this send. */
+  keep: SyncedField[];
+  /** Both sides changed it; only with `onConflict: 'ask'`. */
+  conflicts: SyncedField[];
+}
+
+/** What a send takes, sends (in no list), clears and keeps, given the User's choices and the fields of open entries. */
+export function planSend(input: {
+  fields: readonly SyncedField[]; base: Comparable | null; provider: Comparable; hub: Comparable;
+  choices: Partial<Record<SyncedField, Choice>>; open: readonly SyncedField[]; onConflict: 'ask' | 'defer';
+}): SendPlan {
+  const { fields, base, provider, hub, choices, open, onConflict } = input;
+  const plan: SendPlan = { take: [], clear: [], keep: [], conflicts: [] };
+  if (base === null) {
+    plan.take = fields.filter((f) => isEmpty(f, hub) && !isEmpty(f, provider));
+    return plan;
+  }
+  const auto = threeWay(fields.filter((f) => !open.includes(f)), base, provider, hub);
+  const settle = (field: SyncedField) => {
+    const choice = choices[field];
+    if (choice === 'provider') { if (!(field === 'site' && isEmpty(field, provider))) plan.take.push(field); }
+    else if (choice === 'hub') { if (isEmpty(field, hub) && field !== 'site') plan.clear.push(field); }
+    else (onConflict === 'ask' ? plan.conflicts : plan.keep).push(field);
+  };
+  for (const field of fields) {
+    if (open.includes(field)) {
+      if (field === 'site' && isEmpty('site', provider)) continue;
+      if (!same(field, provider, hub)) settle(field);
+    } else if (auto.take.includes(field)) plan.take.push(field);
+    else if (auto.clear.includes(field)) plan.clear.push(field);
+    else if (auto.conflicts.includes(field)) settle(field);
+  }
+  return plan;
 }

@@ -448,6 +448,40 @@ export async function goneAtSsi(api: APIRequestContext, diveId: string): Promise
   expect(await checked.json()).toMatchObject({ empty: false, gone: 1 });
 }
 
+/** Changes the Dive's dive in Erika's SSI logbook in the fake SSI, as she would in SSI's app (ADR 0056). */
+export async function editAtSsi(api: APIRequestContext, diveId: string, set: Record<string, unknown>) {
+  const status = await (await api.get(`/api/dives/${diveId}/providers/ssi`)).json() as { current: { remoteId: string } | null };
+  const answer = await (await api.post('/e2e/fake-ssi/dive', { data: { email: SSI_ACCOUNT.login, remoteId: status.current!.remoteId, set }, headers })).json() as { found: boolean };
+  if (!answer.found) throw new Error('the Dive is not in Erika\'s SSI logbook');
+}
+
+/** Dive 9 sent to SSI with these notes (deletableDive, sendToSsi), so the send is the base of the next update (ADR 0056). */
+export async function sentWithNotes(api: APIRequestContext, notes: string): Promise<string> {
+  const id = await deletableDive(api);
+  await editElsewhere(api, id, notes);
+  await sendToSsi(api, id);
+  return id;
+}
+
+/**
+ * A Conflict with SSI (ADR 0056): Dive 9 sent with the notes "Reef", then its notes changed in SSI's app ("Reef in SSI")
+ * and here ("Reef here"), so the next update asks which to keep. Undone by leaveConflict.
+ */
+export async function conflictAtSsi(api: APIRequestContext): Promise<string> {
+  const id = await sentWithNotes(api, 'Reef');
+  await editAtSsi(api, id, { odin_user_log_comment: 'Reef in SSI' });
+  await editElsewhere(api, id, 'Reef here');
+  return id;
+}
+
+/** Dive 9 out of SSI again, without notes and lead, and Erika's SSI logbook empty. */
+export async function leaveConflict(api: APIRequestContext) {
+  await api.post('/e2e/fake-ssi/clear-dives', { data: { email: SSI_ACCOUNT.login }, headers });
+  const id = await deletableDive(api);
+  const dive = await (await api.get(`/api/dives/${id}`)).json() as Dive;
+  await api.patch(`/api/dives/${id}`, { data: { version: dive.version, notes: null, lead: [] }, headers });
+}
+
 /** Nobody else on the Dive (ADR 0028): the Participants the buddy tests set are taken off again. */
 export async function clearParticipants(api: APIRequestContext, diveId: string) {
   const dive = await (await api.get(`/api/dives/${diveId}`)).json() as Dive;
@@ -581,9 +615,10 @@ export async function pushRunSetup(api: APIRequestContext, diveId: string, optio
   return { connectionId: connection.id, siteId: dive.site.id };
 }
 
-/** Makes the fake SSI forget every token it issued, as when SSI's tokens expire. */
-export async function expireSsiTokens(api: APIRequestContext) {
-  await api.post('/e2e/fake-ssi/expire-tokens', { data: {}, headers });
+/** Makes the fake SSI forget the tokens it issued to one account (Erika's), as when SSI's tokens expire. */
+export async function expireSsiTokens(api: APIRequestContext, login = SSI_ACCOUNT.login) {
+  const answer = await (await api.post('/e2e/fake-ssi/expire-tokens', { data: { email: login }, headers })).json() as { ok: boolean };
+  if (!answer.ok) throw new Error(`no SSI account ${login} at the fake SSI`);
 }
 
 export async function signInSsi(api: APIRequestContext, connectionId: string) {

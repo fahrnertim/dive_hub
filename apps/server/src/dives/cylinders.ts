@@ -165,15 +165,21 @@ export const providerCylinderOf = ({ volumeL, material, startPressureBar, endPre
 /**
  * The one tank typed at a Provider, on a Dive (ADR 0045, amended). `fill`: a Dive without Cylinders gets it as one,
  * unless its history spoke of Cylinders (one a User emptied stays empty), and a Dive's only Cylinder takes the values
- * it lacks. `take`: the only Cylinder takes every value the Provider has, a Dive without Cylinders gets one. What the
+ * it lacks. `take`: the only Cylinder takes every value the Provider has, a Dive without Cylinders gets one. A tank emptied at the Provider (`null`) removes the only Cylinder, unless a Recording brought it (ADR 0056). What the
  * Provider doesn't keep stays (working pressure, the series, "from the pod"), and so does a value it has none for.
  * With several Cylinders nothing: the tank can't be told to be one of them. Pressures that would end above their
  * start are left as they were. Answers the change for the caller's Revision (empty when nothing differs).
  */
-export async function mergeProviderCylinder(tx: Tx, diveId: string, tank: ProviderCylinder, how: 'fill' | 'take'): Promise<Changes> {
+export async function mergeProviderCylinder(tx: Tx, diveId: string, tank: ProviderCylinder | null, how: 'fill' | 'take'): Promise<Changes> {
   const before = await cylindersOf(tx, diveId);
   if (before.length > 1) return {};
   const only = before[0];
+  if (!tank) {
+    // The Provider's tank was emptied (ADR 0056): the only Cylinder goes, unless a Recording brought it.
+    if (how === 'fill' || !only || only.series) return {};
+    await write(tx, diveId, []);
+    return { cylinders: { from: before, to: [] } };
+  }
   if (!only && how === 'fill') {
     const [spoken] = await tx.select({ id: revision.id }).from(revision)
       .where(and(eq(revision.entityType, 'dive'), eq(revision.entityId, diveId), sql`jsonb_exists(${revision.changes}, 'cylinders')`)).limit(1);

@@ -23,7 +23,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { WATER_TYPES, type DecoModel, type DiveMode, type GasCircuit, type ImportSource, type SiteWaterType, type WaterType } from '../vocabulary.js';
 import { user } from './auth-schema.js';
-import type { ImportArea, ImportedValues, SiteImportCounts } from './import-types.js';
+import type { ImportArea, ImportedValues, SiteImportCounts, StoredConflictField } from './import-types.js';
 
 export * from './auth-schema.js';
 
@@ -975,6 +975,25 @@ export const pushRun = pgTable(
     uniqueIndex('push_run_one_active_uq').on(t.connectionId).where(sql`${t.status} in ('queued', 'running')`),
     index('push_run_user_idx').on(t.userId, t.createdAt),
   ],
+);
+
+/**
+ * A Conflict found while sending a Dive to a Provider: the same field changed on both sides, differently. Waits for the
+ * User's choice. One per Dive and Provider. Whether it still waits (the Dive is live, this remote dive is still its
+ * current one) is worked out on reading; a send that settles every field removes it.
+ */
+export const providerConflict = pgTable(
+  'provider_conflict',
+  {
+    diveId: uuid('dive_id').notNull().references(() => dive.id, { onDelete: 'cascade' }),
+    provider: text('provider').notNull(),
+    connectionId: uuid('connection_id').notNull().references(() => connection.id, { onDelete: 'cascade' }),
+    remoteId: text('remote_id').notNull(),
+    fields: jsonb('fields').$type<StoredConflictField[]>().notNull(),
+    runId: uuid('run_id').references(() => pushRun.id, { onDelete: 'set null' }),
+    foundAt: timestamp('found_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.diveId, t.provider] }), index('provider_conflict_connection_idx').on(t.connectionId)],
 );
 
 /** One Dive of a Push run: what is done with it, where it stands, and the Push it made. */
