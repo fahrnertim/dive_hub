@@ -222,6 +222,12 @@ export interface ActionContext {
 }
 
 /** The dive operations of one action. An adapter may share reads between them (one logbook read per action). */
+/**
+ * What an update leaves alone and what it empties (ADR 0056). `keep`: the Provider's value stays, whatever Dive Hub has.
+ * `clear`: the Provider's value is removed. A field in neither is sent from the Dive as usual.
+ */
+export interface Leave { keep: DiveField[]; clear: DiveField[] }
+
 export interface DiveExportAction {
   /** A dive we sent before (by our reference), and one at about the same time, if the Provider has them. */
   find?(dive: OutgoingDive, reference: string): Promise<{ ours: RemoteDive | null; sameTime: RemoteDive | null }>;
@@ -235,7 +241,15 @@ export interface DiveExportAction {
    * so the adapter can tell what it set before from what the User set in the Provider's own app. With a `number`: it
    * is set unless another dive there has it, in which case the number there stays.
    */
-  update?(remoteId: string, dive: OutgoingDive, previous: Record<string, unknown> | null, number?: number | null): Promise<Delivered | null>;
+  update?(
+    remoteId: string, dive: OutgoingDive, previous: Record<string, unknown> | null, number?: number | null, leave?: Leave,
+  ): Promise<Delivered | null>;
+  /**
+   * The remote dive as the Provider has it now, in typed values, with the record it was read from and the context to
+   * read it in; null when it is gone. It is the read the same action's `update` works from (no second read), so the
+   * comparison and the update see one state. Offered by a Provider that has `update` and can read its dives.
+   */
+  current?(remoteId: string): Promise<{ dive: ImportedDive; context: ImportContext; record: Record<string, unknown> } | null>;
   /**
    * With `numbers.set` holding `update` (ADR 0048): changes only the number of the remote dive. `taken` saves nothing
    * and names the dive that holds the number; null when the remote dive is gone. With `sharedWith` (ADR 0052, the

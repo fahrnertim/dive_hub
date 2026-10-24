@@ -216,6 +216,17 @@ export function providerContract(name: string, make: () => ContractHarness) {
       expect(await h.adapter.dives!.open(ctx).update!(remoteId!, h.dive, null)).toBeNull();
     });
 
+    // Only a Provider that reads its dives (import) can give the record as an ImportedDive.
+    it.runIf(declares('dives.export.update') && declares('dives.import.list'))('an adapter that updates also answers current', async () => {
+      const h = make();
+      const ctx = await connect(h);
+      const { remoteId } = await h.adapter.dives!.open(ctx).create(h.dive, 'divehub-contract-current');
+      const action = h.adapter.dives!.open(ctx);
+      expect((await action.current!(remoteId!))?.dive.remoteId).toBe(remoteId);
+      h.deleteThere!(remoteId!);
+      expect(await h.adapter.dives!.open(ctx).current!(remoteId!)).toBeNull();
+    });
+
     it.runIf(declares('dives.export.delete'))('deletes, says when the remote dive was already gone, and tells whether it is there', async () => {
       const h = make();
       const ctx = await connect(h);

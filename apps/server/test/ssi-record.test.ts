@@ -1,9 +1,11 @@
 // A Dive as SSI's dive record (ADR 0024), and the secrets kept for SSI: pure, no database.
 import { describe, expect, it } from 'vitest';
 import { createSecretBox, parseEncryptionKey } from '../src/secrets/secret-box.js';
+import { SYNCED_FIELDS } from '../src/providers/three-way.js';
 import { SENT_KEYS } from '../src/providers/ssi/ssi-dive-row.js';
 import {
-  compareReadBack, createRecord, deleteRecord, fingerprint, localTime, ownFields, resample, samplesJson, updateRecord, writableRecord, type DiveForSsi,
+  compareReadBack, createRecord, deleteRecord, fingerprint, localTime, ownFields, resample, samplesJson, SSI_FIELD_KEYS, updateRecord, writableRecord,
+  type DiveForSsi,
 } from '../src/providers/ssi/ssi-record.js';
 import { diveModeOfSsi, keepTraining, ssiDiveType } from '../src/providers/ssi/ssi-dive-type.js';
 
@@ -349,5 +351,42 @@ describe('secret box', () => {
     expect(parseEncryptionKey(undefined)).toBeUndefined();
     expect(parseEncryptionKey(Buffer.alloc(32, 3).toString('base64'))).toHaveLength(32);
     expect(() => parseEncryptionKey('c2hvcnQ=')).toThrow(/32 bytes/);
+  });
+});
+
+describe('an update that keeps or clears named fields', () => {
+  const ids = { number: 1, accountId: '1', reference: 'r' };
+  const tank = { volumeL: 12, material: 'steel' as const, startPressureBar: 200, endPressureBar: 50, workingPressureBar: 232, gas: { o2: 32, he: 0 } };
+  const remote = () => ({ ...createRecord(dive({ notes: 'created', leadKg: 6, cylinder: tank }), ids), odin_user_log_id: 9, odin_user_log_comment: 'from the app' });
+
+  it("an update keeps the Provider's notes when asked to", () => {
+    const r = updateRecord(remote(), dive({ notes: 'ours' }), { keep: ['notes'], clear: [] });
+    expect(r.odin_user_log_comment).toBe('from the app');
+    expect(updateRecord(remote(), dive({ notes: 'ours' })).odin_user_log_comment).toBe('ours');
+  });
+
+  it('an update clears the lead and the tank when asked to', () => {
+    const r = updateRecord(remote(), dive({ leadKg: null, cylinder: null, notes: null }), { keep: [], clear: ['lead', 'cylinder'] });
+    for (const key of [...SSI_FIELD_KEYS.lead, ...SSI_FIELD_KEYS.cylinder]) expect(r[key], key).toBeNull();
+    expect(r.odin_user_log_comment).toBe('from the app');
+    expect(r.odin_user_log_depth_m).toBe(18.5);
+  });
+
+  it('a field kept stays as the Provider has it even where the Dive has a value', () => {
+    const r = updateRecord(remote(), dive({ leadKg: 9, maxDepthM: 30 }), { keep: ['lead'], clear: [] });
+    expect(r).toMatchObject({ odin_user_log_weight_kg: 6, odin_user_log_weight_lb: 13.2, odin_user_log_depth_m: 30 });
+  });
+
+  it('the site is never cleared', () => {
+    const r = updateRecord(remote(), dive(), { keep: [], clear: ['site'] });
+    expect(r.odin_user_log_dive_sites_id).toBe(3314);
+  });
+
+  it('every synced field but buddies names its keys, and each key is in the dive row', () => {
+    for (const field of SYNCED_FIELDS) {
+      if (field === 'buddies') { expect(SSI_FIELD_KEYS[field]).toEqual([]); continue; }
+      expect(SSI_FIELD_KEYS[field].length, field).toBeGreaterThan(0);
+      for (const key of SSI_FIELD_KEYS[field]) expect(SENT_KEYS, `${field}: ${key}`).toContain(key);
+    }
   });
 });

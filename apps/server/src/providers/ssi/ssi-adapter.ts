@@ -200,16 +200,27 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         const record = withBuddies(createRecord(forSsi(dive), { number, accountId: ctx.accountId, reference }), ids);
         return { ...(await saveAndReadBack(ctx, record, number)), leftOut };
       },
-      async update(remoteId, dive, previous, wanted) {
+      async current(remoteId) {
+        const read = await logbook.current();
+        const record = read.dives.find((r) => idOf(r.odin_user_log_id) === remoteId);
+        if (!record) return null;
+        const context = contextOf(read);
+        const parsed = parseSsiDive(record, context, remoteId);
+        return parsed ? { dive: parsed, context, record } : null;
+      },
+      async update(remoteId, dive, previous, wanted, leave) {
         const remote = await byId(remoteId);
         if (!remote) return null;
-        const { ids, leftOut } = buddiesFor(dive, (await logbook.current()).buddies);
+        const { ids: sent, leftOut } = buddiesFor(dive, (await logbook.current()).buddies);
+        // Buddies kept as the Provider has them: its IDs go back unchanged and Dive Hub's are not added.
+        const asTheyAre = leave?.keep.includes('buddies') ?? false;
+        const ids = asTheyAre ? [] : sent;
         // Buddies set in SSI's app stay; those Dive Hub sent before are replaced by those it sends now.
-        const sentBefore = buddyIdsOf(previous);
+        const sentBefore = asTheyAre ? [] : buddyIdsOf(previous);
         const kept = buddyIdsOf(remote).filter((id) => !sentBefore.includes(id) && !ids.includes(id));
         // The number there stays unless Dive Hub's is asked for and no other dive has it.
         const number = wanted != null && !(await holderOf(wanted, remoteId)) ? wanted : numberOf(remote.odin_user_log_nr);
-        const record = { ...withBuddies(updateRecord(remote, forSsi(dive)), [...ids, ...kept]), odin_user_log_nr: number };
+        const record = { ...withBuddies(updateRecord(remote, forSsi(dive), leave), [...ids, ...kept]), odin_user_log_nr: number };
         return { ...(await saveAndReadBack(ctx, record, number)), leftOut };
       },
       async setNumber(remoteId, number, sharedWith) {

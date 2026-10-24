@@ -66,6 +66,34 @@ describe('the SSI adapter\'s logbook reads', () => {
   });
 });
 
+describe('the SSI adapter reading the current record', () => {
+  it("current answers SSI's record as an ImportedDive from the same read the update uses", async () => {
+    const { fake, adapter, ctx, reads } = await setUp();
+    const { remoteId } = await adapter.dives!.open(ctx).create({ ...dive('2026-01-15T09:00:00Z'), notes: 'Ours' }, 'divehub-1');
+    fake.dives.get(Number(remoteId))!.odin_user_log_comment = 'From the app';
+    const before = reads();
+    const action = adapter.dives!.open(ctx);
+    const current = await action.current!(remoteId!);
+    expect(current?.dive).toMatchObject({ remoteId, maxDepthM: 12 });
+    expect(current?.dive.localStart).toContain('2026-01-15 09:00');
+    expect(current?.record.odin_user_log_comment).toBe('From the app');
+    expect(current?.context).toHaveProperty('sites');
+    await action.update!(remoteId!, dive('2026-01-15T09:00:00Z'), null, null, { keep: ['notes'], clear: [] });
+    // One read for current and update together, one after the save.
+    expect(reads()).toBe(before + 2);
+    expect(fake.dives.get(Number(remoteId))!.odin_user_log_comment).toBe('From the app');
+    expect(await adapter.dives!.open(ctx).current!('999999')).toBeNull();
+  });
+
+  it("an update that keeps the buddies sends the Provider's buddy IDs unchanged", async () => {
+    const { fake, adapter, ctx } = await setUp();
+    const { remoteId } = await adapter.dives!.open(ctx).create(dive('2026-01-15T09:00:00Z'), 'divehub-1');
+    fake.dives.get(Number(remoteId))!.odin_user_log_buddy_ids = [41, 42];
+    await adapter.dives!.open(ctx).update!(remoteId!, dive('2026-01-15T09:00:00Z'), { odin_user_log_buddy_ids: [41] }, null, { keep: ['buddies'], clear: [] });
+    expect(fake.dives.get(Number(remoteId))!.odin_user_log_buddy_ids).toEqual([41, 42]);
+  });
+});
+
 describe('the SSI adapter\'s call log', () => {
   it('reports every call to SSI with its Connection and outcome, never the token or password', async () => {
     const fake = createFakeSsi();
