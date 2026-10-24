@@ -221,13 +221,13 @@ export interface ActionContext {
   access: string;
 }
 
-/** The dive operations of one action. An adapter may share reads between them (one logbook read per action). */
 /**
  * What an update leaves alone and what it empties (ADR 0056). `keep`: the Provider's value stays, whatever Dive Hub has.
  * `clear`: the Provider's value is removed. A field in neither is sent from the Dive as usual.
  */
 export interface Leave { keep: DiveField[]; clear: DiveField[] }
 
+/** The dive operations of one action. An adapter may share reads between them (one logbook read per action). */
 export interface DiveExportAction {
   /** A dive we sent before (by our reference), and one at about the same time, if the Provider has them. */
   find?(dive: OutgoingDive, reference: string): Promise<{ ours: RemoteDive | null; sameTime: RemoteDive | null }>;
