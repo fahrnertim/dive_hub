@@ -305,15 +305,18 @@ ports 3000 and 5173 were running, no collision with 3300+), the browser suite as
 Decided:
 - **Unknown files don't run everything.** Files under `apps/server/test/` that aren't tests (helpers, fixtures, one-off
   scripts) run the server tests that import them (`vitest related`); the server test setup (`support.ts`) and fixture
-  data (read, not imported) all server tests. They run every browser test only when the e2e server loads them: the
-  check script follows the relative imports from `apps/server/test/e2e-server.ts` within `apps/server/test/` (so a new
-  import there counts at once, with no list to keep). Browser test setup and data (`apps/web/e2e/`, not specs) run
+  data (any file there that isn't `.ts`: read, not imported, so its readers can't be traced) all server tests and
+  every browser test. Helpers run every browser test only when the e2e server loads them: the check script follows the
+  relative imports from `apps/server/test/e2e-server.ts` within `apps/server/test/`, with `.js`, without an extension
+  and through a folder's `index.ts` (so a new import there counts at once, with no list to keep). Browser test setup and data (`apps/web/e2e/`, not specs) run
   every browser test and nothing else; the review capture none. The check scripts run their own tests (`check-lint.mjs`
-  also lints everything). `LICENSE`, `NOTICE` and `scripts/fit-compressibility.mjs` are quiet. Packages, the lockfile,
+  also lints everything; ESLint covers TypeScript only, so the check scripts were never linted). `LICENSE`, `NOTICE` and `scripts/fit-compressibility.mjs` are quiet. Packages, the lockfile,
   configuration and paths the script doesn't know still run everything; shared app code still runs that app's tests and
   every browser test.
 - **A passing `--failed` renews the browser record.** A browser step that fails in a run that records keeps its snapshot
-  and Playwright's failed tests (`refs/check/failed-e2e`). `pnpm check --failed` that passes on the same snapshot, with
+  and Playwright's failed tests (`refs/check/failed-e2e`), but only from a report Playwright wrote during that step, with
+  status failed and a list of failed tests, and only while the config sets no `maxFailures` (tests a stopped run never
+  started would otherwise count as passed); otherwise nothing is kept and the output says why. `pnpm check --failed` that passes on the same snapshot, with
   Playwright's last run still that run, records the browser step green there: every test the step planned has then
   passed on those files. Changed files, or another Playwright run in between, record nothing, as before. The output
   says which. This replaces "It records nothing" in the amendment of 2026-10-08 for that case.
@@ -321,6 +324,11 @@ Decided:
   phone (tag `@variants`, 57 tests, about 460 s of worker time) runs when texts (`i18n/`), shared styles (`pages.css`,
   `design/`) or shared UI (`ui/`, `App.tsx`, `main.tsx`) changed, and then for the areas touched. The two variants
   without axe stay `@full`. CI runs all four. Measured: the whole local browser plan went from 1136 s to 877 s.
+- **axe once per ui-quality test locally.** `pnpm check` sets `E2E_AXE=once`: a ui-quality test checks each page as
+  before but runs axe once, on its final page, after it passed. `pnpm check:full` and CI leave it unset and run axe at
+  every page check, as before. What is given up locally: an accessibility fault on an intermediate page of a test (a
+  dialog closed again, a page navigated away from) waits for CI. The saving was not measured (owner); axe took 246 s of
+  the English variant's 526 s of worker time, 2.4 s per page check.
 - **No full check by hand before a push.** `pnpm check` before each commit (the pre-commit hook stays); CI's
   `pnpm check:full` on the pull request is the gate, and the owner merges only on green CI. This replaces "`pnpm
   check:full` runs before a push and before a release" of the amendment of 2026-10-08. `pnpm check:full` stays available.
@@ -331,12 +339,10 @@ Decided:
 - **Main and origin/main** at the same merge base count once; on main itself `--dry` names the base "main (<sha>)".
 
 Not done, with numbers:
-- axe once per test instead of at every page check would save up to about half of the English variant's 246 s; it
-  changes what each test asserts, so it needs its own decision.
 - Per-test setup through the API (resetting the seeded Dive, buddies, SSI connections) is most of the remaining time;
   shared fixtures per worker would cut it but bring back hidden dependencies between tests (see Context).
-- Flaky: ui-quality.spec.ts:327 (a centre's code image not found) and :1369 (the Deleted dives heading not found),
-  each in one run of three; ui-quality.spec.ts:679 and "German, dark, phone › signed out › invitation" did not fail in
+- Flaky: ui-quality.spec.ts:327 (a centre's code image not found), in one run of three; :1369 was not flaky but
+  depended on other tests leaving a deleted dive (fixed: it asserts the part's own link and its heading or empty text); ui-quality.spec.ts:679 and "German, dark, phone › signed out › invitation" did not fail in
   these runs. Coverage-based test selection is a separate design.
 - *What is given up:* German, dark, phone checks of a page change wait for CI (dark-mode contrast and German overflow
   on pages whose own files changed); a change that breaks another area through a wrong map entry is found at the pull
