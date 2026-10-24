@@ -155,8 +155,25 @@ describe.skipIf(!(await databaseReachable()))('managing Users', () => {
       const shared = leaversKeys.filter((k) => stayersKeys.includes(k));
       expect(shared).toHaveLength(1);
 
+      // A Cylinder tied to a doomed Recording: on the leaver's own Dive, and on a Dive that stays (its Diver is also the stayer's).
+      const leaversDives = (await t.db.execute(sql`select d.id, d.primary_recording_id as recording from dive d
+        join diver_management m on m.diver_id = d.diver_id where m.user_id = ${ids.leaver} order by d.starts_at`)).rows as { id: string; recording: string }[];
+      expect(leaversDives).toHaveLength(2);
+      const [own, kept] = leaversDives as [{ id: string; recording: string }, { id: string; recording: string }];
+      const both = (await t.db.execute(sql`insert into diver (name) values ('Shared buddy') returning id`)).rows[0] as { id: string };
+      await t.db.execute(sql`insert into diver_management (user_id, diver_id) values (${ids.leaver}, ${both.id}), (${ids.stayer}, ${both.id})`);
+      await t.db.execute(sql`update dive set diver_id = ${both.id} where id = ${kept.id}`);
+      for (const d of [own, kept]) {
+        await t.db.execute(sql`delete from cylinder where dive_id = ${d.id}`);
+        await t.db.execute(sql`insert into cylinder (dive_id, position, volume_l, from_pod, recording_id, channel)
+          values (${d.id}, 0, 12, true, ${d.recording}, 'tankPressure')`);
+      }
+
       const response = await inject('DELETE', `/api/users/${ids.leaver}`, adminCookie, { confirmEmail: 'Leaver@Example.com ' });
-      expect(response.statusCode).toBe(204);
+      expect(response.statusCode, response.body).toBe(204);
+      // The Dive that stays keeps its Cylinder, without the series.
+      expect((await t.db.execute(sql`select dive_id, volume_l, from_pod, recording_id, channel from cylinder where dive_id in (${own.id}, ${kept.id})`)).rows)
+        .toEqual([{ dive_id: kept.id, volume_l: 12, from_pod: false, recording_id: null, channel: null }]);
 
       expect(await status('/api/me', leaver)).toBe(401);
       expect(await canSignIn('leaver@example.com')).toBe(false);
@@ -177,8 +194,8 @@ describe.skipIf(!(await databaseReachable()))('managing Users', () => {
       for (const key of leaversKeys) {
         expect(existsSync(join(t.dataDir, ...key.split('/'))), key).toBe(shared.includes(key));
       }
-      // The stayer's logbook is untouched.
-      expect((await inject('GET', '/api/dives', stayer)).json().dives).toHaveLength(1);
+      // The stayer's logbook is untouched: their own Dive, and the shared Diver's that stayed.
+      expect((await inject('GET', '/api/dives', stayer)).json().dives).toHaveLength(2);
       expect((await inject('GET', '/api/imports', stayer)).json()).toHaveLength(2);
     });
   });

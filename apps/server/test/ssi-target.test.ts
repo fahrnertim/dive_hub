@@ -336,11 +336,9 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Provider', () => {
       const [row] = await t.db.select({ recordingId: dive.primaryRecordingId }).from(dive).where(eq(dive.id, recorded.id));
       await t.db.update(cylinder).set({ recordingId: row!.recordingId, channel: 'tankPressure' }).where(eq(cylinder.diveId, recorded.id));
       setInSsi(recorded.remoteId, noTank);
-      expect((await send({}, recorded.id)).json()).toMatchObject({ outcome: 'updated' });
+      expect((await send({}, recorded.id)).json()).toMatchObject({ outcome: 'updated', taken: [], deferred: [] });
       expect((await values(recorded.id)).cylinders).toHaveLength(1);
       expect(ssiDive(recorded.remoteId)).toMatchObject({ odin_user_log_tank_vol_l: 12, odin_user_log_pressure_start_bar: 200 });
-      // Untied again: deleting the User at the end doesn't yet untie Cylinders from the Recordings it deletes.
-      await t.db.update(cylinder).set({ recordingId: null, channel: null }).where(eq(cylinder.diveId, recorded.id));
     });
 
     it('a site removed at SSI is sent again', async () => {
@@ -349,6 +347,17 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Provider', () => {
       expect((await send({}, id)).json()).toMatchObject({ outcome: 'updated', taken: [] });
       expect(ssiDive(remoteId).odin_user_log_dive_sites_id).toBe(3314);
       expect((await values(id)).site?.id).toBe(hausreefId);
+    });
+
+    it("a site changed in SSI's app to one Dive Hub doesn't know (no site data from SSI) stays as SSI has it and is deferred", async () => {
+      ctx.fakeSsi.sites.push({ odin_dive_sites_id: 4410, odin_dive_sites_name: 'Elphinstone', odin_dive_sites_lat: 25.31, odin_dive_sites_lon: 34.86, odin_countries_code_iso: 'EG' });
+      const { id, remoteId } = await sentDive({ notes: 'Reef' });
+      setInSsi(remoteId, { odin_user_log_dive_sites_id: 4410 });
+      const answer = (await send({}, id)).json();
+      expect(answer).toMatchObject({ outcome: 'updated', taken: [], deferred: ['site'] });
+      expect(ssiDive(remoteId).odin_user_log_dive_sites_id).toBe(4410);
+      expect((await values(id)).site?.id).toBe(hausreefId);
+      expect(await updates(id)).toEqual([]);
     });
 
     it('changed on both sides: nothing is sent, the answer lists the conflict with both values', async () => {
@@ -438,7 +447,7 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Provider', () => {
       setInSsi(remoteId, { odin_user_log_comment: 'Reef, a turtle' });
       const signIns = ctx.fakeSsi.calls.filter((c) => c.what === 'authenticate').length;
       ctx.fakeSsi.expireAfterRead = true;
-      expect((await send({}, id)).json()).toMatchObject({ outcome: 'updated', status: { current: { upToDate: true } } });
+      expect((await send({}, id)).json()).toMatchObject({ outcome: 'updated', taken: ['notes'], status: { current: { upToDate: true } } });
       expect(ctx.fakeSsi.calls.filter((c) => c.what === 'authenticate')).toHaveLength(signIns + 1);
       expect(await updates(id)).toHaveLength(1);
       expect((await values(id)).notes).toBe('Reef, a turtle');

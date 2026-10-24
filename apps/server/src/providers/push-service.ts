@@ -308,13 +308,14 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
    * and the base, with the open entry and the choices; 5. a Conflict to ask sends nothing; 6. what changed only there is
    * taken first (one Revision, the User's); 7. the Dive is read again; 8. the update keeps what is deferred or doesn't go
    * out, and clears what was removed here; 9. the Push with the fingerprint of the Dive as sent; 10. the entry waits
-   * (a Push run's Conflicts) or is settled. A retry after a sign-in compares again: what was taken is equal there now.
+   * (a Push run's Conflicts) or is settled. A retry after a sign-in compares again: what was taken is equal there now,
+   * so `taken` carries what the first attempt took into the answer.
    */
   async function updateThere(u: {
     adapter: ProviderAdapter; conn: ConnectionRow; userId: string; diveId: string; action: DiveExportAction; current: PushRow;
-    steps: ReturnType<typeof pushSteps>; options: SendOptions;
+    steps: ReturnType<typeof pushSteps>; options: SendOptions; taken: Set<SyncedField>;
   }): Promise<SendResult> {
-    const { adapter, conn, userId, diveId, action, current, steps, options } = u;
+    const { adapter, conn, userId, diveId, action, current, steps, options, taken } = u;
     const exports = adapter.capabilities.data.dives!.export!;
     const remoteId = current.remoteId!;
     const read = action.current && adapter.dives!.parse
@@ -322,22 +323,29 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     if (read === null) return steps.gone(remoteId);
     const x = read ? await exchange(conn, adapter, diveId, remoteId, read, options) : null;
     if (x && x.plan.conflicts.length > 0) return { result: 'conflicts', conflicts: await shownOf(x, x.plan.conflicts) };
-    if (x && x.plan.take.length > 0) {
-      await db.transaction((tx) => changes.takeChanges(tx, x.run, diveId, x.remote, x.plan.take, { type: 'user', id: userId }, true));
-    }
+    // The take commits on its own, before `requirementsMet` and the update: should either fail, the Dive holds the
+    // Provider's values, and the next comparison sees both sides equal there, so nothing is taken twice nor lost.
+    const applied = x && x.plan.take.length > 0
+      ? await db.transaction((tx) => changes.takeChanges(tx, x.run, diveId, x.remote, x.plan.take, { type: 'user', id: userId }, true))
+      : [];
+    for (const field of applied) taken.add(field);
+    // A take that changed nothing (a site Dive Hub can't use) stays as the Provider has it; a tank a Recording
+    // brought, removed there, is sent again.
+    const missed = (x?.plan.take ?? []).filter((f) => !applied.includes(f) && !(f === 'cylinder' && x!.remote.cylinder === null));
+    const deferred = [...(x?.deferred ?? []), ...missed];
     const reloaded = await loadOutgoingDive(db, userId, diveId);
     const now = prepared(exports, reloaded);
     requirementsMet(adapter, now);
     const wanted = numbersFor(conn, exports, reloaded.row.number);
     const leave: Leave = {
-      keep: [...(x?.plan.keep ?? []), ...DIVE_FIELDS.filter((f) => !exportsField(adapter, f))], clear: x?.plan.clear ?? [],
+      keep: [...(x?.plan.keep ?? []), ...missed, ...DIVE_FIELDS.filter((f) => !exportsField(adapter, f))], clear: x?.plan.clear ?? [],
     };
     const updated = await action.update!(remoteId, now.outgoing, current.payload, wanted?.onUpdate ? wanted.wanted : undefined, leave)
       .catch((error: unknown) => steps.failed('update', error, remoteId));
     if (!updated) return steps.gone(remoteId);
     const pushed = await steps.delivered('update', { ...updated, remoteNumber: updated.remoteNumber ?? current.remoteNumber }, now, reloaded.row.version);
     if (x) await settle(x, conn, diveId, remoteId, options);
-    return { result: 'updated', push: pushed, taken: x?.plan.take ?? [], deferred: x?.deferred ?? [] };
+    return { result: 'updated', push: pushed, taken: [...taken].filter((f) => !deferred.includes(f)), deferred };
   }
 
   /** The remote dive a Dive has now: whether it is up to date, and what an update would cost there (ADR 0043). */
@@ -462,12 +470,14 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
       const conn = await connectionOrThrow(userId, row.diverId, adapter);
       requirementsMet(adapter, sending);
       const wanted = numbersFor(conn, exports, row.number);
+      // What an update took, kept across a retry after a sign-in.
+      const taken = new Set<SyncedField>();
       return leased(diveId, [adapter], () => connections.withAccess(conn, async (ctx) => {
         const action = dives.open(ctx);
         const steps = pushSteps(adapter, conn, row, userId);
 
         const current = currentRemote(await pushesOf(diveId, adapter.id));
-        if (current && action.update) return updateThere({ adapter, conn, userId, diveId, action, current, steps, options });
+        if (current && action.update) return updateThere({ adapter, conn, userId, diveId, action, current, steps, options, taken });
 
         if (action.find) {
           const { ours, sameTime } = await action.find(outgoing, reference(diveId));

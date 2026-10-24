@@ -325,7 +325,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     const fields = found
       ? [...found.take, ...found.conflicts.filter((f) => plan.conflicts?.[`${d.remoteId}:${f}`] === 'provider')]
       : [];
-    const taken = fields.length > 0 && await takeChanges(tx, run, diveId, d, fields, actor);
+    const taken = fields.length > 0 && (await takeChanges(tx, run, diveId, d, fields, actor)).length > 0;
     const filled = await fill(tx, run, diveId, d, actor);
     return taken || filled;
   }

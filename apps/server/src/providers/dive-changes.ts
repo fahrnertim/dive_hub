@@ -258,18 +258,26 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
   /**
    * Takes the Provider's values for these fields (ADR 0030, amended): one Revision (`update`). A Dive that was up to date
    * at the Provider stays so (a new `link` Push with its fingerprint), unless `sending`: the send's own Push follows.
+   * Answers the fields it changed: a site Dive Hub can't use, or a tank a Recording brought, changes nothing.
    */
-  async function takeChanges(tx: Tx, run: ProviderRun, diveId: string, d: ImportedDive, fields: SyncedField[], actor: Actor, sending = false) {
+  async function takeChanges(
+    tx: Tx, run: ProviderRun, diveId: string, d: ImportedDive, fields: SyncedField[], actor: Actor, sending = false,
+  ): Promise<SyncedField[]> {
     const [current] = await tx.select().from(dive).where(eq(dive.id, diveId)).for('update');
-    if (!current) return false;
+    if (!current) return [];
     const pushes = await tx.select().from(push).where(and(eq(push.diveId, diveId), eq(push.provider, run.adapter.id)))
       .orderBy(desc(push.createdAt), desc(push.id));
     const remote = currentRemote(pushes);
     const wasUpToDate = !!remote?.fingerprint && remote.fingerprint === fingerprintNow(run.adapter, await loadOutgoingDive(tx, run.userId, diveId));
     const t: Taking = { tx, run, diveId, d, actor, current, changes: {}, columns: {}, overrides: new Set(current.overrides) };
-    for (const field of fields) await takeField(t, field);
+    const taken: SyncedField[] = [];
+    for (const field of fields) {
+      const before = Object.keys(t.changes).length;
+      await takeField(t, field);
+      if (Object.keys(t.changes).length > before) taken.push(field);
+    }
     const { changes } = t;
-    if (Object.keys(changes).length === 0) return false;
+    if (taken.length === 0) return [];
     if (t.overrides.size !== current.overrides.length) {
       changes.overrides = { from: current.overrides, to: [...t.overrides] };
       t.columns.overrides = [...t.overrides];
@@ -285,7 +293,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
         fingerprint: fingerprintNow(run.adapter, loaded),
       });
     }
-    return true;
+    return taken;
   }
 
   /** A field's value as the preview shows it: the site's and people's names, the local start, the number or text. */

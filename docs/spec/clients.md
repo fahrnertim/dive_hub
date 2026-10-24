@@ -506,8 +506,8 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
     the import preview, and send again with `conflicts` (`{ notes: 'hub', lead: 'provider' }`: `hub` sends the Dive's value,
     `provider` takes the Provider's). A choice for a field that is no Conflict any more is ignored.
   - **`taken`** (with `updated`): the fields that came back from the Provider. Say what came back ("Notes came from SSI").
-  - **`deferred`** (with `updated`): the fields left as the Provider has them (from a Push run, or a field the Provider
-    doesn't take from Dive Hub). Say which.
+  - **`deferred`** (with `updated`): the fields left as the Provider has them (from a Push run, a field the Provider
+    doesn't take from Dive Hub, or a change there Dive Hub couldn't take, such as a site it doesn't know). Say which.
   - **`status.conflicts`:** an open entry (a Push run left these fields as the Provider has them). Say so on the panel,
     with both values, and offer to decide (the same send with `conflicts`).
 - **Must show the Provider's `notices`:** `shows_unconfirmed` means it shows the dive as unconfirmed (SSI: only a dive

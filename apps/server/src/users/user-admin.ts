@@ -138,6 +138,10 @@ async function deleteUserData(tx: Tx, userId: string) {
   const unlinked = await rows<{ diver_id: string }>(sql`select distinct diver_id from dive
     where primary_recording_id in (select id from doomed_recording) and id not in (select id from doomed_dive)`);
   await tx.execute(sql`update dive set primary_recording_id = null where primary_recording_id in (select id from doomed_recording)`);
+  // A Cylinder tied to one of their series stays, without the series (`cylinder_series_ck`: both columns), and is no
+  // longer "from the pod", as when a Recording leaves its Dive (`untieRecording`).
+  await tx.execute(sql`update cylinder set recording_id = null, channel = null, from_pod = false
+    where recording_id in (select id from doomed_recording)`);
   await tx.execute(sql`delete from recording where id in (select id from doomed_recording)`); // samples, events cascade
   // Pushes record what reached a Target (ADR 0024); they go with their Dive. The User's Connections hold
   // their secrets for Targets, and a doomed Diver's External IDs go with the Diver.
