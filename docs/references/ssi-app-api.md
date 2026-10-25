@@ -372,7 +372,8 @@ a synced dive has been seen:
   volume on 13, a volume and a type only on 8, none on 106 [T].
 - Kept: each dive's record as received, as one JSON Original; the buddy list itself never (only entry → account, on the
   Import), and of `logbook_sites` each site's name, position, country (alpha-2) and water type (`bow`: salt or fresh;
-  artificial or missing is none, as in the site list). The private flag isn't read (owner, 2026-10-06).
+  artificial or missing is none, as in the site list) and the private flag (`is_private` and its owner). A missing flag
+  is 'unknown': the site is stored private to the account, never public. See [Private site ID](../glossary.md#data-in-and-out).
 - A dive's site (slice 15a): the site here with that SSI ID, else the same site by name and position (it gets the ID),
   else, only if an admin allowed SSI's site data, a site made from the logbook's entry (marked "From SSI").
 
@@ -490,8 +491,8 @@ From the research note. Record the result here with date and app version, and tu
 - [x] Private sites in the logbook read [T] (owner's account, 2026-10-06, `logbook_sites` downloaded raw through the
   Connection): 4 of 26 entries are private (`odin_dive_sites_is_private: 1`, `odin_dive_sites_is_private_owner` = the
   owner's own SSI account). None of the 4 is in the public zip, three of them older than it: private sites stay out of
-  the public list, and the zip's 43 are likely older ones that got published. The flag isn't read: once an admin allows
-  SSI's site data, the dive import makes them shared sites like any other, which the owner wants (2026-10-06).
+  the public list, and the zip's 43 are likely older ones that got published. Since piece 4 (2026-10-24) the flag is read: the
+  dive import still makes them shared sites (once an admin allows SSI's site data), but the ID is stored private to the account.
   Entries also carry `odin_dive_sites_comment` (9 of 26 non-empty), SSI's statistics (`myloggedDives`, …), aliases and
   wildlife IDs; Dive Hub keeps only ID, name, position and country.
 - [ ] A buddy code and a professional's code drawn by Dive Hub: does SSI's app take them (add the buddy; verify a

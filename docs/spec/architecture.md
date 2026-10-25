@@ -592,6 +592,23 @@ Implemented:
   dive's buddies, both dialogs, the SSI buddy list and other divers. `leases.test.ts` now checks the 30 s bound on the
   time that passed, not on the sum of the test clock's sleeps (it failed under load since slice 13a).
 
+**Private site IDs (2026-10-24, SSI alignment piece 4;** [design](../superpowers/specs/2026-10-23-ssi-app-alignment-design.md#piece-4-settled-2026-10-24)**).**
+- **Site requirement, amended:** the unmet entry carries `bySend`: a send finds or makes the site, so the missing ID
+  doesn't block. A typed ID through the old route still counts.
+- **Storage:** `dive_site_external_id.account_id` is the Diver's provider account; null = public. Only
+  `apps/server/src/sites/site-ids.ts` touches the table.
+- **The site step of a send** (manual or Push run; `providers/site-for-send.ts`): the ID sent is the remote dive's ID if
+  usable, else the public one, else the Diver's own private one, never another account's. With none, the send finds a
+  nearby same-name site in the account's SSI logbook whose ID no site here holds, else creates a private site
+  (`save_divesite`). One find-or-make per site and account, under an advisory lock.
+- **SSI:** logbook rows carry the private flag; a missing flag is 'unknown' and stored private to the account, never public.
+  `get_divesite` and `save_divesite`: [SSI app API](../references/ssi-app-api.md#sites-save_divesite-get_divesite-checked-2026-10-24-app-5043).
+- **Route:** `PUT /api/connections/{id}/dive-sites/{siteId}` asks SSI first: unknown is 422 `provider_site_unknown`,
+  public is stored public, private, unknown or unavailable is stored private to the Connection's account.
+  `PUT /api/dive-sites/{id}/external-ids/{source}` still stores a public ID without asking.
+- **Web:** the Dive panel sends with `bySend`; the picker marks private sites; the site page shows and edits "Your
+  private SSI site ID" when the User has a Connection for that Source.
+
 Deliberate simplifications, to revisit:
 - **No Connection Diver mappings:** a buddy entry without an SSI account can't be sent (none seen in the owner's list).
   They come with `PUT /api/connections/{id}/divers/{diverId}` and `fixes: ['connection_mapping']`.
