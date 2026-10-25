@@ -9,7 +9,9 @@ import type { Db } from '../db/client.js';
 import { diveSite } from '../db/schema.js';
 import type { Actor } from '../dives/revisions.js';
 import { accountOf, heldIds, idsOf, nearbyMatch, pickId, settleVisibility, storeId } from '../sites/site-ids.js';
+import { SiteError } from '../sites/site-error.js';
 import type { SiteSource } from '../sites/sources.js';
+import { LeaseBusy, MAX_WAIT_MS, POLL_MS, realClock, type Clock } from './leases.js';
 import type { ActionContext, ProviderAdapter, RemoteSite } from './provider.js';
 
 export type SiteForSend = 'had' | 'matched' | 'created' | 'none';
@@ -17,11 +19,29 @@ export type SiteForSend = 'had' | 'matched' | 'created' | 'none';
 /**
  * Runs `fn` holding a PostgreSQL advisory lock on `key`, on a connection of its own and outside any transaction: one
  * find-or-make per site and account at a time in every app process (a site made at the Provider can't be deleted
- * there). The lock goes with the session, so a crashed process leaves none behind.
+ * there). The lock goes with the session, so a crashed process leaves none behind. A waiter holds no connection: it
+ * tries the lock, gives the connection back and looks again every POLL_MS, for up to MAX_WAIT_MS (then LeaseBusy). The
+ * holder keeps its one connection until `fn` ends. Needs a pool: on a single Client advisory locks are re-entrant per
+ * session and would exclude nothing.
  */
-async function locked<T>(db: Db, key: string, fn: () => Promise<T>): Promise<T> {
-  const client = (db as Db & { $client: pg.Pool | pg.PoolClient | pg.Client }).$client;
-  const session = client instanceof pg.Pool ? await client.connect() : client;
+async function locked<T>(db: Db, key: string, source: string, clock: Clock, fn: () => Promise<T>): Promise<T> {
+  const client = (db as Db & { $client: unknown }).$client;
+  if (!(client instanceof pg.Pool)) throw new Error('The site lock needs a pg.Pool: advisory locks are re-entrant on a single connection');
+  const started = clock.now();
+  let session: pg.PoolClient;
+  for (;;) {
+    const candidate = await client.connect();
+    try {
+      const { rows } = await candidate.query<{ got: boolean }>('select pg_try_advisory_lock(hashtext($1)) as got', [key]);
+      if (rows[0]?.got) { session = candidate; break; }
+    } catch (error) {
+      candidate.release(error instanceof Error ? error : new Error(String(error)));
+      throw error;
+    }
+    candidate.release();
+    if (clock.now() - started + POLL_MS > MAX_WAIT_MS) throw new LeaseBusy(source);
+    await clock.sleep(POLL_MS);
+  }
   // A session whose unlock failed may still hold the lock: the pool destroys it instead of handing it out again.
   let broken: Error | undefined;
   const unlock = () =>
@@ -30,7 +50,6 @@ async function locked<T>(db: Db, key: string, fn: () => Promise<T>): Promise<T> 
       return Promise.reject(broken);
     });
   try {
-    await session.query('select pg_advisory_lock(hashtext($1))', [key]);
     let result: T;
     try {
       result = await fn();
@@ -41,7 +60,7 @@ async function locked<T>(db: Db, key: string, fn: () => Promise<T>): Promise<T> 
     await unlock();
     return result;
   } finally {
-    if (client instanceof pg.Pool) (session as pg.PoolClient).release(broken);
+    session.release(broken);
   }
 }
 
@@ -52,6 +71,8 @@ async function locked<T>(db: Db, key: string, fn: () => Promise<T>): Promise<T> 
  */
 export async function siteForSend(db: Db, s: {
   adapter: ProviderAdapter; context: ActionContext; diverId: string; siteId: string | null; source: SiteSource; actor: Actor;
+  /** Where the wait for the site lock takes its time from. */
+  clock?: Clock;
 }): Promise<SiteForSend> {
   const sites = s.adapter.diveSites;
   if (!s.siteId || !sites?.create) return 'none';
@@ -64,7 +85,7 @@ export async function siteForSend(db: Db, s: {
   if (!site || site.latitude === null || site.longitude === null) return 'none';
   const position = { latitude: site.latitude, longitude: site.longitude };
   // Another send for the account at this site may be finding or making it now: after it, its stored ID is used.
-  return locked(db, `site-for-send:${siteId}:${account}`, async () => {
+  return locked(db, `site-for-send:${siteId}:${account}`, s.source, s.clock ?? realClock, async () => {
     if (await had()) return 'had';
     return findOrMake(db, s, site, position, account, sites);
   });
@@ -85,8 +106,17 @@ async function findOrMake(
     const match: RemoteSite | undefined = nearbyMatch({ name: site.name, position }, free);
     if (!match) return false;
     // Only a site the Provider calls public is stored public: one it doesn't say about stays the account's.
-    await storeId(tx, { siteId: site.id, source: s.source, externalId: match.id, accountId: match.visibility === 'public' ? null : account, actor: s.actor });
-    return true;
+    try {
+      // A savepoint: a refused store keeps the settled visibility.
+      await tx.transaction((inner) => storeId(inner, {
+        siteId: site.id, source: s.source, externalId: match.id, accountId: match.visibility === 'public' ? null : account, actor: s.actor,
+      }));
+      return true;
+    } catch (error) {
+      // Another process stored this ID after `heldIds` was read: no match, the send makes the site.
+      if (error instanceof SiteError && error.code === 'external_id_taken') return false;
+      throw error;
+    }
   });
   if (matched) return 'matched';
 

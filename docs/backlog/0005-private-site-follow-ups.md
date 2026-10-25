@@ -12,11 +12,11 @@ From piece 4's final review (branch `ssi-private-sites`, 2026-10-26; [design](..
 [architecture](../spec/architecture.md)). Not ready: needs the owner's look first.
 
 ## Goal
-- **The send's site lock** (`apps/server/src/providers/site-for-send.ts`, `locked`): a PostgreSQL advisory lock holds a
-  pool connection (pool max 10) for the whole find-or-make, SSI calls included (60 s timeout each). About ten sends at
-  once that each need a site would hold every connection while each needs another for its queries; the pool waits
-  forever, so the server stalls. It also goes against `leases.ts`'s rule (nothing holds a connection while it waits) and
-  brings `pg` into `providers/`. Replace it with a row lease keyed on (site, account), like `leases.dive`, or a `db/` helper.
+- **The send's site lock** (`apps/server/src/providers/site-for-send.ts`, `locked`): waiters no longer hold a pool
+  connection (try-lock with polling, 2026-10-26), but the holder still holds one across the whole find-or-make, SSI calls
+  included (60 s timeout each); about ten holders for different sites at once would still exhaust the pool (max 10), each
+  needing another connection for its queries. It also brings `pg` into `providers/`. A row lease keyed on (site, account),
+  like `leases.dive`, or a `db/` helper remains the clean fix.
 - **A site SSI lists publicly but flags private for its owner** (43 such sites in SSI's zip, [SSI app API](../references/ssi-app-api.md)):
   if the owner uses this instance, each read of their logbook (`settleVisibility`) makes the imported public row private
   and each Site import (`publishIds`) makes it public again; while private, other Users' sends at that site find no ID
@@ -32,3 +32,5 @@ From piece 4's final review (branch `ssi-private-sites`, 2026-10-26; [design](..
 - The site form shows the public typed field (old route, stored public without asking SSI) beside the private one.
 - Web: cancelling after a refused private ID leaves the site page stale until a refetch; the Diver label reads "()" while Divers load.
 - Tests missing: settle's clash skip; an invalid typed pattern; `get` and `find` both unknown; the preview's count for a nameless site.
+- A site made at the Provider whose `storeId` then fails is orphaned and the retry makes another (log it, or retry the store).
+- `settleVisibility` does a select, a clash check and an update per remote site on every send's find: batch with `inArray`.

@@ -3,7 +3,10 @@
 // makes there (stored private). A retried send, a Push run and a failed dive save make no second site (Review Focus 2);
 // a User managing two Divers with their own SSI accounts never sends one's private ID for the other (Review Focus 3).
 import { and, eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import pg from 'pg';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import * as schema from '../src/db/schema.js';
 import { dive, diveSiteExternalId } from '../src/db/schema.js';
 import { siteForSend } from '../src/providers/site-for-send.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
@@ -149,6 +152,50 @@ describe.skipIf(!(await databaseReachable()))('the send finds or creates the sit
     expect((await Promise.all([once(), once()])).sort()).toEqual(['created', 'had']);
     expect(siteSaves()).toBe(1);
     expect(await rowsOf(site)).toEqual([{ externalId: String(ctx.fakeSsi.sites.at(-1)!.odin_dive_sites_id), accountId: accounts.x }]);
+  });
+
+  it('lets waiters for one site wait without holding a connection: three sends on a pool of two finish', async () => {
+    const site = await newSite('Narrow Reef', 21);
+    const adapter = createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: ctx.fakeSsi.fetch }) });
+    const { account, access } = await adapter.signIn({ kind: 'password', login: 'x@example.com', password: 'ssi-password' });
+    const small = new pg.Pool({ connectionString: t.pool.options.connectionString, max: 2 });
+    try {
+      const once = () => siteForSend(drizzle(small, { schema }), {
+        adapter, context: { connectionId: connectionX, accountId: account.id, access }, diverId: divers.x, siteId: site, source: 'ssi',
+        actor: { type: 'user', id: 'tim' },
+      });
+      expect((await Promise.all([once(), once(), once()])).sort()).toEqual(['created', 'had', 'had']);
+      expect(siteSaves()).toBe(1);
+    } finally {
+      await small.end();
+    }
+  });
+
+  it('makes the site when the ID of the logbook match is stored by another process after the held IDs were read', async () => {
+    const site = await newSite('Raced Reef', 22);
+    const other = await newSite('Raced Reef Far', 22.5);
+    ssiSite(4200, 'Raced Reef', 22 + NEAR);
+    const diveId = await newDive();
+    await atSite(diveId, site);
+    // The other process has stored the ID in a transaction that isn't committed: the send doesn't see it until its own insert is refused.
+    const rival = await t.pool.connect();
+    try {
+      await rival.query('begin');
+      await rival.query("insert into dive_site_external_id (site_id, source, external_id) values ($1, 'ssi', '4200')", [other]);
+      const sending = send(diveId);
+      for (let waiting = false; !waiting;) {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        waiting = (await rival.query("select 1 from pg_stat_activity where wait_event_type = 'Lock' and datname = current_database()")).rowCount === 1;
+      }
+      await rival.query('commit');
+      expect((await sending).json()).toMatchObject({ outcome: 'created' });
+    } finally {
+      rival.release();
+    }
+    expect(siteSaves()).toBe(1);
+    const [row] = await rowsOf(site);
+    expect(row).toMatchObject({ accountId: accounts.x });
+    expect(row!.externalId).not.toBe('4200');
   });
 
   it('skips a logbook site nearby whose ID another site here holds, and makes one', async () => {
