@@ -1269,7 +1269,7 @@
     "privateSite": "privat",
     "privateSiteLabel": "Dein privater {{name}}-Tauchplatz",
     "privateSiteIdLabel": "Deine private {{name}}-Tauchplatz-ID",
-    "privateSiteIdHint": "Nur dein {{name}}-Konto kann ihn nutzen. Dive Hub fragt {{name}} zuerst nach der ID.",
+    "privateSiteIdHint": "Nur dein {{name}}-Konto kann sie nutzen. Dive Hub fragt {{name}} zuerst nach der ID.",
     "peopleUnknown": "{{name}} bekommt diesen Tauchgang ohne {{names}}: Dive Hub kennt ihr {{name}}-Konto noch nicht.",
     "peopleUnknownBlocking": "Um diesen Tauchgang zu senden, braucht Dive Hub das {{name}}-Konto von {{names}}.",
     "findInList": "{{diver}} in deiner {{name}}-Liste suchen",

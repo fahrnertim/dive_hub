@@ -2,7 +2,7 @@
 // without an SSI ID is sent (the send makes the site at SSI), the picker stores through the Connection, and the site
 // page types, shows and clears the account's private ID.
 import { request as playwrightRequest, expect, test } from '@playwright/test';
-import { E2E_BASE_URL, connectSsi, leaveSsi, openLine, readyForSsi, resetDive } from './support.ts';
+import { E2E_BASE_URL, connectSsi, disconnectSsi, leaveSsi, openLine, readyForSsi, resetDive } from './support.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -95,4 +95,41 @@ test('the site page: an unknown ID is refused, a private one is shown and cleare
   await expect(page.locator('dl.facts').getByText('Your private SSI site', { exact: true })).toHaveCount(0);
   expect((await siteOf(request, dive.id)).externalIds).toEqual([]);
   await leaveSsi(request, dive.id);
+});
+
+test('the site page: a name saved with a refused private ID is kept, and the corrected ID saves', { tag: ['@sites'] }, async ({ page, request }) => {
+  const dive = await resetDive(request);
+  await connectSsi(request);
+  await readyForSsi(request, dive.id);
+  const site = await siteOf(request, dive.id);
+  await page.goto(`/#/sites/${site.id}`);
+  await page.getByRole('button', { name: 'Edit dive site' }).click();
+  await page.getByRole('textbox', { name: 'Name' }).fill('SSI test reef');
+  await page.getByRole('textbox', { name: 'Body of water' }).fill('Attersee');
+  await page.getByRole('textbox', { name: 'Your private SSI site ID' }).fill('99999');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('SSI has no site with this ID.')).toBeVisible();
+  // The site's edit was saved before the ID was refused: saving again must not meet "changed meanwhile".
+  await page.getByRole('textbox', { name: 'Your private SSI site ID' }).fill('7010');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.locator('dl.facts div', { hasText: 'Your private SSI site' }).getByText('7010', { exact: true })).toBeVisible();
+  expect(await (await request.get(`/api/dive-sites/${site.id}`)).json()).toMatchObject({ waterBody: 'Attersee' });
+  await leaveSsi(request, dive.id);
+});
+
+test('the site form has no private ID field without a Connection for that Source', { tag: ['@sites'] }, async ({ page, request }) => {
+  const dive = await resetDive(request);
+  await connectSsi(request);
+  await readyForSsi(request, dive.id);
+  const site = await siteOf(request, dive.id);
+  await disconnectSsi(request);
+  try {
+    await page.goto(`/#/sites/${site.id}`);
+    await page.getByRole('button', { name: 'Edit dive site' }).click();
+    await expect(page.getByRole('textbox', { name: 'SSI site ID', exact: true })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: /private SSI site ID/ })).toHaveCount(0);
+  } finally {
+    await connectSsi(request);
+    await leaveSsi(request, dive.id);
+  }
 });

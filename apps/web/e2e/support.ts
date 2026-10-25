@@ -261,7 +261,8 @@ export async function readyForSsi(api: APIRequestContext, diveId: string, option
     await api.put(`/api/dive-sites/${site.id}/external-ids/ssi`, { data: { externalId: null }, headers });
     // The account's private ID too: an earlier send may have made the site at SSI (piece 4).
     for (const c of (await (await api.get('/api/connections')).json() as Connection[]).filter((x) => x.provider === 'ssi')) {
-      await api.put(`/api/connections/${c.id}/dive-sites/${site.id}`, { data: { externalId: null }, headers });
+      const cleared = await api.put(`/api/connections/${c.id}/dive-sites/${site.id}`, { data: { externalId: null }, headers });
+      if (!cleared.ok()) throw new Error(`clearing the private SSI ID failed: ${cleared.status()} ${await cleared.text()}`);
     }
     const { version } = await (await api.get(`/api/dive-sites/${site.id}`)).json() as { version: number };
     await api.patch(`/api/dive-sites/${site.id}`, { data: { version, position }, headers });
