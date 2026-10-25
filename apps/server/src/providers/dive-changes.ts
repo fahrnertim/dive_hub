@@ -56,7 +56,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
   /**
    * The sites a Provider's dive names, with what the Provider says about them. A site missing from the context can only be
    * found by its ID (no name to match or create it by). `private`: the Provider marks the site private and the account's
-   * own (the context holds no other account's private site).
+   * own, or doesn't say (kept as the account's, never public); the context holds no other account's private site.
    */
   async function sitesOf(q: Db | Tx, run: ProviderRun, d: ImportedDive): Promise<ProviderSite[]> {
     return Promise.all(Object.entries(d.siteIds).map(async ([source, externalId]) => {
@@ -65,7 +65,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
         source: source as SiteSource, externalId, name: known?.name ?? '',
         position: known && known.latitude !== null && known.longitude !== null ? { latitude: known.latitude, longitude: known.longitude } : null,
         country: known?.country ?? null, waterType: known?.waterType ?? null,
-        account: await accountOf(q, run.diverId, source as SiteSource), private: known?.private === true,
+        account: await accountOf(q, run.diverId, source as SiteSource), private: known?.private !== undefined,
       };
     }));
   }
@@ -79,7 +79,9 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     const source = run.adapter.accountSource as SiteSource | undefined;
     const account = source ? await accountOf(tx, run.diverId, source) : null;
     if (!source || !account) return;
-    await settleVisibility(tx, source, account, Object.entries(run.context.sites).map(([externalId, s]) => ({ externalId, private: s.private === true })));
+    // A site the Provider doesn't say about changes nothing here.
+    await settleVisibility(tx, source, account, Object.entries(run.context.sites).filter(([, s]) => s.private !== 'unknown')
+      .map(([externalId, s]) => ({ externalId, private: s.private === true })));
   }
 
   /** The start's instant: from the dive's position, else its site's at the Provider, else nearby Dives, else unknown. */

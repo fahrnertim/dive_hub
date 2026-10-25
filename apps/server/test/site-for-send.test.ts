@@ -5,6 +5,9 @@
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { dive, diveSiteExternalId } from '../src/db/schema.js';
+import { siteForSend } from '../src/providers/site-for-send.js';
+import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
+import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { accountOf, storeId } from '../src/sites/site-ids.js';
 import { createFakeSsi, type FakeSsiSite } from './fake-ssi.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
@@ -123,6 +126,29 @@ describe.skipIf(!(await databaseReachable()))('the send finds or creates the sit
     const id = String(made.odin_dive_sites_id);
     expect(await rowsOf(site)).toEqual([{ externalId: id, accountId: accounts.x }]);
     expect(ssiSiteOf(await sentId(diveId))).toBe(id);
+  });
+
+  it('stores a logbook site nearby without the private flag of SSI private, never public', async () => {
+    const site = await newSite('Flagless Reef', 19);
+    ssiSite(4010, 'Flagless Reef', 19 + NEAR, { odin_dive_sites_is_private: null });
+    const diveId = await newDive();
+    await atSite(diveId, site);
+    expect((await send(diveId)).json()).toMatchObject({ outcome: 'created' });
+    expect(await rowsOf(site)).toEqual([{ externalId: '4010', accountId: accounts.x }]);
+    expect(siteSaves()).toBe(0);
+  });
+
+  it('makes one site for two sends of different Dives at one new site at the same time', async () => {
+    const site = await newSite('Twice Reef', 20);
+    const adapter = createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: ctx.fakeSsi.fetch }) });
+    const { account, access } = await adapter.signIn({ kind: 'password', login: 'x@example.com', password: 'ssi-password' });
+    const once = () => siteForSend(t.db, {
+      adapter, context: { connectionId: connectionX, accountId: account.id, access }, diverId: divers.x, siteId: site, source: 'ssi',
+      actor: { type: 'user', id: 'tim' },
+    });
+    expect((await Promise.all([once(), once()])).sort()).toEqual(['created', 'had']);
+    expect(siteSaves()).toBe(1);
+    expect(await rowsOf(site)).toEqual([{ externalId: String(ctx.fakeSsi.sites.at(-1)!.odin_dive_sites_id), accountId: accounts.x }]);
   });
 
   it('skips a logbook site nearby whose ID another site here holds, and makes one', async () => {

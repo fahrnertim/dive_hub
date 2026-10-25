@@ -8,7 +8,7 @@ import { computerDive, handTypedDive } from './fake-ssi.js';
 
 const logbook: SsiLogbook = {
   dives: [],
-  sites: [{ id: '3314', name: 'Hausreef', latitude: 27.29, longitude: 33.82, country: 'EG', waterType: 'salt', privateOwner: null }],
+  sites: [{ id: '3314', name: 'Hausreef', latitude: 27.29, longitude: 33.82, country: 'EG', waterType: 'salt', private: false, privateOwner: null }],
   buddies: [{ id: 3_786_888, name: 'Kai Lund', account: '4989164' }, { id: 1_111, name: 'No Account', account: null }],
 };
 const context = contextOf(logbook);

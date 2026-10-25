@@ -176,6 +176,9 @@ describe.skipIf(!(await databaseReachable()))('a dive import and SSI\'s private 
           site(400, 'Own Private', 12, { odin_dive_sites_is_private: 1, odin_dive_sites_is_private_owner: ACCOUNT_A }),
           site(500, 'Published', 13),
           site(600, 'Theirs', 14, { odin_dive_sites_is_private: 1, odin_dive_sites_is_private_owner: ACCOUNT_B }),
+          // Rows without SSI's private flag: what they are isn't known.
+          site(700, 'Flagless', 15, { odin_dive_sites_is_private: null }),
+          site(800, 'Flagless Held', 16, { odin_dive_sites_is_private: null }),
         ],
       }),
     });
@@ -232,6 +235,18 @@ describe.skipIf(!(await databaseReachable()))('a dive import and SSI\'s private 
     expect(view.site?.name).toBe('Own Private');
     expect(await rowOf('400')).toMatchObject({ siteId: view.site!.id, accountId: accounts.a });
     expect(await revisionsOf(view.site!.id)).not.toContain('400');
+  });
+
+  it('stores a logbook site without the private flag of SSI as the private ID of the account, and leaves a public ID of one alone', async () => {
+    const held = await makeSite('Flagless Held', 16);
+    await store(held.id, '800', null);
+    ctx.fakeSsi.addDive(ACCOUNT_A, handTypedDive({ at: '2026-05-04 10:00', depthM: 12, minutes: 30, siteId: 700, nr: 3 }));
+    ctx.fakeSsi.addDive(ACCOUNT_A, handTypedDive({ at: '2026-05-05 10:00', depthM: 12, minutes: 30, siteId: 800, nr: 4 }));
+    const outcome = await runImport('a');
+    const site = (await call('GET', `/api/dives/${outcome.find((o) => o.result === 'created')!.diveId}`, 'a')).json() as { site: { id: string } | null };
+    expect(await rowOf('700')).toMatchObject({ accountId: accounts.a });
+    expect(site.site).not.toBeNull();
+    expect(await rowOf('800')).toMatchObject({ siteId: held.id, accountId: null });
   });
 
   it('never stores a site SSI lists as private to another account', async () => {

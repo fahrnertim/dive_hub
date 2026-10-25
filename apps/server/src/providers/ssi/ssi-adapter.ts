@@ -287,8 +287,10 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
     },
     diveSites: {
       // Another account's private site is dropped: Dive Hub can't use it and never keeps it.
-      find: async (ctx) => (await logbookOf(ctx).recent()).sites.flatMap(({ id, name, latitude, longitude, country, waterType, privateOwner }) => {
-        const visibility = privateOwner === null ? 'public' : privateOwner === ctx.accountId ? 'private' : null;
+      // A row without SSI's private flag is `unknown`, never public.
+      find: async (ctx) => (await logbookOf(ctx).recent()).sites.flatMap((site) => {
+        const { id, name, latitude, longitude, country, waterType } = site;
+        const visibility = visibilityFor(site, ctx.accountId);
         return visibility ? [{ id, name, latitude, longitude, country, waterType, visibility }] : [];
       }),
       async get(ctx, id) {

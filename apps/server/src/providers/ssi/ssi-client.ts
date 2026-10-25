@@ -36,6 +36,8 @@ export interface SsiLogbookSite {
   country: string | null;
   /** From SSI's `bow` (body of water): salt or fresh; artificial or missing is null (as in ssi-sites.ts). */
   waterType: SiteWaterType | null;
+  /** SSI's private flag; null when the row doesn't have it (then nothing is known about the site's privacy). */
+  private: boolean | null;
   /** The account (SSI's `mid`) the site is private to (`_is_private` set); null for a public site. */
   privateOwner: string | null;
 }
@@ -141,7 +143,7 @@ export function createSsiClient(options: SsiClientOptions): SsiClient {
         const site = readSsiSite(row);
         if (!site || site.deleted) return [];
         const { id, name, latitude, longitude, country, waterType, privateOwner } = site;
-        return [{ id, name, latitude, longitude, country, waterType, privateOwner }];
+        return [{ id, name, latitude, longitude, country, waterType, private: site.private, privateOwner }];
       });
       const buddies = (Array.isArray(data.logbook_buddies) ? data.logbook_buddies : []).filter(isObject).flatMap((b) => {
         const id = idText(b.id);

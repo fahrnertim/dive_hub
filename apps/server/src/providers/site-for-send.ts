@@ -4,6 +4,7 @@
 // private to the account (stored private at once, so a retry, a later Dive of a run or a failed dive save makes none).
 // Generic: the adapter's `diveSites` say what the Provider has.
 import { eq } from 'drizzle-orm';
+import pg from 'pg';
 import type { Db } from '../db/client.js';
 import { diveSite } from '../db/schema.js';
 import type { Actor } from '../dives/revisions.js';
@@ -12,6 +13,26 @@ import type { SiteSource } from '../sites/sources.js';
 import type { ActionContext, ProviderAdapter, RemoteSite } from './provider.js';
 
 export type SiteForSend = 'had' | 'matched' | 'created' | 'none';
+
+/**
+ * Runs `fn` holding a PostgreSQL advisory lock on `key`, on a connection of its own and outside any transaction: one
+ * find-or-make per site and account at a time in every app process (a site made at the Provider can't be deleted
+ * there). The lock goes with the session, so a crashed process leaves none behind.
+ */
+async function locked<T>(db: Db, key: string, fn: () => Promise<T>): Promise<T> {
+  const client = (db as Db & { $client: pg.Pool | pg.PoolClient | pg.Client }).$client;
+  const session = client instanceof pg.Pool ? await client.connect() : client;
+  try {
+    await session.query('select pg_advisory_lock(hashtext($1))', [key]);
+    try {
+      return await fn();
+    } finally {
+      await session.query('select pg_advisory_unlock(hashtext($1))', [key]);
+    }
+  } finally {
+    if (client instanceof pg.Pool) (session as pg.PoolClient).release();
+  }
+}
 
 /**
  * Gives the Dive's site an ID at the Provider for the Diver's account, under the send's action. `none`: no site, no
@@ -25,12 +46,24 @@ export async function siteForSend(db: Db, s: {
   if (!s.siteId || !sites?.create) return 'none';
   const account = await accountOf(db, s.diverId, s.source);
   if (!account) return 'none';
-  const rows = (await idsOf(db, [s.siteId], [account])).get(s.siteId) ?? [];
-  if (pickId(rows, s.source, account) !== null) return 'had';
-  const [site] = await db.select().from(diveSite).where(eq(diveSite.id, s.siteId));
+  const siteId = s.siteId;
+  const had = async () => pickId((await idsOf(db, [siteId], [account])).get(siteId) ?? [], s.source, account) !== null;
+  if (await had()) return 'had';
+  const [site] = await db.select().from(diveSite).where(eq(diveSite.id, siteId));
   if (!site || site.latitude === null || site.longitude === null) return 'none';
   const position = { latitude: site.latitude, longitude: site.longitude };
+  // Another send for the account at this site may be finding or making it now: after it, its stored ID is used.
+  return locked(db, `site-for-send:${siteId}:${account}`, async () => {
+    if (await had()) return 'had';
+    return findOrMake(db, s, site, position, account, sites);
+  });
+}
 
+/** Under the lock: a logbook site nearby, else a site made at the Provider; its ID stored for the account. */
+async function findOrMake(
+  db: Db, s: { context: ActionContext; source: SiteSource; actor: Actor }, site: typeof diveSite.$inferSelect, position: { latitude: number; longitude: number },
+  account: string, sites: NonNullable<ProviderAdapter['diveSites']>,
+): Promise<SiteForSend> {
   // Another account's private site is never listed (the adapter drops it).
   const remote = await sites.find(s.context);
   const held = await heldIds(db, remote.map((r) => ({ source: s.source, externalId: r.id })));
@@ -47,7 +80,7 @@ export async function siteForSend(db: Db, s: {
   if (matched) return 'matched';
 
   // The ID `create` answers is the one used: the adapter's kept logbook read doesn't list the new site yet.
-  const created = await sites.create(s.context, { name: site.name, position, country: site.country, waterType: site.waterType });
+  const created = await sites.create!(s.context, { name: site.name, position, country: site.country, waterType: site.waterType });
   await db.transaction((tx) => storeId(tx, { siteId: site.id, source: s.source, externalId: created, accountId: account, actor: null }));
   return 'created';
 }

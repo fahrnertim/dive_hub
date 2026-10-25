@@ -615,7 +615,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
 /** The context as kept on the Import: accounts and sites only, whatever else an adapter might add left behind. */
 const pick = (c: ImportContext): ImportContext => ({
   people: Object.fromEntries(Object.entries(c.people).map(([k, v]) => [k, String(v)])),
-  sites: Object.fromEntries(Object.entries(c.sites).map(([k, s]) => [k, { name: s.name, latitude: s.latitude, longitude: s.longitude, country: s.country, waterType: s.waterType ?? null, ...(s.private && { private: true }) }])),
+  sites: Object.fromEntries(Object.entries(c.sites).map(([k, s]) => [k, { name: s.name, latitude: s.latitude, longitude: s.longitude, country: s.country, waterType: s.waterType ?? null, ...(s.private && { private: s.private }) }])),
 });
 
 export type DiveImportService = ReturnType<typeof createDiveImportService>;

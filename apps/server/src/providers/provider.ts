@@ -336,8 +336,11 @@ export const referenceOf = (diveId: string) => `${REFERENCE_PREFIX}${diveId}`;
  */
 export type ImportContext = {
   people: ProviderImportPlan['context']['people'];
-  /** `private`: the Provider marks the site private and the account's own (another account's private site is left out). */
-  sites: Record<string, ProviderImportPlan['context']['sites'][string] & { private?: boolean }>;
+  /**
+   * `private`: `true`, the Provider marks the site private and the account's own (another account's private site is left
+   * out); `unknown`, the Provider doesn't say, so the site is kept as the account's, never public, and not settled.
+   */
+  sites: Record<string, ProviderImportPlan['context']['sites'][string] & { private?: true | 'unknown' }>;
 };
 
 /** The account's dives at the Provider, each as the record it keeps, and their context. */

@@ -478,8 +478,10 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
         // The site at the Provider first, found or made (stored at once, so a retry after a sign-in makes none), then
         // the Dive as it goes out with it.
         if (bySend?.type === 'site_external_id') {
+          // The Dive's site as it is under the lease, not as it was before.
+          const [now] = await db.select({ siteId: dive.siteId }).from(dive).where(eq(dive.id, diveId));
           await siteForSend(db, {
-            adapter, context: ctx, diverId: first.row.diverId, siteId: first.row.siteId, source: bySend.source, actor: { type: 'user', id: userId },
+            adapter, context: ctx, diverId: first.row.diverId, siteId: now?.siteId ?? null, source: bySend.source, actor: { type: 'user', id: userId },
           });
         }
         const loaded = await loadOutgoingDive(db, userId, diveId);

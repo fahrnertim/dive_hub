@@ -18,8 +18,8 @@ export interface FakeSsiSite {
   odin_countries_code_iso: string;
   /** Body of water: salt, fresh or artificial. */
   bow?: string;
-  /** Private to `odin_dive_sites_is_private_owner` (SSI answers flags as 0/1). */
-  odin_dive_sites_is_private?: number | boolean;
+  /** Private to `odin_dive_sites_is_private_owner` (SSI answers flags as 0/1). Null: the row comes without the flag. */
+  odin_dive_sites_is_private?: number | boolean | null;
   odin_dive_sites_is_private_owner?: number;
   odin_dive_sites_deleted?: number;
 }
@@ -140,6 +140,15 @@ export function computerDive(v: {
   };
 }
 
+/** A site row as SSI answers it: flags as 0/1, the owner null on a public site; a null flag is left out. */
+function asSsiAnswers(site: FakeSsiSite): Record<string, unknown> {
+  const { odin_dive_sites_is_private: flag, ...rest } = site;
+  return {
+    ...rest, ...(flag !== null && { odin_dive_sites_is_private: flag ? 1 : 0 }),
+    odin_dive_sites_is_private_owner: site.odin_dive_sites_is_private_owner ?? null, odin_dive_sites_deleted: site.odin_dive_sites_deleted ?? 0,
+  };
+}
+
 export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: FakeSsiSite[]; buddies?: FakeSsiBuddy[]; cards?: FakeSsiCard[] } = {}): FakeSsi {
   const tokens = new Map<string, number>();
   let nextToken = 1;
@@ -213,16 +222,13 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
           fake.expireAfterRead = false;
           tokens.clear();
         }
-        return answer({ verified_dives: 0, logbook_details: own, logbook_sites: fake.sites, logbook_buddies: buddies });
+        return answer({ verified_dives: 0, logbook_details: own, logbook_sites: fake.sites.map(asSsiAnswers), logbook_buddies: buddies });
       }
       if (what === 'get_divesite') {
         const found = fake.sites.find((s) => String(s.odin_dive_sites_id) === params.get('dsid'));
         // The real SSI answers one row in an array, flags as 0/1; an unknown ID is a 404 (checked 2026-10-24).
         if (!found) return answer({ error: 'not found' }, 404);
-        return answer([{
-          ...found, odin_dive_sites_is_private: found.odin_dive_sites_is_private ? 1 : 0,
-          odin_dive_sites_is_private_owner: found.odin_dive_sites_is_private_owner ?? null, odin_dive_sites_deleted: found.odin_dive_sites_deleted ?? 0,
-        }]);
+        return answer([asSsiAnswers(found)]);
       }
       if (what === 'save_divesite' && init.method === 'POST') {
         const row = JSON.parse(new URLSearchParams(init.body ?? '').get('json_data') ?? '{}') as Record<string, unknown>;
