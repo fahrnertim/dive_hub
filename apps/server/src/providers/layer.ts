@@ -16,6 +16,7 @@ import type { ProviderAdapter } from './provider.js';
 import { createPushRunService } from './push-run-service.js';
 import { createPushService } from './push-service.js';
 import { createProviderRegistry } from './registry.js';
+import { createSitePickService } from './site-pick.js';
 
 export function createProviderLayer(deps: { db: Db; secrets: SecretBox; blobs: BlobStore; adapters: ProviderAdapter[]; clock?: Clock }) {
   const providers = createProviderRegistry(deps.adapters);
@@ -24,11 +25,12 @@ export function createProviderLayer(deps: { db: Db; secrets: SecretBox; blobs: B
   const pushes = createPushService({ db: deps.db, blobs: deps.blobs, registry: providers, connections, leases });
   const pushRuns = createPushRunService({ db: deps.db, registry: providers, pushes });
   const buddies = createBuddyService({ registry: providers, connections, divers: createDiverService(deps.db) });
+  const sitePicks = createSitePickService({ db: deps.db, registry: providers, connections });
   const diveImports = createDiveImportService({ db: deps.db, blobs: deps.blobs, registry: providers, connections });
   const goneDives = createGoneDiveService({ db: deps.db, registry: providers, connections, leases });
   const conflicts = createConflictService({ db: deps.db, connections });
   const certifications = createCertificationService({ db: deps.db, blobs: deps.blobs, registry: providers, connections });
-  return { providers, connections, pushes, pushRuns, buddies, diveImports, goneDives, conflicts, certifications };
+  return { providers, connections, pushes, pushRuns, buddies, sitePicks, diveImports, goneDives, conflicts, certifications };
 }
 
 export type ProviderLayer = ReturnType<typeof createProviderLayer>;

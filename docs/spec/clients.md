@@ -492,8 +492,14 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
     has `createdBySend` and the site has a position) it doesn't block: offer sending, and say "Sending finds this site in
     your <Provider> logbook or creates it there as a private site"; the pick below stays on offer. Otherwise, when `typed`, offer the Provider's sites
     nearest first (`GET /api/dives/{id}/providers/{provider}/sites`, which asks the Provider, so only on request) and
-    typing the ID (accept the `prefixes`, check against `pattern`); save it on the site
-    (`PUT /api/dive-sites/{id}/external-ids/{source}`). When not `typed`, say it can't be fixed here.
+    typing the ID (accept the `prefixes`, check against `pattern`). Each suggestion carries `visibility` (`private`: private
+    to the Connection's account, show it as such; `unknown`: the Provider doesn't say) and `waterType`. With a Connection
+    for the Source, pick and type through it: `PUT /api/connections/{id}/dive-sites/{siteId}` with `{ externalId }` asks the
+    Provider first and answers `{ externalId, private }` (`null` clears the account's private ID); `provider_site_unknown`
+    (422) means the Provider has no site with that ID (also another account's private one), and nothing is stored; an ID
+    the Provider doesn't say about, or can't be asked about, is stored private. `external_id_taken` as below. Without a
+    Connection, save it on the site (`PUT /api/dive-sites/{id}/external-ids/{source}`), which stores a public ID without
+    asking the Provider. When not `typed`, say it can't be fixed here.
   - **`diver_mapping`:** one item per Participant (`diverName`) the Provider can't identify; say they will be left out
     (advisory) or that sending waits (blocking). With `fixes` containing `diver_external_id` and a Provider offering
     `buddies` `find`, offer finding the person in the account's list (`GET /api/connections/{id}/buddies`, only entries

@@ -498,6 +498,7 @@
     "provider_unsupported": "{{name}} bietet das nicht an.",
     "provider_import_off": "Der Import von Tauchgängen aus {{name}} ist aus. Wähle zuerst, was der Import darf.",
     "provider_site_data_not_confirmed": "Bestätige zuerst die Erklärung zur fehlenden Lizenz von {{name}}.",
+    "provider_site_unknown": "{{name}} kennt keinen Platz mit dieser ID.",
     "provider_account_held": "Ein Taucher hier hat dieses {{name}}-Konto schon.",
     "diver_not_external": "Nur ein Taucher, den kein User führt, kann in einen anderen zusammengeführt werden.",
     "ai_access_not_found": "Diesen KI-Zugang gibt es nicht mehr.",
