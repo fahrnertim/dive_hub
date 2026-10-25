@@ -388,6 +388,9 @@ Tested on the owner's account [T]; details in [the research note](../research/20
 - **`get_divesite`** (query `token`, `dsid`) answers HTTP 200 with a JSON **array of one row** (not an object), carrying `odin_dive_sites_is_private`, `_is_private_owner` and `_deleted`. An unknown ID answers HTTP 404 [T].
 - A new site with no dive is in `logbook_sites` of `get_divelog` right after creation, with `is_private` 1 and the owner [T].
 - **Not deletable with `odin_dive_sites_deleted` true or 1** [T]: `save_divesite` answers "update saved", but the site stays and `logbook_sites` still lists it. The app has no delete call or button and never sets the flag [R]. Other ways to delete were not tried.
+- **A private site is usable on a dive by its account** [T] (2026-10-26, app 5.0.43): a dive created on private site 1083262 is in the logbook with that site, and `logbook_sites` lists it as private with the account as owner. The logbook site rows carry both `odin_dive_sites_country_iso3` and `odin_countries_code_iso`.
+- **A private site is not in `get_divesites_global`** [T] (2026-10-26): the feed answers an object `{ divesites_timestamp, divesites }`; with `last_sync` before the site's creation (202 rows on one page) and with a recent one (1 row), 1083262 is not in it. `last_sync` was accepted as unix seconds and as `YYYY-MM-DD HH:MM:SS`; which one the app sends is not certain, and `limit` may be ignored ([research](../research/2026-10-26-ssi-private-site-check.md)).
+- **Not in `APP_CACHE_SITES.zip`**: pending the next-day check [R].
 
 ## Known but not used
 
