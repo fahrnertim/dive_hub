@@ -22,15 +22,26 @@ export type SiteForSend = 'had' | 'matched' | 'created' | 'none';
 async function locked<T>(db: Db, key: string, fn: () => Promise<T>): Promise<T> {
   const client = (db as Db & { $client: pg.Pool | pg.PoolClient | pg.Client }).$client;
   const session = client instanceof pg.Pool ? await client.connect() : client;
+  // A session whose unlock failed may still hold the lock: the pool destroys it instead of handing it out again.
+  let broken: Error | undefined;
+  const unlock = () =>
+    session.query('select pg_advisory_unlock(hashtext($1))', [key]).catch((error: unknown) => {
+      broken = error instanceof Error ? error : new Error(String(error));
+      return Promise.reject(broken);
+    });
   try {
     await session.query('select pg_advisory_lock(hashtext($1))', [key]);
+    let result: T;
     try {
-      return await fn();
-    } finally {
-      await session.query('select pg_advisory_unlock(hashtext($1))', [key]);
+      result = await fn();
+    } catch (error) {
+      await unlock().catch(() => undefined);
+      throw error;
     }
+    await unlock();
+    return result;
   } finally {
-    if (client instanceof pg.Pool) (session as pg.PoolClient).release();
+    if (client instanceof pg.Pool) (session as pg.PoolClient).release(broken);
   }
 }
 
