@@ -59,12 +59,12 @@ test('anyone enters the SSI site ID and maximum depth by hand', { tag: ['@sites'
   await page.getByRole('searchbox', { name: 'Search' }).fill('Ras il');
   await page.getByRole('link', { name: 'Ras il-Ħobż' }).click();
   await page.getByRole('button', { name: 'Edit dive site' }).click();
-  await page.getByRole('textbox', { name: 'SSI site ID' }).fill('Q3314');
+  await page.getByRole('textbox', { name: 'SSI site ID', exact: true }).fill('Q3314');
   await page.getByRole('button', { name: 'Save dive site' }).click();
   await expect(page.getByText('An SSI site ID is a number, e.g. 3314.')).toBeVisible();
 
   // What SSI's QR code says works as well as the number.
-  await page.getByRole('textbox', { name: 'SSI site ID' }).fill('site:3314');
+  await page.getByRole('textbox', { name: 'SSI site ID', exact: true }).fill('site:3314');
   await page.getByRole('textbox', { name: 'Maximum depth' }).fill('32');
   await page.getByRole('button', { name: 'Save dive site' }).click();
   await expect(page.getByRole('button', { name: 'Edit dive site' })).toBeFocused();

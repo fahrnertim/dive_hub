@@ -173,14 +173,23 @@ export function SitesPage({ params }: { params: SitesParams }) {
 }
 
 /** A site ID Users may type, worded by the Provider that needs it (ADR 0029). */
-function TypedId({ provider, value }: { provider: ProviderView; value: string | undefined }) {
+function TypedId({ provider, value, privateIds }: { provider: ProviderView; value: string | undefined; privateIds: string[] }) {
   const { t } = useTranslation();
   const pt = useProviderText(provider);
   return (
-    <div>
-      <dt>{pt('siteIdLabel')}</dt>
-      <dd>{value ?? t('common.none')}</dd>
-    </div>
+    <>
+      <div>
+        <dt>{pt('siteIdLabel')}</dt>
+        <dd>{value ?? t('common.none')}</dd>
+      </div>
+      {/* The API lists a private ID only to Users who manage its Diver (client contract). */}
+      {privateIds.map((id) => (
+        <div key={id}>
+          <dt>{pt('privateSiteLabel')}</dt>
+          <dd>{id}</dd>
+        </div>
+      ))}
+    </>
   );
 }
 
@@ -285,7 +294,11 @@ export function SitePage({ id }: { id: string }) {
                 <dd>{s.maxDepthM === null ? t('sites.notKnown') : display.depth(s.maxDepthM)}</dd>
               </div>
               {typed.map(({ provider, requirement }) => (
-                <TypedId key={requirement.source} provider={provider} value={s.externalIds.find((e) => e.source === requirement.source)?.externalId} />
+                <TypedId
+                  key={requirement.source} provider={provider}
+                  value={s.externalIds.find((e) => e.source === requirement.source && !e.privateTo)?.externalId}
+                  privateIds={s.externalIds.filter((e) => e.source === requirement.source && e.privateTo).map((e) => e.externalId)}
+                />
               ))}
               <div>
                 <dt>{t('sites.yourDives')}</dt>

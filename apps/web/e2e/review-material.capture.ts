@@ -582,10 +582,23 @@ test('review material', async ({ page, request, browser }) => {
       await page.getByRole('button', { name: 'Choose the SSI site' }).click();
       await page.getByRole('dialog').getByRole('option').first().waitFor();
       await capture(page, '27-dive-ssi-picker', { full: false });
-      await page.getByRole('dialog').getByRole('option', { name: /Attersee – Schwarzenbach/ }).click();
+      // The account's own private site among them (piece 4): marked "private".
+      await page.getByRole('dialog').getByRole('searchbox').fill('geheim');
+      await page.getByRole('dialog').getByRole('option', { name: /Erikas Geheimriff/ }).waitFor();
+      await capture(page, '27b-dive-ssi-picker-private', { full: false, aria: false });
+      await page.getByRole('dialog').getByRole('option', { name: /Erikas Geheimriff/ }).click();
+      await page.getByRole('dialog').waitFor({ state: 'hidden' });
       await page.getByRole('button', { name: 'Send to SSI' }).click();
       await page.getByText('Up to date').waitFor();
       await capture(page, '28-dive-ssi-sent', { aria: false });
+      // Piece 4: the site the send made at SSI is private to the account; its page and form say so.
+      const sent = await (await request.get(`/api/dives/${dive42}`)).json() as { site: { id: string } };
+      await page.goto(`/#/sites/${sent.site.id}`); await page.getByText('Your private SSI site', { exact: true }).waitFor();
+      await capture(page, '28b-site-private-id', { aria: false });
+      await page.getByRole('button', { name: 'Edit dive site' }).click();
+      await page.getByRole('textbox', { name: 'Your private SSI site ID' }).waitFor();
+      await capture(page, '28c-site-private-id-edit', { aria: false });
+      await page.goto(`/#/dives/${dive42}`); await page.reload();
       await editElsewhere(request, dive42, 'Changed after sending');
       await page.reload(); await page.getByText('Changed since sent').waitFor();
       await capture(page, '29-dive-ssi-changed');
@@ -624,7 +637,7 @@ test('review material', async ({ page, request, browser }) => {
       await setPreferences(request, { language: 'en' });
       await page.emulateMedia({ colorScheme: 'light' });
       await page.setViewportSize({ width: 1280, height: 900 });
-      const { connectionId, siteId } = await pushRunSetup(request, dive42, { keepSignedIn: false, siteExternalId: null });
+      const { connectionId, siteId } = await pushRunSetup(request, dive42, { keepSignedIn: false, siteExternalId: null, positioned: false });
       await page.goto(`/#/?site=${siteId}`); await page.reload();
       await page.getByRole('button', { name: 'Send to SSI…' }).click();
       await page.getByRole('dialog').getByText(/held back/).waitFor();

@@ -539,6 +539,32 @@ for (const v of variants) {
       await leaveSsi(request, diveId);
     });
 
+    test('a dive at a site with a position: sending finds or makes the site at SSI; the site page with its private ID', { tag: ['@dives', '@sites'] }, async ({ page, request }) => {
+      await connectSsi(request);
+      await readyForSsi(request, diveId);
+      await page.goto(`/#/dives/${diveId}`);
+      await openLine(page, 'SSI');
+      await expect(page.getByText(v.english ? /Sending finds this site in your SSI logbook/ : /Beim Senden wird dieser Tauchplatz in deinem SSI-Logbuch/)).toBeVisible();
+      await goodPage(page, title('Dive 42'), v);
+      // The picker marks the account's private sites.
+      await page.getByRole('button', { name: v.english ? 'Choose the SSI site' : 'SSI-Tauchplatz wählen' }).click();
+      await page.getByRole('dialog').getByRole('searchbox').fill('geheim');
+      await expect(page.getByRole('dialog').getByRole('option', { name: /Erikas Geheimriff/ })).toContainText(v.english ? 'private' : 'privat');
+      await goodPage(page, title('Dive 42'), v);
+      await page.getByRole('dialog').getByRole('button', { name: v.english ? 'Cancel' : 'Abbrechen' }).click();
+      await expect(page.getByRole('dialog')).toBeHidden();
+      await page.getByRole('button', { name: v.english ? 'Send to SSI' : 'An SSI senden' }).click();
+      await expect(page.getByText(v.english ? 'Up to date' : 'Aktuell')).toBeVisible();
+      const dive = await (await request.get(`/api/dives/${diveId}`)).json() as { site: { id: string } };
+      await page.goto(`/#/sites/${dive.site.id}`);
+      await expect(page.getByText(v.english ? 'Your private SSI site' : 'Dein privater SSI-Tauchplatz', { exact: true })).toBeVisible();
+      await goodPage(page, title('SSI test reef'), v);
+      await page.getByRole('button', { name: v.english ? 'Edit dive site' : 'Tauchplatz bearbeiten' }).click();
+      await expect(page.getByRole('textbox', { name: v.english ? 'Your private SSI site ID' : 'Deine private SSI-Tauchplatz-ID' })).toBeVisible();
+      await goodPage(page, title('SSI test reef'), v);
+      await leaveSsi(request, diveId);
+    });
+
     test('a dive with buddies: adding someone, and one SSI doesn’t know yet', { tag: ['@dives'] }, async ({ page, request }) => {
       await connectSsi(request);
       await readyForSsi(request, diveId);
