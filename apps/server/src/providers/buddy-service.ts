@@ -173,8 +173,10 @@ export function createBuddyService(deps: { db: Db; registry: ProviderRegistry; c
       const before = await asProblem(() => divers.details(actor, diverId));
       // The account first: another Diver having it ends the add before anything is made at the Provider.
       if (person.account) await asProblem(() => divers.setExternalId(actor, diverId, source, person.account));
+      const found = { byAccount: false };
       const answered = await underLock(row, source, accountId, async (ctx) => {
         const existing = person.account ? (await buddies.find(ctx)).find((b) => b.account === person.account) : undefined;
+        found.byAccount = !!person.account;
         const entry = existing ?? await buddies.add!(ctx, { firstName, lastName, email: person.email, account: person.account });
         await remember(db, accountId, diverId, entry.remoteId);
         return entry;
@@ -182,7 +184,8 @@ export function createBuddyService(deps: { db: Db; registry: ProviderRegistry; c
       await divers.fillDetails(actor, diverId, { firstName, lastName, email: person.email });
       return {
         added: { diverId, name: answered.name },
-        knownAs: nameDiffers(answered.name, before) ? answered.name : null,
+        // Only an account can be known under another name; a typed person is as typed.
+        knownAs: found.byAccount && nameDiffers(answered.name, before) ? answered.name : null,
       };
     },
 

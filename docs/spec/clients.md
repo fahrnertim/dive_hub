@@ -510,14 +510,15 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
     gives the Diver that account (`diver_external_id_taken` names the Diver that has it: say so), one without is only
     remembered for the Diver; `provider_buddy_not_found` means the entry is gone from the list: read it again. Adding a
     person is `POST …/buddies/add` with `{ diverId, firstName, lastName, email?, account? }` (a typed person, or a scanned
-    code with its `account`): after it show `added.name` as the Provider answered it, and `knownAs` when it is not
-    null ("<Provider> knows them as …"). An entry shown with a `diver` and no `account` is one remembered for that Diver.
+    code with its `account`): after it say exactly "Added {{name}} to your {{provider}} list. It might take some
+    time until they show up in {{provider}}'s app." (`added.name`), and `knownAs` (only for an account; typed names give null) when it is not
+    null, as "{{provider}} knows this account as {{name}}". An entry shown with a `diver` and no `account` is one remembered for that Diver.
   - **An unknown `type`:** show the requirement's `description` and that it can't be fixed here.
 - **Must say who a Push left out** (the latest Push's `leftOut`), by name and `reason`: `no_reference` (the Provider
-  can't tell who they are) or `not_at_provider` (SSI: not in the User's buddy list; say to add them in SSI's app, by
-  scanning their buddy QR code, then update); offer **Link or add** for each, and again after the send.
+  can't tell who they are) or `not_at_provider` (SSI: not in the User's buddy list; offer **Link or add** for each, before and
+  after the send, and never tell the User to add them in the Provider's app).
 - **Must show what a send did to the list of people** (`buddies` in the send's answer, null when nothing): `added` (the
-  entries it made by SSI account, with the name SSI answered) and `knownAs` (SSI knows the account under another name
+  entries it made by SSI account, with the name SSI answered) and `knownAs` (say "{{provider}} knows this account as {{name}}": SSI knows the account under another name
   than the Diver's: say so, by `diverName` and `name`).
 - **`outcome: exists`:** nothing was sent; a dive at the same time is there. Show it (number, time, depth, minutes)
   and ask: link to it (`onExisting: link`) or send a new one (`create`).

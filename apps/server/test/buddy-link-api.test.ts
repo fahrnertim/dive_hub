@@ -130,7 +130,7 @@ describe.skipIf(!(await databaseReachable()))('link or add a list entry for a Di
     expect(saves()).toHaveLength(1);
     expect(saves()[0]).toMatchObject({ id: null, firstname: 'Dive Hub', lastname: 'test', email: 't@example.com' });
     const made = ctx.fakeSsi.buddies.find((b) => b.firstname === 'Dive Hub')!;
-    expect(response.json()).toEqual({ added: { diverId: diver, name: 'Dive Hub test' }, knownAs: 'Dive Hub test' });
+    expect(response.json()).toEqual({ added: { diverId: diver, name: 'Dive Hub test' }, knownAs: null });
     expect(await remembered(diver)).toBe(String(made.id));
     expect(await details(diver, other)).toMatchObject({ name: 'Samuel Dreier', email: 't@example.com', firstName: 'Dive Hub', lastName: 'test' });
   });
@@ -155,6 +155,21 @@ describe.skipIf(!(await databaseReachable()))('link or add a list entry for a Di
     expect(saves()[0]).toMatchObject({ id: null, master_id: account });
     expect((await details(diver)).accounts).toEqual([{ source: 'ssi', externalId: String(account) }]);
     expect(await remembered(diver)).toBe(String(ctx.fakeSsi.buddies.find((b) => b.buddy_master_id === account)!.id));
+  });
+
+  it('says whom SSI knows a scanned account as when the name differs', async () => {
+    const account = nextAccount++;
+    ctx.fakeSsi.profiles.set(account, { firstname: 'Real', lastname: 'Person' });
+    const diver = await person('Someone Typed');
+    const response = await call('POST', `/api/connections/${connectionId}/buddies/add`, { diverId: diver, firstName: 'Someone', lastName: 'Typed', account: String(account) });
+    expect(response.json()).toEqual({ added: { diverId: diver, name: 'Real Person' }, knownAs: 'Real Person' });
+  });
+
+  it('does not count an answered entry without a name as another name', async () => {
+    const account = nextAccount++;
+    const diver = await person('Not Yet Filled');
+    const response = await call('POST', `/api/connections/${connectionId}/buddies/add`, { diverId: diver, firstName: 'Not', lastName: 'Filled', account: String(account) });
+    expect(response.json()).toMatchObject({ added: { name: '' }, knownAs: null });
   });
 
   it('an add for an account already in the list links that entry', async () => {

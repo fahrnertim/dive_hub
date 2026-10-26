@@ -92,7 +92,8 @@ async function settle(
 /** Whether the answered entry's name differs from the Diver's `first last` (else the Diver's name). */
 export function nameDiffers(answered: string, p: Person): boolean {
   const own = [p.firstName, p.lastName].filter(Boolean).join(' ') || p.name;
-  return foldName(answered) !== foldName(own);
+  // SSI may answer an add by account before it has the profile: no name is no difference.
+  return foldName(answered) !== '' && foldName(answered) !== foldName(own);
 }
 
 /** The answered entry's name against the Diver's: a difference is `knownAs`. */
