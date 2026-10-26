@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { FULL_ONLY, VARIANTS, browserGrepInvert, variantsRun } from './check-lib.mjs';
-import { baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, greenRun, keptFailures, lintTargets, planFor, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
+import { baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, failedTestsFromReport, forBrowserTests, greenRun, keptFailures, lintTargets, planFor, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
 
 /** A git repository with one commit holding `files`. */
 function repository(files) {
@@ -411,11 +411,50 @@ test('a failed browser run is kept with its snapshot and its failed tests, and c
   t.after(repo.drop);
   assert.equal(failedRun('e2e', repo.cwd), null);
   const tree = snapshot(repo.cwd);
-  recordFailed('e2e', tree, ['b-id', 'a-id'], repo.cwd);
-  assert.deepEqual(failedRun('e2e', repo.cwd), { tree, failedTests: ['a-id', 'b-id'] });
+  recordFailed('e2e', tree, { ids: ['b-id', 'a-id'], tests: [] }, repo.cwd);
+  assert.deepEqual(failedRun('e2e', repo.cwd)?.failedTests, ['a-id', 'b-id']);
   clearFailed('e2e', repo.cwd);
   assert.equal(failedRun('e2e', repo.cwd), null);
   clearFailed('e2e', repo.cwd); // clearing twice is fine
+});
+
+test('a failed browser run keeps its failed tests by id and by title, and an old record still reads', (t) => {
+  const repo = repository({ 'a.ts': 'a' });
+  t.after(repo.drop);
+  const tree = snapshot(repo.cwd);
+  const line = 'ui-quality.spec.ts › English, light, desktop › Divers, a diver’s certifications';
+  recordFailed('e2e', tree, { ids: ['b-id', 'a-id'], tests: [line] }, repo.cwd);
+  const { base, at, ...rest } = failedRun('e2e', repo.cwd);
+  assert.deepEqual(rest, { tree, failedTests: ['a-id', 'b-id'], owed: [line] });
+  assert.match(base, /^[0-9a-f]{40}$/);
+  assert.match(at, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
+  // A record from before the titles: a bare list of ids.
+  const old = repo.git('-c', 'user.name=x', '-c', 'user.email=x@x', 'commit-tree', tree, '-m', 'e2e: failed\n\n["a-id"]').toString().trim();
+  repo.git('update-ref', 'refs/check/failed-e2e', old);
+  assert.deepEqual(failedRun('e2e', repo.cwd)?.failedTests, ['a-id']);
+  assert.deepEqual(failedRun('e2e', repo.cwd)?.owed, []);
+});
+
+test('the failed tests of a report are named as test-list lines, curly quotes and all', () => {
+  const result = (status) => ({ tests: [{ results: [{ status }] }] });
+  const report = {
+    suites: [{
+      title: 'ui-quality.spec.ts',
+      file: 'ui-quality.spec.ts',
+      suites: [{
+        title: 'English, light, desktop',
+        specs: [
+          { file: 'ui-quality.spec.ts', title: 'Divers, a diver’s certifications', ...result('passed') },
+          { file: 'ui-quality.spec.ts', title: 'Dive 100% of the “Shark’s” sites', ...result('failed') },
+          { file: 'ui-quality.spec.ts', title: 'Equipment: the \'list\'', ...result('timedOut') },
+        ],
+      }],
+    }],
+  };
+  assert.deepEqual(failedTestsFromReport(report), [
+    'ui-quality.spec.ts › English, light, desktop › Dive 100% of the “Shark’s” sites',
+    "ui-quality.spec.ts › English, light, desktop › Equipment: the 'list'",
+  ]);
 });
 
 test('a failed browser step keeps only failures Playwright wrote during it, and none when it may have stopped early', () => {

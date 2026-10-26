@@ -377,19 +377,51 @@ export function countingBase(step, tree, cwd = process.cwd()) {
 // failed on and the tests that failed, as a commit held by a local ref like the green runs.
 const failedRef = (step) => `refs/check/failed-${step}`;
 
-/** Records that `step` failed on the snapshot `tree`, with the ids of the tests that failed. */
-export function recordFailed(step, tree, failedTests, cwd = process.cwd()) {
-  const message = `${step}: failed\n\n${JSON.stringify([...failedTests].sort())}`;
+/** Playwright's JSON report (apps/web/playwright.config.ts), written next to `.last-run.json`. */
+export const REPORT = 'apps/web/test-results/report.json';
+
+/**
+ * The tests of a Playwright JSON report whose last result is failed or timed out, as `--test-list` lines:
+ * `<file relative to testDir> › <describe> › … › <title>` (no project, no tags, no line numbers).
+ */
+export function failedTestsFromReport(report) {
+  const lines = [];
+  const walk = (suite, describes) => {
+    for (const spec of suite.specs ?? []) {
+      const failed = (spec.tests ?? []).some((test) => ['failed', 'timedOut'].includes(test.results?.at(-1)?.status));
+      if (failed) lines.push([spec.file, ...describes, spec.title].join(' › '));
+    }
+    for (const child of suite.suites ?? []) walk(child, [...describes, child.title]);
+  };
+  for (const fileSuite of report?.suites ?? []) walk(fileSuite, []);
+  return lines;
+}
+
+/**
+ * Records that `step` failed on the snapshot `tree`: the ids of the tests that failed (what `.last-run.json` lists)
+ * and their `--test-list` lines (`failedTestsFromReport`).
+ */
+export function recordFailed(step, tree, { ids, tests }, cwd = process.cwd()) {
+  const message = `${step}: failed
+
+${JSON.stringify({ ids: [...ids].sort(), tests: [...tests].sort() })}`;
   const commit = git(['-c', 'user.name=pnpm check', '-c', 'user.email=check@localhost', 'commit-tree', tree, '-m', message], cwd);
   git(['update-ref', failedRef(step), commit], cwd);
 }
 
-/** The last failed run of `step` that was kept: `{ tree, failedTests }`, or null. */
+/**
+ * The last failed run of `step` that was kept, or null: `{ tree, base, at, failedTests, owed }` (the snapshot, the
+ * record's commit and date, the ids of the failed tests, and their test-list lines). A record from before the
+ * titles was a bare list of ids: it reads with `owed: []`.
+ */
 export function failedRun(step, cwd = process.cwd()) {
   try {
     const tree = git(['rev-parse', `${failedRef(step)}^{tree}`], cwd);
-    const body = git(['log', '-1', '--format=%b', failedRef(step), '--'], cwd);
-    return { tree, failedTests: JSON.parse(body || '[]') };
+    const base = git(['rev-parse', failedRef(step)], cwd);
+    const at = git(['log', '-1', '--format=%cd', '--date=format:%Y-%m-%d %H:%M', failedRef(step), '--'], cwd);
+    const body = JSON.parse(git(['log', '-1', '--format=%b', failedRef(step), '--'], cwd) || '[]');
+    const { ids, tests } = Array.isArray(body) ? { ids: body, tests: [] } : body;
+    return { tree, base, at, failedTests: ids ?? [], owed: tests ?? [] };
   } catch {
     return null;
   }
