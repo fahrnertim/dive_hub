@@ -2,6 +2,7 @@
 // hand), SSI's zeros as "none", buddy-list entries as SSI accounts, the profile, the site's position from the context.
 // Pure: no database, no network.
 import { describe, expect, it } from 'vitest';
+import { rowOf } from '../src/providers/ssi/ssi-buddy-row.js';
 import type { SsiLogbook } from '../src/providers/ssi/ssi-client.js';
 import { contextOf, parseSsiDive, ssiOrigin } from '../src/providers/ssi/ssi-import.js';
 import { computerDive, handTypedDive } from './fake-ssi.js';
@@ -9,7 +10,7 @@ import { computerDive, handTypedDive } from './fake-ssi.js';
 const logbook: SsiLogbook = {
   dives: [],
   sites: [{ id: '3314', name: 'Hausreef', latitude: 27.29, longitude: 33.82, country: 'EG', waterType: 'salt', private: false, privateOwner: null }],
-  buddies: [{ id: 3_786_888, name: 'Kai Lund', account: '4989164' }, { id: 1_111, name: 'No Account', account: null }],
+  buddies: [{ id: 3_786_888, name: 'Kai Lund', account: '4989164', row: rowOf({}) }, { id: 1_111, name: 'No Account', account: null, row: rowOf({}) }],
 };
 const context = contextOf(logbook);
 const withId = (record: Record<string, unknown>, id = 27_000_001) => ({ ...record, odin_user_log_id: id });

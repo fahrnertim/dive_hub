@@ -5,6 +5,7 @@ import {
   DIVE_FIELDS, ProviderError, type ActionContext, type Capabilities, type Delivered, type DiveExportAction, type OutgoingDive,
   type ProviderAdapter, type RemoteDive,
 } from '../provider.js';
+import { accountOnlyRow, newEntryRow, withAccountRow } from './ssi-buddy-row.js';
 import { SsiError, type SsiBuddy, type SsiClient, type SsiLogbook, type SsiRecord } from './ssi-client.js';
 import {
   buddyIdsOf, COMPARED_FIELDS, compareReadBack, createRecord, deleteRecord, fingerprint, localTime, startChangesAtSsi, updateRecord, withBuddies, writableRecord,
@@ -49,8 +50,8 @@ export const SSI_CAPABILITIES: Capabilities = {
     },
     // `find`: the sites of the User's logbook; `list`: SSI's whole site list for the admin's Site import (ssi-sites.ts).
     diveSites: { import: { operations: ['find', 'list'], findBy: ['position'] } },
-    // `save_buddy` is known (piece 5 adds entries); `find` is all this piece uses.
-    buddies: { import: { operations: ['find'] } },
+    // `find`: the buddy list (`get_buddies`). Export: `save_buddy` makes an entry, or gives one an account (piece 5).
+    buddies: { import: { operations: ['find'] }, export: { operations: ['add', 'setAccount'] } },
     // `find`: the account's certification cards (`get_ccards`, ADR 0050); no call to change a card is known or wanted.
     certifications: { import: { operations: ['find'] } },
   },
@@ -103,7 +104,7 @@ function buddiesFor(dive: OutgoingDive, list: SsiBuddy[]) {
  * long it took. Never the token, password or URL. Shows when Dive Hub used an account at SSI.
  */
 export interface SsiCallLog {
-  call: 'authenticate' | 'get_divelog' | 'save_divelog' | 'get_ccards' | 'get_divesite' | 'save_divesite';
+  call: 'authenticate' | 'get_divelog' | 'save_divelog' | 'get_ccards' | 'get_divesite' | 'save_divesite' | 'get_buddies' | 'save_buddy';
   connectionId: string | null;
   /** `ok`, or the reason SSI's client gave (`unavailable`, `signed_out`, …). */
   outcome: 'ok' | SsiError['reason'] | 'error';
@@ -111,6 +112,9 @@ export interface SsiCallLog {
   detail?: string;
   ms: number;
 }
+
+/** An entry of the buddy list as the Provider's typed value; the row for a save back stays here. */
+const remoteBuddy = ({ id, row: _row, ...b }: SsiBuddy) => ({ remoteId: String(id), ...b });
 
 /** SSI's maintenance (HTTP 503) is, for the generic layer, SSI being unavailable. */
 const providerReason = (error: SsiError) => (error.reason === 'maintenance' ? 'unavailable' : error.reason);
@@ -148,6 +152,41 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
     return null;
   };
 
+  /** The last buddy list read per Connection, kept like the logbook; any `save_buddy` drops it. */
+  const buddySnapshots = new Map<string, { at: number; buddies: SsiBuddy[] }>();
+
+  /**
+   * Reads the buddy list (`get_buddies`) at most once per action. `recent` may answer with a read from moments ago;
+   * `current` always reads, because a save back sends SSI's own row.
+   */
+  function buddyListOf(ctx: ActionContext) {
+    let read: Promise<SsiBuddy[]> | null = null;
+    const current = () => {
+      read ??= called('get_buddies', ctx.connectionId, () => client.buddies(ctx.access)).then((buddies) => {
+        buddySnapshots.set(ctx.connectionId, { at: now(), buddies });
+        return buddies;
+      });
+      return read;
+    };
+    const recent = () => {
+      if (!read) {
+        const kept = buddySnapshots.get(ctx.connectionId);
+        if (kept && now() - kept.at < SNAPSHOT_MS) read = Promise.resolve(kept.buddies);
+      }
+      return current();
+    };
+    return { recent, current };
+  }
+
+  /** Saves a buddy row; the kept list is out of date after it. */
+  async function saveBuddy(ctx: ActionContext, row: Parameters<SsiClient['saveBuddy']>[1]) {
+    try {
+      return await called('save_buddy', ctx.connectionId, () => client.saveBuddy(ctx.access, row));
+    } finally {
+      buddySnapshots.delete(ctx.connectionId);
+    }
+  }
+
   /**
    * Reads the logbook at most once per action. `recent` may answer with a read-back of the last two minutes (finding
    * a dive, picking the next number); `current` always reads, because an update or delete writes SSI's record back.
@@ -181,6 +220,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
 
   function open(ctx: ActionContext): DiveExportAction {
     const logbook = logbookOf(ctx);
+    const buddyList = buddyListOf(ctx);
     const byId = async (remoteId: string) => (await logbook.current()).dives.find((r) => idOf(r.odin_user_log_id) === remoteId);
     /** Another dive of the logbook just read that has this number: SSI would take it twice. */
     const holderOf = async (number: number, except: string) =>
@@ -195,12 +235,12 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         return { ours: ours ? remoteDive(ours) : null, sameTime: same ? remoteDive(same) : null };
       },
       async create(dive, reference, wanted) {
-        const { dives, buddies } = await logbook.recent();
+        const { dives } = await logbook.recent();
         // SSI's dive number is the client's choice: Dive Hub's when it is asked to and no dive in the logbook has it
         // (a duplicate is never made), else the highest in the logbook + 1.
         const taken = wanted != null && dives.some((r) => numberOf(r.odin_user_log_nr) === wanted);
         const number = wanted != null && !taken ? wanted : Math.max(0, ...dives.map((r) => numberOf(r.odin_user_log_nr) ?? 0)) + 1;
-        const { ids, leftOut } = buddiesFor(dive, buddies);
+        const { ids, leftOut } = buddiesFor(dive, await buddyList.recent());
         const record = withBuddies(createRecord(forSsi(dive), { number, accountId: ctx.accountId, reference }), ids);
         return { ...(await saveAndReadBack(ctx, record, number)), leftOut };
       },
@@ -208,14 +248,14 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         const read = await logbook.current();
         const record = read.dives.find((r) => idOf(r.odin_user_log_id) === remoteId);
         if (!record) return null;
-        const context = contextOf(read, ctx.accountId);
+        const context = contextOf(read, ctx.accountId, await buddyList.current());
         const parsed = parseSsiDive(record, context, remoteId);
         return parsed ? { dive: parsed, context, record } : null;
       },
       async update(remoteId, dive, previous, wanted, leave) {
         const remote = await byId(remoteId);
         if (!remote) return null;
-        const { ids: sent, leftOut } = buddiesFor(dive, (await logbook.current()).buddies);
+        const { ids: sent, leftOut } = buddiesFor(dive, await buddyList.current());
         // Buddies kept as the Provider has them: its IDs go back unchanged and Dive Hub's are not added.
         const asTheyAre = leave?.keep.includes('buddies') ?? false;
         // Cleared: none stays, not even those SSI holds that Dive Hub never sent.
@@ -276,9 +316,10 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
       async list(ctx, options) {
         const read = logbookOf(ctx);
         const logbook = await (options?.recent ? read.recent() : read.current());
+        const buddies = await (options?.recent ? buddyListOf(ctx).recent() : buddyListOf(ctx).current());
         return {
           records: logbook.dives.flatMap((r) => { const id = idOf(r.odin_user_log_id); return id ? [{ remoteId: id, record: r }] : []; }),
-          context: contextOf(logbook, ctx.accountId),
+          context: contextOf(logbook, ctx.accountId, buddies),
         };
       },
       parse: parseSsiDive,
@@ -304,7 +345,18 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
       create: (ctx, site) => called('save_divesite', ctx.connectionId, () => client.saveSite(ctx.access, ssiSiteRow(site, ctx.accountId))),
     },
     buddies: {
-      find: async (ctx) => (await logbookOf(ctx).recent()).buddies.map(({ id, ...b }) => ({ remoteId: String(id), ...b })),
+      find: async (ctx) => (await buddyListOf(ctx).recent()).map(remoteBuddy),
+      // With an account only that and the flags go: SSI fills the entry itself and answers an existing entry of the account
+      // by that entry. Without, the app's whole row from scratch (docs/research/2026-10-27-ssi-buddy-checks.md).
+      async add(ctx, person) {
+        return remoteBuddy(await saveBuddy(ctx, person.account ? accountOnlyRow(person.account) : newEntryRow(person)));
+      },
+      async setAccount(ctx, entryId, account) {
+        // The entry as SSI has it now goes back whole, so nothing of it changes but the account.
+        const entry = (await buddyListOf(ctx).current()).find((b) => String(b.id) === entryId);
+        if (!entry) throw new ProviderError('not_found', `get_buddies: no entry ${entryId} in the list`);
+        return remoteBuddy(await saveBuddy(ctx, withAccountRow(entry.row, account)));
+      },
     },
     certifications: {
       find: async (ctx) => (await called('get_ccards', ctx.connectionId, () => client.cards(ctx.access))).map((c) => ({

@@ -118,6 +118,7 @@ describe('the SSI adapter\'s call log', () => {
     expect(calls.map(({ call, connectionId, outcome }) => ({ call, connectionId, outcome }))).toEqual([
       { call: 'authenticate', connectionId: null, outcome: 'ok' },
       { call: 'get_divelog', connectionId: 'c1', outcome: 'ok' },
+      { call: 'get_buddies', connectionId: 'c1', outcome: 'ok' },
       { call: 'save_divelog', connectionId: 'c1', outcome: 'ok' },
       { call: 'get_divelog', connectionId: 'c1', outcome: 'ok' },
       { call: 'authenticate', connectionId: null, outcome: 'wrong_credentials' },

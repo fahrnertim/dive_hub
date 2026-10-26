@@ -68,7 +68,7 @@ describe.skipIf(!(await databaseReachable()))('the times of the dives at SSI', (
     const before = ctx.fakeSsi.calls.length;
     const text = JSON.stringify(await times());
     expect(text).not.toContain('Reef Divers');
-    expect(ctx.fakeSsi.calls.slice(before).map((c) => c.what)).toEqual(['get_divelog']);
+    expect(ctx.fakeSsi.calls.slice(before).map((c) => c.what)).toEqual(['get_divelog', 'get_buddies']);
     expect(((await call('GET', '/api/dives?limit=5')).json() as { total: number }).total).toBe(0);
   });
 

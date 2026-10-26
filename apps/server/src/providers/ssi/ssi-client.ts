@@ -4,6 +4,7 @@
 // every later call carries the token. The transport (ssi-transport.ts) makes the calls and reads SSI's answers.
 
 import type { SiteWaterType } from '../../vocabulary.js';
+import { rowOf, type SsiBuddyRow } from './ssi-buddy-row.js';
 import { readSsiSite } from './ssi-site-record.js';
 import { createSsiTransport, SSI_APP_USER_AGENT, SsiError, type Fetch } from './ssi-transport.js';
 
@@ -57,6 +58,8 @@ export interface SsiBuddy {
   email?: string | null;
   /** `leader_nr`; null when empty or 0. Whether `leader_active` matters for the code is unknown, so it isn't read. */
   leaderNumber?: string | null;
+  /** The app's keys as SSI returned them, for a save back (`save_buddy`). Never leaves `providers/ssi/`. */
+  row: SsiBuddyRow;
 }
 
 /** A certification card of the account (`get_ccards`, ADR 0050); values as SSI gives them, tidied to text. */
@@ -101,6 +104,10 @@ export interface SsiClient {
   site(token: string, id: string): Promise<SsiRecord | null>;
   /** Creates a site (`odin_dive_sites_id: null`) from the app's site row; returns SSI's site ID. Sites can't be deleted at SSI. */
   saveSite(token: string, row: SsiRecord): Promise<string>;
+  /** The account's buddy list (`get_buddies`); entries flagged deleted are left out. */
+  buddies(token: string): Promise<SsiBuddy[]>;
+  /** Saves a buddy row (`save_buddy`: a new entry with `id: null`, else that entry) and answers the entry as SSI keeps it. */
+  saveBuddy(token: string, row: Partial<SsiBuddyRow>): Promise<SsiBuddy>;
 }
 
 export interface SsiClientOptions {
@@ -114,6 +121,24 @@ export interface SsiClientOptions {
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const idText = (v: unknown) => (typeof v === 'number' && Number.isInteger(v) && v > 0 ? String(v)
   : typeof v === 'string' && /^[1-9]\d*$/.test(v) ? v : null);
+
+/** One entry of the buddy list (`get_buddies`, `logbook_buddies`); a deleted entry, or one with neither name nor account, is none. */
+function readBuddy(b: unknown): SsiBuddy[] {
+  if (!isObject(b)) return [];
+  const id = idText(b.id);
+  if (!id || b.deleted === 1 || b.deleted === '1' || b.deleted === true) return [];
+  const text = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+  const name = [text(b.firstname), text(b.lastname)].filter(Boolean).join(' ') || text(b.nickname);
+  const leader = typeof b.leader_nr === 'number' ? String(b.leader_nr) : text(b.leader_nr);
+  // `buddy_master_id` is the buddy's account (0: none); `master_id` is the same, as the app writes it.
+  const account = idText(b.buddy_master_id) ?? idText(b.master_id);
+  if (!name && !account) return [];
+  return [{
+    id: Number(id), name, account,
+    firstName: text(b.firstname) || null, lastName: text(b.lastname) || null, email: text(b.email) || null,
+    leaderNumber: leader && leader !== '0' ? leader : null, row: rowOf(b),
+  }];
+}
 
 export function createSsiClient(options: SsiClientOptions): SsiClient {
   const fetchImpl: Fetch = options.fetch ?? ((url, init) => fetch(url, init));
@@ -145,19 +170,24 @@ export function createSsiClient(options: SsiClientOptions): SsiClient {
         const { id, name, latitude, longitude, country, waterType, privateOwner } = site;
         return [{ id, name, latitude, longitude, country, waterType, private: site.private, privateOwner }];
       });
-      const buddies = (Array.isArray(data.logbook_buddies) ? data.logbook_buddies : []).filter(isObject).flatMap((b) => {
-        const id = idText(b.id);
-        if (!id || b.deleted === 1 || b.deleted === '1') return [];
-        const text = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
-        const name = [text(b.firstname), text(b.lastname)].filter(Boolean).join(' ') || text(b.nickname);
-        const leader = typeof b.leader_nr === 'number' ? String(b.leader_nr) : text(b.leader_nr);
-        return name ? [{
-          id: Number(id), name, account: idText(b.buddy_master_id),
-          firstName: text(b.firstname) || null, lastName: text(b.lastname) || null, email: text(b.email) || null,
-          leaderNumber: leader && leader !== '0' ? leader : null,
-        }] : [];
-      });
+      const buddies = (Array.isArray(data.logbook_buddies) ? data.logbook_buddies : []).flatMap(readBuddy);
       return { dives, sites, buddies };
+    },
+
+    async buddies(token) {
+      const data = await call('get_buddies', { token });
+      if (!Array.isArray(data.user_buddies)) throw new SsiError('bad_response', 'get_buddies: no user_buddies');
+      return data.user_buddies.flatMap(readBuddy);
+    },
+
+    async saveBuddy(token, row) {
+      const data = await call('save_buddy', { token }, row);
+      // The app reads the saved entry from `result.buddy`, an array of one (checked 2026-10-27).
+      const result = isObject(data.result) ? data.result : null;
+      const saved = Array.isArray(result?.buddy) ? readBuddy(result.buddy[0]) : [];
+      if (saved[0]) return saved[0];
+      const reason = typeof data.error === 'string' && data.error ? data.error : `no buddy in the answer (fields: ${Object.keys(data).join(', ')})`;
+      throw new SsiError('bad_response', `save_buddy: ${reason}`);
     },
 
     async cards(token) {

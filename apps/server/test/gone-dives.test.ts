@@ -86,8 +86,8 @@ describe.skipIf(!(await databaseReachable()))('Dives gone at SSI', () => {
     deleteAtSsi('d1');
     const before = ctx.fakeSsi.calls.length;
     expect(await check()).toEqual({ empty: false, compared: 6, gone: 1, warning: false });
-    // One fresh read of the logbook, nothing written there.
-    expect(ctx.fakeSsi.calls.slice(before).map((c) => c.what)).toEqual(['get_divelog']);
+    // One fresh read of the logbook and of the buddy list (the listing's context), nothing written there.
+    expect(ctx.fakeSsi.calls.slice(before).map((c) => c.what)).toEqual(['get_divelog', 'get_buddies']);
     const found = await waiting();
     expect(found).toHaveLength(1);
     expect(found[0]).toMatchObject({ connectionId, provider: 'ssi', compared: 6, warning: false });
@@ -150,7 +150,7 @@ describe.skipIf(!(await databaseReachable()))('Dives gone at SSI', () => {
     await call('PATCH', `/api/connections/${connectionId}`, { diveImport: { mode: 'add' } });
     const before = ctx.fakeSsi.calls.length;
     const preview = (await call('GET', `/api/connections/${connectionId}/dive-import`)).json() as { goneDives: Summary };
-    expect(ctx.fakeSsi.calls.slice(before).map((c) => c.what)).toEqual(['get_divelog']);
+    expect(ctx.fakeSsi.calls.slice(before).map((c) => c.what)).toEqual(['get_divelog', 'get_buddies']);
     expect(preview.goneDives).toEqual({ empty: false, compared: 6, gone: 2, warning: false });
     expect(await waitingIds()).toEqual(sorted('d1', 'd3'));
     await call('PATCH', `/api/connections/${connectionId}`, { diveImport: { mode: 'off' } });
@@ -161,8 +161,8 @@ describe.skipIf(!(await databaseReachable()))('Dives gone at SSI', () => {
     const res = await confirm([hub.d1!]);
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ empty: false, results: [{ diveId: hub.d1, confirmation: 'gone' }] });
-    // One read for the confirmation; nothing was deleted or sent at SSI.
-    expect(ctx.fakeSsi.calls.slice(before).map((c) => c.what)).toEqual(['get_divelog']);
+    // One read for the confirmation (logbook and buddy list); nothing was deleted or sent at SSI.
+    expect(ctx.fakeSsi.calls.slice(before).map((c) => c.what)).toEqual(['get_divelog', 'get_buddies']);
     const s = await status(hub.d1!);
     expect(s.current).toBeNull();
     expect(s.pushes[0]).toMatchObject({ action: 'delete', state: 'confirmed', remoteGone: true });

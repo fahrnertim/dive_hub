@@ -85,8 +85,11 @@ export interface Capabilities {
       fields?: Partial<Record<DiveField, ('import' | 'export')[]>>;
     };
     diveSites?: { import?: Direction };
-    /** `find`: the account's own list of people (SSI's buddy list), through a Connection (ADR 0029). */
-    buddies?: { import?: Direction };
+    /**
+     * `find`: the account's own list of people (SSI's buddy list), through a Connection (ADR 0029). Export: `add` makes an
+     * entry, `setAccount` gives an existing entry the person's account.
+     */
+    buddies?: { import?: Direction; export?: { operations: ('add' | 'setAccount')[] } };
     /** `find`: the account's certification cards, through a Connection (ADR 0050). */
     certifications?: { import?: Direction };
   };
@@ -104,8 +107,11 @@ export interface Capabilities {
 }
 
 /** Why the Provider didn't do what was asked; the generic layer turns it into a problem code. */
-/** `not_stored`: the Provider answered a save as done and stored nothing (SSI, for a client it doesn't take saves from: ADR 0049). */
-export type ProviderErrorReason = 'wrong_credentials' | 'signed_out' | 'refused' | 'not_stored' | 'unavailable' | 'bad_response';
+/**
+ * `not_stored`: the Provider answered a save as done and stored nothing (SSI, for a client it doesn't take saves from: ADR 0049).
+ * `not_found`: what the action names (a list entry) is no longer at the Provider.
+ */
+export type ProviderErrorReason = 'wrong_credentials' | 'signed_out' | 'refused' | 'not_stored' | 'unavailable' | 'bad_response' | 'not_found';
 
 export class ProviderError extends Error {
   constructor(readonly reason: ProviderErrorReason, detail: string) {
@@ -434,6 +440,16 @@ export interface ProviderAdapter {
   buddies?: {
     /** The account's own list of people (SSI: the buddy list), read live. */
     find(context: ActionContext): Promise<RemoteBuddy[]>;
+    /**
+     * Makes an entry in the account's list and answers it as the Provider keeps it. With an `account` the Provider fills
+     * the entry from the person's profile (or answers an entry of that account already in the list); without, the entry
+     * is made from the name and e-mail.
+     */
+    add?(
+      context: ActionContext, person: { firstName: string | null; lastName: string | null; email: string | null; account: string | null },
+    ): Promise<RemoteBuddy>;
+    /** Gives an existing entry an account and answers it as the Provider keeps it afterwards; `not_found` when the entry is gone. */
+    setAccount?(context: ActionContext, entryId: string, account: string): Promise<RemoteBuddy>;
   };
   certifications?: {
     /** The account's certification cards, read live. */

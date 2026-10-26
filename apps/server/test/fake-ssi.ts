@@ -39,6 +39,12 @@ export interface FakeSsiBuddy {
   city: string;
   /** Set for a professional. */
   leader_nr?: string;
+  /** 1: flagged deleted; SSI keeps such an entry in the list. */
+  deleted?: number;
+  /** 1: the person has the owner in their list too, or the entry was filled from a profile (check step 6). Default 1. */
+  confirmed?: number;
+  /** The other keys of the app's buddy row, as saved (nickname, gender, flags, …). */
+  extra?: Record<string, unknown>;
 }
 
 /** A certification card of an account, as `get_ccards` lists it (invented values; the shape is from the capture of 2026-10-10). */
@@ -89,7 +95,9 @@ export interface FakeSsi {
   /** Every account's buddy list entries. */
   buddies: FakeSsiBuddy[];
   /** Every call: its action and whether it carried a token (never the password). */
-  calls: { what: string; method: string }[];
+  calls: { what: string; method: string; /** What a `save_buddy` sent. */ body?: unknown }[];
+  /** What SSI's profiles say, by SSI account: `save_buddy` writes it onto an entry that gets that account (check step 6). */
+  profiles: Map<number, { firstname: string; lastname: string }>;
   /** Makes every token issued so far invalid, as when SSI's tokens expire; with an account ID only that account's. */
   expireTokens(accountId?: number): void;
   /** While set, every call answers with this HTTP status. */
@@ -140,6 +148,15 @@ export function computerDive(v: {
   };
 }
 
+/** An entry as `get_buddies` answers it: the app's keys with flags as 0/1, and the account as `master_id` and `buddy_master_id`. */
+function buddyAnswer({ owner: _owner, extra, ...b }: FakeSsiBuddy): Record<string, unknown> {
+  return {
+    localRefId: null, address: null, comment: null, added: null, gender: null, image: null, nickname: null, leader_active: 0,
+    favorite: 0, needsUpload: 0, ...extra, ...b, master_id: b.buddy_master_id, forename: b.firstname, leader_nr: b.leader_nr ?? null,
+    deleted: b.deleted ?? 0, confirmed: b.confirmed ?? 1,
+  };
+}
+
 /** A site row as SSI answers it: flags as 0/1, the owner null on a public site; a null flag is left out. */
 function asSsiAnswers(site: FakeSsiSite): Record<string, unknown> {
   const { odin_dive_sites_is_private: flag, ...rest } = site;
@@ -154,6 +171,7 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
   let nextToken = 1;
   let nextDiveId = 27_000_001;
   let nextSiteId = 9_000_001;
+  let nextBuddyId = 8_000_001;
   const fake: FakeSsi = {
     accounts: options.accounts ?? [{ email: 'erika@example.com', password: 'ssi-password', accountId: 5_012_047 }],
     sites: options.sites ?? [
@@ -162,6 +180,7 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
     buddies: options.buddies ?? [],
     cards: options.cards ?? [],
     cardImages: new Map(),
+    profiles: new Map(),
     dives: new Map(),
     calls: [],
     failWith: null,
@@ -216,13 +235,45 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
       if (what === 'get_divelog') {
         const own = [...fake.dives.values()].filter((d) => d.odin_user_log_user_master_id === accountId && d.odin_user_log_deleted !== 1);
         // The real logbook lists the sites of the account's dives; the fake's account has dived at all of them.
-        const buddies = fake.buddies.filter((b) => b.owner === accountId)
-          .map(({ owner: _owner, ...b }) => ({ ...b, master_id: b.buddy_master_id, forename: b.firstname, confirmed: 1, deleted: 0, favorite: 0 }));
+        const buddies = fake.buddies.filter((b) => b.owner === accountId).map(buddyAnswer);
         if (fake.expireAfterRead) {
           fake.expireAfterRead = false;
           tokens.clear();
         }
         return answer({ verified_dives: 0, logbook_details: own, logbook_sites: fake.sites.map(asSsiAnswers), logbook_buddies: buddies });
+      }
+      if (what === 'get_buddies') {
+        return answer({ user_buddies: fake.buddies.filter((b) => b.owner === accountId).map(buddyAnswer) });
+      }
+      if (what === 'save_buddy' && init.method === 'POST') {
+        const row = JSON.parse(new URLSearchParams(init.body ?? '').get('json_data') ?? '{}') as Record<string, unknown>;
+        fake.calls[fake.calls.length - 1]!.body = row;
+        const own = fake.buddies.filter((b) => b.owner === accountId);
+        const account = typeof row.master_id === 'number' ? row.master_id : 0;
+        // An ID updates that entry; `id: null` with an account of the list answers that entry (check step 8), else a new one.
+        const found = row.id !== null && row.id !== undefined ? own.find((b) => b.id === Number(row.id))
+          : account ? own.find((b) => b.buddy_master_id === account) : undefined;
+        if (row.id !== null && row.id !== undefined && !found) return answer({ id: null, error: 'not found' });
+        const entry = found ?? { owner: accountId, id: nextBuddyId++, buddy_master_id: 0, firstname: '', lastname: '', email: '', dob: '0000-00-00', phone: ' ', city: '', confirmed: 0 };
+        if (!found) fake.buddies.push(entry);
+        const hadAccount = entry.buddy_master_id !== 0;
+        // Only what is sent and not null is written; SSI adds a space to an empty phone.
+        const entryKeys: Record<string, 'firstname' | 'lastname' | 'email' | 'dob' | 'phone' | 'leader_nr'> = {
+          firstname: 'firstname', lastname: 'lastname', email: 'email', dob: 'dob', phone: 'phone', leader_nr: 'leader_nr',
+        };
+        for (const [key, value] of Object.entries(row)) {
+          if (value === null || value === undefined || key === 'id' || key === 'master_id') continue;
+          if (key in entryKeys) (entry as unknown as Record<string, unknown>)[entryKeys[key]!] = typeof value === 'number' ? String(value) : value;
+          else if (key === 'deleted') entry.deleted = Number(value);
+          else if (key !== 'confirmed') entry.extra = { ...entry.extra, [key]: value };
+        }
+        if (account && !hadAccount) {
+          entry.buddy_master_id = account;
+          const profile = fake.profiles.get(account);
+          if (profile) Object.assign(entry, profile);
+          entry.confirmed = 1;
+        }
+        return answer({ id: entry.id, result: { buddy: [buddyAnswer(entry)] } });
       }
       if (what === 'get_divesite') {
         const found = fake.sites.find((s) => String(s.odin_dive_sites_id) === params.get('dsid'));
