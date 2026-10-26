@@ -19,7 +19,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
-import { QUIET, STEPS, browserGrepInvert, browserTestList, listedTests, changedSince, variantsRun, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, keptFailures, failedTestsFromReport, REPORT, carryPassed, passedSince, passedToRecord, recordPassed, shellArgs, testsFilter, fullPlan, lintTargets, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
+import { QUIET, STEPS, browserGrepInvert, browserTestList, listedTests, changedSince, variantsRun, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, keptFailures, failedTestsFromReport, REPORT, carryPassed, clearPassed, passedSince, passedToRecord, recordPassed, shellArgs, testsFilter, fullPlan, lintTargets, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
 import { appendRun, browserStats, logPath } from './check-log.mjs';
 import { runLanes, takeLock } from './check-run.mjs';
 
@@ -161,6 +161,7 @@ if (args.includes('--failed')) {
   if (verdict.renews && status === 0) {
     recordGreen('e2e', tree);
     clearFailed('e2e');
+    clearPassed();
     console.log('check: browser tests recorded green on these files; the next pnpm check counts from here');
   } else if (verdict.renews) {
     // Some failed again: a later --failed reruns those, still on the same files; without a fresh report, nothing.
@@ -190,6 +191,13 @@ const since = Object.fromEntries(STEPS.map((step) => {
 const browser = forBrowserTests(since.e2e.changed, since.e2e.base, tree);
 const plan = full ? fullPlan() : planSteps({ ...Object.fromEntries(STEPS.map((step) => [step, since[step].changed])), e2e: browser.changed }, { e2eServerLoads: e2eServerLoads() });
 if (!full) for (const note of [browser.note, ...plan.notes]) if (note) console.log(`check: ${note}`);
+
+// Browser tests passed by hand (pnpm check --tests) that no change since reaches (ADR 0023, amendment of 2026-10-26
+// (no second run)). Not with --files, --base or --full: those pretend a state, or want everything.
+const credit = (records || (dry && !given && !givenBase)) && !full ? passedSince(tree) : null;
+const credited = credit?.tests.map(({ line }) => line) ?? [];
+const byHand = (count) => `check: ${count} browser test(s) passed by hand on ${credit.at} (pnpm check --tests) and not reached since`;
+if (dry && credited.length > 0) console.log(`${byHand(credited.length)}; left out of what is planned`);
 
 const pnpm = (cmd) => `pnpm ${cmd}`;
 const CACHE = resolve('node_modules/.cache/check');
@@ -245,28 +253,31 @@ function listBrowserTests(filters) {
 let unlisted = null;
 
 /**
- * After a failed run and a fix: the owed (failed) tests plus the planned ones, through one `--test-list` file
- * (ADR 0023, amendment of 2026-10-26), listed before the lanes start. Owed tests that no longer exist are dropped,
- * said so. Null when there is nothing to run (then green) or the tests could not be listed (then failed).
+ * The owed (failed) tests plus the planned ones, without those passed by hand, through one `--test-list` file
+ * (ADR 0023, amendments of 2026-10-26), listed before the lanes start. `name(left)` names the step, `left` being
+ * how many passed-by-hand tests it leaves out. Owed tests that no longer exist are dropped, said so. Null when
+ * there is nothing to run (then green) or the tests could not be listed (then failed).
  */
-function browserOwedStep(name, { owed, filters, planned: plannedNone }) {
+function browserListStep(name, { owed, filters, planned: plannedNone, credited }) {
   const file = resolve(CACHE, 'e2e-tests.txt');
-  const step = { name, command: pnpm(`--filter @dive-hub/web test:e2e --test-list "${file}"`), step: 'e2e' };
+  const step = { name: name(0), command: pnpm(`--filter @dive-hub/web test:e2e --test-list "${file}"`), step: 'e2e' };
   if (dry) return step;
   const all = listBrowserTests('');
   const planned = plannedNone || !all ? [] : listBrowserTests(filters);
   if (!all?.length || !planned) {
-    console.log(`✗ ${name} failed\ncheck: could not list the browser tests; the failed run stays owed`);
-    unlisted = { name, step: 'e2e', status: 1, seconds: 0, log: null };
+    console.log(`✗ ${step.name} failed\ncheck: could not list the browser tests; the failed run stays owed`);
+    unlisted = { name: step.name, step: 'e2e', status: 1, seconds: 0, log: null };
     return null;
   }
-  const { lines, dropped } = browserTestList({ all, planned, owed });
+  const { lines, dropped, left } = browserTestList({ all, planned, owed, credited });
   for (const line of dropped) console.log(`check: ${line} no longer exists; dropped from the owed tests`);
+  if (left > 0) console.log(`${byHand(left)}; not run again`);
   if (lines.length === 0) {
-    console.log('check: no owed browser test is left and none is planned; nothing to run');
+    console.log('check: no browser test is left to run; nothing to run');
     if (records) clearFailed('e2e'); // and, as a step not planned, green below
     return null;
   }
+  step.name = name(left);
   listFile('e2e-tests.txt', lines);
   console.log(`check: ${lines.length} browser test(s) in ${file}`);
   return step;
@@ -289,9 +300,11 @@ function browserSteps() {
   const leftOut = browserGrepInvert({ full, variants: variants.run });
   const without = leftOut ? ` --grep-invert "${leftOut}"` : '';
   const filters = `${plan.e2e === 'all' ? '' : ` --grep "${grep}"`}${without}`;
-  if (owedTests.length === 0) return [...lane, { name: `browser tests (${which}${leftOut ? `, without ${leftOut}` : ''})`, command: pnpm(`--filter @dive-hub/web test:e2e${filters}`), step: 'e2e' }];
-  const owedStep = browserOwedStep(`browser tests (${owedTests.length} failed test(s) owed + ${which})`, { owed: owedTests, filters, planned: plan.e2e === 'none' });
-  return owedStep ? [...lane, owedStep] : lane;
+  if (owedTests.length === 0 && !(records && credited.length > 0 && plan.e2e !== 'none')) return [...lane, { name: `browser tests (${which}${leftOut ? `, without ${leftOut}` : ''})`, command: pnpm(`--filter @dive-hub/web test:e2e${filters}`), step: 'e2e' }];
+  const owedPart = owedTests.length > 0 ? `${owedTests.length} failed test(s) owed + ` : '';
+  const name = (left) => `browser tests (${owedPart}${which}${left > 0 ? `, ${left} passed by hand left out` : ''})`;
+  const listStep = browserListStep(name, { owed: owedTests, filters, planned: plan.e2e === 'none', credited });
+  return listStep ? [...lane, listStep] : lane;
 }
 
 // In CI one after another (its runner has fewer cores), the quick lane first so a type error shows first; here the
@@ -302,7 +315,10 @@ const steps = lanes.flat();
 
 // A step with nothing to run is as green on this state as on the one it last passed on.
 const planned = new Set([...steps.map(({ step }) => step), ...(unlisted ? ['e2e'] : [])]);
-if (records) for (const step of STEPS) if (!planned.has(step)) recordGreen(step, tree);
+if (records) {
+  for (const step of STEPS) if (!planned.has(step)) recordGreen(step, tree);
+  if (!planned.has('e2e')) clearPassed(); // the browser tests are green on this state, whole
+}
 
 /** "3 changed file(s) since …": one line when every step counts from the same base, else a line per base. */
 function bases() {
@@ -344,7 +360,10 @@ function stepEnded(result) {
   if (result.status === 0) {
     console.log(`✓ ${result.name} (${Math.round(result.seconds)} s)`);
     if (records && result.step) recordGreen(result.step, tree);
-    if (records && result.step === 'e2e') clearFailed('e2e');
+    if (records && result.step === 'e2e') {
+      clearFailed('e2e');
+      clearPassed();
+    }
     return;
   }
   console.log(`\n✗ ${result.name} failed\n${readFileSync(result.log, 'utf8').trimEnd()}\n`);
