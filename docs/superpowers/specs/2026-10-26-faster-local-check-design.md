@@ -169,13 +169,14 @@ the build, the others from the closing measurement (Task 8).
 
 | Case | Before | After |
 |---|---|---|
-| A check that plans everything (`pnpm check --files package.json`) | about 550 s, steps one after another | **473 s** closing measurement; 461 s and a full `pnpm check` of 485 s during the build. Design target 443 s. |
-| After a fix: the rerun | the whole plan again | **82 s** for the browser step including the owed-test listing (the whole check 90 s): the 5 failed tests plus `@tools\|@layout`. During the build, before the lanes: 75 s, 44 tests. |
+| A check that plans everything (`pnpm check --files package.json`) | about 550 s, steps one after another | **473 s** closing measurement; build-time: 461 s (Task 5) and a full `pnpm check` of 485 s (Task 7). Design target 443 s. |
+| After a fix: the rerun | the whole plan again | **82 s** for the browser step including the owed-test listing (the whole check 90 s): the 5 failed tests plus `@tools\|@layout`. Build-time (Task 4, before the lanes): 75 s, 44 tests. |
 
 Lane times of the 473 s run: browser tests 469 s, beside typecheck 9 s, lint 9 s, server tests 226 s, web unit tests 6 s.
-The wall time is the browser step; the other lane (about 250 s) hides behind it. The 5 minutes of the target is met for
-the check after a fix, not for a check that plans everything: that one stays near 8 minutes until the browser tests
-themselves get cheaper (backlog 0004).
+The wall time is the browser step; the other lane (about 250 s) hides behind it. The target for a fix-and-rerun was well
+under a minute of browser tests; measured 82 s (5 failed tests plus `@tools|@layout`), so that target is missed. The
+5-minute wall time is met for a rerun after a fix (90 s), not for a full plan (473 s against about 443 s); that one stays
+near 8 minutes until the browser tests themselves get cheaper (backlog 0004).
 
 `pnpm check:log` lines of the closing measurement (the first run is the full plan, then the failed run, then the rerun):
 
