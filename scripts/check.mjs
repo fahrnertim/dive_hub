@@ -13,10 +13,9 @@
 // step keeps its state and failed tests (refs/check/failed-e2e) for --failed. A run with --base or --files records
 // nothing. Unknown paths count as "everything": when in doubt, run more.
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { relative } from 'node:path';
-import { readFileSync, statSync } from 'node:fs';
-import { QUIET, STEPS, TAGS, browserGrepInvert, changedSince, variantsRun, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, keptFailures, failedTestsFromReport, REPORT, fullPlan, lintTargets, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { relative, resolve } from 'node:path';
+import { QUIET, STEPS, TAGS, browserGrepInvert, browserTestList, listedTests, changedSince, variantsRun, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, keptFailures, failedTestsFromReport, REPORT, fullPlan, lintTargets, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
 import { lint } from './check-lint.mjs';
 
 const args = process.argv.slice(2);
@@ -149,10 +148,33 @@ if (plan.lint === 'all' || (plan.lint === 'changed' && lintTargetsNow.eslint.len
 if (plan.scripts) steps.push(['check script tests', 'node --test scripts/check-lib.test.mjs scripts/agent-lib.test.mjs', 'scripts']);
 if (plan.server !== 'none') steps.push([`server tests (${plan.server})`, unitTests('server', plan.server), 'server']);
 if (plan.web !== 'none') steps.push([`web unit tests (${plan.web})`, unitTests('web', plan.web), 'web']);
-if (plan.e2e !== 'none') {
-  steps.push(['browser test tags', untaggedBrowserTests, null]);
+/** The `playwright test --list` lines (as `--test-list` lines) of the browser tests, narrowed by `filters`. */
+function listBrowserTests(filters) {
+  const { stdout } = spawnSync(`pnpm --filter @dive-hub/web exec playwright test --project=e2e --list${filters}`, { encoding: 'utf8', shell: true });
+  return listedTests(stdout ?? '');
+}
+
+/**
+ * After a failed run and a fix: the owed (failed) tests plus the planned ones, through one `--test-list` file
+ * (ADR 0023, amendment of 2026-10-26). Owed tests that no longer exist are dropped, said so.
+ */
+function browserOwedRun({ owed, filters, planned: plannedNone }) {
+  const all = listBrowserTests('');
+  const { lines, dropped } = browserTestList({ all, planned: plannedNone ? [] : listBrowserTests(filters), owed });
+  for (const line of dropped) console.log(`check: ${line} no longer exists; dropped from the owed tests`);
+  if (lines.length === 0) { console.log('check: no owed browser test is left and none is planned; nothing to run'); return 0; }
+  const file = resolve('node_modules/.cache/check/e2e-tests.txt');
+  mkdirSync(resolve('node_modules/.cache/check'), { recursive: true });
+  writeFileSync(file, `${lines.join('\n')}\n`);
+  console.log(`check: ${lines.length} browser test(s) in ${file}`);
+  return spawnSync(pnpm(`--filter @dive-hub/web test:e2e --test-list "${file}"`), { stdio: 'inherit', shell: true }).status ?? 1;
+}
+
+const owedTests = since.e2e.owed;
+if (plan.e2e !== 'none' || owedTests.length > 0) {
+  if (plan.e2e !== 'none') steps.push(['browser test tags', untaggedBrowserTests, null]);
   const grep = [...plan.areas, ...[...plan.specs].map((s) => s.replace(/\./g, '\\.'))].join('|');
-  const which = plan.e2e === 'all' ? 'all' : grep;
+  const which = plan.e2e === 'all' ? 'all' : grep || 'none';
   // The variants of ui-quality that only the full check runs, and the German, dark, phone one unless texts, shared
   // styles or shared UI changed (ADR 0023, amendment of 2026-10-24). Counted from the files before texts were narrowed.
   const variants = variantsRun(since.e2e.changed);
@@ -162,7 +184,12 @@ if (plan.e2e !== 'none') {
   }
   const leftOut = browserGrepInvert({ full, variants: variants.run });
   const without = leftOut ? ` --grep-invert "${leftOut}"` : '';
-  steps.push([`browser tests (${which}${leftOut ? `, without ${leftOut}` : ''})`, pnpm(`--filter @dive-hub/web test:e2e${plan.e2e === 'all' ? '' : ` --grep "${grep}"`}${without}`), 'e2e']);
+  if (owedTests.length > 0) {
+    const filters = `${plan.e2e === 'all' ? '' : ` --grep "${grep}"`}${without}`;
+    steps.push([`browser tests (${owedTests.length} failed test(s) owed + ${which === 'all' ? 'all' : grep || 'none'})`, () => browserOwedRun({ owed: owedTests, filters, planned: plan.e2e === 'none' }), 'e2e']);
+  } else {
+    steps.push([`browser tests (${which}${leftOut ? `, without ${leftOut}` : ''})`, pnpm(`--filter @dive-hub/web test:e2e${plan.e2e === 'all' ? '' : ` --grep "${grep}"`}${without}`), 'e2e']);
+  }
 }
 
 // A step with nothing to run is as green on this state as on the one it last passed on.
