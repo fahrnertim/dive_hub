@@ -45,6 +45,7 @@ const where = (run) => run.branch ?? `(detached ${run.head})`;
 /** The last runs, one line each, then per branch the runs, the failed ones and the total wall time. */
 export function summarise(entries, { last = 20, branch } = {}) {
   const runs = branch ? entries.filter((run) => run.branch === branch) : entries;
+  if (branch && runs.length === 0) return `no check runs on ${branch}`;
   const lines = runs.slice(-last).map((run) => {
     const slowest = [...(run.steps ?? [])].sort((a, b) => b.seconds - a.seconds)[0];
     const time = localTime(new Date(run.at));

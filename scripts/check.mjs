@@ -33,9 +33,11 @@ if (!args.includes('--full')) process.env.E2E_AXE ??= 'once';
  */
 let lanesRunning = false;
 if (!args.includes('--dry')) {
-  const lock = takeLock(resolve(spawnSync('git rev-parse --git-common-dir', { encoding: 'utf8', shell: true }).stdout.trim(), 'check.lock'));
+  const lockPath = resolve(spawnSync('git rev-parse --git-common-dir', { encoding: 'utf8', shell: true }).stdout.trim(), 'check.lock');
+  const lock = takeLock(lockPath);
   if (lock.heldBy !== undefined) {
-    console.error(`check: another pnpm check is running (pid ${lock.heldBy})`);
+    // A closed console window skips the exit handlers and leaves the lock: the path lets a person remove it.
+    console.error(`check: another pnpm check is running (pid ${lock.heldBy}); if none is, delete ${lockPath}`);
     process.exit(1);
   }
   process.on('exit', lock.release);
@@ -112,13 +114,15 @@ if (args.includes('--failed')) {
     process.exit(0);
   }
   const tree = snapshot();
-  const verdict = failedRerunRenews(failedRun('e2e'), tree, failed);
+  const kept = failedRun('e2e');
+  const verdict = failedRerunRenews(kept, tree, failed);
   const outcome = verdict.renews ? `${verdict.why}, so if they pass the browser tests count as green on these files` : `nothing is recorded: ${verdict.why}`;
   console.log(`check: the ${failed.length} browser test(s) that failed in the last browser run; ${outcome}`);
   const startedAt = Date.now();
   const ran = spawnSync('pnpm --filter @dive-hub/web test:e2e --last-failed', { stdio: 'inherit', shell: true });
   const status = ran.status ?? 1;
-  logRun({ steps: [{ step: 'e2e', from: '--failed', changed: failed.length, plan: 'failed', seconds: Math.round((Date.now() - startedAt) / 1000), status: ran.status }], results: [{ status: ran.status }], browserSince: startedAt });
+  const changed = kept ? changedSince(kept.tree, tree).length : 0; // files changed since the failed run
+  logRun({ steps: [{ step: 'e2e', from: '--failed', changed, plan: `${failed.length} failed test(s)`, seconds: Math.round((Date.now() - startedAt) / 1000), status: ran.status }], results: [{ status: ran.status }], browserSince: startedAt });
   if (verdict.renews && status === 0) {
     recordGreen('e2e', tree);
     clearFailed('e2e');
@@ -317,7 +321,8 @@ function summary(results) {
   const times = all.map(({ name, status, seconds }) => `${name}: ${status === null ? 'not finished' : `${Math.round(seconds)} s`}`).join('\n');
   const failed = all.filter(({ status }) => status !== 0 && status !== null);
   if (all.some(({ status }) => status === null)) {
-    console.log(`\ncheck: interrupted\n${times}`);
+    const before = failed.length > 0 ? `\n✗ failed before the interrupt: ${failed.map(({ name }) => name).join(', ')}` : '';
+    console.log(`\ncheck: interrupted${before}\n${times}`);
     return 130;
   }
   if (failed.length > 0) {

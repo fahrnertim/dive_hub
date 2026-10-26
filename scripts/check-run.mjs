@@ -27,9 +27,9 @@ const SETTLE_MS = 300;
 
 /**
  * Runs one step with its output to `log`; resolves with its exit code, or null when `stop` came while it ran or
- * within SETTLE_MS after it failed.
+ * within `settleMs` after it failed.
  */
-function runStep(command, log, running) {
+function runStep(command, log, running, settleMs) {
   return new Promise((done) => {
     const fd = openSync(log, 'w');
     const child = spawn(command, { shell: true, stdio: ['ignore', fd, fd], detached: !WINDOWS, windowsHide: true });
@@ -45,7 +45,7 @@ function runStep(command, log, running) {
         done(entry.stopped ? null : (code ?? 1));
       };
       if (code === 0 && !entry.stopped) settle();
-      else setTimeout(settle, SETTLE_MS);
+      else setTimeout(settle, settleMs);
     };
     child.on('error', () => end(1));
     child.on('close', end);
@@ -56,9 +56,11 @@ function runStep(command, log, running) {
  * Runs `lanes` (arrays of `{ name, command, step }`) side by side, or with `sequential` all steps one after another
  * in lane order. Each step's output goes to `<outDir>/<step or name>.log`; `onEnd(result)` is called as each step
  * ends. Resolves with a result per step in lane order: `{ name, step, status, seconds, log }`, `status` the exit
- * code, or null for a step that was interrupted (SIGINT or `signal`) or never started.
+ * code, or null for a step that was interrupted (SIGINT or `signal`) or never started. When `onEnd` throws, every
+ * running step is stopped with its children and runLanes rejects with that error once they are gone. `settleMs` is
+ * SETTLE_MS (tests set it).
  */
-export async function runLanes(lanes, { sequential = false, outDir, onEnd = () => {}, signal } = {}) {
+export async function runLanes(lanes, { sequential = false, outDir, onEnd = () => {}, signal, settleMs = SETTLE_MS } = {}) {
   mkdirSync(outDir, { recursive: true });
   const results = lanes.flat().map(({ name, step }) => ({ name, step, status: null, seconds: 0, log: join(outDir, `${(step ?? name).replace(/[^\w.-]+/g, '-')}.log`) }));
   const running = new Set();
@@ -75,13 +77,20 @@ export async function runLanes(lanes, { sequential = false, outDir, onEnd = () =
 
   let index = 0;
   const indexed = lanes.map((lane) => lane.map((laneStep) => ({ laneStep, result: results[index++] })));
+  let failure;
   const runLane = async (lane) => {
-    for (const { laneStep, result } of lane) {
-      if (stopped) return;
-      const started = Date.now();
-      result.status = await runStep(laneStep.command, result.log, running);
-      result.seconds = (Date.now() - started) / 1000;
-      if (result.status !== null) onEnd(result);
+    try {
+      for (const { laneStep, result } of lane) {
+        if (stopped) return;
+        const started = Date.now();
+        result.status = await runStep(laneStep.command, result.log, running, settleMs);
+        result.seconds = (Date.now() - started) / 1000;
+        if (result.status !== null) onEnd(result);
+      }
+    } catch (error) {
+      // No lane may outlive another's error: its steps would keep their ports and browsers.
+      failure ??= error;
+      stop();
     }
   };
   try {
@@ -90,11 +99,12 @@ export async function runLanes(lanes, { sequential = false, outDir, onEnd = () =
     signal?.removeEventListener('abort', stop);
     process.off('SIGINT', stop);
   }
+  if (failure) throw failure;
   return results;
 }
 
 /** Whether a process with this pid runs. A pid can be reused by an unrelated process: then a dead check's lock holds until that one ends (acceptable). */
-function running(pid) {
+function processRuns(pid) {
   try {
     process.kill(pid, 0);
     return true;
@@ -105,9 +115,10 @@ function running(pid) {
 
 /**
  * One check at a time per clone: takes the lock file at `path` (it holds the pid of the check that has it).
- * Returns `{ release }`, or `{ heldBy }`, the pid of the running check. A lock whose pid no longer runs is taken over.
+ * Returns `{ release }`, or `{ heldBy }`, the pid of the running check. A lock whose pid no longer runs is taken over;
+ * `isRunning(pid)` says whether it runs (tests give their own).
  */
-export function takeLock(path) {
+export function takeLock(path, { isRunning = processRuns } = {}) {
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       writeFileSync(path, String(process.pid), { flag: 'wx' });
@@ -116,7 +127,7 @@ export function takeLock(path) {
       if (error.code !== 'EEXIST') throw error;
     }
     const pid = Number.parseInt(readFileSync(path, 'utf8'), 10);
-    if (Number.isInteger(pid) && running(pid)) return { heldBy: pid };
+    if (Number.isInteger(pid) && isRunning(pid)) return { heldBy: pid };
     rmSync(path, { force: true }); // left by a check that is gone
   }
   return { heldBy: Number.NaN };

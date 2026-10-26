@@ -64,3 +64,7 @@ test('the time column is local time', () => {
   const at = '2026-10-26T23:30:00.000Z';
   assert.ok(summarise([entry({ at })]).startsWith(localTime(new Date(at))));
 });
+
+test('a branch without runs says so', () => {
+  assert.equal(summarise([entry({ branch: 'main' })], { branch: 'other' }), 'no check runs on other');
+});

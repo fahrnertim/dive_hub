@@ -198,5 +198,14 @@ record counts from the green record, as before.
   forgotten; this differs from a step that ran and failed without a Playwright report, which keeps nothing.
 - **The owed-test listing runs before the lanes start**, and `scripts/check-tags.mjs` is the tags check as a command.
 - **A step that fails within 300 ms of a Ctrl-C counts as interrupted**, not failed.
-- **Not explained:** one hook check failed once on the check script tests and passed on retry; the cause was not found
-  (6 reruns passed). If it comes back, it goes into [check escapes](../../agents/check-escapes.md).
+- **A Ctrl-C'd browser step records nothing**: an older failed run stays kept (Part 1 said "forgets"). The next check
+  counts from it or from the green record, whichever is closer, as for any kept failed run.
+- **The flaky hook check:** one hook check failed once on the check script tests and passed on retry; which test failed
+  was not recorded. The final review found runner tests that could fail on a loaded Windows machine: tight time bounds
+  (a step had to end within 20 to 50 ms of slack, three steps within 1000 ms) and process ids taken as free, though
+  Windows reuses them. These are the likely cause, not a proven one. The tests now use no time bound that a slow
+  machine can break and no process id: lanes prove they overlap by waiting for each other, a killed step proves it is
+  gone by its log no longer growing, and the lock's liveness check is given in the test. Ten runs of the four script
+  test files beside six busy CPU processes all passed; a first fix that only loosened the time bound still failed one
+  of ten there. If it
+  comes back, it goes into [check escapes](../../agents/check-escapes.md).
