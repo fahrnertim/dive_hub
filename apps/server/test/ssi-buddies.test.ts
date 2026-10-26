@@ -142,14 +142,13 @@ describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
   describe('sending', () => {
     it('puts Participants on the SSI dive as entries of the User\'s list, and leaves out one who isn\'t in it', async () => {
       bob = ((await call('POST', '/api/external-divers', { name: 'Bob' })).json() as { id: string }).id;
-      await call('PUT', `/api/divers/${bob}/external-ids/ssi`, { externalId: '9999999' });
       await setParticipants([kai, mia, bob]);
-      // Bob has an SSI account, so nothing is unmet here; only SSI's list can tell he isn't in it.
-      expect((await status()).unmet).toEqual([]);
+      // Bob has no SSI account and no entry: advisory only (a send adds an entry for an account, never from scratch).
+      expect((await status()).unmet).toEqual([expect.objectContaining({ type: 'diver_mapping', severity: 'advisory' })]);
       const sent = (await call('POST', `/api/dives/${diveId}/providers/ssi`, {})).json() as { status: Status };
       const remoteId = sent.status.current!.remoteId;
       expect(ssiDive(remoteId).odin_user_log_buddy_ids).toEqual([KAI.id, MIA.id]);
-      expect(sent.status.pushes[0]).toMatchObject({ leftOut: [{ diverId: bob, name: 'Bob', reason: 'not_at_provider' }], differences: [] });
+      expect(sent.status.pushes[0]).toMatchObject({ leftOut: [{ diverId: bob, name: 'Bob', reason: 'no_reference' }], differences: [] });
       expect(sent.status.current!.upToDate).toBe(true);
     });
 
@@ -170,6 +169,8 @@ describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
       ctx.fakeSsi.buddies.push({ ...person(2, 0, 'Dora', 'Dee'), owner: ERIKA });
       const owner = (await t.db.select().from(dive).where(eq(dive.id, diveId)))[0]!.diverId;
       await remember(t.db, (await listAccountOf(t.db, owner, 'ssi'))!, d2, '2');
+      // SSI's list is kept for two minutes; the entry was added behind Dive Hub's back.
+      ctx.ssiClock.advance(3 * 60_000);
       await setParticipants([mia, d2]);
       // Dora has no account, but an entry is remembered for her: nothing is unmet.
       expect((await status()).unmet).toEqual([]);

@@ -15,13 +15,14 @@ import { createDiveChanges, type ProviderRun } from './dive-changes.js';
 import { LeaseBusy, type Leases } from './leases.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
 import {
-  DIVE_FIELDS, ProviderError, referenceOf, type Delivered, type DiveExport, type DiveExportAction, type DiveField, type ImportContext,
+  DIVE_FIELDS, ProviderError, referenceOf, type ActionContext, type Delivered, type DiveExport, type DiveExportAction, type DiveField, type ImportContext,
   type ImportedDive, type Leave, type OutgoingDive, type ProviderAdapter, type RemoteDive, type RemoteSite,
 } from './provider.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { currentRemote, type PushRow } from './remote-state.js';
 import { blocking, forProvider, leftOutBy, offersListEntries, unmetRequirements } from './requirements.js';
 import { siteForSend } from './site-for-send.js';
+import { buddiesForSend, keepBuddies, type BuddiesForSend } from './buddies-for-send.js';
 import { comparableOf, planSend, same, type Choice, type Comparable, type SendPlan, type SyncedField } from './three-way.js';
 
 /** What deleting a Dive at Providers did: each copy deleted or kept, and why it stopped, if it did. */
@@ -47,12 +48,18 @@ export interface SendOptions {
 }
 
 export type SendResult =
-  | { result: 'created' | 'linked'; push: PushRow }
+  | { result: 'created' | 'linked'; push: PushRow; buddies?: BuddiesForSend }
   /** `taken`: the fields that came from the Provider first; `deferred`: those left as the Provider has them. */
-  | { result: 'updated'; push: PushRow; taken: SyncedField[]; deferred: SyncedField[] }
+  | { result: 'updated'; push: PushRow; taken: SyncedField[]; deferred: SyncedField[]; buddies?: BuddiesForSend }
   | { result: 'exists'; existing: RemoteDive }
   /** Nothing was sent: these fields changed on both sides. */
   | { result: 'conflicts'; conflicts: ConflictField[] };
+
+/** The answer of a send that reached the Provider, with what the send settled in its list of people (left out when nothing). */
+function withSettled(r: SendResult, settled: BuddiesForSend): SendResult {
+  const reached = r.result === 'created' || r.result === 'linked' || r.result === 'updated';
+  return reached && (settled.added.length > 0 || settled.knownAs.length > 0) ? { ...r, buddies: settled } : r;
+}
 
 /** Whether the Provider's `dives.fields` let this field go out: no map means every field does. */
 function exportsField(adapter: ProviderAdapter, field: DiveField): boolean {
@@ -474,6 +481,14 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
       const bySend = exports.requirements.find((r) => r.type === 'site_external_id' && r.createdBySend);
       // What an update took, kept across a retry after a sign-in.
       const taken = new Set<SyncedField>();
+      // The entries the send made or found named otherwise, kept across a retry too.
+      const settled: BuddiesForSend = { added: [], knownAs: [] };
+      const withBuddies = (r: SendResult) => withSettled(r, settled);
+      // The Participants' entries in the Provider's list, settled after the site and before the Dive is read.
+      const settleBuddies = async (context: ActionContext) => {
+        if (!adapter.accountSource) return;
+        keepBuddies(settled, await buddiesForSend(db, { adapter, context, ownerDiverId: first.row.diverId, diveId, source: adapter.accountSource }));
+      };
       return leased(diveId, [adapter], () => connections.withAccess(conn, async (ctx) => {
         // The site at the Provider first, found or made (stored at once, so a retry after a sign-in makes none), then
         // the Dive as it goes out with it.
@@ -484,6 +499,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
             adapter, context: ctx, diverId: first.row.diverId, siteId: now?.siteId ?? null, source: bySend.source, actor: { type: 'user', id: userId },
           });
         }
+        await settleBuddies(ctx);
         const loaded = await loadOutgoingDive(db, userId, diveId);
         const { row } = loaded;
         const sending = prepared(adapter, exports, loaded);
@@ -494,7 +510,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
         const steps = pushSteps(adapter, conn, row, userId);
 
         const current = currentRemote(await pushesOf(diveId, adapter.id));
-        if (current && action.update) return updateThere({ adapter, conn, userId, diveId, action, current, steps, options, taken });
+        if (current && action.update) return withBuddies(await updateThere({ adapter, conn, userId, diveId, action, current, steps, options, taken }));
 
         if (action.find) {
           const { ours, sameTime } = await action.find(outgoing, reference(diveId));
@@ -502,17 +518,17 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
           if (found && !ours && onExisting !== 'link') return { result: 'exists', existing: found };
           if (found) {
             // Linked, not sent: our values aren't there yet, so the Dive shows as changed until it is updated.
-            return {
+            return withBuddies({
               result: 'linked', push: await record(adapter, {
                 ...steps.base, action: 'link', state: 'confirmed', remoteId: found.remoteId, remoteNumber: found.number,
                 fingerprint: ours ? dives.fingerprint(outgoing) : null,
               }),
-            };
+            });
           }
         }
 
         const created = await action.create(outgoing, reference(diveId), wanted?.onCreate ? wanted.wanted : undefined).catch((error: unknown) => steps.failed('create', error));
-        return { result: 'created', push: await steps.delivered('create', created, sending, row.version) };
+        return withBuddies({ result: 'created', push: await steps.delivered('create', created, sending, row.version) });
       }));
     },
 

@@ -852,6 +852,10 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
           conflicts: Nullable(Type.Array(ConflictFieldView, { description: 'With outcome conflicts: the fields changed on both sides' })),
           taken: Nullable(Type.Array(Type.Enum([...SYNCED_FIELDS]), { description: 'With outcome updated: the fields taken from the Provider into the Dive first' })),
           deferred: Nullable(Type.Array(Type.Enum([...SYNCED_FIELDS]), { description: 'With outcome updated: the fields left as the Provider has them' })),
+          buddies: Nullable(Type.Object({
+            added: Type.Array(Type.Object({ diverId: Type.String(), name: Type.String({ description: 'The entry name as the Provider answered it' }) }), { description: 'Entries the send made in the list of people at the Provider' }),
+            knownAs: Type.Array(Type.Object({ diverId: Type.String(), diverName: Type.String(), name: Type.String() }), { description: 'Entries whose name at the Provider differs from the Diver name: whom the Provider knows the account as' }),
+          }, { description: 'What the send did to the list of people at the Provider; null when it added nothing and nothing is known by another name' })),
           status: StatusView,
         }),
         ...errors,
@@ -866,6 +870,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       conflicts: sent.result === 'conflicts' ? sent.conflicts : null,
       taken: sent.result === 'updated' ? sent.taken : null,
       deferred: sent.result === 'updated' ? sent.deferred : null,
+      buddies: 'buddies' in sent ? sent.buddies ?? null : null,
       status: statusView(await pushes.status(request.user!.id, id, provider)),
     };
   });

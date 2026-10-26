@@ -17695,6 +17695,20 @@ export interface paths {
                             }[];
                             taken: null | ("site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC")[];
                             deferred: null | ("site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC")[];
+                            buddies: null | {
+                                /** @description Entries the send made in the list of people at the Provider */
+                                added: {
+                                    diverId: string;
+                                    /** @description The entry name as the Provider answered it */
+                                    name: string;
+                                }[];
+                                /** @description Entries whose name at the Provider differs from the Diver name: whom the Provider knows the account as */
+                                knownAs: {
+                                    diverId: string;
+                                    diverName: string;
+                                    name: string;
+                                }[];
+                            };
                             status: {
                                 provider: string;
                                 connection: null | {
