@@ -23,6 +23,10 @@ read).
 - Locally the check already runs only what changed since the last green run, browser tests by hand-kept area tags; CI
   runs everything and is the gate.
 
+*Measured again on 2026-10-26* ([design](../superpowers/specs/2026-10-26-faster-local-check-design.md#what-was-measured-2026-10-26)):
+the same local plan took 334 s wall (229 tests, 2.6 s a test, ui-quality 42 % of worker time, axe at every check +33 s
+on ui-quality), 4 workers 284 s without timeouts. The 7.3 s did not reproduce; the ranking below was written before.
+
 So most of the time sits in a few places (one spec file, axe, per-test setup), not spread evenly. That shapes the
 ranking at the end.
 
