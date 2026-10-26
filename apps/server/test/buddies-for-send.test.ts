@@ -48,7 +48,11 @@ describe.skipIf(!(await databaseReachable()))('the send settles the buddy list',
     const { version } = (await call('GET', `/api/dives/${diveId}`)).json() as { version: number };
     expect((await call('PUT', `/api/dives/${diveId}/participants`, { version, participants: people })).statusCode).toBe(200);
   };
-  const send = async (diveId: string) => { const r = await call("POST", `/api/dives/${diveId}/providers/ssi`, {}); if (r.statusCode !== 200) throw new Error(r.body); return r.json() as Sent & { outcome: string }; };
+  const send = async (diveId: string, body: object = {}) => {
+    const response = await call('POST', `/api/dives/${diveId}/providers/ssi`, body);
+    if (response.statusCode !== 200) throw new Error(response.body);
+    return response.json() as Sent & { outcome: string };
+  };
   const saves = () => ctx.fakeSsi.calls.filter((c) => c.what === 'save_buddy').map((c) => c.body as Record<string, unknown>);
   const carried = async (diveId: string) => {
     const status = (await call('GET', `/api/dives/${diveId}/providers/ssi`)).json() as { current: { remoteId: string } };
@@ -173,6 +177,37 @@ describe.skipIf(!(await databaseReachable()))('the send settles the buddy list',
     const sent = await send(diveId);
     expect(sent.buddies?.knownAs).toEqual([{ diverId: lena, diverName: 'Lena Berg', name: 'Samuel Dreier' }]);
     expect(await remembered(lena)).toBeDefined();
+  });
+
+  it('adds a new entry for a corrected account and leaves the old entry in the list', async () => {
+    const before = nextAccount++;
+    const after = nextAccount++;
+    ctx.fakeSsi.profiles.set(after, { firstname: 'Kim', lastname: 'Aal' });
+    ctx.fakeSsi.buddies.push(entry(11, before, 'Kim', 'Aal'));
+    const kim = await person('Kim Aal', after);
+    await remember(t.db, (await listAccountOf(t.db, owner, 'ssi'))!, kim, '11');
+    const diveId = await prepare(kim);
+    await send(diveId);
+    expect(saves()).toHaveLength(1);
+    expect(saves()[0]).toMatchObject({ id: null, master_id: after });
+    const made = ctx.fakeSsi.buddies.find((b) => b.buddy_master_id === after)!;
+    expect(made.id).not.toBe(11);
+    expect(await remembered(kim)).toBe(String(made.id));
+    expect(ctx.fakeSsi.buddies.find((b) => b.id === 11)!.buddy_master_id).toBe(before);
+  });
+
+  it('reports an added entry when the answer is exists', async () => {
+    const account = nextAccount++;
+    ctx.fakeSsi.profiles.set(account, { firstname: 'Uli', lastname: 'Voss' });
+    const uli = await person('Uli Voss', account);
+    const diveId = await prepare(uli);
+    const { startsAt } = (await call('GET', `/api/dives/${diveId}`)).json().values;
+    const local = new Date(Date.parse(startsAt.at) + ((startsAt.utcOffsetSeconds ?? 0) + 60) * 1000).toISOString().slice(0, 16).replace('T', ' ');
+    ctx.fakeSsi.addDive(ERIKA, { odin_user_log_nr: 7, odin_user_log_datetime: local, odin_user_log_depth_m: 18, odin_user_log_divetime: 31 });
+    ctx.ssiClock.advance(3 * 60_000);
+    const sent = await send(diveId);
+    expect(sent.outcome).toBe('exists');
+    expect(sent.buddies?.added).toEqual([{ diverId: uli, name: 'Uli Voss' }]);
   });
 
   it('never adds from scratch on a send', async () => {

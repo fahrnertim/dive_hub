@@ -70,13 +70,18 @@ async function settle(
   p: Person, account: string | null, entryId: string | undefined,
 ): Promise<void> {
   const withAccount = account ? c.list.find((b) => b.account === account) : undefined;
-  const kept = entryId === undefined ? undefined : c.list.find((b) => b.remoteId === entryId);
-  if (entryId !== undefined && !kept) await forget(db, c.accountId, p.id);
+  const listed = entryId === undefined ? undefined : c.list.find((b) => b.remoteId === entryId);
+  // Gone from the list, or made for another account than the Diver's now (the account was corrected): forgotten, and the
+  // Diver is added by the account below. The old entry stays in the Provider's list.
+  const corrected = listed?.account != null && account !== null && listed.account !== account;
+  if (entryId !== undefined && (!listed || corrected)) await forget(db, c.accountId, p.id);
+  const kept = corrected ? undefined : listed;
   if (withAccount) {
     await remember(db, c.accountId, p.id, withAccount.remoteId);
-  } else if (kept && account && c.buddies.setAccount) {
+  } else if (kept && kept.account === null && account && c.buddies.setAccount) {
     checkName(c.result, p, await c.buddies.setAccount(c.context, kept.remoteId, account));
   } else if (!kept && account && c.buddies.add) {
+    // A throw after this: the entry is found by its account on the next send, so none is added twice.
     const made = await c.buddies.add(c.context, { account, firstName: null, lastName: null, email: null });
     await remember(db, c.accountId, p.id, made.remoteId);
     c.result.added.push({ diverId: p.id, name: made.name });

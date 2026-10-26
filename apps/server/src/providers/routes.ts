@@ -870,7 +870,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       conflicts: sent.result === 'conflicts' ? sent.conflicts : null,
       taken: sent.result === 'updated' ? sent.taken : null,
       deferred: sent.result === 'updated' ? sent.deferred : null,
-      buddies: 'buddies' in sent ? sent.buddies ?? null : null,
+      buddies: sent.buddies ?? null,
       status: statusView(await pushes.status(request.user!.id, id, provider)),
     };
   });

@@ -47,18 +47,21 @@ export interface SendOptions {
   runId?: string;
 }
 
-export type SendResult =
-  | { result: 'created' | 'linked'; push: PushRow; buddies?: BuddiesForSend }
+export type SendResult = (
+  | { result: 'created' | 'linked'; push: PushRow }
   /** `taken`: the fields that came from the Provider first; `deferred`: those left as the Provider has them. */
-  | { result: 'updated'; push: PushRow; taken: SyncedField[]; deferred: SyncedField[]; buddies?: BuddiesForSend }
+  | { result: 'updated'; push: PushRow; taken: SyncedField[]; deferred: SyncedField[] }
   | { result: 'exists'; existing: RemoteDive }
   /** Nothing was sent: these fields changed on both sides. */
-  | { result: 'conflicts'; conflicts: ConflictField[] };
+  | { result: 'conflicts'; conflicts: ConflictField[] }
+) & {
+  /** What the send did to the Provider's list of people; left out when it added nothing and nothing is known by another name. */
+  buddies?: BuddiesForSend;
+};
 
-/** The answer of a send that reached the Provider, with what the send settled in its list of people (left out when nothing). */
+/** The answer of a send, with what the send settled in its list of people (left out when nothing). */
 function withSettled(r: SendResult, settled: BuddiesForSend): SendResult {
-  const reached = r.result === 'created' || r.result === 'linked' || r.result === 'updated';
-  return reached && (settled.added.length > 0 || settled.knownAs.length > 0) ? { ...r, buddies: settled } : r;
+  return (settled.added.length > 0 || settled.knownAs.length > 0) ? { ...r, buddies: settled } : r;
 }
 
 /** Whether the Provider's `dives.fields` let this field go out: no map means every field does. */
@@ -515,7 +518,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
         if (action.find) {
           const { ours, sameTime } = await action.find(outgoing, reference(diveId));
           const found = ours ?? (onExisting === 'create' ? null : sameTime);
-          if (found && !ours && onExisting !== 'link') return { result: 'exists', existing: found };
+          if (found && !ours && onExisting !== 'link') return withBuddies({ result: 'exists', existing: found });
           if (found) {
             // Linked, not sent: our values aren't there yet, so the Dive shows as changed until it is updated.
             return withBuddies({
