@@ -288,6 +288,13 @@
       "when": 1792859530812,
       "tag": "0040_private_site_ids",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793042453997,
+      "tag": "0041_account_list_entry",
+      "breakpoints": true
     }
   ]
 }

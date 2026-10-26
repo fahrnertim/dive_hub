@@ -113,7 +113,7 @@ SSI built its API, and Dive Hub should follow it (owner). Two goals beyond corre
   SSI **as private** (`save_divesite`). The same in a manual and an unattended send, with no extra step (my call, so a
   push run doesn't stop to ask); the site's new SSI ID is shown on the site and can be changed there as today.
   The blocking requirement `site_external_id` becomes something the send can fix.
-- **Buddies:** a Participant missing from the User's SSI buddy list is added with `save_buddy` (owner): always when
+- **Buddies** (the matching is replaced by "Piece 5, settled" below): a Participant missing from the User's SSI buddy list is added with `save_buddy` (owner): always when
   the Diver has an SSI account (linked to it) or an e-mail; with a name only **if** a check [T] shows SSI keeps such an
   entry (saved, listed in the app, usable on a dive), else left out as today. No duplicates: an entry is matched by SSI
   account, then e-mail, then exact first and last name, and the entry ID is remembered for the Diver after the first
@@ -161,8 +161,8 @@ automatic exchange without clash handling would overwrite edits made in SSI's ap
    change comes back, nothing is overwritten.
 4. **Sites** (above; built, account check pending; global feed checked 2026-10-26). **Check:** a private site created by Dive Hub is usable on a dive and not visible to others [?
    how to see that from one account is for the builder to find].
-5. **Buddies** (above). **Checks:** an added entry appears in the app's buddy list and on the dive; a name-only entry
-   is kept (decides whether name-only buddies are added).
+5. **Buddies** (revised in "Piece 5, settled" below; checked 2026-10-27). **Checks:** an added entry appears in the app's
+   buddy list and on the dive; a name-only entry is kept (both [T]).
 6. **Automation** (above), for every Provider.
 7. **Fewer reads** (above).
 
@@ -292,6 +292,84 @@ Recorded in [ADR 0057](../../decisions/0057-ssi-aligned-with-its-app.md) (amende
   count as changed since sent and go out with whatever send comes next. Draft:
   [backlog 0003](../../backlog/0003-private-site-gets-public.md). For piece 6: whether a resolved Conflict entry should
   likewise only mark the Dive for sending instead of sending at once (piece 3 sends at once, as no queue exists yet).
+
+## Piece 5, settled 2026-10-27
+
+From a fourth session with the owner, after the checks on the owner's account
+([buddy checks](../../research/2026-10-27-ssi-buddy-checks.md), all [T]). It **replaces** the matching in the "SSI"
+section's Buddies bullet: the owner would wince at duplicates, a wrong person, silent changes and half entries, and
+judged automatic matching by name too risky. To be recorded in [ADR 0057](../../decisions/0057-ssi-aligned-with-its-app.md)
+(amendment) and the [client contract](../../spec/clients.md).
+
+**What the checks showed** (the facts the rules below rest on): SSI keeps an entry with name and e-mail and no account, and
+one with a name only, and both show on a dive in the app; an entry is updated in place by its ID; an entry made without an
+account can be given one later (`master_id`), keeps its ID, and SSI then fills it from that person's SSI profile (their
+spelling of the name, e-mail, photo); SSI never merges two entries with one account; a deleted entry stays in
+`get_buddies` with `deleted: 1`; names may be stored in lower case; the app shows a new entry only after its buddy sync
+(up to 12 h [R]). `search_buddy` searches all SSI users and leaks the account of people who don't allow being found.
+
+- **Linked automatically** (owner): a Participant whose Diver has an SSI account and no usable entry in the User's list is
+  added with `save_buddy` with that account, on every send, manual or Push run. Usable entry: one with that account, or
+  the one remembered for the Diver (below), not deleted. The send passes **only the account**; SSI fills the entry from
+  the person's profile (step 6), so an automatic send still carries no more of a person than their account (ADR 0029).
+  A create with an account is checked (step 8): SSI keeps it, and when an entry with that account exists it answers
+  with that entry instead of a new one, writing the sent keys onto it. So the create is sent only when the list just
+  read has no entry with the account, and carries only `id: null`, `master_id` and the flags, never empty name, date
+  or contact keys.
+- **Never added from scratch without the User** (owner, 2026-10-27: "leave them manual for now"): a Participant without an
+  SSI account is only added when the User chooses Add them. A send never makes a from-scratch entry by itself; names and
+  e-mail go to the Provider only on the User's action in the dialog.
+- **Linked later** (owner's idea, checked): when the Diver has an SSI account and the entry remembered for them has none
+  (made from scratch), the send gives that entry the account (`master_id`) instead of adding a second one. Dives sent
+  before keep pointing at it.
+- **Asked, never guessed** (owner): every other Participant the list doesn't hold is shown on the Dive's page as not in
+  the User's <Provider> list, with **Link or add**, before and after a send. The dialog (extending today's "Who is … at
+  SSI?"):
+  - lists the account's entries (not deleted), those whose name or e-mail matches the Diver's first, ignoring case and
+    surrounding spaces, then the rest by name. Matching only sorts; it never links. Picking an entry links it: an entry
+    with an account gives the Diver that account (as today, `diver_external_id_taken` as today); one without is
+    remembered for the Diver.
+  - **Add them**: scan the person's buddy code (account, first and last name, e-mail; the scanner exists, ADR 0043), or
+    type first name and last name (both required) and an optional e-mail. Dive Hub adds the entry with `save_buddy` and
+    links it as above; a scanned account also goes on the Diver. Typed values fill what the Diver lacks (first name,
+    last name, e-mail), as the buddy code's parts do today (ADR 0043), shared with every User (owner: Dive Hub is
+    self-hosted for a closed circle).
+- **Remembered entry** (my call, like piece 4's private site IDs): a table holds, per Source, the list's account (a
+  reference to that account's `diver_external_id` row, `on delete cascade`), the Diver, and the entry's ID. At most one
+  entry per account and Diver; an entry ID at most once per account. It is set by a link, an add and an import. A send
+  that finds the remembered entry gone or `deleted: 1` forgets it, and the Participant counts as not in the list again
+  (linked automatically if the Diver has an account, else asked). Owners of an account are the Users who manage its
+  Diver (as piece 4); other Users never see it. Writing it writes no Revision.
+- **Two candidate entries** (my call, from the builder check): when the remembered entry has no account and another entry
+  of the list has the Diver's account, the one with the account wins: it becomes the remembered entry, and the send
+  doesn't give the old one the account (that would make the duplicate). The old entry stays in the User's SSI list (Dive
+  Hub never deletes an entry); dives sent before keep pointing at it.
+- **Wrong account guard** (my call): when the entry SSI returns after an add or a link-later carries a name that doesn't
+  match the Diver's (first and last name, ignoring case), the send's answer says "<Provider> knows this account as
+  <name>" with a link to the Diver, where the account can be corrected. Nothing is undone by itself.
+- **No duplicates** (my call): Dive Hub adds an entry only after reading the list in the same action and finding no usable
+  entry; two Participants of one Diver on one dive, or one Diver on several dives of a Push run, add one entry (sends
+  on a Connection run one at a time, as in piece 4).
+- **Push runs** (my call): they never ask and never add from scratch. A Participant not linked is left out
+  (`not_at_provider`, as today), and the run's report lists the dives that went without someone (from the run's own
+  record of each dive; no logbook filter, no Review entry), each linking to the Dive's page with Link or add.
+- **What the User is told** (my calls): the requirement's text and the left-out message no longer say "add them in SSI's
+  app"; they offer Link or add. After an add: "Added <name> to your <Provider> list. It might take some time until
+  they show up in <Provider>'s app." (owner: not more specific than that) Each added entry is listed in the send's answer, so nothing is added silently.
+- **The list is read with `get_buddies`** (owner, as decided), not `logbook_buddies`; the import's buddy step and `find`
+  use it too.
+- **Imports** (my calls, from the builder check): the dive import maps an entry without an account through the
+  remembered entry, so a Participant added from scratch comes back as that Diver; one nobody remembers is skipped, as
+  today. The account's list page (`ProviderBuddies`) also shows entries without an account: Link remembers one for a
+  Diver here, Import makes a Diver from its name and remembers it. Importing or linking an entry with an account also
+  remembers its entry ID.
+- **Not used** (owner): `search_buddy`, and any account number from its error text. If a search for people who allow being
+  found is ever built, only as a suggestion the User confirms (as before).
+- **Generic** (my call): the Provider's `buddies` capability gains `add` (first and last name, e-mail, account) and
+  `setAccount` (an entry, an account), each answering the entry as the Provider keeps it (name, account); SSI's adapter
+  does both with `save_buddy`. The dialog's texts take the Provider's name. `add` with names and e-mail is called only from
+  the User's action, never from a send; `OutgoingParticipant` keeps carrying accounts only (ADR 0029).
+- **Privacy flaws at SSI** (owner): recorded in the research note; a report to SSI is parked.
 
 ## For the equipment work (owner, recorded here so it isn't lost)
 

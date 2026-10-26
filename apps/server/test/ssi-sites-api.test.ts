@@ -161,7 +161,8 @@ describe.skipIf(!(await databaseReachable()))('a dive import and SSI\'s private 
     (await call('GET', `/api/connections/${connections[who]}/dive-import`, who)).json() as {
       counts: { changed: number }; conflicts: unknown[]; sites: Record<string, number>; sitesAllowed: boolean;
     };
-  const revisionsOf = async (siteId: string) => JSON.stringify((await call('GET', `/api/dive-sites/${siteId}/revisions`, 'admin')).json());
+  // What the site's history records as changed (not its own random IDs, which may hold any digits).
+  const revisionsOf = async (siteId: string) => JSON.stringify((await call('GET', `/api/dive-sites/${siteId}/revisions`, 'admin')).json<{ changes: unknown }[]>().map((r) => r.changes));
 
   beforeAll(async () => {
     t = await createTestDatabase();

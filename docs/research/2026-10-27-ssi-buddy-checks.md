@@ -1,7 +1,7 @@
 ---
 title: SSI checks of the buddy list (get_buddies, save_buddy, search_buddy)
 summary: On the owner's account (app 5.0.43) get_buddies returns the same entries as the dive read; save_buddy adds an entry with name and e-mail and no account, and one with a name only, both kept and shown on a dive in the app (after its buddy sync); an entry is updated in place by its ID, and one added from scratch can be given an account later, which SSI fills from that person's profile (no merge, so duplicates are the client's to avoid); a delete is the flag deleted 1. search_buddy searches all SSI users and names the account of a person who doesn't allow it; with an account alone SSI hands out the person's e-mail and town (privacy flaws at SSI; Dive Hub uses neither; a report is parked).
-status: in progress
+status: done
 date: 2026-10-27
 ---
 
@@ -66,7 +66,15 @@ From the app's compiled code (Blutter output, see [the API surface note](2026-10
 7. **`buddy finish`**: the test dive deleted. Sending the linked test entry with `master_id: 0` removed it from the list at
    once (before any delete was sent); the other entry sent with `deleted: 1` **stays in `get_buddies` with `deleted: 1`**
    (the app hides it; Dive Hub's client already skips such entries, and reads `buddy_master_id: 0` as no account).
-   The owner's real entry stayed.
+   The owner's real entry stayed. The owner saw 8 entries in the app afterwards, no test entry [T].
+
+8. **`buddy create`**: a new entry created in one save with the account of a person already in the list (`id: null`,
+   `master_id` set, the test name, the other keys empty): **SSI made no new entry; it answered with the person's existing
+   entry** and wrote the sent empty keys onto it: its `dob` became "0000-00-00" (a birth date SSI's app neither shows nor
+   lets one edit). A save back of the copy did not bring `dob` back (sent as SSI had returned it); left so (owner: not
+   visible). One more try (owner) sent the date as milliseconds, the app's drift default: not stored either, so SSI likely takes an account entry's birth date only from the profile [?]. Every save also adds a space to an empty `phone`. The account stayed although the script then sent that entry with `master_id: 0` (SSI ignored it); the
+   safeguard stopped the delete. So: SSI de-duplicates a create by account (a link-later in step 6 does not); a create
+   must only happen when no entry has the account, and must send no empty keys that could land on an existing entry.
 
 ## Privacy flaws at SSI (owner, 2026-10-27)
 
@@ -85,9 +93,8 @@ being told. Only the number leaks, no name or e-mail; SSI says "this or a simila
 - **A report to SSI is parked** (owner): worth sending, but it tells SSI that the account calls the API directly (ADR 0024's
   risk). When it is sent: only the pattern, with the owner's own search as the example, no other person, no Dive Hub.
 
-## Pending
+## Still open
 
-- The owner's look in SSI's app after the clean-up: 8 entries, no test entry, the chosen buddy once.
 - What a `search_buddy` result looks like for a person who allows being found [?] (needs such a person).
 
 ## The session's own slip

@@ -319,3 +319,46 @@ async function deleteTestEntries(o: { access: string; saved: BuddySaved; log: Lo
     o.log(real ? `  existing entry ${o.saved.accountFrom.entryId} is still listed` : `  existing entry ${o.saved.accountFrom.entryId} is NOT listed: run \`buddy restore\``);
   }
 }
+
+/** An entry by its ID, or by its first and last name ignoring case when exactly one has it (never printed). */
+function entryNamed(rows: Row[], who: string): Row | undefined {
+  if (/^\d+$/.test(who)) return byId(rows, who);
+  const named = rows.filter((b) => `${String(b.firstname ?? '')} ${String(b.lastname ?? '')}`.trim().toLowerCase() === who.trim().toLowerCase());
+  return named.length === 1 ? named[0] : undefined;
+}
+
+/**
+ * `buddy create <entry ID or name>`: one new entry created with the account of an existing entry in a single save (no
+ * entry first). Is the account kept, filled from the profile, the existing entry unchanged? Then the new entry is
+ * taken off the account and deleted at once (`master_id: 0` removed one on 2026-10-27, `deleted: 1` hides it).
+ */
+export async function runBuddyCreate(o: { access: string; who: string; saved: BuddySaved; log: Log }): Promise<void> {
+  const ask = makeAsk(o.access);
+  const rows = await list(ask, o.log, 'before');
+  const real = entryNamed(rows, o.who);
+  const account = real?.master_id ?? real?.buddy_master_id;
+  if (!real || !has(account) || !o.saved.before.some((b) => b.id === real.id)) throw new Error(`Refused: no single existing entry with an account is "${o.who}".`);
+  const r = await ask('save_buddy', {}, appRow(o.saved.flagStyle, { id: null, localRefId: null, firstname: FIRST, lastname: 'test account', master_id: account }));
+  const entry = savedEntry(r.data);
+  const newId = entry?.id ?? r.data?.id;
+  o.log(`  save_buddy create with an account: ${outcome(r)}; new entry ${String(newId ?? '-')}; ${entry ? shown(entry) : JSON.stringify(r.data).slice(0, 300)}`);
+  const after = await list(ask, o.log, 'after');
+  const made = byId(after, newId === undefined || newId === null ? undefined : String(newId));
+  o.log(made ? `  new entry: account ${String(made.master_id ?? made.buddy_master_id) === String(account) ? 'SET' : 'NOT set'}; name ${made.firstname === FIRST ? 'as sent' : "from the person's profile"}` : '  new entry is NOT in the list');
+  o.log(`  existing entry ${String(real.id)}: ${realEntryAfter(real, byId(after, String(real.id)))}`);
+  if (made) await removeNew(ask, o, made, real);
+}
+
+/** Takes the account off the entry `buddy create` made and deletes it; says whether the existing entry stayed. */
+async function removeNew(ask: Ask, o: { saved: BuddySaved; log: Log }, made: Row, real: Row) {
+  if (has(made.master_id) && !(await unlinked(ask, { ...o, saved: { ...o.saved, accountFrom: { entryId: String(real.id), row: real } } }, made))) return;
+  const left = byId(await list(ask, o.log, 'after taking the account off'), String(made.id));
+  if (left) {
+    const d = await ask('save_buddy', {}, appRow(o.saved.flagStyle, { master_id: 0, deleted: flag(o.saved.flagStyle, true) }, left));
+    o.log(`  save_buddy delete ${String(made.id)}: ${outcome(d)}`);
+  }
+  const end = await list(ask, o.log, 'at the end');
+  const still = byId(end, String(made.id));
+  o.log(still ? `  new entry STILL listed (deleted ${JSON.stringify(still.deleted)})` : '  new entry gone from the list');
+  o.log(`  existing entry ${String(real.id)} ${byId(end, String(real.id)) ? 'still listed' : 'NOT listed'}`);
+}

@@ -68,7 +68,7 @@ import {
 } from './site-checks.js';
 import { runNumberChecks } from './number-checks.js';
 import {
-  runBuddyAccount, runBuddyAdd, runBuddyDive, runBuddyFinish, runBuddyRead, runBuddyRestore, runBuddySearch, runBuddyUpdate,
+  runBuddyAccount, runBuddyAdd, runBuddyCreate, runBuddyDive, runBuddyFinish, runBuddyRead, runBuddyRestore, runBuddySearch, runBuddyUpdate,
   type BuddySaved,
 } from './buddy-checks.js';
 import { finishValuesChecks, startValuesChecks } from './values-checks.js';
@@ -139,9 +139,10 @@ async function buddyMode(step: string | undefined, arg: string) {
   } else if (step === 'update') await runBuddyUpdate({ ...o, saved: await kept() });
   else if (step === 'dive') await save('buddies', await runBuddyDive({ ...o, saved: await kept() }));
   else if (step === 'account' && arg) await save('buddies', await runBuddyAccount({ ...o, who: arg, saved: await kept() }));
+  else if (step === 'create' && arg) await runBuddyCreate({ ...o, who: arg, saved: await kept() });
   else if (step === 'restore') await runBuddyRestore({ ...o, saved: await kept() });
   else if (step === 'finish') await runBuddyFinish({ ...o, saved: await kept() });
-  else throw new Error('buddy read | search <text> | add | update | dive | account <entry ID or name> | restore | finish');
+  else throw new Error('buddy read | search <text> | add | update | dive | account <entry ID or name> | create <entry ID or name> | restore | finish');
 }
 
 if (mode === 'read') {
