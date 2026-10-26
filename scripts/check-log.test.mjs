@@ -5,6 +5,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { localTime } from './check-lib.mjs';
 import { appendRun, browserStats, summarise } from './check-log.mjs';
 
 const entry = (over = {}) => ({
@@ -57,4 +58,9 @@ test('the summary lists the last runs and sums each branch', () => {
 
 test('a detached run shows no branch name', () => {
   assert.match(summarise([entry({ branch: null, head: 'deadbee' })]), /deadbee/);
+});
+
+test('the time column is local time', () => {
+  const at = '2026-10-26T23:30:00.000Z';
+  assert.ok(summarise([entry({ at })]).startsWith(localTime(new Date(at))));
 });

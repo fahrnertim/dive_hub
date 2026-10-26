@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { failedTestsFromReport } from './check-lib.mjs';
+import { failedTestsFromReport, localTime } from './check-lib.mjs';
 
 /** The log's path: `check-runs.jsonl` in git's common directory. */
 export const logPath = () => resolve(spawnSync('git rev-parse --git-common-dir', { encoding: 'utf8', shell: true }).stdout.trim(), 'check-runs.jsonl');
@@ -47,7 +47,7 @@ export function summarise(entries, { last = 20, branch } = {}) {
   const runs = branch ? entries.filter((run) => run.branch === branch) : entries;
   const lines = runs.slice(-last).map((run) => {
     const slowest = [...(run.steps ?? [])].sort((a, b) => b.seconds - a.seconds)[0];
-    const time = run.at.slice(0, 16).replace('T', ' ');
+    const time = localTime(new Date(run.at));
     return `${time}  ${where(run)}  ${run.by}  ${run.result}  ${Math.round(run.wall)} s  slowest: ${slowest ? `${slowest.step} ${Math.round(slowest.seconds)} s` : '-'}`;
   });
   const byBranch = new Map();
