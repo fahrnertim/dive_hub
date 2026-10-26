@@ -1,6 +1,6 @@
 ---
 title: "ADR 0023: Checks by what changed, and a faster full check"
-summary: pnpm check runs typecheck, the unit tests whose imports changed and the browser tests of the areas touched (tags); pnpm check:full runs everything, before a commit as decided, since the amendment of 2026-10-08 before a push or a release. pnpm check counts each step from its last green run (amendment of 2026-10-08) or from where the branch left main, whichever leaves fewer files (amendment of 2026-10-24) and leaves two ui-quality variants to the full check; changed texts run the pages that use them; --failed reruns the failed browser tests. Browser tests run on 2 workers with a server and database each, prepared once; no trace recording by default; axe in 2 of 4 ui-quality variants; server tests share modules. Full check 10.5 → 3 min. Amendment of 2026-10-24: test helpers no longer run everything, a passing --failed renews the browser record, one ui-quality variant in pnpm check, and CI's full check on the pull request is the gate (no full check before a push).
+summary: pnpm check runs typecheck, the unit tests whose imports changed and the browser tests of the areas touched (tags); pnpm check:full runs everything, before a commit as decided, since the amendment of 2026-10-08 before a push or a release. pnpm check counts each step from its last green run (amendment of 2026-10-08) or from where the branch left main, whichever leaves fewer files (amendment of 2026-10-24) and leaves two ui-quality variants to the full check; changed texts run the pages that use them; --failed reruns the failed browser tests. Browser tests run on 2 workers with a server and database each, prepared once; no trace recording by default; axe in 2 of 4 ui-quality variants; server tests share modules. Full check 10.5 → 3 min. Amendment of 2026-10-24: test helpers no longer run everything, a passing --failed renews the browser record, one ui-quality variant in pnpm check, and CI's full check on the pull request is the gate (no full check before a push). Amendment of 2026-10-26: a check after a fix counts from the failed browser run, every step runs to its end with the browser step beside the others, and a local run log (pnpm check:log).
 status: accepted
 date: 2026-10-04
 ---
@@ -347,3 +347,39 @@ Not done, with numbers:
 - *What is given up:* German, dark, phone checks of a page change wait for CI (dark-mode contrast and German overflow
   on pages whose own files changed); a change that breaks another area through a wrong map entry is found at the pull
   request, not before the push.
+
+## Amendment 2026-10-26: a rerun after a fix, steps side by side, and a run log
+Why: the owner, 2026-10-26: a check takes almost 20 minutes and runs several times per feature (a failed test is rerun
+until it passes, then the whole plan runs again, for each task), against about 10 minutes of implementation. Target: a
+local `pnpm check` of about 5 minutes. Decided with the owner on 2026-10-26; the
+[design](../superpowers/specs/2026-10-26-faster-local-check-design.md) has the details and takes effect with its plan.
+
+Measured 2026-10-26 on the same laptop (plugged in, nothing else heavy running; numbers in the design): the local browser
+plan took 334 s wall, 229 tests, **2.6 s a test, not 7.3 s**; ui-quality 42 % of its worker time; axe at every page
+check instead of once +33 s; the owner's dev servers running alongside made no difference; 4 workers 284 s without
+timeouts but each test 1.6× slower. A `pnpm check` that plans everything: about 550 s with the steps one after another,
+443 s with the browser step beside the others. What made 2026-10-24 three times slower is unknown.
+
+Decided:
+- **A failed browser run is a base for counting.** The next `pnpm check` plans the browser step as the failed tests plus
+  what the area map picks for the files changed since the failed snapshot; it is a candidate beside the green record and
+  main, its failed tests always planned. A test that no longer exists is dropped and named. A step that fails without
+  a fresh Playwright report keeps nothing, as before; the old failed run stays when the browser test listing fails or the step is stopped with Ctrl-C. The owed tests of a failed run count as one unit when the base is chosen (its score is the changed files + 1). Only the browser step; `pnpm check --failed` stays. This replaces,
+  in the amendment of 2026-10-24, "Changed files … record nothing, as before" for a check after a fix.
+- **Every step runs to its end**: a failing step no longer stops the others; each passing step records green. This
+  replaces, in the amendment of 2026-10-08, "the failed step and those after it count from their older records": only
+  the failed steps do.
+- **The browser step runs beside the other steps** (two lanes) locally; with `CI` set the steps run one after another.
+  Output goes to files and only problems are printed ([ADR 0039](0039-working-economically.md)). One check at a time per
+  clone (a lock).
+- **A local run log**: each `pnpm check` that runs steps appends a line to `check-runs.jsonl` in git's common directory
+  (bases, plans, times, results, the browser step's slowest tests); `pnpm check:log` sums it per branch. Never committed;
+  what it teaches goes into `docs/`.
+- **Unchanged:** `E2E_SERVERS` 2, axe once per ui-quality test locally, the variants as on 2026-10-24, CI's
+  `pnpm check:full` as the only full check, no retries.
+- *What is given up:* a failed run is trusted like a green record (the map decides what the fix touched); a failing
+  typecheck no longer stops the browser tests, so its error arrives after the slowest step.
+- *Considered:* fewer axe passes and fewer variants (little left to gain after measuring); stopping the browser tests
+  when a fast step fails (sooner answer, but the browser tests run again after the fix; owner chose to let them finish).
+- *Result (2026-10-26):* a check that plans everything 473 s (550 s before; target 443 s); the rerun after a fix 82 s for
+  the browser step (the failed tests plus `@tools|@layout`), 90 s for the whole check. See the [design's Result](../superpowers/specs/2026-10-26-faster-local-check-design.md#result).

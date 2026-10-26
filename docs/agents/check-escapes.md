@@ -20,4 +20,4 @@ browser tests ("Failed browser tests"). A failure that is a flaky test also coun
 
 ## Escapes
 
-(none yet)
+- 2026-10-26, PR #5, 86808ee: ui-quality.spec.ts, 12 tests in English light desktop and German dark phone (axe color-contrast on notices, the merge dialog, buttons) — flaky: axe measured elements fading in from opacity 0; the browser step ran faster in CI once its output went to a file, and hit the fade — expectAccessible waits for finite animations to end (backlog 0006)

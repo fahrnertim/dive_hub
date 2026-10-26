@@ -13,6 +13,7 @@
     "typecheck": "pnpm --recursive typecheck",
     "check": "node scripts/check.mjs",
     "check:full": "node scripts/check.mjs --full",
+    "check:log": "node scripts/check-log.mjs",
     "lint": "node scripts/check-lint.mjs --all",
     "lint:baseline": "node scripts/check-lint.mjs --shrink",
     "hooks:install": "git config core.hooksPath .githooks"

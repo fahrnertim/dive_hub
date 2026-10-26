@@ -308,6 +308,12 @@ export function recordGreen(step, tree, cwd = process.cwd()) {
   git(['update-ref', ref(step), commit], cwd);
 }
 
+/** A time as `YYYY-MM-DD HH:MM` in local time, the way `greenRun` shows when a step passed. */
+export function localTime(date) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 /** The last green run of `step`: `{ base, at }` (what to diff against, and when it passed), or null. */
 export function greenRun(step, cwd = process.cwd()) {
   try {
@@ -318,9 +324,19 @@ export function greenRun(step, cwd = process.cwd()) {
   }
 }
 
-/** Of the candidates `{ from, base, changed }` (in order of preference), the one with the fewest changed files; null when none. */
+/**
+ * What a candidate costs: its changed files, plus one unit when it owes failed tests. One rerun of the owed tests
+ * costs about what the areas of one changed file cost, however many tests are owed; and a green base that wins still
+ * plans every change since that green run (the fix and the change that failed), so the owed tests would not even be saved.
+ */
+const score = (candidate) => candidate.changed.length + (candidate.owed?.length ? 1 : 0);
+
+/**
+ * Of the candidates `{ from, base, changed, owed? }` (in order of preference), the one with the lowest score (the
+ * changed files, plus one when failed tests are owed); a tie keeps the earlier one. Null when none.
+ */
 export function chooseBase(candidates) {
-  return candidates.reduce((best, next) => (best && best.changed.length <= next.changed.length ? best : next), null);
+  return candidates.reduce((best, next) => (best && score(best) <= score(next) ? best : next), null);
 }
 
 /** Whether a ref names a commit here. */
@@ -343,12 +359,14 @@ function currentBranch(cwd) {
 }
 
 /**
- * The bases `step` may count from, in order of preference: its green run, and where this branch left main and
- * origin/main (CI checks those). The same merge base is taken once; a main without common history is skipped.
- * Returns `[{ from, base }]`.
+ * The bases `step` may count from, in order of preference: for the browser step a kept failed run that owes tests
+ * (its failed tests count on top), its green run, and where this branch left main and origin/main (CI checks those).
+ * The same merge base is taken once; a main without common history is skipped. Returns `[{ from, base, owed? }]`.
  */
 export function baseCandidates(step, cwd = process.cwd()) {
   const candidates = [];
+  const failed = step === 'e2e' ? failedRun(step, cwd) : null;
+  if (failed?.owed.length) candidates.push({ from: `the failed run of ${failed.at} (${failed.owed.length} failed test(s) owed)`, base: failed.base, owed: failed.owed });
   const green = greenRun(step, cwd);
   if (green) candidates.push({ from: `its green run of ${green.at}`, base: green.base });
   let onMain = null;
@@ -366,30 +384,64 @@ export function baseCandidates(step, cwd = process.cwd()) {
 
 /**
  * Where `step` counts its changed files from (ADR 0023, amendment of 2026-10-24): of `baseCandidates`, the one that
- * leaves the fewest files; a tie prefers the green run. Without any, the last commit. Returns `{ from, base, changed }`.
+ * leaves the fewest files, a failed run's owed tests counting as one more file; a tie keeps the earlier candidate. Without
+ * any, the last commit. Returns `{ from, base, changed, owed }` (`owed` is empty unless the failed run won).
  */
 export function countingBase(step, tree, cwd = process.cwd()) {
   const counted = baseCandidates(step, cwd).map((candidate) => ({ ...candidate, changed: changedSince(candidate.base, tree, cwd) }));
-  return chooseBase(counted) ?? { from: 'the last commit (no green run recorded)', base: 'HEAD', changed: changedSince('HEAD', tree, cwd) };
+  const chosen = chooseBase(counted) ?? { from: 'the last commit (no green run recorded)', base: 'HEAD', changed: changedSince('HEAD', tree, cwd) };
+  return { ...chosen, owed: chosen.owed ?? [] };
 }
 
 // A failed run of a step (amendment of 2026-10-24: a passing --failed renews the browser record): the snapshot it
 // failed on and the tests that failed, as a commit held by a local ref like the green runs.
 const failedRef = (step) => `refs/check/failed-${step}`;
 
-/** Records that `step` failed on the snapshot `tree`, with the ids of the tests that failed. */
-export function recordFailed(step, tree, failedTests, cwd = process.cwd()) {
-  const message = `${step}: failed\n\n${JSON.stringify([...failedTests].sort())}`;
+/** Playwright's JSON report (apps/web/playwright.config.ts), written next to `.last-run.json`. */
+export const REPORT = 'apps/web/test-results/report.json';
+
+/**
+ * The tests of a Playwright JSON report whose last result is failed or timed out, as `--test-list` lines:
+ * `<file relative to testDir> › <describe> › … › <title>` (no project, no tags, no line numbers).
+ */
+export function failedTestsFromReport(report) {
+  const lines = [];
+  const walk = (suite, describes) => {
+    for (const spec of suite.specs ?? []) {
+      const failed = (spec.tests ?? []).some((test) => ['failed', 'timedOut'].includes(test.results?.at(-1)?.status));
+      if (failed) lines.push([spec.file, ...describes, spec.title].join(' › '));
+    }
+    for (const child of suite.suites ?? []) walk(child, [...describes, child.title]);
+  };
+  for (const fileSuite of report?.suites ?? []) walk(fileSuite, []);
+  return lines;
+}
+
+/**
+ * Records that `step` failed on the snapshot `tree`: the ids of the tests that failed (what `.last-run.json` lists)
+ * and their `--test-list` lines (`failedTestsFromReport`).
+ */
+export function recordFailed(step, tree, { ids, tests }, cwd = process.cwd()) {
+  const message = `${step}: failed
+
+${JSON.stringify({ ids: [...ids].sort(), tests: [...tests].sort() })}`;
   const commit = git(['-c', 'user.name=pnpm check', '-c', 'user.email=check@localhost', 'commit-tree', tree, '-m', message], cwd);
   git(['update-ref', failedRef(step), commit], cwd);
 }
 
-/** The last failed run of `step` that was kept: `{ tree, failedTests }`, or null. */
+/**
+ * The last failed run of `step` that was kept, or null: `{ tree, base, at, failedTests, owed }` (the snapshot, the
+ * record's commit and date, the ids of the failed tests, and their test-list lines). A record from before the
+ * titles was a bare list of ids: it reads with `owed: []`.
+ */
 export function failedRun(step, cwd = process.cwd()) {
   try {
     const tree = git(['rev-parse', `${failedRef(step)}^{tree}`], cwd);
-    const body = git(['log', '-1', '--format=%b', failedRef(step), '--'], cwd);
-    return { tree, failedTests: JSON.parse(body || '[]') };
+    const base = git(['rev-parse', failedRef(step)], cwd);
+    const at = git(['log', '-1', '--format=%cd', '--date=format:%Y-%m-%d %H:%M', failedRef(step), '--'], cwd);
+    const body = JSON.parse(git(['log', '-1', '--format=%b', failedRef(step), '--'], cwd) || '[]');
+    const { ids, tests } = Array.isArray(body) ? { ids: body, tests: [] } : body;
+    return { tree, base, at, failedTests: ids ?? [], owed: tests ?? [] };
   } catch {
     return null;
   }
@@ -503,4 +555,29 @@ export function forBrowserTests(changed, base, tree, cwd = process.cwd()) {
     changed: [...new Set([...changed.filter((path) => !TEXTS.test(path)), ...users])],
     note: `texts changed in ${[...groups].sort().join(', ') || 'no group'}: the browser tests count the ${users.size} source file(s) that use them as changed`,
   };
+}
+
+/**
+ * The tests of a Playwright `--list` output as `--test-list` lines: without the project, the position and
+ * the trailing tags.
+ */
+export function listedTests(stdout) {
+  return stdout
+    .split(/\r?\n/)
+    .filter((line) => line.startsWith('  [') && line.includes('] › '))
+    .map((line) =>
+      line
+        .replace(/^ {2}\[[^\]]*\] › /, '')
+        .replace(/^([^›]*?):\d+:\d+/, '$1')
+        .replace(/(?: @\S+)+$/, ''),
+    );
+}
+
+/**
+ * One test list from the planned tests plus the owed (previously failed) ones that still exist, in the order of
+ * `all`; `dropped` are the owed tests that no longer exist.
+ */
+export function browserTestList({ all, planned, owed }) {
+  const wanted = new Set([...planned, ...owed.filter((line) => all.includes(line))]);
+  return { lines: all.filter((line) => wanted.has(line)), dropped: owed.filter((line) => !all.includes(line)) };
 }

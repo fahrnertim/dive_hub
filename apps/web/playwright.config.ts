@@ -10,7 +10,7 @@ export default defineConfig({
   // ui-quality.spec.ts spreads its tests over all workers.
   fullyParallel: false,
   workers: E2E_SERVERS,
-  reporter: [['list']],
+  reporter: [['list'], ['json', { outputFile: 'test-results/report.json' }]],
   // Pages answer more slowly while other workers run (ADR 0023).
   expect: { timeout: 10_000 },
   outputDir: 'test-results',

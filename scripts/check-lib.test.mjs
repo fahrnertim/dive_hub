@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { FULL_ONLY, VARIANTS, browserGrepInvert, variantsRun } from './check-lib.mjs';
-import { baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, greenRun, keptFailures, lintTargets, planFor, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
+import { browserTestList, baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, failedTestsFromReport, forBrowserTests, greenRun, keptFailures, lintTargets, listedTests, planFor, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
 
 /** A git repository with one commit holding `files`. */
 function repository(files) {
@@ -238,7 +238,7 @@ test('without changed texts, or without a base to compare them with, the files s
   assert.deepEqual(forBrowserTests([EN], null, null, repo.cwd).changed, [EN]);
 });
 
-test('the counting base is the candidate with the fewest changed files; a tie prefers the first (the green run)', () => {
+test('the counting base is the candidate with the fewest changed files; a tie keeps the earlier one', () => {
   const green = { from: 'its green run', base: 'g', changed: ['a', 'b'] };
   const main = { from: 'main', base: 'm', changed: ['a'] };
   assert.equal(chooseBase([green, main]), main);
@@ -265,6 +265,57 @@ test('a branch counts from main when that leaves fewer files than a stale green 
   assert.match(chosen.from, /^main \(where this branch left it, [0-9a-f]{7,}\)$/);
   assert.deepEqual(chosen.changed, ['d.ts']);
   assert.equal(chosen.base, repo.git('merge-base', 'HEAD', 'main').toString().trim());
+});
+
+// Amendment of 2026-10-26: a failed browser run is a base for counting, its failed tests owed.
+
+test('after a failed browser run and a fix, the browser step counts from the failed run with its failed tests owed', (t) => {
+  const repo = repository({ 'a.ts': 'a', 'b.ts': 'b' });
+  t.after(repo.drop);
+  recordGreen('e2e', snapshot(repo.cwd), repo.cwd);
+  repo.write('a.ts', 'a2');
+  recordFailed('e2e', snapshot(repo.cwd), { ids: ['x'], tests: ['t › one'] }, repo.cwd);
+  repo.write('b.ts', 'b2');
+  const chosen = countingBase('e2e', snapshot(repo.cwd), repo.cwd);
+  assert.deepEqual(chosen.changed, ['b.ts']);
+  assert.deepEqual(chosen.owed, ['t › one']);
+  assert.match(chosen.from, /^the failed run of .+ \(1 failed test\(s\) owed\)$/);
+});
+
+test('only the browser step counts from a failed run', (t) => {
+  const repo = repository({ 'a.ts': 'a', 'b.ts': 'b' });
+  t.after(repo.drop);
+  recordGreen('server', snapshot(repo.cwd), repo.cwd);
+  repo.write('a.ts', 'a2');
+  recordFailed('e2e', snapshot(repo.cwd), { ids: ['x'], tests: ['t › one'] }, repo.cwd);
+  repo.write('b.ts', 'b2');
+  const chosen = countingBase('server', snapshot(repo.cwd), repo.cwd);
+  assert.deepEqual(chosen.owed, []);
+  assert.match(chosen.from, /^its green run of /);
+});
+
+test('a failed run loses to a base with fewer changed files and owed tests together', (t) => {
+  const repo = repository({ 'a.ts': 'a' });
+  t.after(repo.drop);
+  recordGreen('e2e', snapshot(repo.cwd), repo.cwd);
+  repo.write('a.ts', 'a2');
+  recordFailed('e2e', snapshot(repo.cwd), { ids: ['x'], tests: ['t › one', 't › two', 't › three'] }, repo.cwd);
+  repo.write('a.ts', 'a');
+  const chosen = countingBase('e2e', snapshot(repo.cwd), repo.cwd);
+  assert.match(chosen.from, /^its green run of /);
+  assert.deepEqual([chosen.changed, chosen.owed], [[], []]);
+});
+
+test('a failed run owing several tests wins a tie with the green run: its owed tests count as one unit', (t) => {
+  const repo = repository({ 'h.ts': 'h', 'f.ts': 'f' });
+  t.after(repo.drop);
+  recordGreen('e2e', snapshot(repo.cwd), repo.cwd);
+  repo.write('h.ts', 'h2');
+  recordFailed('e2e', snapshot(repo.cwd), { ids: ['x'], tests: ['t › one', 't › two', 't › three'] }, repo.cwd);
+  repo.write('f.ts', 'f2');
+  const chosen = countingBase('e2e', snapshot(repo.cwd), repo.cwd);
+  assert.match(chosen.from, /^the failed run of .+ \(3 failed test\(s\) owed\)$/);
+  assert.deepEqual([chosen.changed, chosen.owed.length], [['f.ts'], 3]);
 });
 
 // Amendment of 2026-10-24: unknown files don't run everything.
@@ -307,7 +358,7 @@ test('the browser test setup and its data run every browser test and nothing els
 });
 
 test('the check scripts run their own tests only; the lint script also lints everything; one-off scripts and licences are quiet', () => {
-  for (const path of ['scripts/check.mjs', 'scripts/check-lib.mjs', 'scripts/check-lib.test.mjs']) {
+  for (const path of ['scripts/check.mjs', 'scripts/check-lib.mjs', 'scripts/check-lib.test.mjs', 'scripts/check-run.mjs', 'scripts/check-log.mjs', 'scripts/check-tags.mjs']) {
     const plan = planFor([path]);
     assert.deepEqual([plan.scripts, plan.typecheck, plan.lint, plan.server, plan.web, plan.e2e], [true, false, 'none', 'none', 'none', 'none'], path);
   }
@@ -411,11 +462,54 @@ test('a failed browser run is kept with its snapshot and its failed tests, and c
   t.after(repo.drop);
   assert.equal(failedRun('e2e', repo.cwd), null);
   const tree = snapshot(repo.cwd);
-  recordFailed('e2e', tree, ['b-id', 'a-id'], repo.cwd);
-  assert.deepEqual(failedRun('e2e', repo.cwd), { tree, failedTests: ['a-id', 'b-id'] });
+  recordFailed('e2e', tree, { ids: ['b-id', 'a-id'], tests: [] }, repo.cwd);
+  const { base, at, ...rest } = failedRun('e2e', repo.cwd);
+  assert.deepEqual(rest, { tree, failedTests: ['a-id', 'b-id'], owed: [] });
+  assert.match(base, /^[0-9a-f]{40}$/);
+  assert.match(at, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
   clearFailed('e2e', repo.cwd);
   assert.equal(failedRun('e2e', repo.cwd), null);
   clearFailed('e2e', repo.cwd); // clearing twice is fine
+});
+
+test('a failed browser run keeps its failed tests by id and by title, and an old record still reads', (t) => {
+  const repo = repository({ 'a.ts': 'a' });
+  t.after(repo.drop);
+  const tree = snapshot(repo.cwd);
+  const line = 'ui-quality.spec.ts › English, light, desktop › Divers, a diver’s certifications';
+  const odd = "tools.spec.ts › 16 % of the “Shark’s” sites: it's \"quoted\"";
+  recordFailed('e2e', tree, { ids: ['b-id', 'a-id'], tests: [odd, line] }, repo.cwd);
+  const { base, at, ...rest } = failedRun('e2e', repo.cwd);
+  assert.deepEqual(rest, { tree, failedTests: ['a-id', 'b-id'], owed: [line, odd].sort() });
+  assert.match(base, /^[0-9a-f]{40}$/);
+  assert.match(at, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
+  // A record from before the titles: a bare list of ids.
+  const old = repo.git('-c', 'user.name=x', '-c', 'user.email=x@x', 'commit-tree', tree, '-m', 'e2e: failed\n\n["a-id"]').toString().trim();
+  repo.git('update-ref', 'refs/check/failed-e2e', old);
+  assert.deepEqual(failedRun('e2e', repo.cwd)?.failedTests, ['a-id']);
+  assert.deepEqual(failedRun('e2e', repo.cwd)?.owed, []);
+});
+
+test('the failed tests of a report are named as test-list lines, curly quotes and all', () => {
+  const result = (status) => ({ tests: [{ results: [{ status }] }] });
+  const report = {
+    suites: [{
+      title: 'ui-quality.spec.ts',
+      file: 'ui-quality.spec.ts',
+      suites: [{
+        title: 'English, light, desktop',
+        specs: [
+          { file: 'ui-quality.spec.ts', title: 'Divers, a diver’s certifications', ...result('passed') },
+          { file: 'ui-quality.spec.ts', title: 'Dive 100% of the “Shark’s” sites', ...result('failed') },
+          { file: 'ui-quality.spec.ts', title: 'Equipment: the \'list\'', ...result('timedOut') },
+        ],
+      }],
+    }],
+  };
+  assert.deepEqual(failedTestsFromReport(report), [
+    'ui-quality.spec.ts › English, light, desktop › Dive 100% of the “Shark’s” sites',
+    "ui-quality.spec.ts › English, light, desktop › Equipment: the 'list'",
+  ]);
 });
 
 test('a failed browser step keeps only failures Playwright wrote during it, and none when it may have stopped early', () => {
@@ -454,4 +548,24 @@ test('a passing --failed records the browser step green only on the same snapsho
   // Playwright ran by hand in between: its last run is not the check's.
   assert.equal(failedRerunRenews(kept, 't1', ['c']).renews, false);
   assert.equal(failedRerunRenews(null, 't1', ['a']).renews, false);
+});
+
+test('a Playwright listing becomes test-list lines', () => {
+  const stdout = [
+    'Listing tests:',
+    '  [e2e] › ui-quality.spec.ts:91:5 › English, light, desktop › logbook @dives',
+    '  [e2e] › weighting.spec.ts:12:1 › adds suit, lead and how it felt’s 100% “x” @a @b',
+    'Total: 2 tests in 1 file',
+    '',
+  ].join('\n');
+  assert.deepEqual(listedTests(stdout), [
+    'ui-quality.spec.ts › English, light, desktop › logbook',
+    'weighting.spec.ts › adds suit, lead and how it felt’s 100% “x”',
+  ]);
+});
+
+test('the test list is the planned tests plus the owed ones that still exist', () => {
+  const all = ['a', 'b', 'c', 'd'];
+  assert.deepEqual(browserTestList({ all, planned: ['b'], owed: ['d', 'gone'] }), { lines: ['b', 'd'], dropped: ['gone'] });
+  assert.deepEqual(browserTestList({ all, planned: ['b', 'd'], owed: ['d'] }), { lines: ['b', 'd'], dropped: [] });
 });
