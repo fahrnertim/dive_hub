@@ -158,7 +158,8 @@ const UnmetView = Type.Object({
   diverName: Type.Optional(Type.String()),
   role: Type.Optional(Type.Enum([...PARTICIPANT_ROLES])),
   fixes: Type.Optional(Type.Array(Type.String(), {
-    description: 'diver_mapping: ways to fix it. diver_external_id: set the Diver\'s account at source (PUT /api/divers/{id}/external-ids/{source})',
+    description: 'diver_mapping: ways to fix it. diver_external_id: set the Diver\'s account at source (PUT /api/divers/{id}/external-ids/{source}). '
+      + 'list_entry: link or add an entry in the account\'s own list at the Provider (SSI: the buddy list)',
   })),
 }, { description: 'A requirement this Dive doesn\'t meet, from Dive Hub\'s own data' });
 

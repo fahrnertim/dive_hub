@@ -35,7 +35,7 @@ export const SSI_CAPABILITIES: Capabilities = {
           },
           {
             type: 'diver_mapping', severity: 'advisory', source: 'ssi', roles: ['buddy', 'guide', 'instructor'],
-            description: 'SSI lists buddies from your SSI buddy list, found by their SSI account; one without an account is left out.',
+            description: 'SSI lists buddies from your SSI buddy list; one who isn\'t there is added when their SSI account is known, else left out until you link or add them.',
           },
         ],
         readBackFields: [...COMPARED_FIELDS],
@@ -92,7 +92,9 @@ function buddiesFor(dive: OutgoingDive, list: SsiBuddy[]) {
   const ids: number[] = [];
   const leftOut: { diverId: string; reason: 'not_at_provider' }[] = [];
   for (const p of dive.participants) {
-    const entry = p.ids.ssi ? list.find((b) => b.account === p.ids.ssi) : undefined;
+    // The entry remembered for the Participant, if it is still in the list; else the one with their account.
+    const remembered = p.entries?.ssi ? list.find((b) => String(b.id) === p.entries!.ssi) : undefined;
+    const entry = remembered ?? (p.ids.ssi ? list.find((b) => b.account === p.ids.ssi) : undefined);
     if (!entry) leftOut.push({ diverId: p.diverId, reason: 'not_at_provider' });
     else if (!ids.includes(entry.id)) ids.push(entry.id);
   }

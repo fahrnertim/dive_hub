@@ -3,7 +3,7 @@
 // adapter's check when it sends.
 import type { ParticipantRole, PushLeftOut } from '../db/schema.js';
 import type { SiteSource } from '../sites/sources.js';
-import type { DiverSource, OutgoingDive, Requirement } from './provider.js';
+import type { Capabilities, DiverSource, OutgoingDive, Requirement } from './provider.js';
 
 /** A requirement not met by one Dive, with what a client needs to offer the fix. */
 export type Unmet = { severity: Requirement['severity'] } & (
@@ -13,11 +13,19 @@ export type Unmet = { severity: Requirement['severity'] } & (
    */
   | { type: 'site_external_id'; source: SiteSource; siteId: string | null; bySend: boolean }
   /** One per Participant nothing identifies at the Provider; `fixes` lists the ways Dive Hub has to fix it. */
-  | { type: 'diver_mapping'; source: DiverSource; diverId: string; diverName: string; role: ParticipantRole; fixes: 'diver_external_id'[] }
+  | { type: 'diver_mapping'; source: DiverSource; diverId: string; diverName: string; role: ParticipantRole; fixes: ('diver_external_id' | 'list_entry')[] }
 );
 
-/** What of `requirements` the Dive doesn't meet, in the order the Provider declares them. `site`: the Dive's site, if any. */
-export function unmetRequirements(requirements: Requirement[], site: { id: string; positioned: boolean } | null, dive: OutgoingDive): Unmet[] {
+/** Whether the Provider can make an entry in the account's own list (`buddies.export` `add`): a `list_entry` fix is then offered. */
+export const offersListEntries = (capabilities: Capabilities) => !!capabilities.data.buddies?.export?.operations.includes('add');
+
+/**
+ * What of `requirements` the Dive doesn't meet, in the order the Provider declares them. `site`: the Dive's site, if any.
+ * `listEntries`: the Provider can make list entries, so an unmet Participant may also be fixed by one.
+ */
+export function unmetRequirements(
+  requirements: Requirement[], site: { id: string; positioned: boolean } | null, dive: OutgoingDive, options: { listEntries?: boolean } = {},
+): Unmet[] {
   return requirements.flatMap((r): Unmet[] => {
     if (r.type === 'site_external_id') {
       return site && dive.siteIds[r.source] ? [] : [{
@@ -25,10 +33,10 @@ export function unmetRequirements(requirements: Requirement[], site: { id: strin
       }];
     }
     return dive.participants
-      .filter((p) => r.roles.includes(p.role) && !p.ids[r.source])
+      .filter((p) => r.roles.includes(p.role) && !p.ids[r.source] && !p.entries?.[r.source])
       .map((p) => ({
         type: r.type, severity: r.severity, source: r.source, diverId: p.diverId, diverName: p.name, role: p.role,
-        fixes: ['diver_external_id'],
+        fixes: options.listEntries ? ['diver_external_id', 'list_entry'] : ['diver_external_id'],
       }));
   });
 }

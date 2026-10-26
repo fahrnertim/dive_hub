@@ -1,7 +1,10 @@
 // Buddies at SSI (ADR 0029), against the fake SSI with a buddy list: importing the list (only names and SSI accounts
 // are kept), Participants sent as entry IDs from the User's own list, one not in it left out, an update that keeps
 // buddies set in SSI's app, the read-back, and "outdated".
+import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { dive } from '../src/db/schema.js';
+import { listAccountOf, remember } from '../src/providers/list-entries.js';
 import { createFakeSsi, type FakeSsiBuddy } from './fake-ssi.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
@@ -160,6 +163,19 @@ describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
       expect((await call('POST', `/api/dives/${diveId}/providers/ssi`, {})).json()).toMatchObject({ outcome: 'updated' });
       expect(ssiDive(remoteId).odin_user_log_buddy_ids).toEqual([MIA.id, 1_234_567]);
       expect((await status()).current!.upToDate).toBe(true);
+    });
+
+    it('a dive carries the remembered entry of a Participant without an account', async () => {
+      const d2 = ((await call('POST', '/api/external-divers', { name: 'Dora' })).json() as { id: string }).id;
+      ctx.fakeSsi.buddies.push({ ...person(2, 0, 'Dora', 'Dee'), owner: ERIKA });
+      const owner = (await t.db.select().from(dive).where(eq(dive.id, diveId)))[0]!.diverId;
+      await remember(t.db, (await listAccountOf(t.db, owner, 'ssi'))!, d2, '2');
+      await setParticipants([mia, d2]);
+      // Dora has no account, but an entry is remembered for her: nothing is unmet.
+      expect((await status()).unmet).toEqual([]);
+      const sent = (await call('POST', `/api/dives/${diveId}/providers/ssi`, {})).json() as { status: Status };
+      expect(ssiDive(sent.status.current!.remoteId).odin_user_log_buddy_ids).toEqual(expect.arrayContaining([MIA.id, 2]));
+      expect(sent.status.pushes[0]!.leftOut).toBeNull();
     });
 
     it('never answers more of a buddy than the name and what their code says: no birth date, phone or town, and the e-mail only inside a code', async () => {

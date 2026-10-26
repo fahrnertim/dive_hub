@@ -137,6 +137,11 @@ export interface OutgoingParticipant {
   name: string;
   role: ParticipantRole;
   ids: Partial<Record<DiverSource, string>>;
+  /**
+   * The entry of the dive's Diver's own list at a source (SSI: the buddy list) remembered for this Participant's Diver.
+   * Set only where one is remembered; the adapter reads its own source's.
+   */
+  entries?: Partial<Record<DiverSource, string>>;
 }
 
 export interface Series {

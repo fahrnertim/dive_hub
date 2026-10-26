@@ -14341,7 +14341,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             /** @description With provider_number_taken: the dive at the Provider that has the number */
@@ -14562,7 +14562,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             /** @description With provider_number_taken: the dive at the Provider that has the number */
@@ -14752,7 +14752,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             /** @description With provider_number_taken: the dive at the Provider that has the number */
@@ -14955,7 +14955,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             /** @description With provider_number_taken: the dive at the Provider that has the number */
@@ -15148,7 +15148,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             /** @description With provider_number_taken: the dive at the Provider that has the number */
@@ -15431,7 +15431,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             /** @description With provider_number_taken: the dive at the Provider that has the number */
@@ -15625,7 +15625,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             /** @description With provider_number_taken: the dive at the Provider that has the number */
@@ -15945,7 +15945,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             /** @description With provider_number_taken: the dive at the Provider that has the number */
@@ -16189,7 +16189,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             /** @description With provider_number_taken: the dive at the Provider that has the number */
@@ -16398,7 +16398,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             /** @description With provider_number_taken: the dive at the Provider that has the number */
@@ -16629,7 +16629,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             /** @description With provider_number_taken: the dive at the Provider that has the number */
@@ -16822,7 +16822,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             /** @description With provider_number_taken: the dive at the Provider that has the number */
@@ -17017,7 +17017,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             /** @description With provider_number_taken: the dive at the Provider that has the number */
@@ -17295,7 +17295,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             current: null | {
@@ -17466,7 +17466,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             current: null | {
@@ -17719,7 +17719,7 @@ export interface paths {
                                     diverName?: string;
                                     /** @enum {unknown} */
                                     role?: "buddy" | "guide" | "instructor";
-                                    /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                    /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                     fixes?: string[];
                                 }[];
                                 current: null | {
@@ -17891,7 +17891,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             /** @description With provider_number_taken: the dive at the Provider that has the number */
@@ -17996,7 +17996,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             current: null | {
@@ -18167,7 +18167,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             /** @description With provider_number_taken: the dive at the Provider that has the number */
@@ -18359,7 +18359,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             /** @description With provider_number_taken: the dive at the Provider that has the number */
@@ -18553,7 +18553,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             /** @description With provider_number_taken: the dive at the Provider that has the number */
@@ -18678,7 +18678,7 @@ export interface paths {
                                     diverName?: string;
                                     /** @enum {unknown} */
                                     role?: "buddy" | "guide" | "instructor";
-                                    /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                    /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                     fixes?: string[];
                                 }[];
                                 current: null | {
@@ -18850,7 +18850,7 @@ export interface paths {
                                 diverName?: string;
                                 /** @enum {unknown} */
                                 role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}) */
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
                                 fixes?: string[];
                             }[];
                             /** @description With provider_number_taken: the dive at the Provider that has the number */

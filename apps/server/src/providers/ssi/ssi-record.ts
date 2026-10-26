@@ -325,11 +325,11 @@ export function buddyIdsOf(record: SsiRecord | null | undefined): number[] {
 }
 
 /**
- * What was pushed, reduced to what matters for "changed since": a hash of our own fields and the SSI accounts of the
- * Participants (their entry IDs are only known with the buddy list, which the status doesn't read).
+ * What was pushed, reduced to what matters for "changed since": a hash of our own fields and the SSI accounts (or
+ * remembered entries) of the Participants (their entry IDs are only known with the buddy list, which the status doesn't read).
  */
 export function fingerprint(d: DiveForSsi): string {
-  const buddies = d.participants.flatMap((p) => (p.ids.ssi ? [p.ids.ssi] : [])).sort();
+  const buddies = d.participants.flatMap((p) => (p.ids.ssi ? [p.ids.ssi] : p.entries?.ssi ? [`entry:${p.entries.ssi}`] : [])).sort();
   return createHash('sha256').update(JSON.stringify({ ...ownFields(d), buddies })).digest('base64url');
 }
 

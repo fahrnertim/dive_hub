@@ -20,7 +20,7 @@ import {
 } from './provider.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { currentRemote, type PushRow } from './remote-state.js';
-import { blocking, forProvider, leftOutBy, unmetRequirements } from './requirements.js';
+import { blocking, forProvider, leftOutBy, offersListEntries, unmetRequirements } from './requirements.js';
 import { siteForSend } from './site-for-send.js';
 import { comparableOf, planSend, same, type Choice, type Comparable, type SendPlan, type SyncedField } from './three-way.js';
 
@@ -221,8 +221,8 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
    * The Dive as this Provider gets it, and what of its requirements is unmet (ADR 0029): from Dive Hub's data alone.
    * Participants an advisory requirement leaves out aren't in it.
    */
-  function prepared(exports: { requirements: Parameters<typeof unmetRequirements>[0] }, loaded: Awaited<ReturnType<typeof loadOutgoingDive>>) {
-    const unmet = unmetRequirements(exports.requirements, loaded.site, loaded.outgoing);
+  function prepared(adapter: ProviderAdapter, exports: { requirements: Parameters<typeof unmetRequirements>[0] }, loaded: Awaited<ReturnType<typeof loadOutgoingDive>>) {
+    const unmet = unmetRequirements(exports.requirements, loaded.site, loaded.outgoing, { listEntries: offersListEntries(adapter.capabilities) });
     return { unmet, outgoing: forProvider(loaded.outgoing, unmet) };
   }
 
@@ -339,7 +339,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     const missed = (x?.plan.take ?? []).filter((f) => !applied.includes(f) && !(f === 'cylinder' && x!.remote.cylinder === null));
     const deferred = [...(x?.deferred ?? []), ...missed];
     const reloaded = await loadOutgoingDive(db, userId, diveId, read ? { remoteSiteIds: read.dive.siteIds } : {});
-    const now = prepared(exports, reloaded);
+    const now = prepared(adapter, exports, reloaded);
     requirementsMet(adapter, now);
     const wanted = numbersFor(conn, exports, reloaded.row.number);
     const leave: Leave = {
@@ -383,7 +383,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
   async function statusAt(userId: string, provider: string, loaded: Awaited<ReturnType<typeof loadOutgoingDive>>) {
     const { adapter, dives, exports } = exporter(provider);
     const { row } = loaded;
-    const { unmet, outgoing } = prepared(exports, loaded);
+    const { unmet, outgoing } = prepared(adapter, exports, loaded);
     const conn = await connections.forDiver(userId, row.diverId, adapter.id);
     const pushes = await pushesOf(row.id, adapter.id);
     const current = currentRemote(pushes);
@@ -470,7 +470,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
       const { adapter, dives, exports } = exporter(provider);
       const first = await loadOutgoingDive(db, userId, diveId);
       const conn = await connectionOrThrow(userId, first.row.diverId, adapter);
-      requirementsMet(adapter, prepared(exports, first), { beforeSite: true });
+      requirementsMet(adapter, prepared(adapter, exports, first), { beforeSite: true });
       const bySend = exports.requirements.find((r) => r.type === 'site_external_id' && r.createdBySend);
       // What an update took, kept across a retry after a sign-in.
       const taken = new Set<SyncedField>();
@@ -486,7 +486,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
         }
         const loaded = await loadOutgoingDive(db, userId, diveId);
         const { row } = loaded;
-        const sending = prepared(exports, loaded);
+        const sending = prepared(adapter, exports, loaded);
         const { outgoing } = sending;
         requirementsMet(adapter, sending);
         const wanted = numbersFor(conn, exports, row.number);
