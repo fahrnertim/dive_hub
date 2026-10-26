@@ -412,7 +412,10 @@ test('a failed browser run is kept with its snapshot and its failed tests, and c
   assert.equal(failedRun('e2e', repo.cwd), null);
   const tree = snapshot(repo.cwd);
   recordFailed('e2e', tree, { ids: ['b-id', 'a-id'], tests: [] }, repo.cwd);
-  assert.deepEqual(failedRun('e2e', repo.cwd)?.failedTests, ['a-id', 'b-id']);
+  const { base, at, ...rest } = failedRun('e2e', repo.cwd);
+  assert.deepEqual(rest, { tree, failedTests: ['a-id', 'b-id'], owed: [] });
+  assert.match(base, /^[0-9a-f]{40}$/);
+  assert.match(at, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
   clearFailed('e2e', repo.cwd);
   assert.equal(failedRun('e2e', repo.cwd), null);
   clearFailed('e2e', repo.cwd); // clearing twice is fine
@@ -423,9 +426,10 @@ test('a failed browser run keeps its failed tests by id and by title, and an old
   t.after(repo.drop);
   const tree = snapshot(repo.cwd);
   const line = 'ui-quality.spec.ts › English, light, desktop › Divers, a diver’s certifications';
-  recordFailed('e2e', tree, { ids: ['b-id', 'a-id'], tests: [line] }, repo.cwd);
+  const odd = "tools.spec.ts › 16 % of the “Shark’s” sites: it's \"quoted\"";
+  recordFailed('e2e', tree, { ids: ['b-id', 'a-id'], tests: [odd, line] }, repo.cwd);
   const { base, at, ...rest } = failedRun('e2e', repo.cwd);
-  assert.deepEqual(rest, { tree, failedTests: ['a-id', 'b-id'], owed: [line] });
+  assert.deepEqual(rest, { tree, failedTests: ['a-id', 'b-id'], owed: [line, odd].sort() });
   assert.match(base, /^[0-9a-f]{40}$/);
   assert.match(at, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
   // A record from before the titles: a bare list of ids.
