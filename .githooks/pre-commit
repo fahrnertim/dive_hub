@@ -2,4 +2,4 @@
 # Runs the check by what changed before every commit (ADR 0023). Installed per clone with `pnpm hooks:install`
 # (sets core.hooksPath to .githooks). It checks the working tree, not only what is staged: with code changes left
 # unstaged, a commit of documentation alone still waits for their check.
-exec pnpm check
+CHECK_FROM_HOOK=1 exec pnpm check

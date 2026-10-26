@@ -19,6 +19,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import { QUIET, STEPS, browserGrepInvert, browserTestList, listedTests, changedSince, variantsRun, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, keptFailures, failedTestsFromReport, REPORT, fullPlan, lintTargets, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
+import { appendRun, browserStats, logPath } from './check-log.mjs';
 import { runLanes, takeLock } from './check-run.mjs';
 
 const args = process.argv.slice(2);
@@ -40,6 +41,26 @@ if (!args.includes('--dry')) {
   process.on('exit', lock.release);
   // The steps' own Ctrl-C handling (runLanes) ends the run; anywhere else the default would skip the exit handlers.
   process.on('SIGINT', () => { if (!lanesRunning) process.exit(130); });
+}
+
+const git = (cmd) => spawnSync(`git ${cmd}`, { encoding: 'utf8', shell: true }).stdout.trim();
+
+/**
+ * Appends this run to the local run log (`check-runs.jsonl`, read by `pnpm check:log`), for a run that ran steps; never in
+ * CI. The check's result is unchanged when the log cannot be written: one line says so.
+ */
+function logRun({ steps, results, browserRan }) {
+  if (process.env.CI) return;
+  const statuses = results.map(({ status }) => status);
+  const result = statuses.includes(null) ? 'interrupted' : statuses.some((status) => status !== 0) ? 'failed' : 'passed';
+  const entry = {
+    at: new Date().toISOString(), branch: git('symbolic-ref --short -q HEAD') || null, head: git('rev-parse --short HEAD'),
+    by: process.env.CHECK_FROM_HOOK ? 'hook' : 'person', args, wall: Math.round(process.uptime()), result, steps,
+  };
+  if (browserRan) {
+    try { entry.browser = browserStats(JSON.parse(readFileSync(REPORT, 'utf8'))); } catch { /* no report */ }
+  }
+  if (!appendRun(entry, logPath())) console.log('check: run log skipped (could not write check-runs.jsonl)');
 }
 
 const LAST_RUN = 'apps/web/test-results/.last-run.json';
@@ -93,6 +114,7 @@ if (args.includes('--failed')) {
   console.log(`check: the ${failed.length} browser test(s) that failed in the last browser run; ${outcome}`);
   const startedAt = Date.now();
   const status = spawnSync('pnpm --filter @dive-hub/web test:e2e --last-failed', { stdio: 'inherit', shell: true }).status ?? 1;
+  logRun({ steps: [{ step: 'e2e', from: '--failed', changed: failed.length, plan: 'failed', seconds: Math.round((Date.now() - startedAt) / 1000), status }], results: [{ status }], browserRan: true });
   if (verdict.renews && status === 0) {
     recordGreen('e2e', tree);
     clearFailed('e2e');
@@ -162,7 +184,7 @@ function otherSteps() {
     const file = dry ? resolve(CACHE, 'lint-files.txt') : listFile('lint-files.txt', lintFiles);
     lane.push({ name: `lint and module boundaries (${count} changed file(s))`, command: `node scripts/check-lint.mjs --files-from "${file}"`, step: 'lint' });
   }
-  if (plan.scripts) lane.push({ name: 'check script tests', command: 'node --test scripts/check-lib.test.mjs scripts/agent-lib.test.mjs scripts/check-run.test.mjs', step: 'scripts' });
+  if (plan.scripts) lane.push({ name: 'check script tests', command: 'node --test scripts/check-lib.test.mjs scripts/agent-lib.test.mjs scripts/check-run.test.mjs scripts/check-log.test.mjs', step: 'scripts' });
   if (plan.server !== 'none') lane.push({ name: `server tests (${plan.server})`, command: unitTests('server', plan.server), step: 'server' });
   if (plan.web !== 'none') lane.push({ name: `web unit tests (${plan.web})`, command: unitTests('web', plan.web), step: 'web' });
   return lane;
@@ -304,4 +326,11 @@ function summary(results) {
 
 lanesRunning = true;
 const results = await runLanes(lanes, { sequential, outDir: resolve(CACHE, 'logs'), onEnd: stepEnded });
-process.exit(summary(results));
+const code = summary(results);
+const all = unlisted ? [unlisted, ...results] : results;
+logRun({
+  steps: all.filter(({ step }) => step).map(({ step, seconds, status }) => ({ step, from: since[step].from, changed: since[step].changed.length, plan: plan[step], seconds: Math.round(seconds), status })),
+  results: all,
+  browserRan: all.some(({ step, seconds }) => step === 'e2e' && seconds > 0),
+});
+process.exit(code);
