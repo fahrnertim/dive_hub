@@ -1,7 +1,7 @@
 ---
 title: No second run of tested browser tests - implementation plan
 summary: Five tasks - browser test setup and fixtures plan no browser tests; the passed-tests record and its pure helpers in check-lib.mjs; pnpm check --tests <filter> in check.mjs; pnpm check leaves out recorded passes the map doesn't reach; the ADR 0023 amendment and docs, then pnpm check, the architecture review and a PR.
-status: draft
+status: approved
 date: 2026-10-26
 ---
 
