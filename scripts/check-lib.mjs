@@ -19,16 +19,6 @@ const AREAS = [
   [/^apps\/web\/src\/CodeScanner\.tsx$|^apps\/web\/src\/lib\/qr-reader\.ts$/, ['@sites', '@divers']],
   [/^apps\/web\/src\/lib\/address-search\.ts$/, ['@sites', '@dives']],
   [/^apps\/web\/src\/(DiveDetail|DiveEditForm|DiveHistory|DiveList|ProfileSketch|DepthProfile|ProfilePlot|Decisions|ReviewPage|ReviewStrip|ReviewRows|ImportPanel|DeleteDive|DeletedDives|MergeDive|LogbookChecks|Participants|Assessment|Cylinders|Weighting|LeadHint|PushRun).tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|tanks|cylinders|weighting|sketch|logbook|review|devices|importable|deletion|assessment)\.ts$/, ['@dives']],
-  // The Dive the deletion browser tests delete and restore (ADR 0026).
-  [/^apps\/web\/e2e\/fixtures\/deletable-computer\.fit$/, ['@dives']],
-  // The two computers' files of the Dives the merging browser tests merge (ADR 0038).
-  [/^apps\/web\/e2e\/fixtures\/mergeable-(main|backup)\.fit$/, ['@dives']],
-  // The Dive whose assessment has several findings (ADR 0036).
-  [/^apps\/web\/e2e\/fixtures\/assessed-computer\.fit$/, ['@dives']],
-  // The Suunto dive a browser test imports (ADR 0037).
-  [/^apps\/web\/e2e\/fixtures\/suunto-d5\.json$/, ['@dives']],
-  // The upload with several kinds of dive, for the choice of what to import (ADR 0044).
-  [/^apps\/web\/e2e\/fixtures\/account-export\.zip$/, ['@dives']],
   // A Diver's codes and details, and taking a scanned code (ADR 0043): on the divers page; the codes also show on a Dive.
   [/^apps\/web\/src\/DiverCodes\.tsx$/, ['@divers', '@dives']],
   [/^apps\/web\/src\/DiversPage\.tsx$/, ['@divers']],
@@ -100,7 +90,7 @@ export const fullPlan = () => ({ typecheck: true, lint: 'all', scripts: true, se
  * - Under apps/server/test (helpers, fixtures, one-off scripts): the server tests that import the file; the test
  *   setup and data files (read, not imported) all server tests; every browser test only when the browser tests'
  *   server loads the file (`loads`; without it, every helper counts as loaded).
- * - Under apps/web/e2e (setup and data): every browser test. The review capture is not part of the check.
+ * - Under apps/web/e2e (setup, helpers, fixtures): no browser tests; ADR 0023, amendment of 2026-10-26 (no second run).
  */
 function planTestSupport(path, plan, more, loads) {
   if (path.startsWith('apps/server/test/')) {
@@ -118,8 +108,7 @@ function planTestSupport(path, plan, more, loads) {
   }
   if (path.startsWith('apps/web/e2e/')) {
     if (!path.endsWith('.capture.ts')) {
-      plan.e2e = 'all';
-      plan.notes.push({ text: `${path} is browser test setup or data, so all browser tests run`, steps: ['e2e'] });
+      plan.notes.push({ text: `${path} is browser test setup or data: no browser tests run for it; run the tests it is for with pnpm check --tests <filter> (CI runs them all)`, steps: ['e2e'] });
     }
     return true;
   }
@@ -400,20 +389,41 @@ const failedRef = (step) => `refs/check/failed-${step}`;
 /** Playwright's JSON report (apps/web/playwright.config.ts), written next to `.last-run.json`. */
 export const REPORT = 'apps/web/test-results/report.json';
 
+/** Calls `visit(spec, line)` for each spec of a Playwright JSON report; `line` is its `--test-list` line. */
+function eachSpec(report, visit) {
+  const walk = (suite, describes) => {
+    for (const spec of suite.specs ?? []) visit(spec, [spec.file, ...describes, spec.title].join(' › '));
+    for (const child of suite.suites ?? []) walk(child, [...describes, child.title]);
+  };
+  for (const fileSuite of report?.suites ?? []) walk(fileSuite, []);
+}
+
+const lastStatuses = (spec) => (spec.tests ?? []).map((test) => test.results?.at(-1)?.status);
+
+/**
+ * Every test of a Playwright JSON report (ADR 0023, amendment of 2026-10-26 (no second run)): its `--test-list` line,
+ * spec file and tags (with the `@`), and whether it passed (every test's last result passed), was skipped (every one)
+ * or failed (anything else, a timeout too).
+ */
+export function reportedTests(report) {
+  const tests = [];
+  eachSpec(report, (spec, line) => {
+    const last = lastStatuses(spec);
+    const status = last.length > 0 && last.every((s) => s === 'passed') ? 'passed' : last.every((s) => s === 'skipped') ? 'skipped' : 'failed';
+    tests.push({ line, file: spec.file, tags: (spec.tags ?? []).map((tag) => `@${tag}`), status });
+  });
+  return tests;
+}
+
 /**
  * The tests of a Playwright JSON report whose last result is failed or timed out, as `--test-list` lines:
  * `<file relative to testDir> › <describe> › … › <title>` (no project, no tags, no line numbers).
  */
 export function failedTestsFromReport(report) {
   const lines = [];
-  const walk = (suite, describes) => {
-    for (const spec of suite.specs ?? []) {
-      const failed = (spec.tests ?? []).some((test) => ['failed', 'timedOut'].includes(test.results?.at(-1)?.status));
-      if (failed) lines.push([spec.file, ...describes, spec.title].join(' › '));
-    }
-    for (const child of suite.suites ?? []) walk(child, [...describes, child.title]);
-  };
-  for (const fileSuite of report?.suites ?? []) walk(fileSuite, []);
+  eachSpec(report, (spec, line) => {
+    if (lastStatuses(spec).some((s) => ['failed', 'timedOut'].includes(s))) lines.push(line);
+  });
   return lines;
 }
 
@@ -452,6 +462,61 @@ export function clearFailed(step, cwd = process.cwd()) {
   try {
     git(['update-ref', '-d', failedRef(step)], cwd);
   } catch { /* none kept */ }
+}
+
+// Browser tests passed by hand (ADR 0023, amendment of 2026-10-26 (no second run)): the snapshot they passed on and
+// the tests, as a commit held by a local ref like the failed runs.
+const PASSED_REF = 'refs/check/passed-e2e';
+
+/** Records that `tests` (`{ line, file, tags }`) passed on the snapshot `tree`. */
+export function recordPassed(tree, tests, cwd = process.cwd()) {
+  const sorted = [...tests].sort((a, b) => (a.line < b.line ? -1 : a.line > b.line ? 1 : 0)).map(({ line, file, tags }) => ({ line, file, tags }));
+  const message = `e2e: passed by hand
+
+${JSON.stringify({ tests: sorted })}`;
+  const commit = git(['-c', 'user.name=pnpm check', '-c', 'user.email=check@localhost', 'commit-tree', tree, '-m', message], cwd);
+  git(['update-ref', PASSED_REF, commit], cwd);
+}
+
+/** The recorded passed tests, or null: `{ tree, base, at, tests }`. */
+export function passedRun(cwd = process.cwd()) {
+  try {
+    const tree = git(['rev-parse', `${PASSED_REF}^{tree}`], cwd);
+    const base = git(['rev-parse', PASSED_REF], cwd);
+    const at = git(['log', '-1', '--format=%cd', '--date=format:%Y-%m-%d %H:%M', PASSED_REF, '--'], cwd);
+    const { tests } = JSON.parse(git(['log', '-1', '--format=%b', PASSED_REF, '--'], cwd));
+    return { tree, base, at, tests };
+  } catch {
+    return null;
+  }
+}
+
+/** Forgets the passed tests. */
+export function clearPassed(cwd = process.cwd()) {
+  try {
+    git(['update-ref', '-d', PASSED_REF], cwd);
+  } catch { /* none kept */ }
+}
+
+/** The passed tests a plan does not reach: none for a full run; a test goes when its spec or one of its areas is in the plan. */
+export function stillPassed(tests, plan) {
+  if (plan.e2e === 'all') return [];
+  return tests.filter((test) => !plan.specs.has(test.file) && !test.tags.some((tag) => plan.areas.has(tag)));
+}
+
+/** The recorded passed tests no change since the record reaches, with the record's date, or null without a record. */
+export function passedSince(tree, cwd = process.cwd()) {
+  const run = passedRun(cwd);
+  if (!run) return null;
+  const { changed } = forBrowserTests(changedSince(run.tree, tree, cwd), run.tree, tree, cwd);
+  return { at: run.at, tests: stillPassed(run.tests, planFor(changed, { e2eServerLoads: e2eServerLoads(cwd) })) };
+}
+
+/** The tests still passed, minus those a run reported, plus the ones that run passed. */
+export function carryPassed(still, reported) {
+  const named = new Set(reported.map((test) => test.line));
+  const passed = reported.filter((test) => test.status === 'passed').map(({ line, file, tags }) => ({ line, file, tags }));
+  return [...still.filter((test) => !named.has(test.line)), ...passed].sort((a, b) => (a.line < b.line ? -1 : a.line > b.line ? 1 : 0));
 }
 
 /**
@@ -575,9 +640,39 @@ export function listedTests(stdout) {
 
 /**
  * One test list from the planned tests plus the owed (previously failed) ones that still exist, in the order of
- * `all`; `dropped` are the owed tests that no longer exist.
+ * `all`, without the `credited` ones (passed by hand: ADR 0023, amendment of 2026-10-26 (no second run)); `dropped`
+ * are the owed tests that no longer exist, `left` how many lines the credit removed.
  */
-export function browserTestList({ all, planned, owed }) {
+export function browserTestList({ all, planned, owed, credited = [] }) {
   const wanted = new Set([...planned, ...owed.filter((line) => all.includes(line))]);
-  return { lines: all.filter((line) => wanted.has(line)), dropped: owed.filter((line) => !all.includes(line)) };
+  const lines = all.filter((line) => wanted.has(line));
+  const skip = new Set(credited);
+  return { lines: lines.filter((line) => !skip.has(line)), dropped: owed.filter((line) => !all.includes(line)), left: lines.filter((line) => skip.has(line)).length };
+}
+
+/** The arguments after `--tests` (all Playwright's), or why `--tests` can't run (ADR 0023, amendment of 2026-10-26 (no second run)). */
+export function testsFilter(args) {
+  const at = args.indexOf('--tests');
+  const clash = args.slice(0, at).find((arg) => ['--failed', '--full', '--dry', '--base', '--files'].includes(arg));
+  if (clash) return { error: `--tests can't be combined with ${clash}` };
+  const filter = args.slice(at + 1);
+  if (filter.length === 0) return { error: 'pnpm check --tests <files, file:line or --grep "…">: name the browser tests to run' };
+  return { filter };
+}
+
+/**
+ * Arguments as one command line for a shell (only when pnpm's own path isn't known, else they go as an array):
+ * single-quoted on POSIX; on Windows quoted where cmd.exe would split or pipe, and refused where it would change them
+ * (`"` and `%` can't be escaped reliably).
+ */
+export function shellArgs(args, platform = process.platform) {
+  if (platform !== 'win32') return { command: args.map((arg) => `'${arg.replaceAll("'", "'\\''")}'`).join(' ') };
+  if (args.some((arg) => /["%]/.test(arg))) return { error: "--tests: a filter with \" or % can't be passed through cmd.exe; run it through pnpm check" };
+  return { command: args.map((arg) => (arg === '' || /[\s|&<>^()]/.test(arg) ? `"${arg}"` : arg)).join(' ') };
+}
+
+/** The tests of a Playwright report to record as passed, or null and why not when the report isn't from this run. */
+export function passedToRecord({ report, writtenAt, startedAt }) {
+  if (!report || writtenAt === null || writtenAt < startedAt) return { reported: null, why: "Playwright's report is from an earlier run" };
+  return { reported: reportedTests(report), why: null };
 }

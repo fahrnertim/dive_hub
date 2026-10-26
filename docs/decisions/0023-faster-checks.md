@@ -1,6 +1,6 @@
 ---
 title: "ADR 0023: Checks by what changed, and a faster full check"
-summary: pnpm check runs typecheck, the unit tests whose imports changed and the browser tests of the areas touched (tags); pnpm check:full runs everything, before a commit as decided, since the amendment of 2026-10-08 before a push or a release. pnpm check counts each step from its last green run (amendment of 2026-10-08) or from where the branch left main, whichever leaves fewer files (amendment of 2026-10-24) and leaves two ui-quality variants to the full check; changed texts run the pages that use them; --failed reruns the failed browser tests. Browser tests run on 2 workers with a server and database each, prepared once; no trace recording by default; axe in 2 of 4 ui-quality variants; server tests share modules. Full check 10.5 → 3 min. Amendment of 2026-10-24: test helpers no longer run everything, a passing --failed renews the browser record, one ui-quality variant in pnpm check, and CI's full check on the pull request is the gate (no full check before a push). Amendment of 2026-10-26: a check after a fix counts from the failed browser run, every step runs to its end with the browser step beside the others, and a local run log (pnpm check:log).
+summary: pnpm check runs typecheck, the unit tests whose imports changed and the browser tests of the areas touched (tags); pnpm check:full runs everything, before a commit as decided, since the amendment of 2026-10-08 before a push or a release. pnpm check counts each step from its last green run (amendment of 2026-10-08) or from where the branch left main, whichever leaves fewer files (amendment of 2026-10-24) and leaves two ui-quality variants to the full check; changed texts run the pages that use them; --failed reruns the failed browser tests. Browser tests run on 2 workers with a server and database each, prepared once; no trace recording by default; axe in 2 of 4 ui-quality variants; server tests share modules. Full check 10.5 → 3 min. Amendment of 2026-10-24: test helpers no longer run everything, a passing --failed renews the browser record, one ui-quality variant in pnpm check, and CI's full check on the pull request is the gate (no full check before a push). Amendment of 2026-10-26: a check after a fix counts from the failed browser run, every step runs to its end with the browser step beside the others, and a local run log (pnpm check:log). Amendment of 2026-10-26 (second): browser test setup and fixtures run no browser tests locally, and --tests <filter> records passed browser tests that a later check leaves out.
 status: accepted
 date: 2026-10-04
 ---
@@ -383,3 +383,17 @@ Decided:
   when a fast step fails (sooner answer, but the browser tests run again after the fix; owner chose to let them finish).
 - *Result (2026-10-26):* a check that plans everything 473 s (550 s before; target 443 s); the rerun after a fix 82 s for
   the browser step (the failed tests plus `@tools|@layout`), 90 s for the whole check. See the [design's Result](../superpowers/specs/2026-10-26-faster-local-check-design.md#result).
+
+## Amendment 2026-10-26: no second run of tested browser tests
+Why: the owner, 2026-10-26, after PR #5: a helper fix verified on its 7 tests was followed by all ~390 browser tests
+in `pnpm check` (418 s) and again in CI. Decided with the owner; [design](../superpowers/specs/2026-10-26-check-credit-by-hand-design.md).
+- **Browser test setup and data run no browser tests locally.** A changed file under `apps/web/e2e/` that isn't a
+  spec (helpers, setup, fixtures) plans none; typecheck and lint run. Whoever changes it runs the tests it is for
+  with `--tests`; CI runs them all. This replaces, in the amendment of 2026-10-24, "Browser test setup and data
+  (`apps/web/e2e/`, not specs) run every browser test", and the fixtures' entries in the area map go.
+- **`pnpm check --tests <filter>`** runs the given browser tests as `pnpm check` would (axe once, the same variants
+  left out) and records each passed test on its snapshot (`refs/check/passed-e2e`). `pnpm check` leaves out every
+  recorded test that the files changed since don't reach through the map (all browser tests, its spec or one of its
+  areas); owed tests among them count as paid. A green browser step clears the record.
+- *What is given up:* a helper or fixture change that breaks a test its author didn't run is found by CI, not
+  before the push.

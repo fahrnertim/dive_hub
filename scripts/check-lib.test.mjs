@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { FULL_ONLY, VARIANTS, browserGrepInvert, variantsRun } from './check-lib.mjs';
-import { browserTestList, baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, failedTestsFromReport, forBrowserTests, greenRun, keptFailures, lintTargets, listedTests, planFor, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
+import { testsFilter, shellArgs, passedToRecord, browserTestList, baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, clearPassed, carryPassed, passedRun, passedSince, recordPassed, reportedTests, stillPassed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, failedTestsFromReport, forBrowserTests, greenRun, keptFailures, lintTargets, listedTests, planFor, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
 
 /** A git repository with one commit holding `files`. */
 function repository(files) {
@@ -348,13 +348,25 @@ test('the server test setup and fixture data run all server tests; neither runs 
   assert.equal(planFor(['apps/server/test/support.ts'], none).e2e, 'none');
 });
 
-test('the browser test setup and its data run every browser test and nothing else; the review capture runs none', () => {
-  for (const path of ['apps/web/e2e/support.ts', 'apps/web/e2e/global-setup.ts', 'apps/web/e2e/prepare.ts', 'apps/web/e2e/fixtures/main-computer.fit']) {
+test('browser test setup, helpers and fixtures run no browser tests; typecheck and lint run; the review capture runs none', () => {
+  for (const path of ['apps/web/e2e/support.ts', 'apps/web/e2e/global-setup.ts', 'apps/web/e2e/prepare.ts',
+    'apps/web/e2e/fixtures/main-computer.fit', 'apps/web/e2e/fixtures/mergeable-main.fit', 'apps/web/e2e/fixtures/suunto-d5.json']) {
     const plan = planFor([path]);
-    assert.deepEqual([plan.server, plan.web, plan.e2e], ['none', 'none', 'all'], path);
+    assert.deepEqual([plan.typecheck, plan.lint, plan.server, plan.web, plan.e2e, plan.areas.size], [true, 'changed', 'none', 'none', 'none', 0], path);
+    assert.match(plan.notes.map((note) => note.text).join('\n'), /no browser tests run for it; run the tests it is for with pnpm check --tests/, path);
   }
   const capture = planFor(['apps/web/e2e/review-material.capture.ts']);
   assert.deepEqual([capture.typecheck, capture.server, capture.web, capture.e2e], [true, 'none', 'none', 'none']);
+  // A spec changed beside a helper still runs itself.
+  const both = planFor(['apps/web/e2e/support.ts', 'apps/web/e2e/sites.spec.ts']);
+  assert.deepEqual([both.e2e, [...both.specs]], ['some', ['sites.spec.ts']]);
+});
+
+test('PR #5 replayed: a change to e2e/support.ts alone plans no browser tests in pnpm check', () => {
+  const changed = ['apps/web/e2e/support.ts'];
+  const plan = planSteps(Object.fromEntries(['typecheck', 'lint', 'scripts', 'server', 'web', 'e2e'].map((step) => [step, changed])));
+  assert.deepEqual([plan.typecheck, plan.lint, plan.e2e], [true, 'changed', 'none']);
+  assert.ok(plan.notes.some((note) => note.includes('apps/web/e2e/support.ts is browser test setup or data')));
 });
 
 test('the check scripts run their own tests only; the lint script also lints everything; one-off scripts and licences are quiet', () => {
@@ -566,6 +578,101 @@ test('a Playwright listing becomes test-list lines', () => {
 
 test('the test list is the planned tests plus the owed ones that still exist', () => {
   const all = ['a', 'b', 'c', 'd'];
-  assert.deepEqual(browserTestList({ all, planned: ['b'], owed: ['d', 'gone'] }), { lines: ['b', 'd'], dropped: ['gone'] });
-  assert.deepEqual(browserTestList({ all, planned: ['b', 'd'], owed: ['d'] }), { lines: ['b', 'd'], dropped: [] });
+  assert.deepEqual(browserTestList({ all, planned: ['b'], owed: ['d', 'gone'] }), { lines: ['b', 'd'], dropped: ['gone'], left: 0 });
+  assert.deepEqual(browserTestList({ all, planned: ['b', 'd'], owed: ['d'] }), { lines: ['b', 'd'], dropped: [], left: 0 });
+});
+
+// Amendment of 2026-10-26 (no second run): tests run by hand count.
+
+const spec = (file, title, tags, ...statuses) => ({ file, title, tags, tests: statuses.map((status) => ({ results: [{ status }] })) });
+
+test('a report names each test with its line, file, tags and whether it passed', () => {
+  const report = { suites: [{ title: 'sites.spec.ts', file: 'sites.spec.ts', suites: [{ title: 'Sites', specs: [
+    spec('sites.spec.ts', 'adds a “Shark’s” site', ['sites'], 'passed'),
+    spec('sites.spec.ts', 'fails', ['sites', 'layout'], 'failed'),
+    spec('sites.spec.ts', 'times out', ['sites'], 'timedOut'),
+    spec('sites.spec.ts', 'is skipped', ['sites'], 'skipped'),
+    spec('sites.spec.ts', 'has no tags', undefined, 'passed'),
+  ] }] }] };
+  assert.deepEqual(reportedTests(report), [
+    { line: 'sites.spec.ts › Sites › adds a “Shark’s” site', file: 'sites.spec.ts', tags: ['@sites'], status: 'passed' },
+    { line: 'sites.spec.ts › Sites › fails', file: 'sites.spec.ts', tags: ['@sites', '@layout'], status: 'failed' },
+    { line: 'sites.spec.ts › Sites › times out', file: 'sites.spec.ts', tags: ['@sites'], status: 'failed' },
+    { line: 'sites.spec.ts › Sites › is skipped', file: 'sites.spec.ts', tags: ['@sites'], status: 'skipped' },
+    { line: 'sites.spec.ts › Sites › has no tags', file: 'sites.spec.ts', tags: [], status: 'passed' },
+  ]);
+});
+
+test('the passed-tests record keeps its snapshot and tests, odd titles and all, and can be cleared', (t) => {
+  const repo = repository({ 'a.ts': 'a' });
+  t.after(repo.drop);
+  assert.equal(passedRun(repo.cwd), null);
+  const tree = snapshot(repo.cwd);
+  const odd = { line: "tools.spec.ts › 16 % of the “Shark’s” sites: it's \"quoted\"", file: 'tools.spec.ts', tags: ['@tools'] };
+  const plain = { line: 'a.spec.ts › one', file: 'a.spec.ts', tags: [] };
+  recordPassed(tree, [odd, plain], repo.cwd);
+  const { base, at, ...rest } = passedRun(repo.cwd);
+  assert.deepEqual(rest, { tree, tests: [plain, odd] });
+  assert.match(at, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
+  clearPassed(repo.cwd);
+  assert.equal(passedRun(repo.cwd), null);
+  clearPassed(repo.cwd);
+});
+
+test('a recorded test stays passed until the map reaches it: every test, its spec or one of its areas', () => {
+  const sites = { line: 'sites.spec.ts › adds', file: 'sites.spec.ts', tags: ['@sites'] };
+  const tools = { line: 'tools.spec.ts › plans', file: 'tools.spec.ts', tags: ['@tools'] };
+  const untagged = { line: 'misc.spec.ts › x', file: 'misc.spec.ts', tags: [] };
+  const all = [sites, tools, untagged];
+  assert.deepEqual(stillPassed(all, planFor([])), all);
+  assert.deepEqual(stillPassed(all, planFor(['apps/web/e2e/support.ts'])), all);
+  assert.deepEqual(stillPassed(all, planFor(['apps/web/src/SitesPage.tsx'])), [tools, untagged]);
+  assert.deepEqual(stillPassed(all, planFor(['apps/web/e2e/tools.spec.ts'])), [sites, untagged]);
+  assert.deepEqual(stillPassed(all, planFor(['package.json'])), []);
+});
+
+test('passes recorded on an earlier snapshot carry over unless a change reaches them', (t) => {
+  const repo = repository({ 'apps/web/src/SitesPage.tsx': 'a', 'apps/web/src/ToolsPage.tsx': 't' });
+  t.after(repo.drop);
+  const sites = { line: 'sites.spec.ts › adds', file: 'sites.spec.ts', tags: ['@sites'] };
+  const tools = { line: 'tools.spec.ts › plans', file: 'tools.spec.ts', tags: ['@tools'] };
+  recordPassed(snapshot(repo.cwd), [sites, tools], repo.cwd);
+  repo.write('apps/web/src/SitesPage.tsx', 'b');
+  const now = passedSince(snapshot(repo.cwd), repo.cwd);
+  assert.deepEqual(now.tests, [tools]);
+  const reported = [{ ...sites, status: 'passed' }, { line: 'tools.spec.ts › plans', file: 'tools.spec.ts', tags: ['@tools'], status: 'failed' }];
+  assert.deepEqual(carryPassed(now.tests, reported), [sites]);
+  const empty = repository({ 'x': 'x' });
+  t.after(empty.drop);
+  assert.equal(passedSince(snapshot(empty.cwd), empty.cwd), null);
+});
+
+test('the browser test list leaves out credited tests, and a credited test is never added by itself', () => {
+  const all = ['a › 1', 'a › 2', 'b › 1', 'c › 1'];
+  assert.deepEqual(browserTestList({ all, planned: ['a › 1', 'a › 2'], owed: ['b › 1', 'gone › 1'], credited: ['a › 2', 'b › 1', 'c › 1', 'gone › 2'] }),
+    { lines: ['a › 1'], dropped: ['gone › 1'], left: 2 });
+  assert.deepEqual(browserTestList({ all, planned: ['a › 1'], owed: [] }), { lines: ['a › 1'], dropped: [], left: 0 });
+});
+
+test('--tests takes everything after it as the filter, and refuses other modes or an empty filter', () => {
+  assert.deepEqual(testsFilter(['--tests', 'sites.spec.ts:12', '--grep', '@sites|@layout']), { filter: ['sites.spec.ts:12', '--grep', '@sites|@layout'] });
+  assert.match(testsFilter(['--tests']).error, /name the browser tests to run/);
+  assert.match(testsFilter(['--dry', '--tests', 'a.spec.ts']).error, /--tests can't be combined with --dry/);
+  assert.match(testsFilter(['--failed', '--tests', 'a.spec.ts']).error, /--failed/);
+});
+
+test('a filter reaches the fallback shell quoted for the platform, or is refused where cmd.exe would change it', () => {
+  const filter = ['sites.spec.ts:12', '--grep', '@sites|@layout', 'a b', ''];
+  assert.deepEqual(shellArgs(filter, 'win32'), { command: 'sites.spec.ts:12 --grep "@sites|@layout" "a b" ""' });
+  assert.match(shellArgs(['--grep', 'a "b|c"'], 'win32').error, /can't be passed through cmd\.exe/);
+  assert.match(shellArgs(['--grep', '100%'], 'win32').error, /can't be passed through cmd\.exe/);
+  assert.deepEqual(shellArgs(filter, 'linux'), { command: "'sites.spec.ts:12' '--grep' '@sites|@layout' 'a b' ''" });
+  assert.deepEqual(shellArgs(['--grep', "it's (a|b);$x*"], 'linux'), { command: "'--grep' 'it'\\''s (a|b);$x*'" });
+});
+
+test('--tests records only from a report written during its run', () => {
+  const report = { suites: [{ title: 'a.spec.ts', file: 'a.spec.ts', specs: [spec('a.spec.ts', 'one', ['tools'], 'passed')] }] };
+  assert.equal(passedToRecord({ report, writtenAt: 2000, startedAt: 1000 }).reported.length, 1);
+  assert.equal(passedToRecord({ report, writtenAt: 500, startedAt: 1000 }).reported, null);
+  assert.match(passedToRecord({ report: null, writtenAt: null, startedAt: 1000 }).why, /earlier run/);
 });

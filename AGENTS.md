@@ -29,7 +29,8 @@ Start at [docs/index.md](docs/index.md); it lists every document.
 - **Checks** ([ADR 0023](docs/decisions/0023-faster-checks.md)): `pnpm check` while working and before a commit (only what changed
   since its last green run); no full check before a push: CI's `pnpm check:full` on the PR is the gate. The review
   capture (`REVIEW_AREAS`) only when UI changed. After a fix, `pnpm check` again (it can count from the failed
-  browser run). `pnpm check --failed` reruns failed browser tests (green there renews the record); `pnpm check:log`
+  browser run). `pnpm check --failed` reruns failed browser tests (green there renews the record); a change to e2e helpers or fixtures runs no browser tests:
+  `pnpm check --tests <filter>` runs given ones and records them ([development.md](docs/development.md)); `pnpm check:log`
   sums the local run log. A PR whose CI fails after a green local check gets an entry in [check escapes](docs/agents/check-escapes.md).
   A docs-only commit needs no check. A new page or module gets its path in `scripts/check-lib.mjs`; a browser test an area tag.
 - **Gates** ([research](docs/research/2026-10-22-agent-guardrails.md)): an edit hook lints each file; run `pnpm hooks:install`

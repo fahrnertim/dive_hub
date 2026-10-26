@@ -1,7 +1,7 @@
 ---
 title: Don't run browser tests again that already passed, or that only test code reaches
 summary: pnpm check runs no browser tests for a change to browser test setup or helpers (CI runs them), and pnpm check --tests <filter> runs given browser tests through the check and records them as passed, so a later check plans only what is left; an ADR 0023 amendment.
-status: draft
+status: done
 risk: medium
 date: 2026-10-26
 ---
