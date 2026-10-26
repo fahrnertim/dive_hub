@@ -148,11 +148,16 @@ if (plan.lint === 'all' || (plan.lint === 'changed' && lintTargetsNow.eslint.len
 if (plan.scripts) steps.push(['check script tests', 'node --test scripts/check-lib.test.mjs scripts/agent-lib.test.mjs', 'scripts']);
 if (plan.server !== 'none') steps.push([`server tests (${plan.server})`, unitTests('server', plan.server), 'server']);
 if (plan.web !== 'none') steps.push([`web unit tests (${plan.web})`, unitTests('web', plan.web), 'web']);
-/** The `playwright test --list` lines (as `--test-list` lines) of the browser tests, narrowed by `filters`. */
+/** The `playwright test --list` lines (as `--test-list` lines) of the browser tests narrowed by `filters`; null when the listing failed. */
 function listBrowserTests(filters) {
-  const { stdout } = spawnSync(`pnpm --filter @dive-hub/web exec playwright test --project=e2e --list${filters}`, { encoding: 'utf8', shell: true });
-  return listedTests(stdout ?? '');
+  const { stdout, stderr, status } = spawnSync(`pnpm --filter @dive-hub/web exec playwright test --project=e2e --list${filters}`, { encoding: 'utf8', shell: true });
+  if (status === 0) return listedTests(stdout ?? '');
+  console.log(`${stdout ?? ''}${stderr ?? ''}`);
+  return null;
 }
+
+/** Set when the browser tests could not be listed: the failed run's record stays as it is. */
+let listingFailed = false;
 
 /**
  * After a failed run and a fix: the owed (failed) tests plus the planned ones, through one `--test-list` file
@@ -160,11 +165,18 @@ function listBrowserTests(filters) {
  */
 function browserOwedRun({ owed, filters, planned: plannedNone }) {
   const all = listBrowserTests('');
-  const { lines, dropped } = browserTestList({ all, planned: plannedNone ? [] : listBrowserTests(filters), owed });
+  const planned = plannedNone || !all ? [] : listBrowserTests(filters);
+  if (!all?.length || !planned) {
+    console.log('check: could not list the browser tests; the failed run stays owed');
+    listingFailed = true;
+    return 1;
+  }
+  const { lines, dropped } = browserTestList({ all, planned, owed });
   for (const line of dropped) console.log(`check: ${line} no longer exists; dropped from the owed tests`);
   if (lines.length === 0) { console.log('check: no owed browser test is left and none is planned; nothing to run'); return 0; }
-  const file = resolve('node_modules/.cache/check/e2e-tests.txt');
-  mkdirSync(resolve('node_modules/.cache/check'), { recursive: true });
+  const dir = resolve('node_modules/.cache/check');
+  const file = resolve(dir, 'e2e-tests.txt');
+  mkdirSync(dir, { recursive: true });
   writeFileSync(file, `${lines.join('\n')}\n`);
   console.log(`check: ${lines.length} browser test(s) in ${file}`);
   return spawnSync(pnpm(`--filter @dive-hub/web test:e2e --test-list "${file}"`), { stdio: 'inherit', shell: true }).status ?? 1;
@@ -226,7 +238,7 @@ for (const [name, cmd, step] of steps) {
     // A failed browser step keeps its files and failed tests: `pnpm check --failed` can then make it green.
     const kept = records && step === 'e2e' ? failuresSince(started) : { failedTests: null, why: null };
     if (kept.failedTests) recordFailed('e2e', tree, { ids: kept.failedTests, tests: failedTitlesSince(started) });
-    else if (records && step === 'e2e') clearFailed('e2e');
+    else if (records && step === 'e2e' && !listingFailed) clearFailed('e2e');
     console.log(`\n✗ ${name} failed\n${times.join('\n')}`);
     if (kept.failedTests) console.log('check: pnpm check --failed reruns the failed browser tests; if they pass on these files, the browser tests count as green');
     else if (kept.why) console.log(`check: nothing kept for pnpm check --failed: ${kept.why}`);

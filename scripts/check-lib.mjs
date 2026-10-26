@@ -318,12 +318,16 @@ export function greenRun(step, cwd = process.cwd()) {
   }
 }
 
-/** The files a candidate leaves to check, and the failed tests it owes on top. */
-const score = (candidate) => candidate.changed.length + (candidate.owed?.length ?? 0);
+/**
+ * What a candidate costs: its changed files, plus one unit when it owes failed tests. One rerun of the owed tests
+ * costs about what the areas of one changed file cost, however many tests are owed; and a green base that wins still
+ * plans every change since that green run (the fix and the change that failed), so the owed tests would not even be saved.
+ */
+const score = (candidate) => candidate.changed.length + (candidate.owed?.length ? 1 : 0);
 
 /**
- * Of the candidates `{ from, base, changed, owed? }` (in order of preference), the one with the fewest changed files
- * plus owed tests; a tie keeps the earlier one. Null when none.
+ * Of the candidates `{ from, base, changed, owed? }` (in order of preference), the one with the lowest score (the
+ * changed files, plus one when failed tests are owed); a tie keeps the earlier one. Null when none.
  */
 export function chooseBase(candidates) {
   return candidates.reduce((best, next) => (best && score(best) <= score(next) ? best : next), null);
@@ -374,7 +378,7 @@ export function baseCandidates(step, cwd = process.cwd()) {
 
 /**
  * Where `step` counts its changed files from (ADR 0023, amendment of 2026-10-24): of `baseCandidates`, the one that
- * leaves the fewest files, the owed tests of a failed run counting on top; a tie keeps the earlier candidate. Without
+ * leaves the fewest files, a failed run's owed tests counting as one more file; a tie keeps the earlier candidate. Without
  * any, the last commit. Returns `{ from, base, changed, owed }` (`owed` is empty unless the failed run won).
  */
 export function countingBase(step, tree, cwd = process.cwd()) {

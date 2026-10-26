@@ -306,6 +306,18 @@ test('a failed run loses to a base with fewer changed files and owed tests toget
   assert.deepEqual([chosen.changed, chosen.owed], [[], []]);
 });
 
+test('a failed run owing several tests wins a tie with the green run: its owed tests count as one unit', (t) => {
+  const repo = repository({ 'h.ts': 'h', 'f.ts': 'f' });
+  t.after(repo.drop);
+  recordGreen('e2e', snapshot(repo.cwd), repo.cwd);
+  repo.write('h.ts', 'h2');
+  recordFailed('e2e', snapshot(repo.cwd), { ids: ['x'], tests: ['t › one', 't › two', 't › three'] }, repo.cwd);
+  repo.write('f.ts', 'f2');
+  const chosen = countingBase('e2e', snapshot(repo.cwd), repo.cwd);
+  assert.match(chosen.from, /^the failed run of .+ \(3 failed test\(s\) owed\)$/);
+  assert.deepEqual([chosen.changed, chosen.owed.length], [['f.ts'], 3]);
+});
+
 // Amendment of 2026-10-24: unknown files don't run everything.
 
 test('a one-off script under the server fixtures runs only the server tests that import it, no browser test', () => {
