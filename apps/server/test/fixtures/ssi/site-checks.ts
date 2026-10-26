@@ -71,12 +71,12 @@ function findNewId(data: Record<string, unknown>): string | null {
   return null;
 }
 
-type Answer = { httpStatus: number | undefined; data: Record<string, unknown> | null; error: string | null };
-type Ask = (what: string, params: Record<string, string>, body?: Record<string, unknown>) => Promise<Answer>;
+export type Answer = { httpStatus: number | undefined; data: Record<string, unknown> | null; error: string | null };
+export type Ask = (what: string, params: Record<string, string>, body?: Record<string, unknown>) => Promise<Answer>;
 
 /** The transport with the HTTP status of the last call; a refusal or an HTTP error is an outcome to print, not a reason to stop. */
-interface Raw { status?: number; contentType?: string | null; text?: string }
-function makeAsk(access: string, raw: Raw = {}): Ask {
+export interface Raw { status?: number; contentType?: string | null; text?: string }
+export function makeAsk(access: string, raw: Raw = {}): Ask {
   let httpStatus: number | undefined;
   const transport = createSsiTransport({
     url: DEFAULT_SSI_URL, timeoutMs: 60_000,
@@ -100,7 +100,7 @@ function makeAsk(access: string, raw: Raw = {}): Ask {
   };
 }
 
-const outcome = (r: Answer) => `HTTP ${r.httpStatus ?? 'none'}${r.error ? `, error ${r.error}` : ''}`;
+export const outcome = (r: Answer) => `HTTP ${r.httpStatus ?? 'none'}${r.error ? `, error ${r.error}` : ''}`;
 
 async function logbookSites(ask: Ask) {
   const r = await ask('get_divelog', {});
@@ -265,7 +265,7 @@ const visibleDive = (siteSsiId: string): DiveForSsi => ({
   samples: { depth: { offsetsMs: [0, 20_000, 40_000, 60_000], values: [0, 1, 1, 0] }, temperature: { offsetsMs: [0], values: [20] } },
 });
 
-const findDive = async (client: SsiClient, access: string, id: string) =>
+export const findDive = async (client: SsiClient, access: string, id: string) =>
   (await client.logbook(access)).dives.find((d) => String(d.odin_user_log_id) === id);
 
 /** `site visible start`: one dive (2000-01-01 12:00, notes "Dive Hub test") on the test site, through Dive Hub's own record code. */
