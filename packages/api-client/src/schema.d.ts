@@ -13414,6 +13414,13 @@ export interface paths {
                             finishedAt: null | string;
                             dismissedAt: null | string;
                         } & {
+                            withoutSomeone: {
+                                diveId: string;
+                                /** Format: date-time */
+                                startsAt: string;
+                                /** @description Participants the sent Dive went without: no SSI account and no list entry, or not at the Provider */
+                                names: string[];
+                            }[];
                             items: {
                                 diveId: string;
                                 /** @description The server's order; don't rely on it being by date */

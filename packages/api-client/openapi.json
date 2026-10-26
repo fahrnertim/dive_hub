@@ -59040,9 +59040,38 @@
                     {
                       "type": "object",
                       "required": [
+                        "withoutSomeone",
                         "items"
                       ],
                       "properties": {
+                        "withoutSomeone": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "diveId",
+                              "startsAt",
+                              "names"
+                            ],
+                            "properties": {
+                              "diveId": {
+                                "type": "string"
+                              },
+                              "startsAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "names": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                },
+                                "description": "Participants the sent Dive went without: no SSI account and no list entry, or not at the Provider"
+                              }
+                            },
+                            "description": "A sent Dive whose Push left someone out"
+                          }
+                        },
                         "items": {
                           "type": "array",
                           "items": {

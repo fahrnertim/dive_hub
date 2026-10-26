@@ -601,6 +601,8 @@ repeatedly).
 - **Must show the run while it goes and after it:** `counts` over `counts.total` as progress, one Stop (`cancel`; the Dive
   being sent is finished first, `cancelRequested`), and the result. Poll `GET /api/push-runs` while a run is active; announce
   the start and the end, not every Dive. A run ends as `done`, `cancelled` or `stopped`.
+- **Say which sent Dives went without someone:** `GET /api/push-runs/{id}` carries `withoutSomeone` (`diveId`, `startsAt`, `names`):
+  sent Dives whose Push left Participants out. List them in the run's report.
 - **A `stopped` run says why and offers Continue** (`stopCode`: a sign-in need, wrong credentials, or two failures in a row).
   It does not time out and is no toast. Continue takes the failed Dives that are worth another try first, then the waiting
   ones. A sign-in need is fixed in the account first.
