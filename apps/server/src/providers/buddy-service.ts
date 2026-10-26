@@ -58,6 +58,8 @@ export function createBuddyService(deps: { registry: ProviderRegistry; connectio
         }
         // A Diver's name has at most 100 characters (divers/routes.ts).
         const name = tidyName(buddy.name).slice(0, 100);
+        // An entry SSI has not filled from the profile yet has an account and no name: nothing to create a Diver from.
+        if (!name) continue;
         const id = await divers.createExternal(actor, name, { source, externalId: buddy.account }, buddy.details);
         buddy.diver = { id, name };
         created += 1;
