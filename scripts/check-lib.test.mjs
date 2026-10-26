@@ -348,13 +348,25 @@ test('the server test setup and fixture data run all server tests; neither runs 
   assert.equal(planFor(['apps/server/test/support.ts'], none).e2e, 'none');
 });
 
-test('the browser test setup and its data run every browser test and nothing else; the review capture runs none', () => {
-  for (const path of ['apps/web/e2e/support.ts', 'apps/web/e2e/global-setup.ts', 'apps/web/e2e/prepare.ts', 'apps/web/e2e/fixtures/main-computer.fit']) {
+test('browser test setup, helpers and fixtures run no browser tests; typecheck and lint run; the review capture runs none', () => {
+  for (const path of ['apps/web/e2e/support.ts', 'apps/web/e2e/global-setup.ts', 'apps/web/e2e/prepare.ts',
+    'apps/web/e2e/fixtures/main-computer.fit', 'apps/web/e2e/fixtures/mergeable-main.fit', 'apps/web/e2e/fixtures/suunto-d5.json']) {
     const plan = planFor([path]);
-    assert.deepEqual([plan.server, plan.web, plan.e2e], ['none', 'none', 'all'], path);
+    assert.deepEqual([plan.typecheck, plan.lint, plan.server, plan.web, plan.e2e, plan.areas.size], [true, 'changed', 'none', 'none', 'none', 0], path);
+    assert.match(plan.notes.map((note) => note.text).join('\n'), /no browser tests run for it; run the tests it is for with pnpm check --tests/, path);
   }
   const capture = planFor(['apps/web/e2e/review-material.capture.ts']);
   assert.deepEqual([capture.typecheck, capture.server, capture.web, capture.e2e], [true, 'none', 'none', 'none']);
+  // A spec changed beside a helper still runs itself.
+  const both = planFor(['apps/web/e2e/support.ts', 'apps/web/e2e/sites.spec.ts']);
+  assert.deepEqual([both.e2e, [...both.specs]], ['some', ['sites.spec.ts']]);
+});
+
+test('PR #5 replayed: a change to e2e/support.ts alone plans no browser tests in pnpm check', () => {
+  const changed = ['apps/web/e2e/support.ts'];
+  const plan = planSteps(Object.fromEntries(['typecheck', 'lint', 'scripts', 'server', 'web', 'e2e'].map((step) => [step, changed])));
+  assert.deepEqual([plan.typecheck, plan.lint, plan.e2e], [true, 'changed', 'none']);
+  assert.ok(plan.notes.some((note) => note.includes('apps/web/e2e/support.ts is browser test setup or data')));
 });
 
 test('the check scripts run their own tests only; the lint script also lints everything; one-off scripts and licences are quiet', () => {

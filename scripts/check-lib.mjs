@@ -19,16 +19,6 @@ const AREAS = [
   [/^apps\/web\/src\/CodeScanner\.tsx$|^apps\/web\/src\/lib\/qr-reader\.ts$/, ['@sites', '@divers']],
   [/^apps\/web\/src\/lib\/address-search\.ts$/, ['@sites', '@dives']],
   [/^apps\/web\/src\/(DiveDetail|DiveEditForm|DiveHistory|DiveList|ProfileSketch|DepthProfile|ProfilePlot|Decisions|ReviewPage|ReviewStrip|ReviewRows|ImportPanel|DeleteDive|DeletedDives|MergeDive|LogbookChecks|Participants|Assessment|Cylinders|Weighting|LeadHint|PushRun).tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|tanks|cylinders|weighting|sketch|logbook|review|devices|importable|deletion|assessment)\.ts$/, ['@dives']],
-  // The Dive the deletion browser tests delete and restore (ADR 0026).
-  [/^apps\/web\/e2e\/fixtures\/deletable-computer\.fit$/, ['@dives']],
-  // The two computers' files of the Dives the merging browser tests merge (ADR 0038).
-  [/^apps\/web\/e2e\/fixtures\/mergeable-(main|backup)\.fit$/, ['@dives']],
-  // The Dive whose assessment has several findings (ADR 0036).
-  [/^apps\/web\/e2e\/fixtures\/assessed-computer\.fit$/, ['@dives']],
-  // The Suunto dive a browser test imports (ADR 0037).
-  [/^apps\/web\/e2e\/fixtures\/suunto-d5\.json$/, ['@dives']],
-  // The upload with several kinds of dive, for the choice of what to import (ADR 0044).
-  [/^apps\/web\/e2e\/fixtures\/account-export\.zip$/, ['@dives']],
   // A Diver's codes and details, and taking a scanned code (ADR 0043): on the divers page; the codes also show on a Dive.
   [/^apps\/web\/src\/DiverCodes\.tsx$/, ['@divers', '@dives']],
   [/^apps\/web\/src\/DiversPage\.tsx$/, ['@divers']],
@@ -100,7 +90,7 @@ export const fullPlan = () => ({ typecheck: true, lint: 'all', scripts: true, se
  * - Under apps/server/test (helpers, fixtures, one-off scripts): the server tests that import the file; the test
  *   setup and data files (read, not imported) all server tests; every browser test only when the browser tests'
  *   server loads the file (`loads`; without it, every helper counts as loaded).
- * - Under apps/web/e2e (setup and data): every browser test. The review capture is not part of the check.
+ * - Under apps/web/e2e (setup, helpers, fixtures): no browser tests; ADR 0023, amendment of 2026-10-26 (no second run).
  */
 function planTestSupport(path, plan, more, loads) {
   if (path.startsWith('apps/server/test/')) {
@@ -118,8 +108,7 @@ function planTestSupport(path, plan, more, loads) {
   }
   if (path.startsWith('apps/web/e2e/')) {
     if (!path.endsWith('.capture.ts')) {
-      plan.e2e = 'all';
-      plan.notes.push({ text: `${path} is browser test setup or data, so all browser tests run`, steps: ['e2e'] });
+      plan.notes.push({ text: `${path} is browser test setup or data: no browser tests run for it; run the tests it is for with pnpm check --tests <filter> (CI runs them all)`, steps: ['e2e'] });
     }
     return true;
   }
