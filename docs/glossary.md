@@ -370,6 +370,11 @@ The identifier a Source gives a record, such as an OpenStreetMap object (`node/1
 _Avoid_: Foreign key, remote ID, reference number
 _German_: externe ID (on screen: "SSI-Tauchplatz-ID")
 
+**Private site ID**:
+A Dive site's External ID at a Source that belongs to one Diver's account there, such as a private site in that Diver's SSI logbook. The site's data stays shared; only the ID is the account's, and a send never uses another account's. Without an account an External ID is public.
+_Avoid_: Personal site ID, hidden ID
+_German_: private Tauchplatz-ID
+
 **Attribution**:
 The credit a Source's license requires wherever its data is shown, such as "© OpenStreetMap contributors" with a link to OSM's copyright page.
 _Avoid_: Credits, copyright notice, source note

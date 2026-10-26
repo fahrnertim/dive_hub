@@ -28,5 +28,5 @@ export function currentRemote(pushes: PushRow[]): PushRow | null {
 export function fingerprintNow(adapter: ProviderAdapter, loaded: Awaited<ReturnType<typeof loadOutgoingDive>>): string | null {
   const exports = adapter.capabilities.data.dives?.export;
   if (!adapter.dives || !exports) return null;
-  return adapter.dives.fingerprint(forProvider(loaded.outgoing, unmetRequirements(exports.requirements, loaded.row.siteId, loaded.outgoing)));
+  return adapter.dives.fingerprint(forProvider(loaded.outgoing, unmetRequirements(exports.requirements, loaded.site, loaded.outgoing)));
 }

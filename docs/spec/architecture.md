@@ -278,7 +278,9 @@ Deliberate simplifications, to revisit:
 **Slice 8 (2026-10-04): external site IDs and the Site import** ([ADR 0021](../decisions/0021-site-external-ids-and-import.md)).
 
 Implemented:
-- **External IDs** (`dive_site_external_id`): unique per Source, at most one per Source and site. Each is either
+- **External IDs** (`dive_site_external_id`): unique per Source; public (every User and send) or private to one SSI account
+  (`account_id`, [ADR 0057](../decisions/0057-ssi-aligned-with-its-app.md): seen by the Users who manage that Diver, used by that Diver's sends);
+  at most one public row per Source and site and one private row per account; read and written only by `sites/site-ids.ts`. Each is either
   data-providing (it keeps what its Source delivered last) or a reference. The Sources (`osm`, `wikidata`, `ssi`)
   and their license, Attribution and link pattern are defined in `src/sites/sources.ts`.
 - **Dive sites:**
@@ -589,6 +591,23 @@ Implemented:
   `buddies.import.find` case; browser tests `buddies.spec.ts` (@account, @divers, @dives) and ui-quality cases for the
   dive's buddies, both dialogs, the SSI buddy list and other divers. `leases.test.ts` now checks the 30 s bound on the
   time that passed, not on the sum of the test clock's sleeps (it failed under load since slice 13a).
+
+**Private site IDs (2026-10-24, SSI alignment piece 4;** [design](../superpowers/specs/2026-10-23-ssi-app-alignment-design.md#piece-4-settled-2026-10-24)**).**
+- **Site requirement, amended:** the unmet entry carries `bySend`: a send finds or makes the site, so the missing ID
+  doesn't block. A typed ID through the old route still counts.
+- **Storage:** `dive_site_external_id.account_id` is the Diver's provider account; null = public. Only
+  `apps/server/src/sites/site-ids.ts` touches the table.
+- **The site step of a send** (manual or Push run; `providers/site-for-send.ts`): the ID sent is the remote dive's ID if
+  usable, else the public one, else the Diver's own private one, never another account's. With none, the send finds a
+  nearby same-name site in the account's SSI logbook whose ID no site here holds, else creates a private site
+  (`save_divesite`). One find-or-make per site and account, under an advisory lock.
+- **SSI:** logbook rows carry the private flag; a missing flag is 'unknown' and stored private to the account, never public.
+  `get_divesite` and `save_divesite`: [SSI app API](../references/ssi-app-api.md#sites-save_divesite-get_divesite-checked-2026-10-24-app-5043).
+- **Route:** `PUT /api/connections/{id}/dive-sites/{siteId}` asks SSI first: unknown is 422 `provider_site_unknown`,
+  public is stored public, private, unknown or unavailable is stored private to the Connection's account.
+  `PUT /api/dive-sites/{id}/external-ids/{source}` still stores a public ID without asking.
+- **Web:** the Dive panel sends with `bySend`; the picker marks private sites; the site page shows and edits "Your
+  private SSI site ID" when the User has a Connection for that Source.
 
 Deliberate simplifications, to revisit:
 - **No Connection Diver mappings:** a buddy entry without an SSI account can't be sent (none seen in the owner's list).

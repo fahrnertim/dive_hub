@@ -9,6 +9,7 @@ import { Problem, problem, PROBLEMS, providerProblem, type ProblemCode } from '.
 import { CYLINDER_MATERIALS, DIVE_IMPORT_MODES, MATCHING_WINDOWS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES } from '../db/schema.js';
 import { ImportView, toImportView } from '../routes.js';
 import { SOURCE_INFO } from '../sites/sources.js';
+import { SITE_WATER_TYPES } from '../vocabulary.js';
 import type { BuddyService } from './buddy-service.js';
 import type { ConnectionService } from './connection-service.js';
 import type { DiveImportService } from './dive-import.js';
@@ -19,6 +20,7 @@ import { FIND_BY, OPERATIONS, type ProviderAdapter, type Requirement } from './p
 import { pushRunRoutes } from './push-run-routes.js';
 import type { PushRunService } from './push-run-service.js';
 import type { PushService } from './push-service.js';
+import type { SitePickService } from './site-pick.js';
 import type { PushRow } from './remote-state.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { CertificationError, type CertificationService } from '../certifications/certification-service.js';
@@ -31,6 +33,7 @@ export interface ProviderRouteDeps {
   pushes: PushService;
   pushRuns: PushRunService;
   buddies: BuddyService;
+  sitePicks: SitePickService;
   diveImports: DiveImportService;
   goneDives: GoneDiveService;
   conflicts: ConflictService;
@@ -64,6 +67,7 @@ const RequirementView = Type.Object({
   typed: Nullable(Type.Boolean({ description: 'site_external_id: Users may type an ID (PUT /api/dive-sites/{id}/external-ids/{source})' })),
   pattern: Nullable(Type.String({ description: 'site_external_id: what the bare ID looks like (a regular expression)' })),
   prefixes: Nullable(Type.Array(Type.String(), { description: 'site_external_id: what may come before the ID as the Source shows it, e.g. "site:"' })),
+  createdBySend: Nullable(Type.Boolean({ description: 'site_external_id: a send finds or creates the site at the Provider when the site has a position' })),
   roles: Nullable(RoleList),
 }, { description: 'What sending needs (ADR 0029)' });
 
@@ -146,6 +150,10 @@ const UnmetView = Type.Object({
   severity: Type.Enum(['blocking', 'advisory']),
   source: Type.String(),
   siteId: Type.Optional(Nullable(Type.String({ description: 'site_external_id: the Dive site to give the ID; null: choose a site first' }))),
+  bySend: Type.Optional(Type.Boolean({
+    description: 'site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), '
+      + 'so it does not stop a send; offering the pick stays',
+  })),
   diverId: Type.Optional(Type.String({ description: 'diver_mapping: the Participant' })),
   diverName: Type.Optional(Type.String()),
   role: Type.Optional(Type.Enum([...PARTICIPANT_ROLES])),
@@ -240,6 +248,7 @@ export const PROVIDER_STATUS: Partial<Record<ProblemCode, number>> = {
   provider_sign_in_needed: 409, provider_requirements_unmet: 409, provider_not_sent: 409, provider_dive_gone: 409, provider_busy: 409,
   push_run_active: 409, push_run_nothing_to_send: 409, push_run_not_found: 404, push_run_not_active: 409, push_run_going: 409, push_run_not_stopped: 409,
   provider_number_taken: 409, provider_numbers_off: 409, provider_number_nothing_to_set: 409,
+  site_not_found: 404, external_id_taken: 409, provider_site_unknown: 422,
   provider_unavailable: 502, provider_refused: 502, provider_not_stored: 502, provider_import_off: 409, provider_account_held: 409,
 };
 /** A refusal about a Provider; with provider_requirements_unmet, what is unmet. */
@@ -256,7 +265,7 @@ const ProviderProblem = Type.Object({
   runId: Type.Optional(Type.String({ description: 'With push_run_active: the run that is going' })),
   diveId: Type.Optional(Nullable(Type.String({ description: 'With provider_number_taken: the Dive here that dive is, if Dive Hub knows it' }))),
 });
-const errors = { 400: Problem, 404: Problem, 409: ProviderProblem, 502: Problem };
+const errors = { 400: Problem, 404: Problem, 409: ProviderProblem, 422: Problem, 502: Problem };
 
 /** Answers a refusal about a Provider: its status, its code and the Provider named, with `extra` (such as the copies). */
 export function replyProviderError(error: ProviderServiceError, reply: FastifyReply, extra: object = {}) {
@@ -272,12 +281,12 @@ export const pushView = (p: PushRow): Static<typeof PushView> => ({
 
 /** A requirement with what clients need to offer its fix: a typed site ID's forms come from its Source. */
 function requirementView(r: Requirement): Static<typeof RequirementView> {
-  const none = { typed: null, pattern: null, prefixes: null, roles: null };
+  const none = { typed: null, pattern: null, prefixes: null, createdBySend: null, roles: null };
   if (r.type === 'diver_mapping') return { type: r.type, severity: r.severity, description: r.description, source: r.source, ...none, roles: r.roles };
   const info = SOURCE_INFO[r.source];
   return {
     type: r.type, severity: r.severity, description: r.description, source: r.source, ...none,
-    typed: !!info.typed, pattern: info.idPattern.source, prefixes: info.typed?.prefixes ?? [],
+    typed: !!info.typed, pattern: info.idPattern.source, prefixes: info.typed?.prefixes ?? [], createdBySend: !!r.createdBySend,
   };
 }
 
@@ -310,7 +319,7 @@ export function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Sta
   };
 }
 
-export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, pushRuns, buddies, diveImports, goneDives, conflicts, certifications }) => {
+export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, pushRuns, buddies, sitePicks, diveImports, goneDives, conflicts, certifications }) => {
   app.addHook('onRequest', requireUser(auth));
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof ProviderServiceError) return replyProviderError(error, reply);
@@ -779,11 +788,37 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
           latitude: Nullable(Type.Number()), longitude: Nullable(Type.Number()),
           country: Nullable(Type.String({ description: 'As the Provider gives it' })),
           distanceM: Nullable(Type.Integer({ description: 'From the Dive site, else the Dive\'s position' })),
+          visibility: Type.Enum(['public', 'private', 'unknown'], {
+            description: 'private: private to the Connection\'s account (show it as such); unknown: the Provider does not say',
+          }),
+          waterType: Nullable(Type.Enum([...SITE_WATER_TYPES], { description: 'As the Provider gives it' })),
         })),
         ...errors,
       },
     },
   }, async (request) => pushes.siteSuggestions(request.user!.id, request.params.id, request.params.provider));
+
+  app.put('/connections/:id/dive-sites/:siteId', {
+    schema: {
+      summary: "Set or clear a Dive site's ID at the Connection's Provider: picked from its sites or typed, after asking the Provider",
+      description: "The Provider is asked about the ID first. One it calls public is stored public (with a Revision); the account's own "
+        + "private one is stored private to the Connection's account; an ID it has no site for (also another account's private site) is "
+        + '422 provider_site_unknown and nothing is stored. When it does not say or cannot be asked, the ID is stored private, never public. '
+        + "null clears the account's private ID of the site only (the public ID is cleared with PUT /api/dive-sites/{id}/external-ids/{source}). "
+        + '409 external_id_taken when another site has the ID.',
+      params: Type.Object({ id: Type.String({ format: 'uuid' }), siteId: Type.String({ format: 'uuid' }) }),
+      body: Type.Object({
+        externalId: Nullable(Type.String({ minLength: 1, maxLength: 40, description: 'As the User typed or picked it; null clears the private ID' })),
+      }, { additionalProperties: false }),
+      response: {
+        200: Type.Object({
+          externalId: Nullable(Type.String({ description: 'The bare ID stored; null after a clear' })),
+          private: Type.Boolean({ description: 'Whether it is stored private to the account' }),
+        }),
+        ...errors,
+      },
+    },
+  }, async (request) => sitePicks.set(request.user!.id, request.params.id, request.params.siteId, request.body.externalId));
 
   app.post('/dives/:id/providers/:provider', {
     schema: {

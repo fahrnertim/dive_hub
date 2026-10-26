@@ -123,9 +123,10 @@ Only when a User does something. There are no background calls: the worker never
 | User action | Calls |
 |---|---|
 | Connect, or sign in again | `authenticate` |
-| Send a dive (create or update) | `get_divelog` (may come from the kept read-back), `save_divelog`, `get_divelog` (read-back) |
+| Send a dive (create or update) | `get_divelog` (may come from the kept read-back), `save_divelog`, `get_divelog` (read-back); first `save_divesite` when the dive's site has no ID usable for the account and is made at SSI as a private site |
 | Delete a dive that was sent to SSI | `get_divelog` (is it still there?), `save_divelog` (deleted) |
 | Open the SSI site picker on a dive | `get_divelog` (may come from the kept read-back) |
+| Type an SSI site ID on a dive's site | `get_divesite` (is the ID known, public or the account's own private site?) |
 | Open the buddy list (Connections) or the buddy picker on a dive | `get_divelog` (may come from the kept read-back) |
 | Show what importing the dives would do (the preview, [ADR 0030](../decisions/0030-importing-dives-from-providers.md)) | `get_divelog` (always read afresh) |
 | Start the import | `get_divelog` (may come from the kept read; the worker never calls SSI) |
@@ -371,9 +372,25 @@ a synced dive has been seen:
   volume on 13, a volume and a type only on 8, none on 106 [T].
 - Kept: each dive's record as received, as one JSON Original; the buddy list itself never (only entry → account, on the
   Import), and of `logbook_sites` each site's name, position, country (alpha-2) and water type (`bow`: salt or fresh;
-  artificial or missing is none, as in the site list). The private flag isn't read (owner, 2026-10-06).
+  artificial or missing is none, as in the site list) and the private flag (`is_private` and its owner). A missing flag
+  is 'unknown': the site is stored private to the account, never public. See [Private site ID](../glossary.md#data-in-and-out).
 - A dive's site (slice 15a): the site here with that SSI ID, else the same site by name and position (it gets the ID),
   else, only if an admin allowed SSI's site data, a site made from the logbook's entry (marked "From SSI").
+
+### Sites: `save_divesite`, `get_divesite` (checked 2026-10-24, app 5.0.43)
+
+Tested on the owner's account [T]; details in [the research note](../research/2026-10-24-ssi-site-checks.md).
+
+- **`save_divesite`** (query `token`; body `json_data` = the site row, keys in [the write bodies](../research/2026-10-22-ssi-write-bodies.md), without `internalPk` and `needsUpload`) with `odin_dive_sites_id` null creates a site. HTTP 200; the new ID is at the answer's top level `odin_dive_sites_id` (also `success.New.odin_dive_sites_id` and `result.site.odin_dive_sites_id`) [T].
+- Dive Hub sends `odin_countries_code_iso` as ISO alpha-3 (as SSI keeps it); unverified at SSI until the owner's next probe.
+- A private site: `odin_dive_sites_is_private` 1 (`true` accepted, stored as 1) and `odin_dive_sites_is_private_owner` the account's `mid`. `result.site` repeats both [T].
+- **Flags are answered as the numbers 0/1** [T].
+- **`get_divesite`** (query `token`, `dsid`) answers HTTP 200 with a JSON **array of one row** (not an object), carrying `odin_dive_sites_is_private`, `_is_private_owner` and `_deleted`. An unknown ID answers HTTP 404 [T].
+- A new site with no dive is in `logbook_sites` of `get_divelog` right after creation, with `is_private` 1 and the owner [T].
+- **Not deletable with `odin_dive_sites_deleted` true or 1** [T]: `save_divesite` answers "update saved", but the site stays and `logbook_sites` still lists it. The app has no delete call or button and never sets the flag [R]. Other ways to delete were not tried.
+- **A private site is usable on a dive by its account** [T] (2026-10-26, app 5.0.43): a dive created on private site 1083262 is in the logbook with that site, and `logbook_sites` lists it as private with the account as owner. The logbook site rows carry both `odin_dive_sites_country_iso3` and `odin_countries_code_iso`.
+- **A private site is not in `get_divesites_global`** [T] (2026-10-26): the feed answers an object `{ divesites_timestamp, divesites }`; with `last_sync` before the site's creation (202 rows on one page) and with a recent one (1 row), 1083262 is not in it. `last_sync` was accepted as unix seconds and as `YYYY-MM-DD HH:MM:SS`; which one the app sends is not certain, and `limit` may be ignored ([research](../research/2026-10-26-ssi-private-site-check.md)).
+- **Not in `APP_CACHE_SITES.zip`**: pending the next-day check [R].
 
 ## Known but not used
 
@@ -477,8 +494,8 @@ From the research note. Record the result here with date and app version, and tu
 - [x] Private sites in the logbook read [T] (owner's account, 2026-10-06, `logbook_sites` downloaded raw through the
   Connection): 4 of 26 entries are private (`odin_dive_sites_is_private: 1`, `odin_dive_sites_is_private_owner` = the
   owner's own SSI account). None of the 4 is in the public zip, three of them older than it: private sites stay out of
-  the public list, and the zip's 43 are likely older ones that got published. The flag isn't read: once an admin allows
-  SSI's site data, the dive import makes them shared sites like any other, which the owner wants (2026-10-06).
+  the public list, and the zip's 43 are likely older ones that got published. Since piece 4 (2026-10-24) the flag is read: the
+  dive import still makes them shared sites (once an admin allows SSI's site data), but the ID is stored private to the account.
   Entries also carry `odin_dive_sites_comment` (9 of 26 non-empty), SSI's statistics (`myloggedDives`, …), aliases and
   wildlife IDs; Dive Hub keeps only ID, name, position and country.
 - [ ] A buddy code and a professional's code drawn by Dive Hub: does SSI's app take them (add the buddy; verify a

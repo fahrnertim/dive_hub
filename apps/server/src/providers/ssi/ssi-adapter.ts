@@ -11,6 +11,7 @@ import {
   type DiveForSsi,
 } from './ssi-record.js';
 import { contextOf, parseSsiDive, ssiOrigin, SSI_PARSER } from './ssi-import.js';
+import { readSsiSite, ssiSiteRow, visibilityFor } from './ssi-site-record.js';
 
 /** Two dives this close in time (minutes) count as the same descent. */
 const SAME_DIVE_MINUTES = 2;
@@ -27,7 +28,10 @@ export const SSI_CAPABILITIES: Capabilities = {
         findBy: ['reference', 'time'],
         delivery: 'confirmed',
         requirements: [
-          { type: 'site_external_id', severity: 'blocking', source: 'ssi', description: 'SSI needs the dive site\'s SSI site ID.' },
+          {
+            type: 'site_external_id', severity: 'blocking', source: 'ssi', createdBySend: true,
+            description: 'SSI needs the dive site\'s SSI site ID; sending finds the site in your SSI logbook or creates it there as a private site.',
+          },
           {
             type: 'diver_mapping', severity: 'advisory', source: 'ssi', roles: ['buddy', 'guide', 'instructor'],
             description: 'SSI lists buddies from your SSI buddy list, found by their SSI account; one without an account is left out.',
@@ -99,7 +103,7 @@ function buddiesFor(dive: OutgoingDive, list: SsiBuddy[]) {
  * long it took. Never the token, password or URL. Shows when Dive Hub used an account at SSI.
  */
 export interface SsiCallLog {
-  call: 'authenticate' | 'get_divelog' | 'save_divelog' | 'get_ccards';
+  call: 'authenticate' | 'get_divelog' | 'save_divelog' | 'get_ccards' | 'get_divesite' | 'save_divesite';
   connectionId: string | null;
   /** `ok`, or the reason SSI's client gave (`unavailable`, `signed_out`, …). */
   outcome: 'ok' | SsiError['reason'] | 'error';
@@ -204,7 +208,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         const read = await logbook.current();
         const record = read.dives.find((r) => idOf(r.odin_user_log_id) === remoteId);
         if (!record) return null;
-        const context = contextOf(read);
+        const context = contextOf(read, ctx.accountId);
         const parsed = parseSsiDive(record, context, remoteId);
         return parsed ? { dive: parsed, context, record } : null;
       },
@@ -274,7 +278,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         const logbook = await (options?.recent ? read.recent() : read.current());
         return {
           records: logbook.dives.flatMap((r) => { const id = idOf(r.odin_user_log_id); return id ? [{ remoteId: id, record: r }] : []; }),
-          context: contextOf(logbook),
+          context: contextOf(logbook, ctx.accountId),
         };
       },
       parse: parseSsiDive,
@@ -282,8 +286,22 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
       parser: SSI_PARSER,
     },
     diveSites: {
-      find: async (ctx) => (await logbookOf(ctx).recent()).sites
-        .map(({ id, name, latitude, longitude, country }) => ({ id, name, latitude, longitude, country })),
+      // Another account's private site is dropped: Dive Hub can't use it and never keeps it.
+      // A row without SSI's private flag is `unknown`, never public.
+      find: async (ctx) => (await logbookOf(ctx).recent()).sites.flatMap((site) => {
+        const { id, name, latitude, longitude, country, waterType } = site;
+        const visibility = visibilityFor(site, ctx.accountId);
+        return visibility ? [{ id, name, latitude, longitude, country, waterType, visibility }] : [];
+      }),
+      async get(ctx, id) {
+        const record = await called('get_divesite', ctx.connectionId, () => client.site(ctx.access, id));
+        const site = readSsiSite(record);
+        if (!site || site.deleted || site.id !== id) return null;
+        const visibility = visibilityFor(site, ctx.accountId);
+        const { name, latitude, longitude, country, waterType } = site;
+        return visibility ? { id, name, latitude, longitude, country, waterType, visibility } : null;
+      },
+      create: (ctx, site) => called('save_divesite', ctx.connectionId, () => client.saveSite(ctx.access, ssiSiteRow(site, ctx.accountId))),
     },
     buddies: {
       find: async (ctx) => (await logbookOf(ctx).recent()).buddies.map(({ id, ...b }) => ({ remoteId: String(id), ...b })),

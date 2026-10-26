@@ -131,7 +131,8 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
   const handedOver = s.pushes.find((x) => x.state === 'handed_over');
   const signInNeeded = s.connection.state === 'needs_sign_in'
     || (send.error instanceof ApiError && send.error.code === 'provider_sign_in_needed');
-  const ready = !s.unmet.some((u) => u.severity === 'blocking');
+  // A site the send finds or creates at the Provider (bySend) doesn't stop it.
+  const ready = !s.unmet.some((u) => u.severity === 'blocking' && !u.bySend);
   const failure = (x: PushView) => problemText(x.failureCode ?? 'internal_error', p);
   // Asked by a send, or left by a run (the open entry): the choice takes the send button's place.
   const choosing = asked ?? openConflicts(s);
@@ -309,10 +310,10 @@ function Requirements({ provider: p, dive: d, status: s }: { provider: ProviderV
         if (!u.siteId || !d.site) return <Muted key={u.source}>{pt('needsSite')}</Muted>;
         return (
           <div className="form" key={u.source}>
-            <Muted>{pt('needsSiteId', { site: d.site.name })}</Muted>
+            <Muted>{u.bySend ? pt('siteBySend') : pt('needsSiteId', { site: d.site.name })}</Muted>
             {r?.typed && canFindSites
               ? <div className="form-actions"><Button icon="site" onPress={() => setPicking(r)}>{pt('chooseSite')}</Button></div>
-              : !r?.typed && <Muted>{pt('cannotFixHere')}</Muted>}
+              : !r?.typed && !u.bySend && <Muted>{pt('cannotFixHere')}</Muted>}
           </div>
         );
       })}
@@ -336,7 +337,7 @@ function Requirements({ provider: p, dive: d, status: s }: { provider: ProviderV
         <Muted key={`${u.type}-${u.source}`}>{requirementOf(p, u)?.description ?? u.type} {pt('cannotFixHere')}</Muted>
       ))}
       {picking && d.site && (
-        <SitePicker provider={p} requirement={picking} diveId={d.id} diveSiteId={d.site.id} siteName={d.site.name} onClose={() => setPicking(null)} />
+        <SitePicker provider={p} requirement={picking} connectionId={s.connection!.id} diveId={d.id} diveSiteId={d.site.id} siteName={d.site.name} onClose={() => setPicking(null)} />
       )}
       {finding && s.connection && (
         <BuddyPicker provider={p} unmet={finding} connectionId={s.connection.id} diveId={d.id} onClose={() => setFinding(null)} />
@@ -420,8 +421,8 @@ const TYPED = '__typed__';
  * logbook), nearest first, narrowed while typing a name or an ID; or use an ID typed in. Picking saves at once on the
  * Dive site (ux-search).
  */
-function SitePicker({ provider: p, requirement: r, diveId, diveSiteId, siteName, onClose }: {
-  provider: ProviderView; requirement: RequirementView; diveId: string; diveSiteId: string; siteName: string; onClose: () => void;
+function SitePicker({ provider: p, requirement: r, connectionId, diveId, diveSiteId, siteName, onClose }: {
+  provider: ProviderView; requirement: RequirementView; connectionId: string; diveId: string; diveSiteId: string; siteName: string; onClose: () => void;
 }) {
   const { t } = useTranslation();
   const pt = useProviderText(p);
@@ -431,11 +432,12 @@ function SitePicker({ provider: p, requirement: r, diveId, diveSiteId, siteName,
   const suggestions = useQuery(providerSitesQuery(diveId, p.id));
   const [text, setText] = useState('');
   const save = useMutation({
-    mutationFn: async (externalId: string) => unwrap(await api.PUT('/api/dive-sites/{id}/external-ids/{source}', {
-      params: { path: { id: diveSiteId, source: r.source as 'ssi' } }, body: { externalId },
+    // Through the Connection: the Provider is asked first, and says whether the site is public or the account's own.
+    mutationFn: async (externalId: string) => unwrap(await api.PUT('/api/connections/{id}/dive-sites/{siteId}', {
+      params: { path: { id: connectionId, siteId: diveSiteId } }, body: { externalId },
     })),
-    onSuccess: async (updated) => {
-      queryClient.setQueryData(keys.site(diveSiteId), updated);
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: keys.site(diveSiteId) });
       await queryClient.invalidateQueries({ queryKey: keys.diveProviders(diveId) });
       await queryClient.invalidateQueries({ queryKey: keys.sites });
       announce(pt('siteSaved'));
@@ -450,7 +452,7 @@ function SitePicker({ provider: p, requirement: r, diveId, diveSiteId, siteName,
   const matching = query ? all.filter((s) => fold(s.name).includes(fold(query)) || s.id === typedId) : all;
   const items: SearchListItem[] = matching.slice(0, SHOWN).map((s) => ({
     id: s.id, name: s.name,
-    detail: [s.country, s.distanceM !== null ? pt('away', { distance: display.distance(s.distanceM) }) : null, pt('idIs', { id: s.id })]
+    detail: [s.country, s.visibility === 'private' ? pt('privateSite') : null, s.distanceM !== null ? pt('away', { distance: display.distance(s.distanceM) }) : null, pt('idIs', { id: s.id })]
       .filter(Boolean).join(' · '),
   }));
   // An ID typed in that isn't among the Provider's sites can still be used.

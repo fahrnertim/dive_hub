@@ -96,6 +96,9 @@ const fakeSsi = createFakeSsi({
   sites: [
     { odin_dive_sites_id: 3314, odin_dive_sites_name: 'Hausreef', odin_dive_sites_lat: 27.29, odin_dive_sites_lon: 33.82, odin_countries_code_iso: 'EG' },
     { odin_dive_sites_id: 5120, odin_dive_sites_name: 'Attersee – Schwarzenbach', odin_dive_sites_lat: 47.8512, odin_dive_sites_lon: 13.5514, odin_countries_code_iso: 'AT' },
+    // Erika's own private site, and one private to Lena (SSI's logbook lists it, Dive Hub drops it): the private-ID browser tests.
+    { odin_dive_sites_id: 7010, odin_dive_sites_name: 'Erikas Geheimriff', odin_dive_sites_lat: 27.5, odin_dive_sites_lon: 34.1, odin_countries_code_iso: 'EG', odin_dive_sites_is_private: 1, odin_dive_sites_is_private_owner: 5_012_047 },
+    { odin_dive_sites_id: 7020, odin_dive_sites_name: 'Lenas Geheimriff', odin_dive_sites_lat: 27.6, odin_dive_sites_lon: 34.2, odin_countries_code_iso: 'EG', odin_dive_sites_is_private: 1, odin_dive_sites_is_private_owner: 6_100_200 },
   ],
   // Erika's SSI buddy list (ADR 0029); buddies.spec.ts adds Kai to Dive Hub and finds Mia for a Diver typed by hand.
   buddies: [

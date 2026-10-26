@@ -304,6 +304,11 @@ an Import links a new Dive to the only site within 200 m of its position.
 most one per Source and site (`osm`, `wikidata`, `ssi`). Each either *provides data* (keeps the values its Source
 delivered last, the base for the next import's 3-way merge) or is a *reference* (hand-made site linked by an
 import, or an SSI ID typed in). License, Attribution and link pattern belong to the Source, defined once in code.
+*Private IDs ([ADR 0057](../decisions/0057-ssi-aligned-with-its-app.md)):* an External ID row has an optional `account_id`
+(a Diver's `diver_external_id`, deleted with it). Without it the ID is **public**: every User and every send may use it, at most one
+per Source and site. With it the ID is **private** to that SSI account: at most one per Source, site and account, used only by sends
+for that Diver and seen only by Users who manage the Diver. `(source, external id)` stays unique across both. Private IDs write no
+Revision on the site. `sites/site-ids.ts` is the only code that reads and writes the table.
 *Implemented (ADR 0025):* **water type** (fresh, salt or brackish), the water type of every Dive at the site;
 any User edits it, imports merge it per field (only SSI fills it), merging fills it as a gap. A reference on a
 hand-made site keeps its Source's values as an **offer**; any User takes it ("Use SSI's data": empty fields

@@ -52,11 +52,11 @@ describe.skipIf(!(await databaseReachable()))('Push requirements', () => {
     expect(of('ssi')).toEqual([
       {
         type: 'site_external_id', severity: 'blocking', description: expect.any(String), source: 'ssi',
-        typed: true, pattern: '^[1-9]\\d{0,9}$', prefixes: ['site:'], roles: null,
+        typed: true, pattern: '^[1-9]\\d{0,9}$', prefixes: ['site:'], createdBySend: true, roles: null,
       },
       {
         type: 'diver_mapping', severity: 'advisory', description: expect.any(String), source: 'ssi',
-        typed: null, pattern: null, prefixes: null, roles: ['buddy', 'guide', 'instructor'],
+        typed: null, pattern: null, prefixes: null, createdBySend: null, roles: ['buddy', 'guide', 'instructor'],
       },
     ]);
     expect(of('ledger')).toMatchObject([
@@ -67,16 +67,17 @@ describe.skipIf(!(await databaseReachable()))('Push requirements', () => {
 
   it('lists what is unmet from Dive Hub\'s data alone: no site first, then each Participant without a reference', async () => {
     const calls = ctx.fakeSsi.calls.length;
-    expect((await status('ssi')).unmet).toEqual([{ type: 'site_external_id', severity: 'blocking', source: 'ssi', siteId: null }]);
+    expect((await status('ssi')).unmet).toEqual([{ type: 'site_external_id', severity: 'blocking', source: 'ssi', siteId: null, bySend: false }]);
     await call('PUT', `/api/dives/${diveId}/participants`, { version: (await dive()).version, participants: [{ diverId: bob.id, role: 'guide' }] });
     expect((await status('ledger')).unmet).toEqual([
-      { type: 'site_external_id', severity: 'advisory', source: 'wikidata', siteId: null },
+      { type: 'site_external_id', severity: 'advisory', source: 'wikidata', siteId: null, bySend: false },
       { type: 'diver_mapping', severity: 'blocking', source: 'padi', diverId: bob.id, diverName: 'Bob', role: 'guide', fixes: ['diver_external_id'] },
     ]);
+    // A site without a position: SSI can't make it, so it blocks.
     const site = (await call('POST', '/api/dive-sites', { name: 'Reef' })).json() as { id: string };
     await call('PATCH', `/api/dives/${diveId}`, { version: (await dive()).version, siteId: site.id });
     expect((await status('ssi')).unmet).toEqual([
-      { type: 'site_external_id', severity: 'blocking', source: 'ssi', siteId: site.id },
+      { type: 'site_external_id', severity: 'blocking', source: 'ssi', siteId: site.id, bySend: false },
       { type: 'diver_mapping', severity: 'advisory', source: 'ssi', diverId: bob.id, diverName: 'Bob', role: 'guide', fixes: ['diver_external_id'] },
     ]);
     expect(ctx.fakeSsi.calls.length).toBe(calls);

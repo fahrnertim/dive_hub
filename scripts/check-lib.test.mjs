@@ -6,7 +6,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
-import { baselineGrowth, baselineSize, changedSince, forBrowserTests, greenRun, lintTargets, planFor, planSteps, recordGreen, snapshot } from './check-lib.mjs';
+import { FULL_ONLY, VARIANTS, browserGrepInvert, variantsRun } from './check-lib.mjs';
+import { baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, greenRun, keptFailures, lintTargets, planFor, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
 
 /** A git repository with one commit holding `files`. */
 function repository(files) {
@@ -235,4 +236,222 @@ test('without changed texts, or without a base to compare them with, the files s
   t.after(repo.drop);
   assert.deepEqual(forBrowserTests(['apps/web/src/Admin.tsx'], 'HEAD', snapshot(repo.cwd), repo.cwd).changed, ['apps/web/src/Admin.tsx']);
   assert.deepEqual(forBrowserTests([EN], null, null, repo.cwd).changed, [EN]);
+});
+
+test('the counting base is the candidate with the fewest changed files; a tie prefers the first (the green run)', () => {
+  const green = { from: 'its green run', base: 'g', changed: ['a', 'b'] };
+  const main = { from: 'main', base: 'm', changed: ['a'] };
+  assert.equal(chooseBase([green, main]), main);
+  assert.equal(chooseBase([green, { ...main, changed: ['x', 'y'] }]), green);
+  assert.equal(chooseBase([main]), main);
+  assert.equal(chooseBase([]), null);
+});
+
+test('a branch counts from main when that leaves fewer files than a stale green run', (t) => {
+  const repo = repository({ 'a.ts': 'a' });
+  t.after(repo.drop);
+  repo.git('branch', '-M', 'main');
+  assert.match(countingBase('server', snapshot(repo.cwd), repo.cwd).from, /^main \(/, 'on main without a green run: main itself');
+  recordGreen('server', snapshot(repo.cwd), repo.cwd);
+  assert.match(countingBase('server', snapshot(repo.cwd), repo.cwd).from, /^its green run of /);
+  // Main moves on without a green run; a branch leaves it and adds one file.
+  repo.write('b.ts', 'b');
+  repo.write('c.ts', 'c');
+  repo.git('add', '-A');
+  repo.git('commit', '--quiet', '-m', 'main moves on');
+  repo.git('checkout', '--quiet', '-b', 'topic');
+  repo.write('d.ts', 'd');
+  const chosen = countingBase('server', snapshot(repo.cwd), repo.cwd);
+  assert.match(chosen.from, /^main \(where this branch left it, [0-9a-f]{7,}\)$/);
+  assert.deepEqual(chosen.changed, ['d.ts']);
+  assert.equal(chosen.base, repo.git('merge-base', 'HEAD', 'main').toString().trim());
+});
+
+// Amendment of 2026-10-24: unknown files don't run everything.
+
+test('a one-off script under the server fixtures runs only the server tests that import it, no browser test', () => {
+  const plan = planFor(['apps/server/test/fixtures/ssi/site-checks.ts'], { e2eServerLoads: new Set(['apps/server/test/e2e-server.ts']) });
+  assert.deepEqual([plan.typecheck, plan.lint, plan.server, plan.web, plan.e2e], [true, 'changed', 'changed', 'none', 'none']);
+  assert.deepEqual(plan.notes, []);
+});
+
+test('a server test helper the e2e server loads runs the server tests that import it and every browser test', () => {
+  const loads = new Set(['apps/server/test/e2e-server.ts', 'apps/server/test/fake-ssi.ts', 'apps/server/test/fixtures/synthetic-dive.ts']);
+  for (const path of loads) {
+    const plan = planFor([path], { e2eServerLoads: loads });
+    assert.deepEqual([plan.server, plan.web, plan.e2e, plan.lint], ['changed', 'none', 'all', 'changed'], path);
+  }
+  // A fake only the server tests use.
+  const fake = planFor(['apps/server/test/fake-ledger-provider.ts'], { e2eServerLoads: loads });
+  assert.deepEqual([fake.server, fake.web, fake.e2e], ['changed', 'none', 'none']);
+  // Without knowing what the e2e server loads, a helper counts as loaded: when in doubt, run more.
+  assert.equal(planFor(['apps/server/test/fixtures/ssi/site-checks.ts']).e2e, 'all');
+});
+
+test('the server test setup and fixture data run all server tests; neither runs the web tests', () => {
+  const none = { e2eServerLoads: new Set() };
+  for (const path of ['apps/server/test/support.ts', 'apps/server/test/fixtures/synthetic-dive.fit']) {
+    const plan = planFor([path], none);
+    assert.deepEqual([plan.server, plan.web], ['all', 'none'], path);
+  }
+  assert.equal(planFor(['apps/server/test/support.ts'], none).e2e, 'none');
+});
+
+test('the browser test setup and its data run every browser test and nothing else; the review capture runs none', () => {
+  for (const path of ['apps/web/e2e/support.ts', 'apps/web/e2e/global-setup.ts', 'apps/web/e2e/prepare.ts', 'apps/web/e2e/fixtures/main-computer.fit']) {
+    const plan = planFor([path]);
+    assert.deepEqual([plan.server, plan.web, plan.e2e], ['none', 'none', 'all'], path);
+  }
+  const capture = planFor(['apps/web/e2e/review-material.capture.ts']);
+  assert.deepEqual([capture.typecheck, capture.server, capture.web, capture.e2e], [true, 'none', 'none', 'none']);
+});
+
+test('the check scripts run their own tests only; the lint script also lints everything; one-off scripts and licences are quiet', () => {
+  for (const path of ['scripts/check.mjs', 'scripts/check-lib.mjs', 'scripts/check-lib.test.mjs']) {
+    const plan = planFor([path]);
+    assert.deepEqual([plan.scripts, plan.typecheck, plan.lint, plan.server, plan.web, plan.e2e], [true, false, 'none', 'none', 'none', 'none'], path);
+  }
+  const lintScript = planFor(['scripts/check-lint.mjs']);
+  assert.deepEqual([lintScript.scripts, lintScript.lint, lintScript.server, lintScript.e2e], [true, 'all', 'none', 'none']);
+  assert.deepEqual(planFor(['scripts/fit-compressibility.mjs', 'LICENSE', 'NOTICE']), planFor([]));
+});
+
+test('the dive number pages run the areas that show them', () => {
+  for (const path of ['apps/web/src/NumberChain.tsx', 'apps/web/src/ProviderDiveNumbers.tsx']) {
+    const plan = planFor([path]);
+    assert.deepEqual([plan.web, plan.e2e, [...plan.areas].sort()], ['changed', 'some', ['@account', '@dives', '@layout']], path);
+  }
+});
+
+test('packages, the lockfile and configuration still run everything', () => {
+  for (const path of ['package.json', 'pnpm-lock.yaml', 'apps/web/vite.config.ts', 'apps/server/tsconfig.json', 'packages/api-client/src/index.ts']) {
+    const plan = planFor([path]);
+    assert.deepEqual([plan.server, plan.web, plan.e2e], ['all', 'all', 'all'], path);
+  }
+});
+
+test('planSteps passes on what the e2e server loads', () => {
+  const plan = planSteps({ typecheck: [], lint: [], scripts: [], server: [], web: [], e2e: ['apps/server/test/fixtures/ssi/site-checks.ts'] }, { e2eServerLoads: new Set() });
+  assert.equal(plan.e2e, 'none');
+});
+
+test('what the e2e server loads: its own file and the test files it imports, followed through their imports', (t) => {
+  const repo = repository({
+    'apps/server/test/e2e-server.ts': "import { a } from '../src/app.js';\nimport { createFakeSsi } from './fake-ssi.js';\nimport { makeSyntheticDive } from './fixtures/synthetic-dive.js';",
+    'apps/server/test/fake-ssi.ts': "import type { X } from './fixtures/ssi-shapes.js';",
+    'apps/server/test/fixtures/ssi-shapes.ts': 'export type X = 1;',
+    'apps/server/test/fixtures/synthetic-dive.ts': "import { y } from '@garmin/fitsdk';",
+    'apps/server/test/fake-ledger-provider.ts': "import { z } from './fixtures/other.js';",
+    'apps/server/test/fixtures/other.ts': '',
+  });
+  t.after(repo.drop);
+  assert.deepEqual([...e2eServerLoads(repo.cwd)].sort(), ['apps/server/test/e2e-server.ts', 'apps/server/test/fake-ssi.ts', 'apps/server/test/fixtures/ssi-shapes.ts', 'apps/server/test/fixtures/synthetic-dive.ts']);
+});
+
+// Amendment of 2026-10-24: one ui-quality variant in pnpm check.
+
+test('the other ui-quality variants run in pnpm check only when texts, shared styles or shared UI changed', () => {
+  assert.deepEqual(variantsRun(['apps/web/src/SitesPage.tsx', 'apps/server/src/sites/routes.ts', 'apps/web/e2e/sites.spec.ts']), { run: false, why: null });
+  for (const path of ['apps/web/src/i18n/locales/de.json', 'apps/web/src/i18n/index.ts', 'apps/web/src/ui/Button.tsx', 'apps/web/src/design/tokens.css',
+    'apps/web/src/App.tsx', 'apps/web/src/pages.css', 'apps/web/src/main.tsx']) {
+    const verdict = variantsRun(['apps/web/src/SitesPage.tsx', path]);
+    assert.equal(verdict.run, true, path);
+    assert.match(verdict.why, new RegExp(path.replace(/[./]/g, '\\$&')));
+  }
+});
+
+test('what the browser tests leave out: in pnpm check the full-only tests and, unless asked for, the other variants', () => {
+  assert.equal(browserGrepInvert({ full: true, variants: false }), null);
+  assert.equal(browserGrepInvert({ full: false, variants: true }), FULL_ONLY);
+  assert.equal(browserGrepInvert({ full: false, variants: false }), `${FULL_ONLY}|${VARIANTS}`);
+});
+
+// Leftovers of the review of the amendment "main counts as green".
+
+test('main and origin/main at the same merge base are one candidate', (t) => {
+  const repo = repository({ 'a.ts': 'a' });
+  t.after(repo.drop);
+  repo.git('branch', '-M', 'main');
+  repo.git('update-ref', 'refs/remotes/origin/main', 'HEAD');
+  assert.equal(baseCandidates('server', repo.cwd).length, 1);
+});
+
+test('on main itself the base is named "main (<sha>)", not where a branch left it', (t) => {
+  const repo = repository({ 'a.ts': 'a' });
+  t.after(repo.drop);
+  repo.git('branch', '-M', 'main');
+  assert.match(countingBase('server', snapshot(repo.cwd), repo.cwd).from, /^main \([0-9a-f]{7}\)$/);
+});
+
+test('without main and without a green run the base is the last commit', (t) => {
+  const repo = repository({ 'a.ts': 'a' });
+  t.after(repo.drop);
+  repo.git('branch', '-M', 'trunk');
+  repo.write('b.ts', 'b');
+  const chosen = countingBase('server', snapshot(repo.cwd), repo.cwd);
+  assert.deepEqual([chosen.base, chosen.changed], ['HEAD', ['b.ts']]);
+  assert.match(chosen.from, /last commit/);
+});
+
+test('a main without common history is skipped, not a crash', (t) => {
+  const repo = repository({ 'a.ts': 'a' });
+  t.after(repo.drop);
+  repo.git('branch', '-M', 'trunk');
+  repo.git('checkout', '--quiet', '--orphan', 'main');
+  repo.git('commit', '--quiet', '-m', 'unrelated');
+  repo.git('checkout', '--quiet', 'trunk');
+  assert.deepEqual(baseCandidates('server', repo.cwd), []);
+  assert.equal(countingBase('server', snapshot(repo.cwd), repo.cwd).base, 'HEAD');
+});
+
+// Amendment of 2026-10-24: a passing --failed renews the browser record.
+
+test('a failed browser run is kept with its snapshot and its failed tests, and can be cleared', (t) => {
+  const repo = repository({ 'a.ts': 'a' });
+  t.after(repo.drop);
+  assert.equal(failedRun('e2e', repo.cwd), null);
+  const tree = snapshot(repo.cwd);
+  recordFailed('e2e', tree, ['b-id', 'a-id'], repo.cwd);
+  assert.deepEqual(failedRun('e2e', repo.cwd), { tree, failedTests: ['a-id', 'b-id'] });
+  clearFailed('e2e', repo.cwd);
+  assert.equal(failedRun('e2e', repo.cwd), null);
+  clearFailed('e2e', repo.cwd); // clearing twice is fine
+});
+
+test('a failed browser step keeps only failures Playwright wrote during it, and none when it may have stopped early', () => {
+  const lastRun = { status: 'failed', failedTests: ['a'] };
+  assert.deepEqual(keptFailures({ lastRun, writtenAt: 2000, startedAt: 1000, stopsEarly: false }), { failedTests: ['a'], why: null });
+  // The server didn't start or the setup crashed: the file is from an earlier run.
+  assert.equal(keptFailures({ lastRun, writtenAt: 500, startedAt: 1000, stopsEarly: false }).failedTests, null);
+  assert.match(keptFailures({ lastRun, writtenAt: 500, startedAt: 1000, stopsEarly: false }).why, /earlier/);
+  assert.equal(keptFailures({ lastRun: null, writtenAt: null, startedAt: 1000, stopsEarly: false }).failedTests, null);
+  assert.equal(keptFailures({ lastRun: { status: 'interrupted', failedTests: ['a'] }, writtenAt: 2000, startedAt: 1000, stopsEarly: false }).failedTests, null);
+  assert.equal(keptFailures({ lastRun: { status: 'failed', failedTests: [] }, writtenAt: 2000, startedAt: 1000, stopsEarly: false }).failedTests, null);
+  // With maxFailures Playwright stops early: the tests it never ran are in no list.
+  assert.equal(keptFailures({ lastRun, writtenAt: 2000, startedAt: 1000, stopsEarly: true }).failedTests, null);
+});
+
+test('data files under the server tests run every browser test (the e2e server reads some by path)', () => {
+  const plan = planFor(['apps/server/test/fixtures/synthetic-dive.fit'], { e2eServerLoads: new Set() });
+  assert.deepEqual([plan.server, plan.e2e], ['all', 'all']);
+});
+
+test('what the e2e server loads follows imports without an extension and of a folder index', (t) => {
+  const repo = repository({
+    'apps/server/test/e2e-server.ts': "import { a } from './helpers';\nimport { b } from './seeds';",
+    'apps/server/test/helpers.ts': '',
+    'apps/server/test/seeds/index.ts': '',
+  });
+  t.after(repo.drop);
+  assert.deepEqual([...e2eServerLoads(repo.cwd)].sort(), ['apps/server/test/e2e-server.ts', 'apps/server/test/helpers.ts', 'apps/server/test/seeds/index.ts']);
+});
+
+test('a passing --failed records the browser step green only on the same snapshot and the same failed tests', () => {
+  const kept = { tree: 't1', failedTests: ['a', 'b'] };
+  assert.equal(failedRerunRenews(kept, 't1', ['b', 'a']).renews, true);
+  assert.equal(failedRerunRenews(kept, 't2', ['a', 'b']).renews, false);
+  assert.match(failedRerunRenews(kept, 't2', ['a', 'b']).why, /changed/);
+  // Playwright ran by hand in between: its last run is not the check's.
+  assert.equal(failedRerunRenews(kept, 't1', ['c']).renews, false);
+  assert.equal(failedRerunRenews(null, 't1', ['a']).renews, false);
 });

@@ -1,7 +1,7 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, keys, unwrap, type Position, type ProviderView, type RequirementView, type SiteView } from './api.ts';
+import { api, ApiError, connectionsQuery, keys, unwrap, type ConnectionView, type Position, type ProviderView, type RequirementView, type SiteView } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { countryOptions } from './lib/geo.ts';
 import { depthFromDisplay, depthIn } from './lib/units.ts';
@@ -27,6 +27,8 @@ interface Draft {
   waterType: WaterType | null;
   /** The site's External IDs Users may type, by Source, as typed. */
   externalIds: Record<string, string>;
+  /** The account's own private site IDs, by Connection, as typed (only those edited here). */
+  privateIds: Record<string, string>;
 }
 
 /**
@@ -51,8 +53,13 @@ const draftOf = (s: Partial<SiteView>, units: 'metric' | 'imperial'): Draft => (
   description: s.description ?? '',
   maxDepth: s.maxDepthM == null ? Number.NaN : round1(depthIn(s.maxDepthM, units)),
   waterType: s.waterType ?? null,
-  externalIds: Object.fromEntries((s.externalIds ?? []).map((e) => [e.source, e.externalId])),
+  externalIds: Object.fromEntries((s.externalIds ?? []).filter((e) => !e.privateTo).map((e) => [e.source, e.externalId])),
+  privateIds: {},
 });
+
+/** The account's private ID of the site at a Connection's Provider, if it has one. */
+const privateIdOf = (s: Partial<SiteView> | undefined, c: ConnectionView) =>
+  s?.externalIds?.find((e) => e.source === c.provider && e.privateTo?.diverId === c.diverId)?.externalId;
 
 /** One typed site ID field, worded by the Provider that needs it. */
 function ExternalIdField({ provider: p, requirement: r, value, invalid, onChange }: {
@@ -64,6 +71,22 @@ function ExternalIdField({ provider: p, requirement: r, value, invalid, onChange
       <TextField
         label={pt('siteIdLabel')} name={`externalId-${r.source}`} description={pt('siteIdHint')} autoComplete="off"
         maxLength={40} value={value} onChange={onChange}
+      />
+      {invalid && <Notice tone="danger">{pt('siteIdInvalid')}</Notice>}
+    </>
+  );
+}
+
+/** A site ID of the User's own account at the Provider, private to it (ADR 0057): typed through the Connection. */
+function PrivateIdField({ provider: p, connection: c, many, value, invalid, onChange }: {
+  provider: ProviderView; connection: ConnectionView; many: boolean; value: string; invalid: boolean; onChange: (v: string) => void;
+}) {
+  const pt = useProviderText(p);
+  return (
+    <>
+      <TextField
+        label={many ? `${pt('privateSiteIdLabel')} (${c.diverName})` : pt('privateSiteIdLabel')} name={`privateId-${c.id}`}
+        description={pt('privateSiteIdHint')} autoComplete="off" maxLength={40} value={value} onChange={onChange}
       />
       {invalid && <Notice tone="danger">{pt('siteIdInvalid')}</Notice>}
     </>
@@ -94,11 +117,18 @@ export function SiteForm({ site, initial, submitLabel, onSaved, onCancel }: {
   const display = useDisplay();
   const queryClient = useQueryClient();
   const typed = typedSources(useProviders().data);
+  const connections = useQuery(connectionsQuery()).data;
+  // The fields of Providers the User is connected to: the private ID needs the Connection to ask the Provider.
+  const privateFields = typed.flatMap(({ provider, requirement }) => (connections ?? [])
+    .filter((c) => c.provider === provider.id).map((connection) => ({ provider, requirement, connection })));
   const start = draftOf(site ?? initial ?? {}, display.units);
   const [draft, setDraft] = useState(start);
   const [half, setHalf] = useState(false);
   const [bad, setBad] = useState<string[]>([]);
-  /** A site this form created whose IDs didn't save: submitting again edits it instead of creating another. */
+  /**
+   * The site as the last step of a save left it: when a later step fails (a typed ID refused), submitting again edits
+   * this one, with its new version, instead of creating another or sending the old version.
+   */
   const created = useRef<SiteView | null>(null);
   // The "both or neither" message stays until the next submit: clearing it as a field commits (on blur)
   // would move the buttons under a pointer that is pressing one.
@@ -111,31 +141,42 @@ export function SiteForm({ site, initial, submitLabel, onSaved, onCancel }: {
   useEffect(() => { form.current?.querySelector<HTMLInputElement>('input')?.focus(); }, []);
 
   const save = useMutation({
-    mutationFn: async ({ ids, ...body }: {
+    mutationFn: async ({ ids, privateIds, ...body }: {
       name: string; position: Position | null; country: string | null; waterBody: string | null; description: string | null;
-      maxDepthM: number | null; waterType: WaterType | null; ids: Record<string, string | null>;
+      maxDepthM: number | null; waterType: WaterType | null; ids: Record<string, string | null>; privateIds: Record<string, string | null>;
     }) => {
-      const target = site ?? created.current;
+      const target = created.current ?? site;
       let saved = target
         ? unwrap(await api.PATCH('/api/dive-sites/{id}', { params: { path: { id: target.id } }, body: { version: target.version, ...body } }))
         : unwrap(await api.POST('/api/dive-sites', { body }));
-      if (!site) created.current = saved;
+      created.current = saved;
       // A site's typed IDs have their own route and don't change its version (ADR 0029).
       for (const [source, externalId] of Object.entries(ids)) {
-        if ((saved.externalIds.find((e) => e.source === source)?.externalId ?? null) === externalId) continue;
+        if ((saved.externalIds.find((e) => e.source === source && !e.privateTo)?.externalId ?? null) === externalId) continue;
         saved = unwrap(await api.PUT('/api/dive-sites/{id}/external-ids/{source}', {
           params: { path: { id: saved.id, source: source as 'ssi' } }, body: { externalId },
         }));
+        created.current = saved;
+      }
+      // The private ones go through the Connection, which asks the Provider first; it doesn't change the version either.
+      for (const [connectionId, externalId] of Object.entries(privateIds)) {
+        const c = privateFields.find((f) => f.connection.id === connectionId)!.connection;
+        const now = saved.externalIds.find((e) => e.source === c.provider && e.privateTo?.diverId === c.diverId)?.externalId ?? null;
+        if (now === externalId) continue;
+        unwrap(await api.PUT('/api/connections/{id}/dive-sites/{siteId}', { params: { path: { id: connectionId, siteId: saved.id } }, body: { externalId } }));
+        saved = unwrap(await api.GET('/api/dive-sites/{id}', { params: { path: { id: saved.id } } }));
+        created.current = saved;
       }
       return saved;
     },
-    onSuccess: (saved) => {
+    onSuccess: (saved, sent) => {
       releaseLeaveGuard();
       queryClient.setQueryData(keys.site(saved.id), saved);
       // Close at once; lists, nearby sites and the history refresh behind it (waiting kept the form open).
       void queryClient.invalidateQueries({ queryKey: keys.sites, predicate: (q) => q.queryKey[1] !== saved.id || q.queryKey.length > 2 });
       // A Dive's water type is its site's (ADR 0025), and its site's name shows on it.
-      if (site) void queryClient.invalidateQueries({ queryKey: keys.dives });
+      // A private ID typed here changes what a Dive's Provider panel needs.
+      if (site || Object.values(sent.privateIds).some(Boolean)) void queryClient.invalidateQueries({ queryKey: keys.dives });
       onSaved(saved);
     },
   });
@@ -149,7 +190,11 @@ export function SiteForm({ site, initial, submitLabel, onSaved, onCancel }: {
       const text = (draft.externalIds[r.source] ?? '').trim();
       return [r.source, text ? typedSiteId(r, text) : null];
     }));
-    const invalid = Object.entries(ids).filter(([, v]) => v === undefined).map(([source]) => source);
+    const privateIds = Object.fromEntries(privateFields.map(({ requirement: r, connection: c }) => {
+      const text = (draft.privateIds[c.id] ?? privateIdOf(created.current ?? site, c) ?? '').trim();
+      return [c.id, text ? typedSiteId(r, text) : null];
+    }));
+    const invalid = Object.entries({ ...ids, ...privateIds }).filter(([, v]) => v === undefined).map(([source]) => source);
     setHalf(position === 'half');
     setBad(invalid);
     if (position === 'half' || invalid.length > 0) return;
@@ -158,7 +203,7 @@ export function SiteForm({ site, initial, submitLabel, onSaved, onCancel }: {
       waterBody: draft.waterBody.trim() || null, description: draft.description.trim() || null,
       maxDepthM: Number.isNaN(draft.maxDepth) ? null : Math.round(depthFromDisplay(draft.maxDepth, display.units) * 100) / 100,
       waterType: draft.waterType,
-      ids: ids as Record<string, string | null>,
+      ids: ids as Record<string, string | null>, privateIds: privateIds as Record<string, string | null>,
     });
   };
 
@@ -202,13 +247,20 @@ export function SiteForm({ site, initial, submitLabel, onSaved, onCancel }: {
           minValue={0.1} maxValue={depthIn(400, display.units)} formatOptions={{ maximumFractionDigits: 1 }}
         />
       </div>
-      {typed.length > 0 && (
+      {(typed.length > 0 || privateFields.length > 0) && (
         <div className="form-grid">
           {typed.map(({ provider, requirement }) => (
             <ExternalIdField
               key={requirement.source} provider={provider} requirement={requirement} invalid={bad.includes(requirement.source)}
               value={draft.externalIds[requirement.source] ?? ''}
               onChange={(v) => set('externalIds', { ...draft.externalIds, [requirement.source]: v })}
+            />
+          ))}
+          {privateFields.map(({ provider, connection }) => (
+            <PrivateIdField
+              key={connection.id} provider={provider} connection={connection} many={privateFields.filter((f) => f.provider.id === provider.id).length > 1}
+              invalid={bad.includes(connection.id)} value={draft.privateIds[connection.id] ?? privateIdOf(site, connection) ?? ''}
+              onChange={(v) => set('privateIds', { ...draft.privateIds, [connection.id]: v })}
             />
           ))}
         </div>

@@ -44,6 +44,11 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - The API names only the signed-in User (`actor.type` `you`) and says `user` for anyone else. Don't fill in
     names from elsewhere ([ADR 0020](../decisions/0020-dive-sites.md)).
   - A merge tells a Dive's owner "Dive Hub" moved it (ADR 0022).
+- **A private site ID is shown only to its own Users.** An entry of a site's `externalIds` with `privateTo` set is
+  private to that Diver's account at the Source (an SSI site only that account can use, ADR 0057); the API lists it
+  only to Users who manage that Diver, and only sends for that Diver use it. A site can then have two IDs from one
+  Source (the public one and the account's private one): show the private one as the Diver's, never as the site's for
+  everyone. Null: public. The site's history never names a private ID.
 - **Must say that a site is shared** when creating or editing one, especially one made from a Dive's position.
   Every User sees a site's position, while a Dive's own position stays private (ADR 0020).
   *Web:* `SiteForm.tsx` (`sites.sharedHint`).
@@ -483,10 +488,18 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
   A send refused this way may already have taken changes made at the Provider into the Dive (the take comes first), so
   re-read the Dive after the error.
   Offer the fix per `type`, from the Provider's `requirements` in `GET /api/providers`:
-  - **`site_external_id`:** `siteId: null` means choose a site first. Otherwise, when `typed`, offer the Provider's sites
+  - **`site_external_id`:** `siteId: null` means choose a site first. With `bySend: true` (the Provider's requirement
+    has `createdBySend` and the site has a position) it doesn't block: offer sending, and say "Sending finds this site in
+    your <Provider> logbook or creates it there as a private site"; the pick below stays on offer. Otherwise, when `typed`, offer the Provider's sites
     nearest first (`GET /api/dives/{id}/providers/{provider}/sites`, which asks the Provider, so only on request) and
-    typing the ID (accept the `prefixes`, check against `pattern`); save it on the site
-    (`PUT /api/dive-sites/{id}/external-ids/{source}`). When not `typed`, say it can't be fixed here.
+    typing the ID (accept the `prefixes`, check against `pattern`). Each suggestion carries `visibility` (`private`: private
+    to the Connection's account, show it as such; `unknown`: the Provider doesn't say) and `waterType`. With a Connection
+    for the Source, pick and type through it: `PUT /api/connections/{id}/dive-sites/{siteId}` with `{ externalId }` asks the
+    Provider first and answers `{ externalId, private }` (`null` clears the account's private ID); `provider_site_unknown`
+    (422) means the Provider has no site with that ID (also another account's private one), and nothing is stored; an ID
+    the Provider doesn't say about, or can't be asked about, is stored private; so `private: true` can also mean the Provider didn't confirm the site public (unknown or unreachable), and clients don't present it as the Provider's statement. `external_id_taken` as below. Without a
+    Connection, save it on the site (`PUT /api/dive-sites/{id}/external-ids/{source}`), which stores a public ID without
+    asking the Provider. When not `typed`, say it can't be fixed here.
   - **`diver_mapping`:** one item per Participant (`diverName`) the Provider can't identify; say they will be left out
     (advisory) or that sending waits (blocking). With `fixes` containing `diver_external_id` and a Provider offering
     `buddies` `find`, offer finding the person in the account's list (`GET /api/connections/{id}/buddies`, only entries

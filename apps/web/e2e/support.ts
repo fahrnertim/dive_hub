@@ -76,6 +76,20 @@ export async function setPreferences(api: APIRequestContext, preferences: { lang
   await api.patch('/api/me/preferences', { data: preferences, headers });
 }
 
+/** No axe violations on the page as it is (WCAG 2.2 AA and best practices). */
+export async function expectAccessible(page: Page) {
+  // React Aria points a search field at its new active result one render after a list changes: wait until every such
+  // reference is on the page. One that stays broken still fails.
+  await expect.poll(() => page.evaluate(() => [...document.querySelectorAll('[aria-activedescendant]')]
+    .every((el) => !!document.getElementById(el.getAttribute('aria-activedescendant')!)))).toBe(true);
+  const axe = await new AxeBuilder({ page })
+    // React Aria's live announcer briefly keeps a role=img pointing at a pending button that may be gone.
+    .exclude('[data-live-announcer]')
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
+    .analyze();
+  expect(axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.html.slice(0, 120)).join(' | ')}`)).toEqual([]);
+}
+
 /**
  * The checks every page must pass (UI review 2026-10-03, so its problems don't come back):
  * axe-core finds no WCAG 2.2 AA or best-practice violation, the page has one h1 and its own title,
@@ -94,18 +108,7 @@ export async function expectGoodPage(page: Page, title?: string, options: { axe?
   else await expect(page).toHaveTitle(/^.+ – Dive Hub$/);
 
   // axe is the slowest check; ui-quality runs it in two of its four variants (ADR 0023).
-  if (options.axe !== false) {
-    // React Aria points a search field at its new active result one render after a list changes: wait until every such
-    // reference is on the page. One that stays broken still fails.
-    await expect.poll(() => page.evaluate(() => [...document.querySelectorAll('[aria-activedescendant]')]
-      .every((el) => !!document.getElementById(el.getAttribute('aria-activedescendant')!)))).toBe(true);
-    const axe = await new AxeBuilder({ page })
-      // React Aria's live announcer briefly keeps a role=img pointing at a pending button that may be gone.
-      .exclude('[data-live-announcer]')
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-      .analyze();
-    expect(axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.html.slice(0, 120)).join(' | ')}`)).toEqual([]);
-  }
+  if (options.axe !== false) await expectAccessible(page);
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow, 'the page scrolls sideways').toBeLessThanOrEqual(0);
@@ -245,14 +248,25 @@ export async function disconnectSsi(api: APIRequestContext) {
 
 /**
  * The Dive ready to go to SSI, but not there: at the site "SSI test reef" without an SSI site ID, and with
- * no SSI dive (deleted there if an earlier test sent it). Needs a Connection.
+ * no SSI dive (deleted there if an earlier test sent it). Needs a Connection. `positioned: false`: the site without its
+ * position, so that sending can't find or make it at SSI and the site's ID is still needed first (piece 4).
  */
-export async function readyForSsi(api: APIRequestContext, diveId: string) {
+export async function readyForSsi(api: APIRequestContext, diveId: string, options: { positioned?: boolean } = {}) {
   const name = 'SSI test reef';
+  const position = options.positioned === false ? null : { latitude: 47.851, longitude: 13.5512 };
   const { sites } = await (await api.get(`/api/dive-sites?q=${encodeURIComponent(name)}`)).json() as { sites: { id: string; name: string; version: number }[] };
   let site = sites.find((s) => s.name === name);
-  if (!site) site = await (await api.post('/api/dive-sites', { data: { name, position: { latitude: 47.851, longitude: 13.5512 } }, headers })).json() as { id: string; name: string; version: number };
-  else await api.put(`/api/dive-sites/${site.id}/external-ids/ssi`, { data: { externalId: null }, headers });
+  if (!site) site = await (await api.post('/api/dive-sites', { data: { name, position }, headers })).json() as { id: string; name: string; version: number };
+  else {
+    await api.put(`/api/dive-sites/${site.id}/external-ids/ssi`, { data: { externalId: null }, headers });
+    // The account's private ID too: an earlier send may have made the site at SSI (piece 4).
+    for (const c of (await (await api.get('/api/connections')).json() as Connection[]).filter((x) => x.provider === 'ssi')) {
+      const cleared = await api.put(`/api/connections/${c.id}/dive-sites/${site.id}`, { data: { externalId: null }, headers });
+      if (!cleared.ok()) throw new Error(`clearing the private SSI ID failed: ${cleared.status()} ${await cleared.text()}`);
+    }
+    const { version } = await (await api.get(`/api/dive-sites/${site.id}`)).json() as { version: number };
+    await api.patch(`/api/dive-sites/${site.id}`, { data: { version, position }, headers });
+  }
   const dive = await (await api.get(`/api/dives/${diveId}`)).json() as Dive;
   await api.patch(`/api/dives/${diveId}`, { data: { version: dive.version, siteId: site.id }, headers });
   const status = await (await api.get(`/api/dives/${diveId}/providers/ssi`)).json() as { current: unknown };
@@ -602,13 +616,13 @@ export async function cancelWaitingImports(api: APIRequestContext) {
  * Erika's SSI connection as the push-run tests need it: the password not kept (so an expired token stops a run), and
  * the test reef's SSI site ID set or taken away. Returns the Connection, the site and the Dive's id.
  */
-export async function pushRunSetup(api: APIRequestContext, diveId: string, options: { keepSignedIn: boolean; siteExternalId: string | null }) {
+export async function pushRunSetup(api: APIRequestContext, diveId: string, options: { keepSignedIn: boolean; siteExternalId: string | null; positioned?: boolean }) {
   await disconnectSsi(api);
   const me = await (await api.get('/api/me')).json() as { ownDiver: { id: string } };
   const made = await api.post('/api/connections/ssi', { data: { diverId: me.ownDiver.id, ...SSI_ACCOUNT, keepSignedIn: options.keepSignedIn }, headers });
   if (!made.ok()) throw new Error(`connecting to SSI failed: ${made.status()} ${await made.text()}`);
   const connection = await made.json() as { id: string };
-  await readyForSsi(api, diveId);
+  await readyForSsi(api, diveId, { positioned: options.positioned ?? true });
   await api.post('/e2e/fake-ssi/clear-dives', { data: { email: SSI_ACCOUNT.login }, headers });
   const dive = await (await api.get(`/api/dives/${diveId}`)).json() as { site: { id: string } };
   await api.put(`/api/dive-sites/${dive.site.id}/external-ids/ssi`, { data: { externalId: options.siteExternalId }, headers });

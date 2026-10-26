@@ -66,8 +66,9 @@ Anything in the prompt that is worth keeping longer than the next session belong
 
 ## Checks
 
-Unchanged, [ADR 0023](../decisions/0023-faster-checks.md): `pnpm check` while working, `pnpm check:full` before
-proposing a commit, the review capture when UI changed. They were not a relevant cost.
+[ADR 0023](../decisions/0023-faster-checks.md): `pnpm check` while working and before a commit, CI's
+`pnpm check:full` on the pull request (no full check by hand before a push, amendment of 2026-10-24), the review
+capture when UI changed.
 
 A commit that touches only documentation (`docs/`, `AGENTS.md`, `CLAUDE.md`, `README.md`) needs no check: none of
 them reads it (amendment of 2026-10-08 to ADR 0023). Say so when handing over the commit.
@@ -96,8 +97,8 @@ them reads it (amendment of 2026-10-08 to ADR 0023). Say so when handing over th
 
 ## Never saved on
 
-- A green `pnpm check` before proposing a commit that changes more than documentation, and `pnpm check:full` before a
-  push or a release ([ADR 0023](../decisions/0023-faster-checks.md), amended 2026-10-08).
+- A green `pnpm check` before proposing a commit that changes more than documentation, and a green CI full check
+  before a merge or a release ([ADR 0023](../decisions/0023-faster-checks.md), amended 2026-10-24).
 - Tests first.
 - Reading an ADR in full before changing what it decided.
 - The review of the screenshots when UI changed.

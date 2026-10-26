@@ -1,13 +1,15 @@
-// The Dive site a Provider's dive names (ADR 0030): the site here with that site ID; else one here that is the same site
-// by the Site import's rule (matchingSite: within 100 m, the same name, no ID at that Source yet), which then gets the
-// ID; else, where an admin allowed the Provider's site data, a new site from the values the Provider gives (name,
-// position, country, water type).
-import { and, eq, inArray, isNull } from 'drizzle-orm';
+// The Dive site a Provider's dive names (ADR 0030): the site here with that site ID (whoever's it is); else one here that
+// is the same site by the Site import's rule (matchingSite: within 100 m, the same name, no ID at that Source yet that the
+// account may use), which then gets the ID; else, where an admin allowed the Provider's site data, a new site from the
+// values the Provider gives (name, position, country, water type). A site the Provider marks private to the account is
+// stored as the account's private ID, without a Revision for it (ADR 0057).
+import { and, eq, isNull } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
-import { diveSite, diveSiteExternalId, providerSiteData } from '../db/schema.js';
+import { diveSite, providerSiteData } from '../db/schema.js';
 import { writeRevision, type Actor, type Changes } from '../dives/revisions.js';
 import { matchingSite, MATCH_WITHIN_M } from './import/import-plan.js';
 import type { ImportedValues } from './import/site-source.js';
+import { holderOf, idsOf, storeId } from './site-ids.js';
 import { nearSql, type Position } from './site-service.js';
 import { revisionKey, type SiteSource } from './sources.js';
 import type { SiteWaterType } from '../vocabulary.js';
@@ -22,6 +24,10 @@ export interface ProviderSite {
   country: string | null;
   /** Fresh, salt or brackish, where the Provider says (ADR 0025: the water of every Dive there). */
   waterType: SiteWaterType | null;
+  /** The importing Diver's account at the Source (their `diver_external_id` row), or null. */
+  account: string | null;
+  /** The Provider marks the site private, and the account's own. */
+  private: boolean;
 }
 
 /** Where the site of a Provider's dive is here: already (`known`), the same site by name and position (`match`), or none. */
@@ -38,19 +44,17 @@ export async function siteDataAllowed(q: Db | Tx, provider: string): Promise<boo
  * another, and a deleted site isn't used).
  */
 export async function siteOutlook(q: Db | Tx, s: ProviderSite): Promise<SiteOutlook> {
-  const [known] = await q.select({ siteId: diveSite.id, deletedAt: diveSite.deletedAt }).from(diveSiteExternalId)
-    .innerJoin(diveSite, eq(diveSite.id, diveSiteExternalId.siteId))
-    .where(and(eq(diveSiteExternalId.source, s.source), eq(diveSiteExternalId.externalId, s.externalId)));
-  if (known) return known.deletedAt ? { kind: 'taken' } : { kind: 'known', siteId: known.siteId };
+  const known = await holderOf(q, s.source, s.externalId);
+  if (known) return known.deleted ? { kind: 'taken' } : { kind: 'known', siteId: known.siteId };
   if (!s.position) return { kind: 'new' };
   const near = await q.select({ id: diveSite.id, name: diveSite.name, latitude: diveSite.latitude, longitude: diveSite.longitude })
     .from(diveSite).where(and(isNull(diveSite.deletedAt), nearSql(s.position, MATCH_WITHIN_M)));
-  const ids = near.length === 0 ? [] : await q.select({ siteId: diveSiteExternalId.siteId, source: diveSiteExternalId.source })
-    .from(diveSiteExternalId).where(inArray(diveSiteExternalId.siteId, near.map((n) => n.id)));
+  // Another account's private ID doesn't block: this account can't use it.
+  const ids = await idsOf(q, near.map((n) => n.id), s.account ? [s.account] : []);
   const site = matchingSite({ source: s.source, name: s.name, position: s.position }, near.map((n) => ({
     id: n.id,
     values: { name: n.name, position: n.latitude !== null && n.longitude !== null ? { latitude: n.latitude, longitude: n.longitude } : null },
-    externalIds: ids.filter((e) => e.siteId === n.id),
+    externalIds: ids.get(n.id) ?? [],
   })));
   return site ? { kind: 'match', siteId: site.id } : { kind: 'new' };
 }
@@ -58,7 +62,8 @@ export async function siteOutlook(q: Db | Tx, s: ProviderSite): Promise<SiteOutl
 /**
  * The site for a Provider's dive, made so (ADR 0030): a matched site gets the Provider's ID as a reference (no data
  * taken); a new one is made from the Provider's values only with `allowCreate`, marked as from that Source, with the
- * User as its creator. One Revision on the site. Null when there is none to use.
+ * User as its creator. One Revision on the site, naming the ID only when it is public. Null when there is none to use
+ * (also a private site without the account to keep it for).
  */
 export async function siteForProvider(
   tx: Tx, s: ProviderSite, options: { allowCreate: boolean; userId: string; actor: Actor },
@@ -66,13 +71,16 @@ export async function siteForProvider(
   const outlook = await siteOutlook(tx, s);
   if (outlook.kind === 'known') return outlook.siteId;
   if (outlook.kind === 'taken') return null;
-  const idChange: Changes = { [revisionKey(s.source)]: { from: null, to: s.externalId } };
+  if (s.private && !s.account) return null;
+  const accountId = s.private ? s.account : null;
+  const idChange: Changes = accountId === null ? { [revisionKey(s.source)]: { from: null, to: s.externalId } } : {};
   if (outlook.kind === 'match') {
-    await tx.insert(diveSiteExternalId).values({ siteId: outlook.siteId, source: s.source, externalId: s.externalId });
-    await writeRevision(tx, 'dive_site', outlook.siteId, options.actor, 'link', idChange);
+    await storeId(tx, { siteId: outlook.siteId, source: s.source, externalId: s.externalId, accountId, actor: null });
+    if (accountId === null) await writeRevision(tx, 'dive_site', outlook.siteId, options.actor, 'link', idChange);
     return outlook.siteId;
   }
-  if (!options.allowCreate) return null;
+  // A site we know only by its ID (a name-less one: the Provider left it out of its lists) is not made.
+  if (!options.allowCreate || !s.name) return null;
   const imported: ImportedValues = {
     name: s.name, position: s.position, country: s.country, waterBody: null, description: null, maxDepthM: null, waterType: s.waterType,
   };
@@ -80,9 +88,7 @@ export async function siteForProvider(
     name: s.name, latitude: s.position?.latitude ?? null, longitude: s.position?.longitude ?? null, country: s.country,
     waterType: s.waterType, createdBy: options.userId,
   }).returning({ id: diveSite.id });
-  await tx.insert(diveSiteExternalId).values({
-    siteId: created!.id, source: s.source, externalId: s.externalId, providesData: true, imported,
-  });
+  await storeId(tx, { siteId: created!.id, source: s.source, externalId: s.externalId, accountId, actor: null, providesData: true, imported });
   const changes: Changes = { name: { from: null, to: s.name }, ...idChange };
   if (s.position) changes.position = { from: null, to: s.position };
   if (s.country) changes.country = { from: null, to: s.country };

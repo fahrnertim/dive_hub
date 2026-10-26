@@ -69,6 +69,14 @@ jobs:
 
       - run: pnpm check:full
 
+      # Names what failed in the job summary, for the log of check escapes (docs/agents/check-escapes.md):
+      # Playwright keeps a folder per failed test.
+      - name: Failed browser tests
+        if: failure()
+        run: |
+          echo "### Failed browser tests" >> "$GITHUB_STEP_SUMMARY"
+          find apps/web/test-results -mindepth 1 -maxdepth 1 -type d -printf '- %f\n' >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || echo "- none (another step failed)" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Browser test results
         if: failure()
         uses: actions/upload-artifact@v4

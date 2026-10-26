@@ -37,12 +37,29 @@
 //     plan's leave and prints the stored notes and lead (expected: take notes, the lead goes out). clear sends with the
 //     notes removed here and prints the stored notes (expected: none). finish deletes the dive (only if it is a test
 //     dive) and checks it is gone.
-// write, number, omitted, values, clear, twoway and expired sign in when SSI_EMAIL and SSI_PASSWORD are set, else use the token kept by "read".
+//   … round-trip.ts site probe   (needs SSI_SITE_ID, a public site; Piece 4, private sites)
+//     creates one private site "Dive Hub test" at 0.001, 0.001 with save_divesite, reads it with get_divesite and get_divelog
+//     (also a public site and an unknown ID), deletes it with odin_dive_sites_deleted and checks it is gone. Prints key names,
+//     HTTP statuses and IDs only; the answers go to samples/private/ssi/site-probe.json. If a step fails the new ID is printed.
+//   … round-trip.ts site get <id>     read-only: get_divesite raw (HTTP status, content-type, body length, JSON shape, key names).
+//   … round-trip.ts site delete <id>   deletes a leftover site, only one named "Dive Hub test" and private to the account.
+//   … round-trip.ts site visible start   (Piece 4: a private site is usable and not visible; the site is the existing test site 1083262)
+//     creates one throwaway dive (2000-01-01 12:00, notes "Dive Hub test") on site 1083262 through Dive Hub's own record code;
+//     keeps the site ID, the dive ID and the start time in samples/private/ssi/site-visible.json. SSI cannot delete sites.
+//   … round-trip.ts site visible global   get_divesites_global from just before start's time, paged to the end: is the site there?
+//     Prints the last_sync value and format used; reads only. Also get_divelog's entry for the site.
+//   … round-trip.ts site visible zip   downloads APP_CACHE_SITES.zip (no sign-in): is the site in it, when was the file created?
+//   … round-trip.ts site visible finish   deletes the dive (only a "Dive Hub test" dive dated 2000-01-01), checks it is gone; the site stays.
+// write, number, omitted, values, clear, twoway, site and expired sign in when SSI_EMAIL and SSI_PASSWORD are set, else use the token kept by "read".
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import { finishClearChecks, startClearChecks } from './clear-checks.js';
 import { finishTwoway, sendTwoway, startTwoway, type TwowaySaved } from './twoway-checks.js';
+import {
+  runSiteDelete, runSiteGet, runSiteProbe, runSiteVisibleFinish, runSiteVisibleGlobal, runSiteVisibleStart, runSiteVisibleZip,
+  type SiteVisibleSaved,
+} from './site-checks.js';
 import { runNumberChecks } from './number-checks.js';
 import { finishValuesChecks, startValuesChecks } from './values-checks.js';
 import { userAgent } from '../../../src/sites/import/polite-http.js';
@@ -212,6 +229,32 @@ if (mode === 'read') {
   const account = await access();
   const { id } = JSON.parse(await readFile(`${out}twoway.json`, 'utf8')) as TwowaySaved;
   await finishTwoway({ client, access: account.token, log: console.log }, id);
+} else if (mode === 'site' && process.argv[3] === 'probe') {
+  const account = await access();
+  const siteId = process.env.SSI_SITE_ID;
+  if (!siteId) throw new Error('Set SSI_SITE_ID to a public site ID from your SSI logbook (see logbook.json after "read")');
+  await save('site-probe', await runSiteProbe({ access: account.token, accountId: account.accountId, siteId, log: console.log }));
+} else if (mode === 'site' && process.argv[3] === 'get' && /^\d+$/.test(process.argv[4] ?? '')) {
+  const account = await access();
+  await runSiteGet({ access: account.token, id: process.argv[4]!, log: console.log });
+} else if (mode === 'site' && process.argv[3] === 'delete' && /^\d+$/.test(process.argv[4] ?? '')) {
+  const account = await access();
+  await save('site-delete', await runSiteDelete({ access: account.token, accountId: account.accountId, id: process.argv[4]!, log: console.log }));
+} else if (mode === 'site' && process.argv[3] === 'visible' && process.argv[4] === 'start') {
+  const account = await access();
+  await save('site-visible', await runSiteVisibleStart({ client, access: account.token, accountId: account.accountId, log: console.log }));
+  console.log('Look at the dive in the MySSI app (the site shows on it), then run `site visible global`.');
+} else if (mode === 'site' && process.argv[3] === 'visible' && process.argv[4] === 'global') {
+  const account = await access();
+  const saved = JSON.parse(await readFile(`${out}site-visible.json`, 'utf8')) as SiteVisibleSaved;
+  await save('site-visible-global', await runSiteVisibleGlobal({ access: account.token, saved, log: console.log }));
+} else if (mode === 'site' && process.argv[3] === 'visible' && process.argv[4] === 'zip') {
+  const saved = JSON.parse(await readFile(`${out}site-visible.json`, 'utf8')) as SiteVisibleSaved;
+  await save('site-visible-zip', await runSiteVisibleZip({ saved, log: console.log }));
+} else if (mode === 'site' && process.argv[3] === 'visible' && process.argv[4] === 'finish') {
+  const account = await access();
+  const saved = JSON.parse(await readFile(`${out}site-visible.json`, 'utf8')) as SiteVisibleSaved;
+  await runSiteVisibleFinish({ client, access: account.token, saved, log: console.log });
 } else if (mode === 'expired') {
   const { token, at } = JSON.parse(await readFile(tokenFile, 'utf8')) as { token: string; at: string };
   const hours = ((Date.now() - Date.parse(at)) / 3_600_000).toFixed(1);
@@ -241,5 +284,5 @@ if (mode === 'read') {
     + `status: ${JSON.stringify(seen.status)}; authenticated: ${JSON.stringify(seen.authenticated)}`);
   await save('expired', result);
 } else {
-  console.log('Usage: round-trip.ts read | token | write [--pause] | number [--pause] | number --dive <SSI dive ID> --to <n> | omitted start | omitted finish | values start | values finish [<SSI dive ID>…] | clear start | clear finish | twoway start | twoway send | twoway clear | twoway finish | expired');
+  console.log('Usage: round-trip.ts read | token | write [--pause] | number [--pause] | number --dive <SSI dive ID> --to <n> | omitted start | omitted finish | values start | values finish [<SSI dive ID>…] | clear start | clear finish | twoway start | twoway send | twoway clear | twoway finish | site probe | site get <id> | site delete <id> | site visible start | site visible global | site visible zip | site visible finish | expired');
 }

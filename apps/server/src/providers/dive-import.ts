@@ -91,7 +91,7 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 export function createDiveImportService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService }) {
   const { db, blobs, registry, connections } = deps;
-  const { runOf, sitesOf, placeTime, changesOf, takeChanges, fill, shown } = createDiveChanges({ db, blobs });
+  const { runOf, sitesOf, settle, placeTime, changesOf, takeChanges, fill, shown } = createDiveChanges({ db, blobs });
 
   /** The Provider's dive import, or `provider_unsupported`. */
   function importer(provider: string) {
@@ -504,7 +504,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       const seen = new Set<string>();
       for (const d of dives) {
         if (d.evidence === 'ours') continue;
-        for (const site of sitesOf(run, d)) {
+        for (const site of await sitesOf(db, run, d)) {
           const key = `${site.source}:${site.externalId}`;
           if (seen.has(key)) continue;
           seen.add(key);
@@ -572,6 +572,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
         diverId: plan.diverId, connectionId: job.connectionId, mode: plan.mode, windowMinutes: plan.windowMinutes, choices: plan.computers,
         context: plan.context,
       });
+      await db.transaction((tx) => settle(tx, run));
       const rows = await db.select({ id: original.id, storageKey: original.storageKey, fileName: original.fileName })
         .from(importOriginal).innerJoin(original, eq(original.id, importOriginal.originalId))
         .where(eq(importOriginal.importId, job.id));
@@ -614,7 +615,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
 /** The context as kept on the Import: accounts and sites only, whatever else an adapter might add left behind. */
 const pick = (c: ImportContext): ImportContext => ({
   people: Object.fromEntries(Object.entries(c.people).map(([k, v]) => [k, String(v)])),
-  sites: Object.fromEntries(Object.entries(c.sites).map(([k, s]) => [k, { name: s.name, latitude: s.latitude, longitude: s.longitude, country: s.country, waterType: s.waterType ?? null }])),
+  sites: Object.fromEntries(Object.entries(c.sites).map(([k, s]) => [k, { name: s.name, latitude: s.latitude, longitude: s.longitude, country: s.country, waterType: s.waterType ?? null, ...(s.private && { private: s.private }) }])),
 });
 
 export type DiveImportService = ReturnType<typeof createDiveImportService>;

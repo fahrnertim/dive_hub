@@ -18,15 +18,21 @@ const nonZero = (v: unknown) => { const n = numberOf(v); return n !== null && n 
 const aboveZero = (v: unknown) => { const n = numberOf(v); return n !== null && n > 0 ? n : null; };
 const text = (v: unknown) => (typeof v === 'string' && v.trim() !== '' ? v.trim() : typeof v === 'number' ? String(v) : null);
 
-/** The context of a logbook (ADR 0030): buddy-list entry → SSI account, SSI site → name and position. No names of people. */
-export function contextOf(logbook: SsiLogbook): ImportContext {
+/**
+ * The context of a logbook (ADR 0030): buddy-list entry → SSI account, SSI site → name and position. No names of people.
+ * A site private to the account `accountId` is marked `private`; one private to another account (or to any, without
+ * `accountId`) is left out. A row without SSI's private flag is marked `private: 'unknown'`: kept as the account's,
+ * never public, and not settled.
+ */
+export function contextOf(logbook: SsiLogbook, accountId?: string): ImportContext {
   return {
     people: Object.fromEntries(logbook.buddies.flatMap((b) => (b.account ? [[String(b.id), b.account]] : []))),
-    sites: Object.fromEntries(logbook.sites.map((s) => [s.id, {
+    sites: Object.fromEntries(logbook.sites.filter((s) => s.private === null || s.privateOwner === null || s.privateOwner === accountId).map((s) => [s.id, {
       name: s.name, latitude: s.latitude, longitude: s.longitude,
       // SSI gives alpha-3, alpha-2 or a country's name.
       country: alpha2Of(s.country) ?? (s.country && /^[A-Za-z]{2}$/.test(s.country) ? s.country.toUpperCase() : null),
       waterType: s.waterType,
+      ...(s.private === null ? { private: 'unknown' as const } : s.privateOwner !== null && { private: true as const }),
     }])),
   };
 }

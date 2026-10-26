@@ -92,8 +92,9 @@ Where a skill and this project disagree, these rules win. They lived in AGENTS.m
   4. **Reviews.** The plan's "Global Constraints" name the rules of [ADR 0053](decisions/0053-module-boundaries.md) and
      the ADRs the plan touches, so task reviewers check them. After the final whole-branch review, the
      `architecture-review` subagent runs. A finding counts only with `path:line` and the rule, ADR or plan line it breaks.
-  5. **Finishing a branch.** Don't ask: once `pnpm check:full` is green, push the branch and open a PR (owner,
-     2026-10-24). Never merge locally; the owner merges.
+  5. **Finishing a branch.** Don't ask: once `pnpm check` is green, push the branch and open a PR (owner,
+     2026-10-24); CI runs the full check, and the owner merges only on green CI. Never merge locally. When CI fails
+     after the green local check, add an entry to [check escapes](agents/check-escapes.md).
   6. **Rulings and stops.** The fix loop keeps its cap of 5 rounds (owner, 2026-10-23). Every finding parked "with a
      ruling" at the cap goes into the finish summary. A task that would change an accepted ADR stops with
      `STOP: <reason>` ([ADR 0054](decisions/0054-unattended-implementation.md)) and hands back.

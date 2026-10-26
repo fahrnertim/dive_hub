@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, keys, meQuery, siteQuery, sitesQuery, unwrap, type ExternalIdView, type Position, type SiteView } from './api.ts';
+import { api, ApiError, diversQuery, keys, meQuery, siteQuery, sitesQuery, unwrap, type ExternalIdView, type Position, type SiteView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { mapsUrl } from './lib/geo.ts';
@@ -173,14 +173,24 @@ export function SitesPage({ params }: { params: SitesParams }) {
 }
 
 /** A site ID Users may type, worded by the Provider that needs it (ADR 0029). */
-function TypedId({ provider, value }: { provider: ProviderView; value: string | undefined }) {
+function TypedId({ provider, value, privateIds }: { provider: ProviderView; value: string | undefined; privateIds: { id: string; diverId: string }[] }) {
   const { t } = useTranslation();
   const pt = useProviderText(provider);
+  const divers = useQuery(diversQuery()).data ?? [];
   return (
-    <div>
-      <dt>{pt('siteIdLabel')}</dt>
-      <dd>{value ?? t('common.none')}</dd>
-    </div>
+    <>
+      <div>
+        <dt>{pt('siteIdLabel')}</dt>
+        <dd>{value ?? t('common.none')}</dd>
+      </div>
+      {/* The API lists a private ID only to Users who manage its Diver (client contract). */}
+      {privateIds.map(({ id, diverId }) => (
+        <div key={diverId}>
+          <dt>{privateIds.length > 1 ? `${pt('privateSiteLabel')} (${divers.find((d) => d.id === diverId)?.name ?? ''})` : pt('privateSiteLabel')}</dt>
+          <dd>{id}</dd>
+        </div>
+      ))}
+    </>
   );
 }
 
@@ -285,7 +295,11 @@ export function SitePage({ id }: { id: string }) {
                 <dd>{s.maxDepthM === null ? t('sites.notKnown') : display.depth(s.maxDepthM)}</dd>
               </div>
               {typed.map(({ provider, requirement }) => (
-                <TypedId key={requirement.source} provider={provider} value={s.externalIds.find((e) => e.source === requirement.source)?.externalId} />
+                <TypedId
+                  key={requirement.source} provider={provider}
+                  value={s.externalIds.find((e) => e.source === requirement.source && !e.privateTo)?.externalId}
+                  privateIds={s.externalIds.filter((e) => e.source === requirement.source && e.privateTo).map((e) => ({ id: e.externalId, diverId: e.privateTo!.diverId }))}
+                />
               ))}
               <div>
                 <dt>{t('sites.yourDives')}</dt>

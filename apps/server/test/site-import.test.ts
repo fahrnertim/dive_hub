@@ -157,7 +157,7 @@ describe.skipIf(!(await databaseReachable()))('Site import and external site IDs
       expect(ssiOf(canyon)).toBeNull();
       expect(canyon.externalIds).toEqual([{
         source: 'osm', name: 'OpenStreetMap', externalId: 'node/101', url: 'https://www.openstreetmap.org/node/101', providesData: true,
-        attribution: { text: '© OpenStreetMap contributors', url: 'https://www.openstreetmap.org/copyright' }, offered: null,
+        attribution: { text: '© OpenStreetMap contributors', url: 'https://www.openstreetmap.org/copyright' }, offered: null, privateTo: null,
       }]);
       const blueHole = (await siteNamed('Blue Hole'))!;
       expect(blueHole.externalIds).toEqual([expect.objectContaining({ source: 'wikidata', url: 'https://www.wikidata.org/wiki/Q101', providesData: true, attribution: null })]);
@@ -291,7 +291,7 @@ describe.skipIf(!(await databaseReachable()))('Site import and external site IDs
       expect(done.counts).toMatchObject({ created: 1 });
       const garden = (await siteNamed('Coral Garden'))!;
       expect(garden).toMatchObject({ waterType: 'salt', country: 'EG' });
-      expect(garden.externalIds).toEqual([{ source: 'ssi', name: 'SSI', externalId: '9101', url: null, providesData: true, attribution: null, offered: null }]);
+      expect(garden.externalIds).toEqual([{ source: 'ssi', name: 'SSI', externalId: '9101', url: null, providesData: true, attribution: null, offered: null, privateTo: null }]);
       const [created] = await json<Revision[]>('GET', `/api/dive-sites/${garden.id}/revisions`, tim);
       expect(created).toMatchObject({ actor: { type: 'site_import', name: 'SSI' }, changes: expect.objectContaining({ waterType: { from: null, to: 'salt' }, ssiSiteId: { from: null, to: '9101' } }) });
     });

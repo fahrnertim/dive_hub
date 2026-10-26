@@ -142,3 +142,42 @@ describe.skipIf(!(await databaseReachable()))('0013: Providers as adapters (ADR 
     expect(pushes[invented]).toMatchObject({ state: 'failed', error_code: 'provider_not_stored', remote_id: null, remote_number: null });
   });
 });
+
+describe.skipIf(!(await databaseReachable()))('0040: private site IDs (ADR 0057)', () => {
+  let t: TestDatabase;
+  let before: string;
+  beforeAll(async () => {
+    before = await migrationsBefore('0040_private_site_ids');
+    t = await createTestDatabase({ migrationsFolder: before });
+  });
+  afterAll(async () => {
+    await t?.drop();
+    if (before) await rm(before, { recursive: true, force: true });
+  });
+
+  it('keeps public IDs and allows one private ID per account', async () => {
+    const q = (sql: string, params: unknown[] = []) => t.pool.query(sql, params);
+    const diver = (await q(`insert into diver (name) values ('Erika') returning id`)).rows[0].id as string;
+    const site = (await q(`insert into dive_site (name) values ('Blue Hole') returning id`)).rows[0].id as string;
+    const other = (await q(`insert into dive_site (name) values ('Reef') returning id`)).rows[0].id as string;
+    await q(`insert into dive_site_external_id (site_id, source, external_id) values ($1, 'ssi', '100')`, [other]);
+
+    await migrateDatabase(t.db, t.pool, migrations);
+
+    expect((await q('select account_id from dive_site_external_id')).rows).toEqual([{ account_id: null }]);
+    const account = (await q(`insert into diver_external_id (diver_id, source, external_id) values ($1, 'ssi', '5012047') returning id`, [diver])).rows[0].id as string;
+    const insert = (siteId: string, externalId: string, accountId: string | null) =>
+      q(`insert into dive_site_external_id (site_id, source, external_id, account_id) values ($1, 'ssi', $2, $3)`, [siteId, externalId, accountId]);
+
+    await insert(site, '1', null);
+    await expect(insert(site, '2', null)).rejects.toThrow();
+    await insert(site, '3', account);
+    await expect(insert(site, '4', account)).rejects.toThrow();
+    await expect(insert(other, '1', null)).rejects.toThrow();
+    await expect(insert(other, '3', account)).rejects.toThrow();
+    expect((await q(`select count(*)::int as n from dive_site_external_id where site_id = $1`, [site])).rows[0].n).toBe(2);
+
+    await q('delete from diver_external_id where id = $1', [account]);
+    expect((await q(`select external_id from dive_site_external_id where site_id = $1`, [site])).rows).toEqual([{ external_id: '1' }]);
+  });
+});

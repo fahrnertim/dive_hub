@@ -3,7 +3,7 @@
 // and does only what is its own. Connections, credentials, Pushes, leases, pacing, problem codes and the routes are
 // the generic layer's (connection-service.ts, push-service.ts, leases.ts, routes.ts).
 import type { CylinderMaterial, ParticipantRole, ProviderImportPlan } from '../db/schema.js';
-import type { DiveMode, SiteWaterType } from '../vocabulary.js';
+import type { DiveMode, Position, SiteWaterType } from '../vocabulary.js';
 import type { SiteSource } from '../sites/sources.js';
 
 export type DiverSource = 'ssi' | 'padi';
@@ -37,8 +37,12 @@ export interface Direction {
  * only by a client that doesn't know the type.
  */
 export type Requirement = { severity: 'blocking' | 'advisory'; description: string } & (
-  /** The Dive's site has an External ID at this site Source (SSI site ID). */
-  | { type: 'site_external_id'; source: SiteSource }
+  /**
+   * The Dive's site has an External ID at this site Source (SSI site ID). `createdBySend`: a send finds the site at the
+   * Provider or creates it there when the site has a position (`diveSites.find` and `create`), so only a site without
+   * one blocks.
+   */
+  | { type: 'site_external_id'; source: SiteSource; createdBySend?: boolean }
   /** The Provider can tell who each Participant in these roles is: today, by the Diver's account at `source`. */
   | { type: 'diver_mapping'; source: DiverSource; roles: ParticipantRole[] }
 );
@@ -279,6 +283,9 @@ export interface RemoteSite {
   longitude: number | null;
   /** As the Provider gives it. */
   country: string | null;
+  /** `private`: private to the account (and the account's own); `unknown`: the Provider doesn't say. Another account's private site is never listed. */
+  visibility: 'public' | 'private' | 'unknown';
+  waterType: SiteWaterType | null;
 }
 
 /** An entry in the account's own list of people at the Provider (SSI's buddy list). */
@@ -327,7 +334,14 @@ export const referenceOf = (diveId: string) => `${REFERENCE_PREFIX}${diveId}`;
  * What a Provider's records need besides themselves (ADR 0030), kept on the Import: the account at the Provider of each
  * entry in the User's list of people, and each site's name and position. Never the people's names or anything else.
  */
-export type ImportContext = ProviderImportPlan['context'];
+export type ImportContext = {
+  people: ProviderImportPlan['context']['people'];
+  /**
+   * `private`: `true`, the Provider marks the site private and the account's own (another account's private site is left
+   * out); `unknown`, the Provider doesn't say, so the site is kept as the account's, never public, and not settled.
+   */
+  sites: Record<string, ProviderImportPlan['context']['sites'][string] & { private?: true | 'unknown' }>;
+};
 
 /** The account's dives at the Provider, each as the record it keeps, and their context. */
 export interface DiveListing {
@@ -410,6 +424,12 @@ export interface ProviderAdapter {
   diveSites?: {
     /** The Provider's sites the User can pick from (SSI: the sites in their logbook). */
     find(context: ActionContext): Promise<RemoteSite[]>;
+    /** One site by its ID; null: the Provider doesn't know the ID (or it is another account's private site). */
+    get?(context: ActionContext, id: string): Promise<RemoteSite | null>;
+    /** Makes a site at the Provider, private to the account; answers its ID. A site can't be deleted there. */
+    create?(
+      context: ActionContext, site: { name: string; position: Position; country: string | null; waterType: SiteWaterType | null },
+    ): Promise<string>;
   };
   buddies?: {
     /** The account's own list of people (SSI: the buddy list), read live. */

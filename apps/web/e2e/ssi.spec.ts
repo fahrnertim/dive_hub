@@ -53,8 +53,12 @@ test('picks the SSI site, sends the dive, updates it after a change and deletes 
 
   await panel.getByRole('button', { name: 'Choose the SSI site' }).click();
   const dialog = page.getByRole('dialog');
-  // Nearest first: Schwarzenbach is next to the test reef, Hausreef is in Egypt.
-  await expect(dialog.getByRole('option').first()).toHaveAccessibleName(/Attersee – Schwarzenbach/);
+  // Nearest first: Schwarzenbach is next to the test reef, Hausreef is in Egypt. (A private site an earlier test made
+  // at the test reef may come before them: the fake SSI keeps it.)
+  await expect(dialog.getByRole('option', { name: /Attersee – Schwarzenbach/ })).toBeVisible();
+  const names = await dialog.getByRole('option').allInnerTexts();
+  expect(names.findIndex((n) => /Attersee – Schwarzenbach/.test(n))).toBeGreaterThanOrEqual(0);
+  expect(names.findIndex((n) => /Attersee – Schwarzenbach/.test(n))).toBeLessThan(names.findIndex((n) => /Hausreef/.test(n)));
   // Typing narrows the logbook's sites; an ID that isn't there can be used as typed.
   const search = dialog.getByRole('searchbox', { name: 'Find a site or type its SSI ID' });
   await search.fill('site:999');

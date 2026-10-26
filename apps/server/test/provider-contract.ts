@@ -330,7 +330,8 @@ export function providerContract(name: string, make: () => ContractHarness) {
       const sites = await h.adapter.diveSites!.find(await connect(h));
       const numberOrNull = (v: unknown) => v === null || typeof v === 'number';
       for (const s of sites) {
-        expect(Object.keys(s).sort()).toEqual(['country', 'id', 'latitude', 'longitude', 'name']);
+        expect(Object.keys(s).sort()).toEqual(['country', 'id', 'latitude', 'longitude', 'name', 'visibility', 'waterType']);
+        expect(['public', 'private', 'unknown']).toContain(s.visibility);
         expect([typeof s.id, typeof s.name]).toEqual(['string', 'string']);
         expect(numberOrNull(s.latitude) && numberOrNull(s.longitude) && (s.country === null || typeof s.country === 'string')).toBe(true);
       }

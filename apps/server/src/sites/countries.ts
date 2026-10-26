@@ -31,6 +31,12 @@ const ALPHA3_TO_ALPHA2: Record<string, string> = {
   VIR: 'VI', VNM: 'VN', VUT: 'VU', WLF: 'WF', WSM: 'WS', YEM: 'YE', ZAF: 'ZA', ZMB: 'ZM', ZWE: 'ZW', XKX: 'XK',
 };
 
+/** "DE" → "DEU"; null for anything that isn't an alpha-2 code we know. */
+export const alpha3Of = (alpha2: unknown): string | null => {
+  const code = typeof alpha2 === 'string' ? alpha2.trim().toUpperCase() : '';
+  return Object.entries(ALPHA3_TO_ALPHA2).find(([, a2]) => a2 === code)?.[0] ?? null;
+};
+
 /** "DEU" → "DE"; null for anything that isn't an alpha-3 code we know. */
 export const alpha2Of = (alpha3: unknown): string | null =>
   (typeof alpha3 === 'string' && ALPHA3_TO_ALPHA2[alpha3.trim().toUpperCase()]) || null;

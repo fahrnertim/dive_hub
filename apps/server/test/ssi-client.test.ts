@@ -19,7 +19,7 @@ describe('SSI client', () => {
     const { id } = await client.save(account.token, { odin_user_log_id: null, odin_user_log_nr: 1 });
     const logbook = await client.logbook(account.token);
     expect(logbook.dives.map((d) => String(d.odin_user_log_id))).toEqual([id]);
-    expect(logbook.sites).toEqual([{ id: '3314', name: 'Hausreef', latitude: 27.29, longitude: 33.82, country: 'EG', waterType: 'salt' }]);
+    expect(logbook.sites).toEqual([{ id: '3314', name: 'Hausreef', latitude: 27.29, longitude: 33.82, country: 'EG', waterType: 'salt', private: false, privateOwner: null }]);
     expect(seen.every((h) => h['User-Agent'] === 'Dart/3.12 (dart:io)')).toBe(true);
   });
 

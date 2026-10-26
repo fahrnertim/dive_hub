@@ -354,7 +354,10 @@ export const diveSite = pgTable(
 export const siteSource = pgEnum('site_source', ['osm', 'wikidata', 'ssi']);
 
 /**
- * A Dive site's identifier at a Source (ADR 0021): unique per Source, at most one per Source and site.
+ * A Dive site's identifier at a Source (ADR 0021, 0057): unique per Source (a Source has one ID space). `accountId`
+ * empty: public, every User and every send may use it, at most one per Source and site. `accountId` set: private to
+ * that `diver_external_id` (one account at the Source), at most one per Source, site and account; only sends for that
+ * Diver use it and only Users who manage the Diver see it. The row's Source equals the account's (checked in code).
  * `providesData`: the site was created or filled from this Source; `imported` holds what the Source
  * delivered last, the base of the next import's 3-way merge. Otherwise it is a reference only; on a
  * hand-made site an import still keeps the Source's values in `imported`, offered on the site page (ADR 0025).
@@ -366,6 +369,7 @@ export const diveSiteExternalId = pgTable(
     siteId: uuid('site_id').notNull().references(() => diveSite.id),
     source: siteSource('source').notNull(),
     externalId: text('external_id').notNull(),
+    accountId: uuid('account_id').references((): AnyPgColumn => diverExternalId.id, { onDelete: 'cascade' }),
     providesData: boolean('provides_data').notNull().default(false),
     imported: jsonb('imported').$type<ImportedValues>(),
     /** The Site import that last delivered it; null when a User entered it. */
@@ -375,7 +379,9 @@ export const diveSiteExternalId = pgTable(
   },
   (t) => [
     uniqueIndex('dive_site_external_id_source_uq').on(t.source, t.externalId),
-    uniqueIndex('dive_site_external_id_site_source_uq').on(t.siteId, t.source),
+    uniqueIndex('dive_site_external_id_public_uq').on(t.siteId, t.source).where(sql`${t.accountId} is null`),
+    uniqueIndex('dive_site_external_id_private_uq').on(t.siteId, t.source, t.accountId).where(sql`${t.accountId} is not null`),
+    index('dive_site_external_id_account_idx').on(t.accountId),
     check('dive_site_external_id_imported_ck', sql`not ${t.providesData} or ${t.imported} is not null`),
   ],
 );

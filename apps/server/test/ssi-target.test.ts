@@ -106,7 +106,7 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Provider', () => {
       expect(await status()).toMatchObject({ connection: { state: 'active' }, unmet: [{ type: 'site_external_id', siteId: null }], current: null, pushes: [] });
       expect((await send()).json()).toMatchObject({ code: 'provider_requirements_unmet', unmet: [{ type: 'site_external_id' }] });
       expect((await call('GET', `/api/dives/${diveId}/providers/ssi/sites`, tim)).json()).toEqual([
-        { id: '3314', name: 'Hausreef', latitude: 27.29, longitude: 33.82, country: 'EG', distanceM: null },
+        { id: '3314', name: 'Hausreef', latitude: 27.29, longitude: 33.82, country: 'EG', distanceM: null, visibility: expect.any(String), waterType: null },
       ]);
       const site = (await call('POST', '/api/dive-sites', tim, { name: 'Hausreef', position: { latitude: 27.29, longitude: 33.82 }, waterType: 'salt' })).json();
       hausreefId = site.id;

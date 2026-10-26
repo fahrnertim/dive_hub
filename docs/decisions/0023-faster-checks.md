@@ -1,6 +1,6 @@
 ---
 title: "ADR 0023: Checks by what changed, and a faster full check"
-summary: pnpm check runs typecheck, the unit tests whose imports changed and the browser tests of the areas touched (tags); pnpm check:full runs everything, before a commit as decided, since the amendment of 2026-10-08 before a push or a release. pnpm check counts each step from its last green run (amendment of 2026-10-08) and leaves two ui-quality variants to the full check; changed texts run the pages that use them; --failed reruns the failed browser tests. Browser tests run on 2 workers with a server and database each, prepared once; no trace recording by default; axe in 2 of 4 ui-quality variants; server tests share modules. Full check 10.5 → 3 min.
+summary: pnpm check runs typecheck, the unit tests whose imports changed and the browser tests of the areas touched (tags); pnpm check:full runs everything, before a commit as decided, since the amendment of 2026-10-08 before a push or a release. pnpm check counts each step from its last green run (amendment of 2026-10-08) or from where the branch left main, whichever leaves fewer files (amendment of 2026-10-24) and leaves two ui-quality variants to the full check; changed texts run the pages that use them; --failed reruns the failed browser tests. Browser tests run on 2 workers with a server and database each, prepared once; no trace recording by default; axe in 2 of 4 ui-quality variants; server tests share modules. Full check 10.5 → 3 min. Amendment of 2026-10-24: test helpers no longer run everything, a passing --failed renews the browser record, one ui-quality variant in pnpm check, and CI's full check on the pull request is the gate (no full check before a push).
 status: accepted
 date: 2026-10-04
 ---
@@ -263,3 +263,87 @@ refactoring code yet.
 - *Considered:* Biome (faster, but no cognitive-complexity rule with SonarJS's definition and no bulk suppressions);
   eslint-plugin-boundaries instead of dependency-cruiser (see ADR 0053); type-aware ESLint rules (slower on every
   edit; can come later).
+
+## Amendment 2026-10-24: main counts as green
+Why: a fresh branch off main inherited a stale green record (the records are one per repository, not per branch), so
+everything main had gained since, merged pull requests included, counted as changed and the full browser suite ran.
+Asked by the owner on 2026-10-24: what branches off main counts as green, because CI runs `pnpm check:full` on every
+push to main and every pull request.
+
+- **Per step, without `--base` or `--files`, there are up to three bases:** the step's green record, `git merge-base
+  HEAD main` (when a `main` exists) and `git merge-base HEAD origin/main` (when `origin/main` exists). The step counts
+  from the one that leaves the fewest changed files; a tie prefers the green record. With none, from the last commit
+  as before. Changed texts are mapped to the source files that use them against the chosen base.
+- **This replaces one sentence of the amendment of 2026-10-08**, "A pull or a branch switch counts like any other
+  change": a pull or a branch switch now counts only what differs from main or from the green record, whichever is closer.
+- **`--dry` names the base:** "its green run of <date>" or "main (where this branch left it, <short sha>)".
+- **Recording is unchanged:** a step that passes records the snapshot as its green run.
+- **What is given up:** the check trusts that main is green. CI checks it; but a red main would hide its own failures
+  from the branch's check until the failing files change or `pnpm check:full` runs.
+
+## Amendment 2026-10-24: a faster `pnpm check`, and CI as the only full check
+Why: the owner, 2026-10-24: "It feels like 80+ percent of our development time is wasted in testing." One `pnpm check`
+browser run took 1126 s (280 tests, 2 workers), several times a day: a one-off owner script under
+`apps/server/test/fixtures/` was an unknown path, so every check ran everything, and a flaky failure made the next
+check run the whole suite again. Decided with the owner on 2026-10-24.
+
+Measured 2026-10-24 on the owner's laptop (i7-12700H, 14 cores / 20 threads, Windows 11; the owner's dev servers on
+ports 3000 and 5173 were running, no collision with 3300+), the browser suite as `pnpm check` ran it (without `@full`):
+
+| Workers | Wall | Server start and preparation | Tests (span) | Worker time in tests | Failed |
+|---|---|---|---|---|---|
+| 2 | 1136 s | 37 s | 1093 s | 2044 s | 1 (push-run.spec.ts:53, fixed: the live announcer repeated the text) |
+| 4 | 1307 s | 173 s | 1116 s | 3278 s | 14 (timeouts at 30 s) |
+| 2, without `@variants` (below) | 877 s | 33 s | 810 s | 1439 s | 2 flaky (ui-quality.spec.ts:327 and :1369) |
+
+- No contention at 2 workers: four spec files took 52 s alone on 1 worker and 46 s inside the 2-worker run. The tests
+  are slow themselves: 7.3 s on average (3.1 s on 2026-10-08), mostly setup through the API and navigation.
+- `ui-quality.spec.ts` is 1231 s of the 2044 s. In its English variant (57 tests, 526 s) axe takes 246 s: 104 page
+  checks at 2.4 s each. The slowest tests (`:825` 29 s, `:244` 22 s, `:679` 21 s, `:73` 20 s) run axe 3–6 times each.
+- 6 workers were not measured (owner): 4 was already slower, as on 2026-10-04.
+
+Decided:
+- **Unknown files don't run everything.** Files under `apps/server/test/` that aren't tests (helpers, fixtures, one-off
+  scripts) run the server tests that import them (`vitest related`); the server test setup (`support.ts`) and fixture
+  data (any file there that isn't `.ts`: read, not imported, so its readers can't be traced) all server tests and
+  every browser test. Helpers run every browser test only when the e2e server loads them: the check script follows the
+  relative imports from `apps/server/test/e2e-server.ts` within `apps/server/test/`, with `.js`, without an extension
+  and through a folder's `index.ts` (so a new import there counts at once, with no list to keep). Browser test setup and data (`apps/web/e2e/`, not specs) run
+  every browser test and nothing else; the review capture none. The check scripts run their own tests (`check-lint.mjs`
+  also lints everything; ESLint covers TypeScript only, so the check scripts were never linted). `LICENSE`, `NOTICE` and `scripts/fit-compressibility.mjs` are quiet. Packages, the lockfile,
+  configuration and paths the script doesn't know still run everything; shared app code still runs that app's tests and
+  every browser test.
+- **A passing `--failed` renews the browser record.** A browser step that fails in a run that records keeps its snapshot
+  and Playwright's failed tests (`refs/check/failed-e2e`), but only from a report Playwright wrote during that step, with
+  status failed and a list of failed tests, and only while the config sets no `maxFailures` (tests a stopped run never
+  started would otherwise count as passed); otherwise nothing is kept and the output says why. `pnpm check --failed` that passes on the same snapshot, with
+  Playwright's last run still that run, records the browser step green there: every test the step planned has then
+  passed on those files. Changed files, or another Playwright run in between, record nothing, as before. The output
+  says which. This replaces "It records nothing" in the amendment of 2026-10-08 for that case.
+- **One ui-quality variant locally.** `pnpm check` runs ui-quality in English, light, desktop only; German, dark,
+  phone (tag `@variants`, 57 tests, about 460 s of worker time) runs when texts (`i18n/`), shared styles (`pages.css`,
+  `design/`) or shared UI (`ui/`, `App.tsx`, `main.tsx`) changed, and then for the areas touched. The two variants
+  without axe stay `@full`. CI runs all four. Measured: the whole local browser plan went from 1136 s to 877 s.
+- **axe once per ui-quality test locally.** `pnpm check` sets `E2E_AXE=once`: a ui-quality test checks each page as
+  before but runs axe once, on its final page, after it passed. `pnpm check:full` and CI leave it unset and run axe at
+  every page check, as before. What is given up locally: an accessibility fault on an intermediate page of a test (a
+  dialog closed again, a page navigated away from) waits for CI. The saving was not measured (owner); axe took 246 s of
+  the English variant's 526 s of worker time, 2.4 s per page check.
+- **No full check by hand before a push.** `pnpm check` before each commit (the pre-commit hook stays); CI's
+  `pnpm check:full` on the pull request is the gate, and the owner merges only on green CI. This replaces "`pnpm
+  check:full` runs before a push and before a release" of the amendment of 2026-10-08. `pnpm check:full` stays available.
+- **Check escapes are logged.** When CI fails on a pull request whose commits had a green local `pnpm check`, whoever
+  pushed it adds a line to [check escapes](../agents/check-escapes.md); CI's job summary names the failed browser tests.
+  The log measures how certain the local check is and where the map needs widening.
+- **`E2E_SERVERS` stays 2.**
+- **Main and origin/main** at the same merge base count once; on main itself `--dry` names the base "main (<sha>)".
+
+Not done, with numbers:
+- Per-test setup through the API (resetting the seeded Dive, buddies, SSI connections) is most of the remaining time;
+  shared fixtures per worker would cut it but bring back hidden dependencies between tests (see Context).
+- Flaky: ui-quality.spec.ts:327 (a centre's code image not found), in one run of three; :1369 was not flaky but
+  depended on other tests leaving a deleted dive (fixed: it asserts the part's own link and its heading or empty text); ui-quality.spec.ts:679 and "German, dark, phone › signed out › invitation" did not fail in
+  these runs. Coverage-based test selection is a separate design.
+- *What is given up:* German, dark, phone checks of a page change wait for CI (dark-mode contrast and German overflow
+  on pages whose own files changed); a change that breaks another area through a wrong map entry is found at the pull
+  request, not before the push.

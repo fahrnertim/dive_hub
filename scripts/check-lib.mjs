@@ -3,7 +3,7 @@
 import { execFileSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, posix, resolve } from 'node:path';
 
 /** The steps that each remember their own green run, in the order they run. */
 export const STEPS = ['typecheck', 'lint', 'scripts', 'server', 'web', 'e2e'];
@@ -41,6 +41,8 @@ const AREAS = [
   [/^apps\/web\/src\/(ProviderDiveImport|GoneDives)\.tsx$/, ['@account', '@dives']],
   // A Dive at a Provider, and a Conflict with it asked on the Dive's page and waiting on the Review page (ADR 0056).
   [/^apps\/web\/src\/(ProviderPanel|ProviderConflicts|ProviderConflictsSection)\.tsx$/, ['@dives']],
+  // A Dive's numbers at its Providers (ADR 0048): on the Dive's Provider panel, a push run and the account's Connections.
+  [/^apps\/web\/src\/(NumberChain|ProviderDiveNumbers)\.tsx$/, ['@dives', '@account']],
   // Providers in the web client (ADR 0027): the account's Connections and each Dive's panels read them.
   [/^apps\/web\/src\/lib\/providers\.ts$/, ['@dives', '@account']],
   [/^apps\/web\/src\/Admin\.tsx$/, ['@admin']],
@@ -62,7 +64,7 @@ const AREAS = [
   [/^apps\/server\/test\/zip\.ts$/, ['@admin', '@sites']],
 ];
 /** Paths that change no behaviour: no tests. */
-export const QUIET = /^(docs\/|samples\/|\.claude\/|\.github\/|\.githooks\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|skills-lock\.json$|\.gitignore$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$|apps\/server\/test\/fixtures\/write-assessment-fixture\.ts$|apps\/server\/test\/fixtures\/write-suunto-fixture\.ts$|apps\/server\/test\/fixtures\/write-merge-fixture\.ts$|apps\/server\/test\/fixtures\/write-account-export-fixture\.ts$|scripts\/token-report\.mjs$)/;
+export const QUIET = /^(docs\/|samples\/|\.claude\/|\.github\/|\.githooks\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|LICENSE$|NOTICE$|skills-lock\.json$|\.gitignore$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$|apps\/server\/test\/fixtures\/write-assessment-fixture\.ts$|apps\/server\/test\/fixtures\/write-suunto-fixture\.ts$|apps\/server\/test\/fixtures\/write-merge-fixture\.ts$|apps\/server\/test\/fixtures\/write-account-export-fixture\.ts$|scripts\/token-report\.mjs$|scripts\/fit-compressibility\.mjs$)/;
 
 /** The area tags a browser test can have; a test with none of them would run only in the full check. */
 export const TAGS = ['@dives', '@divers', '@sites', '@account', '@admin', '@layout', '@tools'];
@@ -70,14 +72,67 @@ export const TAGS = ['@dives', '@divers', '@sites', '@account', '@admin', '@layo
 /** The tag of browser tests that only the full check runs: ui-quality's two variants without axe (small phone, tablet). */
 export const FULL_ONLY = '@full';
 
+/**
+ * The tag of ui-quality's other variant with axe (German, dark, phone), which `pnpm check` runs only when texts,
+ * shared styles or shared UI changed; CI's full check always runs it (amendment of 2026-10-24).
+ */
+export const VARIANTS = '@variants';
+const VARIANT_TRIGGERS = /^apps\/web\/src\/((i18n|ui|design)\/|(App|main)\.tsx$|pages\.css$)/;
+
+/** Whether `pnpm check` runs the other ui-quality variants for these changed files: `{ run, why }`. */
+export function variantsRun(changed) {
+  const triggers = changed.filter((path) => VARIANT_TRIGGERS.test(path));
+  if (triggers.length === 0) return { run: false, why: null };
+  return { run: true, why: `${triggers.join(', ')} changed texts, shared styles or shared UI, so the German, dark, phone variant of the areas touched runs too` };
+}
+
+/** The browser tests a run leaves out (`--grep-invert`), or null for none. */
+export function browserGrepInvert({ full, variants }) {
+  if (full) return null;
+  return variants ? FULL_ONLY : `${FULL_ONLY}|${VARIANTS}`;
+}
+
 /** The plan that runs everything (`pnpm check:full`). */
 export const fullPlan = () => ({ typecheck: true, lint: 'all', scripts: true, server: 'all', web: 'all', e2e: 'all', areas: new Set(), specs: new Set(), notes: [] });
 
 /**
+ * Test helpers outside the test files (amendment of 2026-10-24); false when `path` isn't one.
+ * - Under apps/server/test (helpers, fixtures, one-off scripts): the server tests that import the file; the test
+ *   setup and data files (read, not imported) all server tests; every browser test only when the browser tests'
+ *   server loads the file (`loads`; without it, every helper counts as loaded).
+ * - Under apps/web/e2e (setup and data): every browser test. The review capture is not part of the check.
+ */
+function planTestSupport(path, plan, more, loads) {
+  if (path.startsWith('apps/server/test/')) {
+    const data = !path.endsWith('.ts');
+    if (path === 'apps/server/test/support.ts' || data) {
+      more('server', 'all');
+      plan.notes.push({ text: `${path} is the server test setup or data the server tests read, so all server tests run`, steps: ['server'] });
+    } else more('server', 'changed');
+    // Data is read by path, which no import shows: the e2e server may read it too (when unsure, run more).
+    if (data || !loads || loads.has(path)) {
+      plan.e2e = 'all';
+      plan.notes.push({ text: `${path} is loaded by the browser tests' server, so all browser tests run`, steps: ['e2e'] });
+    }
+    return true;
+  }
+  if (path.startsWith('apps/web/e2e/')) {
+    if (!path.endsWith('.capture.ts')) {
+      plan.e2e = 'all';
+      plan.notes.push({ text: `${path} is browser test setup or data, so all browser tests run`, steps: ['e2e'] });
+    }
+    return true;
+  }
+  return false;
+}
+
+/**
  * What a set of changed files asks for. Unknown paths count as "everything": when in doubt, run more.
  * `notes` say why more than the changed area runs: `{ text, steps }`, with the steps the note widened.
+ * `e2eServerLoads`: the files under apps/server/test the browser tests' server loads (see `e2eServerLoads()`);
+ * without it, every server test helper counts as loaded.
  */
-export function planFor(changed) {
+export function planFor(changed, { e2eServerLoads: loads } = {}) {
   const plan = { typecheck: false, lint: 'none', scripts: false, server: 'none', web: 'none', e2e: 'none', areas: new Set(), specs: new Set(), notes: [] };
   const more = (key, level) => { if (plan[key] !== 'all') plan[key] = level; };
 
@@ -91,6 +146,12 @@ export function planFor(changed) {
     // The scripts of unattended implementation have tests of their own, and nothing else reads them.
     // So have the protected-path hooks (agent-lib.test.mjs runs them).
     if (/^scripts\/(agent|drift)/.test(path) || /^\.claude\/hooks\/(ask|guard)-protected\.mjs$/.test(path)) { plan.scripts = true; continue; }
+    // So has the check script (amendment of 2026-10-24); its lint part also lints everything.
+    if (/^scripts\/check/.test(path)) {
+      plan.scripts = true;
+      if (path === 'scripts/check-lint.mjs') plan.lint = 'all';
+      continue;
+    }
     if (QUIET.test(path)) continue;
     // The lint rules and their baselines change what every file is checked against, and nothing else.
     if (LINT_CONFIG.test(path)) {
@@ -104,7 +165,6 @@ export function planFor(changed) {
     if (spec) { more('e2e', 'some'); plan.specs.add(spec[1]); continue; }
     if (/^apps\/web\/test\//.test(path)) { more('web', 'changed'); continue; }
     if (/^apps\/server\/test\/[\w-]+\.test\.ts$/.test(path)) { more('server', 'changed'); continue; }
-    if (/^apps\/server\/test\/fixtures\//.test(path)) more('server', 'changed');
     const area = AREAS.find(([re]) => re.test(path));
     if (area) {
       more(path.startsWith('apps/server/') ? 'server' : 'web', 'changed');
@@ -123,6 +183,7 @@ export function planFor(changed) {
       plan.notes.push({ text: `${path} is shared by all pages, so the page checks of every page run (ui-quality.spec.ts)`, steps: ['e2e'] });
       continue;
     }
+    if (planTestSupport(path, plan, more, loads)) continue;
     // Shared code of one app (web: ui/, design/, i18n/, App, api; server: app, schema, migrations): that app's
     // tests and every browser test. The test setup, packages, configuration and anything else: everything.
     const app = /^apps\/(web|server)\/(src|drizzle)\//.exec(path)?.[1];
@@ -132,8 +193,6 @@ export function planFor(changed) {
       plan.notes.push({ text: `${path} is shared ${app} code, so all ${app} tests and all browser tests run`, steps: [app, 'e2e'] });
       continue;
     }
-    // The check script has tests of its own.
-    if (/^scripts\/check/.test(path)) plan.scripts = true;
     Object.assign(plan, { lint: 'all', server: 'all', web: 'all', e2e: 'all' });
     plan.notes.push({ text: `${path} is shared or unknown, so everything runs`, steps: ['lint', 'server', 'web', 'e2e'] });
   }
@@ -144,8 +203,8 @@ export function planFor(changed) {
  * The plan when each step has its own changed files (those since that step's last green run): a step that
  * passed on a later state than another repeats less. `changedByStep` has a list of paths per step in STEPS.
  */
-export function planSteps(changedByStep) {
-  const plans = Object.fromEntries(STEPS.map((step) => [step, planFor(changedByStep[step])]));
+export function planSteps(changedByStep, context = {}) {
+  const plans = Object.fromEntries(STEPS.map((step) => [step, planFor(changedByStep[step], context)]));
   const notes = STEPS.flatMap((step) => plans[step].notes.filter((note) => note.steps.includes(step)).map((note) => note.text));
   return {
     typecheck: plans.typecheck.typecheck,
@@ -257,6 +316,140 @@ export function greenRun(step, cwd = process.cwd()) {
   } catch {
     return null;
   }
+}
+
+/** Of the candidates `{ from, base, changed }` (in order of preference), the one with the fewest changed files; null when none. */
+export function chooseBase(candidates) {
+  return candidates.reduce((best, next) => (best && best.changed.length <= next.changed.length ? best : next), null);
+}
+
+/** Whether a ref names a commit here. */
+function exists(name, cwd) {
+  try {
+    git(['rev-parse', '--verify', '--quiet', `${name}^{commit}`], cwd);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** The checked-out branch's name; null when HEAD is detached. */
+function currentBranch(cwd) {
+  try {
+    return git(['symbolic-ref', '--short', '-q', 'HEAD'], cwd);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The bases `step` may count from, in order of preference: its green run, and where this branch left main and
+ * origin/main (CI checks those). The same merge base is taken once; a main without common history is skipped.
+ * Returns `[{ from, base }]`.
+ */
+export function baseCandidates(step, cwd = process.cwd()) {
+  const candidates = [];
+  const green = greenRun(step, cwd);
+  if (green) candidates.push({ from: `its green run of ${green.at}`, base: green.base });
+  let onMain = null;
+  for (const name of ['main', 'origin/main']) {
+    if (!exists(name, cwd)) continue;
+    try {
+      const base = git(['merge-base', 'HEAD', name], cwd);
+      if (candidates.some((candidate) => candidate.base === base)) continue;
+      onMain ??= currentBranch(cwd) === 'main';
+      candidates.push({ from: onMain ? `main (${base.slice(0, 7)})` : `main (where this branch left it, ${base.slice(0, 7)})`, base });
+    } catch { /* no common history */ }
+  }
+  return candidates;
+}
+
+/**
+ * Where `step` counts its changed files from (ADR 0023, amendment of 2026-10-24): of `baseCandidates`, the one that
+ * leaves the fewest files; a tie prefers the green run. Without any, the last commit. Returns `{ from, base, changed }`.
+ */
+export function countingBase(step, tree, cwd = process.cwd()) {
+  const counted = baseCandidates(step, cwd).map((candidate) => ({ ...candidate, changed: changedSince(candidate.base, tree, cwd) }));
+  return chooseBase(counted) ?? { from: 'the last commit (no green run recorded)', base: 'HEAD', changed: changedSince('HEAD', tree, cwd) };
+}
+
+// A failed run of a step (amendment of 2026-10-24: a passing --failed renews the browser record): the snapshot it
+// failed on and the tests that failed, as a commit held by a local ref like the green runs.
+const failedRef = (step) => `refs/check/failed-${step}`;
+
+/** Records that `step` failed on the snapshot `tree`, with the ids of the tests that failed. */
+export function recordFailed(step, tree, failedTests, cwd = process.cwd()) {
+  const message = `${step}: failed\n\n${JSON.stringify([...failedTests].sort())}`;
+  const commit = git(['-c', 'user.name=pnpm check', '-c', 'user.email=check@localhost', 'commit-tree', tree, '-m', message], cwd);
+  git(['update-ref', failedRef(step), commit], cwd);
+}
+
+/** The last failed run of `step` that was kept: `{ tree, failedTests }`, or null. */
+export function failedRun(step, cwd = process.cwd()) {
+  try {
+    const tree = git(['rev-parse', `${failedRef(step)}^{tree}`], cwd);
+    const body = git(['log', '-1', '--format=%b', failedRef(step), '--'], cwd);
+    return { tree, failedTests: JSON.parse(body || '[]') };
+  } catch {
+    return null;
+  }
+}
+
+/** Forgets the failed run of `step`. */
+export function clearFailed(step, cwd = process.cwd()) {
+  try {
+    git(['update-ref', '-d', failedRef(step)], cwd);
+  } catch { /* none kept */ }
+}
+
+/**
+ * The failed tests a failed browser step may keep for `--failed` (Playwright's last run, `.last-run.json`), or none:
+ * only a report Playwright wrote during the step (`writtenAt` after `startedAt`; a server that didn't start, a setup
+ * that crashed or Ctrl-C leave an older file), of a run that ended as failed with a list, and only when Playwright
+ * can't have stopped early (`stopsEarly`: maxFailures set), which would leave unrun tests out of every list.
+ * Returns `{ failedTests, why }`: the list, or null and why not.
+ */
+export function keptFailures({ lastRun, writtenAt, startedAt, stopsEarly }) {
+  if (!lastRun || writtenAt === null || writtenAt < startedAt) return { failedTests: null, why: "Playwright's last report is from an earlier run" };
+  if (lastRun.status !== 'failed' || !(lastRun.failedTests?.length > 0)) return { failedTests: null, why: `Playwright's run ended as ${lastRun.status} without a list of failed tests` };
+  if (stopsEarly) return { failedTests: null, why: 'Playwright may have stopped early (maxFailures), so some tests never ran' };
+  return { failedTests: lastRun.failedTests, why: null };
+}
+
+/**
+ * Whether a passing rerun of the failed browser tests makes the browser step green: only on the snapshot the
+ * kept failed run ran on, and only when Playwright's last run is that run (the same failed tests). `{ renews, why }`.
+ */
+export function failedRerunRenews(kept, tree, failedTests) {
+  if (!kept) return { renews: false, why: 'no failed run of pnpm check is kept' };
+  if (kept.tree !== tree) return { renews: false, why: 'the files changed since the failed run' };
+  if (JSON.stringify([...failedTests].sort()) !== JSON.stringify(kept.failedTests)) return { renews: false, why: "Playwright's last run is not the failed run of pnpm check" };
+  return { renews: true, why: 'the same files as the failed run' };
+}
+
+const E2E_SERVER = 'apps/server/test/e2e-server.ts';
+
+/**
+ * The files under apps/server/test that the browser tests' server loads: e2e-server.ts and the test files it
+ * imports, followed through their imports (amendment of 2026-10-24). Imports of src/ and packages are not followed.
+ */
+export function e2eServerLoads(cwd = process.cwd()) {
+  const loads = new Set();
+  const visit = (path) => {
+    if (loads.has(path) || !existsSync(join(cwd, path))) return;
+    loads.add(path);
+    const dir = path.slice(0, path.lastIndexOf('/'));
+    for (const [, spec] of readFileSync(join(cwd, path), 'utf8').matchAll(/(?:from|import)\s*\(?\s*['"](\.{1,2}\/[^'"]+)['"]/g)) {
+      const target = posix.normalize(`${dir}/${spec}`);
+      if (!target.startsWith('apps/server/test/')) continue;
+      // './x.js' is x.ts; './x' is x.ts or x/index.ts; anything else (a .json) as it is.
+      if (target.endsWith('.js')) visit(target.replace(/\.js$/, '.ts'));
+      else if (/\.\w+$/.test(target)) visit(target);
+      else for (const candidate of [`${target}.ts`, `${target}/index.ts`]) visit(candidate);
+    }
+  };
+  visit(E2E_SERVER);
+  return loads;
 }
 
 const TEXTS = /^apps\/web\/src\/i18n\/locales\/[\w-]+\.json$/;

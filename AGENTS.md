@@ -27,8 +27,9 @@ Start at [docs/index.md](docs/index.md); it lists every document.
 - Markdown with YAML frontmatter (`title`, `summary`, `status`, `date`); relative links, not `[[wikilinks]]`.
 - Record significant decisions as ADRs; don't re-litigate accepted ones without a new ADR.
 - **Checks** ([ADR 0023](docs/decisions/0023-faster-checks.md)): `pnpm check` while working and before a commit (only what changed
-  since its last green run), `pnpm check:full` before a push (CI runs it too),
-  the review capture (`REVIEW_AREAS`) only when UI changed. `pnpm check --failed` reruns failed browser tests.
+  since its last green run); no full check before a push: CI's `pnpm check:full` on the PR is the gate. The review
+  capture (`REVIEW_AREAS`) only when UI changed. `pnpm check --failed` reruns failed browser tests (green there renews
+  the record). A PR whose CI fails after a green local check gets an entry in [check escapes](docs/agents/check-escapes.md).
   A docs-only commit needs no check. A new page or module gets its path in `scripts/check-lib.mjs`; a browser test an area tag.
 - **Gates** ([research](docs/research/2026-10-22-agent-guardrails.md)): an edit hook lints each file; run `pnpm hooks:install`
   once per clone (pre-commit check). Fix what they report; never grow a baseline
