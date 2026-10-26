@@ -546,3 +546,28 @@ export function forBrowserTests(changed, base, tree, cwd = process.cwd()) {
     note: `texts changed in ${[...groups].sort().join(', ') || 'no group'}: the browser tests count the ${users.size} source file(s) that use them as changed`,
   };
 }
+
+/**
+ * The tests of a Playwright `--list` output as `--test-list` lines: without the project, the position and
+ * the trailing tags.
+ */
+export function listedTests(stdout) {
+  return stdout
+    .split(/\r?\n/)
+    .filter((line) => line.startsWith('  [') && line.includes('] › '))
+    .map((line) =>
+      line
+        .replace(/^ {2}\[[^\]]*\] › /, '')
+        .replace(/^([^›]*?):\d+:\d+/, '$1')
+        .replace(/(?: @\S+)+$/, ''),
+    );
+}
+
+/**
+ * One test list from the planned tests plus the owed (previously failed) ones that still exist, in the order of
+ * `all`; `dropped` are the owed tests that no longer exist.
+ */
+export function browserTestList({ all, planned, owed }) {
+  const wanted = new Set([...planned, ...owed.filter((line) => all.includes(line))]);
+  return { lines: all.filter((line) => wanted.has(line)), dropped: owed.filter((line) => !all.includes(line)) };
+}

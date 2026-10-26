@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { FULL_ONLY, VARIANTS, browserGrepInvert, variantsRun } from './check-lib.mjs';
-import { baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, failedTestsFromReport, forBrowserTests, greenRun, keptFailures, lintTargets, planFor, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
+import { browserTestList, baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, failedTestsFromReport, forBrowserTests, greenRun, keptFailures, lintTargets, listedTests, planFor, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
 
 /** A git repository with one commit holding `files`. */
 function repository(files) {
@@ -536,4 +536,24 @@ test('a passing --failed records the browser step green only on the same snapsho
   // Playwright ran by hand in between: its last run is not the check's.
   assert.equal(failedRerunRenews(kept, 't1', ['c']).renews, false);
   assert.equal(failedRerunRenews(null, 't1', ['a']).renews, false);
+});
+
+test('a Playwright listing becomes test-list lines', () => {
+  const stdout = [
+    'Listing tests:',
+    '  [e2e] › ui-quality.spec.ts:91:5 › English, light, desktop › logbook @dives',
+    '  [e2e] › weighting.spec.ts:12:1 › adds suit, lead and how it felt’s 100% “x” @a @b',
+    'Total: 2 tests in 1 file',
+    '',
+  ].join('\n');
+  assert.deepEqual(listedTests(stdout), [
+    'ui-quality.spec.ts › English, light, desktop › logbook',
+    'weighting.spec.ts › adds suit, lead and how it felt’s 100% “x”',
+  ]);
+});
+
+test('the test list is the planned tests plus the owed ones that still exist', () => {
+  const all = ['a', 'b', 'c', 'd'];
+  assert.deepEqual(browserTestList({ all, planned: ['b'], owed: ['d', 'gone'] }), { lines: ['b', 'd'], dropped: ['gone'] });
+  assert.deepEqual(browserTestList({ all, planned: ['b', 'd'], owed: ['d'] }), { lines: ['b', 'd'], dropped: [] });
 });
