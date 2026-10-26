@@ -308,6 +308,12 @@ export function recordGreen(step, tree, cwd = process.cwd()) {
   git(['update-ref', ref(step), commit], cwd);
 }
 
+/** A time as `YYYY-MM-DD HH:MM` in local time, the way `greenRun` shows when a step passed. */
+export function localTime(date) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 /** The last green run of `step`: `{ base, at }` (what to diff against, and when it passed), or null. */
 export function greenRun(step, cwd = process.cwd()) {
   try {

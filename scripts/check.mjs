@@ -49,7 +49,7 @@ const git = (cmd) => spawnSync(`git ${cmd}`, { encoding: 'utf8', shell: true }).
  * Appends this run to the local run log (`check-runs.jsonl`, read by `pnpm check:log`), for a run that ran steps; never in
  * CI. The check's result is unchanged when the log cannot be written: one line says so.
  */
-function logRun({ steps, results, browserRan }) {
+function logRun({ steps, results, browserSince }) {
   if (process.env.CI) return;
   const statuses = results.map(({ status }) => status);
   const result = statuses.includes(null) ? 'interrupted' : statuses.some((status) => status !== 0) ? 'failed' : 'passed';
@@ -57,8 +57,11 @@ function logRun({ steps, results, browserRan }) {
     at: new Date().toISOString(), branch: git('symbolic-ref --short -q HEAD') || null, head: git('rev-parse --short HEAD'),
     by: process.env.CHECK_FROM_HOOK ? 'hook' : 'person', args, wall: Math.round(process.uptime()), result, steps,
   };
-  if (browserRan) {
-    try { entry.browser = browserStats(JSON.parse(readFileSync(REPORT, 'utf8'))); } catch { /* no report */ }
+  if (browserSince !== undefined) {
+    try {
+      // Only a report written during the browser step; an older one is not this run's.
+      if (statSync(REPORT).mtimeMs >= browserSince) entry.browser = browserStats(JSON.parse(readFileSync(REPORT, 'utf8')));
+    } catch { /* no report */ }
   }
   if (!appendRun(entry, logPath())) console.log('check: run log skipped (could not write check-runs.jsonl)');
 }
@@ -113,8 +116,9 @@ if (args.includes('--failed')) {
   const outcome = verdict.renews ? `${verdict.why}, so if they pass the browser tests count as green on these files` : `nothing is recorded: ${verdict.why}`;
   console.log(`check: the ${failed.length} browser test(s) that failed in the last browser run; ${outcome}`);
   const startedAt = Date.now();
-  const status = spawnSync('pnpm --filter @dive-hub/web test:e2e --last-failed', { stdio: 'inherit', shell: true }).status ?? 1;
-  logRun({ steps: [{ step: 'e2e', from: '--failed', changed: failed.length, plan: 'failed', seconds: Math.round((Date.now() - startedAt) / 1000), status }], results: [{ status }], browserRan: true });
+  const ran = spawnSync('pnpm --filter @dive-hub/web test:e2e --last-failed', { stdio: 'inherit', shell: true });
+  const status = ran.status ?? 1;
+  logRun({ steps: [{ step: 'e2e', from: '--failed', changed: failed.length, plan: 'failed', seconds: Math.round((Date.now() - startedAt) / 1000), status: ran.status }], results: [{ status: ran.status }], browserSince: startedAt });
   if (verdict.renews && status === 0) {
     recordGreen('e2e', tree);
     clearFailed('e2e');
@@ -325,12 +329,13 @@ function summary(results) {
 }
 
 lanesRunning = true;
+const lanesStartedAt = Date.now();
 const results = await runLanes(lanes, { sequential, outDir: resolve(CACHE, 'logs'), onEnd: stepEnded });
 const code = summary(results);
 const all = unlisted ? [unlisted, ...results] : results;
 logRun({
   steps: all.filter(({ step }) => step).map(({ step, seconds, status }) => ({ step, from: since[step].from, changed: since[step].changed.length, plan: plan[step], seconds: Math.round(seconds), status })),
   results: all,
-  browserRan: all.some(({ step, seconds }) => step === 'e2e' && seconds > 0),
+  browserSince: all.some(({ step, seconds }) => step === 'e2e' && seconds > 0) ? lanesStartedAt : undefined,
 });
 process.exit(code);
