@@ -1,12 +1,18 @@
 ---
 title: Find out why axe reports colour contrast on two intermediate pages, and fix it
 summary: With axe at every page check (as CI runs it), ui-quality failed twice on color-contrast on 2026-10-26 - a link on the lead calculator and "Show them" on the Review page; decide whether each is a real contrast fault or axe catching a transition, and fix the cause.
-status: draft
+status: done
 risk: low
 date: 2026-10-26
 ---
 
 # Find out why axe reports colour contrast on two intermediate pages, and fix it
+
+**Done 2026-10-26 (PR #5):** a transition, not a contrast fault. Notices (`enter-rise`), dialogs (`enter-dialog`) and
+buttons (colour transitions) start faded, and axe measured them mid-fade. CI hit it on 12 ui-quality tests once
+the browser step ran faster. Reproduced locally by setting the `--duration-*` tokens to 2000 ms (2 of 3 tests
+failed); `expectAccessible` now waits for every animation and transition that ends to end, and the 7 failing tests
+passed in both variants with the slow tokens.
 
 Found while measuring for the [faster local check](../superpowers/specs/2026-10-26-faster-local-check-design.md#what-was-measured-2026-10-26)
 (owner asked for this task, 2026-10-26). `pnpm check` runs axe once per ui-quality test, on its final page

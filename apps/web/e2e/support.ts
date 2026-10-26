@@ -82,6 +82,11 @@ export async function expectAccessible(page: Page) {
   // reference is on the page. One that stays broken still fails.
   await expect.poll(() => page.evaluate(() => [...document.querySelectorAll('[aria-activedescendant]')]
     .every((el) => !!document.getElementById(el.getAttribute('aria-activedescendant')!)))).toBe(true);
+  // A notice or dialog fades in from opacity 0, and axe would measure its contrast mid-fade (backlog 0006, seen in CI
+  // 2026-10-26): wait until every animation and transition that ends has ended. Endless ones (a spinner) are skipped.
+  await page.evaluate(() => Promise.all(document.getAnimations()
+    .filter((a) => a.effect?.getComputedTiming().endTime !== Infinity)
+    .map((a) => a.finished.catch(() => undefined))));
   const axe = await new AxeBuilder({ page })
     // React Aria's live announcer briefly keeps a role=img pointing at a pending button that may be gone.
     .exclude('[data-live-announcer]')
