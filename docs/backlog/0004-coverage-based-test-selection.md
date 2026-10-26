@@ -21,7 +21,7 @@ on how others keep checks fast with enough certainty: test impact analysis and p
 TAP, Meta's predictive test selection, Launchable-style tools), coverage-based selection and test-suite minimisation,
 the test pyramid vs. trophy (what belongs in browser tests at all), risk-based selection, flaky-test handling
 (quarantine, retries), and what Playwright and vitest offer for it (sharding, `--only-changed`, coverage per test). The
-design then picks from it.
+design then picks from it. Done: [testing strategies](../research/2026-10-26-testing-strategies.md).
 
 ## Goal
 - **Selection by coverage:** record, per test, which source files and lines it runs (browser tests: the web client's
