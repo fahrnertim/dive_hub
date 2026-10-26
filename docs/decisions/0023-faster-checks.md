@@ -364,7 +364,7 @@ Decided:
 - **A failed browser run is a base for counting.** The next `pnpm check` plans the browser step as the failed tests plus
   what the area map picks for the files changed since the failed snapshot; it is a candidate beside the green record and
   main, its failed tests always planned. A test that no longer exists is dropped and named. A step that fails without
-  a fresh Playwright report keeps nothing, as before. Only the browser step; `pnpm check --failed` stays. This replaces,
+  a fresh Playwright report keeps nothing, as before; the old failed run stays when the browser test listing fails or the step is stopped with Ctrl-C. The owed tests of a failed run count as one unit when the base is chosen (its score is the changed files + 1). Only the browser step; `pnpm check --failed` stays. This replaces,
   in the amendment of 2026-10-24, "Changed files … record nothing, as before" for a check after a fix.
 - **Every step runs to its end**: a failing step no longer stops the others; each passing step records green. This
   replaces, in the amendment of 2026-10-08, "the failed step and those after it count from their older records": only

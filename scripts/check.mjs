@@ -239,7 +239,7 @@ function browserOwedStep(name, { owed, filters, planned: plannedNone }) {
 
 /** The browser lane: the area tags check, then the browser tests. */
 function browserSteps() {
-  const owedTests = since.e2e.owed ?? []; // none with --files or --base
+  const owedTests = full ? [] : since.e2e.owed ?? []; // none with --files, --base or --full
   if (plan.e2e === 'none' && owedTests.length === 0) return [];
   const lane = plan.e2e === 'none' ? [] : [{ name: 'browser test tags', command: 'node scripts/check-tags.mjs', step: null }];
   const grep = [...plan.areas, ...[...plan.specs].map((s) => s.replace(/\./g, '\\.'))].join('|');
@@ -259,7 +259,10 @@ function browserSteps() {
   return owedStep ? [...lane, owedStep] : lane;
 }
 
-const lanes = [browserSteps(), otherSteps()].filter((lane) => lane.length > 0);
+// In CI one after another (its runner has fewer cores), the quick lane first so a type error shows first; here the
+// lanes side by side.
+const sequential = Boolean(process.env.CI);
+const lanes = (sequential ? [otherSteps(), browserSteps()] : [browserSteps(), otherSteps()]).filter((lane) => lane.length > 0);
 const steps = lanes.flat();
 
 // A step with nothing to run is as green on this state as on the one it last passed on.
@@ -283,8 +286,6 @@ if (steps.length === 0 && !unlisted) {
   console.log(STEPS.every((step) => since[step].changed.length === 0) ? 'check: nothing changed, nothing to run' : 'check: only documentation and other quiet files changed; nothing to run');
   process.exit(0);
 }
-// In CI one after another (its runner has fewer cores); here the lanes side by side.
-const sequential = Boolean(process.env.CI);
 console.log(`check: ${lanes.length > 1 ? (sequential ? 'one step after another' : 'two lanes side by side') : 'one lane'}, every step to its end\n${lanes.map((lane) => `  - ${lane.map(({ name }) => name).join(' → ')}`).join('\n')}`);
 
 if (dry) process.exit(0);
