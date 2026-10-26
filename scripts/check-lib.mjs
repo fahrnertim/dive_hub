@@ -649,3 +649,24 @@ export function browserTestList({ all, planned, owed, credited = [] }) {
   const skip = new Set(credited);
   return { lines: lines.filter((line) => !skip.has(line)), dropped: owed.filter((line) => !all.includes(line)), left: lines.filter((line) => skip.has(line)).length };
 }
+
+/** The arguments after `--tests` (all Playwright's), or why `--tests` can't run (ADR 0023, amendment of 2026-10-26 (no second run)). */
+export function testsFilter(args) {
+  const at = args.indexOf('--tests');
+  const clash = args.slice(0, at).find((arg) => ['--failed', '--full', '--dry', '--base', '--files'].includes(arg));
+  if (clash) return { error: `--tests can't be combined with ${clash}` };
+  const filter = args.slice(at + 1);
+  if (filter.length === 0) return { error: 'pnpm check --tests <files, file:line or --grep "…">: name the browser tests to run' };
+  return { filter };
+}
+
+/** Arguments joined for a command line run with `shell: true`: one with whitespace or shell characters is quoted. */
+export function shellArgs(args) {
+  return args.map((arg) => (/[\s"|&<>^%]/.test(arg) ? `"${arg.replace(/"/g, '\\"')}"` : arg)).join(' ');
+}
+
+/** The tests of a Playwright report to record as passed, or null and why not when the report isn't from this run. */
+export function passedToRecord({ report, writtenAt, startedAt }) {
+  if (!report || writtenAt === null || writtenAt < startedAt) return { reported: null, why: "Playwright's report is from an earlier run" };
+  return { reported: reportedTests(report), why: null };
+}

@@ -9,6 +9,7 @@
 //   pnpm check --dry           only say what would run and from which base (with --files a,b: for these paths)
 //   pnpm check --failed        only the browser tests that failed in the last browser run; when they pass on the
 //                              files the failed pnpm check ran on, the browser tests count as green there
+//   pnpm check --tests <filter>   only the given browser tests (files, file:line, --grep); those that pass are recorded on these files, and pnpm check leaves them out until a change reaches them
 // A step that passes records the state it passed on (a local git ref, refs/check/green-<step>); a failed browser
 // step keeps its state and failed tests (refs/check/failed-e2e) for --failed. A run with --base or --files records
 // nothing. Unknown paths count as "everything": when in doubt, run more.
@@ -18,7 +19,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
-import { QUIET, STEPS, browserGrepInvert, browserTestList, listedTests, changedSince, variantsRun, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, keptFailures, failedTestsFromReport, REPORT, fullPlan, lintTargets, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
+import { QUIET, STEPS, browserGrepInvert, browserTestList, listedTests, changedSince, variantsRun, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, keptFailures, failedTestsFromReport, REPORT, carryPassed, passedSince, passedToRecord, recordPassed, shellArgs, testsFilter, fullPlan, lintTargets, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
 import { appendRun, browserStats, logPath } from './check-log.mjs';
 import { runLanes, takeLock } from './check-run.mjs';
 
@@ -101,6 +102,40 @@ function failedTitlesSince(startedAt) {
   } catch {
     return []; // no report
   }
+}
+
+// --tests: only the given browser tests (everything after it is Playwright's). Those that pass count as passed on
+// these files until a change reaches them (ADR 0023, amendment of 2026-10-26 (no second run)).
+if (args.includes('--tests')) {
+  const given = testsFilter(args);
+  if (given.error) {
+    console.error(`check: ${given.error}`);
+    process.exit(1);
+  }
+  const { filter } = given;
+  const tree = snapshot();
+  const variants = variantsRun(countingBase('e2e', tree).changed);
+  const invert = filter.some((arg) => arg === '--grep-invert' || arg.startsWith('--grep-invert=')) ? [] : ['--grep-invert', browserGrepInvert({ full: false, variants: variants.run })];
+  console.log(`check: browser tests by hand (${filter.join(' ')}); those that pass count as passed on these files`);
+  console.log(`check: ${variants.why ?? 'browser tests in English, light, desktop only; the other ui-quality variants run in CI (pnpm check:full)'}`);
+  if (process.env.E2E_AXE === 'once') console.log('check: axe once per ui-quality test, on its final state; CI runs it at every page check');
+  const startedAt = Date.now();
+  const ran = spawnSync(`pnpm --filter @dive-hub/web test:e2e ${shellArgs([...filter, ...invert])}`, { stdio: 'inherit', shell: true });
+  const seconds = Math.round((Date.now() - startedAt) / 1000);
+  let report = null;
+  let writtenAt = null;
+  try {
+    writtenAt = statSync(REPORT).mtimeMs;
+    report = JSON.parse(readFileSync(REPORT, 'utf8'));
+  } catch { /* no report */ }
+  const { reported, why } = passedToRecord({ report, writtenAt, startedAt });
+  if (reported === null) console.log(`check: nothing recorded: ${why}`);
+  else {
+    recordPassed(tree, carryPassed(passedSince(tree)?.tests ?? [], reported));
+    console.log(`check: ${reported.filter((test) => test.status === 'passed').length} browser test(s) passed and recorded on these files; pnpm check leaves them out until a change reaches them`);
+  }
+  logRun({ steps: [{ step: 'e2e', from: '--tests', changed: 0, plan: filter.join(' '), seconds, status: ran.status }], results: [{ status: ran.status }], browserSince: startedAt });
+  process.exit(ran.status ?? 1);
 }
 
 // --failed: after a failing browser run, only the tests that failed (Playwright's record of its last run). When

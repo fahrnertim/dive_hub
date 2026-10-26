@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { FULL_ONLY, VARIANTS, browserGrepInvert, variantsRun } from './check-lib.mjs';
-import { browserTestList, baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, clearPassed, carryPassed, passedRun, passedSince, recordPassed, reportedTests, stillPassed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, failedTestsFromReport, forBrowserTests, greenRun, keptFailures, lintTargets, listedTests, planFor, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
+import { testsFilter, shellArgs, passedToRecord, browserTestList, baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, clearPassed, carryPassed, passedRun, passedSince, recordPassed, reportedTests, stillPassed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, failedTestsFromReport, forBrowserTests, greenRun, keptFailures, lintTargets, listedTests, planFor, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
 
 /** A git repository with one commit holding `files`. */
 function repository(files) {
@@ -652,4 +652,22 @@ test('the browser test list leaves out credited tests, and a credited test is ne
   assert.deepEqual(browserTestList({ all, planned: ['a › 1', 'a › 2'], owed: ['b › 1', 'gone › 1'], credited: ['a › 2', 'b › 1', 'c › 1', 'gone › 2'] }),
     { lines: ['a › 1'], dropped: ['gone › 1'], left: 2 });
   assert.deepEqual(browserTestList({ all, planned: ['a › 1'], owed: [] }), { lines: ['a › 1'], dropped: [], left: 0 });
+});
+
+test('--tests takes everything after it as the filter, and refuses other modes or an empty filter', () => {
+  assert.deepEqual(testsFilter(['--tests', 'sites.spec.ts:12', '--grep', '@sites|@layout']), { filter: ['sites.spec.ts:12', '--grep', '@sites|@layout'] });
+  assert.match(testsFilter(['--tests']).error, /name the browser tests to run/);
+  assert.match(testsFilter(['--dry', '--tests', 'a.spec.ts']).error, /--tests can't be combined with --dry/);
+  assert.match(testsFilter(['--failed', '--tests', 'a.spec.ts']).error, /--failed/);
+});
+
+test('a filter reaches the shell as Playwright arguments, quoted where the shell would split or pipe', () => {
+  assert.equal(shellArgs(['sites.spec.ts:12', '--grep', '@sites|@layout', 'a "b" c']), 'sites.spec.ts:12 --grep "@sites|@layout" "a \\"b\\" c"');
+});
+
+test('--tests records only from a report written during its run', () => {
+  const report = { suites: [{ title: 'a.spec.ts', file: 'a.spec.ts', specs: [spec('a.spec.ts', 'one', ['tools'], 'passed')] }] };
+  assert.equal(passedToRecord({ report, writtenAt: 2000, startedAt: 1000 }).reported.length, 1);
+  assert.equal(passedToRecord({ report, writtenAt: 500, startedAt: 1000 }).reported, null);
+  assert.match(passedToRecord({ report: null, writtenAt: null, startedAt: 1000 }).why, /earlier run/);
 });
