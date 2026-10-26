@@ -238,7 +238,7 @@ test('without changed texts, or without a base to compare them with, the files s
   assert.deepEqual(forBrowserTests([EN], null, null, repo.cwd).changed, [EN]);
 });
 
-test('the counting base is the candidate with the fewest changed files; a tie prefers the first (the green run)', () => {
+test('the counting base is the candidate with the fewest changed files; a tie keeps the earlier one', () => {
   const green = { from: 'its green run', base: 'g', changed: ['a', 'b'] };
   const main = { from: 'main', base: 'm', changed: ['a'] };
   assert.equal(chooseBase([green, main]), main);
@@ -265,6 +265,45 @@ test('a branch counts from main when that leaves fewer files than a stale green 
   assert.match(chosen.from, /^main \(where this branch left it, [0-9a-f]{7,}\)$/);
   assert.deepEqual(chosen.changed, ['d.ts']);
   assert.equal(chosen.base, repo.git('merge-base', 'HEAD', 'main').toString().trim());
+});
+
+// Amendment of 2026-10-26: a failed browser run is a base for counting, its failed tests owed.
+
+test('after a failed browser run and a fix, the browser step counts from the failed run with its failed tests owed', (t) => {
+  const repo = repository({ 'a.ts': 'a', 'b.ts': 'b' });
+  t.after(repo.drop);
+  recordGreen('e2e', snapshot(repo.cwd), repo.cwd);
+  repo.write('a.ts', 'a2');
+  recordFailed('e2e', snapshot(repo.cwd), { ids: ['x'], tests: ['t › one'] }, repo.cwd);
+  repo.write('b.ts', 'b2');
+  const chosen = countingBase('e2e', snapshot(repo.cwd), repo.cwd);
+  assert.deepEqual(chosen.changed, ['b.ts']);
+  assert.deepEqual(chosen.owed, ['t › one']);
+  assert.match(chosen.from, /^the failed run of .+ \(1 failed test\(s\) owed\)$/);
+});
+
+test('only the browser step counts from a failed run', (t) => {
+  const repo = repository({ 'a.ts': 'a', 'b.ts': 'b' });
+  t.after(repo.drop);
+  recordGreen('server', snapshot(repo.cwd), repo.cwd);
+  repo.write('a.ts', 'a2');
+  recordFailed('e2e', snapshot(repo.cwd), { ids: ['x'], tests: ['t › one'] }, repo.cwd);
+  repo.write('b.ts', 'b2');
+  const chosen = countingBase('server', snapshot(repo.cwd), repo.cwd);
+  assert.deepEqual(chosen.owed, []);
+  assert.match(chosen.from, /^its green run of /);
+});
+
+test('a failed run loses to a base with fewer changed files and owed tests together', (t) => {
+  const repo = repository({ 'a.ts': 'a' });
+  t.after(repo.drop);
+  recordGreen('e2e', snapshot(repo.cwd), repo.cwd);
+  repo.write('a.ts', 'a2');
+  recordFailed('e2e', snapshot(repo.cwd), { ids: ['x'], tests: ['t › one', 't › two', 't › three'] }, repo.cwd);
+  repo.write('a.ts', 'a');
+  const chosen = countingBase('e2e', snapshot(repo.cwd), repo.cwd);
+  assert.match(chosen.from, /^its green run of /);
+  assert.deepEqual([chosen.changed, chosen.owed], [[], []]);
 });
 
 // Amendment of 2026-10-24: unknown files don't run everything.

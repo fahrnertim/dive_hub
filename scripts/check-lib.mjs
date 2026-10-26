@@ -318,9 +318,15 @@ export function greenRun(step, cwd = process.cwd()) {
   }
 }
 
-/** Of the candidates `{ from, base, changed }` (in order of preference), the one with the fewest changed files; null when none. */
+/** The files a candidate leaves to check, and the failed tests it owes on top. */
+const score = (candidate) => candidate.changed.length + (candidate.owed?.length ?? 0);
+
+/**
+ * Of the candidates `{ from, base, changed, owed? }` (in order of preference), the one with the fewest changed files
+ * plus owed tests; a tie keeps the earlier one. Null when none.
+ */
 export function chooseBase(candidates) {
-  return candidates.reduce((best, next) => (best && best.changed.length <= next.changed.length ? best : next), null);
+  return candidates.reduce((best, next) => (best && score(best) <= score(next) ? best : next), null);
 }
 
 /** Whether a ref names a commit here. */
@@ -343,12 +349,14 @@ function currentBranch(cwd) {
 }
 
 /**
- * The bases `step` may count from, in order of preference: its green run, and where this branch left main and
- * origin/main (CI checks those). The same merge base is taken once; a main without common history is skipped.
- * Returns `[{ from, base }]`.
+ * The bases `step` may count from, in order of preference: for the browser step a kept failed run that owes tests
+ * (its failed tests count on top), its green run, and where this branch left main and origin/main (CI checks those).
+ * The same merge base is taken once; a main without common history is skipped. Returns `[{ from, base, owed? }]`.
  */
 export function baseCandidates(step, cwd = process.cwd()) {
   const candidates = [];
+  const failed = step === 'e2e' ? failedRun(step, cwd) : null;
+  if (failed?.owed.length) candidates.push({ from: `the failed run of ${failed.at} (${failed.owed.length} failed test(s) owed)`, base: failed.base, owed: failed.owed });
   const green = greenRun(step, cwd);
   if (green) candidates.push({ from: `its green run of ${green.at}`, base: green.base });
   let onMain = null;
@@ -366,11 +374,13 @@ export function baseCandidates(step, cwd = process.cwd()) {
 
 /**
  * Where `step` counts its changed files from (ADR 0023, amendment of 2026-10-24): of `baseCandidates`, the one that
- * leaves the fewest files; a tie prefers the green run. Without any, the last commit. Returns `{ from, base, changed }`.
+ * leaves the fewest files, the owed tests of a failed run counting on top; a tie keeps the earlier candidate. Without
+ * any, the last commit. Returns `{ from, base, changed, owed }` (`owed` is empty unless the failed run won).
  */
 export function countingBase(step, tree, cwd = process.cwd()) {
   const counted = baseCandidates(step, cwd).map((candidate) => ({ ...candidate, changed: changedSince(candidate.base, tree, cwd) }));
-  return chooseBase(counted) ?? { from: 'the last commit (no green run recorded)', base: 'HEAD', changed: changedSince('HEAD', tree, cwd) };
+  const chosen = chooseBase(counted) ?? { from: 'the last commit (no green run recorded)', base: 'HEAD', changed: changedSince('HEAD', tree, cwd) };
+  return { ...chosen, owed: chosen.owed ?? [] };
 }
 
 // A failed run of a step (amendment of 2026-10-24: a passing --failed renews the browser record): the snapshot it
