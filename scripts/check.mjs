@@ -150,7 +150,7 @@ if (plan.server !== 'none') steps.push([`server tests (${plan.server})`, unitTes
 if (plan.web !== 'none') steps.push([`web unit tests (${plan.web})`, unitTests('web', plan.web), 'web']);
 /** The `playwright test --list` lines (as `--test-list` lines) of the browser tests narrowed by `filters`; null when the listing failed. */
 function listBrowserTests(filters) {
-  const { stdout, stderr, status } = spawnSync(`pnpm --filter @dive-hub/web exec playwright test --project=e2e --list${filters}`, { encoding: 'utf8', shell: true });
+  const { stdout, stderr, status } = spawnSync(`pnpm --filter @dive-hub/web exec playwright test --project=e2e --list --pass-with-no-tests${filters}`, { encoding: 'utf8', shell: true });
   if (status === 0) return listedTests(stdout ?? '');
   console.log(`${stdout ?? ''}${stderr ?? ''}`);
   return null;
