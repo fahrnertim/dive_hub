@@ -381,3 +381,5 @@ Decided:
   typecheck no longer stops the browser tests, so its error arrives after the slowest step.
 - *Considered:* fewer axe passes and fewer variants (little left to gain after measuring); stopping the browser tests
   when a fast step fails (sooner answer, but the browser tests run again after the fix; owner chose to let them finish).
+- *Result (2026-10-26):* a check that plans everything 473 s (550 s before; target 443 s); the rerun after a fix 82 s for
+  the browser step (the failed tests plus `@tools|@layout`), 90 s for the whole check. See the [design's Result](../superpowers/specs/2026-10-26-faster-local-check-design.md#result).

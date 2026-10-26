@@ -162,3 +162,40 @@ titles out of the JSON report. Two invocations (cost: a second server start, abo
 - After a week of slices the run log says the median wall time of a `pnpm check` and the sum per feature; that goes into
   a short note in `docs/research/` and decides whether the next step of 0004 (or 4 workers, 15 % faster but contended)
   is needed for the 5 minutes.
+
+## Result
+Measured 2026-10-26 after the plan, on the owner's laptop with nothing else heavy running. The first two numbers come from
+the build, the others from the closing measurement (Task 8).
+
+| Case | Before | After |
+|---|---|---|
+| A check that plans everything (`pnpm check --files package.json`) | about 550 s, steps one after another | **473 s** closing measurement; 461 s and a full `pnpm check` of 485 s during the build. Design target 443 s. |
+| After a fix: the rerun | the whole plan again | **82 s** for the browser step including the owed-test listing (the whole check 90 s): the 5 failed tests plus `@tools\|@layout`. During the build, before the lanes: 75 s, 44 tests. |
+
+Lane times of the 473 s run: browser tests 469 s, beside typecheck 9 s, lint 9 s, server tests 226 s, web unit tests 6 s.
+The wall time is the browser step; the other lane (about 250 s) hides behind it. The 5 minutes of the target is met for
+the check after a fix, not for a check that plans everything: that one stays near 8 minutes until the browser tests
+themselves get cheaper (backlog 0004).
+
+`pnpm check:log` lines of the closing measurement (the first run is the full plan, then the failed run, then the rerun):
+
+```
+2026-10-26 19:03  testing-strategies-research  person  passed  473 s  slowest: e2e 469 s
+2026-10-26 19:14  testing-strategies-research  person  failed  116 s  slowest: e2e 107 s
+2026-10-26 19:16  testing-strategies-research  person  passed  90 s  slowest: e2e 82 s
+```
+
+The failed run had edited three files (the title of the tools page, comments in two others) and the rerun planned from
+that failed run: `browser tests: 1 changed file(s) since the failed run of 2026-10-26 19:14 (5 failed test(s) owed)`.
+A rerun counts from the failed run only when that run is closer than the green record; a fix right after a green
+record counts from the green record, as before.
+
+### What changed against the plan
+- **A failed run's owed tests count as one unit in the base score** (`changed files + 1`), not one per test. With one
+  per test, a typical fix fell back to the green record and reran the whole plan.
+- **A browser test listing that fails fails the browser step and keeps the failed run.** No test ran, so nothing is
+  forgotten; this differs from a step that ran and failed without a Playwright report, which keeps nothing.
+- **The owed-test listing runs before the lanes start**, and `scripts/check-tags.mjs` is the tags check as a command.
+- **A step that fails within 300 ms of a Ctrl-C counts as interrupted**, not failed.
+- **Not explained:** one hook check failed once on the check script tests and passed on retry; the cause was not found
+  (6 reruns passed). If it comes back, it goes into [check escapes](../../agents/check-escapes.md).
