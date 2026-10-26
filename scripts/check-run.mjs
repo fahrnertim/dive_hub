@@ -18,7 +18,17 @@ function killTree(child) {
   }
 }
 
-/** Runs one step with its output to `log`; resolves with its exit code, or null when it was killed by `stop`. */
+/**
+ * How long a failed step's end waits for an interrupt. On Windows a Ctrl-C reaches every process of the console,
+ * the steps too: one may end, failed, before the runner's SIGINT handler runs. A step that fails this shortly before
+ * an interrupt counts as interrupted, so nothing is recorded for it. A step that passed did its work: no wait.
+ */
+const SETTLE_MS = 300;
+
+/**
+ * Runs one step with its output to `log`; resolves with its exit code, or null when `stop` came while it ran or
+ * within SETTLE_MS after it failed.
+ */
 function runStep(command, log, running) {
   return new Promise((done) => {
     const fd = openSync(log, 'w');
@@ -26,9 +36,16 @@ function runStep(command, log, running) {
     closeSync(fd);
     const entry = { child, stopped: false };
     running.add(entry);
+    let ended = false;
     const end = (code) => {
-      running.delete(entry);
-      done(entry.stopped ? null : (code ?? 1));
+      if (ended) return;
+      ended = true;
+      const settle = () => {
+        running.delete(entry);
+        done(entry.stopped ? null : (code ?? 1));
+      };
+      if (code === 0 && !entry.stopped) settle();
+      else setTimeout(settle, SETTLE_MS);
     };
     child.on('error', () => end(1));
     child.on('close', end);

@@ -65,6 +65,22 @@ function running(pid) {
   }
 }
 
+test('a step that ends just before the interrupt counts as interrupted, not as passed or failed', async (t) => {
+  // On Windows a Ctrl-C reaches the steps too: one may end before the runner hears of it.
+  const dir = outDir(t);
+  const controller = new AbortController();
+  const ended = [];
+  const run = runLanes([[{ name: 'racing', command: 'node -e "console.log(\'done\'); process.exit(1)"', step: null }]], { sequential: false, outDir: dir, onEnd: (result) => ended.push(result.name), signal: controller.signal });
+  const log = join(dir, 'racing.log');
+  const deadline = Date.now() + 5000;
+  while (!(existsSync(log) && readFileSync(log, 'utf8').includes('done')) && Date.now() < deadline) await new Promise((done) => setTimeout(done, 10));
+  await new Promise((done) => setTimeout(done, 100)); // the step has ended by now
+  controller.abort();
+  const [result] = await run;
+  assert.equal(result.status, null);
+  assert.deepEqual(ended, []);
+});
+
 test('an interrupted run leaves unfinished steps without a status', async (t) => {
   const dir = outDir(t);
   const controller = new AbortController();
