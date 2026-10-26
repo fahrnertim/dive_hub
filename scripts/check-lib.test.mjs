@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { FULL_ONLY, VARIANTS, browserGrepInvert, variantsRun } from './check-lib.mjs';
-import { browserTestList, baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, failedTestsFromReport, forBrowserTests, greenRun, keptFailures, lintTargets, listedTests, planFor, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
+import { browserTestList, baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, clearPassed, carryPassed, passedRun, passedSince, recordPassed, reportedTests, stillPassed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, failedTestsFromReport, forBrowserTests, greenRun, keptFailures, lintTargets, listedTests, planFor, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
 
 /** A git repository with one commit holding `files`. */
 function repository(files) {
@@ -578,6 +578,78 @@ test('a Playwright listing becomes test-list lines', () => {
 
 test('the test list is the planned tests plus the owed ones that still exist', () => {
   const all = ['a', 'b', 'c', 'd'];
-  assert.deepEqual(browserTestList({ all, planned: ['b'], owed: ['d', 'gone'] }), { lines: ['b', 'd'], dropped: ['gone'] });
-  assert.deepEqual(browserTestList({ all, planned: ['b', 'd'], owed: ['d'] }), { lines: ['b', 'd'], dropped: [] });
+  assert.deepEqual(browserTestList({ all, planned: ['b'], owed: ['d', 'gone'] }), { lines: ['b', 'd'], dropped: ['gone'], left: 0 });
+  assert.deepEqual(browserTestList({ all, planned: ['b', 'd'], owed: ['d'] }), { lines: ['b', 'd'], dropped: [], left: 0 });
+});
+
+// Amendment of 2026-10-26 (no second run): tests run by hand count.
+
+const spec = (file, title, tags, ...statuses) => ({ file, title, tags, tests: statuses.map((status) => ({ results: [{ status }] })) });
+
+test('a report names each test with its line, file, tags and whether it passed', () => {
+  const report = { suites: [{ title: 'sites.spec.ts', file: 'sites.spec.ts', suites: [{ title: 'Sites', specs: [
+    spec('sites.spec.ts', 'adds a “Shark’s” site', ['sites'], 'passed'),
+    spec('sites.spec.ts', 'fails', ['sites', 'layout'], 'failed'),
+    spec('sites.spec.ts', 'times out', ['sites'], 'timedOut'),
+    spec('sites.spec.ts', 'is skipped', ['sites'], 'skipped'),
+    spec('sites.spec.ts', 'has no tags', undefined, 'passed'),
+  ] }] }] };
+  assert.deepEqual(reportedTests(report), [
+    { line: 'sites.spec.ts › Sites › adds a “Shark’s” site', file: 'sites.spec.ts', tags: ['@sites'], status: 'passed' },
+    { line: 'sites.spec.ts › Sites › fails', file: 'sites.spec.ts', tags: ['@sites', '@layout'], status: 'failed' },
+    { line: 'sites.spec.ts › Sites › times out', file: 'sites.spec.ts', tags: ['@sites'], status: 'failed' },
+    { line: 'sites.spec.ts › Sites › is skipped', file: 'sites.spec.ts', tags: ['@sites'], status: 'skipped' },
+    { line: 'sites.spec.ts › Sites › has no tags', file: 'sites.spec.ts', tags: [], status: 'passed' },
+  ]);
+});
+
+test('the passed-tests record keeps its snapshot and tests, odd titles and all, and can be cleared', (t) => {
+  const repo = repository({ 'a.ts': 'a' });
+  t.after(repo.drop);
+  assert.equal(passedRun(repo.cwd), null);
+  const tree = snapshot(repo.cwd);
+  const odd = { line: "tools.spec.ts › 16 % of the “Shark’s” sites: it's \"quoted\"", file: 'tools.spec.ts', tags: ['@tools'] };
+  const plain = { line: 'a.spec.ts › one', file: 'a.spec.ts', tags: [] };
+  recordPassed(tree, [odd, plain], repo.cwd);
+  const { base, at, ...rest } = passedRun(repo.cwd);
+  assert.deepEqual(rest, { tree, tests: [plain, odd] });
+  assert.match(at, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
+  clearPassed(repo.cwd);
+  assert.equal(passedRun(repo.cwd), null);
+  clearPassed(repo.cwd);
+});
+
+test('a recorded test stays passed until the map reaches it: every test, its spec or one of its areas', () => {
+  const sites = { line: 'sites.spec.ts › adds', file: 'sites.spec.ts', tags: ['@sites'] };
+  const tools = { line: 'tools.spec.ts › plans', file: 'tools.spec.ts', tags: ['@tools'] };
+  const untagged = { line: 'misc.spec.ts › x', file: 'misc.spec.ts', tags: [] };
+  const all = [sites, tools, untagged];
+  assert.deepEqual(stillPassed(all, planFor([])), all);
+  assert.deepEqual(stillPassed(all, planFor(['apps/web/e2e/support.ts'])), all);
+  assert.deepEqual(stillPassed(all, planFor(['apps/web/src/SitesPage.tsx'])), [tools, untagged]);
+  assert.deepEqual(stillPassed(all, planFor(['apps/web/e2e/tools.spec.ts'])), [sites, untagged]);
+  assert.deepEqual(stillPassed(all, planFor(['package.json'])), []);
+});
+
+test('passes recorded on an earlier snapshot carry over unless a change reaches them', (t) => {
+  const repo = repository({ 'apps/web/src/SitesPage.tsx': 'a', 'apps/web/src/ToolsPage.tsx': 't' });
+  t.after(repo.drop);
+  const sites = { line: 'sites.spec.ts › adds', file: 'sites.spec.ts', tags: ['@sites'] };
+  const tools = { line: 'tools.spec.ts › plans', file: 'tools.spec.ts', tags: ['@tools'] };
+  recordPassed(snapshot(repo.cwd), [sites, tools], repo.cwd);
+  repo.write('apps/web/src/SitesPage.tsx', 'b');
+  const now = passedSince(snapshot(repo.cwd), repo.cwd);
+  assert.deepEqual(now.tests, [tools]);
+  const reported = [{ ...sites, status: 'passed' }, { line: 'tools.spec.ts › plans', file: 'tools.spec.ts', tags: ['@tools'], status: 'failed' }];
+  assert.deepEqual(carryPassed(now.tests, reported), [sites]);
+  const empty = repository({ 'x': 'x' });
+  t.after(empty.drop);
+  assert.equal(passedSince(snapshot(empty.cwd), empty.cwd), null);
+});
+
+test('the browser test list leaves out credited tests, and a credited test is never added by itself', () => {
+  const all = ['a › 1', 'a › 2', 'b › 1', 'c › 1'];
+  assert.deepEqual(browserTestList({ all, planned: ['a › 1', 'a › 2'], owed: ['b › 1', 'gone › 1'], credited: ['a › 2', 'b › 1', 'c › 1', 'gone › 2'] }),
+    { lines: ['a › 1'], dropped: ['gone › 1'], left: 2 });
+  assert.deepEqual(browserTestList({ all, planned: ['a › 1'], owed: [] }), { lines: ['a › 1'], dropped: [], left: 0 });
 });

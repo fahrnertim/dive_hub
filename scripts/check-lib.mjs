@@ -389,20 +389,41 @@ const failedRef = (step) => `refs/check/failed-${step}`;
 /** Playwright's JSON report (apps/web/playwright.config.ts), written next to `.last-run.json`. */
 export const REPORT = 'apps/web/test-results/report.json';
 
+/** Calls `visit(spec, line)` for each spec of a Playwright JSON report; `line` is its `--test-list` line. */
+function eachSpec(report, visit) {
+  const walk = (suite, describes) => {
+    for (const spec of suite.specs ?? []) visit(spec, [spec.file, ...describes, spec.title].join(' › '));
+    for (const child of suite.suites ?? []) walk(child, [...describes, child.title]);
+  };
+  for (const fileSuite of report?.suites ?? []) walk(fileSuite, []);
+}
+
+const lastStatuses = (spec) => (spec.tests ?? []).map((test) => test.results?.at(-1)?.status);
+
+/**
+ * Every test of a Playwright JSON report (ADR 0023, amendment of 2026-10-26 (no second run)): its `--test-list` line,
+ * spec file and tags (with the `@`), and whether it passed (every test's last result passed), was skipped (every one)
+ * or failed (anything else, a timeout too).
+ */
+export function reportedTests(report) {
+  const tests = [];
+  eachSpec(report, (spec, line) => {
+    const last = lastStatuses(spec);
+    const status = last.length > 0 && last.every((s) => s === 'passed') ? 'passed' : last.every((s) => s === 'skipped') ? 'skipped' : 'failed';
+    tests.push({ line, file: spec.file, tags: (spec.tags ?? []).map((tag) => `@${tag}`), status });
+  });
+  return tests;
+}
+
 /**
  * The tests of a Playwright JSON report whose last result is failed or timed out, as `--test-list` lines:
  * `<file relative to testDir> › <describe> › … › <title>` (no project, no tags, no line numbers).
  */
 export function failedTestsFromReport(report) {
   const lines = [];
-  const walk = (suite, describes) => {
-    for (const spec of suite.specs ?? []) {
-      const failed = (spec.tests ?? []).some((test) => ['failed', 'timedOut'].includes(test.results?.at(-1)?.status));
-      if (failed) lines.push([spec.file, ...describes, spec.title].join(' › '));
-    }
-    for (const child of suite.suites ?? []) walk(child, [...describes, child.title]);
-  };
-  for (const fileSuite of report?.suites ?? []) walk(fileSuite, []);
+  eachSpec(report, (spec, line) => {
+    if (lastStatuses(spec).some((s) => ['failed', 'timedOut'].includes(s))) lines.push(line);
+  });
   return lines;
 }
 
@@ -441,6 +462,61 @@ export function clearFailed(step, cwd = process.cwd()) {
   try {
     git(['update-ref', '-d', failedRef(step)], cwd);
   } catch { /* none kept */ }
+}
+
+// Browser tests passed by hand (ADR 0023, amendment of 2026-10-26 (no second run)): the snapshot they passed on and
+// the tests, as a commit held by a local ref like the failed runs.
+const PASSED_REF = 'refs/check/passed-e2e';
+
+/** Records that `tests` (`{ line, file, tags }`) passed on the snapshot `tree`. */
+export function recordPassed(tree, tests, cwd = process.cwd()) {
+  const sorted = [...tests].sort((a, b) => (a.line < b.line ? -1 : a.line > b.line ? 1 : 0)).map(({ line, file, tags }) => ({ line, file, tags }));
+  const message = `e2e: passed by hand
+
+${JSON.stringify({ tests: sorted })}`;
+  const commit = git(['-c', 'user.name=pnpm check', '-c', 'user.email=check@localhost', 'commit-tree', tree, '-m', message], cwd);
+  git(['update-ref', PASSED_REF, commit], cwd);
+}
+
+/** The recorded passed tests, or null: `{ tree, base, at, tests }`. */
+export function passedRun(cwd = process.cwd()) {
+  try {
+    const tree = git(['rev-parse', `${PASSED_REF}^{tree}`], cwd);
+    const base = git(['rev-parse', PASSED_REF], cwd);
+    const at = git(['log', '-1', '--format=%cd', '--date=format:%Y-%m-%d %H:%M', PASSED_REF, '--'], cwd);
+    const { tests } = JSON.parse(git(['log', '-1', '--format=%b', PASSED_REF, '--'], cwd));
+    return { tree, base, at, tests };
+  } catch {
+    return null;
+  }
+}
+
+/** Forgets the passed tests. */
+export function clearPassed(cwd = process.cwd()) {
+  try {
+    git(['update-ref', '-d', PASSED_REF], cwd);
+  } catch { /* none kept */ }
+}
+
+/** The passed tests a plan does not reach: none for a full run; a test goes when its spec or one of its areas is in the plan. */
+export function stillPassed(tests, plan) {
+  if (plan.e2e === 'all') return [];
+  return tests.filter((test) => !plan.specs.has(test.file) && !test.tags.some((tag) => plan.areas.has(tag)));
+}
+
+/** The recorded passed tests no change since the record reaches, with the record's date, or null without a record. */
+export function passedSince(tree, cwd = process.cwd()) {
+  const run = passedRun(cwd);
+  if (!run) return null;
+  const { changed } = forBrowserTests(changedSince(run.tree, tree, cwd), run.tree, tree, cwd);
+  return { at: run.at, tests: stillPassed(run.tests, planFor(changed, { e2eServerLoads: e2eServerLoads(cwd) })) };
+}
+
+/** The tests still passed, minus those a run reported, plus the ones that run passed. */
+export function carryPassed(still, reported) {
+  const named = new Set(reported.map((test) => test.line));
+  const passed = reported.filter((test) => test.status === 'passed').map(({ line, file, tags }) => ({ line, file, tags }));
+  return [...still.filter((test) => !named.has(test.line)), ...passed].sort((a, b) => (a.line < b.line ? -1 : a.line > b.line ? 1 : 0));
 }
 
 /**
@@ -564,9 +640,12 @@ export function listedTests(stdout) {
 
 /**
  * One test list from the planned tests plus the owed (previously failed) ones that still exist, in the order of
- * `all`; `dropped` are the owed tests that no longer exist.
+ * `all`, without the `credited` ones (passed by hand: ADR 0023, amendment of 2026-10-26 (no second run)); `dropped`
+ * are the owed tests that no longer exist, `left` how many lines the credit removed.
  */
-export function browserTestList({ all, planned, owed }) {
+export function browserTestList({ all, planned, owed, credited = [] }) {
   const wanted = new Set([...planned, ...owed.filter((line) => all.includes(line))]);
-  return { lines: all.filter((line) => wanted.has(line)), dropped: owed.filter((line) => !all.includes(line)) };
+  const lines = all.filter((line) => wanted.has(line));
+  const skip = new Set(credited);
+  return { lines: lines.filter((line) => !skip.has(line)), dropped: owed.filter((line) => !all.includes(line)), left: lines.filter((line) => skip.has(line)).length };
 }
