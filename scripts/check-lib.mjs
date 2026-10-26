@@ -660,9 +660,15 @@ export function testsFilter(args) {
   return { filter };
 }
 
-/** Arguments joined for a command line run with `shell: true`: one with whitespace or shell characters is quoted. */
-export function shellArgs(args) {
-  return args.map((arg) => (/[\s"|&<>^%]/.test(arg) ? `"${arg.replace(/"/g, '\\"')}"` : arg)).join(' ');
+/**
+ * Arguments as one command line for a shell (only when pnpm's own path isn't known, else they go as an array):
+ * single-quoted on POSIX; on Windows quoted where cmd.exe would split or pipe, and refused where it would change them
+ * (`"` and `%` can't be escaped reliably).
+ */
+export function shellArgs(args, platform = process.platform) {
+  if (platform !== 'win32') return { command: args.map((arg) => `'${arg.replaceAll("'", "'\\''")}'`).join(' ') };
+  if (args.some((arg) => /["%]/.test(arg))) return { error: "--tests: a filter with \" or % can't be passed through cmd.exe; run it through pnpm check" };
+  return { command: args.map((arg) => (arg === '' || /[\s|&<>^()]/.test(arg) ? `"${arg}"` : arg)).join(' ') };
 }
 
 /** The tests of a Playwright report to record as passed, or null and why not when the report isn't from this run. */

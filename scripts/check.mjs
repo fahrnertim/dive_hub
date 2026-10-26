@@ -10,6 +10,7 @@
 //   pnpm check --failed        only the browser tests that failed in the last browser run; when they pass on the
 //                              files the failed pnpm check ran on, the browser tests count as green there
 //   pnpm check --tests <filter>   only the given browser tests (files, file:line, --grep); those that pass are recorded on these files, and pnpm check leaves them out until a change reaches them
+//                              (a --grep-invert in the filter replaces the default leave-out)
 // A step that passes records the state it passed on (a local git ref, refs/check/green-<step>); a failed browser
 // step keeps its state and failed tests (refs/check/failed-e2e) for --failed. A run with --base or --files records
 // nothing. Unknown paths count as "everything": when in doubt, run more.
@@ -120,7 +121,21 @@ if (args.includes('--tests')) {
   console.log(`check: ${variants.why ?? 'browser tests in English, light, desktop only; the other ui-quality variants run in CI (pnpm check:full)'}`);
   if (process.env.E2E_AXE === 'once') console.log('check: axe once per ui-quality test, on its final state; CI runs it at every page check');
   const startedAt = Date.now();
-  const ran = spawnSync(`pnpm --filter @dive-hub/web test:e2e ${shellArgs([...filter, ...invert])}`, { stdio: 'inherit', shell: true });
+  // Under pnpm the arguments go through as an array, unchanged; else through a shell, quoted for it.
+  let ran;
+  const pnpmPath = process.env.npm_execpath;
+  if (pnpmPath) {
+    // pnpm's path is a script (run with node) or, in the native builds, an executable.
+    const script = /\.[cm]?js$/.test(pnpmPath);
+    ran = spawnSync(script ? process.execPath : pnpmPath, [...(script ? [pnpmPath] : []), '--filter', '@dive-hub/web', 'test:e2e', ...filter, ...invert], { stdio: 'inherit' });
+  } else {
+    const line = shellArgs([...filter, ...invert]);
+    if (line.error) {
+      console.error(`check: ${line.error}`);
+      process.exit(1);
+    }
+    ran = spawnSync(`pnpm --filter @dive-hub/web test:e2e ${line.command}`, { stdio: 'inherit', shell: true });
+  }
   const seconds = Math.round((Date.now() - startedAt) / 1000);
   let report = null;
   let writtenAt = null;
@@ -197,7 +212,7 @@ if (!full) for (const note of [browser.note, ...plan.notes]) if (note) console.l
 const credit = (records || (dry && !given && !givenBase)) && !full ? passedSince(tree) : null;
 const credited = credit?.tests.map(({ line }) => line) ?? [];
 const byHand = (count) => `check: ${count} browser test(s) passed by hand on ${credit.at} (pnpm check --tests) and not reached since`;
-if (dry && credited.length > 0) console.log(`${byHand(credited.length)}; left out of what is planned`);
+if (dry && credited.length > 0) console.log(`${byHand(credited.length)}; left out where planned`);
 
 const pnpm = (cmd) => `pnpm ${cmd}`;
 const CACHE = resolve('node_modules/.cache/check');
@@ -265,7 +280,7 @@ function browserListStep(name, { owed, filters, planned: plannedNone, credited }
   const all = listBrowserTests('');
   const planned = plannedNone || !all ? [] : listBrowserTests(filters);
   if (!all?.length || !planned) {
-    console.log(`✗ ${step.name} failed\ncheck: could not list the browser tests; the failed run stays owed`);
+    console.log(`✗ ${step.name} failed\ncheck: could not list the browser tests${owed?.length > 0 ? '; the failed run stays owed' : ''}`);
     unlisted = { name: step.name, step: 'e2e', status: 1, seconds: 0, log: null };
     return null;
   }

@@ -661,8 +661,13 @@ test('--tests takes everything after it as the filter, and refuses other modes o
   assert.match(testsFilter(['--failed', '--tests', 'a.spec.ts']).error, /--failed/);
 });
 
-test('a filter reaches the shell as Playwright arguments, quoted where the shell would split or pipe', () => {
-  assert.equal(shellArgs(['sites.spec.ts:12', '--grep', '@sites|@layout', 'a "b" c']), 'sites.spec.ts:12 --grep "@sites|@layout" "a \\"b\\" c"');
+test('a filter reaches the fallback shell quoted for the platform, or is refused where cmd.exe would change it', () => {
+  const filter = ['sites.spec.ts:12', '--grep', '@sites|@layout', 'a b', ''];
+  assert.deepEqual(shellArgs(filter, 'win32'), { command: 'sites.spec.ts:12 --grep "@sites|@layout" "a b" ""' });
+  assert.match(shellArgs(['--grep', 'a "b|c"'], 'win32').error, /can't be passed through cmd\.exe/);
+  assert.match(shellArgs(['--grep', '100%'], 'win32').error, /can't be passed through cmd\.exe/);
+  assert.deepEqual(shellArgs(filter, 'linux'), { command: "'sites.spec.ts:12' '--grep' '@sites|@layout' 'a b' ''" });
+  assert.deepEqual(shellArgs(['--grep', "it's (a|b);$x*"], 'linux'), { command: "'--grep' 'it'\\''s (a|b);$x*'" });
 });
 
 test('--tests records only from a report written during its run', () => {
