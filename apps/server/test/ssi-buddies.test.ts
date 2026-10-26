@@ -25,7 +25,7 @@ const MIA = person(2_826_964, 4_512_484, 'Mia', 'Stone');
 /** Typed in lower case at SSI, as some entries are. */
 const SAM = person(2_271_970, 4_109_908, 'samuel', 'dreier');
 
-type Buddy = { name: string; account: string | null; diver: { id: string; name: string } | null };
+type Buddy = { entryId: string; matches: boolean; name: string; account: string | null; diver: { id: string; name: string } | null };
 type Status = { unmet: { type: string }[]; current: { remoteId: string; upToDate: boolean } | null; pushes: { leftOut: unknown[] | null; differences: unknown[] | null }[] };
 
 describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
@@ -84,11 +84,11 @@ describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
 
     it('reads the account\'s own list: names and SSI accounts only', async () => {
       expect(await buddies()).toEqual([
-        { name: '', account: '4333333', diver: null },
-        { name: 'Kai Lund', account: '4989164', diver: null },
-        { name: 'Mia Stone', account: '4512484', diver: null },
-        { name: 'samuel dreier', account: '4109908', diver: null },
-        { name: 'Zoe Zett', account: '4700000', diver: null },
+        { entryId: '2999999', name: '', account: '4333333', diver: null, matches: false },
+        { entryId: '3786888', name: 'Kai Lund', account: '4989164', diver: null, matches: false },
+        { entryId: '2826964', name: 'Mia Stone', account: '4512484', diver: null, matches: false },
+        { entryId: '2271970', name: 'samuel dreier', account: '4109908', diver: null, matches: false },
+        { entryId: '2555555', name: 'Zoe Zett', account: '4700000', diver: null, matches: false },
       ]);
     });
 
@@ -107,7 +107,7 @@ describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
     });
 
     it('lists an entry with an account and no name, and the import creates no Diver from it', async () => {
-      expect((await buddies())[0]).toEqual({ name: '', account: '4333333', diver: null });
+      expect((await buddies())[0]).toEqual({ entryId: '2999999', name: '', account: '4333333', diver: null, matches: false });
       const answer = await call('POST', `/api/connections/${connectionId}/buddies/import`, { accounts: ['4333333'] });
       expect(answer.json()).toMatchObject({ created: 0 });
       expect((await buddies())[0]!.diver).toBeNull();
@@ -135,7 +135,7 @@ describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
     it('links an entry to a Diver already here by setting the Diver\'s SSI account', async () => {
       mia = ((await call('POST', '/api/external-divers', { name: 'Mia' })).json() as { id: string }).id;
       expect((await call('PUT', `/api/divers/${mia}/external-ids/ssi`, { externalId: '4512484' })).statusCode).toBe(204);
-      expect((await buddies())[2]).toEqual({ name: 'Mia Stone', account: '4512484', diver: { id: mia, name: 'Mia' } });
+      expect((await buddies())[2]).toEqual({ entryId: '2826964', name: 'Mia Stone', account: '4512484', diver: { id: mia, name: 'Mia' }, matches: false });
     });
   });
 

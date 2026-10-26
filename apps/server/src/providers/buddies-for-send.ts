@@ -62,7 +62,7 @@ export async function buddiesForSend(db: Db, s: {
   });
 }
 
-type Person = { id: string; name: string; firstName: string | null; lastName: string | null };
+export type Person = { id: string; name: string; firstName: string | null; lastName: string | null };
 
 /** One Participant's entry, by the order in the module's header. `entryId`: the entry remembered for the Diver, if any. */
 async function settle(
@@ -89,8 +89,13 @@ async function settle(
   }
 }
 
-/** The answered entry's name against the Diver's `first last` (else the Diver's name): a difference is `knownAs`. */
-function checkName(result: BuddiesForSend, p: Person, answered: RemoteBuddy): void {
+/** Whether the answered entry's name differs from the Diver's `first last` (else the Diver's name). */
+export function nameDiffers(answered: string, p: Person): boolean {
   const own = [p.firstName, p.lastName].filter(Boolean).join(' ') || p.name;
-  if (foldName(answered.name) !== foldName(own)) result.knownAs.push({ diverId: p.id, diverName: p.name, name: answered.name });
+  return foldName(answered) !== foldName(own);
+}
+
+/** The answered entry's name against the Diver's: a difference is `knownAs`. */
+function checkName(result: BuddiesForSend, p: Person, answered: RemoteBuddy): void {
+  if (nameDiffers(answered.name, p)) result.knownAs.push({ diverId: p.id, diverName: p.name, name: answered.name });
 }

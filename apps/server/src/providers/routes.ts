@@ -249,7 +249,8 @@ export const PROVIDER_STATUS: Partial<Record<ProblemCode, number>> = {
   provider_sign_in_needed: 409, provider_requirements_unmet: 409, provider_not_sent: 409, provider_dive_gone: 409, provider_busy: 409,
   push_run_active: 409, push_run_nothing_to_send: 409, push_run_not_found: 404, push_run_not_active: 409, push_run_going: 409, push_run_not_stopped: 409,
   provider_number_taken: 409, provider_numbers_off: 409, provider_number_nothing_to_set: 409,
-  site_not_found: 404, external_id_taken: 409, provider_site_unknown: 422,
+  site_not_found: 404, external_id_taken: 409, provider_site_unknown: 422, provider_buddy_not_found: 404,
+  diver_external_id_taken: 409, diver_external_id_connected: 409, diver_not_editable: 403,
   provider_unavailable: 502, provider_refused: 502, provider_not_stored: 502, provider_import_off: 409, provider_account_held: 409,
 };
 /** A refusal about a Provider; with provider_requirements_unmet, what is unmet. */
@@ -401,31 +402,90 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
   });
 
   const BuddyView = Type.Object({
+    entryId: Type.String({ description: 'The entry\'s ID at the Provider: what link and import name it by' }),
     name: Type.String({ description: 'As the Provider has it' }),
-    account: Nullable(Type.String({ description: 'The person\'s own account at the Provider; null: none (can\'t be imported yet)' })),
-    diver: Nullable(Type.Object({ id: Type.String(), name: Type.String() }, { description: 'The Diver here with that account' })),
+    account: Nullable(Type.String({ description: 'The person\'s own account at the Provider; null: none (link or import it by entryId)' })),
+    diver: Nullable(Type.Object({ id: Type.String(), name: Type.String() }, {
+      description: 'The Diver here with that account; for an entry without one, the Diver it was linked, added or imported for',
+    })),
+    matches: Type.Boolean({ description: 'With ?for: the entry\'s name or e-mail is that Diver\'s (folded, trimmed). Only a sort; the e-mail is never answered' }),
   });
+  /** A refusal of a link or add; with diver_external_id_taken, the Diver that has the account. */
+  const LinkProblem = Type.Object({
+    ...ProviderProblem.properties,
+    diver: Type.Optional(Type.Object({ id: Type.String(), name: Type.String() }, { description: 'With diver_external_id_taken: the Diver that has the account' })),
+  });
+  const linkErrors = { ...errors, 403: Problem, 409: LinkProblem };
 
   app.get('/connections/:id/buddies', {
     schema: {
       summary: 'The account\'s own list of people at the Provider (SSI: the buddy list), read live, each with the Diver here who has their account',
-      description: 'Only names and accounts are answered. An import also stores what the person\'s code says (ADR 0043); nothing else the Provider keeps about them.',
-      params: IdParams, response: { 200: Type.Object({ buddies: Type.Array(BuddyView) }), ...errors },
+      description: 'Only names and accounts are answered. An import also stores what the person\'s code says (ADR 0043); nothing else the Provider keeps about them. '
+        + 'With ?for=<diverId>, the entries whose name or e-mail is that Diver\'s come first (matches), then the rest by name.',
+      params: IdParams,
+      querystring: Type.Object({ for: Type.Optional(Type.String({ format: 'uuid', description: 'The Diver to be linked or added: sorts its likely entries first' })) }),
+      response: { 200: Type.Object({ buddies: Type.Array(BuddyView) }), ...errors },
     },
-  }, async (request) => ({ buddies: await buddies.list(request.user!.id, request.params.id) }));
+  }, async (request) => ({
+    buddies: await buddies.list(request.user!.id, request.params.id, request.query.for ? { forDiverId: request.query.for } : {}),
+  }));
+
+  app.post('/connections/:id/buddies/link', {
+    schema: {
+      summary: 'Link an entry of the account\'s list to a Diver here',
+      description: 'An entry with an account gives the Diver that account (the rules of PUT /api/divers/{id}/external-ids/{source}: 409 diver_external_id_taken names the Diver that has it); '
+        + 'an entry without one is only remembered for the Diver. The last link of an entry wins. 404 provider_buddy_not_found: the entry is not in the list (anymore).',
+      params: IdParams,
+      body: Type.Object({ entryId: Type.String({ minLength: 1, maxLength: 200 }), diverId: Type.String({ format: 'uuid' }) }, { additionalProperties: false }),
+      response: { 200: Type.Object({ diverId: Type.String() }), ...linkErrors },
+    },
+  }, async (request) => buddies.link(
+    { userId: request.user!.id, isAdmin: request.user!.role === 'admin' }, request.params.id, request.body.entryId, request.body.diverId,
+  ));
+
+  app.post('/connections/:id/buddies/add', {
+    schema: {
+      summary: 'Add a person to the account\'s list for a Diver here, and remember the entry for it',
+      description: 'A typed person (names, optional e-mail), or a scanned code (also account): the Diver then gets that account, and the entry is added by it; '
+        + 'an account already in the list links that entry instead. What the Diver lacks of first name, last name and e-mail is filled in. '
+        + 'added.name is the entry as the Provider answered it; knownAs is that name when it differs from the Diver\'s, else null: show it.',
+      params: IdParams,
+      body: Type.Object({
+        diverId: Type.String({ format: 'uuid' }),
+        firstName: Type.String({ minLength: 1, maxLength: 100 }),
+        lastName: Type.String({ minLength: 1, maxLength: 100 }),
+        email: Type.Optional(Nullable(Type.String({ format: 'email', maxLength: 254 }))),
+        account: Type.Optional(Nullable(Type.String({ pattern: '^[1-9]\\d{0,9}$', description: 'The person\'s SSI account from a scanned code: digits only' }))),
+      }, { additionalProperties: false }),
+      response: {
+        200: Type.Object({ added: Type.Object({ diverId: Type.String(), name: Type.String() }), knownAs: Nullable(Type.String()) }),
+        ...linkErrors,
+      },
+    },
+  }, async (request) => {
+    const { diverId, firstName, lastName, email, account } = request.body;
+    return buddies.add(
+      { userId: request.user!.id, isAdmin: request.user!.role === 'admin' }, request.params.id, diverId,
+      { firstName, lastName, email: email ?? null, account: account ?? null },
+    );
+  });
 
   app.post('/connections/:id/buddies/import', {
     schema: {
       summary: 'Add the chosen people from the account\'s list as external Divers, with their name, account and what their code says',
       description: 'First and last name, e-mail and leader number come along (ADR 0043). A chosen entry whose account a Diver already has '
-        + 'fills what that Diver lacks of these and overwrites nothing; entries without an account are skipped. To link an entry to a Diver here '
-        + 'instead, set that Diver\'s account (PUT /api/divers/{id}/external-ids/{source}).',
+        + 'fills what that Diver lacks of these and overwrites nothing. `entries` names entries without an account: each becomes an external Diver '
+        + 'from its name and is remembered for it (one remembered already is skipped). To link an entry to a Diver here '
+        + 'instead, use POST /api/connections/{id}/buddies/link.',
       params: IdParams,
-      body: Type.Object({ accounts: Type.Array(Type.String({ maxLength: 40 }), { maxItems: 500 }) }, { additionalProperties: false }),
+      body: Type.Object({
+        accounts: Type.Array(Type.String({ maxLength: 40 }), { maxItems: 500 }),
+        entries: Type.Optional(Type.Array(Type.String({ maxLength: 200 }), { maxItems: 500, description: 'Entry IDs of entries without an account' })),
+      }, { additionalProperties: false }),
       response: { 200: Type.Object({ created: Type.Integer(), updated: Type.Integer({ description: 'Divers already here that got details they lacked' }), buddies: Type.Array(BuddyView) }), ...errors },
     },
   }, async (request) => buddies.import(
-    { userId: request.user!.id, isAdmin: request.user!.role === 'admin' }, request.params.id, request.body.accounts,
+    { userId: request.user!.id, isAdmin: request.user!.role === 'admin' }, request.params.id, request.body.accounts, request.body.entries,
   ));
 
   app.post('/connections/:id/certifications/import', {

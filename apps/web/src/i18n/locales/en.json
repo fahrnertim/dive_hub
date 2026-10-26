@@ -499,6 +499,7 @@
     "provider_import_off": "Importing dives from {{name}} is off. Choose what the import may do first.",
     "provider_site_data_not_confirmed": "Confirm the explanation about {{name}}’s missing licence first.",
     "provider_site_unknown": "{{name}} has no site with this ID.",
+    "provider_buddy_not_found": "That entry is no longer in your {{name}} list. Reload the list.",
     "provider_account_held": "A diver here already has this {{name}} account.",
     "diver_not_external": "Only a diver no User keeps can be merged into another.",
     "ai_access_not_found": "This AI access no longer exists.",

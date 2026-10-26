@@ -502,13 +502,23 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
     asking the Provider. When not `typed`, say it can't be fixed here.
   - **`diver_mapping`:** one item per Participant (`diverName`) the Provider can't identify; say they will be left out
     (advisory) or that sending waits (blocking). With `fixes` containing `diver_external_id` and a Provider offering
-    `buddies` `find`, offer finding the person in the account's list (`GET /api/connections/{id}/buddies`, only entries
-    with an `account` and no `diver`), and save that account on the Diver (`PUT /api/divers/{id}/external-ids/{source}`;
-    `diver_external_id_taken` names the Diver that has it: say so). Fixes a client doesn't know are ignored.
+    `buddies` `find`, offer **Link or add** (below) for that Participant. Fixes a client doesn't know are ignored.
+  - **Link or add** (a Participant the User's list doesn't hold; on the Dive's page, before and after a send, and for a
+    `diver_mapping` item; the list read is `GET /api/connections/{id}/buddies?for=<diverId>`): list the entries, the
+    ones with `matches` first (their name or e-mail is the Diver's; the e-mail itself is never answered; matching only
+    sorts, it never links). Picking one is `POST …/buddies/link` with `{ entryId, diverId }`: an entry with an `account`
+    gives the Diver that account (`diver_external_id_taken` names the Diver that has it: say so), one without is only
+    remembered for the Diver; `provider_buddy_not_found` means the entry is gone from the list: read it again. Adding a
+    person is `POST …/buddies/add` with `{ diverId, firstName, lastName, email?, account? }` (a typed person, or a scanned
+    code with its `account`): after it show `added.name` as the Provider answered it, and `knownAs` when it is not
+    null ("<Provider> knows them as …"). An entry shown with a `diver` and no `account` is one remembered for that Diver.
   - **An unknown `type`:** show the requirement's `description` and that it can't be fixed here.
 - **Must say who a Push left out** (the latest Push's `leftOut`), by name and `reason`: `no_reference` (the Provider
   can't tell who they are) or `not_at_provider` (SSI: not in the User's buddy list; say to add them in SSI's app, by
-  scanning their buddy QR code, then update).
+  scanning their buddy QR code, then update); offer **Link or add** for each, and again after the send.
+- **Must show what a send did to the list of people** (`buddies` in the send's answer, null when nothing): `added` (the
+  entries it made by SSI account, with the name SSI answered) and `knownAs` (SSI knows the account under another name
+  than the Diver's: say so, by `diverName` and `name`).
 - **`outcome: exists`:** nothing was sent; a dive at the same time is there. Show it (number, time, depth, minutes)
   and ask: link to it (`onExisting: link`) or send a new one (`create`).
 - **An update is three-way** ([ADR 0056](../decisions/0056-two-way-exchange-and-automation.md)): per field against what the
@@ -602,7 +612,7 @@ repeatedly).
   being sent is finished first, `cancelRequested`), and the result. Poll `GET /api/push-runs` while a run is active; announce
   the start and the end, not every Dive. A run ends as `done`, `cancelled` or `stopped`.
 - **Say which sent Dives went without someone:** `GET /api/push-runs/{id}` carries `withoutSomeone` (`diveId`, `startsAt`, `names`):
-  sent Dives whose Push left Participants out. List them in the run's report.
+  sent Dives whose Push left Participants out. List them in the run's report, each linked to its Dive's page, where Link or add is.
 - **A `stopped` run says why and offers Continue** (`stopCode`: a sign-in need, wrong credentials, or two failures in a row).
   It does not time out and is no toast. Continue takes the failed Dives that are worth another try first, then the waiting
   ones. A sign-in need is fixed in the account first.
@@ -769,7 +779,8 @@ page), `ProviderConflictsSection.tsx` (the Review section), `PushRun.tsx` (the r
 - **A Provider's list of people** (`buddies` `find`; SSI's buddy list) under its Connection, read only on request
   (`GET /api/connections/{id}/buddies`): who is a Diver here already, adding entries as external Divers one by one or
   all at once (`POST …/buddies/import` with `accounts`), and linking an entry to a Diver here instead
-  (`PUT /api/divers/{id}/external-ids/{source}`). An entry without `account` can't be added.
+  (`POST …/buddies/link`, or `PUT /api/divers/{id}/external-ids/{source}`). An entry without `account` is added by its
+  `entryId` in `entries` of the import: it becomes an external Diver from its name and is remembered for it.
   **Must say what is kept** before adding: name, account, and first name, last name, e-mail and leader number, seen
   by everyone on the instance (ADR 0043). Importing an entry whose Diver is here fills what that Diver lacks; say how
   many were filled (`updated`). *Web:* `ProviderBuddies.tsx`.
