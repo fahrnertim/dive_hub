@@ -2,12 +2,12 @@
 // Run with: node --test scripts/
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { pathToFileURL } from 'node:url';
-import { runLanes } from './check-run.mjs';
+import { runLanes, takeLock } from './check-run.mjs';
 
 const wait = (ms, code = 0) => `node -e "setTimeout(() => process.exit(${code}), ${ms})"`;
 const step = (name, command) => ({ name, command, step: null });
@@ -97,4 +97,31 @@ test('an interrupted run leaves unfinished steps without a status', async (t) =>
   const pid = Number(readFileSync(log, 'utf8').trim());
   assert.ok(pid > 0);
   assert.equal(running(pid), false, `process ${pid} still runs`);
+});
+
+test('a second check finds the lock held', (t) => {
+  const lock = join(outDir(t), 'check.lock');
+  const first = takeLock(lock);
+  assert.equal(typeof first.release, 'function');
+  assert.deepEqual(takeLock(lock), { heldBy: process.pid });
+  first.release();
+});
+
+test('a lock left by a process that is gone is taken over', (t) => {
+  const lock = join(outDir(t), 'check.lock');
+  const gone = spawnSync(process.execPath, ['-e', '0']).pid; // a finished child's pid
+  writeFileSync(lock, String(gone));
+  const taken = takeLock(lock);
+  assert.equal(typeof taken.release, 'function');
+  assert.equal(readFileSync(lock, 'utf8'), String(process.pid));
+  taken.release();
+});
+
+test('release frees it', (t) => {
+  const lock = join(outDir(t), 'check.lock');
+  takeLock(lock).release();
+  assert.equal(existsSync(lock), false);
+  const again = takeLock(lock);
+  assert.equal(typeof again.release, 'function');
+  again.release();
 });

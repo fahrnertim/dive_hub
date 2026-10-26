@@ -2,7 +2,7 @@
 // after another, every step to its end whatever the earlier ones returned. Each step's output goes to a file of its
 // own; the caller prints a failure's log. Ctrl-C (or the `signal`) kills every running step with its children.
 import { spawn, spawnSync } from 'node:child_process';
-import { closeSync, mkdirSync, openSync } from 'node:fs';
+import { closeSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const WINDOWS = process.platform === 'win32';
@@ -91,4 +91,33 @@ export async function runLanes(lanes, { sequential = false, outDir, onEnd = () =
     process.off('SIGINT', stop);
   }
   return results;
+}
+
+/** Whether a process with this pid runs. A pid can be reused by an unrelated process: then a dead check's lock holds until that one ends (acceptable). */
+function running(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error.code === 'EPERM'; // it exists, but is not ours to signal
+  }
+}
+
+/**
+ * One check at a time per clone: takes the lock file at `path` (it holds the pid of the check that has it).
+ * Returns `{ release }`, or `{ heldBy }`, the pid of the running check. A lock whose pid no longer runs is taken over.
+ */
+export function takeLock(path) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      writeFileSync(path, String(process.pid), { flag: 'wx' });
+      return { release: () => rmSync(path, { force: true }) };
+    } catch (error) {
+      if (error.code !== 'EEXIST') throw error;
+    }
+    const pid = Number.parseInt(readFileSync(path, 'utf8'), 10);
+    if (Number.isInteger(pid) && running(pid)) return { heldBy: pid };
+    rmSync(path, { force: true }); // left by a check that is gone
+  }
+  return { heldBy: Number.NaN };
 }

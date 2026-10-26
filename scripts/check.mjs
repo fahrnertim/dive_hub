@@ -19,12 +19,28 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import { QUIET, STEPS, browserGrepInvert, browserTestList, listedTests, changedSince, variantsRun, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, keptFailures, failedTestsFromReport, REPORT, fullPlan, lintTargets, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
-import { runLanes } from './check-run.mjs';
+import { runLanes, takeLock } from './check-run.mjs';
 
 const args = process.argv.slice(2);
 // pnpm check runs axe once per ui-quality test, on its final state; check:full (CI) at every page check (ADR 0023,
 // amendment of 2026-10-24). Set here so that --failed reruns tests the way the failed check ran them.
 if (!args.includes('--full')) process.env.E2E_AXE ??= 'once';
+
+/**
+ * One check at a time per clone (a second would fight the first over the ports, the browsers and the cache): the lock
+ * is `check.lock` in the git directory. Released on every way out: the normal end, a failure, Ctrl-C, an uncaught error.
+ */
+let lanesRunning = false;
+if (!args.includes('--dry')) {
+  const lock = takeLock(resolve(spawnSync('git rev-parse --git-common-dir', { encoding: 'utf8', shell: true }).stdout.trim(), 'check.lock'));
+  if (lock.heldBy !== undefined) {
+    console.error(`check: another pnpm check is running (pid ${lock.heldBy})`);
+    process.exit(1);
+  }
+  process.on('exit', lock.release);
+  // The steps' own Ctrl-C handling (runLanes) ends the run; anywhere else the default would skip the exit handlers.
+  process.on('SIGINT', () => { if (!lanesRunning) process.exit(130); });
+}
 
 const LAST_RUN = 'apps/web/test-results/.last-run.json';
 /** The ids of the browser tests that failed in Playwright's last run. */
@@ -286,5 +302,6 @@ function summary(results) {
   return 0;
 }
 
+lanesRunning = true;
 const results = await runLanes(lanes, { sequential, outDir: resolve(CACHE, 'logs'), onEnd: stepEnded });
 process.exit(summary(results));
