@@ -3,7 +3,8 @@
 // and dependency-cruiser, each against its baseline of the problems that existed when the rules came. Only new
 // problems fail, and a baseline may only shrink. Prints problems only, nothing when all is well (ADR 0039).
 //   node scripts/check-lint.mjs --all          every file (pnpm lint)
-//   node scripts/check-lint.mjs a.ts b.tsx     these files (the check by what changed, the edit hook)
+//   node scripts/check-lint.mjs a.ts b.tsx     these files (the edit hook)
+//   node scripts/check-lint.mjs --files-from list.txt   the files listed in a file, one per line (the check by what changed)
 //   node scripts/check-lint.mjs --shrink       take fixed problems out of both baselines (pnpm lint:baseline)
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -121,7 +122,9 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   if (args.includes('--shrink')) {
     shrink();
   } else {
-    const problems = lint({ all: args.includes('--all'), files: args.filter((arg) => !arg.startsWith('--')) });
+    const from = args.includes('--files-from') ? args[args.indexOf('--files-from') + 1] : null;
+    const files = from ? readFileSync(from, 'utf8').split(/\r?\n/).filter(Boolean) : args.filter((arg) => !arg.startsWith('--'));
+    const problems = lint({ all: args.includes('--all'), files });
     if (problems) {
       console.log(problems);
       process.exit(1);

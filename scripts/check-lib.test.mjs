@@ -358,7 +358,7 @@ test('the browser test setup and its data run every browser test and nothing els
 });
 
 test('the check scripts run their own tests only; the lint script also lints everything; one-off scripts and licences are quiet', () => {
-  for (const path of ['scripts/check.mjs', 'scripts/check-lib.mjs', 'scripts/check-lib.test.mjs']) {
+  for (const path of ['scripts/check.mjs', 'scripts/check-lib.mjs', 'scripts/check-lib.test.mjs', 'scripts/check-run.mjs', 'scripts/check-log.mjs', 'scripts/check-tags.mjs']) {
     const plan = planFor([path]);
     assert.deepEqual([plan.scripts, plan.typecheck, plan.lint, plan.server, plan.web, plan.e2e], [true, false, 'none', 'none', 'none', 'none'], path);
   }
