@@ -132,6 +132,23 @@ describe.skipIf(!(await databaseReachable()))('the send settles the buddy list',
     expect(await remembered(dora)).toBe('2');
   });
 
+  it('keeps a Participant known only through a remembered entry over updates', async () => {
+    ctx.fakeSsi.buddies.push(entry(5, 0, 'Pia', 'Pol'));
+    const pia = await person('Pia Pol');
+    await remember(t.db, (await listAccountOf(t.db, owner, 'ssi'))!, pia, '5');
+    const diveId = await prepare(pia);
+    await send(diveId);
+    expect(await carried(diveId)).toEqual([5]);
+    for (const notes of ['first', 'second']) {
+      const { version } = (await call('GET', `/api/dives/${diveId}`)).json() as { version: number };
+      await call('PATCH', `/api/dives/${diveId}`, { version, notes });
+      ctx.ssiClock.advance(3 * 60_000);
+      expect(await send(diveId)).toMatchObject({ outcome: 'updated' });
+      expect(await carried(diveId)).toEqual([5]);
+    }
+    expect(((await call('GET', `/api/dives/${diveId}`)).json() as { participants: { diverId: string }[] }).participants.map((p) => p.diverId)).toEqual([pia]);
+  });
+
   it('prefers the entry with the account over a remembered one without', async () => {
     const account = nextAccount++;
     ctx.fakeSsi.buddies.push(entry(3, 0, 'Ole', 'Nord'), entry(10, account, 'Ole', 'Nord'));

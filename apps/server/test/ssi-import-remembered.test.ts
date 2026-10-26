@@ -2,7 +2,7 @@
 // account, remembered for a Diver, comes back on an imported dive as that Diver, a Participant. Other entries stay out.
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { participant } from '../src/db/schema.js';
+import { diverExternalId, participant } from '../src/db/schema.js';
 import { listAccountOf, remember } from '../src/providers/list-entries.js';
 import { createFakeSsi, handTypedDive, type FakeSsiBuddy } from './fake-ssi.js';
 import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, signIn, type TestDatabase } from './support.js';
@@ -13,19 +13,23 @@ const entry = (id: number, firstname: string): FakeSsiBuddy => ({
 });
 const ANNA = entry(8_100_001, 'Anna');
 const BOB = entry(8_100_002, 'Bob');
+const KAI: FakeSsiBuddy = { ...entry(8_100_003, 'Kai'), buddy_master_id: 4_989_164 };
 
 describe.skipIf(!(await databaseReachable()))('the dive import maps remembered entries', () => {
   let t: TestDatabase;
   let ctx: Awaited<ReturnType<typeof createTestApp>>;
   let tim: string;
   let connectionId: string;
+  let anna = '';
+  let diveId = '';
+  let remoteId = '';
   const call = (method: 'GET' | 'POST' | 'PATCH', url: string, payload?: object) =>
     ctx.app.inject({ method, url, headers: { cookie: tim, origin: BASE_URL }, ...(payload && { payload }) });
 
   beforeAll(async () => {
     t = await createTestDatabase();
     ctx = await createTestApp(t, {
-      fakeSsi: createFakeSsi({ accounts: [{ email: 'erika@example.com', password: 'ssi-password', accountId: ERIKA }], buddies: [ANNA, BOB] }),
+      fakeSsi: createFakeSsi({ accounts: [{ email: 'erika@example.com', password: 'ssi-password', accountId: ERIKA }], buddies: [ANNA, BOB, KAI] }),
     });
     await createUser(ctx.auth, 'tim@example.com');
     tim = await signIn(ctx.app, 'tim@example.com');
@@ -40,17 +44,31 @@ describe.skipIf(!(await databaseReachable()))('the dive import maps remembered e
 
   it('imports a buddy added from scratch as the Diver it is remembered for', async () => {
     const own = ((await call('GET', '/api/divers')).json() as { id: string; isOwn: boolean }[]).find((d) => d.isOwn)!.id;
-    const anna = ((await call('POST', '/api/external-divers', { name: 'Anna' })).json() as { id: string }).id;
+    anna = ((await call('POST', '/api/external-divers', { name: 'Anna' })).json() as { id: string }).id;
     await remember(t.db, (await listAccountOf(t.db, own, 'ssi'))!, anna, String(ANNA.id));
-    ctx.fakeSsi.addDive(ERIKA, handTypedDive({ at: '2026-01-15 11:05', depthM: 18, minutes: 30, nr: 1, buddies: [ANNA.id, BOB.id] }));
+    remoteId = String(ctx.fakeSsi.addDive(ERIKA, handTypedDive({ at: '2026-01-15 11:05', depthM: 18, minutes: 30, nr: 1, buddies: [ANNA.id, BOB.id] })));
     ctx.ssiClock.advance(5 * 60_000);
     const started = await call('POST', `/api/connections/${connectionId}/dive-import`, { computers: [], decisions: [] });
     expect(started.statusCode).toBe(202);
     await ctx.imports.processImport(started.json().id);
     const done = (await call('GET', `/api/imports/${started.json().id}`)).json() as { outcome: { result: string; diveId: string }[] };
     expect(done.outcome[0]).toMatchObject({ result: 'created' });
+    diveId = done.outcome[0]!.diveId;
     // Anna is a Participant; Bob, remembered for no one, is skipped; the dive's own Diver is none.
     const rows = await t.db.select({ diverId: participant.diverId }).from(participant).where(eq(participant.diveId, done.outcome[0]!.diveId));
     expect(rows.map((r) => r.diverId)).toEqual([anna]);
+  });
+
+  it('keeps that Diver when the import takes a buddy added at SSI', async () => {
+    await call('POST', `/api/connections/${connectionId}/buddies/import`, { accounts: ['4989164'] });
+    const kai = ((await t.db.select({ id: diverExternalId.diverId }).from(diverExternalId).where(eq(diverExternalId.externalId, '4989164')))[0])!.id;
+    ctx.fakeSsi.dives.get(Number(remoteId))!.odin_user_log_buddy_ids = [ANNA.id, BOB.id, KAI.id];
+    ctx.ssiClock.advance(5 * 60_000);
+    const started = await call('POST', `/api/connections/${connectionId}/dive-import`, { computers: [], decisions: [] });
+    await ctx.imports.processImport(started.json().id);
+    const done = (await call('GET', `/api/imports/${started.json().id}`)).json() as { outcome: { result: string }[] };
+    expect(done.outcome[0]).toMatchObject({ result: 'updated' });
+    const rows = await t.db.select({ diverId: participant.diverId }).from(participant).where(eq(participant.diveId, diveId));
+    expect(rows.map((r) => r.diverId).sort()).toEqual([anna, kai].sort());
   });
 });

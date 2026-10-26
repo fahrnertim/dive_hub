@@ -3,7 +3,7 @@
 import { and, eq, inArray, ne } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { accountListEntry, diverExternalId } from '../db/schema.js';
-import type { DiverSource } from './provider.js';
+import type { DiverSource, ImportContext } from './provider.js';
 
 type Q = Db | Tx;
 
@@ -12,6 +12,12 @@ export async function listAccountOf(q: Q, diverId: string, source: DiverSource):
   const [r] = await q.select({ id: diverExternalId.id }).from(diverExternalId)
     .where(and(eq(diverExternalId.diverId, diverId), eq(diverExternalId.source, source)));
   return r?.id ?? null;
+}
+
+/** The context with the entries remembered for the Diver's account at the source (none without an account), for parsing. */
+export async function withRemembered(q: Q, diverId: string, source: DiverSource | undefined, context: ImportContext): Promise<ImportContext> {
+  const accountId = source ? await listAccountOf(q, diverId, source) : null;
+  return { ...context, remembered: accountId ? Object.fromEntries(await rememberedEntries(q, accountId)) : {} };
 }
 
 /** Diver ID to entry ID, for those of `diverIds` the account's list has an entry remembered for. */

@@ -24,7 +24,7 @@ import { REFERENCE_PREFIX, type ImportContext, type ImportedDive, type ProviderC
 import { createDiveChanges, importsField, type ProviderRun } from './dive-changes.js';
 import { currentRemote, fingerprintNow } from './remote-state.js';
 import type { SyncedField } from './three-way.js';
-import { listAccountOf, rememberedEntries } from './list-entries.js';
+import { withRemembered } from './list-entries.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { renumber } from '../dives/dive-numbers.js';
 
@@ -111,8 +111,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     if (row.importMode === 'off' && !options.whateverTheMode) throw new ProviderServiceError('provider_import_off', named(adapter));
     const listing = await connections.withAccess(row, (ctx) => list(ctx, options));
     // The entries without an account remembered for the Connection's account, so the dives' people can be Divers.
-    const accountId = adapter.accountSource ? await listAccountOf(db, row.diverId, adapter.accountSource) : null;
-    const context: ImportContext = { ...listing.context, remembered: accountId ? Object.fromEntries(await rememberedEntries(db, accountId)) : {} };
+    const context = await withRemembered(db, row.diverId, adapter.accountSource, listing.context);
     const parsed = listing.records.map(({ remoteId, record }) => ({ remoteId, record, dive: parse(record, context) }));
     return { row, adapter, context, parsed };
   }

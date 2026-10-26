@@ -18,6 +18,7 @@ import {
   DIVE_FIELDS, ProviderError, referenceOf, type ActionContext, type Delivered, type DiveExport, type DiveExportAction, type DiveField, type ImportContext,
   type ImportedDive, type Leave, type OutgoingDive, type ProviderAdapter, type RemoteDive, type RemoteSite,
 } from './provider.js';
+import { withRemembered } from './list-entries.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { currentRemote, type PushRow } from './remote-state.js';
 import { blocking, forProvider, leftOutBy, offersListEntries, unmetRequirements } from './requirements.js';
@@ -284,11 +285,14 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
    * (as the import compares them), with the open entry's fields and the User's choices.
    */
   async function exchange(
-    conn: ConnectionRow, adapter: ProviderAdapter, diveId: string, remoteId: string, read: { dive: ImportedDive; context: ImportContext },
+    conn: ConnectionRow, adapter: ProviderAdapter, diveId: string, remoteId: string, read: { dive: ImportedDive; context: ImportContext; record: Record<string, unknown> },
     options: SendOptions,
   ): Promise<Exchange> {
+    // The adapter parsed the dive without the entries remembered for Divers; parse it again with them.
+    const context = await withRemembered(db, conn.diverId, adapter.accountSource, read.context);
+    read = { ...read, context, dive: adapter.dives!.parse!(read.record, context, read.dive.remoteId) ?? read.dive };
     const run = await changes.runOf(db, conn.userId, adapter, {
-      diverId: conn.diverId, connectionId: conn.id, mode: conn.importMode, windowMinutes: conn.importWindowMinutes, choices: {}, context: read.context,
+      diverId: conn.diverId, connectionId: conn.id, mode: conn.importMode, windowMinutes: conn.importWindowMinutes, choices: {}, context,
     });
     const base = await changes.baseOf(db, run, diveId, remoteId);
     const source = (Object.keys(read.dive.siteIds)[0] ?? Object.keys(base?.siteIds ?? {})[0] ?? null) as SiteSource | null;
