@@ -348,6 +348,11 @@ export const referenceOf = (diveId: string) => `${REFERENCE_PREFIX}${diveId}`;
 export type ImportContext = {
   people: ProviderImportPlan['context']['people'];
   /**
+   * Entry in the User's list of people without an account → the Diver it is remembered for (Diver IDs, no names). Filled
+   * by the generic import before parsing; missing (as on an Import kept earlier) means none.
+   */
+  remembered?: Record<string, string>;
+  /**
    * `private`: `true`, the Provider marks the site private and the account's own (another account's private site is left
    * out); `unknown`, the Provider doesn't say, so the site is kept as the account's, never public, and not settled.
    */
@@ -376,6 +381,8 @@ export interface ImportedDive extends ProviderDive {
   sitePosition: { latitude: number; longitude: number } | null;
   /** The people on the dive, as their accounts at the Provider (Diver External IDs at `accountSource`). */
   people: string[];
+  /** Divers found through a remembered entry without an account; they become Participants like `people`. Never the dive's own Diver. */
+  diverIds?: string[];
 }
 
 /** A Provider's single tank: what it keeps of a Cylinder. A value it doesn't have is null. */

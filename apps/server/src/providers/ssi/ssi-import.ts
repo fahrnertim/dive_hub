@@ -212,6 +212,8 @@ export function parseSsiDive(r: SsiRecord, context: ImportContext, givenId?: str
     gfLow: gfLow !== null && gfLow > 0 ? gfLow : null, gfHigh: gfHigh !== null && gfHigh > 0 ? gfHigh : null,
     cnsStart: numberOf(r.odin_user_log_cns_start), cnsEnd: numberOf(r.odin_user_log_cns_end),
     people: [...new Set(buddyIdsOf(r).flatMap((id) => { const account = context.people[String(id)]; return account ? [account] : []; }))],
+    // An entry without an account, remembered for a Diver.
+    diverIds: [...new Set(buddyIdsOf(r).flatMap((id) => { const diverId = context.people[String(id)] ? undefined : context.remembered?.[String(id)]; return diverId ? [diverId] : []; }))],
     notes: text(r.odin_user_log_comment),
     cylinder: cylinderOf(r, gases[0] ?? null),
     // SSI's weight, as typed; 0 is what an empty field reads as.

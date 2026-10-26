@@ -17,7 +17,7 @@ import { accountOf, idsOf, pickId, settleVisibility } from '../sites/site-ids.js
 import type { SiteSource } from '../sites/sources.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
-import type { DiveField, ImportContext, ImportedDive, ProviderAdapter, ProviderCylinder } from './provider.js';
+import type { DiveField, DiverSource, ImportContext, ImportedDive, ProviderAdapter, ProviderCylinder } from './provider.js';
 import { currentRemote, fingerprintNow } from './remote-state.js';
 import { comparableOf, SYNCED_FIELDS, threeWay, VALUE_FIELDS, type Comparable, type SyncedField } from './three-way.js';
 import { cylindersOf, mergeProviderCylinder, providerCylinderOf } from '../dives/cylinders.js';
@@ -97,14 +97,21 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     return null;
   }
 
+  /** The Divers of the Provider's dive: by their accounts at the Provider, and by an entry remembered for them; not deleted ones. */
+  async function wantedDivers(tx: Tx, source: DiverSource, d: ImportedDive): Promise<string[]> {
+    const byAccount = d.people.length === 0 ? [] : await tx.select({ diverId: diverExternalId.diverId }).from(diverExternalId)
+      .innerJoin(diver, eq(diver.id, diverExternalId.diverId))
+      .where(and(eq(diverExternalId.source, source), inArray(diverExternalId.externalId, d.people), isNull(diver.deletedAt)));
+    const remembered = !d.diverIds?.length ? [] : await tx.select({ diverId: diver.id }).from(diver)
+      .where(and(inArray(diver.id, d.diverIds), isNull(diver.deletedAt)));
+    return [...new Set([...byAccount, ...remembered].map((x) => x.diverId))];
+  }
+
   /** The Participants the Dive lacks, by their accounts at the Provider: the Dive's `participants` change, if any. */
   async function fillBuddies(tx: Tx, run: ProviderRun, diveId: string, d: ImportedDive, ownerId: string): Promise<Changes> {
     const source = run.adapter.accountSource;
-    if (!source || d.people.length === 0 || (await participantsOf(tx, diveId)).length > 0) return {};
-    const divers = await tx.select({ diverId: diverExternalId.diverId }).from(diverExternalId)
-      .innerJoin(diver, eq(diver.id, diverExternalId.diverId))
-      .where(and(eq(diverExternalId.source, source), inArray(diverExternalId.externalId, d.people), isNull(diver.deletedAt)));
-    const ids = [...new Set(divers.map((x) => x.diverId))].filter((id) => id !== ownerId);
+    if (!source || (d.people.length === 0 && !d.diverIds?.length) || (await participantsOf(tx, diveId)).length > 0) return {};
+    const ids = (await wantedDivers(tx, source, d)).filter((id) => id !== ownerId);
     if (ids.length === 0) return {};
     await tx.insert(participant).values(ids.map((diverId) => ({ diveId, diverId, role: 'buddy' as const })));
     return { participants: { from: [], to: await participantsOf(tx, diveId) } };
@@ -231,12 +238,9 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     const before = await participantsOf(tx, diveId);
     const withAccount = before.length === 0 ? [] : await tx.select({ diverId: diverExternalId.diverId }).from(diverExternalId)
       .where(and(eq(diverExternalId.source, source), inArray(diverExternalId.diverId, before.map((p) => p.diverId))));
-    const wanted = d.people.length === 0 ? [] : await tx.select({ diverId: diverExternalId.diverId }).from(diverExternalId)
-      .innerJoin(diver, eq(diver.id, diverExternalId.diverId))
-      .where(and(eq(diverExternalId.source, source), inArray(diverExternalId.externalId, d.people), isNull(diver.deletedAt)));
     // Participants the Provider can't know (no account there) stay; the others are the Provider's list now.
     const keep = before.filter((p) => !withAccount.some((w) => w.diverId === p.diverId));
-    const add = [...new Set(wanted.map((w) => w.diverId))].filter((id) => id !== current.diverId && !keep.some((k) => k.diverId === id));
+    const add = (await wantedDivers(tx, source, d)).filter((id) => id !== current.diverId && !keep.some((k) => k.diverId === id));
     await tx.delete(participant).where(eq(participant.diveId, diveId));
     const list = [...keep.map((k) => ({ diveId, diverId: k.diverId, role: k.role })), ...add.map((diverId) => ({ diveId, diverId, role: 'buddy' as const }))];
     if (list.length > 0) await tx.insert(participant).values(list);
