@@ -136,6 +136,28 @@ async function noteNew(n: Note, provider: string): Promise<void> {
   if (conn) await upsertSend(n.tx, conn, n.diveId, n.at);
 }
 
+/**
+ * The Providers where each of these Dives would be deleted through the queue rather than asked: the Dive's current
+ * remote dive there was made through a Connection with "delete at the Provider" on (the one `noteDiveChange` decides by).
+ */
+export async function deletingItself(q: Q, diveIds: string[]): Promise<Map<string, Set<string>>> {
+  const found = new Map<string, Set<string>>();
+  if (diveIds.length === 0) return found;
+  const pushes = await q.select().from(push).where(inArray(push.diveId, diveIds)).orderBy(desc(push.createdAt), desc(push.id));
+  const used = [...new Set(pushes.flatMap((p) => (p.connectionId ? [p.connectionId] : [])))];
+  if (used.length === 0) return found;
+  const conns = await q.select({ id: connection.id, deleteAtProvider: connection.deleteAtProvider }).from(connection)
+    .where(inArray(connection.id, used));
+  for (const id of diveIds) {
+    for (const provider of new Set(pushes.filter((p) => p.diveId === id).map((p) => p.provider))) {
+      const current = currentOf(pushes.filter((p) => p.diveId === id && p.provider === provider));
+      if (!current || !conns.find((c) => c.id === current.connectionId)?.deleteAtProvider) continue;
+      found.set(id, (found.get(id) ?? new Set()).add(provider));
+    }
+  }
+  return found;
+}
+
 /** A change to a site's name or position reaches the sent Dives there, as an edit of each. */
 export async function noteSiteChange(tx: Tx, siteId: string, at: Date): Promise<void> {
   const dives = await tx.select({ id: dive.id }).from(dive).where(and(eq(dive.siteId, siteId), sql`${dive.deletedAt} is null`));

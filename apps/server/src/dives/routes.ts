@@ -31,6 +31,7 @@ import { VerificationCodeView } from '../centres/routes.js';
 import type { PushService } from '../providers/push-service.js';
 import type { AssessmentService } from '../assessment/assessment-service.js';
 import { ProviderServiceError } from '../providers/registry.js';
+import { WaitingPushViewSchema } from '../providers/waiting-push-view.js';
 import { replyProviderError } from '../providers/routes.js';
 
 export interface DiveRouteDeps {
@@ -309,6 +310,10 @@ const DeletedDiveView = Type.Object({
     provider: Type.String(),
     remoteNumber: Nullable(Type.Integer({ description: 'The Provider\'s own dive number' })),
   }), { description: 'Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md)' }),
+  waiting: Type.Array(WaitingPushViewSchema, {
+    description: 'The Dive\'s entries in the queue of Waiting pushes: a delete at a Provider that goes out 5 minutes after deleting here '
+      + '(Undo cancels it), or one that is held or stopped, with its reason',
+  }),
 });
 
 const At = Type.Array(Type.Object({
@@ -347,6 +352,10 @@ const MergeCandidate = Type.Object({
   keeps: Type.String({ description: 'Which of the two Dives a merge keeps: the one with a Recording when only one has, else the Dive asked about' }),
   bothAt: Type.Array(Type.String(), {
     description: 'Providers both Dives are at: the dive of the one not kept stays there unless `alsoAt` names the Provider (docs/spec/clients.md)',
+  }),
+  deletesItself: Type.Array(Type.String(), {
+    description: 'Of `bothAt`, the Providers where the Connection of the Dive not kept deletes at the Provider by itself: its dive there is '
+      + 'deleted 5 minutes after the merge (restoring it cancels that), so don\'t ask about them and leave them out of `alsoAt`',
   }),
 });
 
@@ -567,10 +576,10 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       querystring: Type.Object({ scope: Type.Optional(Type.Enum(['rule', 'nearby'], { default: 'rule' })) }),
       response: { 200: Type.Array(MergeCandidate), 404: Problem },
     },
-  }, async (request) => (await merging.candidates(request.user!.id, request.params.id, request.query.scope)).map(({ dive: d, siteName, recordings, at, keeps, bothAt, rule, answered }) => ({
+  }, async (request) => (await merging.candidates(request.user!.id, request.params.id, request.query.scope)).map(({ dive: d, siteName, recordings, at, keeps, bothAt, deletesItself, rule, answered }) => ({
     id: d.id, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
     utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
-    site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null, fromProvider: d.fromProvider, recordings, at, keeps, bothAt,
+    site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null, fromProvider: d.fromProvider, recordings, at, keeps, bothAt, deletesItself,
     rule, answered,
   })));
 
@@ -663,7 +672,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     const candidate = (await merging.candidates(userId, request.params.id).catch(() => [])).find((c) => c.dive.id === otherId);
     // Deleted at the Provider before anything changes here, as when deleting a Dive: only the copy of the Dive not kept,
     // and only where the kept one has its own.
-    const asked = candidate ? candidate.bothAt.filter((provider) => alsoAt.includes(provider)) : [];
+    // Where the Dive's Connection deletes by itself, the queue does it after 5 minutes, not asked.
+    const asked = candidate ? candidate.bothAt.filter((provider) => alsoAt.includes(provider) && !candidate.deletesItself.includes(provider)) : [];
     if (asked.length > 0) {
       const leaving = candidate!.keeps === otherId ? request.params.id : otherId;
       if (await logbook.versionOf(leaving) !== (leaving === otherId ? otherVersion : version)) return reply.code(409).send(problem('dive_changed'));
@@ -708,7 +718,9 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     // Checked before any Provider is asked, so a changed Dive isn't deleted there and then kept here.
     if (row.version !== version) return reply.code(409).send(problem('dive_changed'));
     const at = [...((await pushes.currentOf([row.id])).get(row.id)?.keys() ?? [])];
-    const asked = at.filter((provider) => alsoAt.includes(provider));
+    // Where the Dive's Connection deletes by itself, the queue does it after 5 minutes, even when `alsoAt` names it (Undo cancels it).
+    const itself = (await pushes.deletingItself([row.id])).get(row.id);
+    const asked = at.filter((provider) => alsoAt.includes(provider) && !itself?.has(provider));
     const { copies, failure } = asked.length > 0 ? await pushes.removeAt(request.user!.id, row.id, asked) : { copies: [], failure: null };
     const providers = at.map((provider) => ({ provider, copy: copies.find((c) => c.provider === provider)?.copy ?? 'kept' as const }));
     if (failure) return replyProviderError(failure, reply, { providers });
@@ -724,6 +736,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   }, async (request) => {
     const rows = await logbook.deletedDives(request.user!.id, DELETED_SHOWN);
     const remote = await pushes.currentOf(rows.map((r) => r.d.id));
+    const waiting = await pushes.waitingOf(rows.map((r) => r.d.id));
     return {
       dives: rows.map(({ d, siteName, mergedInto, movedTo }) => ({
         id: d.id, diverId: d.diverId, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(),
@@ -731,6 +744,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
         site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null,
         deletedAt: d.deletedAt!.toISOString(), mergedInto, movedTo,
         stillAt: [...(remote.get(d.id)?.entries() ?? [])].map(([provider, p]) => ({ provider, remoteNumber: p.remoteNumber })),
+        waiting: waiting.get(d.id) ?? [],
       })),
     };
   });

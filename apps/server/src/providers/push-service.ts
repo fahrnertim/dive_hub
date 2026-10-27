@@ -24,7 +24,8 @@ import { currentRemote, type PushRow } from './remote-state.js';
 import { blocking, forProvider, leftOutBy, offersListEntries, unmetRequirements } from './requirements.js';
 import { siteForSend } from './site-for-send.js';
 import { buddiesForSend, keepBuddies, type BuddiesForSend } from './buddies-for-send.js';
-import { mark as markWaitingPush, settle as settleWaitingPush, type QueueMark } from './waiting-push-queue.js';
+import { deletingItself, mark as markWaitingPush, settle as settleWaitingPush, type QueueMark } from './waiting-push-queue.js';
+import { waitingOf } from './waiting-push-view.js';
 import { comparableOf, planSend, same, type Choice, type Comparable, type SendPlan, type SyncedField } from './three-way.js';
 
 /** What deleting a Dive at Providers did: each copy deleted or kept, and why it stopped, if it did. */
@@ -411,6 +412,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     const entry = current ? await entryOf(db, row.id, adapter.id) : null;
     return {
       provider: adapter.id,
+      deletesItself: (await deletingItself(db, [row.id])).get(row.id)?.has(adapter.id) ?? false,
       connection: conn ? { id: conn.id, state: conn.state, accountLabel: conn.accountLabel } : null,
       siteId: row.siteId,
       unmet,
@@ -634,6 +636,12 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
       }
       return current;
     },
+
+    /** The Providers where each of these Dives is deleted through the queue (5 minutes after deleting it here), not asked. */
+    deletingItself: (diveIds: string[]) => deletingItself(db, diveIds),
+
+    /** The entries of the Waiting pushes of these Dives, by Dive. */
+    waitingOf: (diveIds: string[]) => waitingOf(db, diveIds),
 
     /**
      * Deletes the Dive's remote copy at the Provider. The Dive stays in the hub; a Dive deleted in the hub can still be

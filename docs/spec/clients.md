@@ -326,6 +326,8 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
     goes to the deleted dives and can be restored.
   - **Must ask about each Provider both Dives are at** (`bothAt`), in the same dialog, as when deleting: the dive of the
     one not kept stays there unless the User chooses to delete it there too (`alsoAt`). Without a Connection it stays.
+    **Not for a Provider in `deletesItself`:** the Connection of the Dive not kept deletes there by itself, 5 minutes after the
+    merge (restoring that Dive cancels it); don't ask, and say so ("Will be deleted in {{provider}} in 5 min").
     On a provider_* error nothing is merged: say so with the reason.
   - `POST /api/dives/{id}/merge` with `version`, `otherId`, `otherVersion` (`dive_changed` 409, `merge_not_possible` 400
     for the same Dive or Dives of two Divers). **The answer is the kept Dive, which may be the other one: follow its
@@ -343,6 +345,8 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - **Must ask about every Provider the Dive is at in the same dialog** (`GET /api/dives/{id}/providers`, each `current`):
     "Delete here and in SSI" (`alsoAt: ['ssi']`) or "Delete only here", saying SSI's app can't bring it back. Without a
     Connection for its Diver at a Provider, say it stays there and don't offer deleting it there. Don't preselect either.
+    **Not for a Provider whose status says `deletesItself`:** its Connection deletes there by itself 5 minutes after the
+    delete here, and Undo within that time cancels it; don't ask (`alsoAt` for it is ignored), say it will be deleted there.
   - **On a provider_* error the Dive stays here:** say so with the reason, and offer both again. With several Providers
     each is checked before any is deleted, so usually nothing was deleted; but when one fails after another's copy was
     deleted, the refusal's `providers` says so (`copy: deleted`): say which copy is gone. *Web:* says "Nothing was
@@ -353,6 +357,9 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - **Must remind while a deleted Dive is still at a Provider** (`stillAt` not empty): say so on the Dive with "Delete
     in SSI" per Provider (`DELETE /api/dives/{id}/providers/{provider}`, confirmed), and where the User lands (the logbook).
     The reminder may be dismissed for a visit; it comes back while the dive is there. *Web:* `DeletedDives.tsx`.
+  - **Must show `waiting`** (the queue of Waiting pushes): a `delete` that waits goes out at `dueAt` ("Will be deleted in
+    {{provider}} in {{minutes}} min"); a `held` one says why (`reason`), a `stopped` one "Couldn't delete it in {{provider}}:
+    {{reason}}" (the problem code's text).
 - **History:** a restored Dive's history shows "Deleted" and "Restored" (causes `delete`, `restore`; their change
   `deletedAt` needs no line of its own). *Web:* `DiveHistory.tsx`.
 - **History:** an import from a Provider writes `fill` (what a Dive lacked, from the Provider's dive: `site`,

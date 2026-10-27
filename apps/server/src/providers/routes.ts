@@ -206,6 +206,10 @@ const ConflictFieldView = Type.Object({
 
 const StatusView = Type.Object({
   provider: Type.String(),
+  deletesItself: Type.Boolean({
+    description: 'The Dive\'s Connection deletes at the Provider by itself (5 minutes after the Dive is deleted here; Undo cancels it): '
+      + 'don\'t ask about deleting the copy there, and don\'t send `alsoAt` for it (docs/spec/clients.md)',
+  }),
   connection: Nullable(Type.Object({ id: Type.String(), state: Type.Enum(['active', 'needs_sign_in']), accountLabel: Type.String() }, {
     description: 'The Connection of the Dive\'s Diver; null when that Diver is not connected to this Provider',
   })),

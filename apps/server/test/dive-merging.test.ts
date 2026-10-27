@@ -3,8 +3,9 @@
 // in stands beside the file's Dive, and two logbook entries of one dive become two Dives. Merging resolves both; links
 // are followed at two Providers (SSI's fake and the test-only ledger). Finding such pairs unasked is slice 18c.
 import { and, eq, gte, isNull, lt } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { dive } from '../src/db/schema.js';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { connection, dive, waitingPush } from '../src/db/schema.js';
+import { DELETE_QUIET_MS } from '../src/providers/waiting-push-queue.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { createFakeSsi, handTypedDive } from './fake-ssi.js';
 import { makeSuuntoJson } from './fixtures/suunto-dive.js';
@@ -21,8 +22,10 @@ type DiveView = {
   values: { startsAt: { at: string }; maxDepthM: number | null; waterTemperatureC: number | null };
   recordings: { isPrimary: boolean; parser: string }[]; participants: { name: string }[];
 };
-type Candidate = { id: string; version: number; recordings: number; keeps: string; bothAt: string[]; at: { provider: string }[] };
-type Deleted = { id: string; version: number; mergedInto: string | null; movedTo: string | null; stillAt: { provider: string }[] };
+type Candidate = { id: string; version: number; recordings: number; keeps: string; bothAt: string[]; deletesItself: string[]; at: { provider: string }[] };
+type Deleted = {
+  id: string; version: number; mergedInto: string | null; movedTo: string | null; stillAt: { provider: string }[]; waiting: { provider: string }[];
+};
 
 describe.skipIf(!(await databaseReachable()))('merging two Dives, and moving a linked one', () => {
   let t: TestDatabase;
@@ -328,6 +331,80 @@ describe.skipIf(!(await databaseReachable()))('merging two Dives, and moving a l
       expect((await merge(fromEntry, fromFile)).json()).toMatchObject({ id: fromFile });
       expect(await at(fromFile, 'ssi')).not.toBeNull();
       expect((await nearbyOf(fromFile)).map((c) => c.id)).not.toContain(fromEntry);
+    });
+  });
+
+  describe('with delete at the Provider on', () => {
+    const rows = () => t.db.select().from(waitingPush);
+    const entryAt = (when: string, minutes = 40) => addEntry(when, minutes, 15);
+    /** Two entries of one dive at SSI, imported as two Dives (the first is the one a merge keeps). */
+    const pair = async (first: string, second: string) => {
+      const [one, two] = [entryAt(first), entryAt(second)];
+      const outcome = await runImport();
+      return { one, two, x: outcome.find((o) => o.remoteId === one)!.diveId!, y: outcome.find((o) => o.remoteId === two)!.diveId! };
+    };
+    /** Moves the clock to the entry's due time, as if the worker's job ran then, and runs the Connection's job. */
+    const untilDue = async () => {
+      const [row] = await rows();
+      ctx.clock.skip(Math.max(0, row!.dueAt.getTime() - ctx.clock.now()));
+      await ctx.providers.waitingPushes.step(connectionId);
+    };
+
+    beforeAll(async () => {
+      await t.db.update(connection).set({ deleteAtProvider: true });
+    });
+    beforeEach(async () => {
+      await t.db.delete(waitingPush);
+    });
+    afterAll(async () => {
+      await t.db.update(connection).set({ deleteAtProvider: false });
+    });
+
+    it('merging two Dives both at the Provider deletes the merged-away copy after 5 min without asking', async () => {
+      const { one, two, x, y } = await pair('2026-03-24 10:00', '2026-03-24 10:10');
+      expect(await candidatesOf(x)).toEqual([expect.objectContaining({ id: y, bothAt: ['ssi'], deletesItself: ['ssi'] })]);
+      // `alsoAt` names SSI, but the merge doesn't ask: the copy is deleted by the queue.
+      expect((await merge(x, y, { alsoAt: ['ssi'] })).json()).toMatchObject({ id: x });
+      expect(ctx.fakeSsi.dives.get(Number(two))!.odin_user_log_deleted).toBe(0);
+      const [entry, ...rest] = await rows();
+      expect(rest).toEqual([]);
+      expect(entry).toMatchObject({ diveId: y, provider: 'ssi', action: 'delete', state: 'waiting' });
+      expect(entry!.dueAt.getTime() - entry!.changedAt.getTime()).toBe(DELETE_QUIET_MS);
+      expect(await deleted(y)).toMatchObject({
+        mergedInto: x, stillAt: [expect.objectContaining({ provider: 'ssi' })], waiting: [expect.objectContaining({ provider: 'ssi', action: 'delete', state: 'waiting' })],
+      });
+
+      await untilDue();
+      expect(ctx.fakeSsi.dives.get(Number(two))!.odin_user_log_deleted).toBe(1);
+      expect(ctx.fakeSsi.dives.get(Number(one))!.odin_user_log_deleted).toBe(0);
+      expect(await rows()).toEqual([]);
+      expect(await deleted(y)).toMatchObject({ stillAt: [], waiting: [] });
+    });
+
+    it('restoring the merged-away Dive in that time cancels the delete', async () => {
+      const { two, x, y } = await pair('2026-03-26 10:00', '2026-03-26 10:10');
+      expect((await merge(x, y)).json()).toMatchObject({ id: x });
+      expect(await rows()).toHaveLength(1);
+      expect((await call('POST', `/api/dives/${y}/restore`, { version: (await deleted(y))!.version })).statusCode).toBe(200);
+      expect(await rows()).toEqual([]);
+      ctx.clock.skip(DELETE_QUIET_MS + 1000);
+      await ctx.providers.waitingPushes.step(connectionId);
+      expect(ctx.fakeSsi.dives.get(Number(two))!.odin_user_log_deleted).toBe(0);
+    });
+
+    it('a merge where only one is at the Provider moves its link and deletes nothing', async () => {
+      const sent = (await uploadSuunto('2026-06-01')).diveId!;
+      expect(await json('POST', `/api/dives/${sent}/providers/ledger`, {})).toMatchObject({ outcome: 'created' });
+      const remote = (await at(sent, 'ledger'))!;
+      const kept = (await uploadSuunto('2026-06-02')).diveId!;
+      expect((await candidatesOf(kept)).filter((c) => c.id === sent)).toEqual([]);
+      expect((await merge(kept, sent)).json()).toMatchObject({ id: kept });
+      expect(await at(kept, 'ledger')).toBe(remote);
+      expect(await rows()).toEqual([]);
+      expect(await deleted(sent)).toMatchObject({ mergedInto: kept, stillAt: [], waiting: [] });
+      ctx.clock.skip(DELETE_QUIET_MS + 1000);
+      await ctx.providers.waitingPushes.step(connectionId);
+      expect(ledger.dives.has(remote)).toBe(true);
     });
   });
 });

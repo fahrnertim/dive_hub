@@ -7,6 +7,7 @@ import type { Db, Tx } from '../db/client.js';
 import { OVERRIDABLE_FIELDS, dive, diveSite, participant, push, recording, type OverridableField } from '../db/schema.js';
 import { OVERLAP_TOLERANCE_SECONDS, localStartMs } from '../imports/matching.js';
 import { currentRemote, type PushRow } from '../providers/remote-state.js';
+import { deletingItself, noteDiveChange } from '../providers/waiting-push-queue.js';
 import { liveSite } from '../sites/dive-site-link.js';
 import {
   DiveError, applyToDive, attachRecording, lockManagedDive, managedDiverIds, participantsOf,
@@ -84,14 +85,19 @@ export function createMerging(db: Db) {
         return remote ? [{ provider, remoteNumber: remote.remoteNumber }] : [];
       });
       const mine = at(row.id);
+      const itself = await deletingItself(db, [row.id, ...hits.map((h) => h.id)]);
       return hits.map((h) => {
         const original = near.find(({ d }) => d.id === h.id)!.d;
         const theirs = at(h.id);
+        const keeps = keptOf(row.id, count(row.id), h.id, count(h.id))[0];
+        const bothAt = theirs.filter((t) => mine.some((m) => m.provider === t.provider)).map((t) => t.provider);
         return {
           dive: original, siteName: h.siteName, recordings: count(h.id), at: theirs, rule: h.rule, answered: h.answered,
-          keeps: keptOf(row.id, count(row.id), h.id, count(h.id))[0],
-          // Where both are at a Provider, the other's dive there stays behind: the client asks whether to delete it there.
-          bothAt: theirs.filter((t) => mine.some((m) => m.provider === t.provider)).map((t) => t.provider),
+          keeps,
+          // Where both are at a Provider, the other's dive there stays behind: the client asks whether to delete it there,
+          // unless the Dive left behind is deleted there by the queue (its Connection's setting), 5 minutes after the merge.
+          bothAt,
+          deletesItself: bothAt.filter((provider) => itself.get(keeps === row.id ? h.id : row.id)?.has(provider)),
         };
       });
     },
@@ -156,6 +162,9 @@ export function createMerging(db: Db) {
         await writeRevision(tx, 'dive', other.id, actor, 'merge', {
           deletedAt: { from: null, to: at.toISOString() }, mergedInto: { from: null, to: kept.id },
         });
+        // The Revision's cause is `merge`, which the queue doesn't read as a delete: told so, the copy at a Provider whose
+        // Connection deletes by itself goes after the quiet period, and restoring the Dive cancels it.
+        await noteDiveChange(tx, other.id, 'delete', at, actor);
         await renumber(tx, [kept.diverId]);
         return { kept: kept.id, merged: other.id };
       });
