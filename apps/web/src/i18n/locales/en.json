@@ -763,8 +763,19 @@
     "title": "Changed in both places ({{count}})",
     "titleConnection": "Changed in both places in {{name}}: {{diver}} ({{count}})",
     "intro": "A run sent these dives to {{name}} without these values: they were changed both here and in {{name}} since the last exchange. Choose which to keep; the dive is then sent again with your choice.",
-    "sent": "{{dive}} was sent to {{name}} with your choices.",
-    "again": "{{dive}} was changed in both places again. Choose once more."
+    "queued": {
+      "conflicts": "{{dive}} will be sent to {{name}} with your choices.",
+      "exists-link": "{{dive}} will be linked with the dive in {{name}}.",
+      "exists-create": "{{dive}} will be created in {{name}} as a new dive."
+    },
+    "existsTitle": "Already in {{name}} ({{count}})",
+    "existsTitleConnection": "Already in {{name}}: {{diver}} ({{count}})",
+    "existsIntro": "Sending these dives to {{name}} waits for you: it has a dive at the same time, and Dive Hub doesn’t make a second one by itself.",
+    "exists": "{{name}} already has a dive at this time",
+    "existsDive": "It is dive {{number}} in {{name}}, {{time}}.",
+    "existsDiveNoNumber": "It is the dive in {{name}} at {{time}}.",
+    "link": "Link to it",
+    "create": "Create a new one"
   },
   "review": {
     "title": "Review",
@@ -791,6 +802,8 @@
       "gone_other": "{{count}} dives no longer in {{name}}",
       "conflicts_one": "{{count}} dive with values changed in both places",
       "conflicts_other": "{{count}} dives with values changed in both places",
+      "exists_one": "{{count}} dive that is already at a Provider",
+      "exists_other": "{{count}} dives that are already at a Provider",
       "go": "Review them"
     }
   },
@@ -1572,7 +1585,30 @@
       "retry": "Retry",
       "fix": "See what is needed"
     },
-    "deletesItself": "It is also in {{name}}, as dive {{number}}, and will be deleted there in 5 minutes. Undo cancels it."
+    "deletesItself": "It is also in {{name}}, as dive {{number}}, and will be deleted there in 5 minutes. Undo cancels it.",
+    "automation": {
+      "title": "Automatic",
+      "titleDiver": "Automatic: {{diver}}",
+      "saved": "Saved.",
+      "sendChanges": "Send changes automatically",
+      "sendNewDives": "Send new dives automatically",
+      "deleteAtProvider": "Delete at {{name}} when I delete here",
+      "deleteHelp": "Restoring the dive later creates it at {{name}} again as a new entry, and a verification it had there is lost. Dive Hub can’t see whether a dive there is verified.",
+      "fetch": "Fetch from {{name}}",
+      "fetchEvery": "How often",
+      "everyHour": "every hour",
+      "every6Hours": "every 6 hours",
+      "onceADay": "once a day",
+      "fetchNeedsImport": "A fetch does nothing while the import below is off.",
+      "lastFetch": "Last fetched {{when}}: {{new}} new, {{updated}} updated, {{waiting}} wait for you",
+      "askImport": "Decide them in an import",
+      "queueWaiting": "{{count}} waiting to send",
+      "queueHeld": "{{count}} held",
+      "queueStopped": "{{count}} stopped",
+      "unsent_one": "{{count}} new dive wasn’t sent automatically",
+      "unsent_other": "{{count}} new dives weren’t sent automatically",
+      "unsentSend": "Send them to {{name}}"
+    }
   },
   "providers": {
     "ssi": {

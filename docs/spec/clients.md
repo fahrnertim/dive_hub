@@ -729,7 +729,7 @@ page), `ProviderConflictsSection.tsx` (the Review section), `PushRun.tsx` (the r
 ### Sending by itself
 ([ADR 0056](../decisions/0056-two-way-exchange-and-automation.md); the settings of a Connection, the queue of Waiting
 pushes, the scheduled fetch.) A Connection can send a changed or new Dive, delete at the Provider, and fetch the account's
-dives, all off until the User turns them on. *Web:* `ProviderSettings.tsx`, `WaitingPush.tsx`.
+dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (settings, summary, offer), `WaitingPush.tsx`, `ProviderConflictsSection.tsx` (decisions).
 - **Settings** (`PATCH /api/connections/{id}`): `sendChanges` ("Send changes automatically"), `sendNewDives` ("Send new
   dives automatically"), `deleteAtProvider` ("Delete at {{provider}} when I delete here", with the help text: restoring the
   dive later creates it at {{provider}} again as a new entry, and a verification it had there is lost; Dive Hub can't see

@@ -1,102 +1,173 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   api, connectionsQuery, keys, providerConflictsQuery, unwrap, type ConflictChoices, type ConflictEntryView, type ConflictsOfConnection,
 } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
-import { useFieldNames } from './lib/providers.ts';
-import { ProviderConflicts } from './ProviderConflicts.tsx';
+import { ProviderConflicts, useConflictValueText } from './ProviderConflicts.tsx';
 import { Candidates, CandidateRow, type Fact } from './ReviewRows.tsx';
-import { Button, Notice, Panel } from './ui/index.ts';
+import { Button, Icon, Muted, Notice, Panel } from './ui/index.ts';
 
-/** What sending one Dive with the User's choices came to; the notice says it to screen readers as it appears. */
-type Told = { key: string; tone: 'info' | 'success'; text: string };
+/** What choosing for one Dive came to; the notice says it to screen readers as it appears. */
+type Told = { key: string; text: string };
+/** What the User chose: a way out of an `exists` answer, or a choice per Conflict field. */
+type Decision = { onExisting: 'link' | 'create' } | { conflicts: ConflictChoices };
+
+/** How long the page waits before it asks again while choices are queued; the worker sends within a minute. */
+const WHILE_QUEUED_MS = 5000;
 
 /**
- * Dives a run left with Conflicts on the Review page (ADR 0056): values changed both here and at the Provider since the
- * last exchange, which the run left out. One choice per field, Dive Hub's preselected; "Send with these choices" sends
- * the Dive again with them, and the entry is gone. Beside the gone dives, built the same way.
+ * What waits for the User's choice on the Review page (ADR 0056): Dives a run or a fetch left with Conflicts (values
+ * changed both here and at the Provider since the last exchange; one choice per field, Dive Hub's preselected), and Dives
+ * the Provider already has a dive for ("Link to it" or "Create a new one"). A choice queues the Dive, due now: the worker
+ * sends it. The entry stays listed until then, shown as waiting, so it can't be chosen for twice.
  */
 export function ProviderConflictsSection() {
   const { t } = useTranslation();
-  const conflicts = useQuery(providerConflictsQuery());
+  const [decided, setDecided] = useState<ReadonlySet<string>>(new Set());
+  const conflicts = useQuery({ ...providerConflictsQuery(), refetchInterval: decided.size > 0 ? WHILE_QUEUED_MS : false });
   const connections = useQuery(connectionsQuery());
   const [told, setTold] = useState<Told[]>([]);
   const groups = (conflicts.data ?? []).filter((g) => g.entries.length > 0);
+  // An entry that left the list is settled; a new one for the same Dive is a new question.
+  const listed = (conflicts.data ?? []).flatMap((g) => g.entries.map((e) => e.diveId)).join();
+  useEffect(() => {
+    setDecided((all) => {
+      const still = new Set(listed.split(','));
+      const kept = [...all].filter((id) => still.has(id));
+      return kept.length === all.size ? all : new Set(kept);
+    });
+  }, [listed]);
   const tell = (n: Told) => setTold((all) => [...all.filter((a) => a.key !== n.key), n]);
   const diverOf = (g: ConflictsOfConnection) => connections.data?.find((c) => c.id === g.connectionId)?.diverName ?? '';
   return (
     <>
       {told.map((n) => (
-        <Notice key={n.key} tone={n.tone}>
+        <Notice key={n.key} tone="info">
           <p>{n.text}</p>
           <Button variant="quiet" onPress={() => setTold((all) => all.filter((a) => a.key !== n.key))}>{t('common.close')}</Button>
         </Notice>
       ))}
       {groups.map((g) => (
-        <Group key={g.connectionId} group={g} diver={groups.length > 1 ? diverOf(g) : undefined} onTold={tell} />
+        <Group
+          key={g.connectionId} group={g} diver={groups.length > 1 ? diverOf(g) : undefined} decided={decided} onTold={tell}
+          onDecided={(diveId) => setDecided((all) => new Set([...all, diveId]))}
+        />
       ))}
     </>
   );
 }
 
-function Group({ group: g, diver, onTold }: { group: ConflictsOfConnection; diver: string | undefined; onTold: (n: Told) => void }) {
+function Group({ group: g, diver, decided, onTold, onDecided }: {
+  group: ConflictsOfConnection; diver: string | undefined; decided: ReadonlySet<string>; onTold: (n: Told) => void; onDecided: (diveId: string) => void;
+}) {
   const { t } = useTranslation();
   const display = useDisplay();
   const errorText = useErrorText();
-  const fieldNames = useFieldNames();
+  const valueText = useConflictValueText();
   const queryClient = useQueryClient();
   const nameOf = (e: ConflictEntryView) => (e.number !== null ? t('dive.title', { number: e.number }) : display.diveTime(e.startsAt, e.utcOffsetSeconds, e.utcOffsetSource));
-  // One Dive at a time: the other Dives' buttons wait while one is sent (page rules).
-  const send = useMutation({
-    mutationFn: async ({ entry, choices }: { entry: ConflictEntryView; choices: ConflictChoices }) =>
-      unwrap(await api.POST('/api/dives/{id}/providers/{provider}', { params: { path: { id: entry.diveId, provider: g.provider } }, body: { conflicts: choices } })),
-    onSuccess: async (sent, { entry }) => {
-      const key = entry.diveId;
+  // One Dive at a time: the other Dives' buttons wait while one is queued (page rules).
+  const decide = useMutation({
+    mutationFn: async ({ entry, decision }: { entry: ConflictEntryView; decision: Decision }) =>
+      unwrap(await api.POST('/api/dives/{id}/providers/{provider}/decision', { params: { path: { id: entry.diveId, provider: g.provider } }, body: decision })),
+    onSuccess: async (_, { entry, decision }) => {
       const dive = nameOf(entry);
-      if (sent.outcome === 'conflicts') onTold({ key, tone: 'info', text: t('conflicts.again', { dive }) });
-      else {
-        const taken = sent.taken ?? [];
-        const text = t('conflicts.sent', { dive, name: g.providerName });
-        onTold({ key, tone: 'success', text: taken.length > 0 ? `${text} ${t('provider.taken', { name: g.providerName, fields: fieldNames(taken) })}` : text });
-      }
+      const key = 'onExisting' in decision ? (decision.onExisting === 'link' ? 'exists-link' : 'exists-create') : 'conflicts';
+      onDecided(entry.diveId);
+      onTold({ key: entry.diveId, text: t(`conflicts.queued.${key}`, { dive, name: g.providerName }) });
       await queryClient.invalidateQueries({ queryKey: keys.providerConflicts });
-      // The Dive's state at the Provider changed, and values taken from it are in the Dive.
+      // The Dive's state at the Provider now says it waits.
       await queryClient.invalidateQueries({ queryKey: ['dives'] });
     },
   });
-  const count = g.entries.length;
-  const heading = diver !== undefined ? t('conflicts.titleConnection', { name: g.providerName, diver, count }) : t('conflicts.title', { count });
+  const choosing = (e: ConflictEntryView) => decide.isPending && decide.variables?.entry.diveId === e.diveId;
+  /** Which way out of an `exists` answer is being queued for the entry. */
+  const chosenWay = (e: ConflictEntryView) => (choosing(e) && decide.variables && 'onExisting' in decide.variables.decision ? decide.variables.decision.onExisting : null);
+  const otherChoosing = (e: ConflictEntryView) => decide.isPending && decide.variables?.entry.diveId !== e.diveId;
+  const factsOf = (e: ConflictEntryView): Fact[] => [
+    { key: 'time', text: display.diveTime(e.startsAt, e.utcOffsetSeconds, e.utcOffsetSource) },
+    { key: 'depth', text: display.depth(e.maxDepthM) }, { key: 'duration', text: display.duration(e.durationSeconds) },
+    { key: 'site', text: e.site?.name },
+  ];
+  const row = (e: ConflictEntryView) => (
+    <Candidates>
+      <CandidateRow
+        facts={factsOf(e)} marked={new Set()}
+        title={<a className="candidate-title" href={`#/dives/${e.diveId}`}>{e.number !== null ? t('dive.title', { number: e.number }) : t('dive.titleNoNumber')}</a>}
+      />
+    </Candidates>
+  );
+  /** The entry after the choice: it waits for the worker, and says so where the choice was. */
+  const waiting = <p className="waiting-push"><Icon name="waiting" /><span>{t('provider.waitingPush.waiting', { name: g.providerName })}</span></p>;
+
+  const clashes = g.entries.filter((e) => e.kind === 'conflict');
+  const existing = g.entries.filter((e) => e.kind === 'exists');
+  const title = (key: 'title' | 'existsTitle', count: number) => (diver !== undefined
+    ? t(`conflicts.${key}Connection`, { name: g.providerName, diver, count })
+    : t(`conflicts.${key}`, { name: g.providerName, count }));
   return (
-    <Panel title={heading} attention>
-      <p className="muted">{t('conflicts.intro', { name: g.providerName })}</p>
-      <ul className="decisions">
-        {g.entries.map((e) => {
-          const facts: Fact[] = [
-            { key: 'time', text: display.diveTime(e.startsAt, e.utcOffsetSeconds, e.utcOffsetSource) },
-            { key: 'depth', text: display.depth(e.maxDepthM) }, { key: 'duration', text: display.duration(e.durationSeconds) },
-            { key: 'site', text: e.site?.name },
-          ];
-          return (
-            <li key={e.diveId} className="decision">
-              <Candidates>
-                <CandidateRow
-                  facts={facts} marked={new Set()}
-                  title={<a className="candidate-title" href={`#/dives/${e.diveId}`}>{e.number !== null ? t('dive.title', { number: e.number }) : t('dive.titleNoNumber')}</a>}
-                />
-              </Candidates>
-              <ProviderConflicts
-                key={e.fields.map((f) => f.field).join()} item={nameOf(e)} conflicts={e.fields} providerName={g.providerName}
-                isPending={send.isPending && send.variables.entry.diveId === e.diveId}
-                isDisabled={send.isPending && send.variables.entry.diveId !== e.diveId}
-                onSend={(choices) => send.mutate({ entry: e, choices })}
-              />
-            </li>
-          );
-        })}
-      </ul>
-      {send.error && <Notice tone="danger">{errorText(send.error)}</Notice>}
-    </Panel>
+    <>
+      {clashes.length > 0 && (
+        <Panel title={title('title', clashes.length)} attention>
+          <p className="muted">{t('conflicts.intro', { name: g.providerName })}</p>
+          <ul className="decisions">
+            {clashes.map((e) => (
+              <li key={e.diveId} className="decision">
+                {row(e)}
+                {decided.has(e.diveId) ? waiting : (
+                  <ProviderConflicts
+                    key={e.fields.map((f) => f.field).join()} item={nameOf(e)} conflicts={e.fields} providerName={g.providerName}
+                    isPending={choosing(e)} isDisabled={otherChoosing(e)}
+                    onSend={(conflicts) => decide.mutate({ entry: e, decision: { conflicts } })}
+                  />
+                )}
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
+      {existing.length > 0 && (
+        <Panel title={title('existsTitle', existing.length)} attention>
+          <Muted>{t('conflicts.existsIntro', { name: g.providerName })}</Muted>
+          <ul className="decisions">
+            {existing.map((e) => (
+              <li key={e.diveId} className="decision">
+                {row(e)}
+                <p className="provider-conflict-question">
+                  {t('conflicts.exists', { name: g.providerName })}
+                  {e.existing && (
+                    <>
+                      {' '}
+                      <span className="muted">
+                        {t(e.existing.remoteNumber !== null ? 'conflicts.existsDive' : 'conflicts.existsDiveNoNumber', {
+                          name: g.providerName, number: e.existing.remoteNumber ?? 0, time: valueText('startsAt', e.existing.startsAt),
+                        })}
+                      </span>
+                    </>
+                  )}
+                </p>
+                {decided.has(e.diveId) ? waiting : (
+                  <div className="form-actions">
+                    {(['link', 'create'] as const).map((onExisting) => (
+                      <Button
+                        key={onExisting} variant={onExisting === 'link' ? 'primary' : 'secondary'} icon={onExisting === 'link' ? 'link' : 'add'}
+                        isPending={chosenWay(e) === onExisting} isDisabled={decide.isPending && chosenWay(e) !== onExisting}
+                        aria-label={t('common.forItem', { action: t(`conflicts.${onExisting}`), item: nameOf(e) })}
+                        onPress={() => decide.mutate({ entry: e, decision: { onExisting } })}
+                      >
+                        {t(`conflicts.${onExisting}`)}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
+      {decide.error && <Notice tone="danger">{errorText(decide.error)}</Notice>}
+    </>
   );
 }

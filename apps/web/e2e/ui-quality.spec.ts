@@ -9,7 +9,7 @@ import { dataFile, type PreparedData } from './prepare.ts';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, diveNumber, seededDiveId, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectAccessible, expectGoodPage, externalDiver, openLine,
-  clearPushRuns, clearQueue, conflictAtSsi, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, queueEntry, readyForSsi, resetDive, ssiConnectionOf, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, tankPodDive
+  clearPushRuns, clearQueue, conflictAtSsi, fetchState, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, queueEntry, readyForSsi, resetDive, ssiConnectionOf, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, tankPodDive
 } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
@@ -625,6 +625,36 @@ for (const v of variants) {
       await page.getByRole('button', { name: v.english ? /^Show your SSI buddy list/ : /^Deine SSI-Buddyliste zeigen/ }).click();
       await expect(page.getByRole('row', { name: /Mia Stone/ })).toBeVisible();
       await goodPage(page, title('My account'), v);
+    });
+
+    // What the Connection does by itself (ADR 0056): the switches, the last fetch with what waits, and the offer of unsent new dives.
+    test('my account, automatic sending and fetching: the settings, the last fetch, the offer', { tag: ['@account'] }, async ({ page, request }) => {
+      await connectSsi(request);
+      const id = await deletableDive(request);
+      const connectionId = await ssiConnectionOf(request, id);
+      await fetchState(request, connectionId, { created: 2, updated: 1, skipped: 3, unsent: [id] });
+      try {
+        await page.goto('/#/account?tab=connections');
+        await expect(page.getByRole('region', { name: v.english ? /^Automatic/ : /^Automatisch/ })).toBeVisible();
+        await expect(page.getByText(v.english ? /^Last fetched / : /^Zuletzt abgerufen /)).toBeVisible();
+        await goodPage(page, title('My account'), v);
+      } finally {
+        await fetchState(request, connectionId, { clear: true });
+      }
+    });
+
+    // Waiting under Needs your decision: a dive the Provider already has (ADR 0056).
+    test('review, a dive already at SSI', { tag: ['@dives'] }, async ({ page, request }) => {
+      await connectSsi(request);
+      const id = await deletableDive(request);
+      try {
+        await queueEntry(request, id, { state: 'held', reason: 'exists', detail: { remoteId: '555', remoteNumber: 12, startsAt: '2026-03-05 08:00' } });
+        await page.goto('/#/review');
+        await expect(page.getByText(v.english ? /^SSI already has a dive at this time/ : /^SSI hat schon einen Tauchgang zu dieser Zeit/)).toBeVisible();
+        await goodPage(page, title('Review'), v);
+      } finally {
+        await clearQueue(request);
+      }
     });
 
     // Importing dives from SSI (ADR 0030), with Lena's logbook: the setting, the preview with a computer and a decision

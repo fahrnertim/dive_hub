@@ -10,7 +10,7 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, diveNumber, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, falseStart, forgetDivers, keepFalseStart, mergePair, mergeablePair, tankPodDive,
-  clearPushRuns, conflictAtSsi, expireSsiTokens, leaveConflict, goneAtSsi, leaveLena, leaveSsi, lenaReady, openLine, pushRunSetup, readyForSsi, sendToSsi, setBuddies, setPreferences,
+  clearPushRuns, clearQueue, conflictAtSsi, fetchState, queueEntry, ssiConnectionOf, expireSsiTokens, leaveConflict, goneAtSsi, leaveLena, leaveSsi, lenaReady, openLine, pushRunSetup, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
 const out = process.env.REVIEW_OUT ?? 'review-output/';
@@ -570,6 +570,25 @@ test('review material', async ({ page, request, browser }) => {
     if (want('account')) {
       await page.reload(); await page.getByText('Connected, password kept').waitFor();
       await capture(page, '25-account-ssi-connected', { aria: false });
+      // Sending by itself (ADR 0056): the last fetch with what waits, the offer of unsent new dives, and a dive SSI already has.
+      const automaticDive = await deletableDive(request);
+      const automaticConnection = await ssiConnectionOf(request, automaticDive);
+      await fetchState(request, automaticConnection, { created: 2, updated: 1, skipped: 3, unsent: [automaticDive] });
+      await queueEntry(request, automaticDive, { state: 'held', reason: 'exists', detail: { remoteId: '555', remoteNumber: 12, startsAt: '2026-03-05 08:00' } });
+      await page.reload(); await page.getByText(/^Last fetched/).waitFor();
+      await capture(page, '25a-account-ssi-automatic', { aria: false });
+      await page.goto('/#/review'); await page.getByText(/^SSI already has a dive at this time/).waitFor();
+      await capture(page, '25a2-account-review-dive-already-at-ssi', { aria: false });
+      await setPreferences(request, { language: 'de' });
+      await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark' });
+      await page.reload(); await page.getByText(/^SSI hat schon einen Tauchgang/).waitFor();
+      await capture(page, '25a3-account-review-dive-already-at-ssi-de-phone', { aria: false });
+      await page.goto('/#/account?tab=connections'); await page.getByText(/^Zuletzt abgerufen/).waitFor();
+      await capture(page, '25a4-account-ssi-automatic-de-phone', { aria: false });
+      await fetchState(request, automaticConnection, { clear: true }); await clearQueue(request);
+      await setPreferences(request, { language: 'en' });
+      await page.setViewportSize({ width: 1280, height: 900 }); await page.emulateMedia({ colorScheme: 'light' });
+      await page.goto('/#/account?tab=connections'); await page.reload(); await page.getByText('Connected, password kept').waitFor();
       // The SSI buddy list (ADR 0029): who is in Dive Hub already, adding and linking.
       await page.getByRole('button', { name: /^Show your SSI buddy list/ }).click();
       await page.getByRole('row', { name: /Mia Stone/ }).waitFor();

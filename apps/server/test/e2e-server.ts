@@ -26,7 +26,7 @@ import { computerDive, createFakeSsi, fakeCard, handTypedDive } from './fake-ssi
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import { createMerging } from '../src/dives/merging.js';
 import { createDiverService } from '../src/divers/diver-service.js';
-import { connection, dive, pushRun, waitingPush } from '../src/db/schema.js';
+import { connection, dive, importJob, pushRun, waitingPush } from '../src/db/schema.js';
 import { eq } from 'drizzle-orm';
 import { createInvitations } from '../src/users/invitations.js';
 import { createSetup } from '../src/users/setup.js';
@@ -236,11 +236,13 @@ app.post('/e2e/waiting-push/set', { schema: { hide: true } }, async (request) =>
   const b = request.body as {
     diveId: string; connectionId: string; provider: string; action?: 'send' | 'delete';
     state: 'waiting' | 'held' | 'stopped'; reason?: string | null; dueInMs?: number;
+    /** With reason `exists`: the dive already at the Provider. */
+    detail?: { remoteId: string; remoteNumber: number | null; startsAt: string };
   };
   const now = new Date();
   const row = {
     diveId: b.diveId, connectionId: b.connectionId, provider: b.provider, action: b.action ?? 'send', state: b.state,
-    reason: b.reason ?? null, dueAt: new Date(now.getTime() + (b.dueInMs ?? 3_600_000)), changedAt: now,
+    reason: b.reason ?? null, detail: b.detail ?? null, dueAt: new Date(now.getTime() + (b.dueInMs ?? 3_600_000)), changedAt: now,
   };
   await db.insert(waitingPush).values(row).onConflictDoUpdate({ target: [waitingPush.diveId, waitingPush.provider], set: row });
   return { ok: true };
@@ -248,6 +250,34 @@ app.post('/e2e/waiting-push/set', { schema: { hide: true } }, async (request) =>
 
 // Test-only: every entry of the queue is removed.
 app.post('/e2e/waiting-push/clear', { schema: { hide: true } }, async () => { await db.delete(waitingPush); return { ok: true }; });
+
+// Test-only: what the Connection shows of its last fetch and of the new Dives it offers to send (ADR 0056): an Import with
+// that outcome is made and tied to it. `unsent` lists Dives the Import "created".
+app.post('/e2e/connection/fetch-state', { schema: { hide: true } }, async (request) => {
+  const b = request.body as { id: string; clear?: boolean; created?: number; updated?: number; skipped?: number; unsent?: string[] | null };
+  const [conn] = await db.select().from(connection).where(eq(connection.id, b.id));
+  if (!conn) return { ok: false };
+  if (b.clear) {
+    await db.update(connection).set({ lastFetchImportId: null, unsentImportId: null }).where(eq(connection.id, conn.id));
+    return { ok: true };
+  }
+  const entries = (result: 'created' | 'updated' | 'skipped', n: number, ids: string[] = []) => Array.from({ length: n }, (_, i) => ({
+    fileName: `fake-${result}-${i}`, result, ...(result === 'skipped' && { reason: 'ambiguous' as const }), ...(ids[i] && { diveId: ids[i] }),
+  }));
+  const [made] = await db.insert(importJob).values({
+    userId: conn.userId, status: 'done', uploadName: conn.provider, provider: conn.provider, connectionId: conn.id, finishedAt: new Date(),
+    outcome: [...entries('created', b.created ?? 0), ...entries('updated', b.updated ?? 0), ...entries('skipped', b.skipped ?? 0)],
+  }).returning({ id: importJob.id });
+  await db.update(connection).set({ lastFetchImportId: made!.id }).where(eq(connection.id, conn.id));
+  if (b.unsent !== undefined) {
+    const [offer] = b.unsent === null ? [] : await db.insert(importJob).values({
+      userId: conn.userId, status: 'done', uploadName: conn.provider, provider: conn.provider, connectionId: conn.id, finishedAt: new Date(),
+      outcome: entries('created', b.unsent.length, b.unsent),
+    }).returning({ id: importJob.id });
+    await db.update(connection).set({ unsentImportId: offer?.id ?? null }).where(eq(connection.id, conn.id));
+  }
+  return { ok: true };
+});
 
 // Test-only: a Connection that keeps no password needs a new sign-in (signing in again sets it right).
 app.post('/e2e/connection/needs-sign-in', { schema: { hide: true } }, async (request) => {

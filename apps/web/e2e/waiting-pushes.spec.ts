@@ -3,13 +3,13 @@
 // The e2e server's worker settles real entries within a minute, so the states that must stay are put into the queue
 // by test-only routes (apps/server/test/e2e-server.ts); the saves and the delete are real.
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
-import { clearQueue, connectSsi, deletableDive, diveNumber, diveRows, editElsewhere, headers, leaveConflict, leaveSsi, openLine, queueEntry, sendToSsi, setPreferences, ssiConnectionOf } from './support.ts';
+import { clearQueue, connectSsi, deletableDive, diveNumber, diveRows, editElsewhere, fetchState, headers, leaveConflict, leaveSsi, openLine, queueEntry, readyForSsi, sendToSsi, setPreferences, ssiConnectionOf } from './support.ts';
 
 test.describe.configure({ mode: 'serial' });
 
 type Status = { connection: { id: string } | null; waiting: { state: string; reason: string | null; action: string } | null; deletesItself: boolean };
 const status = async (api: APIRequestContext, id: string) => await (await api.get(`/api/dives/${id}/providers/ssi`)).json() as Status;
-const settings = (api: APIRequestContext, connectionId: string, data: Record<string, boolean>) =>
+const settings = (api: APIRequestContext, connectionId: string, data: Record<string, boolean | number | null>) =>
   api.patch(`/api/connections/${connectionId}`, { data, headers });
 /** The logbook row of the Dive, found by its number. */
 const rowOf = (page: Page, n: number) => diveRows(page).filter({ hasText: new RegExp(`Number ${n}(?!\\d)`) });
@@ -24,7 +24,9 @@ async function leave(request: APIRequestContext) {
   await clearQueue(request);
   await connectSsi(request);
   const id = await deletableDive(request);
-  await settings(request, await ssiConnectionOf(request, id), { sendChanges: false, sendNewDives: false, deleteAtProvider: false });
+  const connectionId = await ssiConnectionOf(request, id);
+  await settings(request, connectionId, { sendChanges: false, sendNewDives: false, deleteAtProvider: false, fetchEveryMinutes: null });
+  await fetchState(request, connectionId, { clear: true });
   await leaveConflict(request);
   await leaveSsi(request, id);
 }
@@ -164,7 +166,8 @@ test('the delete dialog doesn\'t ask for a Provider that deletes by itself, and 
     await expect(panel.getByText('Will be deleted in SSI in 5 min')).toBeVisible();
     // Restoring cancels it.
     await panel.getByRole('button', { name: /^Restore: Mar 5, 2026/ }).click();
-    await expect(panel).toHaveCount(0);
+    // Other specs may leave deleted dives, so the list itself can stay; this dive's wait is what goes.
+    await expect(panel.getByText('Will be deleted in SSI in 5 min')).toHaveCount(0);
     expect((await status(request, id)).waiting).toBeNull();
   } finally {
     await leave(request);
@@ -194,4 +197,155 @@ test('a delete that stopped shows the error in the deleted dives and Retry puts 
   } finally {
     await leave(request);
   }
+});
+
+/** The Connection's automatic settings on the account page. */
+const automatic = (page: Page) => page.getByRole('region', { name: 'Automatic: Erika' });
+const openConnections = async (page: Page) => { await page.goto('/#/account?tab=connections'); await expect(automatic(page)).toBeVisible(); };
+const connectionRow = async (api: APIRequestContext, connectionId: string) =>
+  ((await (await api.get('/api/connections')).json()) as { id: string; sendChanges: boolean; fetchEveryMinutes: number | null; unsentDives: string[] }[]).find((c) => c.id === connectionId);
+
+test('the settings show only what the Provider offers and 6 hours is preselected', { tag: ['@account'] }, async ({ page, request }) => {
+  await connectSsi(request);
+  const id = await deletableDive(request);
+  try {
+    // A Provider that can't delete and fetches every 6 hours at the soonest: the page shows what `offers` lists.
+    const narrowed = (row: { offers: Record<string, unknown> }) => ({ ...row, offers: { ...row.offers, deleteAtProvider: false, fetchEvery: [360, 1440] } });
+    await page.route('**/api/connections', async (route) => {
+      const response = await route.fetch();
+      await route.fulfill({ status: response.status(), json: ((await response.json()) as { offers: Record<string, unknown> }[]).map(narrowed) });
+    });
+    await page.route('**/api/connections/*', async (route) => {
+      if (route.request().method() !== 'PATCH') return route.fallback();
+      const response = await route.fetch();
+      return route.fulfill({ status: response.status(), json: narrowed(await response.json() as { offers: Record<string, unknown> }) });
+    });
+    await openConnections(page);
+    const settingsOf = automatic(page);
+    await expect(settingsOf.getByRole('switch', { name: 'Send changes automatically' })).toBeVisible();
+    await expect(settingsOf.getByRole('switch', { name: 'Send new dives automatically' })).toBeVisible();
+    await expect(settingsOf.getByRole('switch', { name: 'Delete at SSI when I delete here' })).toHaveCount(0);
+    await expect(settingsOf.getByRole('radio')).toHaveCount(0);
+
+    const connectionId = await ssiConnectionOf(request, id);
+    await settingsOf.getByText('Send changes automatically', { exact: true }).click();
+    await expect(settingsOf.getByRole('switch', { name: 'Send changes automatically' })).toBeChecked();
+    await expect.poll(async () => (await connectionRow(request, connectionId))?.sendChanges).toBe(true);
+
+    await settingsOf.getByText('Fetch from SSI', { exact: true }).click();
+    const every = settingsOf.getByRole('radiogroup', { name: 'How often' });
+    await expect(every.getByRole('radio', { name: 'every 6 hours' })).toBeChecked();
+    await expect(every.getByRole('radio', { name: 'once a day' })).toBeVisible();
+    // The interval 60 is not offered here, and what is chosen is kept.
+    await expect(every.getByRole('radio', { name: 'every hour' })).toHaveCount(0);
+    await expect.poll(async () => (await connectionRow(request, connectionId))?.fetchEveryMinutes).toBe(360);
+    await every.getByText('once a day').click();
+    await expect.poll(async () => (await connectionRow(request, connectionId))?.fetchEveryMinutes).toBe(1440);
+    // Off again: the choice goes.
+    await settingsOf.getByText('Fetch from SSI', { exact: true }).click();
+    await expect(every).toHaveCount(0);
+  } finally {
+    await leave(request);
+  }
+});
+
+test('the delete setting\'s help text says what restoring does', { tag: ['@account'] }, async ({ page, request }) => {
+  try {
+    await connectSsi(request);
+    await openConnections(page);
+    const toggle = automatic(page).getByRole('switch', { name: 'Delete at SSI when I delete here' });
+    await expect(toggle).toBeVisible();
+    const help = 'Restoring the dive later creates it at SSI again as a new entry, and a verification it had there is lost. Dive Hub can’t see whether a dive there is verified.';
+    await expect(automatic(page).getByText(help)).toBeVisible();
+    await expect(toggle).toHaveAccessibleDescription(help);
+  } finally {
+    await leave(request);
+  }
+});
+
+test('the Connection shows the last fetch and how many wait', { tag: ['@account'] }, async ({ page, request }) => {
+  await connectSsi(request);
+  const id = await deletableDive(request);
+  try {
+    const connectionId = await ssiConnectionOf(request, id);
+    await fetchState(request, connectionId, { clear: true });
+    await openConnections(page);
+    await expect(automatic(page).getByText(/^Last fetched/)).toHaveCount(0);
+
+    await fetchState(request, connectionId, { created: 2, updated: 1, skipped: 3 });
+    await queueEntry(request, id, { state: 'held', reason: 'requirements' });
+    await page.reload();
+    await expect(automatic(page).getByText(/^Last fetched .+: 2 new, 1 updated, 3 wait for you$/)).toBeVisible();
+    await expect(automatic(page).getByText('1 held')).toBeVisible();
+
+    // The ones that wait lead to the import that asks.
+    await automatic(page).getByRole('button', { name: 'Decide them in an import' }).click();
+    await expect(page.locator('h3[id^="import-"]')).toBeFocused();
+  } finally {
+    await leave(request);
+  }
+});
+
+test('the offer of unsent new dives opens a Push run', { tag: ['@account'] }, async ({ page, request }) => {
+  await connectSsi(request);
+  const id = await deletableDive(request);
+  try {
+    await readyForSsi(request, id);
+    const connectionId = await ssiConnectionOf(request, id);
+    await fetchState(request, connectionId, { created: 1, unsent: [id] });
+    await openConnections(page);
+    const offer = automatic(page).getByRole('group', { name: '1 new dive wasn’t sent automatically' });
+    await expect(offer).toBeVisible();
+    await offer.getByRole('button', { name: 'Send them to SSI' }).click();
+    // The run's own dialog, for exactly these dives: no choice of scope.
+    const dialog = page.getByRole('dialog', { name: 'Send dives to SSI' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('radiogroup')).toHaveCount(0);
+    await expect(dialog.getByText('1 new dive')).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Send 1 dive' })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Close dialog' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(offer).toBeVisible();
+
+    await offer.getByRole('button', { name: 'Dismiss' }).click();
+    await expect(offer).toBeHidden();
+    expect((await connectionRow(request, connectionId))?.unsentDives).toEqual([]);
+  } finally {
+    await leave(request);
+  }
+});
+
+test('a dive already at the Provider is decided under Needs your decision', { tag: ['@account'] }, async ({ page, request }) => {
+  await connectSsi(request);
+  const id = await deletableDive(request);
+  try {
+    await queueEntry(request, id, { state: 'held', reason: 'exists', detail: { remoteId: '555', remoteNumber: 12, startsAt: '2026-03-05 08:00' } });
+    const n = await diveNumber(request, id);
+    await page.goto('/#/review');
+    await expect(page.getByText(/^SSI already has a dive at this time/)).toBeVisible();
+    // The dive at SSI is named, and both ways out are buttons of this dive.
+    await expect(page.getByText(/It is dive 12 in SSI/)).toBeVisible();
+    const sent = page.waitForRequest((r) => r.method() === 'POST' && r.url().endsWith(`/api/dives/${id}/providers/ssi/decision`));
+    await page.getByRole('button', { name: `Link to it: Dive ${n}` }).click();
+    expect((await sent).postDataJSON()).toEqual({ onExisting: 'link' });
+    // Queued: the choice is told and can't be made twice.
+    await expect(page.locator('#main').getByText(`Dive ${n} will be linked with the dive in SSI.`)).toBeVisible();
+    await expect(page.getByRole('button', { name: `Link to it: Dive ${n}` })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: `Create a new one: Dive ${n}` })).toHaveCount(0);
+  } finally {
+    await leave(request);
+  }
+});
+
+test('opening Dive Hub asks for a fetch once', { tag: ['@account'] }, async ({ page }) => {
+  const asked: string[] = [];
+  page.on('request', (r) => { if (r.method() === 'POST' && r.url().endsWith('/api/connections/fetch-due')) asked.push(r.url()); });
+  await page.goto('/#/');
+  await expect.poll(() => asked.length).toBe(1);
+  // Moving around the app doesn't ask again.
+  await page.goto('/#/review');
+  await page.goto('/#/account?tab=connections');
+  await page.goto('/#/');
+  await expect(page.getByRole('link', { name: 'Logbook' }).first()).toBeVisible();
+  expect(asked).toHaveLength(1);
 });

@@ -69,6 +69,13 @@ export function SendToProvider({ params, filterName }: { params: LogbookParams; 
   );
 }
 
+/** The dialog for exactly these Dives, started from outside the logbook (the offer on a Connection, ADR 0056). */
+export function SendDivesDialog({ connection, provider, ids, onClose }: {
+  connection: ConnectionView; provider: ProviderView | undefined; ids: string[]; onClose: () => void;
+}) {
+  return <SendDialog connection={connection} provider={provider} params={{}} filterName={String} ids={ids} onClose={onClose} />;
+}
+
 /** What the dialog can send: the logbook's list as it is now, every Dive not at the Provider yet, or the ones changed since sent. */
 type Scope = 'list' | 'new' | 'changed';
 const SCOPES: readonly Scope[] = ['list', 'new', 'changed'];
@@ -87,8 +94,10 @@ const scopeLabel = (label: string, count: number | undefined, hint: string | und
  * The dialog before a run (ADR 0047), which owns what is sent (UI/UX pass, option A2): it asks which Dives, lists the ones
  * that would go with a checkbox each, and sends exactly the ticked ones. The logbook behind it is never changed.
  */
-function SendDialog({ connection, provider, params, filterName, onClose }: {
-  connection: ConnectionView; provider: ProviderView | undefined; params: LogbookParams; filterName: (filter: LogbookFilter) => string; onClose: () => void;
+function SendDialog({ connection, provider, params, filterName, ids, onClose }: {
+  connection: ConnectionView; provider: ProviderView | undefined; params: LogbookParams; filterName: (filter: LogbookFilter) => string;
+  /** Exactly these Dives (the offer of a large Import's new ones): no scope to choose, the Dives can still be taken out. */
+  ids?: string[] | undefined; onClose: () => void;
 }) {
   const { t } = useTranslation();
   const display = useDisplay();
@@ -105,13 +114,10 @@ function SendDialog({ connection, provider, params, filterName, onClose }: {
   const [choices, setChoices] = useState(NO_CHOICES);
   // The Dives the User took out of the run (by id); a new scope starts with all of them in.
   const [left, setLeft] = useState<ReadonlySet<string>>(new Set());
-  const sizes = {
-    list: useQuery(pushRunPreviewQuery(connection.id, { list: lists.list, ...NO_CHOICES })),
-    new: useQuery(pushRunPreviewQuery(connection.id, { list: lists.new, ...NO_CHOICES })),
-    changed: useQuery(pushRunPreviewQuery(connection.id, { list: lists.changed, ...NO_CHOICES })),
-  };
+  const counted = (list: PushRunChoices['list']) => ({ ...pushRunPreviewQuery(connection.id, { list, ...NO_CHOICES }), enabled: !ids });
+  const sizes = { list: useQuery(counted(lists.list)), new: useQuery(counted(lists.new)), changed: useQuery(counted(lists.changed)) };
   // Numbers are previewed as if confirmed: the dialog lists every number, and asks once before sending where a verification can go.
-  const request: PushRunChoices = { list: lists[scope], ...choices, numbersRemovingVerification: choices.numbers };
+  const request: PushRunChoices = { list: ids ? {} : lists[scope], ...(ids && { ids }), ...choices, numbersRemovingVerification: choices.numbers };
   const preview = useQuery(pushRunPreviewQuery(connection.id, request));
   const p = preview.data;
   const dives = p?.dives ?? [];
@@ -168,10 +174,12 @@ function SendDialog({ connection, provider, params, filterName, onClose }: {
   return (
     <Dialog title={t('pushRun.title', { name })} isOpen onOpenChange={(open) => { if (!open) onClose(); }}>
       <div className="push-run-dialog">
-        <RadioGroup
-          label={t('pushRun.which', { diver: connection.diverName })} value={scope} onChange={(v) => chooseScope(v as Scope)}
-          options={offered.map((s) => ({ value: s, label: scopeLabel(labels[s], sizes[s].data?.inScope, hints[s]) }))}
-        />
+        {!ids && (
+          <RadioGroup
+            label={t('pushRun.which', { diver: connection.diverName })} value={scope} onChange={(v) => chooseScope(v as Scope)}
+            options={offered.map((s) => ({ value: s, label: scopeLabel(labels[s], sizes[s].data?.inScope, hints[s]) }))}
+          />
+        )}
         {preview.isError && <Notice tone="danger">{errorText(preview.error)}</Notice>}
         {!p && !preview.isError && <Muted>{t('pushRun.loading')}</Muted>}
         {p && (
