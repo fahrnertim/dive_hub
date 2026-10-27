@@ -91,6 +91,7 @@ describe.skipIf(!(await databaseReachable()))('the scheduled fetch', () => {
     const { dives } = await json<{ dives: { id: string }[] }>('GET', `/api/dives?limit=100&diverId=${diverId}`);
     for (const d of dives) await call('DELETE', `/api/dives/${d.id}`, { version: (await diveOf(d.id)).version });
     ledger.dives.clear();
+    ledger.beforeList = null;
     ledger.tokens.clear();
     ledger.tokens.set('ledger-token-1', { accountId: 'l-5', label: 'Ledger of Ann' });
     ledger.tokens.set('ledger-token-2', { accountId: 'l-6', label: 'Ledger of Bob' });
@@ -206,6 +207,21 @@ describe.skipIf(!(await databaseReachable()))('the scheduled fetch', () => {
     ctx.clock.skip(30 * MINUTE);
     await ctx.providers.scheduledFetch.tick();
     expect(await queued()).toEqual([`fetch:${connectionId}`]);
+  });
+
+  it('a second fetch while the first is reading does not read again', async () => {
+    ledger.seedRemote({ number: 1, startsAt: `${year}-05-01T09:00`, durationSeconds: 2400, maxDepthM: 18 });
+    const reads = ledger.listReads;
+    let second: Promise<void> | undefined;
+    // A tick or the opening queued the Connection again while its job was reading.
+    ledger.beforeList = async () => {
+      ledger.beforeList = null;
+      second = ctx.providers.scheduledFetch.fetch(connectionId);
+    };
+    await ctx.providers.scheduledFetch.fetch(connectionId);
+    await second;
+    expect(ledger.listReads).toBe(reads + 1);
+    expect(await t.db.select().from(importJob).where(eq(importJob.connectionId, connectionId))).toHaveLength(1);
   });
 
   it('a successful fetch wakes the Provider\'s entries stopped as unavailable', async () => {

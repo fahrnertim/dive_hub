@@ -3,7 +3,7 @@
 // job starts the same Import a manual one would, unattended (dive-import.ts leaves what only the User can decide). A read
 // never comes sooner than the Provider's minimum. A successful read sets the Connection's `lastUsedAt`, which wakes the
 // Provider's stopped Waiting pushes at the next tick.
-import { and, eq, inArray, isNotNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, lte, or, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { connection, importJob } from '../db/schema.js';
 import type { DiveImportService } from './dive-import.js';
@@ -53,8 +53,8 @@ export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry;
   return {
     /**
      * The job: starts an unattended Import of the Connection's dives, unless something blocks it or the last fetch is
-     * younger than the Provider's minimum. Every attempt counts for the interval (a Provider that is down is not read
-     * every minute); a successful one also keeps its Import for the summary (`lastFetchImportId`).
+     * younger than the Provider's minimum. Every attempt claims the interval before it reads (a Provider that is down is
+     * not read every minute); a successful one also keeps its Import for the summary (`lastFetchImportId`).
      */
     async fetch(connectionId: string): Promise<void> {
       const [conn] = await db.select().from(connection).where(eq(connection.id, connectionId));
@@ -62,13 +62,16 @@ export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry;
       const minimum = minimumOf(conn.provider);
       const at = clock.now();
       if (minimum === null || (await blocked(conn))) return;
-      if (conn.lastFetchedAt && at - conn.lastFetchedAt.getTime() < minimum * MINUTE_MS) return;
-      const attempted = { lastFetchedAt: new Date(at) };
+      // The slot is claimed before the read: a second job of the Connection (queued again while this one reads) finds
+      // it taken and reads nothing, so no read comes sooner than the minimum and no dive is imported twice.
+      const claimed = await db.update(connection).set({ lastFetchedAt: new Date(at) })
+        .where(and(eq(connection.id, conn.id), or(isNull(connection.lastFetchedAt), lte(connection.lastFetchedAt, new Date(at - minimum * MINUTE_MS)))))
+        .returning({ id: connection.id });
+      if (claimed.length === 0) return;
       try {
         const made = await diveImports.start(conn.userId, conn.id, { computers: {}, decisions: {}, unattended: true });
-        await db.update(connection).set({ ...attempted, lastFetchImportId: made.id }).where(eq(connection.id, conn.id));
+        await db.update(connection).set({ lastFetchImportId: made.id }).where(eq(connection.id, conn.id));
       } catch (error) {
-        await db.update(connection).set(attempted).where(eq(connection.id, conn.id));
         // The Provider's answer (signed out, down): the Connection shows it, and the next interval tries again.
         if (!(error instanceof ProviderServiceError)) throw error;
       }

@@ -2,7 +2,7 @@
 // will call (record, openFields, close) and the listing route, against a fake ledger Provider and the real database.
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
-import { connection, providerConflict, push } from '../src/db/schema.js';
+import { connection, providerConflict, push, waitingPush } from '../src/db/schema.js';
 import { close, openFields, record, type ConflictField } from '../src/providers/conflicts.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
@@ -168,6 +168,17 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     expect(await notesOf(diveId)).toBe('Manta');
     expect(await openFields(t.db, diveId, 'ledger')).toEqual([]);
     expect((await listed()).connections).toEqual([]);
+  });
+
+  it('keeping Dive Hub\'s value in a manual preview closes the field and queues the Dive', async () => {
+    const { diveId, remoteId } = await openOnNotes();
+    await t.db.delete(waitingPush);
+    await manualImport([{ remoteId, field: 'notes', choice: 'hub' }]);
+    expect(await notesOf(diveId)).toBe('Turtle');
+    expect(await openFields(t.db, diveId, 'ledger')).toEqual([]);
+    expect(await t.db.select().from(waitingPush)).toMatchObject([
+      { diveId, provider: 'ledger', connectionId, action: 'send', state: 'waiting', options: { conflicts: { notes: 'hub' } } },
+    ]);
   });
 
   it('leaves out the Connection of a Provider this instance does not offer', async () => {

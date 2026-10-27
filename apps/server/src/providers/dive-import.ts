@@ -26,6 +26,7 @@ import { createDiveChanges, importsField, type ProviderRun } from './dive-change
 import { currentRemote, fingerprintNow } from './remote-state.js';
 import { same, type SyncedField } from './three-way.js';
 import { closeFields, entryOf, openFields, record as recordConflict, type ConflictField } from './conflicts.js';
+import { queueNow } from './waiting-push-queue.js';
 import { withRemembered } from './list-entries.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { renumber } from '../dives/dive-numbers.js';
@@ -346,6 +347,19 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   }
 
   /**
+   * Fields of an open entry the User kept Dive Hub's value for: the Dive is queued as a send with that choice, through
+   * the Dive's Connection (the one its current remote dive was made through); none when it has no such Connection.
+   */
+  async function queueKept(tx: Tx, run: ProviderRun, diveId: string, remoteId: string, fields: SyncedField[]) {
+    if (fields.length === 0) return;
+    const pushes = await tx.select().from(push).where(and(eq(push.diveId, diveId), eq(push.provider, run.adapter.id)))
+      .orderBy(desc(push.createdAt), desc(push.id));
+    const current = currentRemote(pushes);
+    if (current?.remoteId !== remoteId || !current.connectionId) return;
+    await queueNow(tx, diveId, run.adapter.id, current.connectionId, { conflicts: Object.fromEntries(fields.map((f) => [f, 'hub' as const])) });
+  }
+
+  /**
    * Conflicts an unattended import found and nobody chose for: Dive Hub's values stay and the Dive's entry waits in
    * "Needs your decision", the fields merged into an open one (one entry per Dive and Provider, no run). An entry that
    * would be the same is left as it is, so it isn't raised twice.
@@ -374,8 +388,10 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       const { take, conflicts, open } = await held(tx, run, diveId, d, found);
       const choice = (f: SyncedField) => plan.conflicts?.[`${d.remoteId}:${f}`];
       fields = [...take, ...conflicts.filter((f) => choice(f) === 'provider')];
-      // The User's choice for a field of the open entry settles it there: asked once, not twice.
+      // The User's choice for a field of the open entry settles it there: asked once, not twice. Keeping Dive Hub's
+      // value queues the Dive, due now, as every choice in "Needs your decision" does (ADR 0056).
       await closeFields(tx, diveId, run.adapter.id, open.filter((f) => choice(f) !== undefined));
+      await queueKept(tx, run, diveId, d.remoteId, open.filter((f) => choice(f) === 'hub'));
       if (plan.unattended) await waitForUser(tx, run, diveId, d, found, conflicts.filter((f) => choice(f) === undefined));
     }
     const taken = fields.length > 0 && (await takeChanges(tx, run, diveId, d, fields, actor)).length > 0;

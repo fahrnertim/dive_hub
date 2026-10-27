@@ -28,6 +28,8 @@ export interface FakeLedger {
   heldReads: number;
   /** How many times the account's dives were listed (`imports` only). */
   listReads: number;
+  /** Runs inside each listing, after Dive Hub asked for it (a test's second fetch "during a read"; `imports` only). */
+  beforeList: (() => Promise<void>) | null;
   /** Puts a dive there that Dive Hub doesn't know (one only at the Provider), under the account of the sign-in token. */
   seedRemote(entry: { number: number; startsAt: string } & Partial<Pick<LedgerDive, 'notes' | 'durationSeconds' | 'maxDepthM' | 'device'>>): string;
   /** Changes the number of a dive there, as the Provider's own app would. */
@@ -98,6 +100,7 @@ export function createFakeLedger(options: { imports?: boolean } = {}): FakeLedge
     numberSaves: [],
     heldReads: 0,
     listReads: 0,
+    beforeList: null,
     expireTokens: () => fake.tokens.clear(),
     seedRemote: ({ number, startsAt, notes = null, ...more }) => {
       const remoteId = `L${nextId++}`;
@@ -202,6 +205,7 @@ export function createFakeLedger(options: { imports?: boolean } = {}): FakeLedge
           async list(ctx) {
             const { accountId } = account(ctx.access);
             fake.listReads += 1;
+            await fake.beforeList?.();
             const records = [...fake.dives.entries()].filter(([, d]) => d.accountId === accountId)
               .map(([id, d]) => ({ remoteId: id, record: recordOf(id, d) }));
             return { records, context: { people: {}, sites: {} } };
