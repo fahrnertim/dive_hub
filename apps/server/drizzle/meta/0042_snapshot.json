@@ -743,11 +743,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "unsent_import_id": {
-          "name": "unsent_import_id",
-          "type": "uuid",
+        "unsent_import_ids": {
+          "name": "unsent_import_ids",
+          "type": "uuid[]",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "'{}'"
         },
         "created_at": {
           "name": "created_at",
@@ -826,19 +827,6 @@
           "tableTo": "import",
           "columnsFrom": [
             "last_fetch_import_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "connection_unsent_import_id_import_id_fk": {
-          "name": "connection_unsent_import_id_import_id_fk",
-          "tableFrom": "connection",
-          "tableTo": "import",
-          "columnsFrom": [
-            "unsent_import_id"
           ],
           "columnsTo": [
             "id"

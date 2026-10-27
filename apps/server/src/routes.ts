@@ -12,6 +12,7 @@ import { DIVE_SORTS, type LogbookService, type RowExtras } from './dives/logbook
 import { Problem, problem } from './http/problems.js';
 import type { ImportService } from './imports/import-service.js';
 import type { PushService } from './providers/push-service.js';
+import type { WaitingPushService } from './providers/waiting-push-service.js';
 import { WaitingPushViewSchema, type WaitingPushView } from './providers/waiting-push-view.js';
 import { UploadTooLargeError } from './storage/blob-store.js';
 
@@ -20,6 +21,8 @@ export interface RouteDeps {
   logbook: LogbookService;
   /** For the logbook's "changed since sent" filter, which needs the adapters' fingerprints. */
   pushes: PushService;
+  /** Which Connections offer an Import's new Dives that weren't sent by themselves (ADR 0056). */
+  waitingPushes: Pick<WaitingPushService, 'offersOf'>;
   maxUploadBytes: number;
   auth: Auth;
 }
@@ -45,6 +48,14 @@ export const ImportView = Type.Object({
     otherFiles: Type.Integer({ description: 'Files that are no dive (other sports, health data, anything else); they are not kept' }),
   }, { description: 'What an upload holds, once it is analysed (ADR 0044); null before, and for an import from a Provider' })),
   kinds: Nullable(Type.Array(Type.Enum([...DIVE_KINDS]), { description: 'The kinds of dive the User chose to import; null when nobody was asked (all were imported)' })),
+  unsentTo: Type.Array(Type.Object({
+    connectionId: Type.String(),
+    provider: Type.String(),
+    count: Type.Integer({ minimum: 1, description: 'How many of the Import’s new Dives still have no remote dive there' }),
+  }), {
+    description: 'The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) '
+      + 'and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none',
+  }),
   outcome: Type.Array(Type.Object({
     fileName: Type.String(),
     result: Type.Enum(['created', 'attached', 'linked', 'updated', 'unchanged', 'duplicate-candidate', 'skipped', 'failed'], {
@@ -160,14 +171,18 @@ export const toImportView = (j: typeof importJob.$inferSelect): Static<typeof Im
   // A parser's own words (English, internals) stay in the database and the server log (client contract §6).
   finishedAt: iso(j.finishedAt), outcome: j.outcome.map(({ message: _detail, ...o }) => o),
   errorCode: j.error === null ? null : j.error === 'unsupported_file' || j.error === 'choice_expired' ? j.error : 'processing_failed',
-  found: j.found, kinds: j.kinds,
+  found: j.found, kinds: j.kinds, unsentTo: [],
 });
 /**
  * An Import's outcome is stored once; a Duplicate candidate is decided later. Adds the current
  * decision (and the Dive the Recording went to) so the client doesn't show a stale "needs your decision".
  */
-async function withDecisions(imports: ImportService, rows: (typeof importJob.$inferSelect)[]) {
+async function withDecisions(
+  imports: ImportService, waitingPushes: RouteDeps['waitingPushes'], userId: string, rows: (typeof importJob.$inferSelect)[],
+) {
   const views = rows.map(toImportView);
+  const offers = await waitingPushes.offersOf(userId, views.map((v) => v.id));
+  for (const v of views) v.unsentTo = offers.get(v.id) ?? [];
   const ids = views.flatMap((v) => v.outcome.filter((o) => o.result === 'duplicate-candidate' && o.recordingId).map((o) => o.recordingId!));
   if (ids.length === 0) return views;
   const byRecording = await imports.decisionsOf(ids);
@@ -222,14 +237,14 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
   app.get('/imports', {
     schema: { summary: 'Recent Imports of the signed-in User', response: { 200: Type.Array(ImportView) } },
   }, async (request) => {
-    return withDecisions(imports, await imports.recentImports(userId(request)));
+    return withDecisions(imports, deps.waitingPushes, userId(request), await imports.recentImports(userId(request)));
   });
 
   app.get('/imports/:id', {
     schema: { summary: 'One Import with its outcome', params: IdParams, response: { 200: ImportView, 404: Problem } },
   }, async (request, reply) => {
     const row = await imports.findImport(userId(request), request.params.id);
-    return row ? (await withDecisions(imports, [row]))[0]! : reply.code(404).send(problem('import_not_found'));
+    return row ? (await withDecisions(imports, deps.waitingPushes, userId(request), [row]))[0]! : reply.code(404).send(problem('import_not_found'));
   });
 
   app.post('/imports/:id/start', {

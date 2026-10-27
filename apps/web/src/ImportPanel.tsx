@@ -5,7 +5,9 @@ import { FileTrigger } from 'react-aria-components';
 import { api, importsQuery, keys, unwrap, uploadFile, type ImportView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useErrorText } from './lib/display.ts';
+import { connectionHref } from './lib/account-tabs.ts';
 import { IMPORTABLE, splitImportable } from './lib/importable.ts';
+import { useProviders, useProviderText } from './lib/providers.ts';
 import { Badge, Button, Checkbox, Muted, Notice, Panel } from './ui/index.ts';
 
 const isRunning = (i: ImportView) => i.status === 'pending' || i.status === 'processing';
@@ -241,6 +243,33 @@ function useDescribeOutcome() {
   }, [t, grouped]);
 }
 
+/**
+ * The Connections that left this Import's new Dives out (more than 20 at once, ADR 0056) and offer them instead: the
+ * count, with a link to that Connection's settings, where the offer is.
+ */
+function UnsentTo({ item }: { item: ImportView }) {
+  const providers = useProviders();
+  if (item.unsentTo.length === 0) return null;
+  return (
+    <>
+      {item.unsentTo.map((u) => {
+        const provider = providers.data?.find((p) => p.id === u.provider);
+        return provider ? <UnsentLine key={u.connectionId} provider={provider} connectionId={u.connectionId} count={u.count} /> : null;
+      })}
+    </>
+  );
+}
+
+function UnsentLine({ provider, connectionId, count }: { provider: { id: string; name: string }; connectionId: string; count: number }) {
+  const pt = useProviderText(provider);
+  return (
+    <p className="import-unsent">
+      {pt('automation.unsentByImport' as 'automation.unsentByImport_one', { count })}{' '}
+      <a href={connectionHref(connectionId)}>{pt('automation.unsentOpen')}</a>
+    </p>
+  );
+}
+
 /** An import of a Provider's dives (ADR 0030), summed up: its state and what happened, counted. */
 export function ProviderImportSummary({ item }: { item: ImportView }) {
   const { t } = useTranslation();
@@ -250,6 +279,7 @@ export function ProviderImportSummary({ item }: { item: ImportView }) {
       <Badge tone={statusTone(item)}>{t(`import.status.${item.status}`)}</Badge>
       {item.errorCode && <span className="import-error">{t(`import.errorCode.${item.errorCode}`)}</span>}
       {item.outcome.length > 0 && <ul className="import-groups">{grouped(item).map((line) => <li key={line}>{line}</li>)}</ul>}
+      <UnsentTo item={item} />
     </div>
   );
 }
@@ -349,6 +379,7 @@ function ImportRow({ item }: { item: ImportView }) {
         );
       })}
       <LeftOut item={item} />
+      <UnsentTo item={item} />
     </li>
   );
 }

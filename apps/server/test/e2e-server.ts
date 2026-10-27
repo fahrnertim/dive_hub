@@ -258,7 +258,7 @@ app.post('/e2e/connection/fetch-state', { schema: { hide: true } }, async (reque
   const [conn] = await db.select().from(connection).where(eq(connection.id, b.id));
   if (!conn) return { ok: false };
   if (b.clear) {
-    await db.update(connection).set({ lastFetchImportId: null, unsentImportId: null }).where(eq(connection.id, conn.id));
+    await db.update(connection).set({ lastFetchImportId: null, unsentImportIds: [] }).where(eq(connection.id, conn.id));
     return { ok: true };
   }
   const entries = (result: 'created' | 'updated' | 'skipped', n: number, ids: string[] = []) => Array.from({ length: n }, (_, i) => ({
@@ -274,7 +274,7 @@ app.post('/e2e/connection/fetch-state', { schema: { hide: true } }, async (reque
       userId: conn.userId, status: 'done', uploadName: conn.provider, provider: conn.provider, connectionId: conn.id, finishedAt: new Date(),
       outcome: entries('created', b.unsent.length, b.unsent),
     }).returning({ id: importJob.id });
-    await db.update(connection).set({ unsentImportId: offer?.id ?? null }).where(eq(connection.id, conn.id));
+    await db.update(connection).set({ unsentImportIds: offer ? [offer.id] : [] }).where(eq(connection.id, conn.id));
   }
   return { ok: true };
 });

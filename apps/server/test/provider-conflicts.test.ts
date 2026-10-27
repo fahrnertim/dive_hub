@@ -1,7 +1,7 @@
 // Conflicts with a Provider, stored per Dive and Provider and listed for "Needs your decision": the service the send
 // will call (record, openFields, close) and the listing route, against a fake ledger Provider and the real database.
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { connection, providerConflict, push, waitingPush } from '../src/db/schema.js';
 import { close, openFields, record, type ConflictField } from '../src/providers/conflicts.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
@@ -88,8 +88,9 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     const decided = await call('POST', '/api/dives/' + diveId + '/providers/ledger/decision', { conflicts: { notes: 'hub', maxDepthM: 'hub' } });
     expect(decided.statusCode).toBe(204);
     expect((await listed()).connections[0]!.entries).toMatchObject([{ diveId, queued: true }]);
-    // The send ends in a new Conflict for the Dive: the question is open again.
-    await new Promise((r) => setTimeout(r, 5));
+    // The send ends in a new Conflict for the Dive: the question is open again. The choice was queued a moment before
+    // (moved back here rather than waiting: the queue and the Conflict both take the time from `new Date()`, no Clock).
+    await t.db.update(waitingPush).set({ changedAt: sql`${waitingPush.changedAt} - interval '1 second'` }).where(eq(waitingPush.diveId, diveId));
     await record(t.db, entry(diveId, remoteId, fields('Ray')));
     expect((await listed()).connections[0]!.entries).toMatchObject([{ diveId, queued: false }]);
     await t.db.delete(waitingPush).where(eq(waitingPush.diveId, diveId));

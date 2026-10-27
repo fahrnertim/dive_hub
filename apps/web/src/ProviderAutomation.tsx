@@ -1,10 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, keys, unwrap, type ConnectionView, type ProviderView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { useProviderText } from './lib/providers.ts';
+import { reviewHref } from './lib/review.ts';
 import { SendDivesDialog } from './PushRun.tsx';
 import { Button, Muted, Notice, RadioGroup, Switch } from './ui/index.ts';
 
@@ -20,7 +21,11 @@ type Settings = { sendChanges?: boolean; sendNewDives?: boolean; deleteAtProvide
  * What a Connection does by itself (ADR 0056), under the Connection: the settings (saved at once, only what the
  * Provider offers), when it last fetched and how many Dives wait, and the offer to send the new Dives of a large Import.
  */
-export function ProviderAutomation({ provider: p, connection: c, several }: { provider: ProviderView; connection: ConnectionView; several: boolean }) {
+export function ProviderAutomation({ provider: p, connection: c, several, focused = false }: {
+  provider: ProviderView; connection: ConnectionView; several: boolean;
+  /** The page was opened for this Connection's settings (a link from an Import's result): they get the focus. */
+  focused?: boolean;
+}) {
   const pt = useProviderText(p);
   const { t, i18n } = useTranslation();
   const display = useDisplay();
@@ -30,6 +35,11 @@ export function ProviderAutomation({ provider: p, connection: c, several }: { pr
   const offerId = useId();
   const heading = useRef<HTMLHeadingElement>(null);
   const [sending, setSending] = useState(false);
+  useEffect(() => {
+    if (!focused) return;
+    heading.current?.focus();
+    heading.current?.scrollIntoView({ block: 'start' });
+  }, [focused]);
   const save = useMutation({
     mutationFn: async (body: Settings) => unwrap(await api.PATCH('/api/connections/{id}', { params: { path: { id: c.id } }, body })),
     onSuccess: (updated) => {
@@ -133,6 +143,10 @@ export function ProviderAutomation({ provider: p, connection: c, several }: { pr
           </p>
           {lastFetch.waitingForYou > 0 && c.diveImport && (
             <Button variant="quiet" size="small" onPress={askImport}>{pt('automation.askImport')}</Button>
+          )}
+          {/* Conflicts aren't decided by an import: they wait in Needs your decision. */}
+          {lastFetch.conflicts > 0 && (
+            <p><a href={reviewHref('decide')}>{pt('automation.conflicts' as 'automation.conflicts_one', { count: lastFetch.conflicts })}</a></p>
           )}
         </div>
       )}

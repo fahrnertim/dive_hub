@@ -1607,7 +1607,12 @@
       "queueStopped": "{{count}} gestoppt",
       "unsent_one": "{{count}} neuer Tauchgang wurde nicht automatisch gesendet",
       "unsent_other": "{{count}} neue Tauchgänge wurden nicht automatisch gesendet",
-      "unsentSend": "An {{name}} senden"
+      "unsentSend": "An {{name}} senden",
+      "unsentByImport_one": "{{count}} neuer Tauchgang wurde nicht von selbst an {{name}} gesendet.",
+      "unsentByImport_other": "{{count}} neue Tauchgänge wurden nicht von selbst an {{name}} gesendet.",
+      "unsentOpen": "Zum Senden die Einstellungen für {{name}} öffnen",
+      "conflicts_one": "{{count}} Konflikt wartet unter „Braucht deine Entscheidung“",
+      "conflicts_other": "{{count}} Konflikte warten unter „Braucht deine Entscheidung“"
     }
   },
   "providers": {

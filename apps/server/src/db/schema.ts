@@ -853,8 +853,11 @@ export const connection = pgTable(
     lastFetchedAt: timestamp('last_fetched_at', { withTimezone: true }),
     /** The Import of the last fetch, for the summary. */
     lastFetchImportId: uuid('last_fetch_import_id').references(() => importJob.id, { onDelete: 'set null' }),
-    /** The Import whose new Dives weren't queued (too many at once): the offer to send them. */
-    unsentImportId: uuid('unsent_import_id').references(() => importJob.id, { onDelete: 'set null' }),
+    /**
+     * The Imports whose new Dives weren't queued (too many at once): the offer to send them, oldest first, each once. An
+     * Import deleted since offers nothing (its outcome is gone), so no foreign key is needed.
+     */
+    unsentImportIds: uuid('unsent_import_ids').array().notNull().default(sql`'{}'`),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

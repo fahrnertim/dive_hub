@@ -751,18 +751,26 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
     remove the verification in {{provider}}: send it yourself to confirm" (the Dive's Send confirms it).
   - `stopped` (error icon): "Couldn't send to {{provider}}: {{reason}}" / "Couldn't delete it in {{provider}}: {{reason}}"
     (`reason` is a problem code; use its translated text) with **Retry** (`POST /api/dives/{id}/providers/{provider}/retry`,
-    204; 404 `waiting_push_not_found` when it no longer is held or stopped, 404 `dive_not_found` for a Dive that isn't the
-    User's, 404 `connection_not_found` when the entry runs through another User's Connection).
+    204, also for an entry that waits already (a second click changes nothing); 404 `waiting_push_not_found` only when
+    the Dive has no entry there any more, 404 `dive_not_found` for a Dive that isn't the User's, 404 `connection_not_found`
+    when the entry runs through another User's Connection).
   - Saving a Dive while its Connection needs a sign-in says at once, on its page, that it won't be sent until the User signs in.
   - The manual Send on the Dive's page sends at once and removes the entry. No toasts; none of these texts time out.
 - **The Connection shows** `waiting` (how many are waiting, held and stopped), and `lastFetch` ("Last fetched {{when}}: {{new}}
   new, {{updated}} updated, {{waiting}} wait for you"; `at` is the time of the fetch's Import; `waitingForYou` counts ambiguous
-  entries, dives of a computer with no choice yet, and open Conflicts, with a link to a manual import that asks; null before
-  the first fetch). A reason `no_computer_choice` in an import outcome is translated.
-- **Must offer the unsent dives** (`unsentDives` not empty): an Import created more than 20 Dives and none was queued. Say
-  "{{count}} new dives weren't sent automatically" with "Send them to {{provider}}" (the Push run preview for these ids,
-  `POST /api/connections/{id}/push-runs/preview` with `dives.ids`) and "Dismiss"
-  (`POST /api/connections/{id}/unsent-dives/dismiss`, 204). Empty means no offer, whatever the Import was.
+  entries and dives of a computer with no choice yet, with a link to a manual import that asks; `conflicts` counts the
+  Connection's open Conflicts apart, with a link to Needs your decision, where they are decided, never to the import; null
+  before the first fetch). A reason `no_computer_choice` in an import outcome is translated.
+- **Must offer the unsent dives** (`unsentDives` not empty): an Import created more than 20 Dives and none was queued. Each
+  such Import adds its Dives to the offer (an earlier one stays); the list holds those still without a remote dive at the
+  Provider, so it shrinks by what a Push run sends. Say "{{count}} new dives weren't sent automatically" with "Send them to
+  {{provider}}" (the Push run preview for these ids, `POST /api/connections/{id}/push-runs/preview` with `dives.ids`) and
+  "Dismiss" (`POST /api/connections/{id}/unsent-dives/dismiss`, 204: the whole offer). Empty means no offer, whatever the
+  Imports were.
+- **An Import's result links to that offer** (`unsentTo` on `GET /api/imports` and `/api/imports/{id}`: per Connection of
+  the User that left the Import's new Dives out, `connectionId`, `provider` and `count`, how many of them are still
+  unsent): say "{{count}} new dives weren't sent to {{provider}} by themselves" with a link to that Connection's settings,
+  where the offer is. Empty: say nothing. *Web:* `ImportPanel.tsx` (`#/account?tab=connections&connection=<id>`).
 - **Must call `POST /api/connections/fetch-due` once per app start** (after sign-in); it answers `{ queued }`, fetches
   nothing itself, and queues a fetch only for Connections with the schedule on whose last fetch is more than an hour
   old. Don't poll it.

@@ -4,7 +4,7 @@ import type { FastifyBaseLogger } from 'fastify';
 import { BACKFILL_GAS_FIGURES_TASK, BACKFILL_POSITIONS_TASK, EXPIRE_WAITING_IMPORTS_TASK, FILL_CYLINDERS_TASK, PROCESS_IMPORT_TASK, type ImportService } from './imports/import-service.js';
 import { IMPORT_SITES_TASK, type SiteImportService } from './sites/import/site-import-service.js';
 import { PUSH_RUN_STEP_TASK, type PushRunService } from './providers/push-run-service.js';
-import { WAITING_PUSHES_TASK } from './providers/waiting-push-queue.js';
+import { WAITING_PUSHES_TASK, waitingPushesKey } from './providers/waiting-push-queue.js';
 import { AUTOMATION_TICK_TASK, type WaitingPushService } from './providers/waiting-push-service.js';
 import { FETCH_TASK, type ScheduledFetch } from './providers/scheduled-fetch.js';
 import { CERTIFICATION_IMAGE_TASK, type CertificationService } from './certifications/certification-service.js';
@@ -16,6 +16,36 @@ const ASSESS_DIVES_TASK = 'assess-dives';
 
 /** Drops AI access log entries older than 90 days (ADR 0035). */
 const PURGE_AI_ACCESS_LOG_TASK = 'purge-ai-access-log';
+
+/** What the tasks log for the operator (the app's logger). */
+export interface TaskLog {
+  info(detail: object, message: string): void;
+  warn(detail: object, message: string): void;
+  error(detail: object, message: string): void;
+}
+
+/**
+ * The Import's task: processes it, logs its files that failed, then hands its new Dives to the queue of Waiting pushes
+ * (imports/ can't reach it). A failure there is logged, not thrown: the Import is done, and running it again changes
+ * nothing; the operator sees which Import's new Dives weren't queued.
+ */
+export function processImportTask(
+  imports: Pick<ImportService, 'processImport'>, waitingPushes: Pick<WaitingPushService, 'afterImport'>, log: TaskLog,
+) {
+  return async (payload: unknown) => {
+    const { importId } = payload as { importId: string };
+    log.info({ importId }, 'processing import');
+    const outcome = await imports.processImport(importId);
+    // The detail Users don't see (they get the reason code): here for the operator.
+    for (const o of outcome) if (o.result === 'failed') log.warn({ importId, file: o.fileName, reason: o.reason, detail: o.message }, 'import file failed');
+    if (outcome.length === 0) return;
+    try {
+      await waitingPushes.afterImport(importId);
+    } catch (error) {
+      log.error({ err: error, importId }, "an Import's new Dives could not be queued for sending");
+    }
+  };
+}
 
 export async function startWorker(
   pool: pg.Pool, imports: ImportService, siteImports: SiteImportService, aiAccesses: AiAccessService, assessments: AssessmentService, pushRuns: PushRunService,
@@ -32,15 +62,7 @@ export async function startWorker(
     // Every night at 03:17 (UTC), the waiting Imports every hour, and automation every minute (ADR 0056).
     crontab: `17 3 * * * ${PURGE_AI_ACCESS_LOG_TASK}\n47 * * * * ${EXPIRE_WAITING_IMPORTS_TASK}\n* * * * * ${AUTOMATION_TICK_TASK}`,
     taskList: {
-      [PROCESS_IMPORT_TASK]: async (payload) => {
-        const { importId } = payload as { importId: string };
-        log.info({ importId }, 'processing import');
-        const outcome = await imports.processImport(importId);
-        // The Import's new Dives go to the Providers whose Connections send new dives (imports/ can't reach the queue).
-        if (outcome.length > 0) await waitingPushes.afterImport(importId);
-        // The detail Users don't see (they get the reason code): here for the operator.
-        for (const o of outcome) if (o.result === 'failed') log.warn({ importId, file: o.fileName, reason: o.reason, detail: o.message }, 'import file failed');
-      },
+      [PROCESS_IMPORT_TASK]: processImportTask(imports, waitingPushes, log),
       [IMPORT_SITES_TASK]: async (payload) => {
         const { siteImportId } = payload as { siteImportId: string };
         log.info({ siteImportId }, 'importing dive sites');
@@ -59,7 +81,9 @@ export async function startWorker(
         const { connectionId } = payload as { connectionId: string };
         const next = await waitingPushes.step(connectionId);
         if (next) {
-          await helpers.addJob(WAITING_PUSHES_TASK, { connectionId }, { runAt: new Date(Date.now() + next.afterMs), jobKey: `waiting-pushes:${connectionId}`, maxAttempts: 1 });
+          await helpers.addJob(WAITING_PUSHES_TASK, { connectionId }, {
+            runAt: new Date(Date.now() + next.afterMs), jobKey: waitingPushesKey(connectionId), queueName: waitingPushesKey(connectionId), maxAttempts: 1,
+          });
         }
       },
       // Wakes Waiting pushes and queues the scheduled fetches that are due (ADR 0056).

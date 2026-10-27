@@ -413,7 +413,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     return {
       provider: adapter.id,
       deletesItself: (await deletingItself(db, [row.id])).get(row.id)?.has(adapter.id) ?? false,
-      waiting: (await waitingOf(db, [row.id])).get(row.id)?.find((w) => w.provider === adapter.id) ?? null,
+      waiting: (await waitingOf(db, [row.id], [adapter.id])).get(row.id)?.find((w) => w.provider === adapter.id) ?? null,
       connection: conn ? { id: conn.id, state: conn.state, accountLabel: conn.accountLabel } : null,
       siteId: row.siteId,
       unmet,
@@ -642,7 +642,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     deletingItself: (diveIds: string[]) => deletingItself(db, diveIds),
 
     /** The entries of the Waiting pushes of these Dives, by Dive. */
-    waitingOf: (diveIds: string[]) => waitingOf(db, diveIds),
+    waitingOf: (diveIds: string[]) => waitingOf(db, diveIds, registry.list().map((a) => a.id)),
 
     /**
      * Deletes the Dive's remote copy at the Provider. The Dive stays in the hub; a Dive deleted in the hub can still be

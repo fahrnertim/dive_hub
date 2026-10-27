@@ -417,6 +417,18 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
       expect((await deletedOf(id)).waiting).toEqual([expect.objectContaining({ provider: 'ledger', action: 'delete', state: 'stopped', reason: 'provider_refused' })]);
     });
 
+    it("a Connection that is no longer the Diver's doesn't delete by itself, so the delete asks", async () => {
+      const { id } = await sent();
+      const [own] = await t.db.select({ diverId: connection.diverId }).from(connection).where(eq(connection.id, connectionId));
+      const timsDiver = (await json<{ id: string; isOwn: boolean }[]>('GET', '/api/divers', tim)).find((d) => d.isOwn)!.id;
+      await settings({ diverId: timsDiver });
+      try {
+        expect(await json('GET', `/api/dives/${id}/providers/ledger`, ann)).toMatchObject({ deletesItself: false });
+      } finally {
+        await settings({ diverId: own!.diverId });
+      }
+    });
+
     it('with the setting off the delete still asks (alsoAt) as today', async () => {
       await settings({ deleteAtProvider: false });
       const asked = await sent();

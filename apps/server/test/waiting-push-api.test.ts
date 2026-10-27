@@ -17,7 +17,7 @@ type ConnectionRow = {
   id: string; provider: string; sendChanges: boolean; sendNewDives: boolean; deleteAtProvider: boolean; fetchEveryMinutes: number | null;
   offers: { sendChanges: boolean; sendNewDives: boolean; deleteAtProvider: boolean; fetchEvery: number[] };
   waiting: { waiting: number; held: number; stopped: number };
-  lastFetch: { at: string; created: number; updated: number; waitingForYou: number } | null;
+  lastFetch: { at: string; created: number; updated: number; waitingForYou: number; conflicts: number } | null;
   unsentDives: string[];
 };
 
@@ -164,11 +164,16 @@ describe.skipIf(!(await databaseReachable()))('the API of the automation', () =>
     expect([other.statusCode, other.json().code]).toEqual([404, 'dive_not_found']);
     expect([missing.statusCode, missing.json().code]).toEqual([404, 'dive_not_found']);
     expect((await rows())[0]).toMatchObject({ state: 'stopped' });
-    // The owner's Retry makes it wait again, due now; one that waits has nothing to retry.
+    // The owner's Retry makes it wait again, due now; a second Retry (a double click, two tabs) changes nothing.
     expect((await call('POST', `/api/dives/${id}/providers/ledger/retry`)).statusCode).toBe(204);
-    expect((await rows())[0]).toMatchObject({ state: 'waiting', reason: null });
-    const again = await call('POST', `/api/dives/${id}/providers/ledger/retry`);
-    expect([again.statusCode, again.json().code]).toEqual([404, 'waiting_push_not_found']);
+    const [retried] = await rows();
+    expect(retried).toMatchObject({ state: 'waiting', reason: null });
+    expect((await call('POST', `/api/dives/${id}/providers/ledger/retry`)).statusCode).toBe(204);
+    expect((await rows())[0]!.dueAt).toEqual(retried!.dueAt);
+    // Only a missing entry is not found.
+    await t.db.delete(waitingPush).where(eq(waitingPush.diveId, id));
+    const gone = await call('POST', `/api/dives/${id}/providers/ledger/retry`);
+    expect([gone.statusCode, gone.json().code]).toEqual([404, 'waiting_push_not_found']);
   });
 
   it('a decision queues the Dive due now with its options', async () => {
@@ -224,10 +229,10 @@ describe.skipIf(!(await databaseReachable()))('the API of the automation', () =>
       ],
     }).returning();
     await set(connectionId, { lastFetchImportId: made!.id, lastFetchedAt: new Date(Date.UTC(year, 5, 2, 8, 0)) });
-    expect((await connectionRow()).lastFetch).toEqual({ at: new Date(Date.UTC(year, 5, 1, 14, 2)).toISOString(), created: 2, updated: 1, waitingForYou: 2 });
+    expect((await connectionRow()).lastFetch).toEqual({ at: new Date(Date.UTC(year, 5, 1, 14, 2)).toISOString(), created: 2, updated: 1, waitingForYou: 2, conflicts: 0 });
   });
 
-  it('a Conflict waiting counts among those who wait for you', async () => {
+  it('a Conflict waiting is counted apart from the entries a manual import asks about', async () => {
     ledger.tokens.set('ledger-token-1', { accountId: 'l-5', label: 'Ledger of Ann' });
     await set(connectionId, { importMode: 'create', fetchEveryMinutes: 60 });
     const id = await upload(new Date(Date.UTC(year, 4, 1, 9)));
@@ -238,7 +243,7 @@ describe.skipIf(!(await databaseReachable()))('the API of the automation', () =>
     await ctx.providers.scheduledFetch.fetch(connectionId);
     const importId = (await t.db.select().from(connection).where(eq(connection.id, connectionId)))[0]!.lastFetchImportId!;
     await ctx.imports.processImport(importId);
-    expect((await connectionRow()).lastFetch).toMatchObject({ created: 0, waitingForYou: 1 });
+    expect((await connectionRow()).lastFetch).toMatchObject({ created: 0, waitingForYou: 0, conflicts: 1 });
     expect((await t.db.select().from(importJob).where(and(eq(importJob.id, importId))))[0]!.status).toBe('done');
   });
 
@@ -247,7 +252,7 @@ describe.skipIf(!(await databaseReachable()))('the API of the automation', () =>
     const [made] = await t.db.insert(importJob).values({
       userId: annId, uploadName: 'file.fit', status: 'done', outcome: [{ fileName: 'x', result: 'created', diveId: id }],
     }).returning();
-    await set(connectionId, { unsentImportId: made!.id });
+    await set(connectionId, { unsentImportIds: [made!.id] });
     expect((await connectionRow()).unsentDives).toEqual([id]);
     // Sent meanwhile: nothing is offered any more, though the Import is still pointed at.
     expect((await call('POST', `/api/dives/${id}/providers/ledger`, {})).statusCode).toBeLessThan(300);

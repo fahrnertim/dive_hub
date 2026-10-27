@@ -1607,7 +1607,12 @@
       "queueStopped": "{{count}} stopped",
       "unsent_one": "{{count}} new dive wasn’t sent automatically",
       "unsent_other": "{{count}} new dives weren’t sent automatically",
-      "unsentSend": "Send them to {{name}}"
+      "unsentSend": "Send them to {{name}}",
+      "unsentByImport_one": "{{count}} new dive wasn’t sent to {{name}} by itself.",
+      "unsentByImport_other": "{{count}} new dives weren’t sent to {{name}} by themselves.",
+      "unsentOpen": "Open the {{name}} settings to send them",
+      "conflicts_one": "{{count}} conflict waits in Needs your decision",
+      "conflicts_other": "{{count}} conflicts wait in Needs your decision"
     }
   },
   "providers": {

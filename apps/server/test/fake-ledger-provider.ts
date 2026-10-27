@@ -41,15 +41,15 @@ export interface LedgerDive {
   durationSeconds?: number; maxDepthM?: number | null; device?: { manufacturer: string; serialNumber: string };
 }
 
-/**
- * A record as the ledger lists it, or the payload a send recorded (`startsAt` and `notes` only), in typed values. The
- * ledger keeps no site, people or tank; its start is the local time.
- */
 /** A kept dive as the ledger lists it: no account, no people. */
 function recordOf(id: string, { accountId: _account, participants: _people, ...d }: LedgerDive): Record<string, unknown> {
   return { id, ...d };
 }
 
+/**
+ * A record as the ledger lists it, or the payload a send recorded (`startsAt` and `notes` only), in typed values. The
+ * ledger keeps no site, people or tank; its start is the local time.
+ */
 function parseLedger(record: Record<string, unknown>, remoteId?: string): ImportedDive | null {
   const startsAt = typeof record.startsAt === 'string' ? record.startsAt : null;
   const id = typeof record.id === 'string' ? record.id : remoteId;

@@ -315,6 +315,23 @@ test('the offer of unsent new dives opens a Push run', { tag: ['@account'] }, as
   }
 });
 
+test("an Import's result says its new dives weren't sent and leads to the Connection's settings", { tag: ['@account', '@dives'] }, async ({ page, request }) => {
+  await connectSsi(request);
+  const id = await deletableDive(request);
+  try {
+    const connectionId = await ssiConnectionOf(request, id);
+    await fetchState(request, connectionId, { created: 1, unsent: [id] });
+    await page.goto('/#/review?tab=imports');
+    const line = page.getByText('1 new dive wasn’t sent to SSI by itself.');
+    await expect(line).toBeVisible();
+    await page.getByRole('link', { name: 'Open the SSI settings to send them' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Automatic: Erika' })).toBeFocused();
+    await expect(automatic(page).getByRole('group', { name: '1 new dive wasn’t sent automatically' })).toBeVisible();
+  } finally {
+    await leave(request);
+  }
+});
+
 test('a dive already at the Provider is decided under Needs your decision', { tag: ['@account'] }, async ({ page, request }) => {
   await connectSsi(request);
   const id = await deletableDive(request);

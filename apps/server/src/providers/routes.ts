@@ -162,7 +162,10 @@ const ConnectionView = Type.Object({
     created: Type.Integer({ description: 'New Dives' }),
     updated: Type.Integer({ description: 'Dives changed or filled' }),
     waitingForYou: Type.Integer({
-      description: 'Ambiguous entries, dives of a computer with no choice yet, and Conflicts: they wait for the User (a manual import asks)',
+      description: 'Ambiguous entries and dives of a computer with no choice yet: they wait for the User (a manual import asks about them)',
+    }),
+    conflicts: Type.Integer({
+      description: 'Conflicts of the Connection that wait, whenever they were found: decided under "Needs your decision" (GET /api/provider-conflicts), not by an import',
     }),
   }, { description: 'The last scheduled fetch that started an Import, as that Import came out; null before the first' })),
   unsentDives: Type.Array(Type.String(), {
@@ -388,7 +391,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
   /** The Connections with what they show besides the row: offers, the queue's counts, the last fetch and the unsent Dives. */
   const connectionViews = async (userId: string, rows: ListedConnection[]): Promise<Static<typeof ConnectionView>[]> => {
     const shown = await waitingPushes.overview(rows);
-    // Conflicts that wait count among those who wait for the User, whenever they were found.
+    // Conflicts that wait for the User, whenever they were found: apart from what a manual import asks about.
     const clashes = new Map((await conflicts.waiting(userId)).map((c) => [c.connectionId, c.entries.filter((e) => e.kind === 'conflict').length]));
     return rows.map((c) => {
       const { importMode, importWindowMinutes, followNumbers, lastFetchImportId: _, ...rest } = c;
@@ -402,7 +405,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
         offers, waiting, unsentDives,
         lastFetch: lastFetch && {
           at: lastFetch.at.toISOString(), created: lastFetch.created, updated: lastFetch.updated,
-          waitingForYou: lastFetch.skipped + (clashes.get(c.id) ?? 0),
+          waitingForYou: lastFetch.skipped, conflicts: clashes.get(c.id) ?? 0,
         },
       };
     });
@@ -933,7 +936,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     schema: {
       summary: 'Retry a Waiting push that is stopped or held: it waits again, due now (ADR 0056)',
       description: '404 dive_not_found for a Dive that is none of the User\'s Divers\' (also for one that does not exist), 404 waiting_push_not_found when '
-        + 'the Dive has no entry for the Provider or it is waiting already, 404 connection_not_found when the entry is on another User\'s Connection '
+        + 'the Dive has no entry for the Provider (an entry that waits already answers 204 and stays as it is), 404 connection_not_found when the entry is on another User\'s Connection '
         + '(sends go out as the Connection\'s User).',
       params: DiveProviderParams, response: { 204: Type.Null(), 404: Problem },
     },
@@ -945,8 +948,10 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
   app.post('/dives/:id/providers/:provider/decision', {
     schema: {
       summary: 'The User\'s decision for a Dive at a Provider: it is queued as a send, due now, with this choice (ADR 0056)',
-      description: 'From "Needs your decision": `onExisting` for a dive the Provider already has at the Dive\'s time ("Link to it", "Create a new one"), '
-        + '`conflicts` for the fields of a Conflict. It sends nothing at once: the worker sends, one Dive after another, paced for the Provider '
+      description: 'From "Needs your decision", by the entry\'s kind. `exists` (the Provider already has a dive at the Dive\'s time): `onExisting` '
+        + 'link ties the Dive to that dive and updates it, create makes a second dive there. `conflict` (a field changed on both sides): '
+        + '`conflicts` per field, hub sends the Dive\'s value over the Provider\'s, provider takes the Provider\'s value into the Dive here (a '
+        + 'Revision of the User\'s) and leaves that field as it is there; the other fields go out as usual. It sends nothing at once: the worker sends, one Dive after another, paced for the Provider '
         + '(the Dive\'s page keeps POST /api/dives/{id}/providers/{provider}, which sends at once). At least one property; 404 dive_not_found, '
         + '404 connection_not_found as for Retry.',
       params: DiveProviderParams, body: DecisionBody, response: { 204: Type.Null(), 400: Problem, 404: Problem },

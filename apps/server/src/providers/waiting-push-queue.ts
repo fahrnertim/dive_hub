@@ -13,6 +13,8 @@ type PushRow = typeof push.$inferSelect;
 
 /** The Graphile Worker task that sends a Connection's due entries. */
 export const WAITING_PUSHES_TASK = 'waiting_pushes';
+/** The job key and queue name of a Connection's job: one job per Connection, and one step at a time. */
+export const waitingPushesKey = (connectionId: string) => `waiting-pushes:${connectionId}`;
 /** A Dive goes out once it has been quiet for this long; a delete waits longer, so an Undo cancels it. */
 export const QUIET_MS = 30_000;
 export const DELETE_QUIET_MS = 300_000;
@@ -51,8 +53,10 @@ export async function scheduleConnection(q: Q, connectionId: string, options: { 
     .where(and(eq(waitingPush.connectionId, connectionId), eq(waitingPush.state, 'waiting')));
   if (!next?.due) return;
   const mode = options.keepTime ? 'preserve_run_at' : 'replace';
+  // The queue name keeps a Connection's steps one at a time: a job added while one runs waits until that one is done.
   await q.execute(sql`select graphile_worker.add_job(${WAITING_PUSHES_TASK}, json_build_object('connectionId', ${connectionId}::text),
-    job_key => ${'waiting-pushes:' + connectionId}, job_key_mode => ${mode}, run_at => ${next.due.toISOString()}::timestamptz, max_attempts => 1)`);
+    queue_name => ${waitingPushesKey(connectionId)}, job_key => ${waitingPushesKey(connectionId)}, job_key_mode => ${mode},
+    run_at => ${next.due.toISOString()}::timestamptz, max_attempts => 1)`);
 }
 
 /** Puts the Dive in the queue as a send, due `QUIET_MS` after `at`; a waiting delete stays (a send never replaces it). */
@@ -120,8 +124,11 @@ interface Note {
 /** A Dive with a remote dive at the Provider: only the Connection it was sent through decides (none: nothing goes by itself). */
 async function noteSent(n: Note, provider: string, current: PushRow): Promise<void> {
   const conn = n.conns.find((c) => c.id === current.connectionId && c.provider === provider);
-  if (!conn || n.cause === 'restore') return;
-  if (n.cause === 'delete') {
+  if (!conn) return;
+  // A restore cancelled the delete (above); a change waiting before it, which the delete replaced, waits again.
+  if (n.cause === 'restore') {
+    if (conn.sendChanges) await upsertSend(n.tx, conn, n.diveId, n.at);
+  } else if (n.cause === 'delete') {
     if (!conn.deleteAtProvider) return;
     await upsertDelete(n.tx, conn, n.diveId, n.at, { remoteId: current.remoteId!, remoteNumber: current.remoteNumber, startsAt: n.row.startsAt.toISOString() });
   } else if (conn.sendChanges && !n.row.deletedAt && provider !== n.from) {
@@ -142,7 +149,8 @@ async function noteNew(n: Note, provider: string): Promise<void> {
 
 /**
  * The Providers where each of these Dives would be deleted through the queue rather than asked: the Dive's current
- * remote dive there was made through a Connection with "delete at the Provider" on (the one `noteDiveChange` decides by).
+ * remote dive there was made through a Connection, still the Dive's Diver's, with "delete at the Provider" on (the one
+ * `noteDiveChange` decides by).
  */
 export async function deletingItself(q: Q, diveIds: string[]): Promise<Map<string, Set<string>>> {
   const found = new Map<string, Set<string>>();
@@ -150,12 +158,16 @@ export async function deletingItself(q: Q, diveIds: string[]): Promise<Map<strin
   const pushes = await q.select().from(push).where(inArray(push.diveId, diveIds)).orderBy(desc(push.createdAt), desc(push.id));
   const used = [...new Set(pushes.flatMap((p) => (p.connectionId ? [p.connectionId] : [])))];
   if (used.length === 0) return found;
-  const conns = await q.select({ id: connection.id, deleteAtProvider: connection.deleteAtProvider }).from(connection)
+  const conns = await q.select({ id: connection.id, diverId: connection.diverId, deleteAtProvider: connection.deleteAtProvider }).from(connection)
     .where(inArray(connection.id, used));
+  const divers = await q.select({ id: dive.id, diverId: dive.diverId }).from(dive).where(inArray(dive.id, diveIds));
   for (const id of diveIds) {
+    const diverId = divers.find((d) => d.id === id)?.diverId;
     for (const provider of new Set(pushes.filter((p) => p.diveId === id).map((p) => p.provider))) {
       const current = currentOf(pushes.filter((p) => p.diveId === id && p.provider === provider));
-      if (!current || !conns.find((c) => c.id === current.connectionId)?.deleteAtProvider) continue;
+      // Only a Connection still the Diver's decides, as in `noteSent`: another one queues no delete.
+      const conn = conns.find((c) => c.id === current?.connectionId && c.diverId === diverId);
+      if (!current || !conn?.deleteAtProvider) continue;
       found.set(id, (found.get(id) ?? new Set()).add(provider));
     }
   }
@@ -203,7 +215,8 @@ export async function mark(q: Q, diveId: string, provider: string, action?: 'sen
 /**
  * A send or delete of the Dive was confirmed; `seen` is the entry's mark from before it began. The entry is done,
  * unless the Dive changed since (its mark differs, or an entry came that wasn't there): then it stays `waiting`, due
- * `QUIET_MS` after that change, so the change goes out once more. Told by the entry's own last change, not by a clock:
+ * `QUIET_MS` after that change, so the change goes out once more (without the entry's options: the confirmed send
+ * applied the decisions). Told by the entry's own last change, not by a clock:
  * an edit whose transaction began before the send and committed during it carries an older time, but a new mark.
  * `action` limits it to the entries of that action (a confirmed send leaves a waiting delete alone).
  */
@@ -216,7 +229,7 @@ export async function settle(q: Q, diveId: string, provider: string, seen: Queue
   const [entry] = await q.select().from(waitingPush).where(mine);
   if (!entry || entry.action === 'delete') return;
   await q.update(waitingPush).set({
-    state: 'waiting', reason: null, attempts: 0, firstFailedAt: null, stoppedAt: null, dueAt: new Date(entry.changedAt.getTime() + QUIET_MS),
+    state: 'waiting', reason: null, options: {}, attempts: 0, firstFailedAt: null, stoppedAt: null, dueAt: new Date(entry.changedAt.getTime() + QUIET_MS),
   }).where(mine);
   await scheduleConnection(q, entry.connectionId);
 }

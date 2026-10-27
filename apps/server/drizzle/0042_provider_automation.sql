@@ -24,10 +24,9 @@ ALTER TABLE "connection" ADD COLUMN "delete_at_provider" boolean DEFAULT false N
 ALTER TABLE "connection" ADD COLUMN "fetch_every_minutes" integer;--> statement-breakpoint
 ALTER TABLE "connection" ADD COLUMN "last_fetched_at" timestamp with time zone;--> statement-breakpoint
 ALTER TABLE "connection" ADD COLUMN "last_fetch_import_id" uuid;--> statement-breakpoint
-ALTER TABLE "connection" ADD COLUMN "unsent_import_id" uuid;--> statement-breakpoint
+ALTER TABLE "connection" ADD COLUMN "unsent_import_ids" uuid[] DEFAULT '{}' NOT NULL;--> statement-breakpoint
 ALTER TABLE "waiting_push" ADD CONSTRAINT "waiting_push_dive_id_dive_id_fk" FOREIGN KEY ("dive_id") REFERENCES "public"."dive"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "waiting_push" ADD CONSTRAINT "waiting_push_connection_id_connection_id_fk" FOREIGN KEY ("connection_id") REFERENCES "public"."connection"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "waiting_push_due_idx" ON "waiting_push" USING btree ("connection_id","state","due_at");--> statement-breakpoint
 ALTER TABLE "connection" ADD CONSTRAINT "connection_last_fetch_import_id_import_id_fk" FOREIGN KEY ("last_fetch_import_id") REFERENCES "public"."import"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "connection" ADD CONSTRAINT "connection_unsent_import_id_import_id_fk" FOREIGN KEY ("unsent_import_id") REFERENCES "public"."import"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "connection" ADD CONSTRAINT "connection_fetch_every_ck" CHECK ("connection"."fetch_every_minutes" in (60, 360, 1440));

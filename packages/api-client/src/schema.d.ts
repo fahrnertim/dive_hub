@@ -1546,6 +1546,13 @@ export interface paths {
                                 otherFiles: number;
                             } | null;
                             kinds: ("scuba" | "apnea")[] | null;
+                            /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
+                            unsentTo: {
+                                connectionId: string;
+                                provider: string;
+                                /** @description How many of the Import’s new Dives still have no remote dive there */
+                                count: number;
+                            }[];
                             outcome: {
                                 fileName: string;
                                 /**
@@ -1615,6 +1622,13 @@ export interface paths {
                                 otherFiles: number;
                             } | null;
                             kinds: ("scuba" | "apnea")[] | null;
+                            /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
+                            unsentTo: {
+                                connectionId: string;
+                                provider: string;
+                                /** @description How many of the Import’s new Dives still have no remote dive there */
+                                count: number;
+                            }[];
                             outcome: {
                                 fileName: string;
                                 /**
@@ -1740,6 +1754,13 @@ export interface paths {
                                 otherFiles: number;
                             } | null;
                             kinds: ("scuba" | "apnea")[] | null;
+                            /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
+                            unsentTo: {
+                                connectionId: string;
+                                provider: string;
+                                /** @description How many of the Import’s new Dives still have no remote dive there */
+                                count: number;
+                            }[];
                             outcome: {
                                 fileName: string;
                                 /**
@@ -1854,6 +1875,13 @@ export interface paths {
                                 otherFiles: number;
                             } | null;
                             kinds: ("scuba" | "apnea")[] | null;
+                            /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
+                            unsentTo: {
+                                connectionId: string;
+                                provider: string;
+                                /** @description How many of the Import’s new Dives still have no remote dive there */
+                                count: number;
+                            }[];
                             outcome: {
                                 fileName: string;
                                 /**
@@ -1960,6 +1988,13 @@ export interface paths {
                                 otherFiles: number;
                             } | null;
                             kinds: ("scuba" | "apnea")[] | null;
+                            /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
+                            unsentTo: {
+                                connectionId: string;
+                                provider: string;
+                                /** @description How many of the Import’s new Dives still have no remote dive there */
+                                count: number;
+                            }[];
                             outcome: {
                                 fileName: string;
                                 /**
@@ -14238,8 +14273,10 @@ export interface paths {
                                 created: number;
                                 /** @description Dives changed or filled */
                                 updated: number;
-                                /** @description Ambiguous entries, dives of a computer with no choice yet, and Conflicts: they wait for the User (a manual import asks) */
+                                /** @description Ambiguous entries and dives of a computer with no choice yet: they wait for the User (a manual import asks about them) */
                                 waitingForYou: number;
+                                /** @description Conflicts of the Connection that wait, whenever they were found: decided under "Needs your decision" (GET /api/provider-conflicts), not by an import */
+                                conflicts: number;
                             };
                             /** @description The new Dives of a large Import (more than 20) that were not sent by themselves: offer to send them (a Push run for these ids: POST /api/connections/{id}/push-runs/preview with dives.ids) or Dismiss (POST /api/connections/{id}/unsent-dives/dismiss). Empty: no offer */
                             unsentDives: string[];
@@ -14363,8 +14400,10 @@ export interface paths {
                                 created: number;
                                 /** @description Dives changed or filled */
                                 updated: number;
-                                /** @description Ambiguous entries, dives of a computer with no choice yet, and Conflicts: they wait for the User (a manual import asks) */
+                                /** @description Ambiguous entries and dives of a computer with no choice yet: they wait for the User (a manual import asks about them) */
                                 waitingForYou: number;
+                                /** @description Conflicts of the Connection that wait, whenever they were found: decided under "Needs your decision" (GET /api/provider-conflicts), not by an import */
+                                conflicts: number;
                             };
                             /** @description The new Dives of a large Import (more than 20) that were not sent by themselves: offer to send them (a Push run for these ids: POST /api/connections/{id}/push-runs/preview with dives.ids) or Dismiss (POST /api/connections/{id}/unsent-dives/dismiss). Empty: no offer */
                             unsentDives: string[];
@@ -14617,8 +14656,10 @@ export interface paths {
                                 created: number;
                                 /** @description Dives changed or filled */
                                 updated: number;
-                                /** @description Ambiguous entries, dives of a computer with no choice yet, and Conflicts: they wait for the User (a manual import asks) */
+                                /** @description Ambiguous entries and dives of a computer with no choice yet: they wait for the User (a manual import asks about them) */
                                 waitingForYou: number;
+                                /** @description Conflicts of the Connection that wait, whenever they were found: decided under "Needs your decision" (GET /api/provider-conflicts), not by an import */
+                                conflicts: number;
                             };
                             /** @description The new Dives of a large Import (more than 20) that were not sent by themselves: offer to send them (a Push run for these ids: POST /api/connections/{id}/push-runs/preview with dives.ids) or Dismiss (POST /api/connections/{id}/unsent-dives/dismiss). Empty: no offer */
                             unsentDives: string[];
@@ -15965,8 +16006,10 @@ export interface paths {
                                 created: number;
                                 /** @description Dives changed or filled */
                                 updated: number;
-                                /** @description Ambiguous entries, dives of a computer with no choice yet, and Conflicts: they wait for the User (a manual import asks) */
+                                /** @description Ambiguous entries and dives of a computer with no choice yet: they wait for the User (a manual import asks about them) */
                                 waitingForYou: number;
+                                /** @description Conflicts of the Connection that wait, whenever they were found: decided under "Needs your decision" (GET /api/provider-conflicts), not by an import */
+                                conflicts: number;
                             };
                             /** @description The new Dives of a large Import (more than 20) that were not sent by themselves: offer to send them (a Push run for these ids: POST /api/connections/{id}/push-runs/preview with dives.ids) or Dismiss (POST /api/connections/{id}/unsent-dives/dismiss). Empty: no offer */
                             unsentDives: string[];
@@ -16704,6 +16747,13 @@ export interface paths {
                                 otherFiles: number;
                             } | null;
                             kinds: ("scuba" | "apnea")[] | null;
+                            /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
+                            unsentTo: {
+                                connectionId: string;
+                                provider: string;
+                                /** @description How many of the Import’s new Dives still have no remote dive there */
+                                count: number;
+                            }[];
                             outcome: {
                                 fileName: string;
                                 /**
@@ -18017,7 +18067,7 @@ export interface paths {
         put?: never;
         /**
          * Retry a Waiting push that is stopped or held: it waits again, due now (ADR 0056)
-         * @description 404 dive_not_found for a Dive that is none of the User's Divers' (also for one that does not exist), 404 waiting_push_not_found when the Dive has no entry for the Provider or it is waiting already, 404 connection_not_found when the entry is on another User's Connection (sends go out as the Connection's User).
+         * @description 404 dive_not_found for a Dive that is none of the User's Divers' (also for one that does not exist), 404 waiting_push_not_found when the Dive has no entry for the Provider (an entry that waits already answers 204 and stays as it is), 404 connection_not_found when the entry is on another User's Connection (sends go out as the Connection's User).
          */
         post: {
             parameters: {
@@ -18079,7 +18129,7 @@ export interface paths {
         put?: never;
         /**
          * The User's decision for a Dive at a Provider: it is queued as a send, due now, with this choice (ADR 0056)
-         * @description From "Needs your decision": `onExisting` for a dive the Provider already has at the Dive's time ("Link to it", "Create a new one"), `conflicts` for the fields of a Conflict. It sends nothing at once: the worker sends, one Dive after another, paced for the Provider (the Dive's page keeps POST /api/dives/{id}/providers/{provider}, which sends at once). At least one property; 404 dive_not_found, 404 connection_not_found as for Retry.
+         * @description From "Needs your decision", by the entry's kind. `exists` (the Provider already has a dive at the Dive's time): `onExisting` link ties the Dive to that dive and updates it, create makes a second dive there. `conflict` (a field changed on both sides): `conflicts` per field, hub sends the Dive's value over the Provider's, provider takes the Provider's value into the Dive here (a Revision of the User's) and leaves that field as it is there; the other fields go out as usual. It sends nothing at once: the worker sends, one Dive after another, paced for the Provider (the Dive's page keeps POST /api/dives/{id}/providers/{provider}, which sends at once). At least one property; 404 dive_not_found, 404 connection_not_found as for Retry.
          */
         post: {
             parameters: {

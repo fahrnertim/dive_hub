@@ -37,7 +37,7 @@ describe.skipIf(!(await databaseReachable()))('applied migrations', () => {
       `insert into connection (user_id, diver_id, provider, account_id, account_label, keep_signed_in) values ($1, $2, 'ledger', '1', 'a@b.c', false) returning *`,
       [user, diver],
     )).rows[0];
-    expect(conn).toMatchObject({ send_changes: false, send_new_dives: false, delete_at_provider: false, fetch_every_minutes: null, last_fetched_at: null, last_fetch_import_id: null, unsent_import_id: null });
+    expect(conn).toMatchObject({ send_changes: false, send_new_dives: false, delete_at_provider: false, fetch_every_minutes: null, last_fetched_at: null, last_fetch_import_id: null, unsent_import_ids: [] });
 
     const insert = () => q(`insert into waiting_push (dive_id, provider, connection_id, action, due_at, changed_at) values ($1, 'ledger', $2, 'send', now(), now()) returning *`, [dive, conn.id]);
     expect((await insert()).rows[0]).toMatchObject({ state: 'waiting', options: {}, detail: null, attempts: 0, reason: null, first_failed_at: null, stopped_at: null });

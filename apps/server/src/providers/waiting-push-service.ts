@@ -3,7 +3,7 @@
 // and says when to come again. It holds what can't go out by itself (a blocking requirement, a sign-in, a dive already
 // at the Provider, a lost verification), retries a Provider that is down for a day, and stops what would fail again.
 // The minute tick wakes what a sign-in or the Provider's return cleared, and Retry is the User's.
-import { and, asc, count, desc, eq, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
+import { and, arrayOverlaps, asc, count, desc, eq, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { connection, dive, importJob, providerConflict, push, pushRun, waitingPush, type WaitingPushOptions } from '../db/schema.js';
 import { managedDiverIds } from '../dives/dive-service.js';
@@ -80,7 +80,9 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
     const attempts = entry.attempts + 1;
     const firstFailedAt = entry.firstFailedAt ?? at;
     if (RETRIED.has(code) && at.getTime() - firstFailedAt.getTime() < GIVE_UP_MS) {
-      const dueAt = new Date(at.getTime() + RETRY_AFTER_MS[Math.min(attempts - 1, RETRY_AFTER_MS.length - 1)]!);
+      // The last retry comes when the day is over, not later: that attempt either sends or stops the entry.
+      const dueAt = new Date(Math.min(at.getTime() + RETRY_AFTER_MS[Math.min(attempts - 1, RETRY_AFTER_MS.length - 1)]!,
+        firstFailedAt.getTime() + GIVE_UP_MS));
       await db.update(waitingPush).set({ attempts, firstFailedAt, dueAt }).where(unchanged(entry, seen));
       return;
     }
@@ -138,11 +140,13 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
     }
   }
 
-  /** The Dives of the Connection's offer (its Import's new ones) that still have no remote dive at the Provider. */
+  /** The Dives of the Connection's offer (its Imports' new ones, oldest Import first) that still have no remote dive at the Provider. */
   async function unsentDives(connectionId: string): Promise<string[]> {
     const [conn] = await db.select().from(connection).where(eq(connection.id, connectionId));
-    if (!conn?.unsentImportId) return [];
-    const ids = (await createdBy(conn.unsentImportId)).filter((d) => d.diverId === conn.diverId).map((d) => d.id);
+    if (!conn || conn.unsentImportIds.length === 0) return [];
+    const offered = new Map<string, string>();
+    for (const importId of conn.unsentImportIds) for (const d of await createdBy(importId)) offered.set(d.id, d.diverId);
+    const ids = [...offered].filter(([, diverId]) => diverId === conn.diverId).map(([id]) => id);
     if (ids.length === 0) return [];
     const pushes = await db.select().from(push).where(and(inArray(push.diveId, ids), eq(push.provider, conn.provider)))
       .orderBy(desc(push.createdAt), desc(push.id));
@@ -167,7 +171,9 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
   /** A Connection's share of an Import's new Dives: queued, or above `OFFER_ABOVE` only offered. */
   async function queueOrOffer(conn: Connection, diveIds: string[], importId: string, at: Date): Promise<void> {
     if (diveIds.length > OFFER_ABOVE) {
-      await db.update(connection).set({ unsentImportId: importId }).where(eq(connection.id, conn.id));
+      // Added to what the Connection already offers, once: an earlier Import's offer stays until it is sent or dismissed.
+      await db.update(connection).set({ unsentImportIds: sql`array_append(${connection.unsentImportIds}, ${importId}::uuid)` })
+        .where(and(eq(connection.id, conn.id), sql`not (${importId}::uuid = any(${connection.unsentImportIds}))`));
       return;
     }
     for (const id of diveIds) await upsertSend(db, conn, id, at);
@@ -177,7 +183,7 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
     /**
      * An Import finished (the worker calls it, as `imports/` may not reach the queue): its new Dives go to each Provider
      * the Diver has a Connection with "send new dives" to, through the oldest such Connection, except the Import's own
-     * Provider. Up to 20 are queued; more are not, and the Connection offers them (`unsentImportId`).
+     * Provider. Up to 20 are queued; more are not, and the Connection offers them (`unsentImportIds`, added to an offer it has).
      */
     async afterImport(importId: string): Promise<void> {
       const [job] = await db.select({ provider: importJob.provider }).from(importJob).where(eq(importJob.id, importId));
@@ -197,9 +203,29 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
     /** The Dives of the Connection's offer (its Import's new ones) that still have no remote dive at the Provider. */
     unsentDives,
 
-    /** The User dismisses the Connection's offer; `connection_not_found` unless the Connection is theirs. */
+    /**
+     * Where these Imports' new Dives weren't sent by themselves: per Import, the User's Connections whose offer holds it,
+     * with how many of its Dives still have no remote dive there. An Import none offers is missing from the map.
+     */
+    async offersOf(userId: string, importIds: string[]): Promise<Map<string, { connectionId: string; provider: string; count: number }[]>> {
+      const found = new Map<string, { connectionId: string; provider: string; count: number }[]>();
+      if (importIds.length === 0) return found;
+      const conns = await db.select().from(connection)
+        .where(and(eq(connection.userId, userId), arrayOverlaps(connection.unsentImportIds, importIds)))
+        .orderBy(asc(connection.createdAt), asc(connection.id));
+      for (const conn of conns) {
+        const unsent = new Set(await unsentDives(conn.id));
+        for (const importId of conn.unsentImportIds.filter((id) => importIds.includes(id))) {
+          const count = (await createdBy(importId)).filter((d) => unsent.has(d.id)).length;
+          if (count > 0) found.set(importId, [...(found.get(importId) ?? []), { connectionId: conn.id, provider: conn.provider, count }]);
+        }
+      }
+      return found;
+    },
+
+    /** The User dismisses the Connection's offer (every Import in it); `connection_not_found` unless the Connection is theirs. */
     async dismissOffer(userId: string, connectionId: string): Promise<void> {
-      const done = await db.update(connection).set({ unsentImportId: null })
+      const done = await db.update(connection).set({ unsentImportIds: [] })
         .where(and(eq(connection.id, connectionId), eq(connection.userId, userId))).returning({ id: connection.id });
       if (done.length === 0) throw new ProviderServiceError('connection_not_found');
     },
@@ -244,8 +270,9 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
         and ${connection.lastUsedAt} > ${waitingPush.stoppedAt})`;
       await db.update(waitingPush).set({ state: 'waiting', reason: null, dueAt: at, attempts: 0, firstFailedAt: null, stoppedAt: null })
         .where(and(eq(waitingPush.state, 'stopped'), eq(waitingPush.reason, 'provider_unavailable'), isNotNull(waitingPush.stoppedAt), answered));
+      // Only at the Providers this instance has: an entry of a removed one would only be dropped by its step.
       const due = await db.selectDistinct({ id: waitingPush.connectionId }).from(waitingPush)
-        .where(and(eq(waitingPush.state, 'waiting'), lte(waitingPush.dueAt, at)));
+        .where(and(eq(waitingPush.state, 'waiting'), lte(waitingPush.dueAt, at), inArray(waitingPush.provider, registry.list().map((a) => a.id))));
       for (const { id } of due) await scheduleConnection(db, id, { keepTime: true });
     },
 
@@ -253,15 +280,18 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
      * The User's Retry: a stopped or held entry of the Dive at the Provider waits again, due now. The Dive must be one
      * of the User's Divers' (`dive_not_found`, the same answer as for a Dive that doesn't exist), and the entry sent
      * through the User's own Connection: a User who co-manages the Diver but has another Connection gets
-     * `connection_not_found`, as sends go out as the Connection's User. `waiting_push_not_found` when there is no such entry.
+     * `connection_not_found`, as sends go out as the Connection's User. `waiting_push_not_found` when there is no such entry;
+     * an entry that waits already stays as it is (Retry is idempotent).
      */
     async retry(userId: string, diveId: string, provider: string): Promise<void> {
       await visibleDive(userId, diveId);
       const [entry] = await db.select({ entry: waitingPush, userId: connection.userId }).from(waitingPush)
         .innerJoin(connection, eq(connection.id, waitingPush.connectionId))
         .where(and(eq(waitingPush.diveId, diveId), eq(waitingPush.provider, provider)));
-      if (!entry || entry.entry.state === 'waiting') throw new ProviderServiceError('waiting_push_not_found');
+      if (!entry) throw new ProviderServiceError('waiting_push_not_found');
       if (entry.userId !== userId) throw new ProviderServiceError('connection_not_found');
+      // Waiting already (a second click, another tab): nothing to do, and no error.
+      if (entry.entry.state === 'waiting') return;
       await db.update(waitingPush).set({ state: 'waiting', reason: null, dueAt: now(), attempts: 0, firstFailedAt: null, stoppedAt: null })
         .where(the(entry.entry));
       await scheduleConnection(db, entry.entry.connectionId);
@@ -291,7 +321,7 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
      * What each Connection shows besides its settings: how many entries wait, are held and stopped, and the summary of
      * its last fetch, told from the fetch's Import (its time and outcome; the Connection's own time is set when a fetch
      * only claims its slot). `waitingForYou` counts the entries the fetch left to the User: ambiguous ones and dives of a
-     * computer with no choice yet; the caller adds the Conflicts that wait. `updated` counts Dives changed or filled.
+     * computer with no choice yet (the Conflicts that wait are the caller's, counted apart). `updated` counts Dives changed or filled.
      */
     async overview(conns: { id: string; lastFetchImportId: string | null }[]) {
       const found = new Map<string, {

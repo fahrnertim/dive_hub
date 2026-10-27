@@ -10,3 +10,8 @@ export function accountTab(params: URLSearchParams): AccountTab {
 export function accountHref(tab: AccountTab): string {
   return tab === 'account' ? '#/account' : `#/account?tab=${tab}`;
 }
+
+/** A Connection's settings on the account page ("#/account?tab=connections&connection=<id>"): the page goes to them. */
+export function connectionHref(connectionId: string): string {
+  return `${accountHref('connections')}&connection=${encodeURIComponent(connectionId)}`;
+}
