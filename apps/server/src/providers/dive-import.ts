@@ -2,6 +2,7 @@
 // here. Trust per dive by its evidence (sent by Dive Hub, from a dive computer, typed by hand) and per computer by the
 // User; logbook entries match Dives here by local time and fill what they lack; computer dives become Recordings placed
 // like a file's. A preview first (nothing stored), then an Import over one JSON Original per dive that the worker runs.
+import { isDeepStrictEqual } from 'node:util';
 import { and, desc, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import {
@@ -23,7 +24,8 @@ import { loadOutgoingDive } from './outgoing-dive.js';
 import { REFERENCE_PREFIX, type ImportContext, type ImportedDive, type ProviderCylinder } from './provider.js';
 import { createDiveChanges, importsField, type ProviderRun } from './dive-changes.js';
 import { currentRemote, fingerprintNow } from './remote-state.js';
-import type { SyncedField } from './three-way.js';
+import { same, type SyncedField } from './three-way.js';
+import { closeFields, entryOf, openFields, record as recordConflict, type ConflictField } from './conflicts.js';
 import { withRemembered } from './list-entries.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { renumber } from '../dives/dive-numbers.js';
@@ -83,7 +85,12 @@ type Assessment =
   | { kind: 'link'; diveId: string }
   | { kind: 'decide'; candidates: CandidateView[] }
   | { kind: 'create' }
-  | { kind: 'no_match' };
+  | { kind: 'no_match' }
+  /** Unattended: from a dive computer the User hasn't chosen for yet. */
+  | { kind: 'unchosen' };
+
+/** What changed at the Provider since Dive Hub last saw a linked dive, compared with the Dive here. */
+type FoundChanges = NonNullable<Awaited<ReturnType<ReturnType<typeof createDiveChanges>['changesOf']>>>;
 
 const DAY_MS = 86_400_000;
 const MAX_OFFSET_MS = 14 * 3600_000;
@@ -183,8 +190,11 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     return new Set(diveIds.filter((id) => currentRemote(rows.filter((p) => p.diveId === id))));
   }
 
-  /** What the import does with one dive (the preview says it, the worker does it). */
-  async function assess(q: Db | Tx, run: ProviderRun, d: ImportedDive): Promise<Assessment> {
+  /**
+   * What the import does with one dive (the preview says it, the worker does it). `unattended`: a computer's dive whose
+   * computer has no choice in `run.choices` waits for the User (Recordings or entries could go wrong, hard to undo).
+   */
+  async function assess(q: Db | Tx, run: ProviderRun, d: ImportedDive, unattended = false): Promise<Assessment> {
     if (d.evidence === 'ours') {
       // The Dive it is linked to now, when that isn't the one our reference names: the Dive it was sent from was merged
       // into another, which took the link (ADR 0038). Changes made at the Provider then come back to that Dive.
@@ -206,7 +216,9 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       // Linked already (made from it as a logbook entry, before its computer was recognised): its profile still comes in,
       // unless the Dive has that computer's Recording (its own file) already.
       const usable = owner === null || run.managed.has(owner);
-      if (usable && (!linked || !(await hasRecordingOf(q, linked.diveId, d.device)))) return { kind: 'recording' };
+      if (usable && (!linked || !(await hasRecordingOf(q, linked.diveId, d.device)))) {
+        return unattended && !(keyOf(d.device) in run.choices) ? { kind: 'unchosen' } : { kind: 'recording' };
+      }
     }
     if (linked) return { kind: 'linked', diveId: linked.diveId };
     const local = wallClockMs(d.localStart)!;
@@ -320,14 +332,52 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   }
 
   /**
+   * The changes with the fields of the Dive's open entry at the Provider held (ADR 0056, "while it is open the base
+   * stays"): never taken, nor "changed only here" because a newer Original moved the base; a Conflict while the two
+   * sides differ. `open`: the entry's fields the comparison covers.
+   */
+  async function held(q: Db | Tx, run: ProviderRun, diveId: string, d: ImportedDive, found: FoundChanges) {
+    const open = (await openFields(q, diveId, run.adapter.id, d.remoteId)).filter((f) => found.here.fields.includes(f));
+    // As a send: a Provider without a site never clears one here.
+    const clash = open.filter((f) => !(f === 'site' && found.provider.site === null) && !same(f, found.provider, found.here.hub));
+    return {
+      take: found.take.filter((f) => !open.includes(f)), conflicts: [...found.conflicts.filter((f) => !open.includes(f)), ...clash], open,
+    };
+  }
+
+  /**
+   * Conflicts an unattended import found and nobody chose for: Dive Hub's values stay and the Dive's entry waits in
+   * "Needs your decision", the fields merged into an open one (one entry per Dive and Provider, no run). An entry that
+   * would be the same is left as it is, so it isn't raised twice.
+   */
+  async function waitForUser(tx: Tx, run: ProviderRun, diveId: string, d: ImportedDive, found: FoundChanges, fields: SyncedField[]) {
+    if (fields.length === 0 || !run.connectionId) return;
+    const now: ConflictField[] = await Promise.all(fields.map(async (field) => ({
+      field, hub: await shown(run, field, found.here.hub, found.here.row.siteId), provider: await shown(run, field, found.provider, null),
+    })));
+    const before = await entryOf(tx, diveId, run.adapter.id);
+    const kept = before?.remoteId === d.remoteId ? before.fields.filter((f) => !fields.includes(f.field)) : [];
+    const merged = [...kept, ...now];
+    const byField = (list: ConflictField[]) => list.toSorted((a, b) => a.field.localeCompare(b.field));
+    if (before?.remoteId === d.remoteId && isDeepStrictEqual(byField(before.fields), byField(merged))) return;
+    await recordConflict(tx, { diveId, provider: run.adapter.id, connectionId: run.connectionId, remoteId: d.remoteId, fields: merged, runId: null });
+  }
+
+  /**
    * The Provider's changes since Dive Hub last saw the dive, taken where the Dive here kept its value, and where the User
    * chose the Provider's in a conflict; then what is still empty is filled. Whether anything changed.
    */
   async function sync(tx: Tx, run: ProviderRun, plan: ProviderImportPlan, diveId: string, d: ImportedDive, importId: string, actor: Actor) {
     const found = await changesOf(tx, run, diveId, d, importId);
-    const fields = found
-      ? [...found.take, ...found.conflicts.filter((f) => plan.conflicts?.[`${d.remoteId}:${f}`] === 'provider')]
-      : [];
+    let fields: SyncedField[] = [];
+    if (found) {
+      const { take, conflicts, open } = await held(tx, run, diveId, d, found);
+      const choice = (f: SyncedField) => plan.conflicts?.[`${d.remoteId}:${f}`];
+      fields = [...take, ...conflicts.filter((f) => choice(f) === 'provider')];
+      // The User's choice for a field of the open entry settles it there: asked once, not twice.
+      await closeFields(tx, diveId, run.adapter.id, open.filter((f) => choice(f) !== undefined));
+      if (plan.unattended) await waitForUser(tx, run, diveId, d, found, conflicts.filter((f) => choice(f) === undefined));
+    }
     const taken = fields.length > 0 && (await takeChanges(tx, run, diveId, d, fields, actor)).length > 0;
     const filled = await fill(tx, run, diveId, d, actor);
     return taken || filled;
@@ -354,7 +404,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   ): Promise<ImportOutcome[number]> {
     const actor: Actor = { type: 'import', id: at.importId };
     const base = { fileName: at.fileName, remoteId: d.remoteId, ...(d.remoteNumber !== null && { remoteNumber: d.remoteNumber }) };
-    const a = await assess(tx, run, d);
+    const a = await assess(tx, run, d, plan.unattended);
     switch (a.kind) {
       case 'ours': {
         // Sent by Dive Hub: already ours. One whose answer got lost is linked to its Dive, as sending would.
@@ -405,6 +455,8 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
         return { ...base, result: 'created', diveId: await createDive(tx, run, d, actor) };
       case 'no_match':
         return { ...base, result: 'skipped', reason: 'no_match' };
+      case 'unchosen':
+        return { ...base, result: 'skipped', reason: 'no_computer_choice' };
     }
   }
 
@@ -482,7 +534,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
         else if (a.kind === 'link') counts.link += 1;
         else if (a.kind === 'create') counts.create += 1;
         else if (a.kind === 'no_match') counts.noMatch += 1;
-        else {
+        else if (a.kind === 'decide') {
           counts.decide += 1;
           decisions.push({
             remoteId: d.remoteId, remoteNumber: d.remoteNumber, localStart: d.localStart, durationSeconds: d.durationSeconds,
@@ -493,8 +545,10 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
         const diveId = await diveOfLinked(run, a, d);
         const found = diveId ? await changesOf(db, run, diveId, d) : null;
         if (!found) continue;
-        if (found.take.length > 0) counts.changed += 1;
-        for (const field of found.conflicts) {
+        // A field of the Dive's open entry is shown as a Conflict, never as a change to take.
+        const { take, conflicts: clashes } = await held(db, run, diveId!, d, found);
+        if (take.length > 0) counts.changed += 1;
+        for (const field of clashes) {
           conflicts.push({
             remoteId: d.remoteId, remoteNumber: d.remoteNumber, diveId: diveId!, number: found.here.row.number, field,
             startsAt: found.here.row.startsAt, utcOffsetSeconds: found.here.row.utcOffsetSeconds, utcOffsetSource: found.here.row.utcOffsetSource,
@@ -524,25 +578,29 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     /**
      * Starts the import (ADR 0030): reads the dives again (or the Provider's kept read), keeps the choice per computer on
      * the Connection, stores one Original per dive (its record as JSON, never the whole answer), and creates the Import
-     * the worker runs, with the context and the decisions.
+     * the worker runs, with the context and the decisions. `unattended` (a scheduled fetch, ADR 0056): a fresh read that
+     * also finds gone dives, as a preview's (ADR 0051); only the computers the User chose for keep a choice, so the
+     * others' dives wait (`no_computer_choice`), and Conflicts wait in "Needs your decision".
      */
     async start(userId: string, connectionId: string, given: {
       computers: Record<string, ComputerChoice>; decisions: Record<string, string>; conflicts?: Record<string, 'hub' | 'provider'>;
+      unattended?: boolean;
     }) {
-      const { row, adapter, context, parsed } = await read(userId, connectionId, { recent: true });
+      const { row, adapter, context, parsed } = await read(userId, connectionId, { recent: !given.unattended });
+      if (given.unattended) await recordFindings(db, row, parsed);
       const dives = parsed.flatMap((p) => (p.dive ? [p.dive] : []));
       const run = await runOf(db, userId, adapter, {
         diverId: row.diverId, connectionId: row.id, mode: row.importMode, windowMinutes: row.importWindowMinutes, choices: {}, context,
       });
       const saved = { ...row.importComputers, ...given.computers };
-      const computers = await computersOf(db, run, dives, saved);
+      const computers = (await computersOf(db, run, dives, saved)).filter((c) => !given.unattended || saved[c.key] !== undefined);
       const choices = Object.fromEntries(computers.map((c) => [c.key, c.choice]));
       const stored = await Promise.all(parsed.map(async ({ remoteId, record }) => ({
         remoteId, blob: await blobs.putOriginal(Buffer.from(JSON.stringify(record), 'utf8')),
       })));
       const plan: ProviderImportPlan = {
         context: pick(context), computers: choices, decisions: given.decisions, conflicts: given.conflicts ?? {}, mode: row.importMode,
-        windowMinutes: row.importWindowMinutes, diverId: row.diverId,
+        windowMinutes: row.importWindowMinutes, diverId: row.diverId, ...(given.unattended && { unattended: true }),
       };
       return db.transaction(async (tx) => {
         await tx.update(connection).set({ importComputers: saved, updatedAt: new Date() }).where(eq(connection.id, row.id));

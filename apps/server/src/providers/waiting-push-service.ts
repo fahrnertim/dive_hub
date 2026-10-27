@@ -220,7 +220,7 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
     },
 
     /**
-     * The minute tick (fetching comes with the scheduled fetch): entries held for a sign-in of a Connection signed in
+     * The minute tick (its fetching part is scheduled-fetch.ts): entries held for a sign-in of a Connection signed in
      * again, and entries stopped as unavailable at a Provider that answered any Connection since, wait again, due now.
      * Every Connection with a due entry has its job (a safety net for a job that got lost).
      */

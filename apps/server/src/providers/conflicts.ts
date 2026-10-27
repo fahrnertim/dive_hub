@@ -52,6 +52,16 @@ export async function openFields(q: Db | Tx, diveId: string, provider: string, r
   return entry.fields.map((f) => f.field);
 }
 
+/** Removes these fields from the Dive's entry at the Provider (the User chose for them); without fields left, the entry. */
+export async function closeFields(q: Db | Tx, diveId: string, provider: string, fields: readonly SyncedField[]): Promise<void> {
+  const entry = await entryOf(q, diveId, provider);
+  if (!entry || fields.length === 0) return;
+  const left = entry.fields.filter((f) => !fields.includes(f.field));
+  if (left.length === 0) return close(q, diveId, provider);
+  await q.update(providerConflict).set({ fields: left })
+    .where(and(eq(providerConflict.diveId, diveId), eq(providerConflict.provider, provider)));
+}
+
 /** Removes the Dive's entry at the Provider. */
 export async function close(q: Db | Tx, diveId: string, provider: string): Promise<void> {
   await q.delete(providerConflict).where(and(eq(providerConflict.diveId, diveId), eq(providerConflict.provider, provider)));

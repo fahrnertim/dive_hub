@@ -211,8 +211,9 @@ export const OUTCOME_REASONS = [
   // The same dive is here from a file that holds more (Suunto's JSON beside its FIT, ADR 0037).
   'fuller_copy_here',
   // A Provider's dive (ADR 0030): sent by Dive Hub (already ours); a logbook entry matching no Dive while the import only
-  // adds; several Dives and no decision that still fits; left out by the User.
-  'sent_by_dive_hub', 'no_match', 'ambiguous', 'left_out',
+  // adds; several Dives and no decision that still fits; left out by the User; in an unattended fetch, a dive of a
+  // computer the User hasn't chosen for yet.
+  'sent_by_dive_hub', 'no_match', 'ambiguous', 'left_out', 'no_computer_choice',
 ] as const;
 export type OutcomeReason = (typeof OUTCOME_REASONS)[number];
 

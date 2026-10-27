@@ -217,7 +217,8 @@
       "sent_by_dive_hub": "sent from Dive Hub",
       "no_match": "no dive here at that time",
       "ambiguous": "several dives here at that time, or only one that is probably no dive; choose in the preview",
-      "left_out": "left out by you"
+      "left_out": "left out by you",
+      "no_computer_choice": "from a dive computer you haven’t chosen for yet; choose in a manual import"
     },
     "errorCode": {
       "unsupported_file": "This is neither a dive file (FIT, Suunto JSON) nor a zip archive.",

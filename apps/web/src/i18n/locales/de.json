@@ -217,7 +217,8 @@
       "sent_by_dive_hub": "von Dive Hub gesendet",
       "no_match": "kein Tauchgang hier zu dieser Zeit",
       "ambiguous": "mehrere Tauchgänge hier zu dieser Zeit, oder nur einer, der wahrscheinlich kein Tauchgang ist; wähle in der Vorschau aus",
-      "left_out": "von dir ausgelassen"
+      "left_out": "von dir ausgelassen",
+      "no_computer_choice": "von einem Tauchcomputer, für den du noch nichts gewählt hast; wähle es bei einem Import von Hand"
     },
     "errorCode": {
       "unsupported_file": "Das ist weder eine Tauchgangsdatei (FIT, Suunto-JSON) noch ein ZIP-Archiv.",

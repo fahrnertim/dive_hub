@@ -6,6 +6,7 @@ import { IMPORT_SITES_TASK, type SiteImportService } from './sites/import/site-i
 import { PUSH_RUN_STEP_TASK, type PushRunService } from './providers/push-run-service.js';
 import { WAITING_PUSHES_TASK } from './providers/waiting-push-queue.js';
 import { AUTOMATION_TICK_TASK, type WaitingPushService } from './providers/waiting-push-service.js';
+import { FETCH_TASK, type ScheduledFetch } from './providers/scheduled-fetch.js';
 import { CERTIFICATION_IMAGE_TASK, type CertificationService } from './certifications/certification-service.js';
 import type { AiAccessService } from './mcp/access-service.js';
 import type { AssessmentService } from './assessment/assessment-service.js';
@@ -18,7 +19,7 @@ const PURGE_AI_ACCESS_LOG_TASK = 'purge-ai-access-log';
 
 export async function startWorker(
   pool: pg.Pool, imports: ImportService, siteImports: SiteImportService, aiAccesses: AiAccessService, assessments: AssessmentService, pushRuns: PushRunService,
-  waitingPushes: WaitingPushService, certifications: CertificationService, log: FastifyBaseLogger,
+  waitingPushes: WaitingPushService, scheduledFetch: ScheduledFetch, certifications: CertificationService, log: FastifyBaseLogger,
 ): Promise<Runner> {
   // An import still "running" now was cut off when the worker last stopped.
   await siteImports.failInterrupted();
@@ -61,8 +62,15 @@ export async function startWorker(
           await helpers.addJob(WAITING_PUSHES_TASK, { connectionId }, { runAt: new Date(Date.now() + next.afterMs), jobKey: `waiting-pushes:${connectionId}`, maxAttempts: 1 });
         }
       },
+      // Wakes Waiting pushes and queues the scheduled fetches that are due (ADR 0056).
       [AUTOMATION_TICK_TASK]: async () => {
         await waitingPushes.tick();
+        await scheduledFetch.tick();
+      },
+      // One Connection's scheduled fetch: an unattended Import, which PROCESS_IMPORT_TASK then runs.
+      [FETCH_TASK]: async (payload) => {
+        const { connectionId } = payload as { connectionId: string };
+        await scheduledFetch.fetch(connectionId);
       },
       // One card's picture (ADR 0050); three attempts, the last one ends as `failed`.
       [CERTIFICATION_IMAGE_TASK]: async (payload, helpers) => {

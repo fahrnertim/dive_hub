@@ -16,6 +16,7 @@ import type { DiveImportService } from './dive-import.js';
 import type { ConflictService } from './conflicts.js';
 import type { GoneDiveService } from './gone-dives.js';
 import type { WaitingPushService } from './waiting-push-service.js';
+import type { ScheduledFetch } from './scheduled-fetch.js';
 import { SYNCED_FIELDS } from './three-way.js';
 import { FIND_BY, OPERATIONS, type ProviderAdapter, type Requirement } from './provider.js';
 import { pushRunRoutes } from './push-run-routes.js';
@@ -38,6 +39,7 @@ export interface ProviderRouteDeps {
   diveImports: DiveImportService;
   goneDives: GoneDiveService;
   waitingPushes: WaitingPushService;
+  scheduledFetch: ScheduledFetch;
   conflicts: ConflictService;
   certifications: CertificationService;
 }
@@ -327,7 +329,7 @@ export function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Sta
   };
 }
 
-export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, pushRuns, buddies, sitePicks, diveImports, goneDives, waitingPushes, conflicts, certifications }) => {
+export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, pushRuns, buddies, sitePicks, diveImports, goneDives, waitingPushes, scheduledFetch, conflicts, certifications }) => {
   app.addHook('onRequest', requireUser(auth));
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof ProviderServiceError) return replyProviderError(error, reply);
@@ -820,6 +822,16 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     await diveImports.allowSiteData(request.user!.id, request.params.provider, request.body.allowed);
     return { providers: (await diveImports.siteData()).map(siteDataView) };
   });
+
+  app.post('/connections/fetch-due', {
+    schema: {
+      summary: 'The User opened Dive Hub: fetch from each of their Connections with "Fetch from <Provider>" on whose last fetch is more than an hour old (ADR 0056)',
+      description: 'Clients call it once when they start. Each fetch runs in the background as an unattended Import, never sooner than the '
+        + 'Provider\'s minimum; a Connection that needs a sign-in, has its import off, or has an import waiting or running is left out. '
+        + 'Answers how many fetches were queued.',
+      response: { 200: Type.Object({ queued: Type.Integer() }), 401: Problem },
+    },
+  }, async (request) => ({ queued: await scheduledFetch.fetchDue(request.user!.id) }));
 
   app.post('/connections/:id/unsent-dives/dismiss', {
     schema: {
