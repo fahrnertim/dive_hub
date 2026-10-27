@@ -401,7 +401,12 @@ export const connectionsQuery = () => queryOptions({ queryKey: keys.connections,
 export const diveProvidersQuery = (diveId: string) => queryOptions({ queryKey: keys.diveProviders(diveId), queryFn: () => fetchDiveProviders(diveId) });
 /** A Dive at one Provider: its Diver's Connection, what is unmet (ADR 0029), the remote dive it has, its Pushes. */
 export const providerStatusQuery = (diveId: string, provider: string) =>
-  queryOptions({ queryKey: keys.providerStatus(diveId, provider), queryFn: () => fetchProviderStatus(diveId, provider) });
+  queryOptions({
+    queryKey: keys.providerStatus(diveId, provider),
+    queryFn: () => fetchProviderStatus(diveId, provider),
+    // An entry that waits goes out within a minute or two (ADR 0056): the page follows it until it is settled.
+    refetchInterval: (q) => (q.state.data?.waiting?.state === 'waiting' ? 3000 : false),
+  });
 async function fetchDiverSearch(q: string) {
   return unwrap(await api.GET('/api/divers/search', { params: { query: { q, limit: 20 } } })).divers;
 }

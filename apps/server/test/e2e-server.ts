@@ -26,7 +26,7 @@ import { computerDive, createFakeSsi, fakeCard, handTypedDive } from './fake-ssi
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import { createMerging } from '../src/dives/merging.js';
 import { createDiverService } from '../src/divers/diver-service.js';
-import { dive, pushRun } from '../src/db/schema.js';
+import { connection, dive, pushRun, waitingPush } from '../src/db/schema.js';
 import { eq } from 'drizzle-orm';
 import { createInvitations } from '../src/users/invitations.js';
 import { createSetup } from '../src/users/setup.js';
@@ -229,6 +229,32 @@ app.post('/e2e/fake-ssi/clear-dives', { schema: { hide: true } }, async (request
 // Test-only: a run that ended stays in the logbook's strip until dismissed, in each browser's own storage; the tests that
 // start runs remove them, so other tests see no strip.
 app.post('/e2e/push-runs/clear', { schema: { hide: true } }, async () => { await db.delete(pushRun); return { ok: true }; });
+
+// Test-only: an entry of the queue in a given state (the worker would settle a real one within a minute): by the Dive,
+// its Connection and the Provider. `dueInMs` counts from now; the tests that look at it clear it afterwards.
+app.post('/e2e/waiting-push/set', { schema: { hide: true } }, async (request) => {
+  const b = request.body as {
+    diveId: string; connectionId: string; provider: string; action?: 'send' | 'delete';
+    state: 'waiting' | 'held' | 'stopped'; reason?: string | null; dueInMs?: number;
+  };
+  const now = new Date();
+  const row = {
+    diveId: b.diveId, connectionId: b.connectionId, provider: b.provider, action: b.action ?? 'send', state: b.state,
+    reason: b.reason ?? null, dueAt: new Date(now.getTime() + (b.dueInMs ?? 3_600_000)), changedAt: now,
+  };
+  await db.insert(waitingPush).values(row).onConflictDoUpdate({ target: [waitingPush.diveId, waitingPush.provider], set: row });
+  return { ok: true };
+});
+
+// Test-only: every entry of the queue is removed.
+app.post('/e2e/waiting-push/clear', { schema: { hide: true } }, async () => { await db.delete(waitingPush); return { ok: true }; });
+
+// Test-only: a Connection that keeps no password needs a new sign-in (signing in again sets it right).
+app.post('/e2e/connection/needs-sign-in', { schema: { hide: true } }, async (request) => {
+  const { id } = request.body as { id: string };
+  await db.update(connection).set({ state: 'needs_sign_in', keepSignedIn: false }).where(eq(connection.id, id));
+  return { ok: true };
+});
 
 await app.listen({ host: '127.0.0.1', port });
 console.log(`e2e server ready on http://localhost:${port}`);

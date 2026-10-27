@@ -666,3 +666,23 @@ export async function clearPushRuns(api: APIRequestContext) {
   }
   await api.post('/e2e/push-runs/clear', { data: {}, headers });
 }
+
+/** The Connection that carries the Dive's sends to SSI. */
+export async function ssiConnectionOf(api: APIRequestContext, diveId: string): Promise<string> {
+  const status = await (await api.get(`/api/dives/${diveId}/providers/ssi`)).json() as { connection: { id: string } | null };
+  return status.connection!.id;
+}
+
+/** An entry of the queue of Waiting pushes in a given state, put there by a test-only route of the e2e server (ADR 0056). */
+export async function queueEntry(
+  api: APIRequestContext, diveId: string,
+  entry: { state: 'waiting' | 'held' | 'stopped'; reason?: string; action?: 'send' | 'delete'; connectionId?: string },
+) {
+  const connectionId = entry.connectionId ?? await ssiConnectionOf(api, diveId);
+  await api.post('/e2e/waiting-push/set', { data: { diveId, provider: 'ssi', ...entry, connectionId }, headers });
+}
+
+/** The queue of Waiting pushes empty again. */
+export async function clearQueue(api: APIRequestContext) {
+  await api.post('/e2e/waiting-push/clear', { data: {}, headers });
+}

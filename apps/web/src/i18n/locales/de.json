@@ -1554,7 +1554,23 @@
     "nothingToFill": "Nichts zu ergänzen: Diese Taucher haben schon, was bei {{name}} steht.",
     "chain": "Nummer mit den Tauchgängen im Weg setzen",
     "heldOnlyThere": "Dieser Tauchgang ist nur in {{name}}, nicht in deinem Logbuch.",
-    "heldImport": "Tauchgänge aus {{name}} importieren"
+    "heldImport": "Tauchgänge aus {{name}} importieren",
+    "waitingPush": {
+      "waiting": "Wartet darauf, an {{name}} gesendet zu werden",
+      "deleting": "Wird in {{minutes}} Min. in {{name}} gelöscht",
+      "held": {
+        "sign_in": "Wird nicht an {{name}} gesendet, bis du dich anmeldest",
+        "requirements": "Braucht einen Ort mit Position, bevor er an {{name}} gehen kann",
+        "exists": "{{name}} hat schon einen Tauchgang zu dieser Zeit: Entscheide unter „Braucht deine Entscheidung“",
+        "removes_verification": "Senden würde die Verifizierung in {{name}} entfernen: Sende ihn selbst, um das zu bestätigen"
+      },
+      "stopped": {
+        "send": "Konnte nicht an {{name}} gesendet werden: {{reason}}",
+        "delete": "Konnte in {{name}} nicht gelöscht werden: {{reason}}"
+      },
+      "retry": "Erneut versuchen"
+    },
+    "deletesItself": "Er ist auch in {{name}}, als Tauchgang {{number}}, und wird dort in 5 Minuten gelöscht. „Rückgängig“ bricht das ab."
   },
   "providers": {
     "ssi": {

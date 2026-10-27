@@ -13,6 +13,7 @@ import { usePageTitle } from './lib/page.ts';
 import { useNames, useProviders } from './lib/providers.ts';
 import { SendToProvider } from './PushRun.tsx';
 import { ProfileSketch } from './ProfileSketch.tsx';
+import { WaitingPushState } from './WaitingPush.tsx';
 import { sketchScale } from './lib/sketch.ts';
 import { Avatar, Button, DiverAvatar, Disclosure, Icon, Muted, Notice, PageHeader, Panel, Select, TextField, ToggleChip } from './ui/index.ts';
 
@@ -180,7 +181,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
                     <DiveRow
                       key={d.id} dive={d} list={listQuery(params)} year={!byDate} scaleM={sketchScale(dives.data.totals.deepestM)}
                       diver={several ? nameOf.get(d.diverId) : undefined}
-                      from={d.fromProvider ? providerName(d.fromProvider) : undefined}
+                      from={d.fromProvider ? providerName(d.fromProvider) : undefined} providerName={providerName}
                     />
                   ))}
                 </ul>
@@ -280,7 +281,7 @@ function MonthHead({ month, figures }: { month: string; figures: MonthFigures | 
  * One Dive: the site as its title (the date while it has none), then what makes it this dive, who was there, and the
  * two numbers in columns. The title is the link (keyboard and screen readers); the whole row is a larger click target.
  */
-function DiveRow({ dive: d, diver, from, year, scaleM, list }: {
+function DiveRow({ dive: d, diver, from, providerName, year, scaleM, list }: {
   /** The list the row is in; it goes into the Dive's address (ADR 0042). */
   list: string;
   dive: DiveSummary;
@@ -290,6 +291,8 @@ function DiveRow({ dive: d, diver, from, year, scaleM, list }: {
   diver: string | undefined;
   /** The Provider whose entry the Dive was made from, by name. */
   from: string | undefined;
+  /** A Provider's name, for what waits to go to it. */
+  providerName: (id: string) => string;
   /** Whether the day says its year: no month heading does. */
   year: boolean;
 }) {
@@ -321,6 +324,11 @@ function DiveRow({ dive: d, diver, from, year, scaleM, list }: {
           {/* The dive assessment found something that differs from guidance (ADR 0036): text, not a colour or an icon alone. */}
           {d.findings > 0 && <span className="badge">{t('logbook.findings', { count: d.findings })}</span>}
         </p>
+        {d.waiting.length > 0 && (
+          <p className="dive-facts dive-waiting">
+            {d.waiting.map((w) => <WaitingPushState key={w.provider} push={w} providerName={providerName(w.provider)} variant="row" />)}
+          </p>
+        )}
       </div>
       <ProfileSketch profile={d.profile} hasRecording={d.recordings > 0} scaleM={scaleM} />
       <Buddies people={d.participants} />

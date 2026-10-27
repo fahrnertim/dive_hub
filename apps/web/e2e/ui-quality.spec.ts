@@ -9,7 +9,7 @@ import { dataFile, type PreparedData } from './prepare.ts';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, diveNumber, seededDiveId, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectAccessible, expectGoodPage, externalDiver, openLine,
-  clearPushRuns, conflictAtSsi, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, tankPodDive
+  clearPushRuns, clearQueue, conflictAtSsi, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, queueEntry, readyForSsi, resetDive, ssiConnectionOf, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, tankPodDive
 } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
@@ -935,6 +935,43 @@ for (const v of variants) {
         await goodPage(page, title('Review'), v);
       } finally {
         await cancelWaitingImports(request);
+      }
+    });
+
+    test('a dive stopped on its way to SSI, in the logbook and on its page, with Retry', { tag: ['@dives'] }, async ({ page, request }) => {
+      await connectSsi(request);
+      const id = await deletableDive(request);
+      await leaveSsi(request, id);
+      try {
+        await queueEntry(request, id, { state: 'stopped', reason: 'provider_unavailable' });
+        const n = await diveNumber(request, id);
+        const text = v.english ? /^Couldn’t send to SSI: / : /^Konnte nicht an SSI gesendet werden: /;
+        await page.goto('/#/');
+        await expect(diveRows(page).getByText(text)).toBeVisible();
+        await goodPage(page, title('Logbook'), v);
+        await page.goto(`/#/dives/${id}`);
+        await expect(page.getByRole('group', { name: 'SSI' }).getByText(text)).toBeVisible();
+        await expect(page.getByRole('group', { name: 'SSI' }).getByRole('button', { name: v.english ? 'Retry' : 'Erneut versuchen' })).toBeVisible();
+        await goodPage(page, title(`Dive ${n}`), v);
+      } finally {
+        await clearQueue(request);
+      }
+    });
+
+    test('a deleted dive that SSI will delete by itself, in the deleted dives', { tag: ['@dives'] }, async ({ page, request }) => {
+      await connectSsi(request);
+      const id = await deletableDive(request);
+      const connectionId = await ssiConnectionOf(request, id);
+      try {
+        const { version } = await (await request.get(`/api/dives/${id}`)).json() as { version: number };
+        await request.delete(`/api/dives/${id}`, { data: { version }, headers });
+        await queueEntry(request, id, { action: 'delete', state: 'waiting', connectionId });
+        await page.goto('/#/review?tab=deleted');
+        await expect(page.getByText(v.english ? /^Will be deleted in SSI in \d+ min/ : /^Wird in \d+ Min\. in SSI gelöscht/)).toBeVisible();
+        await goodPage(page, title('Review'), v);
+      } finally {
+        await clearQueue(request);
+        await deletableDive(request);
       }
     });
 

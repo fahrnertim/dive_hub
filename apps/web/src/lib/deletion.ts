@@ -12,19 +12,29 @@ export interface CopyAt {
 
 /**
  * What the delete dialog asks: `ask` lists the Providers it can delete the copy at too (its Diver is connected),
- * `cannot` those where the copy stays (not connected any more). Both empty: one "Delete dive" button.
+ * `cannot` those where the copy stays (not connected any more), `itself` those whose Connection deletes the copy by itself
+ * a few minutes later (ADR 0056: not asked, the dialog says so). All empty: one "Delete dive" button.
  */
 export interface DeleteChoice {
   ask: CopyAt[];
   cannot: CopyAt[];
+  itself: CopyAt[];
 }
 
 /** Undefined while the Dive's state at the Providers is loading: the dialog waits before offering anything. */
-export function deleteChoice(statuses: Pick<ProviderStatusView, 'provider' | 'connection' | 'current'>[] | undefined): DeleteChoice | undefined {
+export function deleteChoice(
+  statuses: (Pick<ProviderStatusView, 'provider' | 'connection' | 'current'> & { deletesItself?: boolean })[] | undefined,
+  /** Providers that delete by themselves for another reason than the status (a merge's pair says so itself). */
+  itself: readonly string[] = [],
+): DeleteChoice | undefined {
   if (!statuses) return undefined;
   const at = statuses.filter((s) => s.current);
   const copy = (s: (typeof at)[number]) => ({ provider: s.provider, remoteNumber: s.current!.remoteNumber });
-  return { ask: at.filter((s) => s.connection).map(copy), cannot: at.filter((s) => !s.connection).map(copy) };
+  const byItself = (s: (typeof at)[number]) => !!s.connection && (s.deletesItself === true || itself.includes(s.provider));
+  return {
+    ask: at.filter((s) => s.connection && !byItself(s)).map(copy), cannot: at.filter((s) => !s.connection).map(copy),
+    itself: at.filter(byItself).map(copy),
+  };
 }
 
 /** The Dive just deleted, for the logbook's notice with "Undo". */

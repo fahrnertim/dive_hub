@@ -24,13 +24,14 @@ export type StrayOverride = { [Id in keyof Overrides]: Exclude<Paths<Overrides[I
 export const exporting = (providers: ProviderView[] | undefined) => (providers ?? []).filter((p) => p.data.dives?.export);
 /**
  * Whether the Dive at a Provider has something that waits for the User: it changed since it was sent, the last
- * sending failed, the connection needs a new sign-in, or a run left Conflicts to decide (ADR 0056). Its line on the dive
+ * sending failed, the connection needs a new sign-in, a run left Conflicts to decide, or an entry of the queue waits (ADR 0056). Its line on the dive
  * page then opens by itself.
  */
 export const waitsForUser = (s: {
   connection: { state: string } | null; current: { upToDate: boolean } | null; pushes: { state: string }[]; conflicts?: unknown[] | null;
+  waiting?: unknown;
 }) => !!s.connection && (s.connection.state === 'needs_sign_in' || s.pushes[0]?.state === 'failed' || (!!s.current && !s.current.upToDate)
-  || (s.conflicts?.length ?? 0) > 0);
+  || (s.conflicts?.length ?? 0) > 0 || !!s.waiting);
 
 /** The fields a send named (taken from or left at the Provider), in the import preview's words: "notes and buddies". */
 export function useFieldNames() {

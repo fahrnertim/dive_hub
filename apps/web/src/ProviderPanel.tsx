@@ -14,6 +14,7 @@ import { exporting, typedSiteId, useFieldNames, useNames, useProviders, useProvi
 import { accountHref } from './lib/account-tabs.ts';
 import { NumberChainDialog } from './NumberChain.tsx';
 import { ProviderConflicts } from './ProviderConflicts.tsx';
+import { WaitingPushState } from './WaitingPush.tsx';
 import { Badge, Button, ConfirmButton, Dialog, Disclosure, Muted, Notice, SearchList, type SearchListItem } from './ui/index.ts';
 
 type Existing = { remoteId: string; number: number | null; startsAt: string | null; maxDepthM: number | null; durationMinutes: number | null };
@@ -154,6 +155,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
       {signInNeeded && (
         <Notice tone="danger">{pt('signInNeeded')} <a href={accountHref('connections')}>{pt('goSignIn')}</a></Notice>
       )}
+      {s.waiting && <WaitingPushState push={s.waiting} providerName={p.name} variant="panel" diveId={d.id} />}
       <Requirements provider={p} dive={d} status={s} onFind={setFinding} />
       {listChange && <ListChangeNotice key={JSON.stringify(listChange)} provider={p} change={listChange} onClose={() => setListChange(null)} />}
 

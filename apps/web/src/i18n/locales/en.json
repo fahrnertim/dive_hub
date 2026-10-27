@@ -1554,7 +1554,23 @@
     "nothingToFill": "Nothing to fill in: these divers already have what {{name}} says.",
     "chain": "Set the number with the dives in its way",
     "heldOnlyThere": "That dive is only in {{name}}, not in your logbook.",
-    "heldImport": "Import the dives from {{name}}"
+    "heldImport": "Import the dives from {{name}}",
+    "waitingPush": {
+      "waiting": "Waiting to send to {{name}}",
+      "deleting": "Will be deleted in {{name}} in {{minutes}} min",
+      "held": {
+        "sign_in": "Won’t be sent to {{name}} until you sign in",
+        "requirements": "Needs a site with a position before it can go to {{name}}",
+        "exists": "{{name}} already has a dive at this time: decide under Needs your decision",
+        "removes_verification": "Sending would remove the verification in {{name}}: send it yourself to confirm"
+      },
+      "stopped": {
+        "send": "Couldn’t send to {{name}}: {{reason}}",
+        "delete": "Couldn’t delete it in {{name}}: {{reason}}"
+      },
+      "retry": "Retry"
+    },
+    "deletesItself": "It is also in {{name}}, as dive {{number}}, and will be deleted there in 5 minutes. Undo cancels it."
   },
   "providers": {
     "ssi": {
