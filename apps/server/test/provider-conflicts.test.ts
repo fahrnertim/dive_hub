@@ -81,6 +81,20 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     expect((await listed()).connections).toEqual([]);
   });
 
+  it('a choice marks the entry queued, from the server; a Conflict found again is open again', async () => {
+    const { diveId, remoteId } = await sentDive();
+    await record(t.db, entry(diveId, remoteId));
+    expect((await listed()).connections[0]!.entries).toMatchObject([{ diveId, queued: false }]);
+    const decided = await call('POST', '/api/dives/' + diveId + '/providers/ledger/decision', { conflicts: { notes: 'hub', maxDepthM: 'hub' } });
+    expect(decided.statusCode).toBe(204);
+    expect((await listed()).connections[0]!.entries).toMatchObject([{ diveId, queued: true }]);
+    // The send ends in a new Conflict for the Dive: the question is open again.
+    await new Promise((r) => setTimeout(r, 5));
+    await record(t.db, entry(diveId, remoteId, fields('Ray')));
+    expect((await listed()).connections[0]!.entries).toMatchObject([{ diveId, queued: false }]);
+    await t.db.delete(waitingPush).where(eq(waitingPush.diveId, diveId));
+  });
+
   it('recording twice keeps one entry with the newer fields', async () => {
     const { diveId, remoteId } = await sentDive();
     await record(t.db, entry(diveId, remoteId));

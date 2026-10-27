@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   api, connectionsQuery, keys, providerConflictsQuery, unwrap, type ConflictChoices, type ConflictEntryView, type ConflictsOfConnection,
@@ -25,20 +25,14 @@ const WHILE_QUEUED_MS = 5000;
  */
 export function ProviderConflictsSection() {
   const { t } = useTranslation();
-  const [decided, setDecided] = useState<ReadonlySet<string>>(new Set());
-  const conflicts = useQuery({ ...providerConflictsQuery(), refetchInterval: decided.size > 0 ? WHILE_QUEUED_MS : false });
+  // What is queued is the server's to say (`queued`), so a reload or a second device sees it too.
+  const conflicts = useQuery({
+    ...providerConflictsQuery(),
+    refetchInterval: (q) => (q.state.data?.some((g) => g.entries.some((e) => e.queued)) ? WHILE_QUEUED_MS : false),
+  });
   const connections = useQuery(connectionsQuery());
   const [told, setTold] = useState<Told[]>([]);
   const groups = (conflicts.data ?? []).filter((g) => g.entries.length > 0);
-  // An entry that left the list is settled; a new one for the same Dive is a new question.
-  const listed = (conflicts.data ?? []).flatMap((g) => g.entries.map((e) => e.diveId)).join();
-  useEffect(() => {
-    setDecided((all) => {
-      const still = new Set(listed.split(','));
-      const kept = [...all].filter((id) => still.has(id));
-      return kept.length === all.size ? all : new Set(kept);
-    });
-  }, [listed]);
   const tell = (n: Told) => setTold((all) => [...all.filter((a) => a.key !== n.key), n]);
   const diverOf = (g: ConflictsOfConnection) => connections.data?.find((c) => c.id === g.connectionId)?.diverName ?? '';
   return (
@@ -51,17 +45,13 @@ export function ProviderConflictsSection() {
       ))}
       {groups.map((g) => (
         <Group
-          key={g.connectionId} group={g} diver={groups.length > 1 ? diverOf(g) : undefined} decided={decided} onTold={tell}
-          onDecided={(diveId) => setDecided((all) => new Set([...all, diveId]))}
-        />
+          key={g.connectionId} group={g} diver={groups.length > 1 ? diverOf(g) : undefined} onTold={tell} />
       ))}
     </>
   );
 }
 
-function Group({ group: g, diver, decided, onTold, onDecided }: {
-  group: ConflictsOfConnection; diver: string | undefined; decided: ReadonlySet<string>; onTold: (n: Told) => void; onDecided: (diveId: string) => void;
-}) {
+function Group({ group: g, diver, onTold }: { group: ConflictsOfConnection; diver: string | undefined; onTold: (n: Told) => void }) {
   const { t } = useTranslation();
   const display = useDisplay();
   const errorText = useErrorText();
@@ -75,7 +65,6 @@ function Group({ group: g, diver, decided, onTold, onDecided }: {
     onSuccess: async (_, { entry, decision }) => {
       const dive = nameOf(entry);
       const key = 'onExisting' in decision ? (decision.onExisting === 'link' ? 'exists-link' : 'exists-create') : 'conflicts';
-      onDecided(entry.diveId);
       onTold({ key: entry.diveId, text: t(`conflicts.queued.${key}`, { dive, name: g.providerName }) });
       await queryClient.invalidateQueries({ queryKey: keys.providerConflicts });
       // The Dive's state at the Provider now says it waits.
@@ -116,7 +105,7 @@ function Group({ group: g, diver, decided, onTold, onDecided }: {
             {clashes.map((e) => (
               <li key={e.diveId} className="decision">
                 {row(e)}
-                {decided.has(e.diveId) ? waiting : (
+                {e.queued ? waiting : (
                   <ProviderConflicts
                     key={e.fields.map((f) => f.field).join()} item={nameOf(e)} conflicts={e.fields} providerName={g.providerName}
                     isPending={choosing(e)} isDisabled={otherChoosing(e)}
@@ -148,7 +137,7 @@ function Group({ group: g, diver, decided, onTold, onDecided }: {
                     </>
                   )}
                 </p>
-                {decided.has(e.diveId) ? waiting : (
+                {e.queued ? waiting : (
                   <div className="form-actions">
                     {(['link', 'create'] as const).map((onExisting) => (
                       <Button

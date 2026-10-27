@@ -17100,7 +17100,7 @@ export interface paths {
         };
         /**
          * What waits for the choice of the User ("Needs your decision"), per Connection; no call to a Provider
-         * @description A Conflict (kind conflict) is a field changed on both sides, differently, found while sending or fetching a Dive. One entry per Dive and Provider, with both values of each field. The User chooses per field, the Dive Hub value preselected; the choice goes to POST /api/dives/{id}/providers/{provider}/decision with `conflicts` (or sends the Dive from its page with `conflicts`). A Dive the Provider already has a dive for (kind exists) waits for "Link to it" or "Create a new one": the same route with `onExisting`. A choice queues the Dive, due now, and the entry leaves the list. An entry whose Dive is deleted, or whose remote dive is no longer the current one of the Dive, is not listed.
+         * @description A Conflict (kind conflict) is a field changed on both sides, differently, found while sending or fetching a Dive. One entry per Dive and Provider, with both values of each field. The User chooses per field, the Dive Hub value preselected; the choice goes to POST /api/dives/{id}/providers/{provider}/decision with `conflicts` (or sends the Dive from its page with `conflicts`). A Dive the Provider already has a dive for (kind exists) waits for "Link to it" or "Create a new one": the same route with `onExisting`. A choice queues the Dive, due now: an exists entry leaves the list, a conflict entry stays with queued true until the send settles. An entry whose Dive is deleted, or whose remote dive is no longer the current one of the Dive, is not listed.
          */
         get: {
             parameters: {
@@ -17178,6 +17178,8 @@ export interface paths {
                                     };
                                     /** Format: date-time */
                                     foundAt: string;
+                                    /** @description conflict: the User chose and the Dive waits to be sent with the choices; the entry stays listed until the send settles. A Conflict found again after the choice is not queued */
+                                    queued: boolean;
                                 }[];
                             }[];
                         };

@@ -85,6 +85,10 @@ export function createConflictService(deps: { db: Db; connections: ConnectionSer
           eq(waitingPush.connectionId, c.id), eq(waitingPush.provider, c.provider), eq(waitingPush.state, 'held'), eq(waitingPush.reason, 'exists'),
         ));
         if (entries.length === 0 && asked.length === 0) continue;
+        // A choice queued after the Conflict was found: the entry waits for the worker (a newer Conflict is open again).
+        const chosen = new Map((await db.select().from(waitingPush).where(and(
+          eq(waitingPush.connectionId, c.id), eq(waitingPush.provider, c.provider), eq(waitingPush.action, 'send'), eq(waitingPush.state, 'waiting'),
+        ))).filter((w) => Object.keys(w.options.conflicts ?? {}).length > 0).map((w) => [w.diveId, w.changedAt]));
         const ids = [...entries.map((e) => e.diveId), ...asked.map((e) => e.diveId)];
         const dives = await db.select({
           id: dive.id, number: dive.number, startsAt: dive.startsAt, utcOffsetSeconds: dive.utcOffsetSeconds,
@@ -103,12 +107,13 @@ export function createConflictService(deps: { db: Db; connections: ConnectionSer
           const d = dives.find((x) => x.id === e.diveId);
           const current = currentRemote(byDive.get(e.diveId) ?? []);
           if (!d || d.deletedAt !== null || current?.remoteId !== e.remoteId || current.connectionId !== c.id) return [];
-          return [{ ...shown(d), kind: 'conflict' as const, remoteId: e.remoteId, fields: fieldsOf(e.fields), existing: null, foundAt: e.foundAt }];
+          return [{ ...shown(d), kind: 'conflict' as const, remoteId: e.remoteId, fields: fieldsOf(e.fields), existing: null, foundAt: e.foundAt,
+            queued: (chosen.get(e.diveId)?.getTime() ?? -1) >= e.foundAt.getTime() }];
         });
         const exists = asked.flatMap((e) => {
           const d = dives.find((x) => x.id === e.diveId);
           if (!d || d.deletedAt !== null || !e.detail) return [];
-          return [{ ...shown(d), kind: 'exists' as const, remoteId: e.detail.remoteId, fields: [] as ConflictField[], existing: e.detail, foundAt: e.changedAt }];
+          return [{ ...shown(d), kind: 'exists' as const, remoteId: e.detail.remoteId, fields: [] as ConflictField[], existing: e.detail, foundAt: e.changedAt, queued: false }];
         });
         const listed = [...conflicts, ...exists].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
         if (listed.length > 0) out.push({ connectionId: c.id, provider: c.provider, entries: listed });

@@ -721,7 +721,9 @@ A send that settles the fields removes the entry.
 **A second kind of entry** (`kind: exists`, `fields` empty, `existing` names the dive at the Provider): the Provider already
 has a dive at the Dive's time and the Dive's send waits for the User. Say "{{provider}} already has a dive at this time"
 with the dive's number and time, and two buttons, "Link to it" and "Create a new one" (`decision` with `onExisting: link`
-or `create`). The entry leaves the list once chosen. Tell the kinds by `kind`; a client that doesn't know a kind shows
+or `create`). An `exists` entry leaves the list once chosen; a `conflict` entry stays, with `queued: true`, until the send
+settles: show it as waiting, without the choices, and take it from `queued` (not from client state: a reload or a second
+device shows the same). A Conflict found again after the choice has `queued: false`: ask again. Tell the kinds by `kind`; a client that doesn't know a kind shows
 the Dive with a link to its page.
 *Web:* `ProviderConflicts.tsx` (the choice per field, on the Dive's page where the send button was, and on the Review
 page), `ProviderConflictsSection.tsx` (the Review section), `PushRun.tsx` (the run report's line).
