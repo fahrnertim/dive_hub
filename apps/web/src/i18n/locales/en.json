@@ -798,6 +798,7 @@
     "notice": "{{name}} deleted.",
     "noticeKept": "{{name}} deleted. It is still in {{provider}}, as dive {{number}}: you can delete it there under “Deleted dives”.",
     "noticeBoth": "{{name}} deleted, here and in {{provider}}. Undo brings it back here only.",
+    "noticeItself": "It will be deleted in {{provider}} in 5 minutes. Undo cancels that.",
     "reminder_one": "A dive you deleted is still in {{name}}.",
     "reminder_other": "{{count}} dives you deleted are still in {{name}}.",
     "showList": "Show deleted dives",
@@ -1568,7 +1569,8 @@
         "send": "Couldn’t send to {{name}}: {{reason}}",
         "delete": "Couldn’t delete it in {{name}}: {{reason}}"
       },
-      "retry": "Retry"
+      "retry": "Retry",
+      "fix": "See what is needed"
     },
     "deletesItself": "It is also in {{name}}, as dive {{number}}, and will be deleted there in 5 minutes. Undo cancels it."
   },

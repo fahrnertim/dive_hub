@@ -78,6 +78,7 @@ function JustDeletedNotice({ just, dive: d }: { just: JustDeleted; dive: Deleted
   return (
     <Notice tone="success">
       <p>{t(notice.key, { name: just.name, provider: names(notice.copies.map((c) => c.name)), number: notice.copies[0]?.remoteNumber ?? '' })}</p>
+      {just.byThemselves.length > 0 && <p>{t('deleted.noticeItself', { provider: names(just.byThemselves) })}</p>}
       {restore.error && <p>{errorText(restore.error)}</p>}
       <div className="form-actions">
         <Button icon="undo" isPending={restore.isPending} onPress={() => restore.mutate()}>{t('common.undo')}</Button>

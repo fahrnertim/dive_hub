@@ -44,6 +44,8 @@ export interface JustDeleted {
   name: string;
   /** What happened to its copy at each Provider it was at (the server's answer), with the Provider's name. */
   copies: { provider: string; name: string; copy: 'deleted' | 'kept'; remoteNumber: number | null }[];
+  /** The names of the Providers whose Connection deletes the copy by itself in a few minutes; Undo cancels that. */
+  byThemselves: string[];
 }
 
 /** The notice's sentence for a Dive just deleted, and the copy it names (deleted ones first). */

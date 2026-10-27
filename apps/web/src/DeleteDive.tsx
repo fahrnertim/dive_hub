@@ -36,7 +36,7 @@ export function DeleteDiveDialog({ dive: d, name, onClose }: { dive: Pick<DiveVi
       const numberAt = (id: string) => [...(choice?.ask ?? []), ...(choice?.cannot ?? [])].find((c) => c.provider === id)?.remoteNumber ?? null;
       updateDeletion({
         justDeleted: {
-          id: d.id, name,
+          id: d.id, name, byThemselves: (choice?.itself ?? []).map((c) => providerOf(c.provider).name),
           copies: result.providers.map((r) => ({ provider: r.provider, name: providerOf(r.provider).name, copy: r.copy, remoteNumber: numberAt(r.provider) })),
         },
       });

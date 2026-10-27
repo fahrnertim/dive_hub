@@ -70,9 +70,30 @@ test('a stopped Dive shows the error and Retry puts it back', { tag: ['@dives'] 
     const line = page.getByRole('group', { name: 'SSI' });
     await expect(line.getByText(/^Couldn’t send to SSI: SSI didn’t answer as expected/)).toBeVisible();
     await line.getByRole('button', { name: 'Retry' }).click();
-    // The Dive has no site, so the worker holds it for that: the stopped state is gone.
+    // The stopped state is gone, and focus went from the button that left to the words that replace it. What the
+    // worker makes of the entry afterwards (it acts on minute ticks) is for the server tests.
     await expect(line.getByText(/^Couldn’t send to SSI/)).toBeHidden();
-    await expect(line.getByText('Needs a site with a position before it can go to SSI')).toBeVisible({ timeout: 20_000 });
+    await expect(line.locator('.waiting-push-text')).toBeFocused();
+    await expect(line.getByRole('button', { name: 'Retry' })).toHaveCount(0);
+  } finally {
+    await leave(request);
+  }
+});
+
+test('a stopped Dive in the logbook has its own Retry, and focus stays in the row', { tag: ['@dives'] }, async ({ page, request }) => {
+  const id = await deletableDive(request);
+  try {
+    await leaveSsi(request, id);
+    await queueEntry(request, id, { state: 'stopped', reason: 'provider_unavailable' });
+    const n = await diveNumber(request, id);
+    await page.goto('/#/');
+    const row = rowOf(page, n);
+    await expect(row.getByText(/^Couldn’t send to SSI/)).toBeVisible();
+    await row.getByRole('button', { name: `Retry: Number ${n}` }).click();
+    // Retry doesn't open the Dive; the stopped words are gone and focus is on what replaced them.
+    await expect(row.getByText(/^Couldn’t send to SSI/)).toBeHidden();
+    await expect(page).toHaveURL(/#\/$/);
+    await expect(row.locator('.waiting-push-text')).toBeFocused();
   } finally {
     await leave(request);
   }
@@ -84,10 +105,17 @@ test('a Dive without a site says it needs one', { tag: ['@dives'] }, async ({ pa
     await queueEntry(request, id, { state: 'held', reason: 'requirements' });
     const n = await diveNumber(request, id);
     await page.goto('/#/');
-    await expect(rowOf(page, n).getByText('Needs a site with a position before it can go to SSI')).toBeVisible();
-    await page.goto(`/#/dives/${id}`);
+    const row = rowOf(page, n);
+    await expect(row.getByText('Needs a site with a position before it can go to SSI')).toBeVisible();
+    // The row links to the Dive, where it is fixed.
+    await row.getByRole('link', { name: 'See what is needed' }).click();
+    await expect(page).toHaveURL(new RegExp(`#/dives/${id}`));
     // A held Dive opens its line by itself.
-    await expect(page.getByRole('group', { name: 'SSI' }).getByText('Needs a site with a position before it can go to SSI')).toBeVisible();
+    const line = page.getByRole('group', { name: 'SSI' });
+    await expect(line.getByText('Needs a site with a position before it can go to SSI')).toBeVisible();
+    // Next to the words, a button takes you to what the Dive lacks.
+    await line.getByRole('button', { name: 'See what is needed' }).click();
+    await expect(line.locator('.provider-needs')).toBeFocused();
   } finally {
     await leave(request);
   }
@@ -128,6 +156,8 @@ test('the delete dialog doesn\'t ask for a Provider that deletes by itself, and 
     await expect(dialog.getByRole('button', { name: 'Delete only here' })).toHaveCount(0);
     await dialog.getByRole('button', { name: 'Delete dive' }).click();
     await expect(page.locator('#main').getByText(`Dive ${n} deleted.`)).toBeVisible();
+    // The notice says the delete in the Provider waits, and that Undo cancels it.
+    await expect(page.locator('#main').getByText('It will be deleted in SSI in 5 minutes. Undo cancels that.')).toBeVisible();
 
     await page.goto('/#/review?tab=deleted');
     const panel = deletedPanel(page);

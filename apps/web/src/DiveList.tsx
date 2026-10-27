@@ -303,6 +303,7 @@ function DiveRow({ dive: d, diver, from, providerName, year, scaleM, list }: {
     if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button !== 0 || (e.target as Element).closest('a')) return;
     location.hash = diveHref(d.id, list).slice(1);
   };
+  const itemName = d.number === null ? (d.site?.name ?? display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource)) : `${t('logbook.numberLabel')} ${d.number}`;
   return (
     <li className="dive-row" onClick={open}>
       <span className="dive-no num">
@@ -326,7 +327,7 @@ function DiveRow({ dive: d, diver, from, providerName, year, scaleM, list }: {
         </p>
         {d.waiting.length > 0 && (
           <p className="dive-facts dive-waiting">
-            {d.waiting.map((w) => <WaitingPushState key={w.provider} push={w} providerName={providerName(w.provider)} variant="row" />)}
+            {d.waiting.map((w) => <WaitingPushState key={w.provider} push={w} providerName={providerName(w.provider)} variant="row" diveId={d.id} itemName={itemName} />)}
           </p>
         )}
       </div>

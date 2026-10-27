@@ -798,6 +798,7 @@
     "notice": "{{name}} gelöscht.",
     "noticeKept": "{{name}} gelöscht. Er ist noch in {{provider}}, als Tauchgang {{number}}: Unter „Gelöschte Tauchgänge“ kannst du ihn dort löschen.",
     "noticeBoth": "{{name}} gelöscht, hier und in {{provider}}. Rückgängig holt ihn nur hier zurück.",
+    "noticeItself": "In {{provider}} wird er in 5 Minuten gelöscht. „Rückgängig“ bricht das ab.",
     "reminder_one": "Ein Tauchgang, den du gelöscht hast, ist noch in {{name}}.",
     "reminder_other": "{{count}} Tauchgänge, die du gelöscht hast, sind noch in {{name}}.",
     "showList": "Gelöschte Tauchgänge zeigen",
@@ -1568,7 +1569,8 @@
         "send": "Konnte nicht an {{name}} gesendet werden: {{reason}}",
         "delete": "Konnte in {{name}} nicht gelöscht werden: {{reason}}"
       },
-      "retry": "Erneut versuchen"
+      "retry": "Erneut versuchen",
+      "fix": "Ansehen, was fehlt"
     },
     "deletesItself": "Er ist auch in {{name}}, als Tauchgang {{number}}, und wird dort in 5 Minuten gelöscht. „Rückgängig“ bricht das ab."
   },
