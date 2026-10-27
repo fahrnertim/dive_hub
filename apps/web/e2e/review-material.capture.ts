@@ -605,7 +605,7 @@ test('review material', async ({ page, request, browser }) => {
       // Buddies (ADR 0028, 0029): Kai has an SSI account, Ulla none, so SSI's panel offers to find her.
       await forgetDivers(request, 'Mia');
       await setBuddies(request, dive42, [await externalDiver(request, 'Kai Lund', '4989164'), await externalDiver(request, 'Ulla Berg')]);
-      await page.reload(); await page.getByRole('button', { name: 'Find Ulla Berg in your SSI buddy list' }).waitFor();
+      await page.reload(); await page.getByRole('button', { name: 'Link or add Ulla Berg' }).waitFor();
       await capture(page, '29b-dive-buddies');
       await page.getByRole('button', { name: 'Change: Buddies and guides' }).click(); await page.getByRole('dialog').getByRole('listitem').first().waitFor();
       await capture(page, '29b2-dive-change-buddies', { full: false });
@@ -616,7 +616,7 @@ test('review material', async ({ page, request, browser }) => {
       await capture(page, '29c-dive-add-someone', { full: false });
       // Escape in a search field with text clears it first; Cancel closes the dialog.
       await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
-      await page.getByRole('button', { name: 'Find Ulla Berg in your SSI buddy list' }).click();
+      await page.getByRole('button', { name: 'Link or add Ulla Berg' }).click();
       await page.getByRole('dialog').getByRole('option').first().waitFor();
       await capture(page, '29d-dive-find-in-ssi-list', { full: false });
       await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();

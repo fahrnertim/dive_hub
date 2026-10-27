@@ -23,8 +23,8 @@ export function ProviderBuddies({ provider: p, connection: c }: { provider: Prov
   const [linking, setLinking] = useState<BuddyView | null>(null);
   const buddies = useQuery({ ...buddiesQuery(c.id), enabled: open });
   const add = useMutation({
-    mutationFn: async (accounts: string[]) => unwrap(await api.POST('/api/connections/{id}/buddies/import', {
-      params: { path: { id: c.id } }, body: { accounts },
+    mutationFn: async (chosen: { accounts: string[]; entries: string[] }) => unwrap(await api.POST('/api/connections/{id}/buddies/import', {
+      params: { path: { id: c.id } }, body: chosen,
     })),
     onSuccess: async (answer) => {
       queryClient.setQueryData(keys.buddies(c.id), answer.buddies);
@@ -54,8 +54,12 @@ export function ProviderBuddies({ provider: p, connection: c }: { provider: Prov
     );
   }
   const list = buddies.data ?? [];
-  const addable = list.filter((b) => b.account && !b.diver);
+  // An entry with an account is added by it; one without by its entry (it needs a name to become a Diver).
+  const addable = list.filter((b) => !b.diver && (b.account || b.name));
   const here = list.filter((b) => b.account && b.diver);
+  const chosen = (bs: BuddyView[]) => ({ accounts: bs.flatMap((b) => (b.account ? [b.account] : [])), entries: bs.flatMap((b) => (!b.account ? [b.entryId] : [])) });
+  const count = (v: { accounts: string[]; entries: string[] } | undefined) => (v?.accounts.length ?? 0) + (v?.entries.length ?? 0);
+  const isAdding = (b: BuddyView) => count(add.variables) === 1 && (add.variables?.accounts[0] === b.account || add.variables?.entries[0] === b.entryId);
 
   return (
     <section className="provider-buddies">
@@ -67,18 +71,20 @@ export function ProviderBuddies({ provider: p, connection: c }: { provider: Prov
       {list.length > 0 && (
         <Table cards label={pt('buddyList')} head={[pt('buddyName'), pt('buddyHere'), { label: t('common.actions'), hidden: true }]}>
           {list.map((b) => (
-            <tr key={`${b.account ?? 'none'}-${b.name}`}>
-              <td>{b.name}</td>
+            <tr key={b.entryId}>
+              <td>{b.name || pt('noNameYet')}</td>
               <td>{b.diver ? b.diver.name : b.account ? pt('notHereYet') : pt('noAccount')}</td>
               <td>
-                {b.account && !b.diver && (
+                {!b.diver && (
                   <span className="actions">
-                    <Button variant="quiet" icon="add" aria-label={t('common.forItem', { action: pt('addBuddy'), item: b.name })}
-                      isPending={add.isPending && add.variables?.length === 1 && add.variables[0] === b.account} isDisabled={add.isPending}
-                      onPress={() => add.mutate([b.account!])}>
-                      {pt('addBuddy')}
-                    </Button>
-                    <Button variant="quiet" icon="link" aria-label={t('common.forItem', { action: pt('linkBuddy'), item: b.name })}
+                    {(b.account || b.name) && (
+                      <Button variant="quiet" icon="add" aria-label={t('common.forItem', { action: pt('addBuddy'), item: b.name || pt('noNameYet') })}
+                        isPending={add.isPending && isAdding(b)} isDisabled={add.isPending}
+                        onPress={() => add.mutate(chosen([b]))}>
+                        {pt('addBuddy')}
+                      </Button>
+                    )}
+                    <Button variant="quiet" icon="link" aria-label={t('common.forItem', { action: pt('linkBuddy'), item: b.name || pt('noNameYet') })}
                       onPress={() => setLinking(b)}>
                       {pt('linkBuddy')}
                     </Button>
@@ -93,8 +99,8 @@ export function ProviderBuddies({ provider: p, connection: c }: { provider: Prov
       {fill.data && <Notice tone="info">{fill.data.updated > 0 ? pt('detailsFilled' as 'detailsFilled_one', { count: fill.data.updated }) : pt('nothingToFill')}</Notice>}
       <div className="form-actions">
         {addable.length > 1 && (
-          <Button variant="primary" icon="add" isPending={add.isPending && (add.variables?.length ?? 0) > 1} isDisabled={add.isPending}
-            onPress={() => add.mutate(addable.map((b) => b.account!))}>
+          <Button variant="primary" icon="add" isPending={add.isPending && count(add.variables) > 1} isDisabled={add.isPending}
+            onPress={() => add.mutate(chosen(addable))}>
             {pt('addAllBuddies' as 'addAllBuddies_one', { count: addable.length })}
           </Button>
         )}
@@ -119,15 +125,15 @@ function LinkBuddy({ provider: p, connection: c, buddy: b, onClose }: {
   const queryClient = useQueryClient();
   const [text, setText] = useState('');
   const found = useQuery(diverSearchQuery(text.trim()));
-  const source = p.data.dives?.export?.requirements.find((r) => r.type === 'diver_mapping')?.source ?? p.id;
+  // An entry with an account gives the Diver that account; one without is only remembered for the Diver.
   const link = useMutation({
-    mutationFn: async (diverId: string) => unwrap(await api.PUT('/api/divers/{id}/external-ids/{source}', {
-      params: { path: { id: diverId, source: source as 'ssi' } }, body: { externalId: b.account },
+    mutationFn: async (diverId: string) => unwrap(await api.POST('/api/connections/{id}/buddies/link', {
+      params: { path: { id: c.id } }, body: { entryId: b.entryId, diverId },
     })),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: keys.buddies(c.id) });
       await queryClient.invalidateQueries({ queryKey: keys.divers });
-      announce(pt('buddyLinkedTo', { name: b.name }));
+      announce(pt('buddyLinkedTo', { name: b.name || pt('noNameYet') }));
       onClose();
     },
   });
@@ -137,9 +143,9 @@ function LinkBuddy({ provider: p, connection: c, buddy: b, onClose }: {
   const taken = link.error instanceof ApiError && link.error.code === 'diver_external_id_taken' ? link.error.details.diver : undefined;
 
   return (
-    <Dialog title={pt('linkTitle', { buddy: b.name })} isOpen onOpenChange={(open) => !open && onClose()}>
+    <Dialog title={pt('linkTitle', { buddy: b.name || pt('noNameYet') })} isOpen onOpenChange={(open) => !open && onClose()}>
       <div className="provider-sites">
-        <p>{pt('linkIntro', { buddy: b.name })}</p>
+        <p>{pt('linkIntro', { buddy: b.name || pt('noNameYet') })}</p>
         <SearchList
           label={t('participants.who')} query={text} onQueryChange={setText} autoFocus items={items} onPick={(id) => link.mutate(id)}
           isPending={link.isPending} pendingStatus={t('common.saving')} listLabel={t('participants.divers')}

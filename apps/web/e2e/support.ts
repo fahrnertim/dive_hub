@@ -538,6 +538,20 @@ export async function importSsiBuddies(api: APIRequestContext, accounts: string[
   await api.post(`/api/connections/${ssi.id}/buddies/import`, { data: { accounts }, headers });
 }
 
+/**
+ * Erika's fake SSI buddy list put back to Kai and Mia, plus entries without an SSI account (SSI's app made them from a
+ * name only), and what SSI's profiles say about some accounts. The tests that link or add in the list start here, and
+ * connect after it: it removes the SSI Connection.
+ */
+export async function resetSsiBuddies(
+  api: APIRequestContext,
+  options: { entries?: { firstname: string; lastname: string }[]; profiles?: { account: number; firstname: string; lastname: string }[] } = {},
+) {
+  await api.post('/e2e/fake-ssi/buddies', { data: options, headers });
+  // The adapter keeps a Connection's last buddy list for two minutes; a new Connection reads the list as it is now.
+  await disconnectSsi(api);
+}
+
 type AiAccess = { id: string; name: string };
 
 /** AI access (ADR 0035) switched on for the server, and the seeded User without any access. */

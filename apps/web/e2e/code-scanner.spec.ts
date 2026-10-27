@@ -4,7 +4,7 @@
 // reading, stopping the camera), not the browser's permission prompt or a real camera.
 // The centre numbers and names are made up: no real centre's code is in this repository.
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
-import { encode } from 'uqr';
+import { modules, picture } from './qr-picture.ts';
 import { E2E_BASE_URL, expectGoodPage, setPreferences } from './support.ts';
 
 test.describe.configure({ mode: 'serial' });
@@ -13,40 +13,6 @@ const headers = { origin: E2E_BASE_URL };
 const CENTRE = 'Scanner Divers GmbH, Musterstadt';
 const CODE = `center;700101;name:${CENTRE}`;
 const BUDDY_CODE = 'buddy;1234567;firstName:Erika;lastName:Example;email:erika@example.com';
-
-/** The modules of a text's QR code, as the client draws it. */
-const modules = (text: string) => encode(text, { ecc: 'M', border: 4 }).data;
-
-/** A text's QR code as a BMP file, 6 pixels per module; `null` gives a white picture without a code. */
-function picture(text: string | null) {
-  const rows = text ? modules(text) : Array.from({ length: 40 }, () => Array<boolean>(40).fill(false));
-  const scale = 6;
-  const side = rows.length * scale;
-  const rowBytes = Math.ceil((side * 3) / 4) * 4;
-  const file = Buffer.alloc(54 + rowBytes * side, 255);
-  file.write('BM', 0, 'latin1');
-  file.writeUInt32LE(file.length, 2);
-  file.writeUInt32LE(0, 6);
-  file.writeUInt32LE(54, 10);
-  file.writeUInt32LE(40, 14);
-  file.writeInt32LE(side, 18);
-  // A negative height: the rows run from the top.
-  file.writeInt32LE(-side, 22);
-  file.writeUInt16LE(1, 26);
-  file.writeUInt16LE(24, 28);
-  file.writeUInt32LE(0, 30);
-  file.writeUInt32LE(rowBytes * side, 34);
-  file.writeUInt32LE(2835, 38);
-  file.writeUInt32LE(2835, 42);
-  file.writeUInt32LE(0, 46);
-  file.writeUInt32LE(0, 50);
-  for (let y = 0; y < side; y++) {
-    for (let x = 0; x < side; x++) {
-      if (rows[Math.floor(y / scale)]![Math.floor(x / scale)]) file.fill(0, 54 + y * rowBytes + x * 3, 54 + y * rowBytes + x * 3 + 3);
-    }
-  }
-  return { name: 'code.bmp', mimeType: 'image/bmp', buffer: file };
-}
 
 /** Chooses a file with the "Read from image" button. */
 async function chooseImage(page: Page, file: ReturnType<typeof picture>) {

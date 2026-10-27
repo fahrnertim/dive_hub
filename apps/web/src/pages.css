@@ -320,6 +320,10 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .provider-pushes { margin: 0; padding-left: var(--space-5); }
 .provider-pushes li + li { margin-top: var(--space-1); }
 .provider-sites { display: grid; gap: var(--space-3); }
+/* Link or add: the list to pick from, then the way to add the person; the second group stands apart (2x the gap within). */
+.link-or-add { display: grid; gap: var(--space-6); }
+.link-or-add h3 { font-size: var(--text-md); margin: 0; }
+.link-or-add .provider-sites > p, .link-or-add .field-label { margin: 0; }
 /* What a Provider needs first (ADR 0029): each unmet requirement with its fix. */
 .provider-needs { display: grid; gap: var(--space-3); }
 .provider-needs .muted { margin: 0; }
@@ -540,6 +544,10 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .push-run-risky { display: grid; gap: var(--space-3); margin: 0; min-width: 0; padding: var(--space-3); border: 1px solid var(--color-danger); border-radius: var(--radius-md); background: var(--color-danger-soft); }
 .push-run-risky legend { display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-2); font-weight: 600; }
 .push-run-leftout h3 { margin: 0 0 var(--space-1); font-size: var(--text-md); }
+.push-run-without { display: grid; gap: var(--space-1); }
+.push-run-without h3 { margin: 0; font-size: var(--text-md); }
+.push-run-without .muted { margin: 0; }
+.push-run-without ul { margin: 0; padding-left: var(--space-5); display: grid; gap: var(--space-1); }
 .push-run-leftout ul, .push-run-items { margin: 0; padding-left: var(--space-5); display: grid; gap: var(--space-1); }
 .push-run-strip { flex-direction: column; flex-wrap: nowrap; align-items: stretch; }
 .push-run-progress { display: grid; gap: var(--space-1); flex: 1; }

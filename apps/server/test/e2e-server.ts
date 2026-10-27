@@ -86,6 +86,12 @@ const siteImports = createSiteImportService({
 });
 // SSI as the fake answers it (ADR 0024): the browser tests never reach SSI. Its account is Erika's,
 // with the password below; the e2e server keeps passwords (it has an encryption key).
+// Each reset gives its entries new IDs, so what an earlier test remembered for an entry never sticks to a new one.
+let nextTestEntry = 7_000_000;
+const seedBuddies = [
+  { owner: 5_012_047, id: 3_786_888, buddy_master_id: 4_989_164, firstname: 'Kai', lastname: 'Lund', email: 'kai@example.com', dob: '1980-01-02', phone: '+49 170 000001', city: 'Kiel' },
+  { owner: 5_012_047, id: 2_826_964, buddy_master_id: 4_512_484, firstname: 'Mia', lastname: 'Stone', email: 'mia@example.com', dob: '1985-03-04', phone: '+49 170 000002', city: 'Linz' },
+];
 const fakeSsi = createFakeSsi({
   accounts: [
     { email: 'erika@example.com', password: 'ssi-password', accountId: 5_012_047 },
@@ -101,10 +107,7 @@ const fakeSsi = createFakeSsi({
     { odin_dive_sites_id: 7020, odin_dive_sites_name: 'Lenas Geheimriff', odin_dive_sites_lat: 27.6, odin_dive_sites_lon: 34.2, odin_countries_code_iso: 'EG', odin_dive_sites_is_private: 1, odin_dive_sites_is_private_owner: 6_100_200 },
   ],
   // Erika's SSI buddy list (ADR 0029); buddies.spec.ts adds Kai to Dive Hub and finds Mia for a Diver typed by hand.
-  buddies: [
-    { owner: 5_012_047, id: 3_786_888, buddy_master_id: 4_989_164, firstname: 'Kai', lastname: 'Lund', email: 'kai@example.com', dob: '1980-01-02', phone: '+49 170 000001', city: 'Kiel' },
-    { owner: 5_012_047, id: 2_826_964, buddy_master_id: 4_512_484, firstname: 'Mia', lastname: 'Stone', email: 'mia@example.com', dob: '1985-03-04', phone: '+49 170 000002', city: 'Linz' },
-  ],
+  buddies: seedBuddies.map((b) => ({ ...b })),
   // Erika's certification cards (ADR 0050); certifications.spec.ts imports them from the Diver page. Invented values.
   cards: [
     fakeCard(5_012_047, { uid: 'E2ECARD-0001', course: 'Open Water Diver', short: 'owd', courseId: 101, issued: '2019-06-15', dives: 9 }),
@@ -197,6 +200,21 @@ app.post('/e2e/fake-ssi/expire-tokens', { schema: { hide: true } }, async (reque
   const account = fakeSsi.accounts.find((a) => a.email === email);
   if (!account) return { ok: false };
   fakeSsi.expireTokens(account.accountId);
+  return { ok: true };
+});
+
+// Test-only: Erika's SSI buddy list is put back to Kai and Mia, plus these entries without an SSI account (an account-only
+// entry has no name yet), and what SSI's profiles say about some accounts (so a `save_buddy` by that account is answered
+// under that name). The tests that add to or link in the list start from here.
+app.post('/e2e/fake-ssi/buddies', { schema: { hide: true } }, async (request) => {
+  const { entries = [], profiles = [] } = (request.body ?? {}) as {
+    entries?: { firstname: string; lastname: string }[]; profiles?: { account: number; firstname: string; lastname: string }[];
+  };
+  fakeSsi.buddies.splice(0, fakeSsi.buddies.length, ...seedBuddies.map((b) => ({ ...b })), ...entries.map((e) => ({
+    owner: 5_012_047, id: nextTestEntry++, buddy_master_id: 0, firstname: e.firstname, lastname: e.lastname, email: '', dob: '0000-00-00', phone: ' ', city: '', confirmed: 0,
+  })));
+  fakeSsi.profiles.clear();
+  for (const p of profiles) fakeSsi.profiles.set(p.account, { firstname: p.firstname, lastname: p.lastname });
   return { ok: true };
 });
 

@@ -150,6 +150,7 @@ export const keys = {
   certifications: (id: string) => ['divers', id, 'certifications'] as const,
   /** The account's list of people at a Provider; under ['connections']. */
   buddies: (connectionId: string) => ['connections', connectionId, 'buddies'] as const,
+  buddiesFor: (connectionId: string, diverId: string) => ['connections', connectionId, 'buddies', diverId] as const,
   /** What importing the account's dives would do (ADR 0030); under ['connections']. */
   diveImport: (connectionId: string) => ['connections', connectionId, 'dive-import'] as const,
   diveTimes: (connectionId: string) => ['connections', connectionId, 'dive-times'] as const,
@@ -430,12 +431,17 @@ async function fetchCertifications(id: string) {
 export const certificationsQuery = (id: string) => queryOptions({ queryKey: keys.certifications(id), queryFn: () => fetchCertifications(id) });
 export type CertificationView = Awaited<ReturnType<typeof fetchCertifications>>[number];
 
-async function fetchBuddies(connectionId: string) {
-  return unwrap(await api.GET('/api/connections/{id}/buddies', { params: { path: { id: connectionId } } })).buddies;
+async function fetchBuddies(connectionId: string, diverId?: string) {
+  return unwrap(await api.GET('/api/connections/{id}/buddies', {
+    params: { path: { id: connectionId }, ...(diverId && { query: { for: diverId } }) },
+  })).buddies;
 }
 /** The account's list of people at the Provider (SSI's buddy list); asks the Provider, so only when the User opens it. */
 export const buddiesQuery = (connectionId: string) =>
   queryOptions({ queryKey: keys.buddies(connectionId), queryFn: () => fetchBuddies(connectionId), staleTime: 2 * 60_000 });
+/** The same list for Link or add: the entries that look like this Diver come first (a sort, never a link). */
+export const buddiesForQuery = (connectionId: string, diverId: string) =>
+  queryOptions({ queryKey: keys.buddiesFor(connectionId, diverId), queryFn: () => fetchBuddies(connectionId, diverId), staleTime: 30_000 });
 
 async function fetchDiveImportPreview(connectionId: string) {
   return unwrap(await api.GET('/api/connections/{id}/dive-import', { params: { path: { id: connectionId } } }));
