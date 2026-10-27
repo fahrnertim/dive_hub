@@ -2,14 +2,19 @@
 // period, and the Connection's job runs at the earliest due time. Rows are read from the table (the API comes later).
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { connection, importJob, push, revision, waitingPush } from '../src/db/schema.js';
+import { connection, diveSiteExternalId, importJob, push, revision, waitingPush } from '../src/db/schema.js';
 import { writeRevision } from '../src/dives/revisions.js';
 import { QUIET_MS, settle, WAITING_PUSHES_TASK } from '../src/providers/waiting-push-queue.js';
+import type { ImportedValues, SiteSourceAdapter, SourceSite } from '../src/sites/import/site-source.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
   BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase,
 } from './support.js';
+
+type Position = { latitude: number; longitude: number };
+const HOUSE_REEF = { latitude: 28.495, longitude: 34.516 };
+const northBy = (m: number): Position => ({ latitude: HOUSE_REEF.latitude + m / 111_195, longitude: HOUSE_REEF.longitude });
 
 // A year per test: a Dive deleted earlier is not imported again.
 let year = 3100;
@@ -24,6 +29,10 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
   let connectionId: string;
   let annId: string;
   const ledger = createFakeLedger();
+  let admin: string;
+  // A Site source that answers with what the test put there.
+  let osmSites: SourceSite[] = [];
+  const stand = (source: 'osm' | 'wikidata' | 'ssi'): SiteSourceAdapter => ({ source, fetch: async () => (source === 'osm' ? osmSites : []) });
 
   const call = (method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', url: string, payload?: object, cookie = ann) =>
     ctx.app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload && { payload }) });
@@ -56,7 +65,9 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
 
   beforeAll(async () => {
     t = await createTestDatabase();
-    ctx = await createTestApp(t, { extraProviders: [ledger.adapter] });
+    ctx = await createTestApp(t, { extraProviders: [ledger.adapter], siteSources: { osm: stand('osm'), wikidata: stand('wikidata'), ssi: stand('ssi') } });
+    await createUser(ctx.auth, 'admin@example.com', 'admin');
+    admin = await signIn(ctx.app, 'admin@example.com');
     await createUser(ctx.auth, 'ann@example.com');
     await createUser(ctx.auth, 'bob@example.com');
     ann = await signIn(ctx.app, 'ann@example.com');
@@ -201,6 +212,49 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
     await t.db.delete(waitingPush);
     await call('PATCH', `/api/dive-sites/${site.id}`, { version: (moved.json() as { version: number }).version, name: 'Blue Hole, Dahab' });
     expect(await rows()).toMatchObject([{ diveId: sent }]);
+  });
+
+  /** A sent Dive at a site without a position (or with one), the queue empty. */
+  const sentAt = async (siteId: string) => {
+    const id = await upload(day(1));
+    await call('PATCH', `/api/dives/${id}`, { version: await version(id), siteId });
+    await send(id);
+    return id;
+  };
+
+  it('a site merge that gives the kept site a position queues the Dives already there', async () => {
+    const kept = await json<{ id: string; version: number }>('POST', '/api/dive-sites', { name: 'Site K' });
+    const merged = await json<{ id: string; version: number }>('POST', '/api/dive-sites', { name: 'Site M', position: northBy(0) });
+    const id = await sentAt(kept.id);
+    const done = await call('POST', `/api/dive-sites/${merged.id}/merge`, { intoId: kept.id, version: merged.version, intoVersion: kept.version });
+    expect(done.statusCode).toBe(200);
+    expect(await rows()).toMatchObject([{ diveId: id, action: 'send' }]);
+  });
+
+  it('taking up the position a Source offers for a site queues its Dives', async () => {
+    const site = await json<{ id: string; version: number }>('POST', '/api/dive-sites', { name: 'Hausriff' });
+    const id = await sentAt(site.id);
+    await t.db.insert(diveSiteExternalId).values({
+      siteId: site.id, source: 'osm', externalId: 'node/1', imported: { name: 'Hausriff', position: northBy(0), country: null, waterBody: null, description: null, maxDepthM: null, waterType: null } satisfies ImportedValues,
+    });
+    expect((await call('POST', `/api/dive-sites/${site.id}/adopt`, { source: 'osm', version: site.version })).statusCode).toBe(200);
+    expect(await rows()).toMatchObject([{ diveId: id, action: 'send' }]);
+  });
+
+  it('a Site import that moves a site queues its Dives', async () => {
+    const values = (position: Position): ImportedValues => ({ name: 'Import Reef', position, country: 'EG', waterBody: null, description: null, maxDepthM: null, waterType: null });
+    const runImport = async () => {
+      const started = await call('POST', '/api/admin/site-imports', { sources: ['osm'], area: { kind: 'country', country: 'EG' }, language: 'en', confirmOdbl: true }, admin);
+      expect(started.statusCode).toBe(202);
+      await ctx.siteImports.run(started.json().id);
+    };
+    osmSites = [{ source: 'osm', externalId: 'node/77', values: values(northBy(0)), sameAs: {} }];
+    await runImport();
+    const site = (await json<{ sites: { id: string; name: string }[] }>('GET', '/api/dive-sites?q=Import%20Reef')).sites.find((x) => x.name === 'Import Reef')!;
+    const id = await sentAt(site.id);
+    osmSites = [{ source: 'osm', externalId: 'node/77', values: values(northBy(800)), sameAs: {} }];
+    await runImport();
+    expect(await rows()).toMatchObject([{ diveId: id, action: 'send' }]);
   });
 
   it('a save while the Connection needs a sign-in holds the entry at once', async () => {

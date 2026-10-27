@@ -5,6 +5,7 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../../db/client.js';
 import { diveSite, siteImport, type SiteImportFinding, type SiteImportProgress } from '../../db/schema.js';
 import { writeRevision, type Actor, type Changes } from '../../dives/revisions.js';
+import { noteSiteChange } from '../../providers/waiting-push-queue.js';
 import type { ProblemCode } from '../../http/problems.js';
 import { isUniqueViolation } from '../site-error.js';
 import { allPublicIds, heldIds, insertImportedIds, publishIds, updateImported } from '../site-ids.js';
@@ -114,6 +115,7 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
       .set({ ...columnsOf(set as Partial<ImportedValues>), version: sql`${diveSite.version} + 1`, updatedAt: new Date() })
       .where(eq(diveSite.id, u.siteId));
     await writeRevision(tx, 'dive_site', u.siteId, actor, u.outcome === 'linked' ? 'link' : 'update', changes);
+    if (changes.name || changes.position) await noteSiteChange(tx, u.siteId, new Date());
   }
 
   return {

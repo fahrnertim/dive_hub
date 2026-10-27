@@ -275,6 +275,8 @@ export function createSiteService(db: Db) {
         const by = { type: 'user' as const, id: actor.userId };
         await writeRevision(tx, 'dive_site', kept.id, by, 'merge', changes);
         await writeRevision(tx, 'dive_site', merged.id, by, 'merge', { mergedInto: { from: null, to: { id: kept.id, name: kept.name } } });
+        // Dives already at the kept site now carry the position it took from the merged one (ADR 0056).
+        if (fill.position !== undefined) await noteSiteChange(tx, kept.id, new Date());
       });
     },
 
@@ -300,6 +302,7 @@ export function createSiteService(db: Db) {
         }
         await tx.update(diveSite).set({ ...toColumns(fill), version: sql`${diveSite.version} + 1`, updatedAt: new Date() }).where(eq(diveSite.id, id));
         await writeRevision(tx, 'dive_site', id, { type: 'user', id: actor.userId }, 'adopt', changes);
+        if (changes.name || changes.position) await noteSiteChange(tx, id, new Date());
       });
     },
 
