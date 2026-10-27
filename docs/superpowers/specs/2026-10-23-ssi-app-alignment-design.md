@@ -159,9 +159,9 @@ automatic exchange without clash handling would overwrite edits made in SSI's ap
    shows.
 3. **Two-way with clash handling** (above). **Check:** a field changed in SSI's app, then a send from Dive Hub: the
    change comes back, nothing is overwritten.
-4. **Sites** (above; built, account check pending; global feed checked 2026-10-26). **Check:** a private site created by Dive Hub is usable on a dive and not visible to others [?
+4. **Sites** (above; done: account and global feed checked 2026-10-26/27, [note](../../research/2026-10-26-ssi-private-site-check.md)). **Check:** a private site created by Dive Hub is usable on a dive and not visible to others [?
    how to see that from one account is for the builder to find].
-5. **Buddies** (revised in "Piece 5, settled" below; checked 2026-10-27). **Checks:** an added entry appears in the app's
+5. **Buddies** (revised in "Piece 5, settled" below; checked 2026-10-27, [note](../../research/2026-10-27-ssi-buddy-checks.md); done: [plan](../plans/2026-10-27-ssi-buddies.md)). **Checks:** an added entry appears in the app's
    buddy list and on the dive; a name-only entry is kept (both [T]).
 6. **Automation** (above), for every Provider.
 7. **Fewer reads** (above).

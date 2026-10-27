@@ -405,10 +405,17 @@ What a Provider needs before it takes a Dive, such as the Dive site's SSI site I
 _Avoid_: Precondition, validation, prerequisite
 _German_: Voraussetzung (on screen: "SSI braucht zuerst …")
 
-**Connection Diver mapping**:
-A link, within one Connection, from a Diver to a person's record in that account at the Provider, such as an entry in the User's SSI buddy list. Not built: SSI finds a buddy's entry by the Diver's SSI account; mappings come if an entry without an account turns up ([ADR 0029](decisions/0029-push-requirements-and-buddies.md)).
-_Avoid_: Buddy link, contact mapping
-_German_: Taucher-Zuordnung
+**Remembered list entry**:
+The entry of an account's own list of people at a Provider (SSI's buddy list) that Dive Hub remembers for a Diver, per account, not per Connection: set by a link, an add or an import, forgotten when the Provider no longer lists it; a Participant with one goes on a dive at that Provider without an account ([ADR 0057](decisions/0057-ssi-aligned-with-its-app.md)).
+_Avoid_: Buddy link, contact mapping, Connection Diver mapping
+_German_: Gemerkter Listeneintrag
+
+**Connection Diver mapping**: see **Remembered list entry**.
+
+**Link or add**:
+What the Dive's page offers for a Participant the account's list at a Provider doesn't hold: pick an entry, scan the person's buddy code, or type their name; never done by a send.
+_Avoid_: Match buddy, auto-match
+_German_: Verknüpfen oder hinzufügen
 
 **Connection**:
 One User's link to a Provider for one of their Divers: the account there and what lets Dive Hub sign in for them, sealed. For SSI that is the e-mail, a sign-in that may expire, and the password only if the User chose "Keep me signed in". When the Provider no longer accepts it, the Connection asks the User to sign in again.
