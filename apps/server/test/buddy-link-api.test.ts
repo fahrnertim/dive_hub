@@ -1,7 +1,9 @@
 // Link or add an entry of the User's SSI buddy list for a Diver (piece 5): the list sorted by who matches, a link of an
 // entry with or without an account, an add of a typed person or a scanned code, an import of an entry without an
 // account, and that another User sees none of it.
+import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { diver as diverTable } from '../src/db/schema.js';
 import { listAccountOf, rememberedFor } from '../src/providers/list-entries.js';
 import { createFakeSsi, type FakeSsiBuddy } from './fake-ssi.js';
 import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, signIn, type TestDatabase } from './support.js';
@@ -88,6 +90,33 @@ describe.skipIf(!(await databaseReachable()))('link or add a list entry for a Di
     expect((await details(nora)).accounts).toEqual([]);
     const shown = (await list()).buddies.find((b) => b.entryId === String(id))!;
     expect(shown).toMatchObject({ account: null, diver: { id: nora, name: 'Nora Null' } });
+  });
+
+  it('still shows an entry as linked when it got an account no Diver has', async () => {
+    const id = nextEntry++;
+    const linked = entry(id, 0, 'Rita', 'Spät');
+    ctx.fakeSsi.buddies.push(linked);
+    const rita = await person('Rita Spät');
+    await call('POST', `/api/connections/${connectionId}/buddies/link`, { entryId: String(id), diverId: rita });
+    // The account came later, given at SSI: no Diver here has it.
+    const account = nextAccount++;
+    linked.buddy_master_id = account;
+    ctx.ssiClock.advance(3 * 60_000);
+    expect((await list()).buddies.find((b) => b.entryId === String(id))).toMatchObject({ account: String(account), diver: { id: rita } });
+    // So the Import makes no second Diver of it.
+    const imported = await call('POST', `/api/connections/${connectionId}/buddies/import`, { accounts: [String(account)] });
+    expect(imported.json()).toMatchObject({ created: 0 });
+  });
+
+  it('shows an entry remembered for a merged-away Diver as linked to the Diver it went into', async () => {
+    const id = nextEntry++;
+    ctx.fakeSsi.buddies.push(entry(id, 0, 'Mara', 'Mohn'));
+    const gone = await person('Mara M.');
+    const kept = await person('Mara Mohn');
+    await call('POST', `/api/connections/${connectionId}/buddies/link`, { entryId: String(id), diverId: gone });
+    // As divers/merge.ts leaves it: deleted with merged_into, its remembered entry kept.
+    await t.db.update(diverTable).set({ deletedAt: new Date(), mergedInto: kept }).where(eq(diverTable.id, gone));
+    expect((await list()).buddies.find((b) => b.entryId === String(id))).toMatchObject({ diver: { id: kept, name: 'Mara Mohn' } });
   });
 
   it('answers provider_buddy_not_found for an entry not in the list', async () => {

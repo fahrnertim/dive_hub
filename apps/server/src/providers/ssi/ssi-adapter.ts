@@ -347,7 +347,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
       create: (ctx, site) => called('save_divesite', ctx.connectionId, () => client.saveSite(ctx.access, ssiSiteRow(site, ctx.accountId))),
     },
     buddies: {
-      find: async (ctx) => (await buddyListOf(ctx).recent()).map(remoteBuddy),
+      find: async (ctx, options) => (await (options?.fresh ? buddyListOf(ctx).current() : buddyListOf(ctx).recent())).map(remoteBuddy),
       // With an account only that and the flags go: SSI fills the entry itself and answers an existing entry of the account
       // by that entry. Without, the app's whole row from scratch (docs/research/2026-10-27-ssi-buddy-checks.md).
       async add(ctx, person) {

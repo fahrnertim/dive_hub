@@ -2,7 +2,7 @@
 // account, remembered for a Diver, comes back on an imported dive as that Diver, a Participant. Other entries stay out.
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { diverExternalId, participant } from '../src/db/schema.js';
+import { diver, diverExternalId, participant } from '../src/db/schema.js';
 import { listAccountOf, remember } from '../src/providers/list-entries.js';
 import { createFakeSsi, handTypedDive, type FakeSsiBuddy } from './fake-ssi.js';
 import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, signIn, type TestDatabase } from './support.js';
@@ -70,5 +70,19 @@ describe.skipIf(!(await databaseReachable()))('the dive import maps remembered e
     expect(done.outcome[0]).toMatchObject({ result: 'updated' });
     const rows = await t.db.select({ diverId: participant.diverId }).from(participant).where(eq(participant.diveId, diveId));
     expect(rows.map((r) => r.diverId).sort()).toEqual([anna, kai].sort());
+  });
+
+  it('imports an entry remembered for a merged-away Diver as the Diver it went into', async () => {
+    const survivor = ((await call('POST', '/api/external-divers', { name: 'Anna Berg' })).json() as { id: string }).id;
+    // As divers/merge.ts leaves Anna: deleted with merged_into, her remembered entry kept.
+    await t.db.update(diver).set({ deletedAt: new Date(), mergedInto: survivor }).where(eq(diver.id, anna));
+    ctx.fakeSsi.addDive(ERIKA, handTypedDive({ at: '2026-02-20 10:00', depthM: 12, minutes: 40, nr: 2, buddies: [ANNA.id] }));
+    ctx.ssiClock.advance(5 * 60_000);
+    const started = await call('POST', `/api/connections/${connectionId}/dive-import`, { computers: [], decisions: [] });
+    await ctx.imports.processImport(started.json().id);
+    const done = (await call('GET', `/api/imports/${started.json().id}`)).json() as { outcome: { result: string; diveId: string }[] };
+    const created = done.outcome.find((o) => o.result === 'created')!;
+    const rows = await t.db.select({ diverId: participant.diverId }).from(participant).where(eq(participant.diveId, created.diveId));
+    expect(rows.map((r) => r.diverId)).toEqual([survivor]);
   });
 });

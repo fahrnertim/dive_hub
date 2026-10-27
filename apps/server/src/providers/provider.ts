@@ -450,8 +450,11 @@ export interface ProviderAdapter {
     ): Promise<string>;
   };
   buddies?: {
-    /** The account's own list of people (SSI: the buddy list), read live. */
-    find(context: ActionContext): Promise<RemoteBuddy[]>;
+    /**
+     * The account's own list of people (SSI: the buddy list), read live; it may be a read from moments ago. `fresh`:
+     * read it now (before forgetting an entry it misses).
+     */
+    find(context: ActionContext, options?: { fresh?: boolean }): Promise<RemoteBuddy[]>;
     /**
      * Makes an entry in the account's list and answers it as the Provider keeps it. With an `account` the Provider fills
      * the entry from the person's profile (or answers an entry of that account already in the list); without, the entry

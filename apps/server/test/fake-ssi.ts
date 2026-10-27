@@ -106,6 +106,8 @@ export interface FakeSsi {
   expiredAnswer: { status: number; body: unknown } | null;
   /** Answer saves as SSI does for a client that isn't its app: with an invented dive ID, storing nothing. */
   dropSaves: boolean;
+  /** While set, `save_buddy` answers `{ error }` and saves nothing, as SSI does for a row it refuses. */
+  failBuddySaves: boolean;
   /** While set, every token expires right after the next logbook read, as when one runs out in the middle of an action. */
   expireAfterRead: boolean;
   /** While set, every token expires right after the next site save, as when one runs out between a site and its dive. */
@@ -186,6 +188,7 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
     failWith: null,
     expiredAnswer: null,
     dropSaves: false,
+    failBuddySaves: false,
     expireAfterRead: false,
     expireAfterSiteSave: false,
     expireTokens: (accountId) => {
@@ -248,6 +251,7 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
       if (what === 'save_buddy' && init.method === 'POST') {
         const row = JSON.parse(new URLSearchParams(init.body ?? '').get('json_data') ?? '{}') as Record<string, unknown>;
         fake.calls[fake.calls.length - 1]!.body = row;
+        if (fake.failBuddySaves) return answer({ error: 'buddy could not be saved' });
         const own = fake.buddies.filter((b) => b.owner === accountId);
         const account = typeof row.master_id === 'number' ? row.master_id : 0;
         // An ID updates that entry; `id: null` with an account of the list answers that entry (check step 8), else a new one.

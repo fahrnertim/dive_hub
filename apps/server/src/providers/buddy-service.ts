@@ -11,7 +11,7 @@ import { DiverError } from '../divers/diver-error.js';
 import { tidyName } from '../divers/diver-name.js';
 import type { DiverActor, DiverDetails, DiverService } from '../divers/diver-service.js';
 import { locked } from './advisory-lock.js';
-import { foldName, nameDiffers } from './buddies-for-send.js';
+import { foldName, nameDiffers } from './buddy-names.js';
 import type { ConnectionService } from './connection-service.js';
 import { realClock } from './leases.js';
 import { listAccountOf, remember, rememberedEntries } from './list-entries.js';
@@ -24,7 +24,7 @@ export interface Buddy {
   name: string;
   /** The person's account at the Provider; null when they have none (such an entry can't be imported by account). */
   account: string | null;
-  /** The Diver here with that account, or the Diver an entry without one is remembered for. */
+  /** The Diver here with that account, or else the Diver the entry is remembered for. */
   diver: { id: string; name: string } | null;
   /** The entry's name or e-mail is the `for` Diver's (folded, trimmed): only a sort, never a link. */
   matches: boolean;
@@ -59,14 +59,18 @@ export function createBuddyService(deps: { db: Db; registry: ProviderRegistry; c
     const known = await divers.byAccounts(source, entries.flatMap((e) => (e.account ? [e.account] : [])));
     const accountId = await listAccountOf(db, row.diverId, source);
     const remembered = accountId ? await rememberedEntries(db, accountId) : new Map<string, string>();
-    const names = await namesOf([...new Set(entries.flatMap((e) => (e.account || !remembered.has(e.remoteId) ? [] : [remembered.get(e.remoteId)!])))]);
+    // An entry whose account no Diver has (none, or given at the Provider after the link) is the Diver it is remembered
+    // for, so the Import makes no second Diver of it.
+    const byAccount = (e: RemoteBuddy) => (e.account ? known.get(e.account) : undefined);
+    const rememberedFor = (e: RemoteBuddy) => (byAccount(e) ? undefined : remembered.get(e.remoteId));
+    const names = await namesOf([...new Set(entries.flatMap((e) => rememberedFor(e) ?? []))]);
     const wanted = forDiverId ? await wantedBy(userId, forDiverId) : null;
     const buddies: (Buddy & { details: Partial<DiverDetails> })[] = entries
       .map((e) => {
-        const rememberedFor = e.account ? undefined : remembered.get(e.remoteId);
+        const remembers = rememberedFor(e);
         return {
           entryId: e.remoteId, name: e.name, account: e.account,
-          diver: (e.account && known.get(e.account)) || (rememberedFor && names.get(rememberedFor)) || null,
+          diver: byAccount(e) || (remembers && names.get(remembers)) || null,
           matches: !!wanted && matchesDiver(e, wanted),
           details: { firstName: e.firstName ?? null, lastName: e.lastName ?? null, email: e.email ?? null, leaderNumber: e.leaderNumber ?? null },
         };

@@ -5,15 +5,15 @@ import { LeaseBusy, MAX_WAIT_MS, POLL_MS, type Clock } from './leases.js';
 
 /**
  * Runs `fn` holding a PostgreSQL advisory lock on `key`, on a connection of its own and outside any transaction: one
- * find-or-make per site and account at a time in every app process (a site made at the Provider can't be deleted
- * there). The lock goes with the session, so a crashed process leaves none behind. A waiter holds no connection: it
- * tries the lock, gives the connection back and looks again every POLL_MS, for up to MAX_WAIT_MS (then LeaseBusy). The
- * holder keeps its one connection until `fn` ends. Needs a pool: on a single Client advisory locks are re-entrant per
+ * holder per key at a time in every app process (keys such as a site's find-or-make, which can't be undone at the
+ * Provider, or an account's buddy list). The lock goes with the session, so a crashed process leaves none behind. A
+ * waiter holds no connection: it tries the lock, gives the connection back and looks again every POLL_MS, for up to
+ * MAX_WAIT_MS (then LeaseBusy). The holder keeps its one connection until `fn` ends. Needs a pool: on a single Client advisory locks are re-entrant per
  * session and would exclude nothing.
  */
 export async function locked<T>(db: Db, key: string, source: string, clock: Clock, fn: () => Promise<T>): Promise<T> {
   const client = (db as Db & { $client: unknown }).$client;
-  if (!(client instanceof pg.Pool)) throw new Error('The site lock needs a pg.Pool: advisory locks are re-entrant on a single connection');
+  if (!(client instanceof pg.Pool)) throw new Error('The advisory lock needs a pg.Pool: advisory locks are re-entrant on a single connection');
   const started = clock.now();
   let session: pg.PoolClient;
   for (;;) {

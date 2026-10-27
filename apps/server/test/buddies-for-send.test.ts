@@ -3,8 +3,7 @@
 // account later; a Diver with an account and no entry gets one added; nothing is ever added from scratch on a send.
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { dive } from '../src/db/schema.js';
-import { foldName } from '../src/providers/buddies-for-send.js';
+import { dive, diver } from '../src/db/schema.js';
 import { listAccountOf, remember, rememberedFor } from '../src/providers/list-entries.js';
 import { createFakeSsi, type FakeSsiBuddy } from './fake-ssi.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
@@ -25,6 +24,7 @@ describe.skipIf(!(await databaseReachable()))('the send settles the buddy list',
   let day = 1;
   let nextAccount = 4_600_000;
   let site = '';
+  let connectionId = '';
 
   const call = (method: 'GET' | 'POST' | 'PUT' | 'PATCH', url: string, payload?: object) =>
     ctx.app.inject({ method, url, headers: { cookie: tim, origin: BASE_URL }, ...(payload && { payload }) });
@@ -59,6 +59,9 @@ describe.skipIf(!(await databaseReachable()))('the send settles the buddy list',
     return ctx.fakeSsi.dives.get(Number(status.current.remoteId))!.odin_user_log_buddy_ids;
   };
   const remembered = async (diverId: string) => (await rememberedFor(t.db, (await listAccountOf(t.db, owner, 'ssi'))!, [diverId])).get(diverId);
+  const listAccount = async () => (await listAccountOf(t.db, owner, 'ssi'))!;
+  /** Reads the list as the list page does, so the adapter keeps it for two minutes. */
+  const readList = async () => expect((await call('GET', `/api/connections/${connectionId}/buddies`)).statusCode).toBe(200);
   /** A fresh Dive with these Participants (as buddies), the fake's calls cleared. */
   const prepare = async (...ids: string[]) => {
     const diveId = await newDive();
@@ -73,7 +76,7 @@ describe.skipIf(!(await databaseReachable()))('the send settles the buddy list',
     await createUser(ctx.auth, 'tim@example.com');
     tim = await signIn(ctx.app, 'tim@example.com');
     owner = ((await call('GET', '/api/divers')).json() as { id: string; isOwn: boolean }[]).find((d) => d.isOwn)!.id;
-    await call('POST', '/api/connections/ssi', { diverId: owner, login: 'erika@example.com', password: 'ssi-password', keepSignedIn: true });
+    connectionId = (await call('POST', '/api/connections/ssi', { diverId: owner, login: 'erika@example.com', password: 'ssi-password', keepSignedIn: true })).json().id;
     // The site has its SSI ID, so only the buddies are in question.
     site = ((await call('POST', '/api/dive-sites', { name: 'Hausreef' })).json() as { id: string }).id;
     await call('PUT', `/api/dive-sites/${site}/external-ids/ssi`, { externalId: '3314' });
@@ -85,10 +88,6 @@ describe.skipIf(!(await databaseReachable()))('the send settles the buddy list',
   afterAll(async () => {
     await ctx?.app.close();
     await t?.drop();
-  });
-
-  it('folds a name: trimmed, lower case, without accents', () => {
-    expect(foldName('  Zoë Ähre ')).toBe('zoe ahre');
   });
 
   it('adds an entry by SSI account and remembers it', async () => {
@@ -235,5 +234,76 @@ describe.skipIf(!(await databaseReachable()))('the send settles the buddy list',
     expect(sent.status.pushes[0]!.leftOut).toEqual([expect.objectContaining({ diverId: nobody, reason: 'no_reference' })]);
     expect(await remembered(nobody)).toBeUndefined();
     expect((await t.db.select().from(dive).where(eq(dive.id, diveId)))[0]).toBeDefined();
+  });
+
+  it('carries the entry remembered for a Diver merged into the Participant', async () => {
+    ctx.fakeSsi.buddies.push(entry(12, 0, 'Mia', 'Merz'));
+    const gone = await person('Mia M.');
+    const kept = await person('Mia Merz');
+    await remember(t.db, await listAccount(), gone, '12');
+    // As divers/merge.ts leaves it: deleted with merged_into, its remembered entry kept.
+    await t.db.update(diver).set({ deletedAt: new Date(), mergedInto: kept }).where(eq(diver.id, gone));
+    const diveId = await prepare(kept);
+    await send(diveId);
+    expect(saves()).toHaveLength(0);
+    expect(await carried(diveId)).toEqual([12]);
+    expect(await remembered(kept)).toBe('12');
+  });
+
+  it('sends the Dive without the Participant whose entry SSI refuses to save', async () => {
+    const account = nextAccount++;
+    const lena = await person('Lena Fehl', account);
+    ctx.fakeSsi.buddies.push(entry(14, nextAccount, 'Ina', 'Da'));
+    const ina = await person('Ina Da', nextAccount++);
+    const diveId = await prepare(lena, ina);
+    ctx.fakeSsi.failBuddySaves = true;
+    try {
+      const sent = await send(diveId);
+      expect(sent.outcome).toBe('created');
+      expect(sent.status.pushes[0]!.leftOut).toEqual([expect.objectContaining({ diverId: lena })]);
+      expect(await carried(diveId)).toEqual([14]);
+      expect(await remembered(lena)).toBeUndefined();
+    } finally {
+      ctx.fakeSsi.failBuddySaves = false;
+    }
+  });
+
+  it('adds by account when the remembered entry is gone by the time it gets the account', async () => {
+    const account = nextAccount++;
+    ctx.fakeSsi.profiles.set(account, { firstname: 'Eva', lastname: 'Weg' });
+    const gone = entry(15, 0, 'Eva', 'Weg');
+    ctx.fakeSsi.buddies.push(gone);
+    const eva = await person('Eva Weg', account);
+    await remember(t.db, await listAccount(), eva, '15');
+    const diveId = await prepare(eva);
+    // The kept list still has the entry; SSI has deleted it since, so giving it the account finds none.
+    await readList();
+    gone.deleted = 1;
+    await send(diveId);
+    const made = ctx.fakeSsi.buddies.find((b) => b.buddy_master_id === account)!;
+    expect(made.id).not.toBe(15);
+    expect(saves()).toEqual([expect.objectContaining({ id: null, master_id: account })]);
+    expect(await remembered(eva)).toBe(String(made.id));
+    expect(await carried(diveId)).toEqual([made.id]);
+  });
+
+  it('forgets a remembered entry only when a fresh read misses it too', async () => {
+    await readList();
+    // Added by another process: in SSI's list and remembered, but not in the list the adapter keeps.
+    ctx.fakeSsi.buddies.push(entry(16, 0, 'Nia', 'Neu'));
+    const nia = await person('Nia Neu');
+    await remember(t.db, await listAccount(), nia, '16');
+    const diveId = await prepare(nia);
+    await send(diveId);
+    expect(await remembered(nia)).toBe('16');
+    expect(await carried(diveId)).toEqual([16]);
+  });
+
+  it('names an added entry after the Diver when SSI answers it without a name', async () => {
+    // No profile: SSI answers the entry of the account before it has the name.
+    const ola = await person('Ola Ohne', nextAccount++);
+    const diveId = await prepare(ola);
+    const sent = await send(diveId);
+    expect(sent.buddies?.added).toEqual([{ diverId: ola, name: 'Ola Ohne' }]);
   });
 });
