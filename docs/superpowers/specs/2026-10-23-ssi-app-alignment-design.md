@@ -421,6 +421,9 @@ here names SSI except its declared interval.
     setting only). Restoring it (Undo, or from the list of deleted dives) in that time removes the entry. Off: the delete
     dialog asks as [ADR 0026](../../decisions/0026-deleting-dives.md) says; for a Dive at two Providers it asks only for
     those whose setting is off (my call).
+  - **Merging two Dives** (owner): where both are at the Provider, the setting applies to the merged-away Dive's copy
+    as to a delete (no question, deleted there after 5 minutes, a restore in that time cancels it), so the Provider
+    doesn't keep both. Where only one is there, its link moves to the kept Dive as today ([ADR 0038](../../decisions/0038-logbook-checks-and-merging-dives.md)).
   - **Where a delete's state shows** (my call): the Dive has left the logbook, so on the list of deleted dives, in the
     place of ADR 0026's reminder: "Will be deleted in SSI in 4 minutes" while it waits, "Couldn't delete it in SSI:
     <reason>" with Retry when stopped (the existing "Delete in SSI" stays), and in the Connection's count. The logbook's
@@ -490,7 +493,7 @@ here names SSI except its declared interval.
 - **When** (owner): at the chosen interval, and when the User opens Dive Hub, for each of their Connections with the
   schedule on whose last fetch is more than an hour old (and not younger than the Provider's minimum). The web client
   asks for that once when it starts (a new duty in the [client contract](../../spec/clients.md)). The schedule (my call):
-  a crontab task every 5 minutes queues one job per due Connection (job key `fetch:<connection>`), skipping Connections
+  a crontab task every minute (it also wakes held and stopped Waiting pushes) queues one job per due Connection (job key `fetch:<connection>`), skipping Connections
   that need a sign-in or have an import waiting or running.
 - **What it can't decide** is skipped and counted (design; one more case is my call): several candidates and a probable
   non-dive (`ambiguous`, as today), and dives from a dive computer with no choice yet on the Connection (choosing

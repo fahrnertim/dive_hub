@@ -90,7 +90,8 @@ From the [design's "Piece 6" section](../superpowers/specs/2026-10-23-ssi-app-al
 - **Send new Dives** skips an Import that creates more than 20 Dives; it offers a Push run instead.
 - **With "Delete at the Provider" on, the Dive is deleted here first** and at the Provider after the quiet period
   (amends [ADR 0026](0026-deleting-dives.md)'s order for this setting only); the list of deleted dives shows the waiting
-  or stopped delete in the place of 0026's reminder. Off, 0026 stands.
+  or stopped delete in the place of 0026's reminder. Off, 0026 stands. A merge of two Dives both at the Provider treats
+  the merged-away Dive's copy the same way ([ADR 0038](0038-logbook-checks-and-merging-dives.md)).
 - **The Dive's Connection decides** (the one its current Push was made through): its settings apply whoever changed
   the Dive, and a Connection now at another account never sends the Dive by itself.
 - **An open Conflict holds its fields in every import too**, so a newer Original doesn't send a clash as a change.
