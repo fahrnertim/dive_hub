@@ -10,7 +10,7 @@ import { managedDiverIds } from '../dives/dive-service.js';
 import { DiverError } from '../divers/diver-error.js';
 import { externalDiver, mergeExternalDiver, participations } from '../divers/merge.js';
 import type { SecretBox } from '../secrets/secret-box.js';
-import { TurnTimeout, type Leases } from './leases.js';
+import { realClock, TurnTimeout, type Clock, type Leases } from './leases.js';
 import { ProviderError, type ActionContext, type ProviderAdapter, type SignInInput } from './provider.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 
@@ -38,8 +38,11 @@ type Credentials =
 
 const purpose = (id: string) => `connection:${id}`;
 
-export function createConnectionService(deps: { db: Db; registry: ProviderRegistry; secrets: SecretBox; leases: Leases }) {
+export function createConnectionService(deps: { db: Db; registry: ProviderRegistry; secrets: SecretBox; leases: Leases; clock?: Clock }) {
   const { db, registry, secrets, leases } = deps;
+  const clock = deps.clock ?? realClock;
+  /** When the Provider last answered the Connection: a stopped Waiting push wakes on any later answer (ADR 0056). */
+  const usedNow = () => new Date(clock.now());
 
   /** Runs `fn` on the Connection's turn; a turn that doesn't come in time is `provider_busy`. */
   async function onTurn<T>(adapter: ProviderAdapter, connectionId: string, fn: (row: ConnectionRow | null) => Promise<T>): Promise<T> {
@@ -161,7 +164,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
         await tx.insert(connection).values({
           id, userId, diverId, provider, accountId: signedIn.account.id, accountLabel: signedIn.account.label,
           keepSignedIn: fields.keepSignedIn, credentials: seal(id, credentialsFrom(input, signedIn.access, fields.keepSignedIn)),
-          lastUsedAt: new Date(),
+          lastUsedAt: usedNow(),
         });
       });
       return id;
@@ -177,7 +180,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
       if (signedIn.account.id !== row.accountId) throw new ProviderServiceError('provider_other_account', named(adapter));
       await db.update(connection).set({
         credentials: seal(row.id, credentialsFrom(input, signedIn.access, fields.keepSignedIn)),
-        keepSignedIn: fields.keepSignedIn, state: 'active', lastUsedAt: new Date(), updatedAt: new Date(),
+        keepSignedIn: fields.keepSignedIn, state: 'active', lastUsedAt: usedNow(), updatedAt: new Date(),
       }).where(eq(connection.id, row.id));
     },
 
@@ -224,7 +227,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
           }
           try {
             const result = await fn({ connectionId: row.id, accountId: row.accountId, access });
-            await db.update(connection).set({ lastUsedAt: new Date(), state: 'active' }).where(eq(connection.id, row.id));
+            await db.update(connection).set({ lastUsedAt: usedNow(), state: 'active' }).where(eq(connection.id, row.id));
             return result;
           } catch (error) {
             if (!(error instanceof ProviderError && error.reason === 'signed_out') || attempt > 1) throw asProblem(error, adapter);

@@ -43,14 +43,16 @@ const needsSignIn = (conn: Connection) => conn.state === 'needs_sign_in' && !con
 
 /**
  * Schedules the Connection's job at the earliest due time of its waiting entries (replacing the job's time); nothing
- * when none waits. Held and stopped entries are not due by themselves.
+ * when none waits. Held and stopped entries are not due by themselves. `keepTime`: a job already queued keeps its time
+ * (the minute tick's safety net, which must not cut a pause short); only a missing one is added.
  */
-export async function scheduleConnection(q: Q, connectionId: string): Promise<void> {
+export async function scheduleConnection(q: Q, connectionId: string, options: { keepTime?: boolean } = {}): Promise<void> {
   const [next] = await q.select({ due: min(waitingPush.dueAt) }).from(waitingPush)
     .where(and(eq(waitingPush.connectionId, connectionId), eq(waitingPush.state, 'waiting')));
   if (!next?.due) return;
+  const mode = options.keepTime ? 'preserve_run_at' : 'replace';
   await q.execute(sql`select graphile_worker.add_job(${WAITING_PUSHES_TASK}, json_build_object('connectionId', ${connectionId}::text),
-    job_key => ${'waiting-pushes:' + connectionId}, job_key_mode => 'replace', run_at => ${next.due.toISOString()}::timestamptz, max_attempts => 1)`);
+    job_key => ${'waiting-pushes:' + connectionId}, job_key_mode => ${mode}, run_at => ${next.due.toISOString()}::timestamptz, max_attempts => 1)`);
 }
 
 /** Puts the Dive in the queue as a send, due `QUIET_MS` after `at`; a waiting delete stays (a send never replaces it). */
@@ -161,19 +163,32 @@ export async function queueNow(q: Q, diveId: string, provider: string, connectio
 }
 
 /**
- * A send or delete of the Dive was confirmed, and began at `startedAt`: its entry is done, unless the Dive changed
- * after the send began. Then it stays `waiting`, due `QUIET_MS` after that change, so the change goes out once more.
+ * The Dive's entry at the Provider as it is before a send or delete begins: its last change (exact, as the database
+ * keeps it), or null without one. `settle` tells by it whether the Dive changed while the action ran.
+ */
+export type QueueMark = string | null;
+
+export async function mark(q: Q, diveId: string, provider: string, action?: 'send' | 'delete'): Promise<QueueMark> {
+  const [entry] = await q.select({ at: sql<string>`${waitingPush.changedAt}::text` }).from(waitingPush)
+    .where(and(eq(waitingPush.diveId, diveId), eq(waitingPush.provider, provider), ...(action ? [eq(waitingPush.action, action)] : [])));
+  return entry?.at ?? null;
+}
+
+/**
+ * A send or delete of the Dive was confirmed; `seen` is the entry's mark from before it began. The entry is done,
+ * unless the Dive changed since (its mark differs, or an entry came that wasn't there): then it stays `waiting`, due
+ * `QUIET_MS` after that change, so the change goes out once more. Told by the entry's own last change, not by a clock:
+ * an edit whose transaction began before the send and committed during it carries an older time, but a new mark.
  * `action` limits it to the entries of that action (a confirmed send leaves a waiting delete alone).
  */
-export async function settle(q: Q, diveId: string, provider: string, startedAt: Date, action?: 'send' | 'delete'): Promise<void> {
+export async function settle(q: Q, diveId: string, provider: string, seen: QueueMark, action?: 'send' | 'delete'): Promise<void> {
   const mine = and(eq(waitingPush.diveId, diveId), eq(waitingPush.provider, provider), ...(action ? [eq(waitingPush.action, action)] : []));
-  const [entry] = await q.select().from(waitingPush).where(mine);
-  if (!entry) return;
-  if (entry.changedAt.getTime() <= startedAt.getTime()) {
-    await q.delete(waitingPush).where(mine);
-    return;
+  if (seen !== null) {
+    const done = await q.delete(waitingPush).where(and(mine, sql`${waitingPush.changedAt} = ${seen}::timestamptz`)).returning({ diveId: waitingPush.diveId });
+    if (done.length > 0) return;
   }
-  if (entry.action === 'delete') return;
+  const [entry] = await q.select().from(waitingPush).where(mine);
+  if (!entry || entry.action === 'delete') return;
   await q.update(waitingPush).set({
     state: 'waiting', reason: null, attempts: 0, firstFailedAt: null, stoppedAt: null, dueAt: new Date(entry.changedAt.getTime() + QUIET_MS),
   }).where(mine);

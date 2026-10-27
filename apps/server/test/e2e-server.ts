@@ -165,7 +165,7 @@ for (const record of [
 ]) fakeSsi.addDive(6_100_200, record);
 
 // Uploads made by the tests are processed in the background, as in the real app.
-const worker = await startWorker(pool, imports, siteImports, aiAccesses, assessments, providers.pushRuns, providers.certifications, app.log);
+const worker = await startWorker(pool, imports, siteImports, aiAccesses, assessments, providers.pushRuns, providers.waitingPushes, providers.certifications, app.log);
 // Test-only (never in the production app): a browser test changes a dive in an SSI account's logbook, as the User would
 // in SSI's app (ADR 0030: changes taken back). By the account's e-mail and SSI's dive number or ID; only the fields given.
 app.post('/e2e/fake-ssi/dive', { schema: { hide: true } }, async (request) => {

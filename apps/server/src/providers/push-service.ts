@@ -24,7 +24,7 @@ import { currentRemote, type PushRow } from './remote-state.js';
 import { blocking, forProvider, leftOutBy, offersListEntries, unmetRequirements } from './requirements.js';
 import { siteForSend } from './site-for-send.js';
 import { buddiesForSend, keepBuddies, type BuddiesForSend } from './buddies-for-send.js';
-import { settle as settleWaitingPush } from './waiting-push-queue.js';
+import { mark as markWaitingPush, settle as settleWaitingPush, type QueueMark } from './waiting-push-queue.js';
 import { comparableOf, planSend, same, type Choice, type Comparable, type SendPlan, type SyncedField } from './three-way.js';
 
 /** What deleting a Dive at Providers did: each copy deleted or kept, and why it stopped, if it did. */
@@ -216,13 +216,15 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
       const adapters = providers.map((p) => deleter(p).adapter);
       const { row } = await loadOutgoingDive(db, userId, diveId, { deleted: true });
       return await leased(diveId, adapters, async () => {
-        const startedAt = new Date();
+        // The entries as they are before anything is deleted: a change after this goes out once more.
+        const seen = new Map<string, QueueMark>();
+        for (const provider of providers) seen.set(provider, await markWaitingPush(db, diveId, provider, 'delete'));
         const gone = providers.length > 1 ? await checkAll(userId, row, providers) : new Set<string>();
         for (const provider of providers) {
           await deleteThere(userId, row, provider, gone.has(provider));
           copies.set(provider, 'deleted');
           // A confirmed delete finishes the Dive's waiting delete there (a change noted after it began would not be a delete).
-          await settleWaitingPush(db, diveId, provider, startedAt, 'delete');
+          await settleWaitingPush(db, diveId, provider, seen.get(provider)!, 'delete');
         }
         return answer(null);
       });
@@ -485,8 +487,9 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
      */
     async send(userId: string, diveId: string, provider: string, options: SendOptions = {}): Promise<SendResult> {
       const { onExisting } = options;
-      const startedAt = new Date();
       const { adapter, dives, exports } = exporter(provider);
+      // The Dive's waiting send as it is before the send reads the Dive: a change after this goes out once more.
+      const seen = await markWaitingPush(db, diveId, adapter.id, 'send');
       const first = await loadOutgoingDive(db, userId, diveId);
       const conn = await connectionOrThrow(userId, first.row.diverId, adapter);
       requirementsMet(adapter, prepared(adapter, exports, first), { beforeSite: true });
@@ -543,7 +546,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
         return withBuddies({ result: 'created', push: await steps.delivered('create', created, sending, row.version) });
       }));
       // A confirmed send (manual, a Push run's or the worker's) finishes the Dive's waiting send, unless it changed meanwhile.
-      if ('push' in result && result.push.state === 'confirmed') await settleWaitingPush(db, diveId, adapter.id, startedAt, 'send');
+      if ('push' in result && result.push.state === 'confirmed') await settleWaitingPush(db, diveId, adapter.id, seen, 'send');
       return result;
     },
 

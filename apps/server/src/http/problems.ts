@@ -104,6 +104,7 @@ export const PROBLEMS = {
   push_run_not_active: 'This run is not going anymore',
   push_run_going: 'This run is still going; only an ended run can be dismissed',
   push_run_not_stopped: 'This run did not stop; only a stopped run can be continued',
+  waiting_push_not_found: 'This dive does not wait to go to this service, or it is not stopped or held',
   provider_account_held: 'An external diver here has this account; send claim to make them your diver (they merge into it)',
   diver_not_external: 'Only an external diver (one no User keeps) can be merged into another',
   provider_import_off: 'Importing dives from this account is off; choose what the import may do first',

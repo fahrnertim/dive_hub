@@ -4,6 +4,8 @@ import type { FastifyBaseLogger } from 'fastify';
 import { BACKFILL_GAS_FIGURES_TASK, BACKFILL_POSITIONS_TASK, EXPIRE_WAITING_IMPORTS_TASK, FILL_CYLINDERS_TASK, PROCESS_IMPORT_TASK, type ImportService } from './imports/import-service.js';
 import { IMPORT_SITES_TASK, type SiteImportService } from './sites/import/site-import-service.js';
 import { PUSH_RUN_STEP_TASK, type PushRunService } from './providers/push-run-service.js';
+import { WAITING_PUSHES_TASK } from './providers/waiting-push-queue.js';
+import { AUTOMATION_TICK_TASK, type WaitingPushService } from './providers/waiting-push-service.js';
 import { CERTIFICATION_IMAGE_TASK, type CertificationService } from './certifications/certification-service.js';
 import type { AiAccessService } from './mcp/access-service.js';
 import type { AssessmentService } from './assessment/assessment-service.js';
@@ -15,7 +17,8 @@ const ASSESS_DIVES_TASK = 'assess-dives';
 const PURGE_AI_ACCESS_LOG_TASK = 'purge-ai-access-log';
 
 export async function startWorker(
-  pool: pg.Pool, imports: ImportService, siteImports: SiteImportService, aiAccesses: AiAccessService, assessments: AssessmentService, pushRuns: PushRunService, certifications: CertificationService, log: FastifyBaseLogger,
+  pool: pg.Pool, imports: ImportService, siteImports: SiteImportService, aiAccesses: AiAccessService, assessments: AssessmentService, pushRuns: PushRunService,
+  waitingPushes: WaitingPushService, certifications: CertificationService, log: FastifyBaseLogger,
 ): Promise<Runner> {
   // An import still "running" now was cut off when the worker last stopped.
   await siteImports.failInterrupted();
@@ -25,8 +28,8 @@ export async function startWorker(
     pgPool: pool,
     concurrency: 2,
     noHandleSignals: true,
-    // Every night at 03:17 (UTC), and the waiting Imports every hour.
-    crontab: `17 3 * * * ${PURGE_AI_ACCESS_LOG_TASK}\n47 * * * * ${EXPIRE_WAITING_IMPORTS_TASK}`,
+    // Every night at 03:17 (UTC), the waiting Imports every hour, and automation every minute (ADR 0056).
+    crontab: `17 3 * * * ${PURGE_AI_ACCESS_LOG_TASK}\n47 * * * * ${EXPIRE_WAITING_IMPORTS_TASK}\n* * * * * ${AUTOMATION_TICK_TASK}`,
     taskList: {
       [PROCESS_IMPORT_TASK]: async (payload) => {
         const { importId } = payload as { importId: string };
@@ -46,6 +49,18 @@ export async function startWorker(
         const { runId } = payload as { runId: string };
         const next = await pushRuns.step(runId);
         if (next) await helpers.addJob(PUSH_RUN_STEP_TASK, { runId }, { runAt: new Date(Date.now() + next.afterMs), jobKey: `push-run:${runId}`, maxAttempts: 1 });
+      },
+      // One due Waiting push of a Connection (ADR 0056): again after the Provider's pause while more are due; else the
+      // step has scheduled the job for the next due entry itself.
+      [WAITING_PUSHES_TASK]: async (payload, helpers) => {
+        const { connectionId } = payload as { connectionId: string };
+        const next = await waitingPushes.step(connectionId);
+        if (next) {
+          await helpers.addJob(WAITING_PUSHES_TASK, { connectionId }, { runAt: new Date(Date.now() + next.afterMs), jobKey: `waiting-pushes:${connectionId}`, maxAttempts: 1 });
+        }
+      },
+      [AUTOMATION_TICK_TASK]: async () => {
+        await waitingPushes.tick();
       },
       // One card's picture (ADR 0050); three attempts, the last one ends as `failed`.
       [CERTIFICATION_IMAGE_TASK]: async (payload, helpers) => {

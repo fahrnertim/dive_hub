@@ -16,6 +16,8 @@ export interface FakeLedger {
   down: boolean;
   /** While set, deleting fails as if the service refused it (everything else still works). */
   refuseDelete: boolean;
+  /** Runs before each create or update is saved, after Dive Hub read the Dive it sends (a test's change "during a send"). */
+  beforeSave: (() => Promise<void>) | null;
   /** Makes every token invalid, as when they expire. */
   expireTokens(): void;
   /** Every number the ledger saved by "set number", in order; `shared` when another dive had it at that moment (ADR 0052). */
@@ -55,6 +57,7 @@ export function createFakeLedger(): FakeLedger {
     dives: new Map(),
     down: false,
     refuseDelete: false,
+    beforeSave: null,
     numberSaves: [],
     heldReads: 0,
     expireTokens: () => fake.tokens.clear(),
@@ -106,6 +109,7 @@ export function createFakeLedger(): FakeLedger {
           return {
             async create(dive, _reference, wanted) {
               const { accountId } = account(ctx.access);
+              await fake.beforeSave?.();
               const remoteId = `L${nextId++}`;
               // A number another dive has is not given twice: the ledger numbers its own way then.
               const number = wanted != null && !holderOf(accountId, wanted) ? wanted : nextNumber(accountId);
@@ -115,6 +119,7 @@ export function createFakeLedger(): FakeLedger {
             async update(remoteId, dive, _previous, wanted) {
               const kept = mine(remoteId);
               if (!kept) return null;
+              await fake.beforeSave?.();
               Object.assign(kept, { startsAt: dive.startsAt.toISOString(), notes: dive.notes, participants: padiOf(dive) });
               if (wanted != null && !holderOf(kept.accountId, wanted, remoteId)) kept.number = wanted;
               return delivered(remoteId, dive);
