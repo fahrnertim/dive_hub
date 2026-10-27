@@ -784,16 +784,16 @@ export const diverExternalId = pgTable(
 /**
  * Who a Diver is in one account's own list of people at a Source (ADR 0057, piece 5; SSI's buddy list): the entry's ID
  * there. The list belongs to that account (`accountId`, the list owner's `diver_external_id`, so its Source is the
- * row's Source), not to a Connection; removed with it. At most one entry per account and Diver, an entry ID at most once
- * per account. Needed for entries without an account of their own (added from scratch); set by a link, an add and an
- * import. Only Users who manage the list owner's Diver see it; writing it writes no Revision.
+ * row's Source), not to a Connection; removed with it, and with a deleted Diver. At most one entry per account and
+ * Diver, an entry ID at most once per account. Needed for entries without an account of their own (added from
+ * scratch); set by a link, an add and an import. Only Users who manage the list owner's Diver see it; writing it writes no Revision.
  */
 export const accountListEntry = pgTable(
   'account_list_entry',
   {
     id: id(),
     accountId: uuid('account_id').notNull().references((): AnyPgColumn => diverExternalId.id, { onDelete: 'cascade' }),
-    diverId: uuid('diver_id').notNull().references(() => diver.id),
+    diverId: uuid('diver_id').notNull().references(() => diver.id, { onDelete: 'cascade' }),
     entryId: text('entry_id').notNull(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

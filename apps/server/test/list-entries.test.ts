@@ -2,7 +2,9 @@
 // Diver. One entry per account and Diver, an entry ID once per account; the last link wins; no Revision is written.
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { accountListEntry, diver, diverExternalId, revision } from '../src/db/schema.js';
+import { user } from '../src/db/auth-schema.js';
+import { accountListEntry, diver, diverExternalId, diverManagement, revision } from '../src/db/schema.js';
+import { createDiverService } from '../src/divers/diver-service.js';
 import { forget, forgetEntry, listAccountOf, remember, rememberedEntries, rememberedFor } from '../src/providers/list-entries.js';
 import { createTestDatabase, databaseReachable, type TestDatabase } from './support.js';
 
@@ -63,6 +65,18 @@ describe.skipIf(!(await databaseReachable()))('remembered list entries', () => {
     await remember(t.db, extra, divers[0]!, '5');
     await t.db.delete(diverExternalId).where(eq(diverExternalId.id, extra));
     expect(await t.db.select().from(accountListEntry).where(eq(accountListEntry.accountId, extra))).toEqual([]);
+  });
+
+  it('goes with a managed Diver that is deleted, in every list that remembers it', async () => {
+    const [a, b] = accounts;
+    const [owner] = await t.db.insert(user).values({ name: 'owner', email: 'owner@example.com' }).returning({ id: user.id });
+    const [kid] = await t.db.insert(diver).values({ name: 'Kid' }).returning({ id: diver.id });
+    await t.db.insert(diverManagement).values({ userId: owner!.id, diverId: kid!.id });
+    await remember(t.db, a!, kid!.id, '41');
+    await remember(t.db, b!, kid!.id, '42');
+    await createDiverService(t.db).remove(owner!.id, kid!.id);
+    expect(await t.db.select().from(diver).where(eq(diver.id, kid!.id))).toEqual([]);
+    expect(await t.db.select().from(accountListEntry).where(eq(accountListEntry.diverId, kid!.id))).toEqual([]);
   });
 
   it('hands out the live Diver a merged-away Diver went into, along the chain', async () => {
