@@ -8,7 +8,7 @@ import type { Db, Tx } from '../db/client.js';
 import { connection, dive, importJob, push, waitingPush, type WaitingPushOptions } from '../db/schema.js';
 
 type Q = Db | Tx;
-type Connection = typeof connection.$inferSelect;
+export type Connection = typeof connection.$inferSelect;
 type PushRow = typeof push.$inferSelect;
 
 /** The Graphile Worker task that sends a Connection's due entries. */
@@ -28,7 +28,7 @@ const IMPORT_CAUSES = new Set(['import-create', 'auto-attach', 'reimport', 'fill
  * ID, unless a later delete or a "found gone" came after it. The same rule as `currentRemote` in remote-state.ts, which
  * can't be imported here (it reaches `dives/` through a type import, and a cycle counts).
  */
-function currentOf(pushes: PushRow[]): PushRow | null {
+export function currentOf(pushes: PushRow[]): PushRow | null {
   for (const p of pushes) {
     if (p.remoteGone) return null;
     if (p.state !== 'confirmed') continue;
@@ -56,7 +56,7 @@ export async function scheduleConnection(q: Q, connectionId: string, options: { 
 }
 
 /** Puts the Dive in the queue as a send, due `QUIET_MS` after `at`; a waiting delete stays (a send never replaces it). */
-async function upsertSend(q: Q, conn: Connection, diveId: string, at: Date): Promise<void> {
+export async function upsertSend(q: Q, conn: Connection, diveId: string, at: Date): Promise<void> {
   const held = needsSignIn(conn);
   const fresh = {
     connectionId: conn.id, state: held ? ('held' as const) : ('waiting' as const), reason: held ? 'sign_in' : null, dueAt: new Date(at.getTime() + QUIET_MS),
@@ -129,10 +129,14 @@ async function noteSent(n: Note, provider: string, current: PushRow): Promise<vo
   }
 }
 
+/** The Connection that sends the Diver's new Dives to the Provider: the oldest with "send new dives" (`conns` oldest first). */
+export const newDivesConnection = (conns: Connection[], provider: string): Connection | undefined =>
+  conns.find((c) => c.provider === provider && c.sendNewDives);
+
 /** A Dive without one: the Diver's oldest Connection with "send new dives" queues it, unless an import made it. */
 async function noteNew(n: Note, provider: string): Promise<void> {
   if (n.cause === 'delete' || n.row.deletedAt || IMPORT_CAUSES.has(n.cause)) return;
-  const conn = n.conns.find((c) => c.provider === provider && c.sendNewDives);
+  const conn = newDivesConnection(n.conns, provider);
   if (conn) await upsertSend(n.tx, conn, n.diveId, n.at);
 }
 

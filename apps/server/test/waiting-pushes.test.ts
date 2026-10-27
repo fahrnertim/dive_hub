@@ -40,12 +40,21 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
     ctx.app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload && { payload }) });
   const json = async <T>(method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', url: string, payload?: object, cookie = ann) =>
     (await call(method, url, payload, cookie)).json() as T;
-  const upload = async (start: Date, serialNumber = 100) => {
+  const uploadImport = async (start: Date, serialNumber = 100) => {
     const { payload, headers } = multipartFile(`dive-${start.getTime()}-${serialNumber}.fit`, makeSyntheticDive({ serialNumber, start }));
     const created = await ctx.app.inject({ method: 'POST', url: '/api/imports', payload, headers: { ...headers, cookie: ann } });
     await ctx.imports.processImport(created.json().id);
-    return (await json<{ outcome: { diveId: string }[] }>('GET', `/api/imports/${created.json().id}`)).outcome[0]!.diveId;
+    const diveId = (await json<{ outcome: { diveId: string }[] }>('GET', `/api/imports/${created.json().id}`)).outcome[0]!.diveId;
+    return { importId: created.json().id as string, diveId };
   };
+  const upload = async (start: Date, serialNumber = 100) => (await uploadImport(start, serialNumber)).diveId;
+  /** An Import that is done and created these Dives, as the worker finds it. */
+  const importOf = async (diveIds: string[], provider: string | null = null) =>
+    (await t.db.insert(importJob).values({
+      userId: annId, uploadName: provider ?? 'file.fit', status: 'done', ...(provider && { provider, connectionId }),
+      outcome: diveIds.map((diveId) => ({ fileName: 'dive.fit', result: 'created' as const, diveId })),
+    }).returning({ id: importJob.id }))[0]!.id;
+  const unsent = () => ctx.providers.waitingPushes.unsentDives(connectionId);
   const version = async (id: string) => (await json<{ version: number }>('GET', `/api/dives/${id}`)).version;
   const edit = async (id: string, notes: string, cookie = ann) =>
     call('PATCH', `/api/dives/${id}`, { version: await version(id), notes }, cookie);
@@ -340,6 +349,89 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       expect((await call('PATCH', `/api/dives/${id}`, { version: await version(id), cylinders: [steel12] })).statusCode).toBe(200);
       expect(await rows()).toHaveLength(1);
     });
+  });
+
+  describe('new Dives from an Import', () => {
+    it("a file import's new Dive is queued with send new dives on", async () => {
+      await settings({ sendNewDives: true });
+      const { importId, diveId } = await uploadImport(day(1));
+      expect(await rows()).toEqual([]);
+      await ctx.providers.waitingPushes.afterImport(importId);
+      const [row, ...rest] = await rows();
+      expect(rest).toEqual([]);
+      expect(row).toMatchObject({ diveId, provider: 'ledger', connectionId, action: 'send', state: 'waiting' });
+      expect(row!.dueAt.getTime() - row!.changedAt.getTime()).toBe(QUIET_MS);
+      expect(await jobRunAt(connectionId)).toEqual(row!.dueAt);
+      expect((await t.db.select().from(connection).where(eq(connection.id, connectionId)))[0]!.unsentImportId).toBeNull();
+    });
+
+    it('nothing is queued with send new dives off', async () => {
+      const { importId } = await uploadImport(day(1));
+      await ctx.providers.waitingPushes.afterImport(importId);
+      expect(await rows()).toEqual([]);
+      expect(await unsent()).toEqual([]);
+    });
+
+    it('an import of 21 Dives queues none and offers them on the Connection', async () => {
+      await settings({ sendNewDives: true });
+      const ids: string[] = [];
+      for (let n = 1; n <= 21; n++) ids.push(await upload(day(n), 100 + n));
+      const importId = await importOf(ids);
+      await ctx.providers.waitingPushes.afterImport(importId);
+      expect(await rows()).toEqual([]);
+      expect((await t.db.select().from(connection).where(eq(connection.id, connectionId)))[0]!.unsentImportId).toBe(importId);
+      expect((await unsent()).sort()).toEqual([...ids].sort());
+      // Twenty are still queued.
+      const twenty = await importOf(ids.slice(0, 20));
+      await ctx.providers.waitingPushes.afterImport(twenty);
+      expect(await rows()).toHaveLength(20);
+    }, 60_000);
+
+    it('a Push run started with the offered ids sends them and the offer empties', async () => {
+      await settings({ sendNewDives: true });
+      const ids: string[] = [];
+      for (let n = 1; n <= 21; n++) ids.push(await upload(day(n), 100 + n));
+      await ctx.providers.waitingPushes.afterImport(await importOf(ids));
+      // A run sends at most the Provider's cap (3 here); the offer shrinks by what it sent and is worked off in runs.
+      let runs = 0;
+      for (let offered = await unsent(); offered.length > 0; offered = await unsent(), runs++) {
+        const started = await call('POST', `/api/connections/${connectionId}/push-runs`, { dives: { ids: offered } });
+        expect(started.statusCode).toBe(202);
+        while (await ctx.providers.pushRuns.step((started.json() as { id: string }).id));
+        expect(await unsent()).toHaveLength(Math.max(0, offered.length - 3));
+      }
+      expect(runs).toBe(7);
+      expect(ledger.dives.size).toBe(21);
+      expect(await unsent()).toEqual([]);
+    }, 60_000);
+
+    it('an import from the same Provider queues nothing', async () => {
+      await settings({ sendNewDives: true });
+      const id = await upload(day(1));
+      await ctx.providers.waitingPushes.afterImport(await importOf([id], 'ledger'));
+      expect(await rows()).toEqual([]);
+      expect(await unsent()).toEqual([]);
+    });
+
+    it('a Dive deleted since is not queued', async () => {
+      await settings({ sendNewDives: true });
+      const id = await upload(day(1));
+      await call('DELETE', `/api/dives/${id}`, { version: await version(id) });
+      await ctx.providers.waitingPushes.afterImport(await importOf([id]));
+      expect(await rows()).toEqual([]);
+    });
+
+    it('dismissing removes the offer', async () => {
+      await settings({ sendNewDives: true });
+      const ids: string[] = [];
+      for (let n = 1; n <= 21; n++) ids.push(await upload(day(n), 100 + n));
+      await ctx.providers.waitingPushes.afterImport(await importOf(ids));
+      expect((await call('POST', `/api/connections/${connectionId}/unsent-dives/dismiss`, {}, bob)).statusCode).toBe(404);
+      expect(await unsent()).toHaveLength(21);
+      expect((await call('POST', `/api/connections/${connectionId}/unsent-dives/dismiss`, {})).statusCode).toBe(204);
+      expect(await unsent()).toEqual([]);
+      expect((await t.db.select().from(connection).where(eq(connection.id, connectionId)))[0]!.unsentImportId).toBeNull();
+    }, 60_000);
   });
 
   describe('the worker step', () => {

@@ -35,6 +35,8 @@ export async function startWorker(
         const { importId } = payload as { importId: string };
         log.info({ importId }, 'processing import');
         const outcome = await imports.processImport(importId);
+        // The Import's new Dives go to the Providers whose Connections send new dives (imports/ can't reach the queue).
+        if (outcome.length > 0) await waitingPushes.afterImport(importId);
         // The detail Users don't see (they get the reason code): here for the operator.
         for (const o of outcome) if (o.result === 'failed') log.warn({ importId, file: o.fileName, reason: o.reason, detail: o.message }, 'import file failed');
       },

@@ -15,6 +15,7 @@ import type { ConnectionService } from './connection-service.js';
 import type { DiveImportService } from './dive-import.js';
 import type { ConflictService } from './conflicts.js';
 import type { GoneDiveService } from './gone-dives.js';
+import type { WaitingPushService } from './waiting-push-service.js';
 import { SYNCED_FIELDS } from './three-way.js';
 import { FIND_BY, OPERATIONS, type ProviderAdapter, type Requirement } from './provider.js';
 import { pushRunRoutes } from './push-run-routes.js';
@@ -36,6 +37,7 @@ export interface ProviderRouteDeps {
   sitePicks: SitePickService;
   diveImports: DiveImportService;
   goneDives: GoneDiveService;
+  waitingPushes: WaitingPushService;
   conflicts: ConflictService;
   certifications: CertificationService;
 }
@@ -325,7 +327,7 @@ export function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Sta
   };
 }
 
-export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, pushRuns, buddies, sitePicks, diveImports, goneDives, conflicts, certifications }) => {
+export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, pushRuns, buddies, sitePicks, diveImports, goneDives, waitingPushes, conflicts, certifications }) => {
   app.addHook('onRequest', requireUser(auth));
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof ProviderServiceError) return replyProviderError(error, reply);
@@ -817,6 +819,17 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     if (request.body.allowed && request.body.confirm !== true) return reply.code(400).send(problem('provider_site_data_not_confirmed'));
     await diveImports.allowSiteData(request.user!.id, request.params.provider, request.body.allowed);
     return { providers: (await diveImports.siteData()).map(siteDataView) };
+  });
+
+  app.post('/connections/:id/unsent-dives/dismiss', {
+    schema: {
+      summary: 'Dismiss the offer to send the new Dives of a large Import (ADR 0056)',
+      description: "The Dives stay as they are and can be sent later. The Connection's owner only (others: 404).",
+      params: IdParams, response: { 204: Type.Null(), 404: Problem },
+    },
+  }, async (request, reply) => {
+    await waitingPushes.dismissOffer(request.user!.id, request.params.id);
+    return reply.code(204).send(null);
   });
 
   app.delete('/connections/:id', {

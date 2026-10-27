@@ -3,14 +3,14 @@
 // and says when to come again. It holds what can't go out by itself (a blocking requirement, a sign-in, a dive already
 // at the Provider, a lost verification), retries a Provider that is down for a day, and stops what would fail again.
 // The minute tick wakes what a sign-in or the Provider's return cleared, and Retry is the User's.
-import { and, asc, eq, inArray, isNotNull, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { connection, dive, pushRun, waitingPush } from '../db/schema.js';
+import { connection, dive, importJob, push, pushRun, waitingPush } from '../db/schema.js';
 import { realClock, type Clock } from './leases.js';
 import type { PushService } from './push-service.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { blocking } from './requirements.js';
-import { mark, scheduleConnection, settle, type QueueMark } from './waiting-push-queue.js';
+import { currentOf, mark, newDivesConnection, scheduleConnection, settle, upsertSend, type QueueMark } from './waiting-push-queue.js';
 
 /** After a failure the Provider may be back: tried again after 5 min, 30 min, 2 h, then every 6 h (the last repeats). */
 export const RETRY_AFTER_MS = [300_000, 1_800_000, 7_200_000, 21_600_000];
@@ -23,6 +23,9 @@ export const AUTOMATION_TICK_TASK = 'automation_tick';
 
 /** Failures that may pass by themselves: tried again for a day. Any other code would fail the same way again. */
 const RETRIED = new Set(['provider_unavailable', 'internal_error']);
+
+/** More new Dives than this from one Import are not queued: the Connection offers a Push run instead (ADR 0056). */
+export const OFFER_ABOVE = 20;
 
 /** Where Dive Hub's own faults go for the operator (the app's logger in production; Users see only the code). */
 export interface WaitingPushLog {
@@ -134,7 +137,62 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
     }
   }
 
+  /** The live Dives an Import created, with their Diver. */
+  async function createdBy(importId: string): Promise<{ id: string; diverId: string }[]> {
+    const [job] = await db.select({ outcome: importJob.outcome }).from(importJob).where(eq(importJob.id, importId));
+    const ids = [...new Set((job?.outcome ?? []).flatMap((o) => (o.result === 'created' && o.diveId ? [o.diveId] : [])))];
+    if (ids.length === 0) return [];
+    return db.select({ id: dive.id, diverId: dive.diverId }).from(dive).where(and(inArray(dive.id, ids), isNull(dive.deletedAt)));
+  }
+
+  /** A Connection's share of an Import's new Dives: queued, or above `OFFER_ABOVE` only offered. */
+  async function queueOrOffer(conn: Connection, diveIds: string[], importId: string, at: Date): Promise<void> {
+    if (diveIds.length > OFFER_ABOVE) {
+      await db.update(connection).set({ unsentImportId: importId }).where(eq(connection.id, conn.id));
+      return;
+    }
+    for (const id of diveIds) await upsertSend(db, conn, id, at);
+  }
+
   return {
+    /**
+     * An Import finished (the worker calls it, as `imports/` may not reach the queue): its new Dives go to each Provider
+     * the Diver has a Connection with "send new dives" to, through the oldest such Connection, except the Import's own
+     * Provider. Up to 20 are queued; more are not, and the Connection offers them (`unsentImportId`).
+     */
+    async afterImport(importId: string): Promise<void> {
+      const [job] = await db.select({ provider: importJob.provider }).from(importJob).where(eq(importJob.id, importId));
+      if (!job) return;
+      const created = await createdBy(importId);
+      const at = now();
+      for (const diverId of new Set(created.map((d) => d.diverId))) {
+        const conns = await db.select().from(connection).where(eq(connection.diverId, diverId)).orderBy(asc(connection.createdAt), asc(connection.id));
+        const diveIds = created.filter((d) => d.diverId === diverId).map((d) => d.id);
+        for (const provider of new Set(conns.map((c) => c.provider))) {
+          const conn = provider === job.provider ? undefined : newDivesConnection(conns, provider);
+          if (conn) await queueOrOffer(conn, diveIds, importId, at);
+        }
+      }
+    },
+
+    /** The Dives of the Connection's offer (its Import's new ones) that still have no remote dive at the Provider. */
+    async unsentDives(connectionId: string): Promise<string[]> {
+      const [conn] = await db.select().from(connection).where(eq(connection.id, connectionId));
+      if (!conn?.unsentImportId) return [];
+      const ids = (await createdBy(conn.unsentImportId)).filter((d) => d.diverId === conn.diverId).map((d) => d.id);
+      if (ids.length === 0) return [];
+      const pushes = await db.select().from(push).where(and(inArray(push.diveId, ids), eq(push.provider, conn.provider)))
+        .orderBy(desc(push.createdAt), desc(push.id));
+      return ids.filter((id) => !currentOf(pushes.filter((p) => p.diveId === id)));
+    },
+
+    /** The User dismisses the Connection's offer; `connection_not_found` unless the Connection is theirs. */
+    async dismissOffer(userId: string, connectionId: string): Promise<void> {
+      const done = await db.update(connection).set({ unsentImportId: null })
+        .where(and(eq(connection.id, connectionId), eq(connection.userId, userId))).returning({ id: connection.id });
+      if (done.length === 0) throw new ProviderServiceError('connection_not_found');
+    },
+
     /**
      * One step of the Connection's job: sends its oldest due entry and answers when to come again (the Provider's
      * pause while more are due), or null when the job is scheduled for the next due entry or not needed.
