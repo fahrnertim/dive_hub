@@ -10,8 +10,9 @@ date: 2026-10-27
 
 From the owner, while piece 6 was built ([plan](../superpowers/plans/2026-10-27-provider-automation.md)): the logbook
 shows a waiting Dive's state only when the list is fetched again, and the Dive's page polls while a send waits. Not
-ready: it needs a decision (ADR) first. Piece 6 itself only polls smarter (at the entry's due time, and the logbook
-refreshes after the User's own Retry or send).
+ready: it needs a decision (ADR) first. Piece 6 itself only polls smarter: the Dive's page and the deleted dives ask
+again at the entry's due time, and the logbook refreshes after every Retry, send, number set or remove, and when the
+Dive's Waiting push changes while its page is open. A logbook left open on its own still shows the old state.
 
 ## Goal
 - A page that is open shows a change the worker made within a second or two, without the client polling: a Waiting
