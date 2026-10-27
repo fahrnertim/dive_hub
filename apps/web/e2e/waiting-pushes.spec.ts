@@ -164,10 +164,13 @@ test('the delete dialog doesn\'t ask for a Provider that deletes by itself, and 
     await page.goto('/#/review?tab=deleted');
     const panel = deletedPanel(page);
     await expect(panel.getByText('Will be deleted in SSI in 5 min')).toBeVisible();
-    // Restoring cancels it.
-    await panel.getByRole('button', { name: /^Restore: Mar 5, 2026/ }).click();
+    // Restoring cancels it (the click is strict: this is the only deleted dive of that day).
+    const restore = panel.getByRole('button', { name: /^Restore: Mar 5, 2026/ });
+    await restore.click();
     // Other specs may leave deleted dives, so the list itself can stay; this dive's wait is what goes.
     await expect(panel.getByText('Will be deleted in SSI in 5 min')).toHaveCount(0);
+    // The dive itself is back in the logbook: its Restore button is gone from the list.
+    await expect(restore).toHaveCount(0);
     expect((await status(request, id)).waiting).toBeNull();
   } finally {
     await leave(request);

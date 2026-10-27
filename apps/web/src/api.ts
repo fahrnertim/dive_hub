@@ -4,6 +4,7 @@ import { createAuthClient } from 'better-auth/client';
 import { SITES_PAGE, type SitesParams } from './lib/sites-list.ts';
 import type { LogbookParams, neighbourParams } from './lib/logbook.ts';
 import { BOTTOM_TIME_RULES, type ToolsParams } from './lib/tools.ts';
+import { pollUntilDue } from './lib/waiting-push.ts';
 
 export const api = createApiClient();
 /** Better Auth's own endpoints (sign-in, sign-out) at /api/auth on this origin; the session is a cookie. */
@@ -271,8 +272,20 @@ export const candidatesQuery = (status: 'open' | 'discarded') =>
 async function fetchDeletedDives() {
   return unwrap(await api.GET('/api/dives/deleted'));
 }
-/** The User's deleted Dives, to restore them, and which Providers they are still at (ADR 0026, 0027). */
-export const deletedDivesQuery = () => queryOptions({ queryKey: keys.deletedDives, queryFn: fetchDeletedDives });
+/**
+ * The logbook's list pages (`['dives', { …params }]`), not a Dive's own queries: for what changes how a row looks (a
+ * send, a number, a Waiting push settled) without changing the Dive.
+ */
+export const diveListPages = { queryKey: keys.dives, predicate: (q: { queryKey: readonly unknown[] }) => typeof q.queryKey[1] === 'object' && q.queryKey[1] !== null };
+
+/**
+ * The User's deleted Dives, to restore them, and which Providers they are still at (ADR 0026, 0027); a delete at a
+ * Provider that waits is asked about again when it is due (ADR 0056).
+ */
+export const deletedDivesQuery = () => queryOptions({
+  queryKey: keys.deletedDives, queryFn: fetchDeletedDives,
+  refetchInterval: (q) => pollUntilDue(q.state.data?.dives.flatMap((d) => d.waiting), Date.now()),
+});
 
 async function fetchLogbookChecks(status: 'open' | 'answered') {
   return unwrap(await api.GET('/api/logbook-checks', { params: { query: { status } } }));
@@ -404,8 +417,8 @@ export const providerStatusQuery = (diveId: string, provider: string) =>
   queryOptions({
     queryKey: keys.providerStatus(diveId, provider),
     queryFn: () => fetchProviderStatus(diveId, provider),
-    // An entry that waits goes out within a minute or two (ADR 0056): the page follows it until it is settled.
-    refetchInterval: (q) => (q.state.data?.waiting?.state === 'waiting' ? 3000 : false),
+    // An entry that waits goes out at its due time (ADR 0056): the page asks again then, until it is settled.
+    refetchInterval: (q) => pollUntilDue(q.state.data?.waiting ? [q.state.data.waiting] : [], Date.now()),
   });
 async function fetchDiverSearch(q: string) {
   return unwrap(await api.GET('/api/divers/search', { params: { query: { q, limit: 20 } } })).divers;

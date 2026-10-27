@@ -2,7 +2,7 @@
 // for good with Retry. A logbook row gets a small icon and the words; the Dive's page and the deleted dives get the words
 // and Retry. The queue's own texts name the Provider and, for a stop, say why in the problem's words.
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRef, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, keys, unwrap, type ProblemCode } from './api.ts';
 import { useErrorText, useProblemText } from './lib/display.ts';
@@ -29,11 +29,23 @@ const ICON: Record<WaitingPush['state'], IconName> = { waiting: 'waiting', held:
 /** Whole minutes until the entry goes out, at least one: "in 5 min" right after a delete. */
 const minutesUntil = (dueAt: string, now: number) => Math.max(1, Math.ceil((Date.parse(dueAt) - now) / 60_000));
 
+/** The time now, again every 30 s while `ticking`: "in 5 min" counts down instead of standing still. */
+function useNow(ticking: boolean) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!ticking) return;
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(timer);
+  }, [ticking]);
+  return now;
+}
+
 /** The words for the entry, in the Provider's name; an unknown reason is told as plain waiting. */
 function useWaitingText(push: WaitingPush, providerName: string) {
   const pt = useProviderText({ id: push.provider, name: providerName });
   const problemText = useProblemText();
-  const [now] = useState(() => Date.now());
+  const now = useNow(push.state === 'waiting');
   if (push.state === 'stopped') {
     const reason = problemText((push.reason ?? 'internal_error') as ProblemCode, { id: push.provider, name: providerName });
     return pt(`waitingPush.stopped.${push.action}`, { reason });
@@ -80,11 +92,16 @@ function Retry({ diveId, provider, itemName, settled }: {
   );
 }
 
-/** The fix for a held `requirements` entry: the Dive's page (from the logbook), or the requirements under the words. */
-function FixLink({ diveId, variant, anchor }: { diveId: string; variant: 'row' | 'panel'; anchor: RefObject<HTMLElement | null> }) {
+/**
+ * The fix for a held `requirements` entry: the Dive's page (from the logbook, keeping its `list` for the way back), or
+ * the requirements under the words.
+ */
+function FixLink({ diveId, variant, anchor, list }: {
+  diveId: string; variant: 'row' | 'panel'; anchor: RefObject<HTMLElement | null>; list: string | undefined;
+}) {
   const { t } = useTranslation();
   const label = t('provider.waitingPush.fix');
-  if (variant === 'row') return <a href={diveHref(diveId, undefined)}>{label}</a>;
+  if (variant === 'row') return <a href={diveHref(diveId, list)}>{label}</a>;
   const show = () => {
     const needs = anchor.current?.closest('.waiting-push-panel')?.parentElement?.querySelector<HTMLElement>('.provider-needs');
     if (!needs) return;
@@ -97,21 +114,24 @@ function FixLink({ diveId, variant, anchor }: { diveId: string; variant: 'row' |
 /**
  * One entry of a Dive's queue. `row`: the icon and the words in a logbook row, with Retry for a stopped one when it
  * gets `diveId`. `panel`: the words with Retry where it applies, on the Dive's page and in the deleted dives. A held
- * entry that lacks something links to where it is fixed.
+ * entry that lacks something links to where it is fixed; `list` is the logbook's list the row is in.
  */
-export function WaitingPushState({ push, providerName, variant, diveId, itemName }: {
+export function WaitingPushState({ push, providerName, variant, diveId, itemName, list }: {
   push: WaitingPush; providerName: string; variant: 'row' | 'panel'; diveId?: string | undefined; itemName?: string | undefined;
+  list?: string | undefined;
 }) {
   const text = useWaitingText(push, providerName);
   const words = useRef<HTMLSpanElement>(null);
   const icon = <Icon name={push.action === 'delete' && push.state === 'waiting' ? 'delete' : ICON[push.state]} />;
   const state = <span ref={words} tabIndex={-1} className="waiting-push-text">{text}</span>;
   const retry = push.state === 'stopped' && diveId && <Retry diveId={diveId} provider={push.provider} itemName={itemName} settled={words} />;
-  const fix = push.state === 'held' && push.reason === 'requirements' && diveId && <FixLink diveId={diveId} variant={variant} anchor={words} />;
+  const fix = push.state === 'held' && push.reason === 'requirements' && diveId && <FixLink diveId={diveId} variant={variant} anchor={words} list={list} />;
   if (variant === 'row') {
     return (
-      // The row opens the Dive on a click; the controls are its own.
-      <span className={`waiting-push waiting-push-${push.state}`} onClick={(e) => e.stopPropagation()}>{icon}{state}{retry}{fix}</span>
+      // The row opens the Dive on a click, also on the words; Retry is its own (the row leaves a link's click alone).
+      <span className={`waiting-push waiting-push-${push.state}`}>
+        {icon}{state}{retry && <span className="waiting-push-retry" onClick={(e) => e.stopPropagation()}>{retry}</span>}{fix}
+      </span>
     );
   }
   return (
