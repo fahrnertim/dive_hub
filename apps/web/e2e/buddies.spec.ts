@@ -153,7 +153,7 @@ test('adds a typed person to the SSI list from the dive page and shows the add m
   const { dive, ssi } = await diveWith(page, request, 'Dive Hub test');
   await ssi.getByRole('button', { name: 'Link or add Dive Hub test' }).click();
   const dialog = page.getByRole('dialog', { name: 'Who is Dive Hub test at SSI?' });
-  // Both names are needed; the e-mail is optional and says so.
+  // Both names are needed; the e-mail is optional (rule C16: the label does not say so).
   await expect(dialog.getByRole('textbox', { name: 'E-mail' })).toBeVisible();
   await dialog.getByRole('textbox', { name: 'First name' }).fill('Dive Hub');
   await dialog.getByRole('button', { name: 'Add to your SSI list' }).click();
