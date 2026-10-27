@@ -497,6 +497,8 @@
     "push_run_going": "Dieser Versand läuft noch; ausblenden kann man ihn, wenn er beendet ist.",
     "push_run_not_stopped": "Nur ein angehaltener Versand kann fortgesetzt werden.",
     "provider_unsupported": "{{name}} bietet das nicht an.",
+    "fetch_interval_too_short": "Von {{name}} kann nicht so oft abgerufen werden. Wähle ein längeres Intervall.",
+    "waiting_push_not_found": "Dieser Tauchgang wartet nicht mehr darauf, an den Dienst zu gehen; es gibt nichts zu wiederholen.",
     "provider_import_off": "Der Import von Tauchgängen aus {{name}} ist aus. Wähle zuerst, was der Import darf.",
     "provider_site_data_not_confirmed": "Bestätige zuerst die Erklärung zur fehlenden Lizenz von {{name}}.",
     "provider_site_unknown": "{{name}} kennt keinen Platz mit dieser ID.",

@@ -12,6 +12,7 @@ import { DIVE_SORTS, type LogbookService, type RowExtras } from './dives/logbook
 import { Problem, problem } from './http/problems.js';
 import type { ImportService } from './imports/import-service.js';
 import type { PushService } from './providers/push-service.js';
+import { WaitingPushViewSchema, type WaitingPushView } from './providers/waiting-push-view.js';
 import { UploadTooLargeError } from './storage/blob-store.js';
 
 export interface RouteDeps {
@@ -107,6 +108,9 @@ const DiveSummaryView = Type.Object({
   participants: Type.Array(Type.Object({
     diverId: Type.String(), name: Type.String(), role: Type.Enum([...PARTICIPANT_ROLES]),
   }), { description: 'The Divers on the Dive besides its own Diver: buddies first, then guides and instructors, each by name (ADR 0028)' }),
+  waiting: Type.Array(WaitingPushViewSchema, {
+    description: 'The Dive\'s entries in the queue of Waiting pushes, one per Provider (ADR 0056): a small icon for waiting, a warning for held, an error with Retry for stopped (docs/spec/clients.md)',
+  }),
   profile: Nullable(Type.Object({
     depthsM: Type.Array(Type.Number(), { description: 'Depth in metres, evenly spread over `spanSeconds`; the deepest sample of each stretch' }),
     spanSeconds: Type.Number({ description: 'Seconds from the first to the last depth sample of the Primary recording' }),
@@ -178,8 +182,10 @@ async function withDecisions(imports: ImportService, rows: (typeof importJob.$in
   return views;
 }
 
-const toDiveSummary = (d: typeof dive.$inferSelect, siteName: string | null, findings: number, extras: RowExtras): Static<typeof DiveSummaryView> => ({
-  findings, ...extras, fromProvider: d.fromProvider,
+const toDiveSummary = (
+  d: typeof dive.$inferSelect, siteName: string | null, findings: number, extras: RowExtras, waiting: WaitingPushView[],
+): Static<typeof DiveSummaryView> => ({
+  findings, ...extras, waiting, fromProvider: d.fromProvider,
   site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null,
   id: d.id, diverId: d.diverId, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
   utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, avgDepthM: d.avgDepthM,
@@ -274,8 +280,9 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
       };
     }
     const { rows, total, counts, totals, months } = await logbook.listDives(scope, { limit, offset });
+    const waiting = await deps.pushes.waitingOf(rows.map((r) => r.d.id));
     return {
-      dives: rows.map((r) => toDiveSummary(r.d, r.siteName, r.findings, r.extras)),
+      dives: rows.map((r) => toDiveSummary(r.d, r.siteName, r.findings, r.extras, waiting.get(r.d.id) ?? [])),
       total,
       counts,
       totals: { ...totals, lastDiveAt: totals.lastDiveAt?.toISOString() ?? null },

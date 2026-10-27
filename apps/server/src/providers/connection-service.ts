@@ -38,6 +38,33 @@ type Credentials =
 
 const purpose = (id: string) => `connection:${id}`;
 
+/** The intervals of a scheduled fetch the User can choose, in minutes: every hour, 6 hours, once a day. */
+export const FETCH_INTERVALS = [60, 360, 1440] as const;
+export type FetchInterval = (typeof FETCH_INTERVALS)[number];
+
+/** What the automation settings of a Connection are for: the Provider takes dives by API, deletes them, and lists its dives. */
+export function automationOffers(adapter: ProviderAdapter) {
+  const { data, limits } = adapter.capabilities;
+  const sends = data.dives?.export?.delivery === 'confirmed';
+  const minimum = data.dives?.import?.operations.includes('list') ? limits.fetchEveryMinutes : null;
+  return {
+    sendChanges: sends,
+    sendNewDives: sends,
+    deleteAtProvider: sends && !!data.dives?.export?.operations.includes('delete'),
+    fetchEvery: minimum === null ? [] : FETCH_INTERVALS.filter((m) => m >= minimum),
+    /** The shortest interval the Provider allows; null: no scheduled fetch. */
+    fetchMinimum: minimum,
+  };
+}
+
+/** The settings a User changes on a Connection; a missing one stays. */
+export interface AutomationSettings {
+  sendChanges?: boolean;
+  sendNewDives?: boolean;
+  deleteAtProvider?: boolean;
+  fetchEveryMinutes?: FetchInterval | null;
+}
+
 export function createConnectionService(deps: { db: Db; registry: ProviderRegistry; secrets: SecretBox; leases: Leases; clock?: Clock }) {
   const { db, registry, secrets, leases } = deps;
   const clock = deps.clock ?? realClock;
@@ -106,6 +133,8 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
         accountId: connection.accountId, accountLabel: connection.accountLabel, keepSignedIn: connection.keepSignedIn,
         importMode: connection.importMode, importWindowMinutes: connection.importWindowMinutes, followNumbers: connection.followNumbers,
         state: connection.state, lastUsedAt: connection.lastUsedAt, createdAt: connection.createdAt,
+        sendChanges: connection.sendChanges, sendNewDives: connection.sendNewDives, deleteAtProvider: connection.deleteAtProvider,
+        fetchEveryMinutes: connection.fetchEveryMinutes, lastFetchImportId: connection.lastFetchImportId,
       }).from(connection).innerJoin(diver, eq(diver.id, connection.diverId))
         .where(eq(connection.userId, userId)).orderBy(connection.createdAt);
       // A Provider this instance no longer has stays in the database but isn't offered.
@@ -125,6 +154,26 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
       const adapter = registry.get(row.provider);
       if (follow && !adapter.capabilities.data.dives?.export?.numbers) throw new ProviderServiceError('provider_unsupported', named(adapter));
       await db.update(connection).set({ followNumbers: follow, updatedAt: new Date() }).where(eq(connection.id, row.id));
+    },
+
+    /**
+     * Changes what the Connection does by itself (ADR 0056). A setting is turned on only where the Provider can
+     * (`provider_unsupported`), and an interval below the Provider's minimum is `fetch_interval_too_short`; turning off
+     * is always allowed. Nothing is refused halfway: all or none. Turning a setting on queues nothing that changed before.
+     */
+    async setAutomation(userId: string, connectionId: string, settings: AutomationSettings) {
+      const row = await ownConnection(userId, connectionId);
+      const adapter = registry.get(row.provider);
+      const offers = automationOffers(adapter);
+      for (const key of ['sendChanges', 'sendNewDives', 'deleteAtProvider'] as const) {
+        if (settings[key] && !offers[key]) throw new ProviderServiceError('provider_unsupported', named(adapter));
+      }
+      const every = settings.fetchEveryMinutes;
+      if (every !== undefined && every !== null) {
+        if (offers.fetchMinimum === null) throw new ProviderServiceError('provider_unsupported', named(adapter));
+        if (every < offers.fetchMinimum) throw new ProviderServiceError('fetch_interval_too_short', named(adapter));
+      }
+      await db.update(connection).set({ ...settings, updatedAt: new Date() }).where(eq(connection.id, row.id));
     },
 
     /** One of the User's Connections, or `connection_not_found`. */

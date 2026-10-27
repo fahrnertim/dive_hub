@@ -368,6 +368,10 @@ const CheckView = Type.Object({
     ...PairedDive,
     keeps: Type.String({ description: 'Which of the two a merge keeps' }),
     bothAt: Type.Array(Type.String(), { description: 'Providers both Dives are at (see GET /dives/{id}/merge-candidates)' }),
+    deletesItself: Type.Array(Type.String(), {
+      description: 'Of `bothAt`, the Providers where the Connection of the Dive not kept deletes at the Provider by itself (see GET /dives/{id}/merge-candidates): '
+        + 'merging doesn\'t ask about them; leave them out of `alsoAt`',
+    }),
   })),
 });
 
@@ -607,6 +611,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     const short = await checks.shortDives(request.user!.id, atProvider, status);
     const remote = await pushes.currentOf([...new Set(list.flatMap((c) => c.dives.map((d) => d.id)))]);
     const at = (id: string) => [...(remote.get(id)?.entries() ?? [])].map(([provider, p]) => ({ provider, remoteNumber: p.remoteNumber }));
+    const itself = await pushes.deletingItself([...new Set(list.flatMap((c) => c.dives.map((d) => d.id)))]);
     const paired = (d: (typeof list)[number]['dives'][number]) => ({
       id: d.id, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
       utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
@@ -614,9 +619,11 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     });
     return [...list.map(({ rule, obvious, dives: [a, b] }) => {
       const bothAt = at(b.id).filter((t) => at(a.id).some((m) => m.provider === t.provider)).map((t) => t.provider);
+      const keeps = a.recordings === 0 && b.recordings > 0 ? b.id : a.id;
       return {
         rule, obvious: obvious && bothAt.length === 0, diverId: a.diverId, dive: paired(a),
-        other: { ...paired(b), keeps: a.recordings === 0 && b.recordings > 0 ? b.id : a.id, bothAt },
+        // The Dive not kept stays behind at a Provider, unless its Connection deletes there by itself (the queue, 5 minutes after the merge).
+        other: { ...paired(b), keeps, bothAt, deletesItself: bothAt.filter((provider) => itself.get(keeps === a.id ? b.id : a.id)?.has(provider)) },
       };
     }), ...short.map((d) => ({ rule: 'short_shallow_dive' as const, obvious: false, diverId: d.diverId, dive: paired(d), other: null }))];
   });

@@ -4,7 +4,7 @@
 // is still the Dive's current one. The send records, reads and closes entries; nothing here calls a Provider.
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
-import { dive, diveSite, providerConflict, push } from '../db/schema.js';
+import { dive, diveSite, providerConflict, push, waitingPush } from '../db/schema.js';
 import type { ConnectionService } from './connection-service.js';
 import type { ShownValue } from './dive-changes.js';
 import { currentRemote, type PushRow } from './remote-state.js';
@@ -70,15 +70,22 @@ export async function close(q: Db | Tx, diveId: string, provider: string): Promi
 export function createConflictService(deps: { db: Db; connections: ConnectionService }) {
   const { db, connections } = deps;
   return {
-    /** The entries that wait, for each of the User's Connections that has any (no call to a Provider). */
+    /**
+     * The entries that wait, for each of the User's Connections that has any (no call to a Provider). Two kinds: a
+     * `conflict` (fields changed on both sides) and `exists` (the Provider already has a dive at the Dive's time, so the
+     * Waiting push is held until the User links to it or creates a new one; `existing` names that dive).
+     */
     async waiting(userId: string) {
       const out = [];
       // The User's Connections of the Providers this instance offers: the others cannot be acted on.
       for (const c of await connections.list(userId)) {
         const entries = await db.select().from(providerConflict)
           .where(and(eq(providerConflict.connectionId, c.id), eq(providerConflict.provider, c.provider)));
-        if (entries.length === 0) continue;
-        const ids = entries.map((e) => e.diveId);
+        const asked = await db.select().from(waitingPush).where(and(
+          eq(waitingPush.connectionId, c.id), eq(waitingPush.provider, c.provider), eq(waitingPush.state, 'held'), eq(waitingPush.reason, 'exists'),
+        ));
+        if (entries.length === 0 && asked.length === 0) continue;
+        const ids = [...entries.map((e) => e.diveId), ...asked.map((e) => e.diveId)];
         const dives = await db.select({
           id: dive.id, number: dive.number, startsAt: dive.startsAt, utcOffsetSeconds: dive.utcOffsetSeconds,
           utcOffsetSource: dive.utcOffsetSource, durationSeconds: dive.durationSeconds, maxDepthM: dive.maxDepthM,
@@ -88,16 +95,22 @@ export function createConflictService(deps: { db: Db; connections: ConnectionSer
           .where(and(inArray(push.diveId, ids), eq(push.provider, c.provider))).orderBy(desc(push.createdAt), desc(push.id));
         const byDive = new Map<string, PushRow[]>();
         for (const p of pushes) byDive.set(p.diveId, [...(byDive.get(p.diveId) ?? []), p]);
-        const listed = entries.flatMap((e) => {
+        const shown = (d: (typeof dives)[number]) => ({
+          diveId: d.id, number: d.number, startsAt: d.startsAt, utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource,
+          durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, site: d.siteId && d.siteName !== null ? { id: d.siteId, name: d.siteName } : null,
+        });
+        const conflicts = entries.flatMap((e) => {
           const d = dives.find((x) => x.id === e.diveId);
           const current = currentRemote(byDive.get(e.diveId) ?? []);
           if (!d || d.deletedAt !== null || current?.remoteId !== e.remoteId || current.connectionId !== c.id) return [];
-          return [{
-            diveId: d.id, number: d.number, startsAt: d.startsAt, utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource,
-            durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, site: d.siteId && d.siteName !== null ? { id: d.siteId, name: d.siteName } : null,
-            remoteId: e.remoteId, fields: fieldsOf(e.fields), foundAt: e.foundAt,
-          }];
-        }).sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+          return [{ ...shown(d), kind: 'conflict' as const, remoteId: e.remoteId, fields: fieldsOf(e.fields), existing: null, foundAt: e.foundAt }];
+        });
+        const exists = asked.flatMap((e) => {
+          const d = dives.find((x) => x.id === e.diveId);
+          if (!d || d.deletedAt !== null || !e.detail) return [];
+          return [{ ...shown(d), kind: 'exists' as const, remoteId: e.detail.remoteId, fields: [] as ConflictField[], existing: e.detail, foundAt: e.changedAt }];
+        });
+        const listed = [...conflicts, ...exists].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
         if (listed.length > 0) out.push({ connectionId: c.id, provider: c.provider, entries: listed });
       }
       return out;

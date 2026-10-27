@@ -497,6 +497,8 @@
     "push_run_going": "This run is still going; it can be dismissed when it has ended.",
     "push_run_not_stopped": "Only a stopped run can be continued.",
     "provider_unsupported": "{{name}} doesn’t offer that.",
+    "fetch_interval_too_short": "{{name}} can’t be fetched from that often. Choose a longer interval.",
+    "waiting_push_not_found": "This dive isn’t waiting to go to the service any more, so there is nothing to retry.",
     "provider_import_off": "Importing dives from {{name}} is off. Choose what the import may do first.",
     "provider_site_data_not_confirmed": "Confirm the explanation about {{name}}’s missing licence first.",
     "provider_site_unknown": "{{name}} has no site with this ID.",

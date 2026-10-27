@@ -98,6 +98,7 @@ export const PROBLEMS = {
   provider_numbers_off: 'Numbering dives at this service as in Dive Hub is off for this connection',
   provider_number_nothing_to_set: 'There is no number to set: the dive has none, or the service has it already',
   provider_unsupported: 'This service does not offer that',
+  fetch_interval_too_short: 'This service does not allow fetching that often; choose a longer interval',
   push_run_active: 'A run that sends dives to this service is already going; see runId',
   push_run_nothing_to_send: 'There is no dive to send with these choices',
   push_run_not_found: 'No such run',

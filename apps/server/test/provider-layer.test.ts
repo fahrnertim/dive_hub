@@ -56,7 +56,7 @@ describe.skipIf(!(await databaseReachable()))('the provider layer', () => {
         id: 'handover', name: 'Hand-over',
         signIn: { kind: 'token', login: null, canKeepPassword: false },
         data: { dives: { export: { operations: ['create'], findBy: [], delivery: 'handed_over', requirements: [], readBackFields: [], numbers: null }, import: null }, diveSites: null, buddies: null, certifications: null },
-        notices: [], limits: { pauseMs: 500, run: null },
+        notices: [], limits: { pauseMs: 500, run: null, fetchEveryMinutes: null },
       },
     ]);
   });

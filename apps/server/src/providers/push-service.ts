@@ -413,6 +413,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     return {
       provider: adapter.id,
       deletesItself: (await deletingItself(db, [row.id])).get(row.id)?.has(adapter.id) ?? false,
+      waiting: (await waitingOf(db, [row.id])).get(row.id)?.find((w) => w.provider === adapter.id) ?? null,
       connection: conn ? { id: conn.id, state: conn.state, accountLabel: conn.accountLabel } : null,
       siteId: row.siteId,
       unmet,
