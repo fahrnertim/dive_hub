@@ -949,3 +949,17 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   closes it. A retry after a sign-in compares again, so nothing is taken twice.
 - The answer `updated` carries `taken` and `deferred`; the status carries `conflicts` (the open entry about the current remote dive).
 - Tests: `ssi-target.test.ts` (the three-way send through the fake SSI, whose tokens can expire right after a logbook read).
+
+**Piece 6 (2026-10-27): automation for every Provider** ([ADR 0056](../decisions/0056-two-way-exchange-and-automation.md),
+[plan](../superpowers/plans/2026-10-27-provider-automation.md)).
+- The Waiting push queue: one `waiting_push` row per Dive and Connection (`providers/waiting-push-queue.ts`: `noteDiveChange`,
+  `noteSiteChange`, `queueNow`, `settle`), written in the same transaction as the change; quiet periods 30 s (edit) and 5 min
+  (delete). An Import from the same Provider is not sent back.
+- Worker tasks: `waiting_pushes` (one job per Connection, job key `waiting-pushes:<connectionId>`; `step` sends one due entry and
+  returns the Provider's pause while more are due), `automation_tick` (every minute in the crontab: wakes entries held for a
+  sign-in or the Provider's return, retries after 5 min / 30 min / 2 h / 6 h until 24 h, queues due fetches) and
+  `scheduled_fetch` (one Connection's fetch as an unattended Import; `last_fetched_at` is claimed atomically). Intervals 60, 360
+  or 1440 minutes; more than 20 new Dives from one Import wait as an offer.
+- `providers/waiting-push-service.ts` (`step`, `tick`, `retry`, `afterImport`, `unsentDives`, `dismissOffer`, `decide`),
+  `providers/scheduled-fetch.ts`; the API's settings, waiting states, Retry and decisions are in the
+  [client contract](clients.md) ("Sending by itself").

@@ -163,7 +163,7 @@ automatic exchange without clash handling would overwrite edits made in SSI's ap
    how to see that from one account is for the builder to find].
 5. **Buddies** (revised in "Piece 5, settled" below; checked 2026-10-27, [note](../../research/2026-10-27-ssi-buddy-checks.md); done: [plan](../plans/2026-10-27-ssi-buddies.md)). **Checks:** an added entry appears in the app's
    buddy list and on the dive; a name-only entry is kept (both [T]).
-6. **Automation** (above; revised in "Piece 6, settled" below), for every Provider.
+6. **Automation** (above; revised in "Piece 6, settled" below; done: [plan](../plans/2026-10-27-provider-automation.md)), for every Provider.
 7. **Fewer reads** (above).
 
 **Later:** gear and gear sets, after equipment.
