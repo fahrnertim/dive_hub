@@ -32,7 +32,7 @@ export function createFakeHandover(): FakeHandover {
         signIn: { kind: 'token' },
         data: { dives: { export: { operations: ['create'], delivery: 'handed_over', requirements: [] } } },
         notices: [],
-        limits: { pauseMs: 500, run: null },
+        limits: { pauseMs: 500, run: null, fetchEveryMinutes: null },
       },
       async signIn(input) {
         if (fake.down) throw new ProviderError('unavailable', 'down');

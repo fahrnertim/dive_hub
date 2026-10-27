@@ -28,6 +28,25 @@ describe.skipIf(!(await databaseReachable()))('applied migrations', () => {
     expect(await findChangedMigrations(t.pool, migrations)).toEqual([]);
   });
 
+  it("waiting_push and the Connection's automation columns exist", async () => {
+    const q = (sql: string, params: unknown[] = []) => t.pool.query(sql, params);
+    const user = (await q(`insert into "user" (name, email) values ('Automation', 'automation@example.org') returning id`)).rows[0].id as string;
+    const diver = (await q(`insert into diver (name) values ('Erika') returning id`)).rows[0].id as string;
+    const dive = (await q(`insert into dive (diver_id, starts_at, duration_seconds) values ($1, now(), 1800) returning id`, [diver])).rows[0].id as string;
+    const conn = (await q(
+      `insert into connection (user_id, diver_id, provider, account_id, account_label, keep_signed_in) values ($1, $2, 'ledger', '1', 'a@b.c', false) returning *`,
+      [user, diver],
+    )).rows[0];
+    expect(conn).toMatchObject({ send_changes: false, send_new_dives: false, delete_at_provider: false, fetch_every_minutes: null, last_fetched_at: null, last_fetch_import_id: null, unsent_import_id: null });
+
+    const insert = () => q(`insert into waiting_push (dive_id, provider, connection_id, action, due_at, changed_at) values ($1, 'ledger', $2, 'send', now(), now()) returning *`, [dive, conn.id]);
+    expect((await insert()).rows[0]).toMatchObject({ state: 'waiting', options: {}, detail: null, attempts: 0, reason: null, first_failed_at: null, stopped_at: null });
+    await expect(insert()).rejects.toThrow();
+
+    await q('update connection set fetch_every_minutes = 360 where id = $1', [conn.id]);
+    await expect(q('update connection set fetch_every_minutes = 30 where id = $1', [conn.id])).rejects.toThrow(/connection_fetch_every_ck/);
+  });
+
   it('are reported by name when a file changed after it was applied', async () => {
     await appendFile(join(copy, '0002_password_reset.sql'), '\n-- an edit made after the fact\n');
     expect(await findChangedMigrations(t.pool, copy)).toEqual(['0002_password_reset']);

@@ -85,7 +85,7 @@ export function createFakeLedger(): FakeLedger {
           },
         },
         notices: [],
-        limits: { pauseMs: 300, run: { pauseMs: 1000, maxDives: 3 } },
+        limits: { pauseMs: 300, run: { pauseMs: 1000, maxDives: 3 }, fetchEveryMinutes: 60 },
       },
       async signIn(input) {
         if (fake.down) throw new ProviderError('unavailable', 'down');

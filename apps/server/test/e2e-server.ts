@@ -115,7 +115,7 @@ const fakeSsi = createFakeSsi({
   ],
 });
 const quick = <A extends { capabilities: { limits: { pauseMs: number; run: unknown } } }>(adapter: A): A => ({
-  ...adapter, capabilities: { ...adapter.capabilities, limits: { pauseMs: 0, run: { pauseMs: 150, maxDives: 100 } } },
+  ...adapter, capabilities: { ...adapter.capabilities, limits: { ...adapter.capabilities.limits, pauseMs: 0, run: { pauseMs: 150, maxDives: 100 } } },
 });
 const providers = createProviderLayer({
   db, blobs, secrets: createSecretBox(Buffer.alloc(32, 9)),
