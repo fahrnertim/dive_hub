@@ -1,5 +1,6 @@
 import type { Tx } from '../db/client.js';
 import { revision } from '../db/schema.js';
+import { noteDiveChange } from '../providers/waiting-push-queue.js';
 
 /** Who or what changed logbook data: a User, an Import, a Site import (ADR 0021), or the hub itself. */
 export type Actor = { type: 'user' | 'import' | 'system' | 'site_import'; id: string };
@@ -29,5 +30,7 @@ export type Changes = Record<string, { from: unknown; to: unknown }>;
 export async function writeRevision(
   tx: Tx, entityType: 'dive' | 'recording' | 'device' | 'dive_site' | 'diver' | 'dive_centre', entityId: string, actor: Actor, cause: RevisionCause, changes: Changes,
 ) {
-  await tx.insert(revision).values({ entityType, entityId, actorType: actor.type, actorId: actor.id, cause, changes });
+  const [written] = await tx.insert(revision).values({ entityType, entityId, actorType: actor.type, actorId: actor.id, cause, changes }).returning({ at: revision.at });
+  // Every change to a Dive may need to go to a Provider by itself (ADR 0056): the queue notes it, at the Revision's time.
+  if (entityType === 'dive') await noteDiveChange(tx, entityId, cause, written!.at, actor);
 }
