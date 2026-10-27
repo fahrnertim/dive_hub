@@ -1,7 +1,7 @@
 ---
 title: SSI check of a private site on a dive and in the global feed
-summary: On the owner's account (app 5.0.43) a dive created through Dive Hub on the existing private test site 1083262 is listed in the logbook with that site, and get_divelog's logbook_sites has it as private with the account as owner. get_divesites_global does not list 1083262 (last_sync as unix seconds or as a datetime string both answered). Pending from the owner - a look at the dive in SSI's app, the cache zip the next day, and the finish step.
-status: in progress
+summary: On the owner's account (app 5.0.43) a dive created through Dive Hub on the existing private test site 1083262 is listed in the logbook with that site, and get_divelog's logbook_sites has it as private with the account as owner. get_divesites_global does not list 1083262 (last_sync as unix seconds or as a datetime string both answered). Finished 2026-10-27: the owner saw the site on the dive in SSI's app, the next day's public zip does not hold it, and the test dive was deleted (the site stays).
+status: done
 date: 2026-10-26
 ---
 
@@ -26,10 +26,15 @@ Run by the controller with the kept token on 2026-10-26, announced in the sessio
 ## Result so far
 A private site is usable on a dive by the account that owns it [T], and it is not in the global feed [T] (checked in the rows returned for the dates above).
 
-## Pending (owner)
-1. A look at dive 93 in SSI's app: the site should show on it.
-2. `site visible zip` the next day: `APP_CACHE_SITES.zip` must not contain 1083262.
-3. `site visible finish`: deletes the test dive only; the site stays.
+## Finished 2026-10-27
+1. **The owner looked at dive 93 in SSI's app** [T]: it shows the private site "Dive Hub test" (screenshot, 2026-10-27).
+2. **`site visible zip`** [T]: `APP_CACHE_SITES.zip` created 2026-10-26 06:40:05 (after the site's creation on 2026-10-24),
+   24 604 sites; 1083262 is not in it.
+3. **`site visible finish`** [T]: the test dive 30137120 is gone; the site stays (SSI sites cannot be deleted).
+
+## Result
+A private site Dive Hub created is usable on the owning account's dive [T] and is in neither the global feed nor the
+public zip [T]. That another account can't use the ID directly is not proved; accepted (design, piece 4).
 
 ```
 pnpm --filter @dive-hub/server exec tsx test/fixtures/ssi/round-trip.ts site visible start

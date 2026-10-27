@@ -111,6 +111,7 @@ export const PROBLEMS = {
   ai_access_not_found: 'No such AI access',
   ai_access_off: 'AI access is switched off on this instance; an admin can switch it on',
   provider_site_unknown: 'The service has no site with this ID',
+  provider_buddy_not_found: 'The service\'s list no longer has this entry; read the list again',
   provider_site_data_not_confirmed: 'Allowing dive sites from this service needs the explanation about its missing licence confirmed (confirm)',
 } as const;
 

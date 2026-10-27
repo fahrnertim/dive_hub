@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Label, ProgressBar } from 'react-aria-components';
@@ -10,7 +10,7 @@ import {
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
 import { logbookHref, toggled, type LogbookFilter, type LogbookParams } from './lib/logbook.ts';
-import { useProviders } from './lib/providers.ts';
+import { useNames, useProviders } from './lib/providers.ts';
 import { reviewHref } from './lib/review.ts';
 import { accountHref } from './lib/account-tabs.ts';
 import { HeldAtProvider, NumberPlanList } from './NumberChain.tsx';
@@ -442,6 +442,7 @@ function EndedStrip({ run, name, onDismiss, dismissError }: { run: PushRunView; 
       {dismissError && <Notice tone="danger">{errorText(dismissError)}</Notice>}
       {run.conflicts > 0 && <p>{t('pushRun.conflicts', { count: run.conflicts })} <a href={reviewHref('decide')}>{t('review.strip.go')}</a></p>}
       {run.numbers && <SharedSteps id={run.id} />}
+      {run.counts.sent > 0 && <WithoutSomeone id={run.id} />}
       {unsent > 0 && <Disclosure title={t('pushRun.details', { count: unsent })}><RunItems id={run.id} name={name} provider={provider} /></Disclosure>}
     </>
   );
@@ -456,6 +457,35 @@ function SharedSteps({ id }: { id: string }) {
   const run = useQuery(pushRunQuery(id));
   const count = (run.data?.items ?? []).filter((i) => i.state === 'sent' && i.sharesWithDiveId).length;
   return count > 0 ? <Muted>{t('pushRun.sharedReport', { count })}</Muted> : null;
+}
+
+/** Most dives listed before "and more": the rest is on the run's own Dives. */
+const WITHOUT_SHOWN = 10;
+
+/**
+ * The sent Dives that went without someone (a Participant not in the Provider's list), each linked to its page, where
+ * Link or add is. Read from the run's detail.
+ */
+function WithoutSomeone({ id }: { id: string }) {
+  const { t } = useTranslation();
+  const display = useDisplay();
+  const names = useNames();
+  const heading = useId();
+  const run = useQuery(pushRunQuery(id));
+  const left = run.data?.withoutSomeone ?? [];
+  if (left.length === 0) return null;
+  return (
+    <div className="push-run-without">
+      <h3 id={heading}>{t('pushRun.withoutSomeone')}</h3>
+      <Muted>{t('pushRun.withoutSomeoneHint')}</Muted>
+      <ul aria-labelledby={heading}>
+        {left.slice(0, WITHOUT_SHOWN).map((d) => (
+          <li key={d.diveId}><a href={`#/dives/${d.diveId}`}>{display.dateTime(d.startsAt)}</a>: {names(d.names)}</li>
+        ))}
+        {left.length > WITHOUT_SHOWN && <li>{t('pushRun.withoutMore', { count: left.length - WITHOUT_SHOWN })}</li>}
+      </ul>
+    </div>
+  );
 }
 
 /** Every Dive of a run that was not sent, with the reason. Read only when the list is opened. */

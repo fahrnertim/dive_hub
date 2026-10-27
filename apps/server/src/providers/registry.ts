@@ -38,6 +38,8 @@ export class ProviderServiceError extends Error {
 const PROBLEM_OF: Record<ProviderError['reason'], ProblemCode> = {
   wrong_credentials: 'provider_wrong_credentials', signed_out: 'provider_sign_in_needed', refused: 'provider_refused', not_stored: 'provider_not_stored',
   unavailable: 'provider_unavailable', bad_response: 'provider_unavailable',
+  // No code of its own yet: the service that calls `setAccount` decides what a gone entry means.
+  not_found: 'provider_refused',
 };
 
 /** An adapter's error as a refusal with a problem code; anything else (a bug) passes through as it is. */

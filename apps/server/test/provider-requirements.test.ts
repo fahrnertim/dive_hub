@@ -78,7 +78,7 @@ describe.skipIf(!(await databaseReachable()))('Push requirements', () => {
     await call('PATCH', `/api/dives/${diveId}`, { version: (await dive()).version, siteId: site.id });
     expect((await status('ssi')).unmet).toEqual([
       { type: 'site_external_id', severity: 'blocking', source: 'ssi', siteId: site.id, bySend: false },
-      { type: 'diver_mapping', severity: 'advisory', source: 'ssi', diverId: bob.id, diverName: 'Bob', role: 'guide', fixes: ['diver_external_id'] },
+      { type: 'diver_mapping', severity: 'advisory', source: 'ssi', diverId: bob.id, diverName: 'Bob', role: 'guide', fixes: ['diver_external_id', 'list_entry'] },
     ]);
     expect(ctx.fakeSsi.calls.length).toBe(calls);
   });

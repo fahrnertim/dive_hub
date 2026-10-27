@@ -1,6 +1,6 @@
 ---
 title: "ADR 0057: SSI aligned with its app"
-summary: The decompiled SSI app (5.0.43) is the source of truth for the integration, and every claim about SSI carries its source ([R] app code, [T] our test on the owner's account, [S] reported, [?] unknown); Dive Hub sends the app's full record with its types and reads answers by the app's rules; everything both sides hold goes both ways (dive type, tank, lead, surface interval, tank pressure, CNS, heart rate); a missing site is matched or created at SSI as private; Participants are added to the SSI buddy list (name-only only if a check shows SSI keeps it); a save is checked against SSI's own answer; checks on the owner's account are announced, repeatable and recorded. Amends 0024, 0029, 0031, 0045, 0047; amended 2026-10-24: private site IDs belong to the owning account (amends 0021).
+summary: The decompiled SSI app (5.0.43) is the source of truth for the integration, and every claim about SSI carries its source ([R] app code, [T] our test on the owner's account, [S] reported, [?] unknown); Dive Hub sends the app's full record with its types and reads answers by the app's rules; everything both sides hold goes both ways (dive type, tank, lead, surface interval, tank pressure, CNS, heart rate); a missing site is matched or created at SSI as private; Participants are added to the SSI buddy list (name-only only if a check shows SSI keeps it); a save is checked against SSI's own answer; checks on the owner's account are announced, repeatable and recorded. Amends 0024, 0029, 0031, 0045, 0047; amended 2026-10-24: private site IDs belong to the owning account (amends 0021); amended 2026-10-27: a send adds a buddy only by a known SSI account, everyone else is linked or added by the User on the Dive's page (no matching by name).
 status: proposed
 date: 2026-10-23
 ---
@@ -50,6 +50,15 @@ nothing of several values it imports.
 - **Buddies** (amends [0029](0029-push-requirements-and-buddies.md)): a Participant missing from the SSI buddy list is
   added (`save_buddy`) when the Diver has an SSI account or an e-mail; with a name only if a check shows SSI keeps such
   an entry. Matched by account, e-mail, then exact name; the entry ID is remembered. The list is read with `get_buddies`.
+  - **Amended 2026-10-27** (owner, [piece 5](../superpowers/specs/2026-10-23-ssi-app-alignment-design.md), after the
+    [buddy checks](../research/2026-10-27-ssi-buddy-checks.md)): no matching by e-mail or name. A send adds an entry by
+    itself only for a Diver with an SSI account, sending only that account (SSI fills the rest from the person's
+    profile), and gives an entry made without an account the account once it is known, instead of adding a second one.
+    Every other Participant not in the list is asked on the Dive's page (Link or add: pick an entry, scan the person's
+    buddy code, or type first and last name and an optional e-mail); names and e-mail reach the Provider only on that
+    action, never from a send, so a send still carries only accounts ([ADR 0029](0029-push-requirements-and-buddies.md)).
+    Push runs never ask; they leave such Participants out and list the dives. The entry ID is remembered per list
+    owner's account and Diver (`account_list_entry`). `search_buddy` is not used, nor any account number its answers leak.
 - **Read-back** (amends [0047](0047-push-runs.md)): a save is compared with the record SSI returns in its answer;
   storage is confirmed by one logbook read per run, as [ADR 0049](0049-ssi-app-user-agent.md) still requires.
 - **Checks on the owner's account:** allowed, each announced before it runs, each a mode of the owner's check script,

@@ -9,7 +9,11 @@ import { leadOf, leadTotalKg } from '../dives/weighting.js';
 import { accountOf, idsOf, pickId } from '../sites/site-ids.js';
 import { SITE_SOURCES, type SiteSource } from '../sites/sources.js';
 import type { DiverSource, OutgoingDive, OutgoingParticipant, Series } from './provider.js';
+import { listAccountOf, rememberedFor } from './list-entries.js';
 import { ProviderServiceError } from './registry.js';
+
+/** The sources whose accounts have a list of people of their own. */
+const LIST_SOURCES: DiverSource[] = ['ssi'];
 
 export type DiveRow = typeof dive.$inferSelect;
 
@@ -31,14 +35,24 @@ async function outgoingSite(db: Db | Tx, siteId: string | null, diverId: string,
 }
 
 /** Who else was on the Dive, with their accounts at services: all an adapter may know of them (ADR 0029). */
-async function outgoingParticipants(db: Db | Tx, diveId: string): Promise<OutgoingParticipant[]> {
+async function outgoingParticipants(db: Db | Tx, diveId: string, ownerId: string): Promise<OutgoingParticipant[]> {
   const people = await participantsOf(db, diveId);
   const accounts = people.length === 0 ? [] : await db.select().from(diverExternalId)
     .where(inArray(diverExternalId.diverId, people.map((p) => p.diverId)));
-  return people.map((p) => ({
-    ...p,
-    ids: Object.fromEntries(accounts.filter((a) => a.diverId === p.diverId).map((a) => [a.source, a.externalId])) as Partial<Record<DiverSource, string>>,
-  }));
+  // The entries of the dive's own Diver's list at each source that has one (today SSI's buddy list).
+  const remembered = new Map<DiverSource, Map<string, string>>();
+  for (const source of LIST_SOURCES) {
+    const account = await listAccountOf(db, ownerId, source);
+    if (account) remembered.set(source, await rememberedFor(db, account, people.map((p) => p.diverId)));
+  }
+  return people.map((p) => {
+    const entries = Object.fromEntries([...remembered].flatMap(([source, byDiver]) => (byDiver.has(p.diverId) ? [[source, byDiver.get(p.diverId)!]] : [])));
+    return {
+      ...p,
+      ids: Object.fromEntries(accounts.filter((a) => a.diverId === p.diverId).map((a) => [a.source, a.externalId])) as Partial<Record<DiverSource, string>>,
+      ...(Object.keys(entries).length > 0 && { entries }),
+    };
+  });
 }
 
 /**
@@ -61,7 +75,7 @@ export async function loadOutgoingDive(db: Db | Tx, userId: string, diveId: stri
     return s ? { offsetsMs: s.offsetsMs, values: s.values } : undefined;
   };
   const { siteIds, site } = await outgoingSite(db, row.siteId, row.diverId, options.remoteSiteIds ?? {});
-  const participants = await outgoingParticipants(db, row.id);
+  const participants = await outgoingParticipants(db, row.id, row.diverId);
   const summary = rec?.summary ?? {};
   // One tank only: with two or more Cylinders the Provider's one tank can't be told (ADR 0031, 0057).
   const cylinders = await cylindersOf(db, row.id);

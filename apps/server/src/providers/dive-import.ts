@@ -24,6 +24,7 @@ import { REFERENCE_PREFIX, type ImportContext, type ImportedDive, type ProviderC
 import { createDiveChanges, importsField, type ProviderRun } from './dive-changes.js';
 import { currentRemote, fingerprintNow } from './remote-state.js';
 import type { SyncedField } from './three-way.js';
+import { withRemembered } from './list-entries.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { renumber } from '../dives/dive-numbers.js';
 
@@ -109,8 +110,10 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     const { adapter, list, parse } = importer(row.provider);
     if (row.importMode === 'off' && !options.whateverTheMode) throw new ProviderServiceError('provider_import_off', named(adapter));
     const listing = await connections.withAccess(row, (ctx) => list(ctx, options));
-    const parsed = listing.records.map(({ remoteId, record }) => ({ remoteId, record, dive: parse(record, listing.context) }));
-    return { row, adapter, context: listing.context, parsed };
+    // The entries without an account remembered for the Connection's account, so the dives' people can be Divers.
+    const context = await withRemembered(db, row.diverId, adapter.accountSource, listing.context);
+    const parsed = listing.records.map(({ remoteId, record }) => ({ remoteId, record, dive: parse(record, context) }));
+    return { row, adapter, context, parsed };
   }
 
   /** The computers among the dives, with the User's choice kept on the Connection, else the suggestion. */
@@ -615,6 +618,8 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
 /** The context as kept on the Import: accounts and sites only, whatever else an adapter might add left behind. */
 const pick = (c: ImportContext): ImportContext => ({
   people: Object.fromEntries(Object.entries(c.people).map(([k, v]) => [k, String(v)])),
+  // Diver IDs, no names of people.
+  remembered: Object.fromEntries(Object.entries(c.remembered ?? {}).map(([k, v]) => [k, String(v)])),
   sites: Object.fromEntries(Object.entries(c.sites).map(([k, s]) => [k, { name: s.name, latitude: s.latitude, longitude: s.longitude, country: s.country, waterType: s.waterType ?? null, ...(s.private && { private: s.private }) }])),
 });
 

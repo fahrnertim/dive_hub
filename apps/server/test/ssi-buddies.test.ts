@@ -1,7 +1,10 @@
 // Buddies at SSI (ADR 0029), against the fake SSI with a buddy list: importing the list (only names and SSI accounts
 // are kept), Participants sent as entry IDs from the User's own list, one not in it left out, an update that keeps
 // buddies set in SSI's app, the read-back, and "outdated".
+import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { dive } from '../src/db/schema.js';
+import { listAccountOf, remember } from '../src/providers/list-entries.js';
 import { createFakeSsi, type FakeSsiBuddy } from './fake-ssi.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
@@ -15,12 +18,14 @@ const person = (id: number, account: number, firstname: string, lastname: string
 });
 /** A professional: SSI keeps a leader number for him. */
 const KAI = { ...person(3_786_888, 4_989_164, 'Kai', 'Lund'), leader_nr: '54321' };
+/** SSI has an account for the entry but has not filled in the person's name yet (an add by account just made). */
+const NAMELESS = person(2_999_999, 4_333_333, '', '');
 const ZOE = person(2_555_555, 4_700_000, 'Zoe', 'Zett');
 const MIA = person(2_826_964, 4_512_484, 'Mia', 'Stone');
 /** Typed in lower case at SSI, as some entries are. */
 const SAM = person(2_271_970, 4_109_908, 'samuel', 'dreier');
 
-type Buddy = { name: string; account: string | null; diver: { id: string; name: string } | null };
+type Buddy = { entryId: string; matches: boolean; name: string; account: string | null; diver: { id: string; name: string } | null };
 type Status = { unmet: { type: string }[]; current: { remoteId: string; upToDate: boolean } | null; pushes: { leftOut: unknown[] | null; differences: unknown[] | null }[] };
 
 describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
@@ -51,7 +56,7 @@ describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
 
   beforeAll(async () => {
     t = await createTestDatabase();
-    ctx = await createTestApp(t, { fakeSsi: createFakeSsi({ buddies: [KAI, MIA, SAM, ZOE, { ...person(1_111_111, 7_777_777, 'Other', 'List'), owner: 42 }] }) });
+    ctx = await createTestApp(t, { fakeSsi: createFakeSsi({ buddies: [KAI, MIA, SAM, ZOE, NAMELESS, { ...person(1_111_111, 7_777_777, 'Other', 'List'), owner: 42 }] }) });
     await createUser(ctx.auth, 'tim@example.com');
     tim = await signIn(ctx.app, 'tim@example.com');
     const timDiver = ((await call('GET', '/api/divers')).json() as { id: string; isOwn: boolean }[]).find((d) => d.isOwn)!.id;
@@ -79,17 +84,18 @@ describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
 
     it('reads the account\'s own list: names and SSI accounts only', async () => {
       expect(await buddies()).toEqual([
-        { name: 'Kai Lund', account: '4989164', diver: null },
-        { name: 'Mia Stone', account: '4512484', diver: null },
-        { name: 'samuel dreier', account: '4109908', diver: null },
-        { name: 'Zoe Zett', account: '4700000', diver: null },
+        { entryId: '2999999', name: '', account: '4333333', diver: null, matches: false },
+        { entryId: '3786888', name: 'Kai Lund', account: '4989164', diver: null, matches: false },
+        { entryId: '2826964', name: 'Mia Stone', account: '4512484', diver: null, matches: false },
+        { entryId: '2271970', name: 'samuel dreier', account: '4109908', diver: null, matches: false },
+        { entryId: '2555555', name: 'Zoe Zett', account: '4700000', diver: null, matches: false },
       ]);
     });
 
     it('imports chosen entries as external Divers with their SSI account, and skips those already here', async () => {
       const answer = await call('POST', `/api/connections/${connectionId}/buddies/import`, { accounts: ['4989164'] });
-      expect(answer.json()).toMatchObject({ created: 1, buddies: [{ name: 'Kai Lund', diver: { name: 'Kai Lund' } }, { name: 'Mia Stone', diver: null }, { diver: null }, { diver: null }] });
-      kai = (answer.json() as { buddies: Buddy[] }).buddies[0]!.diver!.id;
+      expect(answer.json()).toMatchObject({ created: 1, buddies: [{ name: '' }, { name: 'Kai Lund', diver: { name: 'Kai Lund' } }, { name: 'Mia Stone', diver: null }, { diver: null }, { diver: null }] });
+      kai = (answer.json() as { buddies: Buddy[] }).buddies[1]!.diver!.id;
       expect((await call('POST', `/api/connections/${connectionId}/buddies/import`, { accounts: ['4989164'] })).json()).toMatchObject({ created: 0 });
       const found = (await call('GET', '/api/external-divers?q=kai')).json() as { divers: { id: string; accounts: string[] }[] };
       expect(found.divers).toEqual([expect.objectContaining({ id: kai, accounts: ['ssi'] })]);
@@ -97,7 +103,14 @@ describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
 
     it('capitalizes a name SSI has all in lower case when importing it', async () => {
       const answer = await call('POST', `/api/connections/${connectionId}/buddies/import`, { accounts: ['4109908'] });
-      expect((answer.json() as { buddies: Buddy[] }).buddies[2]).toMatchObject({ name: 'samuel dreier', diver: { name: 'Samuel Dreier' } });
+      expect((answer.json() as { buddies: Buddy[] }).buddies[3]).toMatchObject({ name: 'samuel dreier', diver: { name: 'Samuel Dreier' } });
+    });
+
+    it('lists an entry with an account and no name, and the import creates no Diver from it', async () => {
+      expect((await buddies())[0]).toEqual({ entryId: '2999999', name: '', account: '4333333', diver: null, matches: false });
+      const answer = await call('POST', `/api/connections/${connectionId}/buddies/import`, { accounts: ['4333333'] });
+      expect(answer.json()).toMatchObject({ created: 0 });
+      expect((await buddies())[0]!.diver).toBeNull();
     });
 
     it('brings along what the buddy code says: first and last name as SSI spells them, the e-mail and a leader number (ADR 0043)', async () => {
@@ -105,7 +118,7 @@ describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
         firstName: 'Kai', lastName: 'Lund', email: 'kai@example.com', leaderNumber: '54321',
         codes: [{ kind: 'buddy' }, { kind: 'professional', text: 'buddy;4989164;firstName:Kai;lastName:Lund;email:kai@example.com;leaderNr:54321' }],
       });
-      const sam = (await buddies())[2]!.diver!.id;
+      const sam = (await buddies())[3]!.diver!.id;
       expect(await details(sam)).toMatchObject({ name: 'Samuel Dreier', firstName: 'samuel', lastName: 'dreier', leaderNumber: null });
     });
 
@@ -122,21 +135,20 @@ describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
     it('links an entry to a Diver already here by setting the Diver\'s SSI account', async () => {
       mia = ((await call('POST', '/api/external-divers', { name: 'Mia' })).json() as { id: string }).id;
       expect((await call('PUT', `/api/divers/${mia}/external-ids/ssi`, { externalId: '4512484' })).statusCode).toBe(204);
-      expect((await buddies())[1]).toEqual({ name: 'Mia Stone', account: '4512484', diver: { id: mia, name: 'Mia' } });
+      expect((await buddies())[2]).toEqual({ entryId: '2826964', name: 'Mia Stone', account: '4512484', diver: { id: mia, name: 'Mia' }, matches: false });
     });
   });
 
   describe('sending', () => {
     it('puts Participants on the SSI dive as entries of the User\'s list, and leaves out one who isn\'t in it', async () => {
       bob = ((await call('POST', '/api/external-divers', { name: 'Bob' })).json() as { id: string }).id;
-      await call('PUT', `/api/divers/${bob}/external-ids/ssi`, { externalId: '9999999' });
       await setParticipants([kai, mia, bob]);
-      // Bob has an SSI account, so nothing is unmet here; only SSI's list can tell he isn't in it.
-      expect((await status()).unmet).toEqual([]);
+      // Bob has no SSI account and no entry: advisory only (a send adds an entry for an account, never from scratch).
+      expect((await status()).unmet).toEqual([expect.objectContaining({ type: 'diver_mapping', severity: 'advisory' })]);
       const sent = (await call('POST', `/api/dives/${diveId}/providers/ssi`, {})).json() as { status: Status };
       const remoteId = sent.status.current!.remoteId;
       expect(ssiDive(remoteId).odin_user_log_buddy_ids).toEqual([KAI.id, MIA.id]);
-      expect(sent.status.pushes[0]).toMatchObject({ leftOut: [{ diverId: bob, name: 'Bob', reason: 'not_at_provider' }], differences: [] });
+      expect(sent.status.pushes[0]).toMatchObject({ leftOut: [{ diverId: bob, name: 'Bob', reason: 'no_reference' }], differences: [] });
       expect(sent.status.current!.upToDate).toBe(true);
     });
 
@@ -150,6 +162,21 @@ describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
       expect((await call('POST', `/api/dives/${diveId}/providers/ssi`, {})).json()).toMatchObject({ outcome: 'updated' });
       expect(ssiDive(remoteId).odin_user_log_buddy_ids).toEqual([MIA.id, 1_234_567]);
       expect((await status()).current!.upToDate).toBe(true);
+    });
+
+    it('a dive carries the remembered entry of a Participant without an account', async () => {
+      const d2 = ((await call('POST', '/api/external-divers', { name: 'Dora' })).json() as { id: string }).id;
+      ctx.fakeSsi.buddies.push({ ...person(2, 0, 'Dora', 'Dee'), owner: ERIKA });
+      const owner = (await t.db.select().from(dive).where(eq(dive.id, diveId)))[0]!.diverId;
+      await remember(t.db, (await listAccountOf(t.db, owner, 'ssi'))!, d2, '2');
+      // SSI's list is kept for two minutes; the entry was added behind Dive Hub's back.
+      ctx.ssiClock.advance(3 * 60_000);
+      await setParticipants([mia, d2]);
+      // Dora has no account, but an entry is remembered for her: nothing is unmet.
+      expect((await status()).unmet).toEqual([]);
+      const sent = (await call('POST', `/api/dives/${diveId}/providers/ssi`, {})).json() as { status: Status };
+      expect(ssiDive(sent.status.current!.remoteId).odin_user_log_buddy_ids).toEqual(expect.arrayContaining([MIA.id, 2]));
+      expect(sent.status.pushes[0]!.leftOut).toBeNull();
     });
 
     it('never answers more of a buddy than the name and what their code says: no birth date, phone or town, and the e-mail only inside a code', async () => {

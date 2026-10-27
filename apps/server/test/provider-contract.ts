@@ -79,6 +79,8 @@ const CASES = [
 /** Operations the adapter interface doesn't carry, and where they are tested instead. */
 const ELSEWHERE: Record<string, string> = {
   'diveSites.import.list': "a SiteSourceAdapter for the admin's Site import (site-source-adapters.test.ts)",
+  'buddies.export.add': 'the buddy list against the fake SSI (ssi-buddy-api.test.ts)',
+  'buddies.export.setAccount': 'the buddy list against the fake SSI (ssi-buddy-api.test.ts)',
 };
 
 export function providerContract(name: string, make: () => ContractHarness) {

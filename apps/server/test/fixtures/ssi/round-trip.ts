@@ -50,7 +50,13 @@
 //     Prints the last_sync value and format used; reads only. Also get_divelog's entry for the site.
 //   … round-trip.ts site visible zip   downloads APP_CACHE_SITES.zip (no sign-in): is the site in it, when was the file created?
 //   … round-trip.ts site visible finish   deletes the dive (only a "Dive Hub test" dive dated 2000-01-01), checks it is gone; the site stays.
-// write, number, omitted, values, clear, twoway, site and expired sign in when SSI_EMAIL and SSI_PASSWORD are set, else use the token kept by "read".
+//   … round-trip.ts buddy read | search <text> | add | update | dive | account <entry ID or name> | restore | finish   (piece 5)
+//     read: get_buddies (read-only), key names and value types, a copy kept to restore from. search: search_buddy
+//     (read-only), how many results and how many are outside the list. add (needs BUDDY_TEST_EMAIL): one entry with name
+//     and e-mail, one with a name only. update: the e-mail entry gets another last name. dive: a 2000-01-01 test dive with
+//     both. account: the e-mail entry gets the account of an existing entry; is that entry unchanged? restore: puts it
+//     back if not. finish: deletes the dive and the test entries. See buddy-checks.ts.
+// write, number, omitted, values, clear, twoway, site, buddy and expired sign in when SSI_EMAIL and SSI_PASSWORD are set, else use the token kept by "read".
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
@@ -61,6 +67,10 @@ import {
   type SiteVisibleSaved,
 } from './site-checks.js';
 import { runNumberChecks } from './number-checks.js';
+import {
+  runBuddyAccount, runBuddyAdd, runBuddyCreate, runBuddyDive, runBuddyFinish, runBuddyRead, runBuddyRestore, runBuddySearch, runBuddyUpdate,
+  type BuddySaved,
+} from './buddy-checks.js';
 import { finishValuesChecks, startValuesChecks } from './values-checks.js';
 import { userAgent } from '../../../src/sites/import/polite-http.js';
 import { createSsiClient, SsiError, type SsiRecord } from '../../../src/providers/ssi/ssi-client.js';
@@ -114,6 +124,26 @@ const testDive = (notes: string): DiveForSsi => ({
 });
 
 await mkdir(out, { recursive: true });
+
+/** The buddy checks (piece 5); each step keeps what the next needs in samples/private/ssi/buddies.json. */
+async function buddyMode(step: string | undefined, arg: string) {
+  const account = await access();
+  const o = { client, access: account.token, accountId: account.accountId, log: console.log };
+  const kept = async () => JSON.parse(await readFile(`${out}buddies.json`, 'utf8')) as BuddySaved;
+  if (step === 'read') await save('buddies', await runBuddyRead(o));
+  else if (step === 'search' && arg) await save('buddies-search', await runBuddySearch({ ...o, text: arg, saved: await kept() }));
+  else if (step === 'add') {
+    const email = process.env.BUDDY_TEST_EMAIL;
+    if (!email) throw new Error('Set BUDDY_TEST_EMAIL: the e-mail of the test entry');
+    await save('buddies', await runBuddyAdd({ ...o, email, saved: await kept() }));
+  } else if (step === 'update') await runBuddyUpdate({ ...o, saved: await kept() });
+  else if (step === 'dive') await save('buddies', await runBuddyDive({ ...o, saved: await kept() }));
+  else if (step === 'account' && arg) await save('buddies', await runBuddyAccount({ ...o, who: arg, saved: await kept() }));
+  else if (step === 'create' && arg) await runBuddyCreate({ ...o, who: arg, saved: await kept() });
+  else if (step === 'restore') await runBuddyRestore({ ...o, saved: await kept() });
+  else if (step === 'finish') await runBuddyFinish({ ...o, saved: await kept() });
+  else throw new Error('buddy read | search <text> | add | update | dive | account <entry ID or name> | create <entry ID or name> | restore | finish');
+}
 
 if (mode === 'read') {
   const account = await signIn();
@@ -255,6 +285,8 @@ if (mode === 'read') {
   const account = await access();
   const saved = JSON.parse(await readFile(`${out}site-visible.json`, 'utf8')) as SiteVisibleSaved;
   await runSiteVisibleFinish({ client, access: account.token, saved, log: console.log });
+} else if (mode === 'buddy') {
+  await buddyMode(process.argv[3], process.argv.slice(4).join(' '));
 } else if (mode === 'expired') {
   const { token, at } = JSON.parse(await readFile(tokenFile, 'utf8')) as { token: string; at: string };
   const hours = ((Date.now() - Date.parse(at)) / 3_600_000).toFixed(1);
@@ -284,5 +316,5 @@ if (mode === 'read') {
     + `status: ${JSON.stringify(seen.status)}; authenticated: ${JSON.stringify(seen.authenticated)}`);
   await save('expired', result);
 } else {
-  console.log('Usage: round-trip.ts read | token | write [--pause] | number [--pause] | number --dive <SSI dive ID> --to <n> | omitted start | omitted finish | values start | values finish [<SSI dive ID>…] | clear start | clear finish | twoway start | twoway send | twoway clear | twoway finish | site probe | site get <id> | site delete <id> | site visible start | site visible global | site visible zip | site visible finish | expired');
+  console.log('Usage: round-trip.ts read | token | write [--pause] | number [--pause] | number --dive <SSI dive ID> --to <n> | omitted start | omitted finish | values start | values finish [<SSI dive ID>…] | clear start | clear finish | twoway start | twoway send | twoway clear | twoway finish | site probe | site get <id> | site delete <id> | site visible start | site visible global | site visible zip | site visible finish | buddy read | buddy search <text> | buddy add | buddy update | buddy dive | buddy account <entry ID or name> | buddy restore | buddy finish | expired');
 }

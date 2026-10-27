@@ -3,7 +3,7 @@
 import type { push } from '../db/schema.js';
 import type { loadOutgoingDive } from './outgoing-dive.js';
 import type { ProviderAdapter } from './provider.js';
-import { forProvider, unmetRequirements } from './requirements.js';
+import { forProvider, offersListEntries, unmetRequirements } from './requirements.js';
 
 export type PushRow = typeof push.$inferSelect;
 
@@ -28,5 +28,5 @@ export function currentRemote(pushes: PushRow[]): PushRow | null {
 export function fingerprintNow(adapter: ProviderAdapter, loaded: Awaited<ReturnType<typeof loadOutgoingDive>>): string | null {
   const exports = adapter.capabilities.data.dives?.export;
   if (!adapter.dives || !exports) return null;
-  return adapter.dives.fingerprint(forProvider(loaded.outgoing, unmetRequirements(exports.requirements, loaded.site, loaded.outgoing)));
+  return adapter.dives.fingerprint(forProvider(loaded.outgoing, unmetRequirements(exports.requirements, loaded.site, loaded.outgoing, { listEntries: offersListEntries(adapter.capabilities) })));
 }

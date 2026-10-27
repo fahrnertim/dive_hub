@@ -252,6 +252,42 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
     expect((await json<Run[]>('GET', '/api/push-runs')).find((r) => r.id === second.id)!.conflicts).toBe(1);
   });
 
+  /** A Participant on a Dive: an external Diver, with an SSI account when given. */
+  const buddyOn = async (diveIds: string[], name: string, account?: number) => {
+    const buddy = (await json<{ id: string }>('POST', '/api/external-divers', { name })).id;
+    if (account) await call('PUT', `/api/divers/${buddy}/external-ids/ssi`, { externalId: String(account) });
+    for (const id of diveIds) {
+      const participants = [{ diverId: buddy, role: 'buddy' }];
+      expect((await call('PUT', `/api/dives/${id}/participants`, { version: await version(id), participants })).statusCode).toBe(200);
+    }
+    return buddy;
+  };
+
+  it('a run adds one entry for a Diver on two dives', async () => {
+    const a = await upload(day(1));
+    const b = await upload(day(2));
+    await atSsiSite(a);
+    await atSsiSite(b);
+    ssi.profiles.set(4_700_001, { firstname: 'Pia', lastname: 'Kern' });
+    await buddyOn([a, b], 'Pia Kern', 4_700_001);
+    ssi.calls.length = 0;
+    const ssiRun = (await start({ dives: all }, ssiConnectionId).then((r) => r.json())) as Run;
+    await runToEnd(ssiRun.id);
+    expect((await run(ssiRun.id)).counts.sent).toBe(2);
+    expect(ssi.calls.filter((c) => c.what === 'save_buddy')).toHaveLength(1);
+  });
+
+  it('a run lists the dives that went without someone', async () => {
+    const id = await upload(day(1));
+    await atSsiSite(id);
+    await buddyOn([id], 'Nils Ohne');
+    const created = (await start({ dives: all }, ssiConnectionId).then((r) => r.json())) as Run;
+    await runToEnd(created.id);
+    const done = (await run(created.id)) as Run & { withoutSomeone: { diveId: string; startsAt: string; names: string[] }[] };
+    expect(done.counts.sent).toBe(1);
+    expect(done.withoutSomeone).toEqual([{ diveId: id, startsAt: day(1).toISOString(), names: ['Nils Ohne'] }]);
+  });
+
   it('skips a dive already at SSI at the same time, and saves nothing for it', async () => {
     const id = await upload(day(1));
     await atSsiSite(id);

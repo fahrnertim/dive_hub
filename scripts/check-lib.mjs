@@ -30,7 +30,7 @@ const AREAS = [
   // Importing a Provider's dives (ADR 0030): on the Connection, and the dives it makes.
   [/^apps\/web\/src\/(ProviderDiveImport|GoneDives)\.tsx$/, ['@account', '@dives']],
   // A Dive at a Provider, and a Conflict with it asked on the Dive's page and waiting on the Review page (ADR 0056).
-  [/^apps\/web\/src\/(ProviderPanel|ProviderConflicts|ProviderConflictsSection)\.tsx$/, ['@dives']],
+  [/^apps\/web\/src\/(ProviderPanel|LinkOrAdd|ProviderConflicts|ProviderConflictsSection)\.tsx$/, ['@dives']],
   // A Dive's numbers at its Providers (ADR 0048): on the Dive's Provider panel, a push run and the account's Connections.
   [/^apps\/web\/src\/(NumberChain|ProviderDiveNumbers)\.tsx$/, ['@dives', '@account']],
   // Providers in the web client (ADR 0027): the account's Connections and each Dive's panels read them.

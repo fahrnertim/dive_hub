@@ -575,7 +575,7 @@ for (const v of variants) {
       await page.goto(`/#/dives/${diveId}`);
       await openLine(page, 'SSI');
       await openLine(page, v.english ? 'History' : 'Verlauf');
-      const find = page.getByRole('button', { name: v.english ? 'Find Ulla Berg in your SSI buddy list' : 'Ulla Berg in deiner SSI-Buddyliste suchen' });
+      const find = page.getByRole('button', { name: v.english ? 'Link or add Ulla Berg' : 'Ulla Berg verknüpfen oder hinzufügen' });
       await expect(find).toBeVisible();
       const people = page.getByRole('group', { name: v.english ? 'Buddies and guides' : 'Buddys und Guides' }).getByRole('listitem');
       await expect(people.locator('.avatar[aria-hidden="true"]')).toHaveText(['KL', 'UB']);
@@ -593,6 +593,28 @@ for (const v of variants) {
       await find.click();
       await expect(page.getByRole('dialog').getByRole('option').first()).toBeVisible();
       await goodPage(page, title('Dive 42'), v);
+      await clearParticipants(request, diveId);
+      await leaveSsi(request, diveId);
+    });
+
+    test('a dive with a person SSI doesn’t know: the Link or add dialog', { tag: ['@dives'] }, async ({ page, request }) => {
+      await connectSsi(request);
+      await readyForSsi(request, diveId);
+      await clearParticipants(request, diveId);
+      await forgetDivers(request, 'Ulla Berg');
+      await setBuddies(request, diveId, [await externalDiver(request, 'Ulla Berg')]);
+      await page.goto(`/#/dives/${diveId}`);
+      await openLine(page, 'SSI');
+      await page.getByRole('button', { name: v.english ? 'Link or add Ulla Berg' : 'Ulla Berg verknüpfen oder hinzufügen' }).click();
+      const dialog = page.getByRole('dialog');
+      await expect(dialog.getByRole('button', { name: v.english ? 'Add to your SSI list' : 'Zu deiner SSI-Liste hinzufügen' })).toBeVisible();
+      await goodPage(page, title('Dive 42'), v);
+      await expectAccessible(page);
+      // The error of an empty name, shown at the field.
+      await dialog.getByRole('button', { name: v.english ? 'Add to your SSI list' : 'Zu deiner SSI-Liste hinzufügen' }).click();
+      await expect(dialog.getByText(v.english ? 'Fill in this field.' : 'Bitte fülle dieses Feld aus.').first()).toBeVisible();
+      await expectAccessible(page);
+      await page.keyboard.press('Escape');
       await clearParticipants(request, diveId);
       await leaveSsi(request, diveId);
     });

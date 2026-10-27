@@ -2,12 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  api, ApiError, buddiesQuery, keys, providerSitesQuery, providerStatusQuery, unwrap,
+  api, ApiError, keys, providerSitesQuery, providerStatusQuery, unwrap,
   type ConflictChoices, type ConflictFieldView, type DiveView, type ProviderStatusView, type ProviderView, type PushView, type RequirementView,
   type UnmetView,
 } from './api.ts';
 import { showDiveCodes } from './CentresPage.tsx';
 import { announce } from './lib/announce.ts';
+import { LinkOrAddDialog, ListChangeNotice, type ListChange } from './LinkOrAdd.tsx';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
 import { exporting, typedSiteId, useFieldNames, useNames, useProviders, useProviderText, waitsForUser, type SyncedField } from './lib/providers.ts';
 import { accountHref } from './lib/account-tabs.ts';
@@ -74,6 +75,9 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
   // Fields changed on both sides, asked by the last send: the choice stands where the send button was until sent or cancelled.
   const [asked, setAsked] = useState<ConflictFieldView[] | null>(null);
   const [exchanged, setExchanged] = useState<Exchanged | null>(null);
+  // What the list of people at the Provider got (a send's `buddies`, or Link or add), and the Participant being linked or added.
+  const [listChange, setListChange] = useState<ListChange | null>(null);
+  const [finding, setFinding] = useState<{ id: string; name: string } | null>(null);
   const can = (op: (typeof exports.operations)[number]) => exports.operations.includes(op);
   const refresh = async (next?: ProviderStatusView) => {
     if (next) queryClient.setQueryData(keys.providerStatus(d.id, p.id), next);
@@ -91,6 +95,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
       const after = afterSend(sent);
       setAsked(after.asked);
       setExchanged(after.exchanged);
+      setListChange(sent.buddies ?? null);
       // Nothing was sent: the User chooses per field first.
       if (sent.outcome === 'conflicts') return announce(pt('result.conflicts'));
       setExisting(sent.outcome === 'exists' ? sent.existing : null);
@@ -149,11 +154,12 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
       {signInNeeded && (
         <Notice tone="danger">{pt('signInNeeded')} <a href={accountHref('connections')}>{pt('goSignIn')}</a></Notice>
       )}
-      <Requirements provider={p} dive={d} status={s} />
+      <Requirements provider={p} dive={d} status={s} onFind={setFinding} />
+      {listChange && <ListChangeNotice key={JSON.stringify(listChange)} provider={p} change={listChange} onClose={() => setListChange(null)} />}
 
       {send.error && !signInNeeded && <Notice tone="danger">{errorText(send.error)}</Notice>}
       {last?.state === 'failed' && !send.error && <Notice tone="danger">{pt('lastFailed', { error: failure(last) })}</Notice>}
-      {last?.leftOut && last.leftOut.length > 0 && last.state !== 'failed' && <LeftOut provider={p} push={last} />}
+      {last?.leftOut && last.leftOut.length > 0 && last.state !== 'failed' && <LeftOut provider={p} push={last} canFind={!!p.data.buddies?.import?.operations.includes('find')} onFind={setFinding} />}
       {last?.differences && last.differences.length > 0 && <Differences provider={p} push={last} />}
       {exchanged && <ExchangedNotice provider={p} exchanged={exchanged} onClose={() => setExchanged(null)} />}
 
@@ -245,6 +251,9 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
       </div>
       </Disclosure>
 
+      {finding && s.connection && (
+        <LinkOrAddDialog provider={p} diver={finding} connectionId={s.connection.id} diveId={d.id} onClose={() => setFinding(null)} onChanged={setListChange} />
+      )}
       <Dialog title={pt('existsTitle')} isOpen={existing !== null} onOpenChange={(open) => !open && setExisting(null)}>
         {existing && (
           <>
@@ -291,11 +300,12 @@ function Line({ title, children }: { title: string; children: ReactNode }) {
  * What the Provider needs and the Dive lacks (ADR 0029), each with its fix: a resolver per requirement type. A type
  * this client doesn't know shows the Provider's own description and that it can't be fixed here.
  */
-function Requirements({ provider: p, dive: d, status: s }: { provider: ProviderView; dive: DiveView; status: ProviderStatusView }) {
+function Requirements({ provider: p, dive: d, status: s, onFind }: {
+  provider: ProviderView; dive: DiveView; status: ProviderStatusView; onFind: (diver: { id: string; name: string }) => void;
+}) {
   const pt = useProviderText(p);
   const names = useNames();
   const [picking, setPicking] = useState<RequirementView | null>(null);
-  const [finding, setFinding] = useState<UnmetView | null>(null);
   if (s.unmet.length === 0) return null;
   const sites = s.unmet.filter((u) => u.type === 'site_external_id');
   const people = s.unmet.filter((u) => u.type === 'diver_mapping');
@@ -322,11 +332,11 @@ function Requirements({ provider: p, dive: d, status: s }: { provider: ProviderV
           <Muted>{pt(people.some((u) => u.severity === 'blocking') ? 'peopleUnknownBlocking' : 'peopleUnknown', {
             names: names(people.map((u) => u.diverName ?? '')),
           })}</Muted>
-          {canFindPeople && people.some((u) => u.fixes?.includes('diver_external_id')) && (
+          {canFindPeople && (
             <ul className="provider-people">
-              {people.map((u) => (
+              {people.filter((u) => u.diverId && (u.fixes?.includes('list_entry') || u.fixes?.includes('diver_external_id'))).map((u) => (
                 <li key={u.diverId}>
-                  <Button icon="link" onPress={() => setFinding(u)}>{pt('findInList', { diver: u.diverName ?? '' })}</Button>
+                  <Button icon="link" onPress={() => onFind({ id: u.diverId!, name: u.diverName ?? '' })}>{pt('findInList', { diver: u.diverName ?? '' })}</Button>
                 </li>
               ))}
             </ul>
@@ -339,22 +349,29 @@ function Requirements({ provider: p, dive: d, status: s }: { provider: ProviderV
       {picking && d.site && (
         <SitePicker provider={p} requirement={picking} connectionId={s.connection!.id} diveId={d.id} diveSiteId={d.site.id} siteName={d.site.name} onClose={() => setPicking(null)} />
       )}
-      {finding && s.connection && (
-        <BuddyPicker provider={p} unmet={finding} connectionId={s.connection.id} diveId={d.id} onClose={() => setFinding(null)} />
-      )}
     </div>
   );
 }
 
 /** Who the last Push couldn't carry, and why (ADR 0029). */
-function LeftOut({ provider: p, push }: { provider: ProviderView; push: PushView }) {
+function LeftOut({ provider: p, push, canFind, onFind }: {
+  provider: ProviderView; push: PushView; canFind: boolean; onFind: (diver: { id: string; name: string }) => void;
+}) {
   const pt = useProviderText(p);
   const names = useNames();
-  const of = (reason: 'no_reference' | 'not_at_provider') => push.leftOut!.filter((l) => l.reason === reason).map((l) => l.name);
+  const left = (reason: 'no_reference' | 'not_at_provider') => push.leftOut!.filter((l) => l.reason === reason);
+  const of = (reason: 'no_reference' | 'not_at_provider') => left(reason).map((l) => l.name);
   return (
     <Notice tone="info">
       {of('no_reference').length > 0 && <p>{pt('leftOut.no_reference', { names: names(of('no_reference')) })}</p>}
       {of('not_at_provider').length > 0 && <p>{pt('leftOut.not_at_provider', { names: names(of('not_at_provider')) })}</p>}
+      {canFind && left('not_at_provider').length > 0 && (
+        <ul className="provider-people">
+          {left('not_at_provider').map((l) => (
+            <li key={l.diverId}><Button icon="link" onPress={() => onFind({ id: l.diverId, name: l.name })}>{pt('findInList', { diver: l.name })}</Button></li>
+          ))}
+        </ul>
+      )}
     </Notice>
   );
 }
@@ -474,65 +491,6 @@ function SitePicker({ provider: p, requirement: r, connectionId, diveId, diveSit
           listLabel={pt('fromLogbook')} status={status}
         />
         {save.error && <Notice tone="danger">{errorText(save.error)}</Notice>}
-        <div className="form-actions">
-          <Button onPress={onClose}>{t('common.cancel')}</Button>
-        </div>
-      </div>
-    </Dialog>
-  );
-}
-
-/**
- * The `diver_mapping` resolver: find the Participant in the account's own list of people at the Provider (SSI's buddy
- * list) and take that entry's account for the Diver (ADR 0029). Entries without an account, or already someone's
- * here, can't be picked.
- */
-function BuddyPicker({ provider: p, unmet: u, connectionId, diveId, onClose }: {
-  provider: ProviderView; unmet: UnmetView; connectionId: string; diveId: string; onClose: () => void;
-}) {
-  const { t } = useTranslation();
-  const pt = useProviderText(p);
-  const errorText = useErrorText();
-  const queryClient = useQueryClient();
-  const buddies = useQuery(buddiesQuery(connectionId));
-  const [text, setText] = useState('');
-  const save = useMutation({
-    mutationFn: async (account: string) => unwrap(await api.PUT('/api/divers/{id}/external-ids/{source}', {
-      params: { path: { id: u.diverId!, source: u.source as 'ssi' } }, body: { externalId: account },
-    })),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: keys.diveProviders(diveId) });
-      await queryClient.invalidateQueries({ queryKey: keys.buddies(connectionId) });
-      await queryClient.invalidateQueries({ queryKey: keys.divers });
-      announce(pt('buddyLinked', { diver: u.diverName ?? '' }));
-      onClose();
-    },
-  });
-
-  const fold = (v: string) => v.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
-  const query = text.trim();
-  const all = buddies.data ?? [];
-  const matching = query ? all.filter((b) => fold(b.name).includes(fold(query))) : all;
-  const pickable = matching.filter((b) => b.account && !b.diver);
-  const items: SearchListItem[] = pickable.slice(0, SHOWN).map((b) => ({ id: b.account!, name: b.name }));
-  const status = buddies.isPending ? t('common.loading')
-    : pickable.length > SHOWN ? t('sites.showingFirst', { shown: SHOWN }) : null;
-  const empty = buddies.isPending ? t('common.loading') : all.length === 0 ? pt('noBuddies') : pt('noBuddyMatch', { q: query });
-  const taken = save.error instanceof ApiError && save.error.code === 'diver_external_id_taken' ? save.error.details.diver : undefined;
-
-  return (
-    <Dialog title={pt('findTitle', { diver: u.diverName ?? '' })} isOpen onOpenChange={(open) => !open && onClose()}>
-      <div className="provider-sites">
-        <p>{pt('findIntro', { diver: u.diverName ?? '' })}</p>
-        {buddies.error && <Notice tone="danger">{errorText(buddies.error)}</Notice>}
-        <SearchList
-          label={pt('findInListLabel')} query={text} onQueryChange={setText} autoFocus
-          items={items} onPick={(account) => save.mutate(account)} isPending={save.isPending} pendingStatus={t('common.saving')}
-          listLabel={pt('buddyList')} status={status} empty={empty}
-        />
-        {taken ? <Notice tone="danger">{pt('accountTaken', { diver: taken.name })}</Notice>
-          : save.error && <Notice tone="danger">{errorText(save.error)}</Notice>}
-        <Muted>{pt('notInList')}</Muted>
         <div className="form-actions">
           <Button onPress={onClose}>{t('common.cancel')}</Button>
         </div>

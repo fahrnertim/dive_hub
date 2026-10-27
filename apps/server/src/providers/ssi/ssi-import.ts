@@ -1,7 +1,7 @@
 // SSI's dives as ImportedDives (ADR 0030). Pure: no database, no network. What SSI returns for a dive is in the SSI
 // reference ("A dive as SSI returns it"); fields a dive synced by SSI's own app may carry are read defensively.
 import { REFERENCE_PREFIX, type DiveOrigin, type ImportContext, type ImportedDive, type ProviderCylinder, type Series } from '../provider.js';
-import type { SsiLogbook, SsiRecord } from './ssi-client.js';
+import type { SsiBuddy, SsiLogbook, SsiRecord } from './ssi-client.js';
 import { alpha2Of } from '../../sites/countries.js';
 import { buddyIdsOf, SAMPLE_INTERVAL_MS } from './ssi-record.js';
 import { asBool } from './ssi-dive-row.js';
@@ -22,11 +22,11 @@ const text = (v: unknown) => (typeof v === 'string' && v.trim() !== '' ? v.trim(
  * The context of a logbook (ADR 0030): buddy-list entry → SSI account, SSI site → name and position. No names of people.
  * A site private to the account `accountId` is marked `private`; one private to another account (or to any, without
  * `accountId`) is left out. A row without SSI's private flag is marked `private: 'unknown'`: kept as the account's,
- * never public, and not settled.
+ * never public, and not settled. `buddies` is the list `get_buddies` gave; without it the logbook's own is used.
  */
-export function contextOf(logbook: SsiLogbook, accountId?: string): ImportContext {
+export function contextOf(logbook: SsiLogbook, accountId?: string, buddies: SsiBuddy[] = logbook.buddies): ImportContext {
   return {
-    people: Object.fromEntries(logbook.buddies.flatMap((b) => (b.account ? [[String(b.id), b.account]] : []))),
+    people: Object.fromEntries(buddies.flatMap((b) => (b.account ? [[String(b.id), b.account]] : []))),
     sites: Object.fromEntries(logbook.sites.filter((s) => s.private === null || s.privateOwner === null || s.privateOwner === accountId).map((s) => [s.id, {
       name: s.name, latitude: s.latitude, longitude: s.longitude,
       // SSI gives alpha-3, alpha-2 or a country's name.
@@ -212,6 +212,8 @@ export function parseSsiDive(r: SsiRecord, context: ImportContext, givenId?: str
     gfLow: gfLow !== null && gfLow > 0 ? gfLow : null, gfHigh: gfHigh !== null && gfHigh > 0 ? gfHigh : null,
     cnsStart: numberOf(r.odin_user_log_cns_start), cnsEnd: numberOf(r.odin_user_log_cns_end),
     people: [...new Set(buddyIdsOf(r).flatMap((id) => { const account = context.people[String(id)]; return account ? [account] : []; }))],
+    // An entry without an account, remembered for a Diver.
+    diverIds: [...new Set(buddyIdsOf(r).flatMap((id) => { const diverId = context.people[String(id)] ? undefined : context.remembered?.[String(id)]; return diverId ? [diverId] : []; }))],
     notes: text(r.odin_user_log_comment),
     cylinder: cylinderOf(r, gases[0] ?? null),
     // SSI's weight, as typed; 0 is what an empty field reads as.

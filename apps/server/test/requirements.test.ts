@@ -33,3 +33,20 @@ describe('site_external_id', () => {
     expect(unmetRequirements([bySend], { id: 's1', positioned: true }, dive({ ssi: '3314' }))).toEqual([]);
   });
 });
+
+describe('diver_mapping', () => {
+  const mapping: Requirement = { type: 'diver_mapping', severity: 'advisory', source: 'ssi', roles: ['buddy'], description: '' };
+  const withPeople = (...entries: (string | undefined)[]) => ({
+    siteIds: {},
+    participants: entries.map((e, i) => ({ diverId: `d${i}`, name: `D${i}`, role: 'buddy', ids: {}, ...(e && { entries: { ssi: e } }) })),
+  }) as unknown as OutgoingDive;
+
+  it('a Participant with a remembered entry meets diver_mapping', () => {
+    expect(unmetRequirements([mapping], null, withPeople('7'))).toEqual([]);
+  });
+
+  it('an unmet Participant offers both fixes where the Provider can add', () => {
+    expect(unmetRequirements([mapping], null, withPeople(undefined), { listEntries: true })).toMatchObject([{ fixes: ['diver_external_id', 'list_entry'] }]);
+    expect(unmetRequirements([mapping], null, withPeople(undefined))).toMatchObject([{ fixes: ['diver_external_id'] }]);
+  });
+});

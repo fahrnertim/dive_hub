@@ -67,9 +67,17 @@ describe('eachFile', () => {
 
   it('does not hand over a file larger than a dive file can be, and leaves no temporary files', async () => {
     const path = await stored('large.zip', await zipOf({ 'huge.bin': Buffer.from('0123456789'), 'n.zip': await zipOf({ 'ok.fit': 'ok' }) }));
-    const before = (await readdir(tmpdir())).filter((n) => n.startsWith('divehub-zip-')).length;
-    const seen = await walk(path, undefined, { ...DEFAULT_LIMITS, maxEntryBytes: 5 });
-    expect(seen.map((e) => e.name)).toEqual(['n.zip/ok.fit']);
-    expect((await readdir(tmpdir())).filter((n) => n.startsWith('divehub-zip-'))).toHaveLength(before);
+    // A temp folder of its own: other test files read archives at the same time in the shared one.
+    const own = await mkdtemp(join(dir, 'tmp-'));
+    const saved = { TMPDIR: process.env.TMPDIR, TMP: process.env.TMP, TEMP: process.env.TEMP };
+    Object.assign(process.env, { TMPDIR: own, TMP: own, TEMP: own });
+    try {
+      expect(tmpdir()).toBe(own);
+      const seen = await walk(path, undefined, { ...DEFAULT_LIMITS, maxEntryBytes: 5 });
+      expect(seen.map((e) => e.name)).toEqual(['n.zip/ok.fit']);
+      expect(await readdir(own)).toEqual([]);
+    } finally {
+      for (const [k, v] of Object.entries(saved)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+    }
   });
 });

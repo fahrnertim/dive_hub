@@ -398,7 +398,8 @@ Tested on the owner's account [T]; details in [the research note](../research/20
 |---|---|---|
 | `get_user_data` | profile: name, address, birthday, units | [S] |
 | `get_divelog_vars` | ID → name lists for conditions (weather, entry, water body, current, surface, dive type, special dive, tank) | [S]; fetch at runtime when conditions are sent. Answers without a token [T] (2026-10-08): `logbook_vars.tanktype` is `{ 19: "steel", 20: "alu" }`, `logbook_vars.suit` `{ 85: "other", 86: "shorty", 87: "wetsuit", 88: "semidry", 89: "drysuit" }`; the two tank types are a constant in `ssi-import.ts` |
-| `get_buddies` | buddy list, the same entries as `logbook_buddies` in `get_divelog` ([Buddies](#buddies-checked-2026-10-05)) | [S]; no call to add a buddy is known |
+| `get_buddies` | buddy list: `{ user_buddies: [...] }`, the same entries as `logbook_buddies` in `get_divelog` ([Buddies](#buddies-checked-2026-10-05)); Dive Hub reads the list from here | [T] 2026-10-27 ([checks](../research/2026-10-27-ssi-buddy-checks.md) step 1) |
+| `save_buddy` | makes or changes a buddy-list entry: the app's whole row as `json_data` (`id: null` makes one, an ID changes it), answered `{ id, result: { buddy: [entry] } }`; an `id: null` with the account of an entry already in the list answers that entry. Dive Hub sends the whole row from scratch, and for a person with an SSI account only `id`, `master_id` and the flags (sent as the design says; the minimal body itself not checked [?]) | [T] 2026-10-27 ([checks](../research/2026-10-27-ssi-buddy-checks.md) steps 3-8) |
 | `get_ccards` | certifications (card ID `ccard_uid`, course, date, instructor and centre numbers) | [S]; [R] answers used by the certification import (ADR 0050): the picture of a card is `https://my.divessi.com/cert/<ccard_uid>`, a PNG served without a token (public by card ID) |
 | `get_gear`, `save_gear`, `delete_gear`, `get_gearsets`, `save_gearset` | equipment | [S] |
 | `get_divelog_history`, `set_divelog_history` | the account's totals from before the logbook (`history_scuba_totaldives`, `_since`, `_totaldivetime`, …, the same for freediving) | [R] the read, in the capture of 2026-10-10; the write is a name in the app's code only |
@@ -448,6 +449,7 @@ SSI is a Provider ([ADR 0027](../decisions/0027-providers-as-adapters.md)): ever
 |---|---|
 | `apps/server/src/providers/ssi/ssi-transport.ts` | makes every call; reads the answer: body `status` 401 / `authenticated: false` signed out, 503 `maintenance`, other non-2xx unavailable, non-JSON `bad_response` |
 | `apps/server/src/providers/ssi/ssi-client.ts` | the calls; errors as reasons (`wrong_credentials`, `signed_out`, `refused`, `unavailable`, `maintenance`, `bad_response`), never with a URL |
+| `apps/server/src/providers/ssi/ssi-buddy-row.ts` | the app's 20 buddy keys, and the rows Dive Hub sends: from scratch, account only, an entry saved back with an account |
 | `apps/server/src/providers/ssi/ssi-dive-row.ts` | the app's 345 keys and their types |
 | `apps/server/src/providers/ssi/ssi-record.ts` | Dive → record (the empty and the writable record are built from `ssi-dive-row.ts`), samples, update and delete records, read-back comparison, fingerprint |
 | `apps/server/src/providers/ssi/ssi-adapter.ts` | SSI's capabilities and requirements, sign-in, the logbook read (kept two minutes after a save), the ±2 min match, SSI's dive numbers, the SSI site ID, buddies as buddy-list entries; SSI's record as typed values |

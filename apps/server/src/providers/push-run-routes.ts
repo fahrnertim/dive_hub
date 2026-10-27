@@ -55,6 +55,11 @@ const ItemView = Type.Object({
   dive: Type.Object({ number: Nullable(Type.Integer()), startsAt: DateTime, siteName: Nullable(Type.String()) }),
 });
 
+const WithoutSomeone = Type.Object({
+  diveId: Type.String(), startsAt: DateTime,
+  names: Type.Array(Type.String(), { description: 'Participants the sent Dive went without: no SSI account and no list entry, or not at the Provider' }),
+}, { description: 'A sent Dive whose Push left someone out' });
+
 const Unmet = Type.Any({ description: 'As in a Dive\'s status at the Provider (unmet)' });
 
 const PreviewView = Type.Object({
@@ -173,11 +178,11 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
   app.get('/push-runs/:id', {
     schema: {
       summary: 'One Push run with its items, in the order they are sent', params: IdParams,
-      response: { 200: Type.Intersect([RunView, Type.Object({ items: Type.Array(ItemView) })]), ...errors },
+      response: { 200: Type.Intersect([RunView, Type.Object({ withoutSomeone: Type.Array(WithoutSomeone), items: Type.Array(ItemView) })]), ...errors },
     },
   }, async (request) => {
     const run = await pushRuns.get(userId(request), request.params.id);
-    return { ...runView(run), items: run.items.map((i) => ({ ...i, action: i.action as Static<typeof ItemView>['action'], outcome: i.outcome as Static<typeof ItemView>['outcome'], dive: { ...i.dive, startsAt: i.dive.startsAt.toISOString() } })) };
+    return { ...runView(run), withoutSomeone: run.withoutSomeone.map((w) => ({ ...w, startsAt: w.startsAt.toISOString() })), items: run.items.map((i) => ({ ...i, action: i.action as Static<typeof ItemView>['action'], outcome: i.outcome as Static<typeof ItemView>['outcome'], dive: { ...i.dive, startsAt: i.dive.startsAt.toISOString() } })) };
   });
 
   app.post('/push-runs/:id/cancel', {

@@ -4,7 +4,7 @@
 // run would do (the preview), and it never calls a Provider.
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { connection, dive, diveSite, providerConflict, pushRun, pushRunItem, type PushRunLeftOut } from '../db/schema.js';
+import { connection, dive, diveSite, providerConflict, push, pushRun, pushRunItem, type PushRunLeftOut } from '../db/schema.js';
 import { asksFor, diveListFilter } from '../dives/list-filter.js';
 import { managedDiverIds } from '../dives/dive-service.js';
 import { isUniqueViolation } from '../sites/site-service.js';
@@ -333,13 +333,22 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
       const row = await ownRun(userId, runId);
       const items = await db.select({
         diveId: pushRunItem.diveId, position: pushRunItem.position, action: pushRunItem.action, state: pushRunItem.state,
-        outcome: pushRunItem.outcome, reason: pushRunItem.reason, sharesWithDiveId: pushRunItem.sharesWithDiveId,
+        outcome: pushRunItem.outcome, reason: pushRunItem.reason, sharesWithDiveId: pushRunItem.sharesWithDiveId, pushId: pushRunItem.pushId,
         number: dive.number, startsAt: dive.startsAt, siteName: diveSite.name,
       }).from(pushRunItem).innerJoin(dive, eq(dive.id, pushRunItem.diveId)).leftJoin(diveSite, eq(diveSite.id, dive.siteId))
         .where(eq(pushRunItem.runId, runId)).orderBy(asc(pushRunItem.position));
+      // The sent Dives whose Push left someone out (no SSI account and no entry, or not at the Provider), in the run's order.
+      const pushIds = items.flatMap((i) => (i.state === 'sent' && i.pushId ? [i.pushId] : []));
+      const pushes = pushIds.length === 0 ? [] : await db.select({ id: push.id, leftOut: push.leftOut }).from(push).where(inArray(push.id, pushIds));
+      const leftOutOf = new Map(pushes.map((p) => [p.id, p.leftOut ?? []]));
+      const withoutSomeone = items.flatMap((i) => {
+        const left = i.pushId ? leftOutOf.get(i.pushId) ?? [] : [];
+        return i.state === 'sent' && left.length > 0 ? [{ diveId: i.diveId, startsAt: i.startsAt, names: left.map((l) => l.name) }] : [];
+      });
       return {
         ...viewOf(row, countsOf(items), (await conflictsOf([row.id])).get(row.id) ?? 0),
-        items: items.map(({ number, startsAt, siteName, ...item }) => ({ ...item, dive: { number, startsAt, siteName } })),
+        withoutSomeone,
+        items: items.map(({ number, startsAt, siteName, pushId: _pushId, ...item }) => ({ ...item, dive: { number, startsAt, siteName } })),
       };
     },
 
