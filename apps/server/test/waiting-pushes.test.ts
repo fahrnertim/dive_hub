@@ -5,7 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { connection, dive, diveSiteExternalId, importJob, providerConflict, push, revision, waitingPush } from '../src/db/schema.js';
 import { writeRevision } from '../src/dives/revisions.js';
 import { mark, QUIET_MS, settle, WAITING_PUSHES_TASK } from '../src/providers/waiting-push-queue.js';
-import { GIVE_UP_MS, RETRY_AFTER_MS } from '../src/providers/waiting-push-service.js';
+import { createWaitingPushService, GIVE_UP_MS, RETRY_AFTER_MS } from '../src/providers/waiting-push-service.js';
 import type { ImportedValues, SiteSourceAdapter, SourceSite } from '../src/sites/import/site-source.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { handTypedDive } from './fake-ssi.js';
@@ -364,14 +364,14 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       return id;
     };
     /** Steps through the failures of an entry until it stops: the delay before each next attempt, in minutes. */
-    const failUntilStopped = async () => {
+    const failUntilStopped = async (stepOnce: () => Promise<unknown> = step) => {
       const delays: number[] = [];
       for (let i = 0; i < 20; i++) {
         const [before] = await rows();
         if (before!.state === 'stopped') break;
         ctx.clock.skip(Math.max(0, before!.dueAt.getTime() - ctx.clock.now()));
         const at = ctx.clock.now();
-        await step();
+        await stepOnce();
         const [after] = await rows();
         if (after!.state === 'waiting') delays.push(Math.round((after!.dueAt.getTime() - at) / 60_000));
       }
@@ -609,10 +609,21 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
 
     it('an internal_error entry wakes only by Retry', async () => {
       const id = await waiting('Turtle');
-      ledger.beforeSave = async () => { throw new Error('a bug in Dive Hub'); };
-      const delays = await failUntilStopped();
+      const bug = new Error('a bug in Dive Hub');
+      ledger.beforeSave = async () => { throw bug; };
+      // The worker as main.ts builds it, with a logger: the fault itself is for the operator, Users see the code.
+      const logged: { detail: object; message: string }[] = [];
+      const logging = createWaitingPushService({
+        db: t.db, registry: ctx.providers.providers, pushes: ctx.providers.pushes, clock: ctx.clock,
+        log: { error: (detail, message) => logged.push({ detail, message }) },
+      });
+      const delays = await failUntilStopped(() => logging.step(connectionId));
       expect(delays).toEqual([5, 30, 120, 360, 360, 360, 360]);
       expect(await rows()).toMatchObject([{ state: 'stopped', reason: 'internal_error' }]);
+      expect(logged).toHaveLength(8);
+      expect(logged[0]).toEqual({
+        detail: { err: bug, diveId: id, provider: 'ledger', connectionId, action: 'send' }, message: 'a Waiting push failed with an internal error',
+      });
       ledger.beforeSave = counting;
       await bobsConnection();
       await ctx.providers.waitingPushes.tick();

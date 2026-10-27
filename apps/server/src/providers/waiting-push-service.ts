@@ -24,11 +24,18 @@ export const AUTOMATION_TICK_TASK = 'automation_tick';
 /** Failures that may pass by themselves: tried again for a day. Any other code would fail the same way again. */
 const RETRIED = new Set(['provider_unavailable', 'internal_error']);
 
+/** Where Dive Hub's own faults go for the operator (the app's logger in production; Users see only the code). */
+export interface WaitingPushLog {
+  error(detail: object, message: string): void;
+}
+
 type Entry = typeof waitingPush.$inferSelect;
 type Connection = typeof connection.$inferSelect;
 
-export function createWaitingPushService(deps: { db: Db; registry: ProviderRegistry; pushes: PushService; clock?: Clock }) {
+export function createWaitingPushService(deps: { db: Db; registry: ProviderRegistry; pushes: PushService; clock?: Clock; log?: WaitingPushLog }) {
   const { db, registry, pushes } = deps;
+  // Without a logger (a script or a test that doesn't look), the fault still goes somewhere an operator sees it.
+  const log: WaitingPushLog = deps.log ?? { error: (detail, message) => console.error(message, detail) };
   const clock = deps.clock ?? realClock;
   const now = () => new Date(clock.now());
   const the = (entry: Entry) => and(eq(waitingPush.diveId, entry.diveId), eq(waitingPush.provider, entry.provider));
@@ -119,7 +126,11 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
       if (entry.action === 'delete') await pushes.remove(conn.userId, entry.diveId, entry.provider);
       else await sendOne(conn, entry, seen);
     } catch (error) {
-      return failed(entry, seen, error instanceof ProviderServiceError ? error.code : 'internal_error');
+      if (error instanceof ProviderServiceError) return failed(entry, seen, error.code);
+      // Dive Hub's own fault: the entry is retried and then stopped as `internal_error`; the error is for the operator.
+      log.error({ err: error, diveId: entry.diveId, provider: entry.provider, connectionId: conn.id, action: entry.action },
+        'a Waiting push failed with an internal error');
+      return failed(entry, seen, 'internal_error');
     }
   }
 
