@@ -120,6 +120,17 @@ describe.skipIf(!(await databaseReachable()))('the API of the automation', () =>
     expect(await connectionRow(handed)).toMatchObject({ sendChanges: false, fetchEveryMinutes: null });
   });
 
+  it('a change refused in a later part leaves the automation part unsaved', async () => {
+    const handed = (await json<{ id: string }>('POST', '/api/connections/handover', { diverId, token: 'handover-token-1', keepSignedIn: false })).id;
+    await set(handed, { sendChanges: true });
+    // Turning off is allowed, but the Provider declares no numbers and no import: those parts are refused.
+    for (const body of [{ diveNumbers: { follow: true } }, { diveImport: { mode: 'create' } }]) {
+      const refused = await call('PATCH', `/api/connections/${handed}`, { sendChanges: false, ...body });
+      expect([refused.statusCode, refused.json().code]).toEqual([400, 'provider_unsupported']);
+      expect(await connectionRow(handed)).toMatchObject({ sendChanges: true });
+    }
+  });
+
   it('refuses an interval below the Provider\'s minimum, and changes nothing', async () => {
     const limits = ledger.adapter.capabilities.limits;
     limits.fetchEveryMinutes = 360;

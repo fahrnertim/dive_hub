@@ -7,11 +7,12 @@ import { and, arrayOverlaps, asc, count, desc, eq, inArray, isNotNull, isNull, l
 import type { Db } from '../db/client.js';
 import { connection, dive, importJob, providerConflict, push, pushRun, waitingPush, type WaitingPushOptions } from '../db/schema.js';
 import { managedDiverIds } from '../dives/dive-service.js';
+import { currentRemote } from './current-remote.js';
 import { realClock, type Clock } from './leases.js';
 import type { PushService } from './push-service.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { blocking } from './requirements.js';
-import { currentOf, mark, newDivesConnection, queueNow, scheduleConnection, settle, upsertSend, type QueueMark } from './waiting-push-queue.js';
+import { mark, newDivesConnection, queueNow, scheduleConnection, settle, upsertSend, type QueueMark } from './waiting-push-queue.js';
 
 /** After a failure the Provider may be back: tried again after 5 min, 30 min, 2 h, then every 6 h (the last repeats). */
 export const RETRY_AFTER_MS = [300_000, 1_800_000, 7_200_000, 21_600_000];
@@ -150,7 +151,7 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
     if (ids.length === 0) return [];
     const pushes = await db.select().from(push).where(and(inArray(push.diveId, ids), eq(push.provider, conn.provider)))
       .orderBy(desc(push.createdAt), desc(push.id));
-    return ids.filter((id) => !currentOf(pushes.filter((p) => p.diveId === id)));
+    return ids.filter((id) => !currentRemote(pushes.filter((p) => p.diveId === id)));
   }
 
   /** The Diver of a Dive of one of the User's Divers; else `dive_not_found`, also for a Dive another User keeps. */

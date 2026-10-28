@@ -611,8 +611,12 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     },
   }, async (request) => {
     const { diveImport, diveNumbers, ...automation } = request.body;
-    // What the Connection does by itself first: a refusal there changes nothing.
-    if (Object.keys(automation).length > 0) await connections.setAutomation(request.user!.id, request.params.id, automation);
+    const userId = request.user!.id;
+    // Every part is checked before any is written: a refusal in one changes nothing.
+    const parts = Object.keys(automation).length > 0;
+    await connections.checkChanges(userId, request.params.id, { ...(parts && { automation }), ...(diveNumbers && { follow: diveNumbers.follow }) });
+    if (diveImport) await diveImports.checkSettings(userId, request.params.id);
+    if (parts) await connections.setAutomation(userId, request.params.id, automation);
     if (diveImport) {
       const { computers, ...set } = diveImport;
       await diveImports.settings(request.user!.id, request.params.id, {

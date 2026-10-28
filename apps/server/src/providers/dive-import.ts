@@ -356,6 +356,10 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       .orderBy(desc(push.createdAt), desc(push.id));
     const current = currentRemote(pushes);
     if (current?.remoteId !== remoteId || !current.connectionId) return;
+    // Only a Connection still the Dive's Diver's decides, as in `noteSent` (ADR 0056): another one queues nothing.
+    const [own] = await tx.select({ id: connection.id }).from(connection).innerJoin(dive, eq(dive.diverId, connection.diverId))
+      .where(and(eq(connection.id, current.connectionId), eq(dive.id, diveId)));
+    if (!own) return;
     await queueNow(tx, diveId, run.adapter.id, current.connectionId, { conflicts: Object.fromEntries(fields.map((f) => [f, 'hub' as const])) });
   }
 
@@ -495,6 +499,11 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
         return;
       }
       await db.insert(providerSiteData).values({ provider, allowedBy: adminId }).onConflictDoNothing();
+    },
+
+    /** Throws what `settings` would refuse (the Provider can't import), writing nothing. */
+    async checkSettings(userId: string, connectionId: string) {
+      importer((await connections.own(userId, connectionId)).provider);
     },
 
     /** What an import of the Connection's dives may do (ADR 0030). */

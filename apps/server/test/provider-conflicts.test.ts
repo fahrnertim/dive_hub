@@ -196,6 +196,20 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     ]);
   });
 
+  it('keeping Dive Hub\'s value queues nothing through a Connection that is no longer the Diver\'s', async () => {
+    const { diveId, remoteId } = await openOnNotes();
+    await t.db.delete(waitingPush);
+    const bobsDiver = (await json<{ id: string; isOwn: boolean }[]>('GET', '/api/divers', undefined, bob)).find((d) => d.isOwn)!.id;
+    await t.db.update(connection).set({ diverId: bobsDiver }).where(eq(connection.id, connectionId));
+    try {
+      await manualImport([{ remoteId, field: 'notes', choice: 'hub' }]);
+      expect(await t.db.select().from(waitingPush)).toEqual([]);
+    } finally {
+      await t.db.update(connection).set({ diverId }).where(eq(connection.id, connectionId));
+    }
+    expect(diveId).toBeTruthy();
+  });
+
   it('leaves out the Connection of a Provider this instance does not offer', async () => {
     const { diveId, remoteId } = await sentDive();
     await record(t.db, entry(diveId, remoteId));

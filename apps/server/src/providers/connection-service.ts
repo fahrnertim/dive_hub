@@ -122,6 +122,24 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
     }
   }
 
+  function checkFollowNumbers(row: { provider: string }, follow: boolean) {
+    const adapter = registry.get(row.provider);
+    if (follow && !adapter.capabilities.data.dives?.export?.numbers) throw new ProviderServiceError('provider_unsupported', named(adapter));
+  }
+
+  function checkAutomation(row: { provider: string }, settings: AutomationSettings) {
+    const adapter = registry.get(row.provider);
+    const offers = automationOffers(adapter);
+    for (const key of ['sendChanges', 'sendNewDives', 'deleteAtProvider'] as const) {
+      if (settings[key] && !offers[key]) throw new ProviderServiceError('provider_unsupported', named(adapter));
+    }
+    const every = settings.fetchEveryMinutes;
+    if (every !== undefined && every !== null) {
+      if (offers.fetchMinimum === null) throw new ProviderServiceError('provider_unsupported', named(adapter));
+      if (every < offers.fetchMinimum) throw new ProviderServiceError('fetch_interval_too_short', named(adapter));
+    }
+  }
+
   return {
     /** Whether the server can keep passwords (DIVEHUB_ENCRYPTION_KEY is set). */
     canKeepPasswords: secrets.available,
@@ -151,8 +169,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
      */
     async setFollowNumbers(userId: string, connectionId: string, follow: boolean) {
       const row = await ownConnection(userId, connectionId);
-      const adapter = registry.get(row.provider);
-      if (follow && !adapter.capabilities.data.dives?.export?.numbers) throw new ProviderServiceError('provider_unsupported', named(adapter));
+      checkFollowNumbers(row, follow);
       await db.update(connection).set({ followNumbers: follow, updatedAt: new Date() }).where(eq(connection.id, row.id));
     },
 
@@ -163,17 +180,18 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
      */
     async setAutomation(userId: string, connectionId: string, settings: AutomationSettings) {
       const row = await ownConnection(userId, connectionId);
-      const adapter = registry.get(row.provider);
-      const offers = automationOffers(adapter);
-      for (const key of ['sendChanges', 'sendNewDives', 'deleteAtProvider'] as const) {
-        if (settings[key] && !offers[key]) throw new ProviderServiceError('provider_unsupported', named(adapter));
-      }
-      const every = settings.fetchEveryMinutes;
-      if (every !== undefined && every !== null) {
-        if (offers.fetchMinimum === null) throw new ProviderServiceError('provider_unsupported', named(adapter));
-        if (every < offers.fetchMinimum) throw new ProviderServiceError('fetch_interval_too_short', named(adapter));
-      }
+      checkAutomation(row, settings);
       await db.update(connection).set({ ...settings, updatedAt: new Date() }).where(eq(connection.id, row.id));
+    },
+
+    /**
+     * Throws what `setAutomation` and `setFollowNumbers` would refuse for these parts, writing nothing: a change made of
+     * several parts checks them all first, so a refusal leaves the Connection as it was.
+     */
+    async checkChanges(userId: string, connectionId: string, parts: { automation?: AutomationSettings | undefined; follow?: boolean | undefined }) {
+      const row = await ownConnection(userId, connectionId);
+      if (parts.automation) checkAutomation(row, parts.automation);
+      if (parts.follow !== undefined) checkFollowNumbers(row, parts.follow);
     },
 
     /** One of the User's Connections, or `connection_not_found`. */

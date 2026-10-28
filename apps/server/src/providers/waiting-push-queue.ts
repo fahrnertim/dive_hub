@@ -5,11 +5,11 @@
 // It imports only the database layer: `dives/revisions.ts` calls it, so a `dives/` import here would be a cycle.
 import { and, asc, desc, eq, inArray, min, ne, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
+import { currentRemote, type PushRow } from './current-remote.js';
 import { connection, dive, importJob, push, waitingPush, type WaitingPushOptions } from '../db/schema.js';
 
 type Q = Db | Tx;
 export type Connection = typeof connection.$inferSelect;
-type PushRow = typeof push.$inferSelect;
 
 /** The Graphile Worker task that sends a Connection's due entries. */
 export const WAITING_PUSHES_TASK = 'waiting_pushes';
@@ -24,21 +24,6 @@ export const DELETE_QUIET_MS = 300_000;
  * brought. Task 5 queues an import's new Dives; the queue is not told by their Revisions.
  */
 const IMPORT_CAUSES = new Set(['import-create', 'auto-attach', 'reimport', 'fill', 'update', 'auto-site']);
-
-/**
- * The remote dive a Dive has at one Provider now, from its Pushes there (newest first): the last confirmed one with an
- * ID, unless a later delete or a "found gone" came after it. The same rule as `currentRemote` in remote-state.ts, which
- * can't be imported here (it reaches `dives/` through a type import, and a cycle counts).
- */
-export function currentOf(pushes: PushRow[]): PushRow | null {
-  for (const p of pushes) {
-    if (p.remoteGone) return null;
-    if (p.state !== 'confirmed') continue;
-    if (p.action === 'delete') return null;
-    if (p.remoteId) return p;
-  }
-  return null;
-}
 
 /** Whether the Connection can't sign in by itself: its entries are held until the User signs in. */
 const needsSignIn = (conn: Connection) => conn.state === 'needs_sign_in' && !conn.keepSignedIn;
@@ -111,7 +96,7 @@ export async function noteDiveChange(tx: Tx, diveId: string, cause: string, at: 
     .orderBy(desc(push.createdAt), desc(push.id));
   const note: Note = { tx, diveId, cause, at, row, conns, from: await importedFrom(tx, cause, actor) };
   for (const provider of providers) {
-    const current = currentOf(pushes.filter((p) => p.provider === provider));
+    const current = currentRemote(pushes.filter((p) => p.provider === provider));
     await (current ? noteSent(note, provider, current) : noteNew(note, provider));
   }
 }
@@ -164,7 +149,7 @@ export async function deletingItself(q: Q, diveIds: string[]): Promise<Map<strin
   for (const id of diveIds) {
     const diverId = divers.find((d) => d.id === id)?.diverId;
     for (const provider of new Set(pushes.filter((p) => p.diveId === id).map((p) => p.provider))) {
-      const current = currentOf(pushes.filter((p) => p.diveId === id && p.provider === provider));
+      const current = currentRemote(pushes.filter((p) => p.diveId === id && p.provider === provider));
       // Only a Connection still the Diver's decides, as in `noteSent`: another one queues no delete.
       const conn = conns.find((c) => c.id === current?.connectionId && c.diverId === diverId);
       if (!current || !conn?.deleteAtProvider) continue;

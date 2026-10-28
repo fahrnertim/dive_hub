@@ -110,6 +110,7 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 | `Button` | `primary`: the one main action of a form or panel. `secondary`: other actions. `quiet`: inline, text-like (table actions). `danger`: destructive confirmation. `size="small"` (32 px) for an action inside a row (Add to this dive, pager). |
 | `TextField` | Label, input, description and error. Validation messages come from our translations. |
 | `Checkbox`, `RadioGroup` | Choices. A radio group saves immediately where that is expected (display settings). |
+| `Switch` | A setting that takes effect at once (role `switch`, `apps/web/src/ui/Choice.tsx`). `Checkbox` is for a choice submitted with a form. |
 | `Form` | React Aria's form with native validation on submit, and the line "* required" at its top while a field carries the mark (hidden in one-line `form-inline` forms). |
 | `PageHeader` | The page's h1 with optional meta (a dive's date and Diver), a lead sentence and the page's actions. |
 | `Panel` | A titled area of a page; `narrow` for single forms; `attention` for something waiting for the User. |

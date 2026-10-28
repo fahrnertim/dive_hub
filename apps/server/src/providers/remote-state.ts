@@ -1,25 +1,10 @@
 // The remote dive a Dive has at a Provider now, and the fingerprint it would get (ADR 0024, 0030). Apart from the push
 // service so that the import, the send and the gone-dive check can all use it without importing one another (ADR 0053).
-import type { push } from '../db/schema.js';
 import type { loadOutgoingDive } from './outgoing-dive.js';
 import type { ProviderAdapter } from './provider.js';
 import { forProvider, offersListEntries, unmetRequirements } from './requirements.js';
 
-export type PushRow = typeof push.$inferSelect;
-
-/**
- * The remote dive a Dive has at one Provider now, from its Pushes there (newest first): the last confirmed one with an
- * ID, unless a later delete or a "found gone" came after it.
- */
-export function currentRemote(pushes: PushRow[]): PushRow | null {
-  for (const p of pushes) {
-    if (p.remoteGone) return null;
-    if (p.state !== 'confirmed') continue;
-    if (p.action === 'delete') return null;
-    if (p.remoteId) return p;
-  }
-  return null;
-}
+export { currentRemote, type PushRow } from './current-remote.js';
 
 /**
  * What the Provider's fingerprint of the Dive is now, as it would get it (without the Participants an advisory
