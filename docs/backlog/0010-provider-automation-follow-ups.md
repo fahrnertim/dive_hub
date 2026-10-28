@@ -88,12 +88,14 @@ and give the reason. Done means: `pnpm check:full` is green.
   (5 min, 30 min, 2 h and 6 h until 24 h), more than 20 new Dives go to an offer, and the fetch intervals.
 - A Push run doesn't clear the offer when it starts, because it sends at most the Provider's cap. The offer shrinks by
   what is sent.
+- Point 14 (owner, 2026-10-28): the deleted dives list **hides "Delete in SSI" while an automatic delete waits**; the
+  button shows only when automatic deleting is off.
 
 ## State
 `main`, after PR #8 (`ssi-automation`) is merged.
 
 ## Open
-Point 14's manual delete button is a question for the owner. The rest is left to the agent.
+Nothing for the owner; the rest is left to the agent.
 
 ## Skills to load
 Load `postgres-drizzle`, `fastify-best-practices`, `tanstack-query-best-practices` and `vitest`, and read their

@@ -43,13 +43,16 @@ decides against it, struck out here with the reason; `pnpm check:full` is green.
 ## Decided
 - [ADR 0056](../decisions/0056-two-way-exchange-and-automation.md): the send is three-way; a run's Conflicts wait as
   one entry per Dive and Provider.
+- Point 2 (owner, 2026-10-28): **recompute the Dive Hub side on read**, so the Dive's page always shows the Dive's
+  current value; the Provider side stays as the run found it.
+- Point 5 (owner, 2026-10-28): **keep the upsert as it is and document it**: an entry belongs to the latest run that
+  found it, so an earlier run's count drops; the run's report says so in its text.
 
 ## State
 `main`, after the branch `ssi-two-way-conflicts` is merged. The line numbers are from that branch's last commit.
 
 ## Open
-Point 2: recompute or say "as found by the run". Point 5: what the run's count says after another run found the
-Dive's Conflict again.
+Nothing for the owner; the rest is left to the agent.
 
 ## Skills to load
 `postgres-drizzle` and `fastify-best-practices` (read their overrides in [skills.md](../skills.md#overrides)); for
