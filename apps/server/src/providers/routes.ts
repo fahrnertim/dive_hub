@@ -2,7 +2,7 @@
 // Passwords, tokens and other credentials go in, never out: no response carries them.
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { FastifyReply } from 'fastify';
-import { Type, type Static } from 'typebox';
+import { Type, type Static, type TOptional } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireAdmin, requireUser } from '../auth/fastify.js';
 import { Problem, problem, PROBLEMS, providerProblem, type ProblemCode } from '../http/problems.js';
@@ -18,7 +18,7 @@ import type { GoneDiveService } from './gone-dives.js';
 import type { WaitingPushService } from './waiting-push-service.js';
 import { WaitingPushViewSchema } from './waiting-push-view.js';
 import type { ScheduledFetch } from './scheduled-fetch.js';
-import { SYNCED_FIELDS } from './three-way.js';
+import { SYNCED_FIELDS, type SyncedField } from './three-way.js';
 import { FIND_BY, OPERATIONS, type ProviderAdapter, type Requirement } from './provider.js';
 import { pushRunRoutes } from './push-run-routes.js';
 import type { PushRunService } from './push-run-service.js';
@@ -234,13 +234,9 @@ const ConflictValue = Type.Union([Type.String(), Type.Number(), Type.Array(Type.
 });
 /** A User's choice for one Conflict: the Dive's value goes out (hub), or the Provider's comes in (provider). */
 const ConflictChoice = Type.Enum(['hub', 'provider']);
-/** The choice per field of a Conflict; a field that is no Conflict any more is ignored. */
-const ConflictChoices = Type.Object({
-  site: Type.Optional(ConflictChoice), notes: Type.Optional(ConflictChoice), buddies: Type.Optional(ConflictChoice),
-  cylinder: Type.Optional(ConflictChoice), lead: Type.Optional(ConflictChoice), startsAt: Type.Optional(ConflictChoice),
-  durationSeconds: Type.Optional(ConflictChoice), maxDepthM: Type.Optional(ConflictChoice), avgDepthM: Type.Optional(ConflictChoice),
-  waterTemperatureC: Type.Optional(ConflictChoice),
-}, {
+/** The choice per field of a Conflict (a key per synced field); a field that is no Conflict any more is ignored. */
+const ConflictChoices = Type.Object(
+  Object.fromEntries(SYNCED_FIELDS.map((f) => [f, Type.Optional(ConflictChoice)])) as Record<SyncedField, TOptional<typeof ConflictChoice>>, {
   additionalProperties: false,
   description: "Per Conflict: hub sends the Dive's value, provider takes the Provider's. A field that is no Conflict any more is ignored",
 });

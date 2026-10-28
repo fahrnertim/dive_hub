@@ -2,6 +2,9 @@
 // per Dive and Provider is stored and waits in "Needs your decision" on the Review page. Like the dives gone at a
 // Provider (gone-dives.ts), whether an entry still waits is worked out on reading: its Dive is live and its remote dive
 // is still the Dive's current one. The send records, reads and closes entries; nothing here calls a Provider.
+// Two ways in: the send uses the bare functions (`record`, `entryOf`, `openFields`, `closeFields`, `close`) with its own
+// `Db | Tx`, inside its own flow, so they need nothing but a query handle; the routes' read side is `createConflictService`,
+// which also needs the User's Connections.
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { dive, diveSite, providerConflict, push, waitingPush } from '../db/schema.js';

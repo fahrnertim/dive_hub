@@ -33,7 +33,7 @@ const RunView = Type.Object({
   numbersRemovingVerification: Type.Boolean(),
   cancelRequested: Type.Boolean({ description: 'Stop was asked for; the Dive being sent is finished first' }),
   counts: Type.Object({ total: Type.Integer(), waiting: Type.Integer(), sent: Type.Integer(), skipped: Type.Integer(), failed: Type.Integer() }),
-  conflicts: Type.Integer({ description: 'Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted' }),
+  conflicts: Type.Integer({ description: 'Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted, one a later run found again counts in that run' }),
   leftOut: LeftOut,
   pauseMs: Type.Integer({ description: 'Pause between two Dives; 0 when this instance no longer has the Provider' }),
   createdAt: DateTime,
