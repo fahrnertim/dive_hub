@@ -543,7 +543,8 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
     doesn't take from Dive Hub, or a change there Dive Hub couldn't take, such as a site it doesn't know). Say which.
   - **`status.conflicts`:** an open entry (a Push run left these fields as the Provider has them). Say so on the panel,
     with both values, and offer to decide (the same send with `conflicts`). `hub` is the Dive's value now (a Dive edited
-    since the run shows its new value); `provider` is the Provider's as the run found it.
+    since the run shows its new value); `provider` is the Provider's as the run found it. A field whose two values became equal is left out; `null` when
+    no field is left.
 - **Must show the Provider's `notices`:** `shows_unconfirmed` means it shows the dive as unconfirmed (SSI: only a dive
   center can confirm it there). `presents_as_app` means Dive Hub introduces itself to the Provider as the Provider's own
   app, which the Provider hasn't agreed to and could object to ([ADR 0049](../decisions/0049-ssi-app-user-agent.md)):
@@ -714,9 +715,10 @@ import preview.) *Web:* `GoneDives.tsx`, the Review page, the logbook's strip an
 (`GET /api/provider-conflicts`, per Connection, no call to a Provider.) A Conflict is a field changed on both sides,
 differently, found while sending a Dive. One entry per Dive and Provider waits under "Needs your decision" on the Review
 page, beside the gone dives: `entries` carry the Dive's number, time, depth, duration and site, the `remoteId`, and
-`fields`, each with `hub` and `provider` values said as in the import preview, both as the run found them (the Dive's
-page says `hub` as the Dive is now: [Sending a Dive](#sending-a-dive-to-a-provider-ssi)); a choice sends the Dive's value now. An entry whose Dive is deleted or whose
-remote dive is no longer the Dive's current one is not listed. Only the Connection's owner sees it. A Push run makes
+`fields`, each with `hub` and `provider` values said as in the import preview: `hub` is the Dive's value now,
+`provider` the Provider's as the run found it; a choice sends the Dive's value now. A field whose two values became equal
+is left out, and an entry with no field left is not listed and not counted in the Connection's or a run's `conflicts`.
+An entry whose Dive is deleted or whose remote dive is no longer the Dive's current one is not listed. Only the Connection's owner sees it. A Push run makes
 them: it sends the Dive without the field, and so does a scheduled fetch ([Sending by itself](#sending-by-itself)).
 Deciding is the choice per field sent to `POST /api/dives/{id}/providers/{provider}/decision` (`conflicts`), which queues
 the Dive due now; the Dive's own page keeps sending at once with `conflicts` ([Sending a Dive](#sending-a-dive-to-a-provider-ssi)).

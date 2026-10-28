@@ -1,7 +1,7 @@
 ---
 title: "Plan: a Conflict waits only while its two sides differ"
 summary: Stored Conflict fields keep the Provider's comparable value; one read side in the conflict service says Dive Hub's side as the Dive is now and leaves out fields whose sides became equal, for the Dive's page, "Needs your decision" and a Push run's count. changedSinceSent does no Conflict work; a test pins a Recording's max depth when the Provider's isn't imported.
-status: ready
+status: done
 date: 2026-10-28
 ---
 

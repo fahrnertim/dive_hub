@@ -279,7 +279,7 @@ const StatusView = Type.Object({
   conflicts: Nullable(Type.Array(ConflictFieldView, {
     description: 'The open entry of Conflicts about the current remote dive (a Push run left these fields as the Provider has them): '
       + "say so and offer to decide (send with conflicts). `hub` is the Dive's value now, `provider` the Provider's as the run found it. "
-      + 'null when none waits',
+      + 'A field whose two values became equal is left out; null when no field is left',
   })),
   pushes: Type.Array(PushView, { description: 'Newest first' }),
 });
@@ -818,7 +818,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
           + '"<Provider> already has a dive at this time" with "Link to it" and "Create a new one"',
       }),
       remoteId: Type.String({ description: 'conflict: the remote dive the Conflict is about. exists: the dive at the Provider' }),
-      fields: Type.Array(ConflictFieldView, { description: "Both values as the run found them; hub sends the Dive's value now" }),
+      fields: Type.Array(ConflictFieldView, { description: "hub is the Dive's value now, provider the Provider's as the run found it; a field whose two values became equal is left out. An entry with no field left is not listed (nor counted in the Connection's or a run's conflicts)" }),
       existing: Nullable(Type.Object({
         remoteId: Type.String(), remoteNumber: Nullable(Type.Integer()),
         startsAt: Type.String({ description: 'Local time as the Provider keeps it, "YYYY-MM-DD HH:MM"' }),

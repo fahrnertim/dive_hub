@@ -1,7 +1,7 @@
 ---
 title: A Conflict waits only while its two sides differ - the Dive's value now everywhere it is shown or counted
 summary: Whether a Provider Conflict still waits is worked out on reading with a third check - the Dive's value now still differs from the Provider's as the run found it (compared as the send compares, with the comparable value the entry now stores). One read side in the conflict service serves the Dive's page, "Needs your decision" on the Review page and a Push run's count. Plus PR #11's deferred minors - changedSinceSent no longer pays for Conflicts, and a test for a profile imported without the Provider's max depth.
-status: approved
+status: done
 date: 2026-10-28
 ---
 

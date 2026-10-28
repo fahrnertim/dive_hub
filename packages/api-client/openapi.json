@@ -58796,7 +58796,7 @@
                     },
                     "conflicts": {
                       "type": "integer",
-                      "description": "Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted"
+                      "description": "Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted, one a later run found again counts in that run"
                     },
                     "leftOut": {
                       "type": "object",
@@ -59564,7 +59564,7 @@
                       },
                       "conflicts": {
                         "type": "integer",
-                        "description": "Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted"
+                        "description": "Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted, one a later run found again counts in that run"
                       },
                       "leftOut": {
                         "type": "object",
@@ -59900,7 +59900,7 @@
                         },
                         "conflicts": {
                           "type": "integer",
-                          "description": "Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted"
+                          "description": "Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted, one a later run found again counts in that run"
                         },
                         "leftOut": {
                           "type": "object",
@@ -60828,7 +60828,7 @@
                     },
                     "conflicts": {
                       "type": "integer",
-                      "description": "Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted"
+                      "description": "Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted, one a later run found again counts in that run"
                     },
                     "leftOut": {
                       "type": "object",
@@ -61606,7 +61606,7 @@
                     },
                     "conflicts": {
                       "type": "integer",
-                      "description": "Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted"
+                      "description": "Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted, one a later run found again counts in that run"
                     },
                     "leftOut": {
                       "type": "object",
@@ -62383,7 +62383,7 @@
                     },
                     "conflicts": {
                       "type": "integer",
-                      "description": "Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted"
+                      "description": "Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted, one a later run found again counts in that run"
                     },
                     "leftOut": {
                       "type": "object",
@@ -77985,7 +77985,8 @@
                                         ]
                                       }
                                     }
-                                  }
+                                  },
+                                  "description": "hub is the Dive's value now, provider the Provider's as the run found it; a field whose two values became equal is left out. An entry with no field left is not listed (nor counted in the Connection's or a run's conflicts)"
                                 },
                                 "existing": {
                                   "anyOf": [
@@ -82846,7 +82847,7 @@
                                 }
                               }
                             },
-                            "description": "The open entry of Conflicts about the current remote dive (a Push run left these fields as the Provider has them): say so and offer to decide (send with conflicts). null when none waits"
+                            "description": "The open entry of Conflicts about the current remote dive (a Push run left these fields as the Provider has them): say so and offer to decide (send with conflicts). `hub` is the Dive's value now, `provider` the Provider's as the run found it. A field whose two values became equal is left out; null when no field is left"
                           }
                         ]
                       },
@@ -83818,7 +83819,7 @@
                               }
                             }
                           },
-                          "description": "The open entry of Conflicts about the current remote dive (a Push run left these fields as the Provider has them): say so and offer to decide (send with conflicts). null when none waits"
+                          "description": "The open entry of Conflicts about the current remote dive (a Push run left these fields as the Provider has them): say so and offer to decide (send with conflicts). `hub` is the Dive's value now, `provider` the Provider's as the run found it. A field whose two values became equal is left out; null when no field is left"
                         }
                       ]
                     },
@@ -85456,7 +85457,7 @@
                                   }
                                 }
                               },
-                              "description": "The open entry of Conflicts about the current remote dive (a Push run left these fields as the Provider has them): say so and offer to decide (send with conflicts). null when none waits"
+                              "description": "The open entry of Conflicts about the current remote dive (a Push run left these fields as the Provider has them): say so and offer to decide (send with conflicts). `hub` is the Dive's value now, `provider` the Provider's as the run found it. A field whose two values became equal is left out; null when no field is left"
                             }
                           ]
                         },
@@ -87159,7 +87160,7 @@
                               }
                             }
                           },
-                          "description": "The open entry of Conflicts about the current remote dive (a Push run left these fields as the Provider has them): say so and offer to decide (send with conflicts). null when none waits"
+                          "description": "The open entry of Conflicts about the current remote dive (a Push run left these fields as the Provider has them): say so and offer to decide (send with conflicts). `hub` is the Dive's value now, `provider` the Provider's as the run found it. A field whose two values became equal is left out; null when no field is left"
                         }
                       ]
                     },
@@ -90834,7 +90835,7 @@
                                   }
                                 }
                               },
-                              "description": "The open entry of Conflicts about the current remote dive (a Push run left these fields as the Provider has them): say so and offer to decide (send with conflicts). null when none waits"
+                              "description": "The open entry of Conflicts about the current remote dive (a Push run left these fields as the Provider has them): say so and offer to decide (send with conflicts). `hub` is the Dive's value now, `provider` the Provider's as the run found it. A field whose two values became equal is left out; null when no field is left"
                             }
                           ]
                         },
