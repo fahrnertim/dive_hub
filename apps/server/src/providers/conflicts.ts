@@ -1,17 +1,22 @@
 // Conflicts with a Provider: a field changed on both sides, differently, found while sending a Dive (ADR 0056). One entry
 // per Dive and Provider is stored and waits in "Needs your decision" on the Review page. Like the dives gone at a
-// Provider (gone-dives.ts), whether an entry still waits is worked out on reading: its Dive is live and its remote dive
-// is still the Dive's current one. The send records, reads and closes entries; nothing here calls a Provider.
-// Two ways in: the send uses the bare functions (`record`, `entryOf`, `openFields`, `closeFields`, `close`) with its own
-// `Db | Tx`, inside its own flow, so they need nothing but a query handle; the routes' read side is `createConflictService`,
-// which also needs the User's Connections.
+// Provider (gone-dives.ts), whether an entry still waits is worked out on reading, from three checks: its Dive is live,
+// its remote dive is still the Dive's current one, and at least one of its fields still differs between the Dive now and
+// the Provider's value as the run found it (design 2026-10-28). Nothing is written on reading; nothing here calls a Provider.
+// Two ways in: the send and the import write through the bare functions (`record`, `entryOf`, `openFields`, `closeFields`,
+// `close`) with their own `Db | Tx`, inside their own flow; `createConflictService` is the one read side, for the Dive's
+// page, "Needs your decision" and a Push run's count.
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
-import { dive, diveSite, providerConflict, push, waitingPush } from '../db/schema.js';
-import type { ConnectionService } from './connection-service.js';
-import type { ShownValue } from './dive-changes.js';
+import { connection, dive, diveSite, providerConflict, push, waitingPush } from '../db/schema.js';
+import type { BlobStore } from '../storage/blob-store.js';
+import type { ConnectionRow, ConnectionService } from './connection-service.js';
+import { createDiveChanges, type ProviderRun, type ShownValue } from './dive-changes.js';
+import type { ProviderAdapter } from './provider.js';
+import type { ProviderRegistry } from './registry.js';
 import { currentRemote, type PushRow } from './remote-state.js';
-import type { SyncedField } from './three-way.js';
+import { same, type Comparable, type SyncedField } from './three-way.js';
+import type { SiteSource } from '../sites/sources.js';
 
 /** One field on which the two sides differ, both values said as in the import preview. */
 export interface ConflictField {
@@ -20,16 +25,24 @@ export interface ConflictField {
   provider: ShownValue;
 }
 
+/** A stored field: the shown values and, from 2026-10-28 on, the Provider's value as the comparison sees it. */
+export interface StoredConflictField extends ConflictField {
+  compared?: { provider: Comparable[SyncedField]; siteSource: SiteSource | null };
+}
+
 export interface ConflictEntry {
   diveId: string;
   provider: string;
   connectionId: string;
   remoteId: string;
-  fields: ConflictField[];
+  fields: StoredConflictField[];
   runId: string | null;
 }
 
-const fieldsOf = (stored: unknown): ConflictField[] => stored as ConflictField[];
+const fieldsOf = (stored: unknown): StoredConflictField[] => stored as StoredConflictField[];
+
+/** What the API says of a field: the shown values only. */
+const shownFields = (fields: StoredConflictField[]): ConflictField[] => fields.map(({ field, hub, provider }) => ({ field, hub, provider }));
 
 /** Stores the Conflict of a Dive at a Provider; a newer one for the same Dive and Provider replaces the older. */
 export async function record(q: Db | Tx, entry: ConflictEntry): Promise<void> {
@@ -39,7 +52,7 @@ export async function record(q: Db | Tx, entry: ConflictEntry): Promise<void> {
 }
 
 /** The Dive's entry at the Provider: the remote dive it is about and its fields; null when there is none. */
-export async function entryOf(q: Db | Tx, diveId: string, provider: string): Promise<{ remoteId: string; fields: ConflictField[] } | null> {
+export async function entryOf(q: Db | Tx, diveId: string, provider: string): Promise<{ remoteId: string; fields: StoredConflictField[] } | null> {
   const [row] = await q.select({ remoteId: providerConflict.remoteId, fields: providerConflict.fields }).from(providerConflict)
     .where(and(eq(providerConflict.diveId, diveId), eq(providerConflict.provider, provider)));
   return row ? { remoteId: row.remoteId, fields: fieldsOf(row.fields) } : null;
@@ -76,24 +89,42 @@ function stillWaits(entry: { remoteId: string; connectionId: string }, d: { dele
   return !!d && d.deletedAt === null && current?.remoteId === entry.remoteId && current.connectionId === entry.connectionId;
 }
 
-/** Per run id: how many entries carrying it still wait (as "Needs your decision" lists them). */
-export async function waitingByRun(q: Db | Tx, runIds: string[]): Promise<Map<string, number>> {
-  const counts = new Map<string, number>();
-  if (runIds.length === 0) return counts;
-  const entries = await q.select().from(providerConflict).where(inArray(providerConflict.runId, runIds));
-  if (entries.length === 0) return counts;
-  const ids = entries.map((e) => e.diveId);
-  const dives = new Map((await q.select({ id: dive.id, deletedAt: dive.deletedAt }).from(dive).where(inArray(dive.id, ids))).map((d) => [d.id, d]));
-  const pushes = await q.select().from(push).where(inArray(push.diveId, ids)).orderBy(desc(push.createdAt), desc(push.id));
-  for (const e of entries) {
-    const own = pushes.filter((p) => p.diveId === e.diveId && p.provider === e.provider);
-    if (e.runId && stillWaits(e, dives.get(e.diveId), own)) counts.set(e.runId, (counts.get(e.runId) ?? 0) + 1);
-  }
-  return counts;
-}
+export function createConflictService(deps: { db: Db; connections: ConnectionService; registry: ProviderRegistry; blobs: BlobStore }) {
+  const { db, connections, registry } = deps;
+  const changes = createDiveChanges({ db, blobs: deps.blobs });
 
-export function createConflictService(deps: { db: Db; connections: ConnectionService }) {
-  const { db, connections } = deps;
+  /** The comparison's run for the Dive's Diver at the Provider, through this Connection if any; no context from the Provider. */
+  const runFor = (userId: string, adapter: ProviderAdapter, conn: Pick<ConnectionRow, 'id' | 'importMode' | 'importWindowMinutes'> | null, diverId: string) =>
+    changes.runOf(db, userId, adapter, {
+      diverId, connectionId: conn?.id ?? null, mode: conn?.importMode ?? 'off', windowMinutes: conn?.importWindowMinutes ?? 15, choices: {},
+      context: { people: {}, sites: {} },
+    });
+
+  /**
+   * The entry's fields that still differ, Dive Hub's side said from the Dive as it is now, the Provider's as the run found
+   * it. Compared as the send compares (the site by its ID at the stored site Source); an entry stored without comparable
+   * values compares the shown ones. A field the comparison no longer covers stays; a Dive `hubOf` can't read keeps the
+   * stored fields.
+   */
+  async function stillDiffering(run: ProviderRun, diveId: string, stored: StoredConflictField[]): Promise<ConflictField[]> {
+    const site = stored.find((f) => f.field === 'site')?.compared;
+    const here = await changes.hubOf(db, run, diveId, site?.siteSource ?? null, site ? (site.provider as string | null) : null);
+    if (!here) return shownFields(stored);
+    const left: ConflictField[] = [];
+    for (const f of stored) {
+      const hub = await changes.shown(run, f.field, here.hub, here.row.siteId);
+      const equal = here.fields.includes(f.field) && (f.compared
+        ? same(f.field, { ...here.hub, [f.field]: f.compared.provider } as Comparable, here.hub)
+        : JSON.stringify(hub) === JSON.stringify(f.provider));
+      if (!equal) left.push({ field: f.field, hub, provider: f.provider });
+    }
+    return left;
+  }
+
+  /** The fields of an entry that wait: none unless its Dive is live and its remote dive current, else those still differing. */
+  const waitingFields = async (run: ProviderRun, e: typeof providerConflict.$inferSelect, d: { deletedAt: Date | null } | undefined, pushes: PushRow[]) =>
+    (stillWaits(e, d, pushes) ? stillDiffering(run, e.diveId, fieldsOf(e.fields)) : []);
+
   return {
     /**
      * The entries that wait, for each of the User's Connections that has any (no call to a Provider). Two kinds: a
@@ -124,16 +155,18 @@ export function createConflictService(deps: { db: Db; connections: ConnectionSer
           .where(and(inArray(push.diveId, ids), eq(push.provider, c.provider))).orderBy(desc(push.createdAt), desc(push.id));
         const byDive = new Map<string, PushRow[]>();
         for (const p of pushes) byDive.set(p.diveId, [...(byDive.get(p.diveId) ?? []), p]);
+        const run = await runFor(userId, registry.get(c.provider), c, c.diverId);
         const shown = (d: (typeof dives)[number]) => ({
           diveId: d.id, number: d.number, startsAt: d.startsAt, utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource,
           durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, site: d.siteId && d.siteName !== null ? { id: d.siteId, name: d.siteName } : null,
         });
-        const conflicts = entries.flatMap((e) => {
+        const conflicts = [];
+        for (const e of entries) {
           const d = dives.find((x) => x.id === e.diveId);
-          if (!d || !stillWaits(e, d, byDive.get(e.diveId) ?? [])) return [];
-          return [{ ...shown(d), kind: 'conflict' as const, remoteId: e.remoteId, fields: fieldsOf(e.fields), existing: null, foundAt: e.foundAt,
-            queued: (chosen.get(e.diveId)?.getTime() ?? -1) >= e.foundAt.getTime() }];
-        });
+          const fields = await waitingFields(run, e, d, byDive.get(e.diveId) ?? []);
+          if (d && fields.length > 0) conflicts.push({ ...shown(d), kind: 'conflict' as const, remoteId: e.remoteId, fields, existing: null, foundAt: e.foundAt,
+            queued: (chosen.get(e.diveId)?.getTime() ?? -1) >= e.foundAt.getTime() });
+        }
         const exists = asked.flatMap((e) => {
           const d = dives.find((x) => x.id === e.diveId);
           if (!d || d.deletedAt !== null || !e.detail) return [];
@@ -143,6 +176,41 @@ export function createConflictService(deps: { db: Db; connections: ConnectionSer
         if (listed.length > 0) out.push({ connectionId: c.id, provider: c.provider, entries: listed });
       }
       return out;
+    },
+
+    /** Per run id: how many entries carrying it still wait (the same checks as `waiting`). */
+    async waitingByRun(runIds: string[]): Promise<Map<string, number>> {
+      const counts = new Map<string, number>();
+      if (runIds.length === 0) return counts;
+      const entries = await db.select().from(providerConflict).where(inArray(providerConflict.runId, runIds));
+      if (entries.length === 0) return counts;
+      const ids = entries.map((e) => e.diveId);
+      const dives = new Map((await db.select({ id: dive.id, deletedAt: dive.deletedAt }).from(dive).where(inArray(dive.id, ids))).map((d) => [d.id, d]));
+      const pushes = await db.select().from(push).where(inArray(push.diveId, ids)).orderBy(desc(push.createdAt), desc(push.id));
+      const conns = new Map((await db.select().from(connection).where(inArray(connection.id, entries.map((e) => e.connectionId)))).map((c) => [c.id, c]));
+      const offered = new Set(registry.list().map((a) => a.id));
+      const runs = new Map<string, ProviderRun>();
+      for (const e of entries) {
+        const own = pushes.filter((p) => p.diveId === e.diveId && p.provider === e.provider);
+        if (!e.runId || !stillWaits(e, dives.get(e.diveId), own)) continue;
+        // An entry at a Provider this instance no longer offers can't be compared: the cheap checks decide.
+        const c = conns.get(e.connectionId);
+        if (c && offered.has(e.provider)) {
+          const run = runs.get(c.id) ?? await runFor(c.userId, registry.get(e.provider), c, c.diverId);
+          runs.set(c.id, run);
+          if ((await stillDiffering(run, e.diveId, fieldsOf(e.fields))).length === 0) continue;
+        }
+        counts.set(e.runId, (counts.get(e.runId) ?? 0) + 1);
+      }
+      return counts;
+    },
+
+    /** The Dive's entry about this remote dive at the adapter's Provider, its fields that still differ; null without one or with none left. */
+    async ofDive(userId: string, adapter: ProviderAdapter, conn: ConnectionRow | null, diverId: string, diveId: string, remoteId: string): Promise<ConflictField[] | null> {
+      const entry = await entryOf(db, diveId, adapter.id);
+      if (!entry || entry.remoteId !== remoteId) return null;
+      const fields = await stillDiffering(await runFor(userId, adapter, conn, diverId), diveId, entry.fields);
+      return fields.length > 0 ? fields : null;
     },
   };
 }

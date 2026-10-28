@@ -200,7 +200,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     // The Provider's one tank can't be told to be one of several Cylinders: not compared then.
     // Nor can the Provider's one weight be told to be one of several Lead entries.
     const fields = SYNCED_FIELDS.filter((f) => importsField(run, f)).filter((f) => (f === 'cylinder' ? cylinders.length <= 1 : f === 'lead' ? entries.length <= 1 : !row.primaryRecordingId || !VALUE_FIELDS.includes(f)));
-    return { row, hub, fields, people, accounts };
+    return { row, hub, fields, people, accounts, siteSource };
   }
 
   /** What changed at the Provider since Dive Hub last saw the dive, compared with the Dive here; null without a base. */
@@ -342,6 +342,16 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     return c[field];
   }
 
+  /** These fields with both values said as the preview says them, and the Provider's value as the comparison sees it. */
+  async function conflictFields(
+    run: ProviderRun, fields: SyncedField[], here: { hub: Comparable; row: { siteId: string | null }; siteSource: SiteSource | null }, provider: Comparable,
+  ): Promise<{ field: SyncedField; hub: ShownValue; provider: ShownValue; compared: { provider: Comparable[SyncedField]; siteSource: SiteSource | null } }[]> {
+    return Promise.all(fields.map(async (field) => ({
+      field, hub: await shown(run, field, here.hub, here.row.siteId), provider: await shown(run, field, provider, null),
+      compared: { provider: provider[field], siteSource: here.siteSource },
+    })));
+  }
+
   async function runOf(q: Db | Tx, userId: string, adapter: ProviderAdapter, s: {
     diverId: string; connectionId: string | null; mode: DiveImportMode; windowMinutes: number; choices: Record<string, ComputerChoice>;
     context: ImportContext;
@@ -349,5 +359,5 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     return { userId, adapter, ...s, managed: await managedDiverIds(q, userId), sitesAllowed: await siteDataAllowed(q, adapter.id) };
   }
 
-  return { runOf, sitesOf, settle, placeTime, baseOf, hubOf, changesOf, takeChanges, fill, shown };
+  return { runOf, sitesOf, settle, placeTime, baseOf, hubOf, changesOf, takeChanges, fill, shown, conflictFields };
 }
