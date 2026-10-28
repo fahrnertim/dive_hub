@@ -47,7 +47,9 @@ and give the reason. Done means: `pnpm check:full` is green.
 
 ### Tests
 9. "Retry makes a stopped entry due now" (`test/waiting-pushes.test.ts`) fails when run alone, because it depends on
-   test order.
+   test order. Two more failed once in a full local `pnpm check` on 2026-10-28 and passed on rerun:
+   - `test/site-for-send.test.ts`: 5 tests got `provider_busy`. It passes alone and passed in CI.
+   - `e2e/waiting-pushes.spec.ts:321`: the Connection's heading was not focused after the link from an Import's result.
 10. Missing tests:
     - a refused create or update stops at once (only a refused delete is tested)
     - `decide`'s `open` branch, the own-Connection fallback and a co-manager's 404
