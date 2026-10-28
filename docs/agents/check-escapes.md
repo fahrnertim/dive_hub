@@ -20,4 +20,5 @@ browser tests ("Failed browser tests"). A failure that is a flaky test also coun
 
 ## Escapes
 
+- 2026-10-28, PR #8, c6e88a1: provider-conflicts.spec.ts:76 (a run's conflict, Take SSI's) — flaky: after the reload the test waited for "Waiting to send to SSI", but the e2e server's worker had already sent the Dive queued due now (the entry was gone) — the reload accepts the wait or an empty list; it still asserts the choices don't come back
 - 2026-10-26, PR #5, 86808ee: ui-quality.spec.ts, 12 tests in English light desktop and German dark phone (axe color-contrast on notices, the merge dialog, buttons) — flaky: axe measured elements fading in from opacity 0; the browser step ran faster in CI once its output went to a file, and hit the fade — expectAccessible waits for finite animations to end (backlog 0006)

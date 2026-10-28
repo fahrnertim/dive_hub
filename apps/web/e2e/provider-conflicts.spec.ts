@@ -111,9 +111,9 @@ test('a run\'s conflict waits under Needs your decision; Take SSI\'s sends and t
     await expect(page.locator('#main').getByText(`Dive ${n} will be sent to SSI with your choices.`)).toBeVisible();
     await expect(page.getByRole('button', { name: `Send with these choices: Dive ${n}` })).toHaveCount(0);
     await expect(page.getByRole('radiogroup', { name: 'Notes' })).toHaveCount(0);
-    // The server says it is queued: a reload still shows the wait, not the choices.
+    // The server says it is queued: a reload shows the wait (or, once the worker has sent it, nothing), never the choices.
     await page.reload();
-    await expect(page.getByText('Waiting to send to SSI')).toBeVisible();
+    await expect(page.getByText('Waiting to send to SSI').or(page.getByText('Nothing waits for your decision.'))).toBeVisible();
     await expect(page.getByRole('radiogroup', { name: 'Notes' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: `Send with these choices: Dive ${n}` })).toHaveCount(0);
     // The worker sends it within a minute; the entry then leaves the page by itself, and SSI's notes are taken.
