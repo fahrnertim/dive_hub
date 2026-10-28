@@ -1,7 +1,7 @@
 ---
 title: "Plan: tidy the two-way exchange with a Provider (backlog 0002)"
 summary: The seven follow-ups of backlog 0002 - a run counts only the Conflicts that still wait, the Dive's page shows the Dive's current value beside the Provider's as found, a Recording from a Provider honours the import directions of its depth and temperature values, the conflicts body is derived from SYNCED_FIELDS, provider_conflict gets an index on run_id and the run's report says an entry belongs to the latest run, two browser tests, and the conflicts module says why the send uses its bare functions.
-status: active
+status: done
 date: 2026-10-28
 ---
 

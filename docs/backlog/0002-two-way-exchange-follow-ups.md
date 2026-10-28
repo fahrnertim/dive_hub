@@ -1,7 +1,7 @@
 ---
 title: Tidy the two-way exchange with a Provider
 summary: Small follow-ups the review of the three-way send (ADR 0056) left - a run's conflict count, the entry's values on the Dive's page, the import directions of a Recording's values, the conflicts body, the entry's run, two browser tests and the conflicts module's way in.
-status: draft
+status: done
 risk: low
 date: 2026-10-24
 ---
@@ -33,6 +33,18 @@ decides against it, struck out here with the reason; `pnpm check:full` is green.
 7. **`conflicts.ts` has two ways in.** The bare functions (`record`, `entryOf`, `openFields`, `close`, used by
    `push-service.ts` with a raw `db`) and `createConflictService` (used by the routes). Give the send the service too, or
    say in the module's header comment why the bare functions are the seam the send uses.
+
+## Done (2026-10-28, branch `two-way-follow-ups`)
+1. `waitingByRun` in `conflicts.ts` (the check "Needs your decision" uses); tests in `push-runs.test.ts`.
+2. `statusAt` says the Dive Hub side from the Dive now (`hubNow`); API description and client contract say so.
+3. `asRecording` takes the Provider's max depth, water and max temperature only where they import; the profile's values
+   stay the fallback. The average depth has the same gap and was left as it is (not in this point).
+4. `ConflictChoices` is built from `SYNCED_FIELDS`.
+5. Index `provider_conflict_run_idx` (migration 0043); the upsert kept, the run's report and the contract say an entry
+   belongs to the latest run that found it; a closed entry counts 0 (test).
+6. Two browser tests in `provider-conflicts.spec.ts`: the deferred notice (a site SSI has that Dive Hub doesn't know) and
+   the Send that can't be pressed while the choice is being sent.
+7. The header comment of `conflicts.ts` says why the send uses the bare functions.
 
 ## Read first
 - [ADR 0056](../decisions/0056-two-way-exchange-and-automation.md) (search for "Conflict").
