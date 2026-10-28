@@ -85,6 +85,12 @@
       "skillPath": "skills/frontend-design/SKILL.md",
       "computedHash": "106acf230014cbb43ca34e6410371321b56ca742f9ee0442e8ec05bf02eb0384"
     },
+    "karpathy-guidelines": {
+      "source": "forrestchang/andrej-karpathy-skills",
+      "sourceType": "github",
+      "skillPath": "skills/karpathy-guidelines/SKILL.md",
+      "computedHash": "0ec1641120accbb458780e0bd19a50a4182f2b97863e90851b91307f29802c9f"
+    },
     "mcp-builder": {
       "source": "anthropics/skills",
       "sourceType": "github",
