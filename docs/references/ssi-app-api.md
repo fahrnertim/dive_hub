@@ -110,10 +110,12 @@ How the app's calls were read (2026-10-10), for the next time SSI's answers chan
   - `logbook_buddies[]`: the account's buddy list.
   - Statistics.
 - Dive Hub reads it at most once per action before saving: to find the dive it updates, to check for a dive at the same
-  time, to pick the next SSI dive number; and once more after saving (read-back). The read-back is kept for two minutes
-  per Connection and answers the next action's duplicate check and number, so dives sent in a row read n + 1 times;
-  updates and deletes always read afresh ([ADR 0027](../decisions/0027-providers-as-adapters.md)). Actions on one
-  Connection wait 2 s between each other.
+  time, to pick the next SSI dive number. The read is kept for two minutes per Connection and answers the next action's
+  duplicate check and number; updates and deletes always read afresh ([ADR 0027](../decisions/0027-providers-as-adapters.md)).
+  After a save it does not read again: SSI's answer carries the record as stored (`result.dive`), which is the read-back
+  and goes into the kept read (piece 7, [ADR 0057](../decisions/0057-ssi-aligned-with-its-app.md)), so dives sent in a
+  row read once. Only an answer without a usable record (none, another reference or number, fewer samples than sent)
+  is decided by one more read. Actions on one Connection wait 2 s between each other.
 
 ### When Dive Hub calls SSI (checked 2026-10-05)
 
@@ -123,7 +125,7 @@ Only when a User does something. There are no background calls: the worker never
 | User action | Calls |
 |---|---|
 | Connect, or sign in again | `authenticate` |
-| Send a dive (create or update) | `get_divelog` (may come from the kept read-back), `save_divelog`, `get_divelog` (read-back); first `save_divesite` when the dive's site has no ID usable for the account and is made at SSI as a private site |
+| Send a dive (create or update) | `get_divelog` (may come from the kept read), `save_divelog` (its answer is the read-back); one more `get_divelog` only when the answer lacks a usable record; first `save_divesite` when the dive's site has no ID usable for the account and is made at SSI as a private site |
 | Delete a dive that was sent to SSI | `get_divelog` (is it still there?), `save_divelog` (deleted) |
 | Open the SSI site picker on a dive | `get_divelog` (may come from the kept read-back) |
 | Type an SSI site ID on a dive's site | `get_divesite` (is the ID known, public or the account's own private site?) |
