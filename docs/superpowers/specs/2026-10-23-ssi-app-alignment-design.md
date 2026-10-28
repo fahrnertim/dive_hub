@@ -137,7 +137,7 @@ SSI built its API, and Dive Hub should follow it (owner). Two goals beyond corre
 | One dive shape for import and export (`ProviderDive` core); a Provider declares per field which directions it takes | 2 |
 | Three-way rule on the send; "Needs your decision" entries for unattended clashes; generic | 3 |
 | Send queue and schedule in the generic layer | 6 |
-| Read-back against the save's own answer (`result.dive`), one logbook read per run to confirm storage | 7 |
+| Read-back against the save's own answer (`result.dive`), which also proves storage; no logbook read after a save ("Piece 7, settled") | 7 |
 
 ## The pieces, in order
 
@@ -164,7 +164,8 @@ automatic exchange without clash handling would overwrite edits made in SSI's ap
 5. **Buddies** (revised in "Piece 5, settled" below; checked 2026-10-27, [note](../../research/2026-10-27-ssi-buddy-checks.md); done: [plan](../plans/2026-10-27-ssi-buddies.md)). **Checks:** an added entry appears in the app's
    buddy list and on the dive; a name-only entry is kept (both [T]).
 6. **Automation** (above; revised in "Piece 6, settled" below; done: [plan](../plans/2026-10-27-provider-automation.md)), for every Provider.
-7. **Fewer reads** (above).
+7. **Fewer reads** (above; settled in "Piece 7, settled" below; checked 2026-10-28,
+   [note](../../research/2026-10-28-ssi-save-answer-check.md)).
 
 **Later:** gear and gear sets, after equipment.
 
@@ -519,6 +520,66 @@ here names SSI except its declared interval.
   ADR 0053, and the client contract for it.
 - The migration (the table, the Connection's settings and its last fetch's summary).
 
+## Piece 7, settled 2026-10-28
+
+From a session with the owner, after a check on the owner's account
+([note](../../research/2026-10-28-ssi-save-answer-check.md)). It replaces "one logbook read per run" in the Architecture
+table and in ADR 0057's draft.
+
+**Why.** Every send reads SSI's whole logbook (about 1.8 MB for the owner) twice for an update: once before the save
+(the three-way needs SSI's record now) and once after it, to see what was stored (the read-back). With send on change
+(piece 6) most reads come from edits, and the logbook read is the call SSI is known to throttle for its app (anti-goal:
+not more often than the app). The read after the save is the one that can go.
+
+**What the check showed [T].** A save SSI stored, a create or an update with the app's User-Agent, is answered with
+`result.dive`: one record of 388 keys, equal key for key to the logbook's record read right after, samples included.
+SSI's invented answer to another User-Agent (ADR 0049) is `{ success: { ok, error, temp_id, odin_user_log_id } }` with no
+`result`, and nothing is stored. The create's answer now also wraps its ID in `success`.
+
+### Decided
+
+- **The answer proves storage** (owner). A save counts as stored when its answer carries `result.dive` with a record whose
+  ID is the dive ID answered (and, for a create, whose reference is the one sent). The read-back comparison runs against
+  that record instead of a logbook read. "Stored at SSI" is known when the send finishes, also for a single send.
+- **No logbook read per run** (owner): the answer already confirms each dive; a read that confirms it again is dropped.
+- **An answer without the record** (my call): the adapter reads the logbook once, as today, and decides from it (found:
+  stored, compared against the logbook's record; not found: `not_stored`). That is the invented answer of ADR 0049, or
+  SSI changing its answer; in the second case it costs a read instead of a false `not_stored`, which could lead to a
+  second create. The read's `SSI call` log line says why it followed a save (`detail`), so a change shows in the log.
+- **A record that fails the check counts as none** (my call, from the builder check): another ID, on a create another
+  reference, on "Set number" another number, or no samples where samples were sent (`odin_user_log_diveSamples` with fewer
+  samples than sent; only 25 were checked, a large profile wasn't). Each goes to the same fallback read, never straight
+  to `not_stored`, and such a record never goes into the kept logbook.
+- **The kept logbook** (my call): the answer's record goes into the kept read of the Connection (replaced, or added for a
+  create), as a delete already removes its dive from it; its two-minute life is not renewed, and without a fresh kept
+  read nothing is kept. So dives created in a row
+  still find their number and duplicates without a read: n creates read once instead of n + 1 times.
+- **"Set number"** (my call) checks the number in the answer's record instead of reading again; the same fallback.
+- **What stays:** the read before an update, a delete, "Set number" and `exists` (always fresh: SSI's app may have changed
+  the dive); the create's use of the kept read; ADR 0056's values, the three-way rule, pacing and limits.
+- **Not changed:** the fingerprint and "outdated" (a hash of what Dive Hub sends, not of what SSI returns); the Push's
+  shape (`differences` as today); the client contract.
+
+**What it saves.** An update: 2 reads → 1. A run of 100 updates: 200 → 100. n creates in a row: n + 1 → 1 (when the kept
+read is fresh).
+
+### Left to the builder
+
+- How `ssi-client.save` hands back the record (its return type) and where the answer is checked (client or adapter),
+  within ADR 0027's seam: no `odin_*` key outside `providers/ssi/`.
+- `test/fake-ssi.ts` answers as the check showed: `result.dive` on a stored create and update, the create's ID in
+  `success` as well, and the invented answer with `success` only.
+- A test that a send makes no logbook read after the save, and one for the fallback (no record, and a record that fails
+  the check).
+- The code never had a per-run confirming read: "one logbook read per run" existed only in this design and ADR 0057's
+  draft, so there is nothing to remove for it.
+
+### Not in this piece
+
+- Other whole-logbook reads (the site picker and `diveSites.find` reading `logbook_sites`): they read only when the User
+  opens them and use the kept read.
+- A delete's answer (not checked); a delete doesn't read after the save today.
+
 ## For the equipment work (owner, recorded here so it isn't lost)
 
 Equipment items ([ADR 0034](../../decisions/0034-equipment-items-and-service-schedules.md), not built yet) need **item groups**: a base
@@ -559,4 +620,5 @@ From the app's code [R]. For the owner to pick from later.
   per-Provider interval, unattended sign-in. Amends 0026, 0027, 0030, 0038, 0047.
 - **[ADR 0057](../../decisions/0057-ssi-aligned-with-its-app.md) SSI aligned with its app**: the app as the source of truth with [R]/[T], the full record, the data now sent
   (amends 0031 and 0045 "not sent"), private sites created at SSI (amends 0024, 0029), buddies added (amends 0029),
-  read-back against the save's answer (amends 0047), checks on the owner's account.
+  read-back against the save's answer, which proves storage, with no logbook read after a save (amends 0047; "Piece 7,
+  settled"), checks on the owner's account.

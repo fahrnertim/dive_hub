@@ -176,7 +176,11 @@ Read from the app's compiled code and one capture; details in the
   `DivesSynchronisation.uploadDives`. How fast the queue is sent is not known [?] (owner's check below).
 - **The save's answer to the app carries the stored dive [R]:** `result.dive` (a list with one record, 387 keys),
   `result.divestats` and `result.potential_duplicate` (seen on an update of a dive without samples). Dive Hub doesn't
-  read `result`.
+  read `result` yet.
+- **The save's answer to Dive Hub carries it too [T]** (2026-10-28, app 5.0.43,
+  [research](../research/2026-10-28-ssi-save-answer-check.md)): a create and an update with the app's User-Agent are
+  answered with `result.dive`, 388 keys equal to the logbook's record, samples included; SSI's invented answer to another
+  User-Agent (ADR 0049) has no `result`. So the answer proves storage without a read.
 - **To read the app's code again:** `adb -s <emulator> shell pm path com.divessi.ssi`, `adb pull` each file; the Dart
   code is `lib/arm64-v8a/libapp.so` in `split_config.arm64_v8a.apk`, and its readable strings hold the call names.
 
@@ -505,7 +509,8 @@ From the research note. Record the result here with date and app version, and tu
 - [ ] The app's upload queue ([research](../research/2026-10-10-ssi-app-bulk-upload.md#owners-checks-open)): log three
   or four manual dives in the emulator in airplane mode, go online with HTTP Toolkit recording. One call or several,
   the gaps between them, the calls that follow.
-- [ ] The save's answer from Dive Hub: does a create's answer hold `result.dive`, and does it hold the samples?
+- [x] The save's answer from Dive Hub: does a create's answer hold `result.dive`, and does it hold the samples? Yes, both,
+  and an update's too; SSI's invented answer holds none ([research](../research/2026-10-28-ssi-save-answer-check.md)).
 - Dive numbers ([ADR 0048](../decisions/0048-dive-numbers.md)), asked 2026-10-09. Run with `round-trip.ts number`
   (it needs `SSI_SITE_ID`; it makes and deletes throwaway dives in 2000; `--pause` waits for Enter between steps)
   ([what it does and what each result switches](../research/2026-10-09-dive-numbers.md#owners-checks-the-builds-first-step)).
