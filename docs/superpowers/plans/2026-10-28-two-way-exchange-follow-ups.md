@@ -30,6 +30,7 @@ answers), [ADR 0056](../../decisions/0056-two-way-exchange-and-automation.md), [
 - UI words in `apps/web/src/i18n/locales/en.json` and `de.json`. A new API duty updates `docs/spec/clients.md`.
 - `db/schema.ts` and migrations are protected paths: the edit asks the owner (hook).
 - `pnpm check` green before each commit.
+- `karpathy-guidelines` (with its override in docs/skills.md): every changed line traces to a task; no extra abstraction or option.
 
 ## Review Focus
 

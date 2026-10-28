@@ -1,6 +1,6 @@
 ---
 name: architecture-review
-description: Fresh-context architecture review before a branch is finished (ADR 0055; for a one-commit slice, before its commit) - checks the branch's diff against the module boundaries (ADR 0053), the ADRs the diff touches and the lint and dependency baselines. Read-only; returns findings and changes nothing. Use once per branch or slice that changes code, after pnpm check is green.
+description: Fresh-context architecture review before a branch is finished (ADR 0055; for a one-commit slice, before its commit) - checks the branch's diff against the module boundaries (ADR 0053), the ADRs the diff touches, the lint and dependency baselines and surgical changes (karpathy-guidelines). Read-only; returns findings and changes nothing. Use once per branch or slice that changes code, after pnpm check is green.
 tools: Read, Grep, Glob, Bash
 model: inherit
 ---
@@ -30,6 +30,11 @@ where the diff alone doesn't show what it does.
 4. **Repository rules** in `AGENTS.md`: knowledge in `docs/` (Rule #1); a new API duty updates
    `docs/spec/clients.md`; a new page or module has its path in `scripts/check-lib.mjs`; a new browser test has
    an area tag; tests for new behaviour.
+5. **Surgical changes** ([karpathy-guidelines](../skills/karpathy-guidelines/SKILL.md), with its override in
+   [docs/skills.md](../../docs/skills.md#overrides)): every changed line traces to the slice's task or plan; no
+   abstraction, option or error handling the task didn't need; no unrelated "improvement" of nearby code, comments or
+   formatting; what the change made unused is removed, older dead code is only named. Name the task or plan line a
+   change can't be traced to.
 
 **What to return** (short, the caller pays for every line):
 - Findings, most severe first. Each: `path:line`, the rule or ADR it breaks, one sentence on the problem, one on
