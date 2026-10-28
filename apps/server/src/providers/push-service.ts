@@ -9,7 +9,7 @@ import type { Db } from '../db/client.js';
 import { connection, dive, push } from '../db/schema.js';
 import type { SiteSource } from '../sites/sources.js';
 import type { BlobStore } from '../storage/blob-store.js';
-import { close, entryOf, openFields, record as recordConflict, type ConflictField, type StoredConflictField } from './conflicts.js';
+import { close, openFields, record as recordConflict, type ConflictField, type ConflictService } from './conflicts.js';
 import type { ConnectionRow, ConnectionService } from './connection-service.js';
 import { createDiveChanges, type ProviderRun } from './dive-changes.js';
 import { LeaseBusy, type Leases } from './leases.js';
@@ -113,8 +113,8 @@ export function numbersFor(conn: { followNumbers: boolean } | null, exports: Div
 }
 type NumbersFor = NonNullable<ReturnType<typeof numbersFor>>;
 
-export function createPushService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService; leases: Leases }) {
-  const { db, registry, connections, leases } = deps;
+export function createPushService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService; leases: Leases; conflicts: ConflictService }) {
+  const { db, registry, connections, leases, conflicts } = deps;
   const changes = createDiveChanges({ db, blobs: deps.blobs });
 
   /** The Provider's dive export, or `provider_unsupported`. */
@@ -398,20 +398,6 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     return null;
   }
 
-  /**
-   * The open entry's fields with Dive Hub's side said from the Dive as it is now (a Dive edited since the run shows its
-   * new value); the Provider's side stays as the run found it.
-   */
-  async function hubNow(adapter: ProviderAdapter, conn: ConnectionRow | null, userId: string, diverId: string, diveId: string, fields: StoredConflictField[]): Promise<ConflictField[]> {
-    const run = await changes.runOf(db, userId, adapter, {
-      diverId, connectionId: conn?.id ?? null, mode: conn?.importMode ?? 'off', windowMinutes: conn?.importWindowMinutes ?? 15, choices: {},
-      context: { people: {}, sites: {} },
-    });
-    const here = await changes.hubOf(db, run, diveId, null);
-    if (!here) return fields.map(({ field, hub, provider }) => ({ field, hub, provider }));
-    return Promise.all(fields.map(async (f) => ({ field: f.field, provider: f.provider, hub: await changes.shown(run, f.field, here.hub, here.row.siteId) })));
-  }
-
   /** A Dive's state at one Provider. */
   async function statusAt(userId: string, provider: string, loaded: Awaited<ReturnType<typeof loadOutgoingDive>>) {
     const { adapter, dives, exports } = exporter(provider);
@@ -420,8 +406,6 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     const conn = await connections.forDiver(userId, row.diverId, adapter.id);
     const pushes = await pushesOf(row.id, adapter.id);
     const current = currentRemote(pushes);
-    // The open entry about the current remote dive: the Conflicts that wait (ADR 0056).
-    const entry = current ? await entryOf(db, row.id, adapter.id) : null;
     return {
       provider: adapter.id,
       deletesItself: (await deletingItself(db, [row.id])).get(row.id)?.has(adapter.id) ?? false,
@@ -430,7 +414,8 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
       siteId: row.siteId,
       unmet,
       current: current ? remoteState(current, dives, outgoing, numbersFor(conn, exports, row.number)) : null,
-      conflicts: entry && entry.remoteId === current?.remoteId ? await hubNow(adapter, conn, userId, row.diverId, row.id, entry.fields) : null,
+      // The open entry about the current remote dive: the Conflicts that wait (ADR 0056).
+      conflicts: current ? await conflicts.ofDive(userId, adapter, conn, row.diverId, row.id, current.remoteId!) : null,
       pushes,
     };
   }

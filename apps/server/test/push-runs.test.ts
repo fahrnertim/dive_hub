@@ -264,6 +264,15 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
     expect((await run(second.id)).conflicts).toBe(0);
   });
 
+  it("an edit to the Provider's value ends the Conflict: not listed, its run counts 0", async () => {
+    const { id, second } = await runWithConflict();
+    await edit(id, 'Reef in SSI');
+    expect((await run(second.id)).conflicts).toBe(0);
+    expect((await json<Run[]>('GET', '/api/push-runs')).find((r) => r.id === second.id)!.conflicts).toBe(0);
+    const waiting = await json<{ connections: { entries: { diveId: string }[] }[] }>('GET', '/api/provider-conflicts');
+    expect(waiting.connections.flatMap((c) => c.entries).filter((e) => e.diveId === id)).toEqual([]);
+  });
+
   it('an entry a later send closed counts 0 in its run', async () => {
     const { id, second } = await runWithConflict();
     expect((await call('POST', `/api/dives/${id}/providers/ssi`, { conflicts: { notes: 'hub' } })).json()).toMatchObject({ outcome: 'updated' });

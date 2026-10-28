@@ -423,12 +423,49 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Provider', () => {
       // Edited again here: the page shows the Dive's value now, SSI's as the run found it.
       await patch(id, { notes: 'Reef changed' });
       expect((await status(id) as unknown as { conflicts: unknown }).conflicts).toEqual([{ field: 'notes', hub: 'Reef changed', provider: 'Reef in SSI' }]);
+      // Edited to SSI's value: the two sides are equal, nothing waits; edited back, it waits again.
+      await patch(id, { notes: 'Reef in SSI' });
+      expect((await status(id) as unknown as { conflicts: unknown }).conflicts).toBeNull();
+      await patch(id, { notes: 'Reef changed' });
 
       expect((await send({}, id)).json()).toMatchObject({ outcome: 'conflicts' });
       expect((await send({}, id)).json().conflicts).toEqual([{ field: 'notes', hub: 'Reef changed', provider: 'Reef in SSI' }]);
       expect((await send({ conflicts: { notes: 'hub' } }, id)).json()).toMatchObject({ outcome: 'updated', status: { conflicts: null } });
       expect(ssiDive(remoteId).odin_user_log_comment).toBe('Reef changed');
       expect(await t.db.select().from(providerConflict).where(eq(providerConflict.diveId, id))).toEqual([]);
+    });
+
+    it("a site Conflict ends when the Dive is moved to the site with the Provider's ID", async () => {
+      ctx.fakeSsi.sites.push(
+        { odin_dive_sites_id: 4420, odin_dive_sites_name: 'Abu Dabab', odin_dive_sites_lat: 25.33, odin_dive_sites_lon: 34.74, odin_countries_code_iso: 'EG' },
+        { odin_dive_sites_id: 4421, odin_dive_sites_name: 'Shaab Samadai', odin_dive_sites_lat: 24.98, odin_dive_sites_lon: 34.99, odin_countries_code_iso: 'EG' },
+      );
+      const siteWith = async (name: string, externalId: string, latitude: number, longitude: number) => {
+        const site = (await call('POST', '/api/dive-sites', tim, { name, position: { latitude, longitude }, waterType: 'salt' })).json() as { id: string };
+        await call('PUT', `/api/dive-sites/${site.id}/external-ids/ssi`, tim, { externalId });
+        return site.id;
+      };
+      const abuDabab = await siteWith('Abu Dabab', '4420', 25.33, 34.74);
+      const samadai = await siteWith('Shaab Samadai', '4421', 24.98, 34.99);
+      const { id, remoteId } = await sentDive();
+      setInSsi(remoteId, { odin_user_log_dive_sites_id: 4420 });
+      await patch(id, { siteId: samadai });
+      const [{ id: userId }] = (await t.db.select({ id: user.id }).from(user).where(eq(user.email, 'tim@example.com'))) as [{ id: string }];
+      const connectionId = (await status(id)).connection!.id;
+      const [run] = await t.db.insert(pushRun).values({
+        userId, connectionId, provider: 'ssi', diverId: timDiver, status: 'done', updates: true, updatesRemovingVerification: false, leftOut: {} as typeof pushRun.$inferInsert['leftOut'],
+      }).returning();
+      expect(await ctx.providers.pushes.send(userId, id, 'ssi', { onConflict: 'defer', runId: run!.id })).toMatchObject({ result: 'updated', deferred: ['site'] });
+      const [stored] = await t.db.select().from(providerConflict).where(eq(providerConflict.diveId, id));
+      expect(stored!.fields).toMatchObject([{ field: 'site', hub: 'Shaab Samadai', compared: { provider: '4420', siteSource: 'ssi' } }]);
+      type Waiting = { connections: { entries: { diveId: string; fields: unknown[] }[] }[] };
+      const listed = async () => ((await call('GET', '/api/provider-conflicts', tim)).json() as Waiting).connections.flatMap((c) => c.entries).filter((e) => e.diveId === id);
+
+      await patch(id, { siteId: abuDabab });
+      expect((await status(id) as unknown as { conflicts: unknown }).conflicts).toBeNull();
+      expect(await listed()).toEqual([]);
+      await patch(id, { siteId: hausreefId });
+      expect(await listed()).toMatchObject([{ fields: [{ field: 'site', hub: 'Hausreef' }] }]);
     });
 
     it("a field the Provider doesn't export stays as SSI has it", async () => {

@@ -48,6 +48,8 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     { field: 'maxDepthM', hub: 18, provider: 19.5 },
   ];
   const entry = (diveId: string, remoteId: string, f: StoredConflictField[] = fields('Manta')) => ({ diveId, provider: 'ledger', connectionId, remoteId, fields: f, runId: null });
+  /** The Dive's max depth now (the FIT Dive's, from its Recording). */
+  const maxDepthOf = async (diveId: string) => (await json<{ values: { maxDepthM: number } }>('GET', `/api/dives/${diveId}`)).values.maxDepthM;
 
   beforeAll(async () => {
     t = await createTestDatabase();
@@ -74,7 +76,9 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     await record(t.db, entry(diveId, remoteId));
     const { connections } = await listed();
     expect(connections).toMatchObject([{ connectionId, provider: 'ledger', providerName: 'Ledger' }]);
-    expect(connections[0]!.entries).toMatchObject([{ diveId, remoteId, fields: fields('Manta') }]);
+    expect(connections[0]!.entries).toMatchObject([{ diveId, remoteId, fields: [
+      { field: 'notes', hub: null, provider: 'Manta' }, { field: 'maxDepthM', hub: await maxDepthOf(diveId), provider: 19.5 },
+    ] }]);
     expect(await openFields(t.db, diveId, 'ledger')).toEqual(['notes', 'maxDepthM']);
     await close(t.db, diveId, 'ledger');
     expect(await openFields(t.db, diveId, 'ledger')).toEqual([]);
@@ -101,7 +105,7 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     await record(t.db, entry(diveId, remoteId));
     await record(t.db, entry(diveId, remoteId, [{ field: 'notes', hub: 'Turtle', provider: 'Ray' }]));
     expect(await t.db.select().from(providerConflict)).toHaveLength(1);
-    expect((await listed()).connections[0]!.entries).toMatchObject([{ fields: [{ field: 'notes', hub: 'Turtle', provider: 'Ray' }] }]);
+    expect((await listed()).connections[0]!.entries).toMatchObject([{ fields: [{ field: 'notes', hub: null, provider: 'Ray' }] }]);
     expect(await openFields(t.db, diveId, 'ledger')).toEqual(['notes']);
   });
 
@@ -208,6 +212,33 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
       await t.db.update(connection).set({ diverId }).where(eq(connection.id, connectionId));
     }
     expect(diveId).toBeTruthy();
+  });
+
+  const setNotes = async (diveId: string, notes: string) => {
+    const version = (await json<{ version: number }>('GET', `/api/dives/${diveId}`)).version;
+    expect((await call('PATCH', `/api/dives/${diveId}`, { version, notes })).statusCode).toBe(200);
+  };
+
+  it("says Dive Hub's value as the Dive is now, and leaves out a field whose sides became equal", async () => {
+    const { diveId, remoteId } = await sentDive();
+    await record(t.db, entry(diveId, remoteId, [{ field: 'notes', hub: 'Turtle', provider: 'Manta', compared: { provider: 'Manta', siteSource: null } }]));
+    // The Connection's count comes with its last fetch (an earlier test's).
+    const counted = async () => (await json<{ id: string; lastFetch: { conflicts: number } }[]>('GET', '/api/connections'))
+      .find((c) => c.id === connectionId)!.lastFetch.conflicts;
+    await setNotes(diveId, 'Reef');
+    expect((await listed()).connections[0]!.entries[0]!.fields).toEqual([{ field: 'notes', hub: 'Reef', provider: 'Manta' }]);
+    expect(await counted()).toBe(1);
+    await setNotes(diveId, 'Manta');
+    expect((await listed()).connections).toEqual([]);
+    expect(await counted()).toBe(0);
+  });
+
+  it('an entry stored without comparable values compares the shown ones', async () => {
+    const { diveId, remoteId } = await sentDive();
+    await record(t.db, entry(diveId, remoteId, fields('Manta')));
+    await setNotes(diveId, 'Manta');
+    // The max depth isn't compared (the FIT Dive has a Recording): it stays, with the Dive's value now.
+    expect((await listed()).connections[0]!.entries[0]!.fields).toEqual([{ field: 'maxDepthM', hub: await maxDepthOf(diveId), provider: 19.5 }]);
   });
 
   it('leaves out the Connection of a Provider this instance does not offer', async () => {

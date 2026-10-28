@@ -8,7 +8,7 @@ import { connection, dive, diveSite, push, pushRun, pushRunItem, type PushRunLef
 import { asksFor, diveListFilter } from '../dives/list-filter.js';
 import { managedDiverIds } from '../dives/dive-service.js';
 import { isUniqueViolation } from '../sites/site-service.js';
-import { waitingByRun } from './conflicts.js';
+import type { ConflictService } from './conflicts.js';
 import { planItem, orderItems, type PlanOptions, type Planned } from './push-run-plan.js';
 import type { RemoteDive } from './provider.js';
 import type { PushService } from './push-service.js';
@@ -46,8 +46,8 @@ type RunRow = typeof pushRun.$inferSelect;
 type ItemRow = typeof pushRunItem.$inferSelect;
 type Status = Awaited<ReturnType<PushService['status']>>;
 
-export function createPushRunService(deps: { db: Db; registry: ProviderRegistry; pushes: PushService }) {
-  const { db, registry, pushes } = deps;
+export function createPushRunService(deps: { db: Db; registry: ProviderRegistry; pushes: PushService; conflicts: ConflictService }) {
+  const { db, registry, pushes, conflicts } = deps;
 
   const error = (code: ConstructorParameters<typeof ProviderServiceError>[0], extra?: Record<string, unknown>) =>
     new ProviderServiceError(code, undefined, extra);
@@ -233,7 +233,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
    * Conflicts that still wait and carry these runs' ids (as "Needs your decision" lists them): an entry a later send
    * closed is gone, one another run found again carries that run's id.
    */
-  const conflictsOf = (runIds: string[]) => waitingByRun(db, runIds);
+  const conflictsOf = (runIds: string[]) => conflicts.waitingByRun(runIds);
   async function view(row: RunRow) {
     const items = await db.select({ state: pushRunItem.state }).from(pushRunItem).where(eq(pushRunItem.runId, row.id));
     return viewOf(row, countsOf(items), (await conflictsOf([row.id])).get(row.id) ?? 0);
