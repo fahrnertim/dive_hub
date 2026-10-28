@@ -17193,7 +17193,7 @@ export interface paths {
                                     kind: "conflict" | "exists";
                                     /** @description conflict: the remote dive the Conflict is about. exists: the dive at the Provider */
                                     remoteId: string;
-                                    /** @description hub is the Dive's value now, provider the Provider's as the run found it; a field whose two values became equal is left out. An entry with no field left is not listed (nor counted in the Connection's or a run's conflicts) */
+                                    /** @description `hub` is the Dive's value now, `provider` the Provider's as the run found it; a field whose two values became equal is left out. An entry with no field left is not listed (nor counted in the Connection's or a run's conflicts) */
                                     fields: {
                                         /**
                                          * @description The field the two sides differ on

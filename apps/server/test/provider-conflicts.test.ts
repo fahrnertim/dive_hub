@@ -222,7 +222,9 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
   it("says Dive Hub's value as the Dive is now, and leaves out a field whose sides became equal", async () => {
     const { diveId, remoteId } = await sentDive();
     await record(t.db, entry(diveId, remoteId, [{ field: 'notes', hub: 'Turtle', provider: 'Manta', compared: { provider: 'Manta', siteSource: null } }]));
-    // The Connection's count comes with its last fetch (an earlier test's).
+    // The Connection's count comes with its last fetch: make one.
+    await t.db.update(connection).set({ importMode: 'add', fetchEveryMinutes: 60, lastFetchedAt: null }).where(eq(connection.id, connectionId));
+    await ctx.providers.scheduledFetch.fetch(connectionId);
     const counted = async () => (await json<{ id: string; lastFetch: { conflicts: number } }[]>('GET', '/api/connections'))
       .find((c) => c.id === connectionId)!.lastFetch.conflicts;
     await setNotes(diveId, 'Reef');
