@@ -468,9 +468,10 @@ export async function goneAtSsi(api: APIRequestContext, diveId: string): Promise
 }
 
 /** Changes the Dive's dive in Erika's SSI logbook in the fake SSI, as she would in SSI's app (ADR 0056). */
-export async function editAtSsi(api: APIRequestContext, diveId: string, set: Record<string, unknown>) {
+export async function editAtSsi(api: APIRequestContext, diveId: string, set: Record<string, unknown>, site?: Record<string, unknown>) {
   const status = await (await api.get(`/api/dives/${diveId}/providers/ssi`)).json() as { current: { remoteId: string } | null };
-  const answer = await (await api.post('/e2e/fake-ssi/dive', { data: { email: SSI_ACCOUNT.login, remoteId: status.current!.remoteId, set }, headers })).json() as { found: boolean };
+  const data = { email: SSI_ACCOUNT.login, remoteId: status.current!.remoteId, set, ...(site && { site }) };
+  const answer = await (await api.post('/e2e/fake-ssi/dive', { data, headers })).json() as { found: boolean };
   if (!answer.found) throw new Error('the Dive is not in Erika\'s SSI logbook');
 }
 

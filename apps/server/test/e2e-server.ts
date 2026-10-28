@@ -22,7 +22,7 @@ import { skippingClock } from '../src/providers/leases.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
-import { computerDive, createFakeSsi, fakeCard, handTypedDive } from './fake-ssi.js';
+import { computerDive, createFakeSsi, fakeCard, handTypedDive, type FakeSsiSite } from './fake-ssi.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import { createMerging } from '../src/dives/merging.js';
 import { createDiverService } from '../src/divers/diver-service.js';
@@ -168,8 +168,12 @@ for (const record of [
 const worker = await startWorker(pool, imports, siteImports, aiAccesses, assessments, providers.pushRuns, providers.waitingPushes, providers.scheduledFetch, providers.certifications, app.log);
 // Test-only (never in the production app): a browser test changes a dive in an SSI account's logbook, as the User would
 // in SSI's app (ADR 0030: changes taken back). By the account's e-mail and SSI's dive number or ID; only the fields given.
+// `site`: a site SSI then lists too (one Dive Hub doesn't know), when it isn't listed yet.
 app.post('/e2e/fake-ssi/dive', { schema: { hide: true } }, async (request) => {
-  const { email, number, remoteId, set } = request.body as { email: string; number?: number; remoteId?: string; set: Record<string, unknown> };
+  const { email, number, remoteId, set, site } = request.body as {
+    email: string; number?: number; remoteId?: string; set: Record<string, unknown>; site?: FakeSsiSite;
+  };
+  if (site && !fakeSsi.sites.some((s) => s.odin_dive_sites_id === site.odin_dive_sites_id)) fakeSsi.sites.push(site);
   const account = fakeSsi.accounts.find((a) => a.email === email);
   const record = remoteId !== undefined
     ? [fakeSsi.dives.get(Number(remoteId))].find((d) => d?.odin_user_log_user_master_id === account?.accountId)

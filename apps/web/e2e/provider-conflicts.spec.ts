@@ -3,7 +3,7 @@
 // until the User chooses), and a run leaves such a dive waiting on the Review page, where the same choice sends it.
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import {
-  clearPushRuns, conflictAtSsi, diveNumber, editAtSsi, headers, leaveConflict, openLine, sentWithNotes,
+  clearPushRuns, conflictAtSsi, diveNumber, editAtSsi, editElsewhere, headers, leaveConflict, openLine, sentWithNotes,
 } from './support.ts';
 
 test.describe.configure({ mode: 'serial' });
@@ -68,6 +68,50 @@ test('a note changed only in SSI comes back on update and the page says so', { t
     // The Dive shows the note from SSI without a reload.
     await expect(page.locator('#main').getByText('Reef, a turtle')).toBeVisible();
     expect(await notesOf(request, id)).toBe('Reef, a turtle');
+  } finally {
+    await leaveConflict(request);
+  }
+});
+
+test('a site changed in SSI\'s app to one Dive Hub doesn\'t know stays as SSI has it, and the page says so', { tag: ['@dives'] }, async ({ page, request }) => {
+  const id = await sentWithNotes(request, 'Reef');
+  try {
+    const elphinstone = { odin_dive_sites_id: 4410, odin_dive_sites_name: 'Elphinstone', odin_dive_sites_lat: 25.31, odin_dive_sites_lon: 34.86, odin_countries_code_iso: 'EG' };
+    await editAtSsi(request, id, { odin_user_log_dive_sites_id: 4410 }, elphinstone);
+    // Changed here too, so there is something to update.
+    await editElsewhere(request, id, 'Reef here');
+
+    await page.goto(`/#/dives/${id}`);
+    await openLine(page, 'SSI');
+    await page.getByRole('button', { name: 'Update in SSI' }).click();
+    await expect(page.locator('#main').getByText(/^Left as SSI has it: .*site/)).toBeVisible();
+    await expect(page.locator('#main').getByText('Up to date')).toBeVisible();
+  } finally {
+    await leaveConflict(request);
+  }
+});
+
+test('while the choice is being sent, Send with these choices can\'t be pressed again', { tag: ['@dives'] }, async ({ page, request }) => {
+  const id = await conflictAtSsi(request);
+  try {
+    const pushes = (await status(request, id)).pushes.length;
+    await page.goto(`/#/dives/${id}`);
+    await openLine(page, 'SSI');
+    await page.getByRole('button', { name: 'Update in SSI' }).click();
+    const choice = page.getByRole('region', { name: 'Changed in both places' });
+    // The send with the choices is held until the button has been looked at.
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => { release = resolve; });
+    await page.route(`**/api/dives/${id}/providers/ssi`, async (route) => {
+      if (route.request().method() === 'POST') await held;
+      await route.continue();
+    });
+    const sendButton = choice.getByRole('button', { name: 'Send with these choices' });
+    await sendButton.click();
+    await expect(sendButton).toBeDisabled();
+    release();
+    await expect(page.locator('#main').getByText('Up to date')).toBeVisible();
+    expect((await status(request, id)).pushes).toHaveLength(pushes + 1);
   } finally {
     await leaveConflict(request);
   }
