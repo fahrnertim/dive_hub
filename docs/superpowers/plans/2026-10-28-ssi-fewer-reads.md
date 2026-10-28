@@ -1,7 +1,7 @@
 ---
 title: "Plan: SSI fewer reads (piece 7)"
 summary: Implementation plan for piece 7 of the SSI alignment - SSI's save answer (result.dive) proves storage and is the read-back, so no logbook read follows a save; an answer without a usable record falls back to one logbook read; the answer's record goes into the kept logbook; "Set number" checks the answer too. Client, fake and adapter only.
-status: proposed
+status: done
 date: 2026-10-28
 ---
 
@@ -91,3 +91,12 @@ outside `providers/ssi/` and the fake changes.
 - [ ] `architecture-review` subagent on the branch; fix findings with `path:line` and the rule.
 - [ ] Design: piece 7 in "The pieces, in order" gets "done: [plan](../plans/2026-10-28-ssi-fewer-reads.md)"; this plan's `status: done`.
 - [ ] `pnpm check` green → push, open the PR (Superpowers override 5).
+
+## Outcome (2026-10-28)
+
+Done in 4373f4f (client, fake) and 93f91e2 (adapter, reference). Final review and architecture review: no blocking
+findings. Deferred minors:
+
+- No test for a "Set number" whose answer and read both show the old number (→ `not_stored`, `ssi-adapter.ts` `confirmed`).
+- An update's fallback-read `detail` says "another reference or fewer samples", though an update checks no reference.
+- The update's fallback (no record, fewer samples) has no test of its own; only the create's has.

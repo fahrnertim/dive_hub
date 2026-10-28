@@ -165,7 +165,7 @@ automatic exchange without clash handling would overwrite edits made in SSI's ap
    buddy list and on the dive; a name-only entry is kept (both [T]).
 6. **Automation** (above; revised in "Piece 6, settled" below; done: [plan](../plans/2026-10-27-provider-automation.md)), for every Provider.
 7. **Fewer reads** (above; settled in "Piece 7, settled" below; checked 2026-10-28,
-   [note](../../research/2026-10-28-ssi-save-answer-check.md)).
+   [note](../../research/2026-10-28-ssi-save-answer-check.md); done: [plan](../plans/2026-10-28-ssi-fewer-reads.md)).
 
 **Later:** gear and gear sets, after equipment.
 
