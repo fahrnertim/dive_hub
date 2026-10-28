@@ -542,7 +542,8 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
   - **`deferred`** (with `updated`): the fields left as the Provider has them (from a Push run, a field the Provider
     doesn't take from Dive Hub, or a change there Dive Hub couldn't take, such as a site it doesn't know). Say which.
   - **`status.conflicts`:** an open entry (a Push run left these fields as the Provider has them). Say so on the panel,
-    with both values, and offer to decide (the same send with `conflicts`).
+    with both values, and offer to decide (the same send with `conflicts`). `hub` is the Dive's value now (a Dive edited
+    since the run shows its new value); `provider` is the Provider's as the run found it.
 - **Must show the Provider's `notices`:** `shows_unconfirmed` means it shows the dive as unconfirmed (SSI: only a dive
   center can confirm it there). `presents_as_app` means Dive Hub introduces itself to the Provider as the Provider's own
   app, which the Provider hasn't agreed to and could object to ([ADR 0049](../decisions/0049-ssi-app-user-agent.md)):

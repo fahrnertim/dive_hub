@@ -400,6 +400,20 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     return null;
   }
 
+  /**
+   * The open entry's fields with Dive Hub's side said from the Dive as it is now (a Dive edited since the run shows its
+   * new value); the Provider's side stays as the run found it.
+   */
+  async function hubNow(adapter: ProviderAdapter, conn: ConnectionRow | null, userId: string, diverId: string, diveId: string, fields: ConflictField[]) {
+    const run = await changes.runOf(db, userId, adapter, {
+      diverId, connectionId: conn?.id ?? null, mode: conn?.importMode ?? 'off', windowMinutes: conn?.importWindowMinutes ?? 15, choices: {},
+      context: { people: {}, sites: {} },
+    });
+    const here = await changes.hubOf(db, run, diveId, null);
+    if (!here) return fields;
+    return Promise.all(fields.map(async (f) => ({ ...f, hub: await changes.shown(run, f.field, here.hub, here.row.siteId) })));
+  }
+
   /** A Dive's state at one Provider. */
   async function statusAt(userId: string, provider: string, loaded: Awaited<ReturnType<typeof loadOutgoingDive>>) {
     const { adapter, dives, exports } = exporter(provider);
@@ -418,7 +432,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
       siteId: row.siteId,
       unmet,
       current: current ? remoteState(current, dives, outgoing, numbersFor(conn, exports, row.number)) : null,
-      conflicts: entry && entry.remoteId === current?.remoteId ? entry.fields : null,
+      conflicts: entry && entry.remoteId === current?.remoteId ? await hubNow(adapter, conn, userId, row.diverId, row.id, entry.fields) : null,
       pushes,
     };
   }

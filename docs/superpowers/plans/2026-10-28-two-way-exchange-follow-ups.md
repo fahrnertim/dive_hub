@@ -84,7 +84,7 @@ answers), [ADR 0056](../../decisions/0056-two-way-exchange-and-automation.md), [
 - [ ] **Step 3:** In `statusAt`, when the entry is about the current remote dive, map its fields to
   `{ field, hub: await changes.shown(run, field, here.hub, here.row.siteId), provider }`, with `run` from `changes.runOf`
   (the Dive's Diver, the Connection's id/mode/window when there is one, else `null`/`'off'`/`0`; `choices: {}`; context
-  `{ people: [], sites: {} }`: the hub side never reads it) and `here` from `changes.hubOf(db, run, row.id, null)`.
+  `{ people: {}, sites: {} }`: the hub side never reads it) and `here` from `changes.hubOf(db, run, row.id, null)`.
   A short private helper (`hubNow`) keeps `statusAt` readable.
 - [ ] **Step 4:** Step 2's command → PASS; whole `ssi-target.test.ts` → PASS.
 - [ ] **Step 5:** Description: "…Dive Hub's value (`hub`) is the Dive's now, the Provider's (`provider`) as the run found it…"; the contract bullet says the same.

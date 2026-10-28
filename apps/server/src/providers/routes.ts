@@ -282,7 +282,8 @@ const StatusView = Type.Object({
   }, { description: 'The remote dive this Dive has now; null when none (never sent, deleted)' })),
   conflicts: Nullable(Type.Array(ConflictFieldView, {
     description: 'The open entry of Conflicts about the current remote dive (a Push run left these fields as the Provider has them): '
-      + 'say so and offer to decide (send with conflicts). null when none waits',
+      + "say so and offer to decide (send with conflicts). `hub` is the Dive's value now, `provider` the Provider's as the run found it. "
+      + 'null when none waits',
   })),
   pushes: Type.Array(PushView, { description: 'Newest first' }),
 });
